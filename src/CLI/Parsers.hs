@@ -556,6 +556,16 @@ matchParser =
             <*> optSeed
         )
 
+compileParser :: Parser Command
+compileParser =
+  CmdCompile
+    <$> ( OptsCompile
+            <$> optLogLevel
+            <*> optLogLines
+            <*> optRule
+            <*> strOption (long "target" <> short 't' <> metavar "FILE" <> value "compiled/generated/Compiled.hs" <> showDefault <> help "File to write the Haskell module to")
+        )
+
 commandParser :: Parser Command
 commandParser =
   hsubparser
@@ -565,6 +575,7 @@ commandParser =
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
         <> command "merge" (info mergeParser (progDesc "Merge 𝜑-expressions into single one by merging their top level formations"))
         <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))
+        <> command "compile" (info compileParser (progDesc "Compile the rules into a Haskell module a build with the flag 'compiled' links in"))
     )
 
 optPin :: Parser (Maybe Pin)

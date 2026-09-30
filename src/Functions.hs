@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Functions (buildTerm, buildFunctions, execFunctions, nameOf) where
+module Functions (buildTerm, buildFunctions, contextualizing, execFunctions, nameOf) where
 
 import AST
 import Builder
@@ -74,11 +74,16 @@ argToNumber arg subst = do
     _ -> throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
 
 _contextualize :: BuildTermMethod
-_contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst = do
+_contextualize = contextualizing contextualize
+
+-- The 'contextualize' function of a rule, carried out by the given 𝒞: the
+-- one of YAML or the one 'phino compile' wrote (#1617).
+contextualizing :: (Expression -> Expression -> IO Expression) -> BuildTermMethod
+contextualizing judgment [Y.ArgExpression expr, Y.ArgExpression context] subst = do
   expr' <- buildExpressionThrows expr subst
   context' <- buildExpressionThrows context subst
-  TeExpression <$> contextualize expr' context'
-_contextualize _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
+  TeExpression <$> judgment expr' context'
+contextualizing _ _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
 
 -- The name the formation of the only argument goes by in the given world, or
 -- the formation itself where it has none (see 'pathOf'). The world is not an
@@ -89,7 +94,7 @@ _contextualize _ _ = throwIO (userError "Function contextualize() requires exact
 nameOf :: Maybe Expression -> BuildTermMethod
 nameOf universe [Y.ArgExpression expr] subst = do
   form <- buildExpressionThrows expr subst
-  pure (TeExpression (maybe form (`pathOf` form) universe))
+  pure (TeExpression (nameIn universe form))
 nameOf _ _ _ = throwIO (userError "Function named() requires exactly 1 argument as expression")
 
 -- Uniqueness is the engine's job: 'freshTau' draws from the document-wide

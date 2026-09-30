@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, redex) where
+module Rule (RuleContext (..), Step (..), domainOf, isFormation, isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, normal, normalWith, presentIn, redex, xiFree) where
 
 import AST
 import Builder
@@ -27,7 +27,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import Deps (BuildTermFunc, BuildTermMethod, Term (..))
-import Functions (nameOf)
+import Functions (buildTerm, nameOf)
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
@@ -41,10 +41,27 @@ import qualified Yaml as Y
 -- functions and the world the matched term stands in, where one is known.
 -- A normalization rule is about a term alone, so the world stays out of its
 -- YAML and reaches only the functions that need it, which is 'named' writing
--- 'Φ' or 'Φ.number' into a ρ instead of the object (#1318, #1460).
+-- 'Φ' or 'Φ.number' into a ρ instead of the object (#1318, #1460). A '𝑛' or
+-- '𝑘' meta asks whether a term is a normal form, which is a question about the
+-- built-in normalization rules, so the context carries the answer the engine
+-- running them gives, the YAML read at run time or the Haskell 'phino compile'
+-- wrote (#1617).
 data RuleContext = RuleContext
   { _buildTerm :: BuildTermFunc
   , _universe :: Maybe Expression
+  , _normal :: Expression -> Bool
+  }
+
+-- One rewriting rule ready to run: its name, which the chain, '--breakpoint'
+-- and the step headers show, and what it makes of a whole term, rewriting
+-- every place it matches at once. The answer is nothing where the rule
+-- matches nowhere, and the term, changed or not, where it matches somewhere,
+-- since the rewriter tells the two apart. A step is either a rule of YAML the
+-- matcher interprets or a rule 'phino compile' turned into Haskell, and the
+-- rewriter cannot tell one from the other (#1617).
+data Step = Step
+  { _name :: String
+  , _applied :: RuleContext -> Expression -> IO (Maybe Expression)
   }
 
 -- Returns True if given expression matches with any of given normalization rules
@@ -61,15 +78,28 @@ matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normali
 
 -- Returns True if given expression is in the normal form
 isNF :: Expression -> RuleContext -> Bool
-isNF ExXi _ = True
-isNF ExRoot _ = True
-isNF ExTermination _ = True
-isNF (ExDispatch ExXi _) _ = True
-isNF (ExDispatch ExRoot _) _ = True
-isNF (ExDispatch ExTermination _) _ = False -- dd rule
-isNF (ExApplication ExTermination _) _ = False -- dc rule
-isNF (ExFormation []) _ = True
-isNF (ExFormation bds) ctx = normalBindings bds || not (matchesAnyNormalizationRule (ExFormation bds) ctx)
+isNF expr ctx = normalWith (`matchesAnyNormalizationRule` ctx) expr
+
+-- Whether a term is a normal form by the rules of YAML, the answer an engine
+-- that interprets them gives to a '𝑛' or '𝑘' meta (see '_normal'). The rules
+-- are matched with a context of their own, since a normal form is a property
+-- of the term alone.
+normal :: Expression -> Bool
+normal expr = isNF expr (RuleContext buildTerm Nothing normal)
+
+-- Whether a term is a normal form, told whether some normalization rule
+-- matches somewhere inside a given term. A few shapes are decided before any
+-- rule is asked, since the rules themselves decide them the same way.
+normalWith :: (Expression -> Bool) -> Expression -> Bool
+normalWith _ ExXi = True
+normalWith _ ExRoot = True
+normalWith _ ExTermination = True
+normalWith _ (ExDispatch ExXi _) = True
+normalWith _ (ExDispatch ExRoot _) = True
+normalWith _ (ExDispatch ExTermination _) = False -- dd rule
+normalWith _ (ExApplication ExTermination _) = False -- dc rule
+normalWith _ (ExFormation []) = True
+normalWith matching (ExFormation bds) = normalBindings bds || not (matching (ExFormation bds))
   where
     -- Returns True if all given bindings are 100% in normal form: each one is
     -- a Δ, a λ or a void, and no Δ stands beside a λ, since 'dl' turns such a
@@ -87,7 +117,7 @@ isNF (ExFormation bds) ctx = normalBindings bds || not (matchesAnyNormalizationR
     lambda :: Binding -> Bool
     lambda (BiLambda _) = True
     lambda _ = False
-isNF expr ctx = not (matchesAnyNormalizationRule expr ctx)
+normalWith matching expr = not (matching expr)
 
 _or :: [Y.Condition] -> Subst -> RuleContext -> IO [Subst]
 _or [] _ _ = pure []
@@ -128,16 +158,22 @@ numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
   Just (MvBindings bds) -> Just (length bds)
   _ -> Nothing
 numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
-  Just (MvBindings bds) -> Just (length (filter notAsset bds))
+  Just (MvBindings bds) -> Just (domainOf bds)
   _ -> Nothing
+numToInt (Y.Literal num) _ = Just num
+numToInt _ _ = Nothing
+
+-- How many of the bindings are attributes a positional argument may fill:
+-- every one but Δ, λ and ρ, which is what 'domain' of a rule counts.
+domainOf :: [Binding] -> Int
+domainOf = length . filter notAsset
   where
+    notAsset :: Binding -> Bool
     notAsset (BiDelta _) = False
     notAsset (BiLambda _) = False
     notAsset (BiVoid AtRho) = False
     notAsset (BiTau AtRho _) = False
     notAsset _ = True
-numToInt (Y.Literal num) _ = Just num
-numToInt _ _ = Nothing
 
 _eq :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
 _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of
@@ -182,7 +218,7 @@ _nf (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
 _nf (ExAny slot) (Subst mp) ctx = case M.lookup (Anon slot) mp of
   Just (MvExpression expr) -> _nf expr (Subst mp) ctx
   _ -> pure []
-_nf expr subst ctx = pure [subst | isNF expr ctx]
+_nf expr subst ctx = pure [subst | _normal ctx expr]
 
 -- An expression is xi-free when it contains no ξ outside of a formation: it is
 -- Φ, ⊥, a formation, a dispatch with a xi-free subject, or an application with
@@ -200,15 +236,16 @@ _absolute (ExAny slot) (Subst mp) ctx = case M.lookup (Anon slot) mp of
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
 _absolute expr subst _ = pure [subst | xiFree expr]
-  where
-    xiFree :: Expression -> Bool
-    xiFree (ExFormation _) = True
-    xiFree ExRoot = True
-    xiFree ExTermination = True
-    xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
-    xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
-    xiFree (ExDispatch e _) = xiFree e
-    xiFree _ = False
+
+-- Whether the term holds no ξ outside of a formation (see '_absolute').
+xiFree :: Expression -> Bool
+xiFree (ExFormation _) = True
+xiFree ExRoot = True
+xiFree ExTermination = True
+xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
+xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
+xiFree (ExDispatch e _) = xiFree e
+xiFree _ = False
 
 -- Hold when the given expression is a formation (an abstraction ⟦…⟧). A meta
 -- is resolved first, so 'binding 𝑛' inspects whatever 𝑛 is bound to.
@@ -217,10 +254,11 @@ _isFormation (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   Just (MvExpression expr) -> _isFormation expr (Subst mp) ctx
   _ -> pure []
 _isFormation expr subst _ = pure [subst | isFormation expr]
-  where
-    isFormation :: Expression -> Bool
-    isFormation (ExFormation _) = True
-    isFormation _ = False
+
+-- Whether the term is a formation (see '_isFormation').
+isFormation :: Expression -> Bool
+isFormation (ExFormation _) = True
+isFormation _ = False
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of

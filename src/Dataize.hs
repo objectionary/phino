@@ -23,6 +23,7 @@ import qualified Data.List.NonEmpty as NE
 import Data.Maybe (listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (..), State (..))
+import Engine (Engine (..))
 import Locator (locatedExpression)
 import Matcher (Subst, matchExpression')
 import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, boxed, deeper, entering, excluding, execBuildTerm, insideUniverse, label, leadsTo, morph', normalized, parking, producer, sidePremise, universed)
@@ -145,7 +146,7 @@ dataize' (expr, seq) univ state caller = do
     firstMatch :: ReduceContext -> [Y.DataizeRule] -> IO (Maybe (Y.DataizeRule, Subst))
     firstMatch _ [] = pure Nothing
     firstMatch ctx (rule : rest) = do
-      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx) (Just univ))
+      substs <- matchExpressionWithRule' (matchExpression' rule.ematch univ) expr (asRule rule) (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal)
       case substs of
         (subst : _) -> pure (Just (rule, subst))
         [] -> firstMatch ctx rest

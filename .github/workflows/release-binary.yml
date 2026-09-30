@@ -51,6 +51,7 @@ jobs:
       - name: Build release binary
         shell: bash
         run: |
+          make compiled
           make binary
       - name: Upload phino binary to Amazon S3
         uses: aws-actions/configure-aws-credentials@v6.3.0

@@ -23,11 +23,12 @@ import Data.Maybe (fromJust, isJust, isNothing)
 import qualified Data.Text as T
 import Dataize
 import Deps (Judgment (..))
+import Emit (emitted)
 import Encoding
+import Engine (Engine (..), building, current, stepOf)
 import Evaluate (evaluation, fired)
 import Files (overwrite)
 import qualified Filter as F
-import Functions (buildTerm)
 import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules, explainRules)
 import Logger
 import Margin (defaultMargin)
@@ -58,6 +59,7 @@ runRewrite OptsRewrite{..} = do
   validateNoOverlap "show" included "hide" excluded
   setStdGen (mkStdGen _seed)
   rules <- getRules _normalize _shuffle _rules
+  linked <- engine
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   (expr, atoms) <- parseInputWithAtoms input _inputFormat
@@ -72,7 +74,7 @@ runRewrite OptsRewrite{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
-  (rewrittens, exceeded) <- rewrite expr rules (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing buildTerm _must _breakpoint save)
+  (rewrittens, exceeded) <- rewrite expr (map (stepOf linked) rules) (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal _must _breakpoint save)
   rewrittens' <- exclude <$> include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
@@ -168,6 +170,7 @@ runDataize OptsDataize{..} = do
   save <- saveStepFunc _stepsDir printCtx
   tally <- tallied _maxFirings
   memo <- memoized _acyclic
+  linked <- engine
   (outcome, chain, _) <-
     withEvalFunc
       _protocol
@@ -177,7 +180,7 @@ runDataize OptsDataize{..} = do
           -- reduces what dataization demands and ends in bytes, so it is off
           -- here; the cycle guard of '--acyclic' is not, since 𝔻 recurses into
           -- itself and a formation it enters again is a loop of its own (#1290).
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally deadline memo 1 _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas buildTerm reduction evaluation fired save record
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally deadline memo 1 _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Dataization aiming._locator
           dataize universe (started universe) aiming
@@ -263,12 +266,13 @@ runMorph OptsMorph{..} = do
   save <- saveStepFunc _stepsDir printCtx
   tally <- tallied _maxFirings
   memo <- memoized _acyclic
+  linked <- engine
   (morphed, chain, _) <-
     withEvalFunc
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally deadline memo 1 _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas buildTerm reduction evaluation fired save record
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally deadline memo 1 _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Morphing aiming._locator
           morph universe (started universe) aiming
@@ -394,10 +398,24 @@ runMatch OptsMatch{..} = do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
       traverse_ (throwIO . AnonymousMetaInCondition . T.unpack) (anonymous condition)
-      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext buildTerm Nothing)
+      linked <- engine
+      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext (building linked) Nothing linked._normal)
       if null substs
         then throwIO EmptySubstsOnMatch
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
     rule ptn cnd = Y.Rule "custom" Nothing Nothing ptn ExRoot cnd Nothing Nothing
+
+runCompile :: OptsCompile -> IO ()
+runCompile OptsCompile{..} = do
+  custom <- getRules False False _rules
+  source <- either (throwIO . CouldNotCompile) pure (emitted Y.normalizationRules custom Y.contextualizationRules current)
+  overwrite _targetFile source
+  logInfo (printf "The rules were compiled into '%s'" _targetFile)
+  exists <- doesFileExist "cabal.project.local"
+  if exists
+    then putStrLn "The file 'cabal.project.local' exists, so add these lines to it to link the compiled rules in:\npackage phino\n  flags: +compiled"
+    else do
+      overwrite "cabal.project.local" "package phino\n  flags: +compiled\n"
+      logInfo "The file 'cabal.project.local' was written, so the next build links the compiled rules in"

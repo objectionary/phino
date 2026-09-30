@@ -13,7 +13,9 @@ import Builder (buildExpressionThrows)
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
+import Engine (Engine (_normal))
 import Files (allPathsIn)
+import Fixtures (linked)
 import Functions (buildTerm)
 import GHC.Generics
 import Matcher
@@ -44,7 +46,7 @@ spec = do
           let expr = expression pack
           let matched = matchExpression (pattern pack) expr
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-          met <- meetCondition (condition pack) matched (RuleContext buildTerm Nothing)
+          met <- meetCondition (condition pack) matched (RuleContext buildTerm Nothing (_normal linked))
           case failure pack of
             Just True ->
               unless
@@ -62,7 +64,7 @@ spec = do
                 )
       )
   describe "isNF determines normal form" $ do
-    let ctx = RuleContext buildTerm Nothing
+    let ctx = RuleContext buildTerm Nothing (_normal linked)
     forM_
       [ ("returns true for ExXi", ExXi, True)
       , ("returns true for ExRoot", ExRoot, True)
@@ -84,7 +86,7 @@ spec = do
 
   describe "matchExpressionWithRule via a 'where' extension or a φ-marker meta" $ do
     let ctx :: RuleContext
-        ctx = RuleContext buildTerm Nothing
+        ctx = RuleContext buildTerm Nothing (_normal linked)
 
         joinRule :: Yaml.Rule
         joinRule =
@@ -181,10 +183,10 @@ spec = do
         world :: Expression
         world = ExFormation [BiTau (AtLabel "qwj") (ExFormation [BiDelta (BtOne "7C")]), BiVoid AtRho]
     it "writes Φ for the whole program the context stands in" $ do
-      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm (Just world)))
+      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm (Just world) (_normal linked)))
         `shouldReturn` [ExRoot]
     it "writes the formation itself where the context knows no universe" $ do
-      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing))
+      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing (_normal linked)))
         `shouldReturn` [world]
 
   describe "redex" $ do
@@ -206,7 +208,7 @@ spec = do
           , "⟦ x ↦ ∅, dd ↦ ⟦ λ ⤍ L_dd, ρ ↦ ∅ ⟧, m1 ↦ ⟦ b ↦ ∅, φ ↦ ξ.ρ.dd( b ↦ ξ.b ), ρ ↦ ∅ ⟧ ⟧"
           ]
         context :: RuleContext
-        context = RuleContext buildTerm Nothing
+        context = RuleContext buildTerm Nothing (_normal linked)
         matches :: Expression -> Yaml.Rule -> IO [Subst]
         matches term rule = maybe pure (\cond substs -> meetCondition cond substs context) rule.when (matchExpressionDeep rule.pattern term)
     it "takes every sample for inert" $ do

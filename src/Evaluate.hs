@@ -18,7 +18,6 @@ module Evaluate (evaluation, fired) where
 
 import AST
 import Builder (buildExpressionThrows)
-import Contextualize (contextualize)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.List (partition)
@@ -26,6 +25,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import qualified Data.Text as T
 import Deps (BuildTermMethodS, Evaluation (..), State (..), Term (..))
+import Engine (Engine (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, starved, unparked)
@@ -279,7 +279,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     reshaped :: ReduceContext -> Subst -> (Meta, (Meta, [Y.Rule])) -> IO Subst
     reshaped ctx bound (meta, (source, rules)) = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      shaped <- rewritten rules (RuleContext ctx._buildTerm Nothing) term
+      shaped <- rewritten rules (RuleContext ctx._buildTerm Nothing ctx._engine._normal) term
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) shaped)
       bind meta (MvExpression shaped) bound
     -- Stand the data of a term another line of the entry has bound into
@@ -406,7 +406,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     -- the formation being fired, so '$.x' is the x of it, and the calculus does
     -- the reaching.
     operand :: Expression -> IO Expression
-    operand = (`contextualize` self)
+    operand term = caller._engine._contextualize term self
     bind :: Meta -> MetaValue -> Subst -> IO Subst
     bind meta value bound = case combine (substSingle meta._name value) bound of
       Just bound' -> pure bound'
