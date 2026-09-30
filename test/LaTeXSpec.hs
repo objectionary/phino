@@ -153,10 +153,10 @@ spec = do
           expressionToLaTeX expr (adjustContext defaultLatexContext) `shouldBe` expected
       )
 
-    it "renders a non-finite double as a piped dispatch off the root" $ do
+    it "renders a non-finite double in its byte form" $ do
       nan <- parseExpressionThrows "[[ x -> Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) ]]"
       expressionToLaTeX nan defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\nQ . |nan| : |x|{.}\n\\end{phiquation}"
+        `shouldBe` "\\begin{phiquation}\nQ . |number| ( Q . |bytes| ( |7F-F8-00-00-00-00-00-00| : D ) ) : |x|{.}\n\\end{phiquation}"
 
     it "renders a bytes meta with the '\\delta' head" $ do
       bts <- parseExpressionThrows "[[ D> !d7 ]]"

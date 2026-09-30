@@ -10,8 +10,7 @@
 module CST where
 
 import AST
-import Bytes (NonFinite, btsIsUtf8, btsSize, btsToNonFinite, btsToNum, btsToStr)
-import Data.Maybe (isJust)
+import Bytes (NonFinite, btsIsUtf8, btsSize, btsToNum, btsToStr)
 import qualified Data.Text as T
 import qualified Yaml as Y
 
@@ -178,7 +177,7 @@ data EXPRESSION
   | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, argument :: APP_ARGUMENT, eol' :: EOL, tab' :: TAB, indent :: Int}
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Argument]}
   | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Argument]}
-  | EX_NONFINITE {global :: GLOBAL, nonfinite :: NonFinite, tab :: TAB, rhos :: [Argument]}
+  | EX_NONFINITE {global :: GLOBAL, nonfinite :: NonFinite, tab :: TAB, rhos :: [Argument]} -- @todo #1427:30min drop EX_NONFINITE with its Render, Sugar and Encoding clauses and the NonFinite helpers of Bytes, since nothing builds it any more
   | EX_META {meta :: META}
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
@@ -262,11 +261,14 @@ expressionToCST = toCST'
 expressionToCSTFrom :: Int -> Expression -> EXPRESSION
 expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
 
+-- A number can be rendered in sweet form when it is finite, and so has a
+-- numeric literal. Every non-finite pattern is kept in its byte form, since
+-- `Φ.nan`, `Φ.pinf` and `Φ.ninf` are ordinary root dispatches (see #1427).
 sweetNumber :: Bytes -> Bool
 sweetNumber bts
   | btsSize bts /= 8 = False
 sweetNumber bts = case btsToNum bts of
-  Right dbl | isNaN dbl || isInfinite dbl -> isJust (btsToNonFinite bts)
+  Right dbl | isNaN dbl || isInfinite dbl -> False
   _ -> True
 
 sweetString :: Bytes -> Bool
@@ -352,7 +354,6 @@ instance ToCST Expression EXPRESSION where
       inlined PA_FORMATION{voids = _ : _} = True
       inlined _ = False
   toCST (DataString bts) (tabs, _) | sweetString bts = EX_STRING (btsToStr bts) (TAB tabs) []
-  toCST (DataNumber bts) (tabs, _) | Just nonfinite <- btsToNonFinite bts = EX_NONFINITE Φ nonfinite (TAB tabs) []
   toCST (DataNumber bts) (tabs, _) | sweetNumber bts = EX_NUMBER (btsToNum bts) (TAB tabs) []
   toCST (ExDispatch ExXi attr) ctx = EX_ATTR (toCST attr ctx)
   toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) NO_SPACE (toCST attr ctx)
@@ -407,9 +408,7 @@ instance ToCST Expression EXPRESSION where
         | otherwise = (bds, [])
       withoutRhosInPrimitives _ bds = (bds, [])
       applicationToPrimitive :: Expression -> Int -> [Argument] -> EXPRESSION
-      applicationToPrimitive (DataNumber bts) tabs rhos = case btsToNonFinite bts of
-        Just nonfinite -> EX_NONFINITE Φ nonfinite (TAB tabs) rhos
-        Nothing -> EX_NUMBER (btsToNum bts) (TAB tabs) rhos
+      applicationToPrimitive (DataNumber bts) tabs rhos = EX_NUMBER (btsToNum bts) (TAB tabs) rhos
       applicationToPrimitive (DataString bts) tabs rhos = EX_STRING (btsToStr bts) (TAB tabs) rhos
       applicationToPrimitive _ _ _ = error "applicationToPrimitive expects DataNumber or DataString"
       complexApplication :: Expression -> (Expression, [Argument], [Expression])

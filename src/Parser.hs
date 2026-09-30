@@ -21,7 +21,7 @@ module Parser
 where
 
 import AST
-import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
+import Bytes (numToBts, strToBts)
 import Control.Exception (Exception)
 import Control.Monad (guard, when)
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
@@ -195,18 +195,6 @@ number = do
             )
         )
     )
-
-root :: Parser Expression
-root = do
-  _ <- global
-  option ExRoot (try labelled)
-  where
-    labelled :: Parser Expression
-    labelled = do
-      _ <- symbol "."
-      named <$> label'
-    named :: T.Text -> Expression
-    named name = maybe (ExDispatch ExRoot (AtLabel name)) (DataNumber . nonFiniteBts) (nonFiniteOf name)
 
 quotedStr :: Parser String
 quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (char '"')
@@ -388,6 +376,15 @@ formationBindings = do
     rsb :: Parser String
     rsb = choice [symbol "]]", symbol "⟧"]
 
+-- head part of expression
+-- 1. formation
+-- 2. this
+-- 3. global
+-- 4. termination
+-- 5. meta expression
+-- 6. full attribute -> sugar for $.attr
+-- 7. one-binding formation of a Δ, λ or void binding -> sugar for ⟦ Δ ⤍ FF- ⟧,
+--    each standing before the first head it could be taken for
 exHead :: Parser Expression
 exHead =
   choice
@@ -397,7 +394,7 @@ exHead =
     , do
         _ <- choice [symbol "$", symbol "ξ"]
         return ExXi
-    , root
+    , ExRoot <$ global
     , do
         _ <- choice [ascii 'T', symbol "⊥"]
         return ExTermination

@@ -433,16 +433,17 @@ spec = do
       , ("", Nothing)
       ]
 
-  describe "parse the non-finite doubles named off the root" $
+  describe "parse the non-finite names off the root as dispatches" $
     test
       parseExpression
-      [ ("Q.nan", Just (DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])))
-      , ("Φ.nan", Just (DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])))
-      , ("Q.pinf", Just (DataNumber (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])))
-      , ("Φ.pinf", Just (DataNumber (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])))
-      , ("Q.ninf", Just (DataNumber (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])))
-      , ("Φ.ninf", Just (DataNumber (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])))
-      , ("Q.number", Just (ExDispatch ExRoot (AtLabel "number")))
+      [ ("Q.nan", Just (ExDispatch ExRoot (AtLabel "nan")))
+      , ("Φ.nan", Just (ExDispatch ExRoot (AtLabel "nan")))
+      , ("Q.pinf", Just (ExDispatch ExRoot (AtLabel "pinf")))
+      , ("Φ.pinf", Just (ExDispatch ExRoot (AtLabel "pinf")))
+      , ("Q.ninf", Just (ExDispatch ExRoot (AtLabel "ninf")))
+      , ("Φ.ninf", Just (ExDispatch ExRoot (AtLabel "ninf")))
+      , -- only the exact names are special, everything else stays an ordinary dispatch
+        ("Q.number", Just (ExDispatch ExRoot (AtLabel "number")))
       , ("Q.nanny", Just (ExDispatch ExRoot (AtLabel "nanny")))
       , ("Q.x.nan", Just (ExDispatch (ExDispatch ExRoot (AtLabel "x")) (AtLabel "nan")))
       , ("nan", Just (ExDispatch ExXi (AtLabel "nan")))
