@@ -994,7 +994,8 @@ than its caller can wait, and a caller that kills it gets a protocol nobody
 closed. The `--max-seconds` option stops the run by the clock instead: once
 that many seconds have passed since the command started, the next step the
 run is about to take, whether it fires a λ function or not, fails it with
-`Evaluation did not finish before reaching the limit of seconds`.
+`Evaluation did not finish before reaching the limit of seconds`, and so does
+a check of `--acyclic` that is still comparing formations by then.
 `--partial` does not park it, since a run out of time has no site to park and
 nothing left to go on with. The protocol is closed as usual and its last line
 says where the time ran out. There is no limit unless the option is given:

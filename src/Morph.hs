@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -24,7 +25,7 @@ import AST
 import Builder (buildExpressionThrows, pathOf)
 import Contextualize (contextualize)
 import Control.Applicative ((<|>))
-import Control.Exception (Exception, SomeException, catch, throwIO, try)
+import Control.Exception (Exception, SomeException, catch, evaluate, throwIO, try)
 import Control.Monad (foldM, unless, when)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
@@ -45,6 +46,7 @@ import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import System.Timeout (timeout)
 import Tau (tausOf)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..), normalizationRules)
@@ -449,20 +451,24 @@ charged ctx = do
       writeIORef count (fired + 1)
 
 -- Refuse to go on once the deadline of '--max-seconds' has passed (see
--- 'Deadline'), which ends the run (see 'OutOfTime'). The refusal is told to
--- the protocol, with the judgment of the frame refused and the site it stood
--- at, at the depth its line would have stood at, so a run out of time reads as
--- one and leaves the protocol closed and whole, with the refusal as its last
--- line (#1607, #1619).
+-- 'Deadline'), which ends the run (see 'expired').
 clocked :: ReduceContext -> IO ()
 clocked ctx = mapM_ clock ctx._deadline
   where
     clock :: Deadline -> IO ()
     clock (Deadline cap due) = do
       now <- getMonotonicTime
-      when (now >= due) $ do
-        ctx._saveEval (EvTimeout ctx._nesting cap ctx._judgment ctx._site)
-        throwIO (OutOfTime cap)
+      when (now >= due) (expired ctx cap)
+
+-- End the run out of time (see 'OutOfTime'). The refusal is told to the
+-- protocol, with the judgment of the frame refused and the site it stood at,
+-- at the depth its line would have stood at, so a run out of time reads as one
+-- and leaves the protocol closed and whole, with the refusal as its last line
+-- (#1607, #1619).
+expired :: ReduceContext -> Int -> IO a
+expired ctx cap = do
+  ctx._saveEval (EvTimeout ctx._nesting cap ctx._judgment ctx._site)
+  throwIO (OutOfTime cap)
 
 -- The memo a run keeps, by the mode of '--acyclic' it runs under: an empty
 -- one under 'Plausible', the mode the memo belongs to (see 'Memo'), and none
@@ -603,15 +609,27 @@ entering term ctx = maybe (pure ctx) (`enter` ctx) (entrance ctx._judgment term)
 -- frame that knows it enters one without being a rule of 𝕄 or 𝔻: the '--deep'
 -- walk, which fires the λ of every formation 𝕄 leaves bare, so a recursion
 -- driven by the walk alone goes through no rule 'entrance' knows of (#1451).
+-- The search is pure, and under 'Plausible' one comparison may take longer than
+-- the whole run may, since 'within' looks for the formation entered above at
+-- every depth of the one about to be entered: on the 'printf' of EO one took 38
+-- seconds. The deadline of '--max-seconds' cuts the search while it runs, and
+-- the refusal stands where the formation would have opened (#1622).
 enter :: Expression -> ReduceContext -> IO ReduceContext
 enter form ctx = maybe (pure ctx) remembered ctx._acyclic
   where
     remembered :: Acyclic -> IO ReduceContext
-    remembered mode = case find (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered) of
-      Just before -> do
-        ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
-        throwIO (Looping form)
-      Nothing -> pure ctx{_entered = seenInsert (digest mode form) form ctx._entered}
+    remembered mode =
+      awaited (find (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered)) >>= \case
+        Just before -> do
+          ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
+          throwIO (Looping form)
+        Nothing -> pure ctx{_entered = seenInsert (digest mode form) form ctx._entered}
+    awaited :: Maybe Expression -> IO (Maybe Expression)
+    awaited found = case ctx._deadline of
+      Nothing -> pure found
+      Just (Deadline cap due) -> do
+        now <- getMonotonicTime
+        maybe (expired ctx cap) pure =<< timeout (ceiling (max 0 (due - now) * 1000000)) (evaluate found)
     digest :: Acyclic -> Expression -> Int
     digest Proven = hashShape
     digest Plausible = hashSkeleton

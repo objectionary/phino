@@ -21,17 +21,19 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (Judgment (..), State, Term (TeExpression))
+import Deps (Acyclic (..), Judgment (..), State, Term (TeExpression))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, overdue, primitives, withLambdas, withLambdasOf)
+import GHC.Clock (getMonotonicTime)
 import GHC.Generics (Generic)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Matcher (MetaValue (MvExpression), substEmpty, substSingle)
-import Morph (ReduceContext (..), emptyState, execBuildTerm, insideUniverse, morph, morph', sidePremise)
+import Morph (Deadline (..), ReduceContext (..), emptyState, enter, execBuildTerm, insideUniverse, morph, morph', sidePremise)
 import Parser (parseExpressionThrows)
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import System.FilePath (makeRelative)
+import System.Timeout (timeout)
 import Tau (seedTaus)
 import Test.Hspec
 import Yaml (ExtraArgument (..))
@@ -330,3 +332,16 @@ spec = do
       deadline <- overdue 23
       morph expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline, _partial = True}
         `shouldThrow` (\e -> "--max-seconds=23" `isInfixOf` show (e :: SomeException))
+
+  -- Under '--acyclic=plausible' one comparison of 'within' may take longer than
+  -- the whole run may, since it looks for the formation entered above at every
+  -- depth of the one about to be entered, so the clock cuts the comparison while
+  -- it runs and does not wait for the next step (#1622).
+  describe "stops an entrance by the clock of --max-seconds" $
+    it "fails a comparison that outlasts the deadline" $ do
+      due <- (+ 0.3) <$> getMonotonicTime
+      let formation :: Expression -> Int -> Expression
+          formation base depth = ExFormation [BiTau (AtLabel "x") (iterate (`ExDispatch` AtLabel "w") base !! depth), BiLambda (Function "L_q")]
+      ctx <- enter (formation ExRoot 29) (defaultReduceContext ExRoot){_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
+      timeout 10000000 (enter (formation ExXi 41) ctx)
+        `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))
