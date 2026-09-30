@@ -42,9 +42,9 @@ validateYamlObject v keys
 validateKnownYamlKeys :: (MonadFail a) => Object -> [String] -> a ()
 validateKnownYamlKeys v keys =
   let unknown = filter (\key -> key `notElem` map Key.fromString keys) (KeyMap.keys v)
-   in if null unknown
-        then pure ()
-        else fail (printf "Unknown key '%s', expected one of: %s" (show (head unknown)) (show keys))
+   in case unknown of
+        [] -> pure ()
+        key : _ -> fail (printf "Unknown key '%s', expected one of: %s" (show key) (show keys))
 
 parseJSON' :: String -> (String -> Either String a) -> Value -> Parser a
 parseJSON' nm func =
@@ -184,8 +184,8 @@ instance FromJSON Extra where
       )
 
 instance FromJSON Rule where
-  parseJSON value@(Object object) = do
-    validateKnownYamlKeys object ["name", "pattern", "result", "e-match", "when", "having", "where"]
+  parseJSON value@(Object fields) = do
+    validateKnownYamlKeys fields ["name", "pattern", "result", "e-match", "when", "having", "where"]
     rule <-
       genericParseJSON
         defaultOptions
