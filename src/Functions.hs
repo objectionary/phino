@@ -143,7 +143,7 @@ _sed args subst = do
     parse input =
       case B.stripPrefix "s/" input of
         Just body
-          | B.elem 47 body ->
+          | B.elem '/' body ->
             let (pat, rest) = nextUntilSlash body B.empty False
                 (rep, flag) = nextUntilSlash rest B.empty True
              in case flag of
