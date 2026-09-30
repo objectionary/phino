@@ -1093,7 +1093,7 @@ spec = do
       withStdin "[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]" $
         testCLISucceeded
           ["rewrite", "--canonize", "--sweet", "--flat"]
-          ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Fn4 ⟧"]
+          ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Package ⟧"]
 
     it "rewrites by locator" $
       withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]" $
