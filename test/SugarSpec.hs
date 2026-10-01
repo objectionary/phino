@@ -23,16 +23,12 @@ xiExpr = EX_XI XI
 rootExpr :: EXPRESSION
 rootExpr = EX_GLOBAL Φ
 
--- `x` dispatched off the root, used as a representative attribute-valued
--- callee for the application collapse cases.
 rootDotX :: EXPRESSION
 rootDotX = EX_DISPATCH rootExpr NO_SPACE (AT_LABEL "x")
 
--- `$.y`, the salty desugaring of the bare attribute `y`.
 dottedY :: EXPRESSION
 dottedY = EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "y")
 
--- The bare attribute `y`, sugar for `$.y`.
 exYAttr :: EXPRESSION
 exYAttr = EX_ATTR (AT_LABEL "y")
 

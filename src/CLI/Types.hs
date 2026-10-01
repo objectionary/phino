@@ -130,10 +130,6 @@ data OptsDataize = OptsDataize
   , _inputFile :: Maybe FilePath
   }
 
--- The option surface of 'morph' is that of 'dataize': the two commands read the
--- same input, aim the same '_locator' at the same subterm and print through the
--- same formatting flags, differing only in the judgment they run — 𝕄, which
--- stops at the first formation it reaches, against 𝔻, which insists on bytes.
 data OptsMorph = OptsMorph
   { _logLevel :: LogLevel
   , _logLines :: Int

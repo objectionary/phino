@@ -25,9 +25,6 @@ throwsWith :: IO a -> String -> IO ()
 throwsWith action needle =
   action `shouldThrow` (\exc -> needle `isInfixOf` show (exc :: SomeException))
 
--- 'Term' carries no 'Show'/'Eq' instance, so a term coming back from
--- 'buildTerm' is checked by pattern-matching out the constructor expected and
--- comparing the payload, which does have both.
 expectExpression :: Term -> Expression -> Expectation
 expectExpression (TeExpression got) want = got `shouldBe` want
 expectExpression _ _ = fail "expected a TeExpression term"

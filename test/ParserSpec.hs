@@ -442,12 +442,10 @@ spec = do
       , ("Φ.pinf", Just (DataNumber (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])))
       , ("Q.ninf", Just (DataNumber (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])))
       , ("Φ.ninf", Just (DataNumber (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])))
-      , -- only the exact names are special, everything else stays an ordinary dispatch
-        ("Q.number", Just (ExDispatch ExRoot (AtLabel "number")))
+      , ("Q.number", Just (ExDispatch ExRoot (AtLabel "number")))
       , ("Q.nanny", Just (ExDispatch ExRoot (AtLabel "nanny")))
       , ("Q.x.nan", Just (ExDispatch (ExDispatch ExRoot (AtLabel "x")) (AtLabel "nan")))
-      , -- a bare name is still a ξ dispatch, as it always was
-        ("nan", Just (ExDispatch ExXi (AtLabel "nan")))
+      , ("nan", Just (ExDispatch ExXi (AtLabel "nan")))
       , ("$.nan", Just (ExDispatch ExXi (AtLabel "nan")))
       ]
 

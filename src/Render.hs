@@ -302,7 +302,6 @@ instance Render CONDITION where
   render CO_SUBSET{..} = render (ST_ATTRIBUTES attrs) <> " \\subseteq " <> union groups
   render CO_EMPTY = ""
 
--- The union of binding groups, parenthesized when there is more than one.
 union :: [BINDING] -> Text
 union [group] = render group
 union groups = "\\lparen " <> T.intercalate " \\cup " (map render groups) <> " \\rparen"
@@ -315,14 +314,7 @@ instance Render EXTRA_ARG where
 
 instance Render EXTRA where
   render EXTRA{func = "contextualize", args = arg : rest, ..} = "\\phinoContextualize{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " }{ " <> render meta <> " }"
-  -- 𝕄 carries the universe and threads a state, 𝕄(n, e, s_1), so a 'morph' extra
-  -- renders with the universe metavariable 'e' and the incoming state 's_1' as its
-  -- trailing arguments. This is a one-off application binding only 'meta', so the
-  -- returned state is dropped (the engine discards it too, see 'execBuildTerm').
   render EXTRA{func = "morph", ..} = render meta <> " \\coloneqq \\phinoMorph{ " <> T.intercalate ", " (map render args) <> " }{ e }{ s_1 }"
-  -- The name a formation goes by in the universe. The rule never writes the
-  -- universe, since phino knows it where the rule applies (#1460), so the name
-  -- and the formation it stands for are the two sides of one relation.
   render EXTRA{func = "named", args = [form], ..} = "\\phinoNamed{ " <> render meta <> " }{ " <> render form <> " }"
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where

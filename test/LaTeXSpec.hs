@@ -7,9 +7,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the LaTeX module that provides conversion of phi-calculus
-expressions and rules to LaTeX format for academic documents.
--}
 module LaTeXSpec where
 
 import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot), Function (FnMeta, FnSymbol))
@@ -92,11 +89,6 @@ spec = do
       )
 
   describe "meets several sub-expressions in a single step" $
-    -- A step routinely carries several independent recurring sub-expressions.
-    -- The first step here holds two distinct recurring formations
-    -- ([[ p -> Q.a ]] and [[ q -> Q.b ]]); both must be factored, so the first
-    -- rendered step ends up with two \phinoMeet{}s, not just the single most
-    -- frequent one (see #976).
     it "factors every recurring sub-expression, not only one" $ do
       let step :: String -> String
           step lastAttr = "[[ r -> [[ p -> Q.a ]], s -> [[ q -> Q.b ]], tag -> Q." <> lastAttr <> " ]]"

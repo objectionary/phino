@@ -31,39 +31,20 @@ import qualified Yaml as Y
 
 type RewriteState = (NonEmpty Rewritten, Expression, Seen, Bool)
 
--- Loop-detection store. It maps a cheap fixed-size digest of an expression (see
--- 'hashExpression') to the full expressions that produced that digest. A
--- digest collision is resolved by a slow, exact structural (==) comparison,
--- so loops are still detected soundly while the common (no collision) case
--- stays O(1) on the digest instead of O(expressionSize) per lookup/insert.
 type Seen = Map.Map Int [Expression]
 
--- Has this exact expression been seen before? The digest lookup is fast; the
--- (==) check runs only on a digest match, guarding against hash collisions.
 seenMember :: Int -> Expression -> Seen -> Bool
 seenMember digest expr seen = maybe False (elem expr) (Map.lookup digest seen)
 
--- Remember an expression under its digest, keeping any earlier collisions.
 seenInsert :: Int -> Expression -> Seen -> Seen
 seenInsert digest expr = Map.insertWith (++) digest [expr]
 
--- A step of a rewriting chain: the expression, and the rule that took it to
--- the next one, named and tagged with the judgment it belongs to, which is how
--- a chain of 𝕄 or 𝔻 mixing rules of several judgments tells them apart (#1536).
 type Rewritten = (Expression, Maybe (Judgment, String))
 
 type Rewrittens = (NonEmpty Rewritten, Bool)
 
 type Rewrittens' = ([Rewritten], Bool)
 
--- Build a header line for every step of a rewriting chain. The chain is
--- '[(e0, Just r0), ..., (en, Nothing)]', where 'ri' is the rule applied to 'ei'
--- to produce 'e(i+1)' (see 'leadsTo'). A step's header names the rule that
--- produced its expression, together with the AST node counts before and after
--- that rule, e.g. "=== Step #4, Rule 'STOP', 32t -> 43t". The very first step is
--- the input, which no rule produced, so it carries only its number:
--- "=== Step #1". The 'N nodes -> M nodes' pair matches the debug log emitted
--- while rewriting.
 stepHeaders :: [Rewritten] -> [String]
 stepHeaders chain = zipWith3 header [1 ..] chain (Nothing : map Just chain)
   where
@@ -84,18 +65,9 @@ data RewriteContext = RewriteContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _depthSensitive :: Bool
-  , -- The world the rewritten term stands in, where one is known. The rules
-    -- never see it: it reaches the 'named' function through 'RuleContext',
-    -- which is how 'dot' tells the formation it dispatched from the whole
-    -- program and writes 'ρ ↦ Φ' rather than the program itself (#1318,
-    -- #1460). Normalization inside 𝕄 and 𝔻 knows the universe and names it
-    -- here; the 'rewrite' command rewrites a term with no world around it and
-    -- names nothing.
-    _universe :: Maybe Expression
+  , _universe :: Maybe Expression
   , _buildTerm :: BuildTermFunc
-  , -- Whether a term is a normal form, which a '𝑛' or '𝑘' meta of a rule asks
-    -- (see '_normal' of 'RuleContext').
-    _normal :: Expression -> Bool
+  , _normal :: Expression -> Bool
   , _must :: Must
   , _breakpoint :: Maybe String
   , _saveStep :: SaveStepFunc
@@ -133,21 +105,12 @@ instance Show RewriteException where
       rul
       expr
 
--- Build pattern and result expression and replace patterns to results in given expression
 buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO Expression
 buildAndReplace' (expr, ptn, res, substs) func = do
   ptns <- buildExpressionsThrows ptn substs
   repls <- buildExpressionsThrows res substs
   pure (func (expr, ptns, map const repls))
 
--- If pattern and replacement are appropriate for fast replacing - does it.
--- Pattern and replacement expressions can be used in fast replacing only if
--- 1. they are both formations
--- 2. they start and end with the same meta bindings, e.g. [!B1, ..., !B2]
--- 3. the does not have meta bindings between first and last meta bindings
--- In such case we can just replace bindings one by one without building whole expression.
--- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
--- If we don't meet the conditions above - just do a regular replacing
 tryBuildAndReplaceFast :: ToReplace -> IO Expression
 tryBuildAndReplaceFast state@(expr, ptn@(ExFormation (_ : pbds)), res@(ExFormation (_ : rbds)), substs)
   | fast ptn res = do
@@ -158,8 +121,6 @@ tryBuildAndReplaceFast state@(expr, ptn@(ExFormation (_ : pbds)), res@(ExFormati
       buildAndReplace' state replaceExpression
 tryBuildAndReplaceFast state = buildAndReplace' state replaceExpression
 
--- Whether a rule of the pattern and the result is replaced the fast way (see
--- 'tryBuildAndReplaceFast').
 fast :: Expression -> Expression -> Bool
 fast (ExFormation _pbds@(pbd : pbds)) (ExFormation _rbds@(rbd : rbds)) =
   startsAndEndsWithMeta _pbds
@@ -184,9 +145,6 @@ fast (ExFormation _pbds@(pbd : pbds)) (ExFormation _rbds@(rbd : rbds)) =
       _ -> False
 fast _ _ = False
 
--- The step a rule of YAML takes: the matcher finds every place the rule
--- matches at and the builder and the replacer rewrite them (see
--- 'tryBuildAndReplaceFast').
 interpreted :: Y.Rule -> Step
 interpreted rule = Step rule.name applied
   where
@@ -196,16 +154,6 @@ interpreted rule = Step rule.name applied
         [] -> pure Nothing
         matched -> Just <$> tryBuildAndReplaceFast (expr, rule.pattern, rule.result, matched)
 
--- The step a rule 'phino compile' turned into Haskell takes: the rule is a
--- function telling what it rewrites a term to where the term matches it as a
--- whole, and the places it matches at are found in the order the matcher
--- finds them (see 'sites') and replaced in that order, exactly as the replacer
--- replaces those of a rule of YAML. A place inside what an earlier one was
--- rewritten to is therefore a step of its own, as it is for the matcher, and
--- the chain of steps does not depend on which of the two ran (#1617). The
--- flag says whether the rule matches only a redex (see 'R.redex').
--- The function is told the world the term stands in, where one is known,
--- which is what the 'named' function of a rule reads.
 direct :: String -> Bool -> (Maybe Expression -> Expression -> [Expression]) -> Step
 direct name redex rewritten = Step name applied
   where
@@ -214,15 +162,6 @@ direct name redex rewritten = Step name applied
       [] -> Nothing
       found -> Just (replaceExpression (expr, map fst found, map (const . snd) found))
 
--- The function returns tuple (X, L, Y, Z) where
--- - X is sequence of expressions;
--- - L is the part of the last of them the locator points at, which every rule
---   is tried on. 'rewrite' looks it up once, and a step that rewrites it hands
---   the new one over, so a rule that matches nothing looks nothing up (#1644)
--- - Y is Set of unique expressions after each rule application. It allows to stop the rewriting if we're getting
---   into loop and get back to an expression which we've already got before
--- - Z is boolean flag which tells us if we reach breakpoint. If unmatched rule is equal to breakpoint rule - entire
---   rewriting must be stopped and original expression must be returned
 rewrite' :: RewriteState -> [Step] -> Int -> RewriteContext -> IO RewriteState
 rewrite' state [] _ _ = pure state
 rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
@@ -282,9 +221,6 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
           let (head', _) :| rest = _rewrittens
            in (next, Nothing) :| (head', Just (Normalization, _name rule)) : rest
 
--- Tells whether any of the rules still matches the located expression. A run
--- with nothing left to rewrite after its last allowed step has finished, not
--- run out of its limit, so --depth-sensitive lets it pass (#1439)
 applicable :: Expression -> [Step] -> RewriteContext -> IO Bool
 applicable _ [] _ = pure False
 applicable expression (rule : rest) ctx@RewriteContext{..} =
@@ -292,7 +228,6 @@ applicable expression (rule : rest) ctx@RewriteContext{..} =
     Nothing -> applicable expression rest ctx
     Just _ -> pure True
 
--- Rewrite the expression by provided locator from RewriteContext
 rewrite :: Expression -> [Step] -> RewriteContext -> IO Rewrittens
 rewrite expr rules ctx@RewriteContext{..} = do
   located <- locatedExpression _locator expr

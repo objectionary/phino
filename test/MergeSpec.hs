@@ -5,9 +5,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Merge module that unites a few top level formations
-into a single one.
--}
 module MergeSpec where
 
 import AST (Expression)

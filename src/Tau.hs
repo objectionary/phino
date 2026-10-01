@@ -3,14 +3,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- Uniqueness of generated 𝜏-labels is the engine's job, not the caller's.
--- Instead of asking every 'random-tau' call site to hand over the names it
--- must steer clear of, we scan the document once at the start of a run and
--- remember every attribute label it already uses. Each minted name is added
--- back to that set so later firings (the fixpoint loop re-applies rules across
--- cycles) never reuse one. A monotonic cursor advances past taken indices so
--- minting never rescans the document. Names are sequential rather than
--- random, which makes the rewritten output deterministic.
 module Tau (seedTaus, freshTau, tausOf) where
 
 import AST
@@ -21,21 +13,13 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.IO (unsafePerformIO)
 
--- The set of attribute labels already taken in the document being rewritten,
--- paired with a monotonic cursor pointing at the next candidate index.
 taus :: IORef (Set Text, Int)
 {-# NOINLINE taus #-}
 taus = unsafePerformIO (newIORef (Set.empty, 0))
 
--- Scan the expression once and seed the avoid-set with every attribute label it
--- contains, resetting the cursor back to the start.
 seedTaus :: Expression -> IO ()
 seedTaus expr = writeIORef taus (exprLabels expr, 0)
 
--- Mint a fresh, deterministic 𝜏-label that collides with no taken name,
--- advancing the cursor past taken indices and recording the new name so it is
--- never handed out again. Atomic so concurrent callers cannot mint duplicates
--- or lose updates.
 freshTau :: IO Text
 freshTau = atomicModifyIORef' taus advance
   where
@@ -43,13 +27,6 @@ freshTau = atomicModifyIORef' taus advance
       let (minted, idx) = mint taken cursor
        in ((Set.insert minted taken, idx + 1), minted)
 
--- A source of fresh names of its own for one entry of a run under '--jobs',
--- which morphs the bindings of a formation side by side (#1534). The names
--- carry the entry, 'a🌵7-0' for the seventh binding, so no two entries mint
--- one name and none of them mints a name the run itself does, and they are
--- counted per entry, so what an entry is named does not depend on which
--- worker got to a name first. The names the document took when the source
--- was made are skipped, the way 'freshTau' skips them.
 tausOf :: Int -> IO (IO Text)
 tausOf entry = do
   (taken, _) <- readIORef taus
@@ -61,11 +38,9 @@ tausOf entry = do
       let (minted, idx) = mint' (T.pack ("a🌵" <> show entry <> "-")) taken cursor
        in ((Set.insert minted taken, idx + 1), minted)
 
--- Find the first index at or after the cursor whose name is still free.
 mint :: Set Text -> Int -> (Text, Int)
 mint = mint' "a🌵"
 
--- The same, for names spelled with the given stem.
 mint' :: Text -> Set Text -> Int -> (Text, Int)
 mint' stem taken idx
   | name `Set.member` taken = mint' stem taken (idx + 1)

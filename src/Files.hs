@@ -4,8 +4,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- This module accesses the filesystem: it ensures a file exists,
--- collects every file path under a directory and replaces a file atomically.
 module Files (FsException (..), ensuredFile, allPathsIn, overwrite) where
 
 import Control.Exception (Exception, onException, throwIO)
@@ -44,7 +42,6 @@ overwrite file content = do
       when exists (copyPermissions file temp)
       renameFile temp file
 
--- Recursively collect all file paths in provided directory
 allPathsIn :: FilePath -> IO [FilePath]
 allPathsIn dir = do
   exists <- doesDirectoryExist dir

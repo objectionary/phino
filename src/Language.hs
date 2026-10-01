@@ -1,18 +1,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The set of λ names the key of a '--symbolic' entry matches, as the automaton
--- recognizing it, so that two keys can be asked for a name they both match.
--- Testing one key against the text of the other misses a name neither key
--- spells, such as 'L_number_plus' of 'L_[a-z]+_plus' and 'L_number_[a-z]+',
--- and leaves the answer to the order the file lists them in (#1440).
---
--- A key is read as the regular expressions of PCRE that describe a regular
--- language: characters, escapes, classes, the dot, groups, alternation and
--- quantifiers, lazy ones too. What goes beyond that, such as a back reference,
--- a lookaround or an anchor, is refused, since two such keys cannot be told
--- apart for certain. The dot stands for every character but a new line, and
--- '\d', '\w' and '\s' for their ASCII sets, the way PCRE reads them.
 module Language (Language, language, shared) where
 
 import Data.Char (isAlphaNum, isDigit)
@@ -23,26 +11,20 @@ import qualified Data.Text as T
 import Text.Printf (printf)
 import Text.Read (readMaybe)
 
--- A set of characters, as sorted and disjoint ranges.
 newtype Span = Span [(Char, Char)]
 
--- A regular expression, as the key spells it.
 data Pattern
   = Chars Span
   | Chain [Pattern]
   | Choice [Pattern]
   | Repeat Int (Maybe Int) Pattern
 
--- A move of the automaton: to a state for free, or on a character of a span.
 data Edge
   = Free Int
   | Step Span Int
 
--- The automaton recognizing the names a key matches, as the edges leaving
--- every state, starting at the state 0 and accepting at the state 1.
 newtype Language = Language (Map.Map Int [Edge])
 
--- The language of a key, or the reason it cannot be read as one.
 language :: Text -> Either String Language
 language key = do
   (pattern, rest) <- choice (T.unpack key)
@@ -172,8 +154,6 @@ language key = do
       | low <= high = collect (Span [(low, high)] : done) rest
       | otherwise = Left "a range runs backwards"
 
--- A name both languages hold, if there is one, found by walking the two
--- automata side by side until both accept at once.
 shared :: Language -> Language -> Maybe Text
 shared (Language left) (Language right) = go (Set.singleton (0, 0)) [((0, 0), [])]
   where
@@ -196,7 +176,6 @@ shared (Language left) (Language right) = go (Set.singleton (0, 0)) [((0, 0), []
     edges :: Map.Map Int [Edge] -> Int -> [Edge]
     edges table state = Map.findWithDefault [] state table
 
--- The automaton of a pattern, from the state 0 to the state 1.
 automaton :: Pattern -> Language
 automaton pattern = Language (Map.fromListWith (flip (++)) [(from, [edge]) | (from, edge) <- snd (build pattern 0 1 2)])
   where
@@ -222,7 +201,6 @@ automaton pattern = Language (Map.fromListWith (flip (++)) [(from, [edge]) | (fr
     build (Repeat low high inner) from to next =
       build (Chain [inner, Repeat (low - 1) (subtract 1 <$> high) inner]) from to next
 
--- Every character in any of the spans.
 union :: [Span] -> Span
 union spans = Span (merge (Set.toAscList (Set.fromList (concat [ranges | Span ranges <- spans]))))
   where
@@ -236,7 +214,6 @@ union spans = Span (merge (Set.toAscList (Set.fromList (concat [ranges | Span ra
       | char == maxBound = char
       | otherwise = succ char
 
--- Every character outside the span.
 complement :: Span -> Span
 complement (Span ranges) = Span (go minBound ranges)
   where
@@ -246,13 +223,10 @@ complement (Span ranges) = Span (go minBound ranges)
       | high == maxBound = [(from, pred low) | from < low]
       | otherwise = [(from, pred low) | from < low] ++ go (succ high) rest
 
--- Every character in both spans.
 meet :: Span -> Span -> Span
 meet (Span first) (Span second) =
   Span [(max low low', min high high') | (low, high) <- first, (low', high') <- second, max low low' <= min high high']
 
--- A character of the span, a small letter if it has one, so the name an error
--- quotes reads like a λ name, and nothing if the span is empty.
 sample :: Span -> Maybe Char
 sample (Span ranges) =
   case [max low 'a' | (low, high) <- ranges, max low 'a' <= min high 'z'] ++ [low | (low, _) <- ranges] of
