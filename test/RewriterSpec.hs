@@ -157,6 +157,16 @@ spec = do
       (rewrittens, _) <- rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) MtDisabled Nothing dontSaveStep)
       nub [judgment | (_, Just (judgment, _)) <- NE.toList rewrittens] `shouldBe` [Normalization]
 
+  describe "rewrites by a locator" $ do
+    it "rewrites the located part step after step" $ do
+      expr <- parseExpressionThrows "⟦ t ↦ ⊥.a.b, u ↦ ⊥.c ⟧"
+      (rewrittens, _) <- rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext (ExDispatch ExRoot (AtLabel "t")) 25 25 False Nothing (building linked) (_normal linked) MtDisabled Nothing dontSaveStep)
+      fst (NE.last rewrittens) `shouldBe` ExFormation [BiTau (AtLabel "t") ExTermination, BiTau (AtLabel "u") (ExDispatch ExTermination (AtLabel "c"))]
+    it "fails on a locator that points nowhere even when no rule runs" $ do
+      expr <- parseExpressionThrows "⟦ t ↦ ⊥.a ⟧"
+      rewrite expr [] (RewriteContext (ExDispatch ExRoot (AtLabel "w")) 25 25 False Nothing (building linked) (_normal linked) MtDisabled Nothing dontSaveStep)
+        `shouldThrow` (\exc -> "Can't find object by locator" `isInfixOf` show (exc :: SomeException))
+
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
     packs <- runIO (allPathsIn resources)
