@@ -55,6 +55,9 @@ spec =
     it "tells a normal form the way the rules of YAML do" $
       filter (\seed -> _normal linked (term False seed) /= _normal yaml (term False seed)) [1 .. 3000]
         `shouldBe` []
+    it "tells a normal form of a term holding metas the way the rules of YAML do" $
+      filter (\seed -> _normal linked (term True seed) /= _normal yaml (term True seed)) [3001 .. 6000]
+        `shouldBe` []
     it "contextualizes random terms the way the rules of YAML do, failures included" $
       filterM (\seed -> (/=) <$> contextualized linked (term True seed) (term False (seed + 1)) <*> contextualized yaml (term True seed) (term False (seed + 1))) [1 .. 3000]
         `shouldReturn` []

@@ -81,6 +81,7 @@ spec = do
       , ("returns false for formation with delta and lambda, which dl reduces", ExFormation [BiDelta (BtMany ["01"]), BiLambda (Function "Fn")], False)
       , ("returns true for a formation with a tau binding whose expression is already normal", ExFormation [BiTau (AtLabel "x") ExRoot], True)
       , ("returns false for a formation with a tau binding matching a normalization rule", ExFormation [BiTau (AtLabel "x") (ExDispatch ExTermination (AtLabel "y"))], False)
+      , ("returns false for a dispatch whose body no rule of contextualization takes", ExDispatch (ExFormation [BiTau (AtLabel "kq") (ExDispatch (ExMeta "e5") (AtLabel "wb"))]) (AtLabel "kq"), False)
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)
 
