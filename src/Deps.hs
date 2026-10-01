@@ -13,6 +13,7 @@
 module Deps where
 
 import AST
+import Control.Monad (unless, when)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
@@ -28,7 +29,7 @@ import System.FilePath
 import System.IO (Handle, hPutStrLn)
 import Text.Printf (printf)
 import XMIR (escapeXML, escapeXMLText)
-import Yaml
+import Yaml (ExtraArgument)
 
 data Term
   = TeExpression Expression
@@ -399,15 +400,20 @@ namedInsert term naming = Map.alter renamed (hashExpression term)
 -- carries nothing — it is the order 𝕄 walks the term — so the symbols are what
 -- the dependencies are read from: a term carrying 𝜎4 is the term the line that
 -- minted 𝜎4 stood for.
+-- Whether 'EvRun' has opened the protocol, which is what tells 'endEval'
+-- whether the run it is closing ever opened at all: a case driving 𝕄 or 𝔻
+-- straight past the CLI, the way a spec does, writes no totals at the end of
+-- what it recorded, since nothing here has a run to total (#1638).
 data Protocol = Protocol
   { _fired :: Int
   , _named :: Named
   , _open :: Map.Map Int Int
+  , _begun :: Bool
   }
 
 -- The protocol before a single firing has been written.
 emptyProtocol :: Protocol
-emptyProtocol = Protocol 0 Map.empty Map.empty
+emptyProtocol = Protocol 0 Map.empty Map.empty False
 
 -- What the XML protocol has counted so far: how many firings the whole run
 -- has opened, the same single counter 'Protocol' keeps since #1261, which
@@ -466,7 +472,7 @@ saveEval handle cursor render salted report = do
     -- fact out (#1280).
     written :: Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written (EvRun judgment locator) protocol =
-      pure (protocol, Just (printf "%s(%s)" (letter judgment) (T.unpack locator)))
+      pure (protocol{_begun = True}, Just (printf "%s(%s)" (letter judgment) (T.unpack locator)))
     written (EvFiring depth key judgment site) protocol = do
       locator <- render site
       pure
@@ -608,6 +614,34 @@ saveEval handle cursor render salted report = do
     labelled protocol depth spelling =
       printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) protocol._open))
 
+-- Append the totals of the whole run to the text protocol, once it was opened
+-- with 'EvRun': how long it took and how many λ functions it fired, so a
+-- caller comparing runs never has to count '𝔼(' itself or time the process
+-- from outside (#1638). A run 'endEval' closes without ever having opened
+-- writes nothing more, the way one that fails before 'EvRun' already leaves
+-- the file exactly as empty as it always has.
+endEval :: Handle -> IORef Protocol -> Double -> IO ()
+endEval handle cursor began = do
+  protocol <- readIORef cursor
+  when protocol._begun $ do
+    now <- getMonotonicTime
+    let taken = milliseconds began now
+    hPutStrLn handle (printf "msec(%d)" taken)
+    hPutStrLn handle (printf "firings(%d)" protocol._fired)
+    hPutStrLn handle (printf "fps(%d)" (perSecond protocol._fired taken))
+
+-- How many whole milliseconds separate two readings of the monotonic clock,
+-- rounded the way a stopwatch is read.
+milliseconds :: Double -> Double -> Int
+milliseconds began now = round ((now - began) * 1000)
+
+-- How many λ functions a run fired for every second it took, rounded to the
+-- nearest whole one. The milliseconds floor at one for the division alone, so
+-- a run finishing under a millisecond answers the firings it made and not a
+-- division by zero, without changing what 'msec' itself reports.
+perSecond :: Int -> Int -> Int
+perSecond firings taken = round (fromIntegral firings * 1000 / fromIntegral (max 1 taken) :: Double)
+
 -- The same protocol as XML, which is what '--protocol' writes when the file it
 -- names ends in '.xml' (see 'withEvalFunc'). It carries the very facts the text
 -- format carries and carries them as markup rather than as a 𝜑-term a reader
@@ -632,6 +666,15 @@ saveEval handle cursor render salted report = do
 -- of λ functions costs no more memory than one firing a single λ function and
 -- the last element to reach the disk is the last one the run got to. What is
 -- still open when the run ends is closed by 'endEvalXml'.
+--
+-- The judgment stands one level inside a root of its own, '<protocol>', which
+-- is what carries the totals 'endEvalXml' closes the document with: holding
+-- them beside the judgment rather than as attributes of its opening tag keeps
+-- that tag written the moment the run starts, before a total is there to
+-- carry, and keeps every total an element of its own, so a later one joins
+-- '<msec>' and '<firings>' without changing either (#1638). Every record under
+-- the judgment is therefore written one level deeper than its own nesting
+-- says, through 'indentedXml' and not 'indented'.
 saveEvalXml :: Handle -> IORef Nesting -> (Expression -> IO String) -> SaveEvalFunc
 saveEvalXml handle cursor render report = do
   written <- atomicModify cursor (elements report)
@@ -644,10 +687,11 @@ saveEvalXml handle cursor render report = do
     elements :: Evaluation -> Nesting -> IO (Nesting, [String])
     elements (EvRun judgment locator) nesting =
       pure
-        ( nesting{_closing = (0, opened judgment) : nesting._closing}
+        ( nesting{_closing = (0, opened judgment) : (-1, "protocol") : nesting._closing}
         ,
           [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-          , printf "<%s at=\"%s\">" (opened judgment) (quoted locator)
+          , "<protocol>"
+          , indentedXml 0 (printf "<%s at=\"%s\">" (opened judgment) (quoted locator))
           ]
         )
     elements (EvFiring depth key judgment site) nesting = do
@@ -658,7 +702,7 @@ saveEvalXml handle cursor render report = do
             , _openedAt = Map.insert depth fires nesting._openedAt
             , _closing = (depth, "evaluate") : kept
             }
-        , closers ++ [indented depth (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) (escapeXML locator))]
+        , closers ++ [indentedXml depth (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) (escapeXML locator))]
         )
       where
         (kept, closers) = closed depth nesting._closing
@@ -668,33 +712,33 @@ saveEvalXml handle cursor render report = do
       form <- render self
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = (depth, "formation") : kept}, closers ++ [indented depth (printf "<formation at=\"%s\" term=\"%s\">" (escapeXML locator) (escapeXML form))])
+      pure (nesting{_closing = (depth, "formation") : kept}, closers ++ [indentedXml depth (printf "<formation at=\"%s\" term=\"%s\">" (escapeXML locator) (escapeXML form))])
     elements (EvLooped depth judgment mode self site) nesting = do
       form <- render self
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<looped by=\"%s\" match=\"%s\" at=\"%s\" term=\"%s\"/>" (opened judgment) (certainty mode) (escapeXML locator) (escapeXML form))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<looped by=\"%s\" match=\"%s\" at=\"%s\" term=\"%s\"/>" (opened judgment) (certainty mode) (escapeXML locator) (escapeXML form))])
     elements (EvStuck depth key judgment self) nesting = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) (escapeXMLText form))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) (escapeXMLText form))])
     elements (EvStall depth key) nesting = do
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<stall λ=\"%s\"/>" (quoted key))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<stall λ=\"%s\"/>" (quoted key))])
     elements (EvStuckOn depth key) nesting = do
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<unfinished λ=\"%s\"/>" (quoted key))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unfinished λ=\"%s\"/>" (quoted key))])
     elements (EvStarved depth limit judgment site) nesting = do
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<starved limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<starved limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
     elements (EvTimeout depth limit judgment site) nesting = do
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<timeout limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<timeout limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
     elements (EvData depth spelling _ value) nesting = do
       record <- stood value
-      pure (nesting{_closing = kept}, closers ++ [indented depth record])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth record])
       where
         (kept, closers) = closed depth nesting._closing
         -- An operand of a 'dataize' line either came down to data, which is
@@ -713,7 +757,7 @@ saveEvalXml handle cursor render report = do
     elements (EvTerm depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
     -- A 'symbolize' line binds a meta to a term like every other line of a
     -- firing, and the markup holds what it was bound to and not what it was
     -- made from: the term an operand was reduced from is what the text format
@@ -722,9 +766,9 @@ saveEvalXml handle cursor render report = do
     elements (EvSymbolize depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
     elements (EvKnown depth symbol bytes) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth known])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth known])
       where
         (kept, closers) = closed depth nesting._closing
         known :: String
@@ -732,15 +776,15 @@ saveEvalXml handle cursor render report = do
     elements (EvJoin depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
     elements (EvJoined depth fresh (one, two)) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth joint])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth joint])
       where
         (kept, closers) = closed depth nesting._closing
         joint :: String
         joint = printf "<joined symbol=\"%s\">%s %s</joined>" (sigma fresh) (sigma one) (sigma two)
     elements (EvTerminate depth condition side _) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth terminal])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth terminal])
       where
         (kept, closers) = closed depth nesting._closing
         -- The condition a symbol stands for is named by it, the way 'joined'
@@ -751,7 +795,7 @@ saveEvalXml handle cursor render report = do
           Just (Right bytes) -> printf "<terminate branch=\"%s\">%s</terminate>" (quoted side) (escapeXMLText (printBytes bytes))
           Nothing -> printf "<terminate branch=\"%s\"/>" (quoted side)
     elements (EvMinted depth symbol operands) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indented depth mint])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth mint])
       where
         (kept, closers) = closed depth nesting._closing
         -- The symbol stands in 'symbol', the way 'known' and 'joined' put
@@ -769,13 +813,13 @@ saveEvalXml handle cursor render report = do
       let (kept, closers) = closed depth nesting._closing
           naming :: String
           naming = printf "%s.1" (labelled nesting depth answer)
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))])
     elements (EvAnswer depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
           naming :: String
           naming = printf "%s.2" (labelled nesting depth answer)
-      pure (nesting{_closing = kept}, closers ++ [indented depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
     -- The name of an operand meta on this firing, spelled the way the text
     -- protocol's own 'labelled' spells it: the meta the entry names it with
     -- in the YAML, followed by which firing of the whole run this is, the
@@ -801,10 +845,24 @@ saveEvalXml handle cursor render report = do
 -- derivation still leaves a file a parser can read. A run failing before it
 -- opened the protocol leaves an empty file, exactly as it leaves one under the
 -- text format.
-endEvalXml :: Handle -> IORef Nesting -> IO ()
-endEvalXml handle cursor = do
+--
+-- '<protocol>' is the one element 'closed' never reaches, since it was pushed
+-- at a depth no record ever asks to close down to (see 'elements'); once
+-- everything the run opened is shut, the totals stand beside the judgment and
+-- '<protocol>' closes last, the way 'endEval' closes the text format (#1638).
+-- A run that never opened the protocol at all leaves nothing in '_closing' and
+-- so gets no totals either, exactly as it gets no judgment.
+endEvalXml :: Handle -> IORef Nesting -> Double -> IO ()
+endEvalXml handle cursor began = do
   nesting <- readIORef cursor
   mapM_ (hPutStrLn handle) (snd (closed 0 nesting._closing))
+  unless (null nesting._closing) $ do
+    now <- getMonotonicTime
+    let taken = milliseconds began now
+    hPutStrLn handle (indentedXml 0 (printf "<msec>%d</msec>" taken))
+    hPutStrLn handle (indentedXml 0 (printf "<firings>%d</firings>" nesting._fires))
+    hPutStrLn handle (indentedXml 0 (printf "<fps>%d</fps>" (perSecond nesting._fires taken)))
+    hPutStrLn handle "</protocol>"
   writeIORef cursor nesting{_closing = []}
 
 -- The elements a record standing at this depth closes, innermost first,
@@ -812,7 +870,7 @@ endEvalXml handle cursor = do
 -- firing opened above it, so one standing at the depth of an open element, or
 -- shallower than it, is the first record after that element and ends it.
 closed :: Int -> [(Int, String)] -> ([(Int, String)], [String])
-closed depth open = (kept, [indented level (printf "</%s>" element) | (level, element) <- shut])
+closed depth open = (kept, [indentedXml level (printf "</%s>" element) | (level, element) <- shut])
   where
     (shut, kept) = span ((>= depth) . fst) open
 
@@ -820,6 +878,12 @@ closed depth open = (kept, [indented level (printf "</%s>" element) | (level, el
 -- protocols a tree rather than a list: two spaces per level.
 indented :: Int -> String -> String
 indented depth line = replicate (2 * depth) ' ' ++ line
+
+-- The same, one level deeper, since the markup nests the judgment one level
+-- inside '<protocol>' and every record stands one level inside the judgment
+-- (#1638).
+indentedXml :: Int -> String -> String
+indentedXml depth = indented (depth + 1)
 
 -- Read, change and write the cursor back in one go, which a firing nested in
 -- the reduction of an operand of another needs: the outer firing is still

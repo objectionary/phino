@@ -16,6 +16,7 @@ module Fixtures
   , loopingLambdas
   , overdue
   , primitives
+  , readProtocol
   , readUtf8
   , recorded
   , recorded'
@@ -32,6 +33,8 @@ import Compiled (compiled)
 import Control.Exception (bracket, evaluate)
 import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Data.ByteString qualified as BS
+import Data.Char (toLower)
+import Data.List (isPrefixOf, stripPrefix)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
@@ -47,6 +50,7 @@ import Lining (LineFormat (MULTILINE))
 import Morph (Deadline (..), ReduceContext (..), Steps (..))
 import Sugar (SugarType (SWEET))
 import System.Directory (getTemporaryDirectory, removePathForcibly)
+import System.FilePath (takeExtension)
 import System.IO (Handle, IOMode (ReadMode), hClose, hGetContents, hSetEncoding, openBinaryTempFile, utf8, withFile)
 import XMIR (defaultXmirContext)
 
@@ -150,7 +154,7 @@ recorded' :: Bool -> (SaveEvalFunc -> IO a) -> IO (a, String)
 recorded' hidden action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
     answer <- withEvalFunc (Just path) printing action
-    written <- readUtf8 path
+    written <- withoutTotals <$> readUtf8 path
     pure (answer, written)
   where
     -- The protocol flattens every term itself, so the only things this context
@@ -203,6 +207,60 @@ readUtf8 path =
     content <- hGetContents stream
     _ <- evaluate (length content)
     pure content
+
+-- The protocol a run of '--protocol' wrote, with the totals 'endEval' or
+-- 'endEvalXml' closed the run with dropped off the end. Most cases here were
+-- written before the totals existed and assert the firings of the run and
+-- nothing past them, so this is what they read the file back with; a case
+-- asserting the totals themselves reads the file back with 'readUtf8'
+-- instead (#1638). Which wrapper is dropped is decided by the name of the
+-- file, exactly as '--protocol' itself decides which one it writes.
+readProtocol :: FilePath -> IO String
+readProtocol path = sansTotals <$> readUtf8 path
+  where
+    sansTotals :: String -> String
+    sansTotals
+      | map toLower (takeExtension path) == ".xml" = withoutWrapper
+      | otherwise = withoutTotals
+
+-- The text protocol with its trailing 'msec'/'firings'/'fps' lines dropped,
+-- where the run wrote them, and left as it is otherwise. 'recorded'' opens
+-- the protocol with 'EvRun' the way a full run of the CLI does, so it closes
+-- with the same totals; the packs it reads the protocol back for predate them
+-- and assert the firings of the run and nothing past them, so this is where
+-- the totals are dropped before a pack ever sees them (#1638).
+withoutTotals :: String -> String
+withoutTotals text
+  | [msec, firings, fps] <- drop (length ls - 3) ls
+  , "msec(" `isPrefixOf` msec
+  , "firings(" `isPrefixOf` firings
+  , "fps(" `isPrefixOf` fps =
+      unlines (take (length ls - 3) ls)
+  | otherwise = text
+  where
+    ls = lines text
+
+-- The XML protocol with its '<protocol>' root and the totals it closes with
+-- dropped, and every remaining line dedented by the one level the root added,
+-- so the document reads exactly as it did before the root wrapped the
+-- judgment in it (#1638).
+withoutWrapper :: String -> String
+withoutWrapper text = case lines text of
+  (decl : "<protocol>" : rest)
+    | Just kept <- withoutRunTotals rest -> unlines (decl : map dedented kept)
+  _ -> text
+  where
+    withoutRunTotals :: [String] -> Maybe [String]
+    withoutRunTotals rest = case reverse rest of
+      (closing : fps : firings : msec : kept)
+        | closing == "</protocol>"
+        , "<fps>" `isPrefixOf` dropWhile (== ' ') fps
+        , "<firings>" `isPrefixOf` dropWhile (== ' ') firings
+        , "<msec>" `isPrefixOf` dropWhile (== ' ') msec ->
+            Just (reverse kept)
+      _ -> Nothing
+    dedented :: String -> String
+    dedented line = fromMaybe line (stripPrefix "  " line)
 
 -- Write the content to a fresh temporary file, hand its path to the action and
 -- delete the file afterwards.

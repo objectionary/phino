@@ -23,7 +23,7 @@ import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
-import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
@@ -113,16 +113,20 @@ withEvalFunc' (Just file) ctx action = do
     markup = map toLower (takeExtension file) == ".xml"
     -- The markup format closes on the way out what the run left open, so the
     -- document is well-formed however the run ended. The closing runs before
-    -- the handle does, and the handle closes whether or not it succeeded.
+    -- the handle does, and the handle closes whether or not it succeeded. The
+    -- clock starts here, before the action opens the protocol with 'EvRun', so
+    -- the 'msec' the run closes with covers the whole of it (#1638).
     markedUp :: IO a
     markedUp = do
       cursor <- newIORef emptyNesting
-      bracket opened (\protocol -> endEvalXml protocol cursor `finally` hClose protocol) $ \protocol ->
+      began <- getMonotonicTime
+      bracket opened (\protocol -> endEvalXml protocol cursor began `finally` hClose protocol) $ \protocol ->
         action (saveEvalXml protocol cursor (flattened ctx))
     plain :: IO a
     plain = do
       cursor <- newIORef emptyProtocol
-      bracket opened hClose $ \protocol ->
+      began <- getMonotonicTime
+      bracket opened (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
         action (saveEval protocol cursor (flattened ctx) (salted ctx))
     -- 'withFile' would do the same, except that it annotates whatever the action
     -- throws with the name of the file, and a dataization failure has to reach
