@@ -64,16 +64,20 @@ data Step = Step
   , _applied :: RuleContext -> Expression -> IO (Maybe Expression)
   }
 
--- Returns True if given expression matches with any of given normalization rules
--- Here we use unsafePerformIO because we're sure that conditions which are used
--- in normalization rules doesn't throw an exception.
+-- Whether any normalization rule applies to the term or to a place inside it:
+-- its pattern, its '𝑛' and '𝑘' metas and its 'when' hold, whatever its 'where'
+-- makes of them, which is what the compiled 'nf' asks too. A function of
+-- 'where' may fail where the rule applies, as 'contextualize' of 'dot' fails on
+-- '⟦ x ↦ 𝑒9.y ⟧.x', since no rule of 𝒞 takes a meta (#1630). Here we use
+-- unsafePerformIO because we're sure that conditions which are used in
+-- normalization rules do not throw an exception.
 matchesAnyNormalizationRule :: Expression -> RuleContext -> Bool
 matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normalizationRules ctx
   where
     matchesAnyNormalizationRule' :: Expression -> [Y.Rule] -> RuleContext -> Bool
     matchesAnyNormalizationRule' _ [] _ = False
     matchesAnyNormalizationRule' expr (rule : rules) ctx =
-      let matched = unsafePerformIO (matchExpressionWithRule expr rule ctx)
+      let matched = unsafePerformIO (admitted (deep rule) [substEmpty] expr rule ctx)
        in not (null matched) || matchesAnyNormalizationRule' expr rules ctx
 
 -- Returns True if given expression is in the normal form
@@ -434,12 +438,14 @@ metasWithPrefix prefix = nub . go
 -- A rule that matches only a redex never looks inside an inert term (see
 -- 'redex').
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule expr rule = matchExpressionBy deep [substEmpty] expr rule
-  where
-    deep :: MatchExpressionFunc
-    deep ptn tgt
-      | reachable' (redex rule) ptn tgt = matchExpressionDeep' (redex rule) ptn tgt
-      | otherwise = []
+matchExpressionWithRule expr rule = matchExpressionBy (deep rule) [substEmpty] expr rule
+
+-- The deep matcher of the rule, asked only where its pattern fits somewhere in
+-- the term (see 'matchExpressionWithRule').
+deep :: Y.Rule -> MatchExpressionFunc
+deep rule ptn tgt
+  | reachable' (redex rule) ptn tgt = matchExpressionDeep' (redex rule) ptn tgt
+  | otherwise = []
 
 -- Whether every match of the rule its 'when' lets through stands at a place
 -- no 'inert' term holds, judged by the pattern and the 'when' alone, so it
@@ -486,13 +492,31 @@ matchExpressionWithRule' = matchExpressionBy matchExpression'
 -- the seed is dropped only when the pattern binds the same name to a different
 -- value; rules that do not mention the name simply carry it along unused.
 matchExpressionBy :: MatchExpressionFunc -> [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionBy matcher seed expr rule ctx =
+matchExpressionBy matcher seed expr rule ctx = do
+  when' <- admitted matcher seed expr rule ctx
+  if null when'
+    then pure []
+    else do
+      logDebug (printf "Rule %s" rule.name)
+      extended <- extraSubstitutions when' rule.where_ ctx
+      if null extended
+        then do
+          logDebug "Substitution is empty after extending, maybe some metas are duplicated"
+          pure []
+        else do
+          met <- meetMaybeCondition rule.having extended ctx
+          when (null met) (logDebug "The 'having' condition wasn't met")
+          pure met
+
+-- The matches of the rule its pattern, its '𝑛' and '𝑘' metas and its 'when'
+-- let through, before its 'where' and its 'having' are asked anything.
+admitted :: MatchExpressionFunc -> [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+admitted matcher seed expr rule ctx =
   let ptn = rule.pattern
       matched = combineMany seed (matcher ptn expr)
-      name = rule.name
    in if null matched
         then do
-          logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
+          logDebug (printf "Pattern from rule '%s' was not matched:\n%s" rule.name (printExpression' ptn logPrintConfig))
           pure []
         else do
           -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check it is xi-free first
@@ -506,21 +530,8 @@ matchExpressionBy matcher seed expr rule ctx =
               pure []
             else do
               when' <- meetMaybeCondition rule.when inNf ctx
-              if null when'
-                then do
-                  logDebug "The 'when' condition wasn't met"
-                  pure []
-                else do
-                  logDebug (printf "Rule %s" name)
-                  extended <- extraSubstitutions when' rule.where_ ctx
-                  if null extended
-                    then do
-                      logDebug "Substitution is empty after extending, maybe some metas are duplicated"
-                      pure []
-                    else do
-                      met <- meetMaybeCondition rule.having extended ctx
-                      when (null met) (logDebug "The 'having' condition wasn't met")
-                      pure met
+              when (null when') (logDebug "The 'when' condition wasn't met")
+              pure when'
   where
     nfMetas :: Expression -> [Expression]
     nfMetas = metasWithPrefix "n"

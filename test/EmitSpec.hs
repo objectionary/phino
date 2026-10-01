@@ -57,6 +57,12 @@ spec = do
     it "compares a meta met twice in the pattern" $
       fromRight "" (emitted [] [Y.Rule "tw" Nothing Nothing (ExApplication (ExMeta "e1") (ArTau (AtLabel "g") (ExMeta "e1"))) ExRoot Nothing Nothing Nothing] [] [] [] [])
         `shouldSatisfy` ("x1 == x3" `isInfixOf`)
+    it "asks a normal form of a '𝑛' meta the way the matcher does" $
+      fromRight "" (emitted [] [Y.Rule "nh" Nothing Nothing (ExDispatch (ExMeta "n4") (AtLabel "wq")) ExRoot Nothing Nothing Nothing] [] [] [] [])
+        `shouldSatisfy` ("Ru.normalHeld nf x1" `isInfixOf`)
+    it "asks the condition 'nf' the way the matcher does" $
+      fromRight "" (emitted [] [Y.Rule "nc" Nothing Nothing (ExDispatch (ExMeta "e3") (AtLabel "jb")) ExRoot (Just (Y.NF (ExMeta "e3"))) Nothing Nothing] [] [] [] [])
+        `shouldSatisfy` ("Ru.normalHeld nf x1" `isInfixOf`)
   describe "emitted refuses a rule of contextualization" $
     it "with a premise that is no contextualization" $
       emitted [] [] [Y.ContextualizeRule "cm" Nothing (ExMeta "n1") (ExMeta "k1") (ExMeta "n2") [Y.Premise "n2" (Y.OpNormalize (ExMeta "n1"))]] [] [] []

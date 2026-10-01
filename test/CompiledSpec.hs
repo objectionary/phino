@@ -49,8 +49,14 @@ spec =
     it "normalizes random terms standing in a world into the chains the rules of YAML make" $
       filterM (\seed -> (/=) <$> chain linked (Just (term False seed)) (term False seed) <*> chain yaml (Just (term False seed)) (term False seed)) [401 .. 800]
         `shouldReturn` []
+    it "normalizes random terms holding metas into the chains the rules of YAML make" $
+      filterM (\seed -> (/=) <$> chain linked Nothing (term True seed) <*> chain yaml Nothing (term True seed)) [801 .. 1200]
+        `shouldReturn` []
     it "tells a normal form the way the rules of YAML do" $
       filter (\seed -> _normal linked (term False seed) /= _normal yaml (term False seed)) [1 .. 3000]
+        `shouldBe` []
+    it "tells a normal form of a term holding metas the way the rules of YAML do" $
+      filter (\seed -> _normal linked (term True seed) /= _normal yaml (term True seed)) [3001 .. 6000]
         `shouldBe` []
     it "contextualizes random terms the way the rules of YAML do, failures included" $
       filterM (\seed -> (/=) <$> contextualized linked (term True seed) (term False (seed + 1)) <*> contextualized yaml (term True seed) (term False (seed + 1))) [1 .. 3000]
