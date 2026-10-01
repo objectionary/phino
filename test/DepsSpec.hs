@@ -12,6 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Deps (Evaluation (EvFiring, EvFormation, EvJoined, EvMinted, EvRun, EvTerm), Judgment (Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, saveStep)
+import Fixtures (readUtf8)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
 import System.Directory
@@ -129,7 +130,7 @@ spec = do
       cursor <- newIORef emptyProtocol
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEval handle cursor began)
-      content <- readFile path
+      content <- readUtf8 path
       content `shouldBe` ""
 
     it "closes a run that opened the protocol with its msec, firings and fps" $ withScratchDir $ \dir -> do
@@ -138,7 +139,7 @@ spec = do
       cursor <- newIORef emptyProtocol{_begun = True, _fired = 5}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEval handle cursor began)
-      content <- readFile path
+      content <- readUtf8 path
       map (takeWhile (/= '(')) (lines content) `shouldBe` ["msec", "firings", "fps"]
 
     it "names the firings of the run it closes" $ withScratchDir $ \dir -> do
@@ -147,7 +148,7 @@ spec = do
       cursor <- newIORef emptyProtocol{_begun = True, _fired = 5}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEval handle cursor began)
-      content <- readFile path
+      content <- readUtf8 path
       lines content `shouldSatisfy` elem "firings(5)"
 
   describe "endEvalXml" $ do
@@ -157,7 +158,7 @@ spec = do
       cursor <- newIORef emptyNesting
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
-      content <- readFile path
+      content <- readUtf8 path
       content `shouldBe` ""
 
     it "closes every element still open before it writes any total" $ withScratchDir $ \dir -> do
@@ -166,7 +167,7 @@ spec = do
       cursor <- newIORef emptyNesting{_fires = 3, _closing = [(1, "evaluate"), (0, "morph"), (-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
-      content <- readFile path
+      content <- readUtf8 path
       take 2 (lines content) `shouldBe` ["    </evaluate>", "  </morph>"]
 
     it "names the firings of the run it closes" $ withScratchDir $ \dir -> do
@@ -175,7 +176,7 @@ spec = do
       cursor <- newIORef emptyNesting{_fires = 3, _closing = [(0, "morph"), (-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
-      content <- readFile path
+      content <- readUtf8 path
       lines content `shouldSatisfy` elem "  <firings>3</firings>"
 
     it "closes the document with '</protocol>' once every total is written" $ withScratchDir $ \dir -> do
@@ -184,7 +185,7 @@ spec = do
       cursor <- newIORef emptyNesting{_closing = [(-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
-      content <- readFile path
+      content <- readUtf8 path
       last (lines content) `shouldBe` "</protocol>"
 
     it "writes the msec before the firings it closes with" $ withScratchDir $ \dir -> do
@@ -193,8 +194,8 @@ spec = do
       cursor <- newIORef emptyNesting{_closing = [(-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
-      content <- readFile path
-      head (lines content) `shouldSatisfy` isPrefixOf "  <msec>"
+      content <- readUtf8 path
+      take 1 (lines content) `shouldSatisfy` any (isPrefixOf "  <msec>")
 
     it "writes the fps after the firings it closes with" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
@@ -202,5 +203,5 @@ spec = do
       cursor <- newIORef emptyNesting{_closing = [(-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
-      content <- readFile path
+      content <- readUtf8 path
       (lines content !! 2) `shouldSatisfy` isPrefixOf "  <fps>"
