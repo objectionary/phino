@@ -17,7 +17,7 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
 import Files (allPathsIn)
-import Fixtures (explainPack, lambdasFile, loopingLambdas, readUtf8, withLambdasOf)
+import Fixtures (explainPack, lambdasFile, loopingLambdas, readProtocol, readUtf8, withLambdasOf)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, makeAbsolute, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime, withCurrentDirectory)
@@ -1210,7 +1210,7 @@ spec = do
             testCLISucceeded
               ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ.t)"
                        , "  formation(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t)"
@@ -1226,7 +1226,7 @@ spec = do
             testCLISucceeded
               ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                        , "<dataize at=\"Φ.t\">"
@@ -1246,7 +1246,7 @@ spec = do
             testCLISucceeded
               ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t), plausible"]
 
       -- The mode is what the guard compares by, and the command has no
@@ -1336,28 +1336,28 @@ spec = do
           hClose stream
           withStdin wide $
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 ⟧)  # 𝔻(Φ.t)"]
       it "folds a long formation in the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
           withStdin wide $
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["  <formation at=\"Φ.t\" term=\"⟦ φ ↦ 01-02:Δ, +4 ⟧\">"]
       it "folds a long formation under the width given as the value" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin wide $
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged=64", "--sweet", "--hide-rho", "--quiet"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 ⟧)  # 𝔻(Φ.t)"]
       it "keeps a formation whole under a width it fits in" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin wide $
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged=200", "--sweet", "--hide-rho", "--quiet"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, anfang ↦ schluss, mitte ↦ anfang, schluss ↦ mitte, rand ↦ schluss ⟧)  # 𝔻(Φ.t)"]
       it "refuses a width that is not a number" $
         withStdin wide $
@@ -1385,8 +1385,44 @@ spec = do
           hClose stream
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           records `shouldBe` "𝔻(Φ)\n"
+
+      -- The totals close the protocol once the run is over, so a caller never
+      -- has to count '𝔼(' itself or time the process from outside (#1638)
+      it "closes the protocol with its msec on the third line from the end" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin sum' $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          (lines records !! (length (lines records) - 3)) `shouldSatisfy` isPrefixOf "msec("
+
+      it "closes the protocol with the firings it counted" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin sum' $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["firings(1)"]
+
+      it "closes the protocol with its fps on the last line" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin sum' $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          last (lines records) `shouldSatisfy` isPrefixOf "fps("
+
+      -- A run firing nothing still closes with its totals, zero firings and
+      -- all, so the shape of the file never depends on what the run did
+      it "closes the protocol with zero firings when the run fires nothing" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["firings(0)"]
 
       -- An operand line says what the meta was bound to and, after two spaces
       -- and '#', the term the entry wrote under it, so a reader never has to
@@ -1397,7 +1433,7 @@ spec = do
           hClose stream
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)"
@@ -1421,7 +1457,7 @@ spec = do
           hClose stream
           withStdin chained $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ).plus( 7 ) ⟧)  # 𝔻(Φ)"
@@ -1455,7 +1491,7 @@ spec = do
           hClose stream
           withStdin mixed $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧, φ ↦ 5.plus( 6 ).times( 7 ) ⟧)  # 𝔻(Φ)"
@@ -1486,7 +1522,7 @@ spec = do
           hClose stream
           withStdin nested $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ) ⟧)  # 𝔻(Φ)"
@@ -1522,7 +1558,7 @@ spec = do
           withLambdasOf (T.pack "- λ: L_stand\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: ⟦ z ↦ 𝑛2 ⟧\n") $ \stands ->
             withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_stand ⟧.z ⟧" $
               testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝕄(Φ.y)"
                        , "  𝔼(L_stand)  # 𝕄(Φ.y)"
@@ -1542,7 +1578,7 @@ spec = do
           withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
             withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧, y ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧ ⟧" $
               testCLISucceeded ["morph", "--symbolic=" ++ outer, "--deep", "--partial", "--acyclic=plausible", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["    <stall λ=\"L_none\"/>"]
 
       it "writes a stuck firing to the XML protocol" $
@@ -1551,7 +1587,7 @@ spec = do
           withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
             withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_absent ⟧, λ ⤍ L_outer ⟧ ⟧" $
               testCLISucceeded ["morph", "--symbolic=" ++ outer, "--deep", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["    <unfinished λ=\"L_absent\"/>"]
 
       it "writes a starved step budget to the XML protocol" $
@@ -1560,7 +1596,7 @@ spec = do
           withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
             withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 07- ⟧ ⟧ ⟧, λ ⤍ L_outer ⟧ ⟧" $
               testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--max-steps=3", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho", "--flat"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["        <starved limit=\"3\" by=\"dataize\" at=\"Φ.a🌵0\"/>"]
 
       it "keeps the lines of a run that fails" $
@@ -1570,7 +1606,7 @@ spec = do
             testCLIFailed
               ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
               ["No entry of --symbolic answers the λ function 'L_number_nope'"]
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)"
@@ -1590,7 +1626,7 @@ spec = do
         withTempFileContent "protocolXXXXXX.txt" "𝔼(L_number_gt)\n" $ \path -> do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           records `shouldBe` "𝔻(Φ)\n"
 
       -- The protocol is a tree of one-line 𝜑 records whatever the run prints
@@ -1600,7 +1636,7 @@ spec = do
           hClose stream
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           records `shouldEndWith` "    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)\n"
 
       -- The same facts as markup, so a program reading the protocol back never
@@ -1615,7 +1651,7 @@ spec = do
             hClose stream
             withStdin sum' $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1641,6 +1677,46 @@ spec = do
                          , "</dataize>"
                          ]
 
+        -- The judgment nests one level inside a '<protocol>' root, which is
+        -- what carries the totals the run closes with, '<msec>' and
+        -- '<firings>' siblings of their own standing after it (#1638)
+        it "nests the judgment one level inside a '<protocol>' root" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            take 4 (lines records)
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol>"
+                         , "  <dataize at=\"Φ\">"
+                         , "  </dataize>"
+                         ]
+
+        it "closes the '<protocol>' root with its msec" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            (lines records !! 4) `shouldSatisfy` isPrefixOf "  <msec>"
+
+        it "closes the '<protocol>' root with its firings" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            lines records `shouldContain` ["  <firings>0</firings>"]
+
+        it "closes the '<protocol>' root with its fps, then '</protocol>' itself" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            drop 6 (lines records) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
+
         -- A formation 𝔻 gets into through 'box' is an element of its own, and
         -- whatever its φ body fires stands inside it, so a reader sees which
         -- object a firing was made on the way into (#1420)
@@ -1649,7 +1725,7 @@ spec = do
             hClose stream
             withStdin sum' $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldContain` [ "  <formation at=\"Φ\" term=\"⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧\">"
                               , "    <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
@@ -1662,7 +1738,7 @@ spec = do
             hClose stream
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1679,7 +1755,7 @@ spec = do
             hClose stream
             withStdin chained $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1729,7 +1805,7 @@ spec = do
             withLambdasOf (T.pack "- λ: L_stand\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: ⟦ z ↦ 𝑛2 ⟧\n") $ \stands ->
               withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_stand ⟧.z ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1757,7 +1833,7 @@ spec = do
             withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
               withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1782,7 +1858,7 @@ spec = do
             withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
               withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⊥, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1809,7 +1885,7 @@ spec = do
             withLambdasOf (T.pack "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  𝑛: ⟦ left ↦ ⟦ λ ⤍ 𝜎 ⟧, right ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧\n") $ \pairs ->
               withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_pair ⟧.left ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ pairs, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1832,7 +1908,7 @@ spec = do
             withLambdasOf (T.pack "- λ: L_keep\n  morph:\n    𝑛1: $.x\n  𝑛: ⟦ z ↦ 𝑛1 ⟧\n") $ \keeps ->
               withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_keep ⟧.z ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ keeps, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1852,7 +1928,7 @@ spec = do
             hClose stream
             withStdin nested $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1900,7 +1976,7 @@ spec = do
             hClose stream
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
               testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1934,7 +2010,7 @@ spec = do
             hClose stream
             withStdin "[[ x -> [[ L> L_number_nope ]].foo ]]" $
               testCLISucceeded ["morph", "--locator=Q.x", "--partial", "--protocol=" ++ path, "--quiet"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.x\">"
@@ -1951,7 +2027,7 @@ spec = do
             hClose stream
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
               testCLIFailed ["dataize", symbolic, "--protocol=" ++ path] ["No entry of --symbolic answers"]
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1988,7 +2064,7 @@ spec = do
             withLambdasOf (T.pack "- λ: L_pick\n  morph:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
               withStdin "[[ x -> [[ here -> [[ ]], L> L_pick ]].foo ]]" $
                 testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["No entry of --symbolic answers the λ function '𝜎1'"]
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.x\">"
@@ -2009,7 +2085,7 @@ spec = do
             hClose stream
             withStdin sum' $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             take 1 (lines records) `shouldBe` ["𝔻(Φ)"]
 
     -- A λ function no entry of the '--symbolic' file answers cannot fire — a
@@ -2045,7 +2121,7 @@ spec = do
           hClose stream
           withStdin stuck $
             testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 2.times( 3 ).nope ⟧)  # 𝔻(Φ)"
@@ -2306,7 +2382,7 @@ spec = do
         hClose stream
         withStdin chained $
           testCLISucceeded ["morph", symbolic, "--locator=Q.@", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-        records <- readUtf8 path
+        records <- readProtocol path
         lines records
           `shouldBe` [ "𝕄(Φ.φ)"
                      , "  𝔼(L_number_plus)  # 𝕄(Φ.φ)"
@@ -2395,7 +2471,7 @@ spec = do
               testCLISucceeded
                 ["morph", "--symbolic=" ++ table, "--deep", "--max-firings=64", "--partial", "--protocol=" ++ path, "--quiet"]
                 []
-            records <- readUtf8 path
+            records <- readProtocol path
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
 
     -- '--max-steps' and '--max-firings' count work, so a run inside both of
@@ -2455,7 +2531,7 @@ spec = do
                   testCLIFailed
                     (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--protocol=" ++ path, "--quiet"] ++ opts)
                     ["--max-seconds=1"]
-              records <- readUtf8 path
+              records <- readProtocol path
               dropWhile (== ' ') (last (lines records)) `shouldStartWith` "timeout(1)  # 𝕄("
 
       -- Only the first refusal of the deadline is written, and the run ends
@@ -2469,7 +2545,7 @@ spec = do
                 testCLIFailed
                   ["morph", "--symbolic=" ++ table, "--deep", "--partial", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
                   ["--max-seconds=1"]
-            records <- readUtf8 path
+            records <- readProtocol path
             length (filter (isInfixOf "<timeout limit=\"1\" by=\"morph\" at=\"") (lines records)) `shouldBe` 1
 
       it "closes the XML protocol of a run out of time" $
@@ -2482,7 +2558,7 @@ spec = do
                   ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
                   ["--max-seconds=1"]
             document <- X.readFile X.def path
-            X.nameLocalName (X.elementName (X.documentRoot document)) `shouldBe` T.pack "morph"
+            X.nameLocalName (X.elementName (X.documentRoot document)) `shouldBe` T.pack "protocol"
 
     -- Every binding of the formation the walk starts at is morphed on a
     -- worker of its own, from the state the spine left, and what the workers
@@ -2496,7 +2572,7 @@ spec = do
               hClose stream
               withStdin twins $
                 testCLISucceeded (["morph", symbolic, "--deep", "--protocol=" ++ path, "--quiet"] ++ extra) []
-              lines <$> readUtf8 path
+              lines <$> readProtocol path
           untaued :: String -> String
           untaued [] = []
           untaued text
@@ -2637,7 +2713,7 @@ spec = do
                 testCLISucceeded
                   ["morph", symbolic, "--deep", "--acyclic=" ++ mode, "--protocol=" ++ path, "--quiet"]
                   []
-              lines <$> readUtf8 path
+              lines <$> readProtocol path
       it "charges a formation once per binding spelling it under proven" $
         withStdin twins $
           testCLIFailed

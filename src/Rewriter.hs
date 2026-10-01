@@ -17,6 +17,7 @@ import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Deps
@@ -31,7 +32,7 @@ import qualified Rule as R
 import Text.Printf (printf)
 import qualified Yaml as Y
 
-type RewriteState = (NonEmpty Rewritten, Seen, Bool, Maybe (Set Int))
+type RewriteState = (NonEmpty Rewritten, Expression, Seen, Bool, Maybe (Set Int))
 
 -- Loop-detection store. It maps a cheap fixed-size digest of an expression (see
 -- 'hashExpression') to the full expressions that produced that digest. A
@@ -229,55 +230,57 @@ direct name redex rewritten = Step name applied
 every :: [Step] -> Maybe Expression -> Expression -> Set Int
 every steps _ _ = Set.fromList (zipWith const [0 ..] steps)
 
--- The function returns tuple (X, Y, Z, W) where
+-- The function returns tuple (X, L, Y, Z, W) where
 -- - X is sequence of expressions;
+-- - L is the part of the last of them the locator points at, which every rule
+--   is tried on. 'rewrite' looks it up once, and a step that rewrites it hands
+--   the new one over, so a rule that matches nothing looks nothing up (#1644)
 -- - Y is Set of unique expressions after each rule application. It allows to stop the rewriting if we're getting
 --   into loop and get back to an expression which we've already got before
 -- - Z is boolean flag which tells us if we reach breakpoint. If unmatched rule is equal to breakpoint rule - entire
 --   rewriting must be stopped and original expression must be returned
--- - W is Set of the numbers of the steps matching the last expression (see '_matching'), or Nothing if they were not
---   asked since it last changed
+-- - W is Set of the numbers of the steps matching L (see '_matching'), or Nothing if they were not asked since it last
+--   changed
 rewrite' :: RewriteState -> [(Int, Step)] -> Int -> RewriteContext -> IO RewriteState
 rewrite' state [] _ _ = pure state
-rewrite' (rewrittens, unique, stop, found) ((idx, rule) : rest) iteration ctx@RewriteContext{..} = do
-  matched <- maybe (_matching _universe <$> locatedExpression _locator (fst (NE.head rewrittens))) pure found
-  if Set.member idx matched || _breakpoint == Just (_name rule)
-    then
-      _rewrite (rewrittens, unique, stop, Just matched) 1 >>= \case
-        state'@(_, _, True, _) -> pure state'
+rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iteration ctx@RewriteContext{..}
+  | Set.member idx matched || _breakpoint == Just (_name rule) =
+      _rewrite (rewrittens, located, unique, stop, Just matched) 1 >>= \case
+        state'@(_, _, _, True, _) -> pure state'
         state' -> rewrite' state' rest iteration ctx
-    else rewrite' (rewrittens, unique, stop, Just matched) rest iteration ctx
+  | otherwise = rewrite' (rewrittens, located, unique, stop, Just matched) rest iteration ctx
   where
+    matched :: Set Int
+    matched = fromMaybe (_matching _universe located) found
     _rewrite :: RewriteState -> Int -> IO RewriteState
-    _rewrite (_rewrittens@((current, _) :| _), _unique, _, _found) _count =
+    _rewrite (_rewrittens@((current, _) :| _), expression, _unique, _, _found) _count =
       let ruleName = _name rule
        in if _count - 1 == _maxDepth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
               if _depthSensitive
                 then do
-                  exhausted <- applicable current [rule] ctx
+                  exhausted <- applicable expression [rule] ctx
                   if exhausted
                     then throwIO (StoppedOnLimit "max-depth" _maxDepth)
-                    else pure (_rewrittens, _unique, False, _found)
-                else pure (_rewrittens, _unique, False, _found)
+                    else pure (_rewrittens, expression, _unique, False, _found)
+                else pure (_rewrittens, expression, _unique, False, _found)
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
-              expression <- locatedExpression _locator current
               _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
                 Nothing -> do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
                   if _breakpoint == Just ruleName
                     then do
                       logDebug (printf "Rule '%s' is a breakpoint, dropping down all the previous rewritings..." ruleName)
-                      pure (_rewrittens, _unique, True, _found)
-                    else pure (_rewrittens, _unique, False, _found)
+                      pure (_rewrittens, expression, _unique, True, _found)
+                    else pure (_rewrittens, expression, _unique, False, _found)
                 Just expr -> do
                   logDebug (printf "Rule '%s' has been matched and applied" ruleName)
                   if expression == expr
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
-                      pure (_rewrittens, _unique, False, _found)
+                      pure (_rewrittens, expression, _unique, False, _found)
                     else
                       let digest = hashExpression expr
                        in if seenMember digest expr _unique
@@ -293,7 +296,7 @@ rewrite' (rewrittens, unique, stop, found) ((idx, rule) : rest) iteration ctx@Re
                                 )
                               updated <- withLocatedExpression _locator expr current
                               _saveStep updated
-                              _rewrite (leadsTo updated, seenInsert digest expr _unique, False, Nothing) (_count + 1)
+                              _rewrite (leadsTo updated, expr, seenInsert digest expr _unique, False, Nothing) (_count + 1)
       where
         leadsTo :: Expression -> NonEmpty Rewritten
         leadsTo next =
@@ -304,32 +307,28 @@ rewrite' (rewrittens, unique, stop, found) ((idx, rule) : rest) iteration ctx@Re
 -- with nothing left to rewrite after its last allowed step has finished, not
 -- run out of its limit, so --depth-sensitive lets it pass (#1439)
 applicable :: Expression -> [Step] -> RewriteContext -> IO Bool
-applicable current rules RewriteContext{..} = do
-  expression <- locatedExpression _locator current
-  go expression rules
-  where
-    go :: Expression -> [Step] -> IO Bool
-    go _ [] = pure False
-    go expression (rule : rest) =
-      _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
-        Nothing -> go expression rest
-        Just _ -> pure True
+applicable _ [] _ = pure False
+applicable expression (rule : rest) ctx@RewriteContext{..} =
+  _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
+    Nothing -> applicable expression rest ctx
+    Just _ -> pure True
 
 -- Rewrite the expression by provided locator from RewriteContext
 rewrite :: Expression -> [Step] -> RewriteContext -> IO Rewrittens
 rewrite expr rules ctx@RewriteContext{..} = do
-  (rewrittens, exceeded) <- _rewrite ((expr, Nothing) :| [], Map.empty, False, Nothing) 0
+  located <- locatedExpression _locator expr
+  (rewrittens, exceeded) <- _rewrite ((expr, Nothing) :| [], located, Map.empty, False, Nothing) 0
   pure (NE.reverse rewrittens, exceeded)
   where
     _rewrite :: RewriteState -> Int -> IO Rewrittens
-    _rewrite state@(rewrittens@((current, _) :| _), _, _, _) count
+    _rewrite state@(rewrittens@((current, _) :| _), expression, _, _, _) count
       | not (inRange _must count) && count > 0 && exceedsUpperBound _must count = throwIO (MustStopBefore _must count)
       | count == _maxCycles && not (inRange _must count) = throwIO (MustBeGoing _must count)
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
           if _depthSensitive
             then do
-              exhausted <- applicable current rules ctx
+              exhausted <- applicable expression rules ctx
               if exhausted
                 then throwIO (StoppedOnLimit "max-cycles" _maxCycles)
                 else pure (rewrittens, False)
@@ -337,8 +336,8 @@ rewrite expr rules ctx@RewriteContext{..} = do
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)
           rewrite' state (zip [0 ..] rules) count ctx >>= \case
-            (_, _, True, _) -> pure ((expr, Nothing) :| [], False)
-            state'@(rewrittens'@((current', _) :| _), _, False, _) ->
+            (_, _, _, True, _) -> pure ((expr, Nothing) :| [], False)
+            state'@(rewrittens'@((current', _) :| _), _, _, False, _) ->
               if length rewrittens' == length rewrittens || current' == current
                 then do
                   logDebug "Rewriting is stopped since it has no effect"
