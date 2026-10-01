@@ -150,7 +150,10 @@ def main(argv):
         print(f"{path}:{line}: inline comment is not documenting a declaration: {text}")
 
     if violations:
-        print(f"\n{len(violations)} inline comment(s) found; see CONTRIBUTING or CLAUDE.md for the policy", file=sys.stderr)
+        print(
+            f"\n{len(violations)} inline comment(s) found; see CONTRIBUTING or CLAUDE.md for the policy",
+            file=sys.stderr,
+        )
         return 1
     return 0
 
