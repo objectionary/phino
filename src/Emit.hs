@@ -69,6 +69,7 @@ emitted builtin custom contextual morphs dataizes sources = do
             , "  Just"
             , "    En.Engine"
             , "      { En._normalization = normalization"
+            , "      , En._matching = \\universe -> Set.fromList . matching universe"
             , "      , En._rules = steps"
             , "      , En._normal = nf"
             , "      , En._contextualize = \\term context -> either E.throwIO pure (contextualize term context)"
@@ -101,11 +102,15 @@ emitted builtin custom contextual morphs dataizes sources = do
             , "-- Whether the term is a normal form: no built-in rule of normalization"
             , "-- matches anywhere inside it."
             , "nf :: Expression -> Bool"
-            , "nf ="
-            , "  Ru.normalWith"
-            , "    ( \\term ->"
-            , "        " ++ intercalate "\n          || " [printf "M.anywhere %s (not . null . rewrite%s Nothing) term" (show (redex rule)) name | (name, rule) <- take (length builtin) rules]
-            , "    )"
+            , "nf = Ru.normalWith (not . null . matching Nothing)"
+            , ""
+            , "-- The numbers of the built-in rules of normalization matching somewhere in"
+            , "-- the term, in the order one walk over it meets them, told the world the"
+            , "-- term stands in."
+            , "matching :: Maybe Expression -> Expression -> [Int]"
+            , "matching ="
+            , "  M.hits"
+            , "    " ++ listed' 4 [printf "(%d, %s, rewrite%s)" idx (show (redex rule)) name | (idx, (name, rule)) <- zip [0 :: Int ..] (take (length builtin) rules)]
             , ""
             , "-- The Contextualization function 𝒞, the conclusion of the one rule matching"
             , "-- the term and the context."
@@ -151,6 +156,7 @@ emitted builtin custom contextual morphs dataizes sources = do
                   , ("Map.", "import qualified Data.Map.Strict as Map")
                   , ("R.", "import qualified Rewriter as R")
                   , ("Ru.", "import qualified Rule as Ru")
+                  , ("Set.", "import qualified Data.Set as Set")
                   , ("T.", "import qualified Data.Text as T")
                   ]
               , qualifier `elem` qualifiers body

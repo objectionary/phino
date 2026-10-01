@@ -246,22 +246,26 @@ sites redex rule tgt = go tgt []
     inside (BiTau _ expr) rest = go expr rest
     inside _ rest = rest
 
-anywhere :: Bool -> (Expression -> Bool) -> Expression -> Bool
-anywhere redex rule = go
+hits :: forall a. [(Int, Bool, Maybe Expression -> Expression -> [a])] -> Maybe Expression -> Expression -> [Int]
+hits rules universe tgt = go [tgt] rules
   where
-    go :: Expression -> Bool
-    go expr
-      | redex && inert expr = False
-      | otherwise = rule expr || below expr
-    below :: Expression -> Bool
-    below (ExFormation bds) = any inside bds
-    below (ExDispatch expr _) = go expr
-    below (ExApplication expr (ArTau _ arg)) = go expr || go arg
-    below (ExApplication expr (ArAlpha _ arg)) = go expr || go arg
-    below _ = False
-    inside :: Binding -> Bool
-    inside (BiTau _ expr) = go expr
-    inside _ = False
+    go :: [Expression] -> [(Int, Bool, Maybe Expression -> Expression -> [a])] -> [Int]
+    go [] _ = []
+    go _ [] = []
+    go (expr : rest) pending
+      | inert expr && and [redex | (_, redex, _) <- pending] = go rest pending
+      | otherwise = case [idx | (idx, redex, rule) <- pending, not (redex && inert expr), not (null (rule universe expr))] of
+          [] -> go (below expr rest) pending
+          met -> met ++ go (below expr rest) [rule | rule@(idx, _, _) <- pending, idx `notElem` met]
+    below :: Expression -> [Expression] -> [Expression]
+    below (ExFormation bds) rest = foldr inside rest bds
+    below (ExDispatch expr _) rest = expr : rest
+    below (ExApplication expr (ArTau _ arg)) rest = expr : arg : rest
+    below (ExApplication expr (ArAlpha _ arg)) rest = expr : arg : rest
+    below _ rest = rest
+    inside :: Binding -> [Expression] -> [Expression]
+    inside (BiTau _ expr) rest = expr : rest
+    inside _ rest = rest
 
 splits :: [Binding] -> [([Binding], [Binding])]
 splits = go []

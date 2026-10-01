@@ -635,13 +635,19 @@ spec = do
     it "never looks inside an inert term when the rule is a redex" $
       sites True (\expr -> [() | ExXi <- [expr]]) (ExFormation [BiTau (AtLabel "zk") (ExFormation [BiDelta (BtOne "1F")])])
         `shouldBe` []
-  describe "anywhere" $ do
-    it "tells a rule matches deep inside the term" $
-      anywhere False (== ExTermination) (ExDispatch (ExApplication ExXi (ArAlpha (Alpha 2) ExTermination)) (AtLabel "y"))
-        `shouldBe` True
-    it "tells a rule matches nowhere in the term" $
-      anywhere False (== ExTermination) (ExDispatch ExXi (AtLabel "ob"))
-        `shouldBe` False
+  describe "hits" $ do
+    it "finds every rule matching deep inside the term in the order one walk meets them" $
+      hits [(7, False, \_ expr -> [() | ExTermination <- [expr]]), (3, False, \_ expr -> [() | ExRoot <- [expr]]), (5, False, \_ expr -> [() | ExXi <- [expr]])] Nothing (ExDispatch (ExApplication ExXi (ArAlpha (Alpha 2) ExTermination)) (AtLabel "y"))
+        `shouldBe` [5, 7]
+    it "never asks a rule that is a redex inside an inert term" $
+      hits [(4, True, \_ expr -> [() | ExXi <- [expr]]), (9, False, \_ expr -> [() | ExXi <- [expr]])] Nothing (ExFormation [BiTau (AtLabel "zk") ExXi])
+        `shouldBe` [9]
+    it "hands the world to every rule it asks" $
+      hits [(2, False, \universe _ -> [() | Just ExRoot <- [universe]])] (Just ExRoot) (ExDispatch ExXi (AtLabel "qo"))
+        `shouldBe` [2]
+    it "stops the walk at the first rule it finds" $
+      take 1 (hits [(6, False, \_ expr -> [() | ExRoot <- [expr]]), (1, False, error "the walk went on past the first rule it found")] Nothing ExRoot)
+        `shouldBe` [6]
   describe "splits" $
     it "cuts the bindings in two, the shortest leading run first" $
       splits [BiVoid (AtLabel "a"), BiVoid AtRho]

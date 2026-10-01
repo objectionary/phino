@@ -10,15 +10,17 @@ import Contextualize (contextualize)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
+import Data.Set (Set)
 import Deps (BuildTermFunc)
 import Functions (buildTerm, contextualizing)
 import Inference (Inference, dataizationOf, morphingOf)
-import Rewriter (interpreted)
+import Rewriter (every, interpreted)
 import Rule (Step, normal)
 import qualified Yaml as Y
 
 data Engine = Engine
   { _normalization :: [Step]
+  , _matching :: Maybe Expression -> Expression -> Set Int
   , _rules :: Map String Step
   , _normal :: Expression -> Bool
   , _contextualize :: Expression -> Expression -> IO Expression
@@ -28,7 +30,10 @@ data Engine = Engine
   }
 
 yaml :: Engine
-yaml = Engine (map interpreted Y.normalizationRules) Map.empty normal contextualize (map morphingOf Y.morphingRules) (map dataizationOf Y.dataizationRules) current
+yaml = Engine steps (every steps) Map.empty normal contextualize (map morphingOf Y.morphingRules) (map dataizationOf Y.dataizationRules) current
+  where
+    steps :: [Step]
+    steps = map interpreted Y.normalizationRules
 
 stepOf :: Engine -> Y.Rule -> Step
 stepOf engine rule = fromMaybe (interpreted rule) (Map.lookup (show rule) engine._rules)
