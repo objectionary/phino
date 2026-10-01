@@ -467,10 +467,6 @@ spec = do
           doesDirectoryExist dir `shouldReturn` True
           files <- listDirectory dir
           let steps = sort files
-          -- The fix is about numbering, not about a specific rule set: the file
-          -- names must be distinct and contiguous from 00001, and there must be
-          -- more of them than a single normalization pass produces (this input
-          -- runs several normalizations, so a global counter yields more steps).
           steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
           length steps `shouldSatisfy` (> 18)
 
@@ -2221,9 +2217,6 @@ spec = do
   -- dataization relation, so there was no way to ask phino for 𝕄(n, Φ) on its
   -- own (#1114)
   describe "morph" $ do
-    -- Two chained λ function calls: the inner fires under 'ml', because '.plus'
-    -- is dispatched on its result, while the outer application is saturated but
-    -- bare, so 'mf' hands it back and firing it is 𝔻's job
     let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
     it "prints help" $
       testCLISucceeded ["morph", "--help"] ["Morph the 𝜑-expression"]

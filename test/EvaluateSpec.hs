@@ -123,8 +123,6 @@ testSymbols pth = do
 
 spec :: Spec
 spec = do
-  -- Every λ function a case may fire comes from the fixture file, read once
-  -- here: phino carries none of its own (see 'Fixtures').
   known <- runIO fixtureLambdas
 
   -- The whole of what a λ function answered by the '--symbolic' file does, pack
@@ -182,11 +180,6 @@ spec = do
       runEvaluate [ArgExpression (ExFormation [BiLambda (Function "L_one"), BiLambda (Function "L_two")]), ArgExpression univ]
         `shouldThrow` (\e -> "Duplicated attribute 'λ'" `isInfixOf` show (e :: SomeException))
 
-    -- A formation with no λ binding has nothing to fire, which is a question
-    -- the calculus answers rather than a malformed one: ⊥ is what 𝕄 hands back
-    -- for a term nobody can reduce further, and 𝔼 says the same. Only a λ 𝔼
-    -- cannot make sense of — several of them, or one standing for a meta or a
-    -- slot — is malformed and throws (see above).
     forM_
       [ ("carries no binding at all", ExFormation [])
       , ("carries bindings but none of them a λ", ExFormation [BiVoid AtRho])

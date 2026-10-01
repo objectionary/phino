@@ -167,9 +167,6 @@ spec = do
       ]
       (\(desc, sweet, salty) -> it desc (toSalty sweet `shouldBe` salty))
 
-    -- These sugar out to deeply nested application chains, so the expected
-    -- shape is checked as rendered text rather than as an equally-nested
-    -- 'EXPRESSION' literal.
     forM_
       [
         ( "EX_APPLICATION with several tau bindings (AA_TAUS) unrolls into a chain of applications"

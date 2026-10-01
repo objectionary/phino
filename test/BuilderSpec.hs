@@ -175,10 +175,6 @@ spec = do
       (\(desc, action, message) -> it desc (action `shouldThrow` (\exc -> message `isInfixOf` show (exc :: SomeException))))
 
   describe "builds an anonymous meta only from the pattern that bound it" $ do
-    -- An anonymous slot is a key of the very substitution its own pattern
-    -- produced, which is how a fired pattern is rebuilt for replacement. Asked
-    -- for it under any other substitution, the builder says plainly that the
-    -- meta has no name to be referenced by, rather than inventing a term.
     forM_
       [
         ( "buildExpression rebuilds an anonymous expression from its own slot"

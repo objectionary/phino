@@ -87,9 +87,7 @@ spec = do
                 printed = printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)
             printed `shouldBe` ascii
             printExpression' expr (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` unicode
-            -- the name is read back into the very same number
             parseExpression printed `shouldBe` Right expr
-            -- and --salty expands it back into the byte form
             let salty = printExpression' expr (SALTY, ASCII, SINGLELINE, defaultMargin)
             salty `shouldContain` "Q.number("
             salty `shouldContain` "Q.bytes("
@@ -105,7 +103,6 @@ spec = do
           it desc $ do
             let expr = DataNumber bts
                 printed = printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)
-            -- rendered as Q.number( Q.bytes( [[ D> .. ]] ) ), not a bare literal
             printed `shouldContain` "number"
             printed `shouldContain` "bytes"
             parseExpression printed `shouldBe` Right expr

@@ -100,9 +100,6 @@ spec = do
     -- withReplacedExpression still replaces the earlier (BiVoid) occurrence
     -- first.
     it "replaces the first (BiVoid) occurrence of a duplicated attribute" $ do
-      -- Built directly rather than parsed: the parser itself rejects a
-      -- duplicated attribute name, but Locator operates on Expression
-      -- values regardless of how they were constructed.
       let input' = ExFormation [BiVoid (AtLabel "x"), BiTau (AtLabel "x") ExXi]
       locator' <- parseExpressionThrows "Q.x"
       expr' <- parseExpressionThrows "5"

@@ -81,33 +81,33 @@ rewriteCtx =
 symbolicCtx :: Acyclic -> Maybe Memo -> Lambdas -> Expression -> ReduceContext
 symbolicCtx acyclic memo lambdas locator =
   ReduceContext
-    locator -- _locator
-    locator -- _site
-    Nothing -- _universe
-    25 -- _maxDepth
-    25 -- _maxCycles
-    (Steps 1000 0) -- _steps
-    Nothing -- _tally
-    Nothing -- _deadline
-    memo -- _memo
-    1 -- _nesting
-    False -- _depthSensitive
-    False -- _shuffle
-    True -- _partial
-    True -- _deep
-    1 -- _jobs
-    (Just acyclic) -- _acyclic
-    Morphing -- _judgment
-    [] -- _parked
-    Map.empty -- _entered
-    lambdas -- _symbolic
-    (building linked) -- _buildTerm
-    reduction -- _reduce
-    evaluation -- _evaluate
-    fired -- _fire
-    dontSaveStep -- _saveStep
-    dontSaveEval -- _saveEval
-    linked -- _engine
+    locator
+    locator
+    Nothing
+    25
+    25
+    (Steps 1000 0)
+    Nothing
+    Nothing
+    memo
+    1
+    False
+    False
+    True
+    True
+    1
+    (Just acyclic)
+    Morphing
+    []
+    Map.empty
+    lambdas
+    (building linked)
+    reduction
+    evaluation
+    fired
+    dontSaveStep
+    dontSaveEval
+    linked
 
 -- The engine the rules run on: the one 'phino compile' wrote, where the build
 -- links it in, and the one interpreting the rules of YAML otherwise, so the

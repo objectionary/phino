@@ -77,7 +77,7 @@ shuffle :: [a] -> IO [a]
 shuffle xs = do
   gen <- newIOGenM =<< newStdGen
   let n = length xs
-  v <- V.thaw (V.fromList xs) -- Mutable copy
+  v <- V.thaw (V.fromList xs)
   forM_ [n - 1, n - 2 .. 1] $ \i -> do
     j <- uniformRM (0, i) gen
     M.swap v i j

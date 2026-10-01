@@ -117,19 +117,12 @@ spec = do
 
   describe "randomString retries on a collision" $
     it "still returns fresh, unique 4-digit numbers well past the birthday bound of a 10000-value space" $ do
-      -- Forces at least one regenerate retry (Set.member match) with
-      -- overwhelming probability, without exhausting the whole space
-      -- (which would loop forever).
       results <- mapM (const (randomString "%d")) [1 :: Int .. 2000]
       let unique = Set.fromList results
       Set.size unique `shouldBe` 2000
 
   describe "randomString %d space exhaustion" $
     it "raises an error instead of looping forever once the 10000-value space is exhausted" $ do
-      -- Fill the whole '%d' space; the next call has no unique value left, so
-      -- 'regenerate' must give up (previously it recursed forever).
-      -- All 10000 values are generated within the same 'try' because the very
-      -- last fill may already fail to find a fresh value.
       result <- timeout 10000000 (try (mapM_ (const (randomString "%d")) [1 :: Int .. 10000]) :: IO (Either SomeException ()))
       case result of
         Just (Left _) -> pure ()

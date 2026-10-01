@@ -109,9 +109,6 @@ dataize' (expr, seq) univ state caller = do
     Nothing -> do
       reached <- inferred expr univ state ctx ctx._engine._dataization
       case reached of
-        -- Data the program itself carries stands for nothing but itself, so
-        -- whichever symbol the last datum was manufactured for is forgotten
-        -- here: only a run ending on a symbol leaves one behind.
         Just (In.Answered step bts, state') -> do
           seq' <- leadsTo seq step (ExBytes bts) ctx
           pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})

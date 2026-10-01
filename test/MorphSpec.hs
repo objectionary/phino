@@ -88,8 +88,6 @@ testMorph known deep pth = do
 
 spec :: Spec
 spec = do
-  -- Every λ function a case may fire comes from the fixture file, read once
-  -- here: phino carries none of its own (see 'Fixtures').
   known <- runIO fixtureLambdas
 
   -- The top-level 𝕄 entry point, the one the 'morph' command runs: it locates

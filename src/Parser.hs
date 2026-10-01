@@ -216,9 +216,6 @@ number = do
     ( DataNumber
         ( numToBts
             ( case sign of
-                -- Negate the Double rather than the Scientific so that a zero
-                -- literal preserves its sign: Scientific has no negative zero,
-                -- but negate on Double yields -0.0, a distinct IEEE-754 value.
                 Just '-' -> negate (toRealFloat unsigned)
                 _ -> toRealFloat unsigned
             )
@@ -269,19 +266,17 @@ quotedStr = char '"' >> manyTill (choice [escapedChar, noneOf ['\\', '"']]) (cha
       case readHex hexDigits of
         [(n, "")] ->
           if n >= 0xD800 && n <= 0xDBFF
-            then -- High surrogate, look for low surrogate
-              do
-                _ <- string "\\u"
-                lowHexDigits <- count 4 hexDigitChar
-                case readHex lowHexDigits of
-                  [(low, "")] ->
-                    if low >= 0xDC00 && low <= 0xDFFF
-                      then do
-                        -- Valid surrogate pair, combine them
-                        let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
-                        return (chr codePoint)
-                      else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
-                  _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
+            then do
+              _ <- string "\\u"
+              lowHexDigits <- count 4 hexDigitChar
+              case readHex lowHexDigits of
+                [(low, "")] ->
+                  if low >= 0xDC00 && low <= 0xDFFF
+                    then do
+                      let codePoint = 0x10000 + ((n - 0xD800) * 0x400) + (low - 0xDC00)
+                      return (chr codePoint)
+                    else fail ("Invalid low surrogate: \\u" ++ lowHexDigits)
+                _ -> fail ("Invalid low surrogate hex: \\u" ++ lowHexDigits)
             else
               if n >= 0xDC00 && n <= 0xDFFF
                 then fail ("Unexpected low surrogate: \\u" ++ hexDigits)

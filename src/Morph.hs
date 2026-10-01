@@ -757,9 +757,6 @@ morph universe state caller@ReduceContext{..} = do
     Left (OutOfStepsAt _ seq parked) | _partial -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
       walked (walking ctx) residue seq parked
-    -- Unlike the two above, this one takes no '_partial' guard: a 'LoopingAt'
-    -- exists only where '_acyclic' put it, so asking for the guard is already
-    -- asking to be parked on what it finds.
     Left (LoopingAt _ seq parked) -> do
       residue <- locatedExpression _locator (fst (NE.head seq))
       walked (walking ctx) residue seq parked

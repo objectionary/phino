@@ -317,7 +317,7 @@ rewrite expr rules ctx@RewriteContext{..} = do
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)
           rewrite' state rules count ctx >>= \case
-            (_, _, True) -> pure ((expr, Nothing) :| [], False) -- breakpoint, return original expression
+            (_, _, True) -> pure ((expr, Nothing) :| [], False)
             state'@(rewrittens'@((current', _) :| _), _, False) ->
               if length rewrittens' == length rewrittens || current' == current
                 then do

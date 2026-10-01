@@ -481,8 +481,6 @@ xmirToPhi xmir =
                     , tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content
                     , t <- T.splitOn "." tail'
                     ]
-              -- An attribute-free <o> is a residual formation printed by
-              -- '--partial': its children are the bindings themselves (#1076)
               if bareRoot o
                 then
                   if null pckg
@@ -702,7 +700,7 @@ hasText :: C.Cursor -> Bool
 hasText cur = any isNonEmptyTextNode (C.child cur)
   where
     isNonEmptyTextNode cur' = case C.node cur' of
-      NodeContent t -> not (T.null (T.strip t)) -- strip to ignore whitespace-only
+      NodeContent t -> not (T.null (T.strip t))
       _ -> False
 
 getText :: C.Cursor -> IO String

@@ -544,7 +544,7 @@ spec = do
       , ("[[x -> ?]].x(Q)", Just (ExApplication (ExDispatch (ExFormation [BiVoid (AtLabel "x")]) (AtLabel "x")) (ArAlpha (Alpha 0) ExRoot)))
       , ("[[]](~!i1 -> $)", Just (ExApplication (ExFormation []) (ArAlpha (AlMeta "i1") ExXi)))
       , ("[[]](α𝑖1 -> Q)", Just (ExApplication (ExFormation []) (ArAlpha (AlMeta "i1") ExRoot)))
-      , ("Q.foo(a1 -> Q.y)", Just (ExApplication (ExDispatch ExRoot (AtLabel "foo")) (ArTau (AtLabel "a1") (ExDispatch ExRoot (AtLabel "y"))))) -- #875: "a"-prefixed label in argument position is a named binding, not a positional alpha
+      , ("Q.foo(a1 -> Q.y)", Just (ExApplication (ExDispatch ExRoot (AtLabel "foo")) (ArTau (AtLabel "a1") (ExDispatch ExRoot (AtLabel "y")))))
       ]
 
   describe "parse meta expressions" $
@@ -565,10 +565,6 @@ spec = do
       ]
 
   describe "parse anonymous meta-variables" $
-    -- A meta written without an index is anonymous: it stands for whatever term
-    -- fills its place and no rule may name it afterwards. It is told apart from
-    -- every other anonymous meta of the same term by the offset it starts at,
-    -- which is why one formation may carry two of the same kind (#218).
     test
       parseExpression
       [ ("!e", Just (ExAny (Slot "e" 0)))
