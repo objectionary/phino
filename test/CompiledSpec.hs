@@ -12,11 +12,12 @@ import Control.Exception (SomeException, evaluate, try)
 import Control.Monad (filterM, (>=>))
 import Data.Aeson (FromJSON)
 import Data.List.NonEmpty (NonEmpty (..))
+import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Dataize (dataize')
 import Deps (dontSaveStep)
-import Engine (Engine (..), building, fresh, stepOf, yaml)
+import Engine (Engine (..), building, fresh, yaml)
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, linked, withLambdasOf)
 import GHC.Generics (Generic)
@@ -25,6 +26,7 @@ import Morph (ReduceContext (..), Steps (..), emptyState, morph')
 import Must (Must (MtDisabled))
 import Parser (parseExpressionThrows)
 import Rewriter (RewriteContext (RewriteContext), rewrite)
+import Rule (RuleContext (RuleContext), matchExpressionWithRule)
 import System.Random (StdGen, mkStdGen, randomR)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 import Yaml qualified as Y
@@ -52,6 +54,9 @@ spec =
     it "normalizes random terms holding metas into the chains the rules of YAML make" $
       filterM (\seed -> (/=) <$> chain linked Nothing (term True seed) <*> chain yaml Nothing (term True seed)) [801 .. 1200]
         `shouldReturn` []
+    it "names every built-in rule matching somewhere in a random term" $
+      filterM (\seed -> not . (`Set.isSubsetOf` _matching linked Nothing (term False seed)) <$> matched (term False seed)) [1 .. 3000]
+        `shouldReturn` []
     it "tells a normal form the way the rules of YAML do" $
       filter (\seed -> _normal linked (term False seed) /= _normal yaml (term False seed)) [1 .. 3000]
         `shouldBe` []
@@ -78,9 +83,11 @@ spec =
         ( show . fst
             <$> rewrite
               expr
-              (map (stepOf engine) Y.normalizationRules)
-              (RewriteContext ExRoot 25 25 False universe (building engine) (_normal engine) MtDisabled Nothing dontSaveStep)
+              (_normalization engine)
+              (RewriteContext ExRoot 25 25 False universe (building engine) (_normal engine) (_matching engine) MtDisabled Nothing dontSaveStep)
         )
+    matched :: Expression -> IO (Set.Set Int)
+    matched expr = Set.fromList . map fst <$> filterM (\(_, rule) -> not . null <$> matchExpressionWithRule expr rule (RuleContext (building yaml) Nothing (_normal yaml))) (zip [0 ..] Y.normalizationRules)
     morphed :: Lambdas -> Engine -> Expression -> IO (Either String String)
     morphed lambdas engine world = settled (show . fst <$> morph' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState (reducing lambdas engine))
     dataized :: Lambdas -> Engine -> Expression -> IO (Either String String)

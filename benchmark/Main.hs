@@ -15,7 +15,7 @@ import Data.Time.Clock
 import Dataize (reduction)
 import Deps (Acyclic (Plausible, Proven), Judgment (Morphing), dontSaveEval, dontSaveStep)
 import Encoding (Encoding (UNICODE))
-import Engine (Engine (_normal), building, stepOf, yaml)
+import Engine (Engine (_matching, _normal), building, stepOf, yaml)
 import Evaluate (evaluation, fired)
 import Lambdas (Lambdas, readLambdas)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
@@ -65,6 +65,7 @@ rewriteCtx =
     Nothing
     (building linked)
     (_normal linked)
+    (_matching linked)
     MtDisabled
     Nothing
     dontSaveStep

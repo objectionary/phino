@@ -74,7 +74,8 @@ runRewrite OptsRewrite{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx
-  (rewrittens, exceeded) <- rewrite expr (map (stepOf linked) rules) (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal _must _breakpoint save)
+  let steps = map (stepOf linked) rules
+  (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save)
   rewrittens' <- exclude <$> include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)

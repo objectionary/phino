@@ -1095,7 +1095,7 @@ normalized expr seq ctx@ReduceContext{..} = do
     -- disabling the must-checker and breakpoints.
     rewriteContext :: ReduceContext -> RewriteContext
     rewriteContext ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal MtDisabled Nothing _saveStep
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep
 
 -- Name the world a run reduces in, where nothing has named it yet: the program
 -- in normal form, which is what Φ denotes and what 'dot' compares a dispatched
