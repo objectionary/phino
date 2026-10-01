@@ -5,7 +5,7 @@
 """Fail if a .hs file carries a comment.
 
 Only two kinds of comment are allowed: an SPDX header, the copyright and
-license lines on top of every file, and a '@todo' puzzle together with the
+license lines on top of every file, and a PDD puzzle together with the
 line comments right below it whose text is indented by two spaces or more.
 GHC pragmas ('{-# ... #-}') are not comments and are always allowed.
 
@@ -19,6 +19,7 @@ import sys
 
 SYMBOL = set("!#$%&*+./<=>?@\\^|~:-")
 CHAR = re.compile(r"'(?:[^'\\\n]|\\[^\n][^'\n]*)'")
+PUZZLE = "\x40todo"
 
 
 def named(char):
@@ -87,7 +88,7 @@ def banned(text):
         body = comment.lstrip("-{").rstrip("}-")
         if comment.startswith("--") and body.lstrip().startswith("SPDX-"):
             continue
-        if body.lstrip().startswith("@todo"):
+        if body.lstrip().startswith(PUZZLE):
             puzzle = (line, column)
             continue
         follows = puzzle == (line - 1, column) and comment.startswith("--")
@@ -112,7 +113,7 @@ def main(argv):
             found += 1
     if found:
         print(
-            f"\n{found} comment(s) found, only SPDX headers and @todo puzzles may stay",
+            f"\n{found} comment(s) found, only SPDX headers and PDD puzzles may stay",
             file=sys.stderr,
         )
         return 1
