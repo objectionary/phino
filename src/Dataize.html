@@ -361,14 +361,11 @@ Expression
 </span><a href="#local-6989586621679633817"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_engine</span><span class="hs-operator">.</span><span class="hs-identifier">_dataization</span><span>
 </span><span id="line-111"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe (Conclusion Bytes, State)
 </span><a href="#local-6989586621679633822"><span class="hs-identifier hs-var">reached</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-112"></span><span>        </span><span class="hs-comment">-- Data the program itself carries stands for nothing but itself, so</span><span>
-</span><span id="line-113"></span><span>        </span><span class="hs-comment">-- whichever symbol the last datum was manufactured for is forgotten</span><span>
-</span><span id="line-114"></span><span>        </span><span class="hs-comment">-- here: only a run ending on a symbol leaves one behind.</span><span>
-</span><span id="line-115"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Inference.html#Answered"><span class="hs-identifier hs-type">In.Answered</span></a></span><span> </span><span id="local-6989586621679633824"><span class="annot"><span class="annottext">(Judgment, String)
+</span><span id="line-112"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Inference.html#Answered"><span class="hs-identifier hs-type">In.Answered</span></a></span><span> </span><span id="local-6989586621679633824"><span class="annot"><span class="annottext">(Judgment, String)
 </span><a href="#local-6989586621679633824"><span class="hs-identifier hs-var">step</span></a></span></span><span> </span><span id="local-6989586621679633825"><span class="annot"><span class="annottext">Bytes
 </span><a href="#local-6989586621679633825"><span class="hs-identifier hs-var">bts</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679633826"><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633826"><span class="hs-identifier hs-var">state'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-116"></span><span>          </span><span id="local-6989586621679633827"><span class="annot"><span class="annottext">NonEmpty Rewritten
+</span><span id="line-113"></span><span>          </span><span id="local-6989586621679633827"><span class="annot"><span class="annottext">NonEmpty Rewritten
 </span><a href="#local-6989586621679633827"><span class="hs-identifier hs-var">seq'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">NonEmpty Rewritten
 -&gt; (Judgment, String)
 -&gt; Expression
@@ -380,7 +377,7 @@ Expression
 </span><a href="AST.html#ExBytes"><span class="hs-identifier hs-var">ExBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
 </span><a href="#local-6989586621679633825"><span class="hs-identifier hs-var">bts</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633817"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-117"></span><span>          </span><span class="annot"><span class="annottext">(Dataized, State) -&gt; IO (Dataized, State)
+</span><span id="line-114"></span><span>          </span><span class="annot"><span class="annottext">(Dataized, State) -&gt; IO (Dataized, State)
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bytes
@@ -389,12 +386,12 @@ forall a. NonEmpty a -&gt; [a]
 </span><span class="hs-identifier hs-var">NE.toList</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Rewritten
 </span><a href="#local-6989586621679633827"><span class="hs-identifier hs-var">seq'</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633826"><span class="hs-identifier hs-var">state'</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Deps.html#_manufactured"><span class="hs-identifier hs-var">_manufactured</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Nothing</span></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
-</span><span id="line-118"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Inference.html#Onward"><span class="hs-identifier hs-type">In.Onward</span></a></span><span> </span><span id="local-6989586621679633831"><span class="annot"><span class="annottext">Way
+</span><span id="line-115"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Inference.html#Onward"><span class="hs-identifier hs-type">In.Onward</span></a></span><span> </span><span id="local-6989586621679633831"><span class="annot"><span class="annottext">Way
 </span><a href="#local-6989586621679633831"><span class="hs-identifier hs-var">way</span></a></span></span><span> </span><span id="local-6989586621679633832"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633832"><span class="hs-identifier hs-var">built</span></a></span></span><span> </span><span id="local-6989586621679633833"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633833"><span class="hs-identifier hs-var">world</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679633834"><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633834"><span class="hs-identifier hs-var">state'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-119"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621679633835"><span class="annot"><span class="annottext">Dataizable
+</span><span id="line-116"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621679633835"><span class="annot"><span class="annottext">Dataizable
 </span><a href="#local-6989586621679633835"><span class="hs-identifier hs-var">dataizable</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679633836"><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633836"><span class="hs-identifier hs-var">state''</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">NonEmpty Rewritten
 -&gt; State
@@ -408,57 +405,57 @@ forall a. NonEmpty a -&gt; [a]
 </span><a href="#local-6989586621679633831"><span class="hs-identifier hs-var">way</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633832"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633817"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-120"></span><span>          </span><span class="annot"><span class="annottext">Dataizable
+</span><span id="line-117"></span><span>          </span><span class="annot"><span class="annottext">Dataizable
 -&gt; Expression -&gt; State -&gt; ReduceContext -&gt; IO (Dataized, State)
 </span><a href="Dataize.html#dataize%27"><span class="hs-identifier hs-var">dataize'</span></a></span><span> </span><span class="annot"><span class="annottext">Dataizable
 </span><a href="#local-6989586621679633835"><span class="hs-identifier hs-var">dataizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633833"><span class="hs-identifier hs-var">world</span></a></span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633836"><span class="hs-identifier hs-var">state''</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633817"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-121"></span><span>        </span><span class="annot"><span class="annottext">Maybe (Conclusion Bytes, State)
+</span><span id="line-118"></span><span>        </span><span class="annot"><span class="annottext">Maybe (Conclusion Bytes, State)
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ReduceException -&gt; IO (Dataized, State)
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; State -&gt; ReduceException
 </span><a href="Morph.html#Undataizable"><span class="hs-identifier hs-var">Undataizable</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633809"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633812"><span class="hs-identifier hs-var">state</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-122"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-123"></span><span>    </span><span class="hs-comment">-- The context a frame opening on a formation 'box' gets into goes on</span><span>
-</span><span id="line-124"></span><span>    </span><span class="hs-comment">-- with, once the formation is written to the protocol: one level deeper,</span><span>
-</span><span id="line-125"></span><span>    </span><span class="hs-comment">-- so everything the &#966; body does stands under that record.</span><span>
-</span><span id="line-126"></span><span>    </span><span class="annot"><a href="#local-6989586621679633818"><span class="hs-identifier hs-type">inside</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Morph.html#ReduceContext"><span class="hs-identifier hs-type">ReduceContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Morph.html#ReduceContext"><span class="hs-identifier hs-type">ReduceContext</span></a></span><span>
-</span><span id="line-127"></span><span>    </span><span id="local-6989586621679633818"><span class="annot"><span class="annottext">inside :: ReduceContext -&gt; Expression -&gt; IO ReduceContext
+</span><span id="line-119"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-120"></span><span>    </span><span class="hs-comment">-- The context a frame opening on a formation 'box' gets into goes on</span><span>
+</span><span id="line-121"></span><span>    </span><span class="hs-comment">-- with, once the formation is written to the protocol: one level deeper,</span><span>
+</span><span id="line-122"></span><span>    </span><span class="hs-comment">-- so everything the &#966; body does stands under that record.</span><span>
+</span><span id="line-123"></span><span>    </span><span class="annot"><a href="#local-6989586621679633818"><span class="hs-identifier hs-type">inside</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Morph.html#ReduceContext"><span class="hs-identifier hs-type">ReduceContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Morph.html#ReduceContext"><span class="hs-identifier hs-type">ReduceContext</span></a></span><span>
+</span><span id="line-124"></span><span>    </span><span id="local-6989586621679633818"><span class="annot"><span class="annottext">inside :: ReduceContext -&gt; Expression -&gt; IO ReduceContext
 </span><a href="#local-6989586621679633818"><span class="hs-identifier hs-var hs-var">inside</span></a></span></span><span> </span><span id="local-6989586621679633838"><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633838"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679633840"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679633840"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span>
-</span><span id="line-128"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; Bool
+</span><span id="line-125"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[Binding] -&gt; Bool
 </span><a href="Morph.html#boxed"><span class="hs-identifier hs-var">boxed</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679633840"><span class="hs-identifier hs-var">bds</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-129"></span><span>          </span><span class="annot"><span class="annottext">ReduceContext
+</span><span id="line-126"></span><span>          </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633838"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_saveEval</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Expression -&gt; Expression -&gt; Evaluation
 </span><a href="Deps.html#EvFormation"><span class="hs-identifier hs-var">EvFormation</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633838"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_nesting</span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633809"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633838"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_site</span><span class="hs-special">)</span><span>
-</span><span id="line-130"></span><span>          </span><span class="annot"><span class="annottext">ReduceContext -&gt; IO ReduceContext
+</span><span id="line-127"></span><span>          </span><span class="annot"><span class="annottext">ReduceContext -&gt; IO ReduceContext
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633838"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Morph.html#%24sel%3A_nesting%3AReduceContext"><span class="hs-identifier hs-var">_nesting</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier">ctx</span></span><span class="hs-operator">.</span><span class="hs-identifier">_nesting</span><span> </span><span class="annot"><span class="hs-operator hs-type">+</span></span><span> </span><span class="annot"><span class="hs-number">1</span></span><span class="hs-special">}</span><span>
-</span><span id="line-131"></span><span>    </span><span class="annot"><a href="#local-6989586621679633818"><span class="hs-identifier hs-var">inside</span></a></span><span> </span><span id="local-6989586621679633843"><span class="annot"><span class="annottext">ReduceContext
+</span><span id="line-128"></span><span>    </span><span class="annot"><a href="#local-6989586621679633818"><span class="hs-identifier hs-var">inside</span></a></span><span> </span><span id="local-6989586621679633843"><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633843"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ReduceContext -&gt; IO ReduceContext
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633843"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-132"></span><span>    </span><span class="hs-comment">-- The symbol a formation carries in place of a &#955; name, if any. Such a</span><span>
-</span><span id="line-133"></span><span>    </span><span class="hs-comment">-- formation is what a &#955; function answered with where it could not work the</span><span>
-</span><span id="line-134"></span><span>    </span><span class="hs-comment">-- value out, so no entry of the '--symbolic' file answers it and firing it</span><span>
-</span><span id="line-135"></span><span>    </span><span class="hs-comment">-- would get stuck; &#120123; therefore takes it before the rules are ever walked,</span><span>
-</span><span id="line-136"></span><span>    </span><span class="hs-comment">-- which also keeps 'fire' from matching what it cannot fire.</span><span>
-</span><span id="line-137"></span><span>    </span><span class="annot"><a href="#local-6989586621679633819"><span class="hs-identifier hs-type">unknown</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-138"></span><span>    </span><span id="local-6989586621679633819"><span class="annot"><span class="annottext">unknown :: Expression -&gt; Maybe Int
+</span><span id="line-129"></span><span>    </span><span class="hs-comment">-- The symbol a formation carries in place of a &#955; name, if any. Such a</span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-comment">-- formation is what a &#955; function answered with where it could not work the</span><span>
+</span><span id="line-131"></span><span>    </span><span class="hs-comment">-- value out, so no entry of the '--symbolic' file answers it and firing it</span><span>
+</span><span id="line-132"></span><span>    </span><span class="hs-comment">-- would get stuck; &#120123; therefore takes it before the rules are ever walked,</span><span>
+</span><span id="line-133"></span><span>    </span><span class="hs-comment">-- which also keeps 'fire' from matching what it cannot fire.</span><span>
+</span><span id="line-134"></span><span>    </span><span class="annot"><a href="#local-6989586621679633819"><span class="hs-identifier hs-type">unknown</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-135"></span><span>    </span><span id="local-6989586621679633819"><span class="annot"><span class="annottext">unknown :: Expression -&gt; Maybe Int
 </span><a href="#local-6989586621679633819"><span class="hs-identifier hs-var hs-var">unknown</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679633844"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679633844"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Int] -&gt; Maybe Int
 forall a. [a] -&gt; Maybe a
@@ -466,21 +463,21 @@ forall a. [a] -&gt; Maybe a
 </span><a href="#local-6989586621679633845"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><a href="AST.html#BiLambda"><span class="hs-identifier hs-type">BiLambda</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#FnSymbol"><span class="hs-identifier hs-type">FnSymbol</span></a></span><span> </span><span id="local-6989586621679633845"><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679633845"><span class="hs-identifier hs-var">idx</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679633844"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-139"></span><span>    </span><span class="annot"><a href="#local-6989586621679633819"><span class="hs-identifier hs-var">unknown</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-136"></span><span>    </span><span class="annot"><a href="#local-6989586621679633819"><span class="hs-identifier hs-var">unknown</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Int
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-140"></span><span>    </span><span class="hs-comment">-- A symbol dataizes to a datum manufactured for it: dataizing an unknown</span><span>
-</span><span id="line-141"></span><span>    </span><span class="hs-comment">-- never gets stuck, and the very same 42 answers every symbol, since the</span><span>
-</span><span id="line-142"></span><span>    </span><span class="hs-comment">-- run is symbolic and no arithmetic of it is ever read. Which symbol the</span><span>
-</span><span id="line-143"></span><span>    </span><span class="hs-comment">-- datum stands for is told to the state rather than to the term, so the</span><span>
-</span><span id="line-144"></span><span>    </span><span class="hs-comment">-- protocol writes '&#120123;(&#120590;1)' where the term carries nothing but the 42.</span><span>
-</span><span id="line-145"></span><span>    </span><span class="annot"><a href="#local-6989586621679633821"><span class="hs-identifier hs-type">manufactured</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Morph.html#ReduceContext"><span class="hs-identifier hs-type">ReduceContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Dataize.html#Dataized"><span class="hs-identifier hs-type">Dataized</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-type">State</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-146"></span><span>    </span><span id="local-6989586621679633821"><span class="annot"><span class="annottext">manufactured :: Int -&gt; ReduceContext -&gt; IO (Dataized, State)
+</span><span id="line-137"></span><span>    </span><span class="hs-comment">-- A symbol dataizes to a datum manufactured for it: dataizing an unknown</span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-comment">-- never gets stuck, and the very same 42 answers every symbol, since the</span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-comment">-- run is symbolic and no arithmetic of it is ever read. Which symbol the</span><span>
+</span><span id="line-140"></span><span>    </span><span class="hs-comment">-- datum stands for is told to the state rather than to the term, so the</span><span>
+</span><span id="line-141"></span><span>    </span><span class="hs-comment">-- protocol writes '&#120123;(&#120590;1)' where the term carries nothing but the 42.</span><span>
+</span><span id="line-142"></span><span>    </span><span class="annot"><a href="#local-6989586621679633821"><span class="hs-identifier hs-type">manufactured</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Morph.html#ReduceContext"><span class="hs-identifier hs-type">ReduceContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Dataize.html#Dataized"><span class="hs-identifier hs-type">Dataized</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-type">State</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-143"></span><span>    </span><span id="local-6989586621679633821"><span class="annot"><span class="annottext">manufactured :: Int -&gt; ReduceContext -&gt; IO (Dataized, State)
 </span><a href="#local-6989586621679633821"><span class="hs-identifier hs-var hs-var">manufactured</span></a></span></span><span> </span><span id="local-6989586621679633848"><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679633848"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span id="local-6989586621679633849"><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633849"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-147"></span><span>      </span><span id="local-6989586621679633850"><span class="annot"><span class="annottext">NonEmpty Rewritten
+</span><span id="line-144"></span><span>      </span><span id="local-6989586621679633850"><span class="annot"><span class="annottext">NonEmpty Rewritten
 </span><a href="#local-6989586621679633850"><span class="hs-identifier hs-var">seq'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">NonEmpty Rewritten
 -&gt; (Judgment, String)
 -&gt; Expression
@@ -493,7 +490,7 @@ forall a. Maybe a
 </span><a href="AST.html#ExBytes"><span class="hs-identifier hs-var">ExBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
 </span><a href="Dataize.html#datum"><span class="hs-identifier hs-var">datum</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633849"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-148"></span><span>      </span><span class="annot"><span class="annottext">(Dataized, State) -&gt; IO (Dataized, State)
+</span><span id="line-145"></span><span>      </span><span class="annot"><span class="annottext">(Dataized, State) -&gt; IO (Dataized, State)
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bytes
@@ -502,37 +499,37 @@ forall a. NonEmpty a -&gt; [a]
 </span><span class="hs-identifier hs-var">NE.toList</span></span><span> </span><span class="annot"><span class="annottext">NonEmpty Rewritten
 </span><a href="#local-6989586621679633850"><span class="hs-identifier hs-var">seq'</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633812"><span class="hs-identifier hs-var">state</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Deps.html#_manufactured"><span class="hs-identifier hs-var">_manufactured</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><a href="#local-6989586621679633848"><span class="hs-identifier hs-type">idx</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
-</span><span id="line-149"></span><span>
-</span><span id="line-150"></span><span class="hs-comment">-- What a 'dataize' operand of a &#955; function is brought down with (see</span><span>
-</span><span id="line-151"></span><span class="hs-comment">-- 'ReductionFunc' in 'Morph'): the operand is bound to a synthetic attribute of</span><span>
-</span><span id="line-152"></span><span class="hs-comment">-- the universe and dataized there, exactly the way the '--inside' option does</span><span>
-</span><span id="line-153"></span><span class="hs-comment">-- it, so what comes back is the data the operand carries. Where a &#955; function on</span><span>
-</span><span id="line-154"></span><span class="hs-comment">-- the way could not fire and '_partial' parked it, the operand never came down</span><span>
-</span><span id="line-155"></span><span class="hs-comment">-- to data at all and nothing comes back, which leaves the firing that asked for</span><span>
-</span><span id="line-156"></span><span class="hs-comment">-- it stuck. An operand reaches a firing unreduced, since reducing it may take</span><span>
-</span><span id="line-157"></span><span class="hs-comment">-- the very &#955; function being fired, so it is reduced here, on demand, and not</span><span>
-</span><span id="line-158"></span><span class="hs-comment">-- before. The context is the one the fire descended with, so the step budget of</span><span>
-</span><span id="line-159"></span><span class="hs-comment">-- the run bounds the nesting, and the state &#119904; goes in and comes back out, so</span><span>
-</span><span id="line-160"></span><span class="hs-comment">-- the symbols this reduction mints are counted in the same sequence as the ones</span><span>
-</span><span id="line-161"></span><span class="hs-comment">-- around it.</span><span>
-</span><span id="line-162"></span><span class="hs-comment">--</span><span>
-</span><span id="line-163"></span><span class="hs-comment">-- An operand reaching a term outside the domain of &#120123; &#8212; the terminator &#8869;, or a</span><span>
-</span><span id="line-164"></span><span class="hs-comment">-- term no dataization rule matches, such as a formation whose &#966; is a void</span><span>
-</span><span id="line-165"></span><span class="hs-comment">-- nothing filled &#8212; never comes down to data either, and under '_partial' it</span><span>
-</span><span id="line-166"></span><span class="hs-comment">-- leaves the firing stuck the same way rather than ending the run: an unfilled</span><span>
-</span><span id="line-167"></span><span class="hs-comment">-- void or an error object is as much a property of the program as a &#955; function</span><span>
-</span><span id="line-168"></span><span class="hs-comment">-- nobody answers (#1401). The protocol records the dead end as a stuck site</span><span>
-</span><span id="line-169"></span><span class="hs-comment">-- named '&#8869;', written with the term &#120123; could not dataize, and the name travels</span><span>
-</span><span id="line-170"></span><span class="hs-comment">-- back in the state as the one the firing got stuck on (see '_stuck'). A run</span><span>
-</span><span id="line-171"></span><span class="hs-comment">-- of &#120123; that is not an operand still fails on it, '_partial' or not (#955).</span><span>
-</span><span id="line-172"></span><span class="annot"><a href="Dataize.html#reduction"><span class="hs-identifier hs-type">reduction</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Morph.html#ReductionFunc"><span class="hs-identifier hs-type">ReductionFunc</span></a></span><span>
-</span><span id="line-173"></span><span id="reduction"><span class="annot"><span class="annottext">reduction :: ReductionFunc
+</span><span id="line-146"></span><span>
+</span><span id="line-147"></span><span class="hs-comment">-- What a 'dataize' operand of a &#955; function is brought down with (see</span><span>
+</span><span id="line-148"></span><span class="hs-comment">-- 'ReductionFunc' in 'Morph'): the operand is bound to a synthetic attribute of</span><span>
+</span><span id="line-149"></span><span class="hs-comment">-- the universe and dataized there, exactly the way the '--inside' option does</span><span>
+</span><span id="line-150"></span><span class="hs-comment">-- it, so what comes back is the data the operand carries. Where a &#955; function on</span><span>
+</span><span id="line-151"></span><span class="hs-comment">-- the way could not fire and '_partial' parked it, the operand never came down</span><span>
+</span><span id="line-152"></span><span class="hs-comment">-- to data at all and nothing comes back, which leaves the firing that asked for</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- it stuck. An operand reaches a firing unreduced, since reducing it may take</span><span>
+</span><span id="line-154"></span><span class="hs-comment">-- the very &#955; function being fired, so it is reduced here, on demand, and not</span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- before. The context is the one the fire descended with, so the step budget of</span><span>
+</span><span id="line-156"></span><span class="hs-comment">-- the run bounds the nesting, and the state &#119904; goes in and comes back out, so</span><span>
+</span><span id="line-157"></span><span class="hs-comment">-- the symbols this reduction mints are counted in the same sequence as the ones</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- around it.</span><span>
+</span><span id="line-159"></span><span class="hs-comment">--</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- An operand reaching a term outside the domain of &#120123; &#8212; the terminator &#8869;, or a</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- term no dataization rule matches, such as a formation whose &#966; is a void</span><span>
+</span><span id="line-162"></span><span class="hs-comment">-- nothing filled &#8212; never comes down to data either, and under '_partial' it</span><span>
+</span><span id="line-163"></span><span class="hs-comment">-- leaves the firing stuck the same way rather than ending the run: an unfilled</span><span>
+</span><span id="line-164"></span><span class="hs-comment">-- void or an error object is as much a property of the program as a &#955; function</span><span>
+</span><span id="line-165"></span><span class="hs-comment">-- nobody answers (#1401). The protocol records the dead end as a stuck site</span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- named '&#8869;', written with the term &#120123; could not dataize, and the name travels</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- back in the state as the one the firing got stuck on (see '_stuck'). A run</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- of &#120123; that is not an operand still fails on it, '_partial' or not (#955).</span><span>
+</span><span id="line-169"></span><span class="annot"><a href="Dataize.html#reduction"><span class="hs-identifier hs-type">reduction</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Morph.html#ReductionFunc"><span class="hs-identifier hs-type">ReductionFunc</span></a></span><span>
+</span><span id="line-170"></span><span id="reduction"><span class="annot"><span class="annottext">reduction :: ReductionFunc
 </span><a href="Dataize.html#reduction"><span class="hs-identifier hs-var hs-var">reduction</span></a></span></span><span> </span><span id="local-6989586621679633852"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633852"><span class="hs-identifier hs-var">univ</span></a></span></span><span> </span><span id="local-6989586621679633853"><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633853"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679633854"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633854"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679633855"><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633855"><span class="hs-identifier hs-var">state</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-174"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679633856"><span class="annot"><span class="annottext">Expression
+</span><span id="line-171"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679633856"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633856"><span class="hs-identifier hs-var">universe</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679633857"><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633857"><span class="hs-identifier hs-var">aiming</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
 -&gt; Expression -&gt; ReduceContext -&gt; IO (Expression, ReduceContext)
@@ -540,7 +537,7 @@ forall a. NonEmpty a -&gt; [a]
 </span><a href="#local-6989586621679633854"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633852"><span class="hs-identifier hs-var">univ</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633853"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-175"></span><span>  </span><span id="local-6989586621679633858"><span class="annot"><span class="annottext">Either ReduceException (Outcome, [Rewritten], State)
+</span><span id="line-172"></span><span>  </span><span id="local-6989586621679633858"><span class="annot"><span class="annottext">Either ReduceException (Outcome, [Rewritten], State)
 </span><a href="#local-6989586621679633858"><span class="hs-identifier hs-var">result</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO (Outcome, [Rewritten], State)
 -&gt; IO (Either ReduceException (Outcome, [Rewritten], State))
 forall e a. Exception e =&gt; IO a -&gt; IO (Either e a)
@@ -550,9 +547,9 @@ forall e a. Exception e =&gt; IO a -&gt; IO (Either e a)
 </span><a href="#local-6989586621679633856"><span class="hs-identifier hs-var">universe</span></a></span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633855"><span class="hs-identifier hs-var">state</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633857"><span class="hs-identifier hs-var">aiming</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-176"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either ReduceException (Outcome, [Rewritten], State)
+</span><span id="line-173"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Either ReduceException (Outcome, [Rewritten], State)
 </span><a href="#local-6989586621679633858"><span class="hs-identifier hs-var">result</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-177"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679633859"><span class="annot"><span class="annottext">Outcome
+</span><span id="line-174"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679633859"><span class="annot"><span class="annottext">Outcome
 </span><a href="#local-6989586621679633859"><span class="hs-identifier hs-var">outcome</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[Rewritten]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679633860"><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633860"><span class="hs-identifier hs-var">state'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Maybe Bytes, State) -&gt; IO (Maybe Bytes, State)
@@ -562,11 +559,11 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><a href="#local-6989586621679633861"><span class="hs-identifier hs-var">reached</span></a></span><span> </span><span class="annot"><span class="annottext">Outcome
 </span><a href="#local-6989586621679633859"><span class="hs-identifier hs-var">outcome</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633860"><span class="hs-identifier hs-var">state'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-178"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Morph.html#Undataizable"><span class="hs-identifier hs-type">Undataizable</span></a></span><span> </span><span id="local-6989586621679633862"><span class="annot"><span class="annottext">Expression
+</span><span id="line-175"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Morph.html#Undataizable"><span class="hs-identifier hs-type">Undataizable</span></a></span><span> </span><span id="local-6989586621679633862"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633862"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span id="local-6989586621679633863"><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633863"><span class="hs-identifier hs-var">state'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679633853"><span class="hs-identifier hs-var">ctx</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_partial</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-179"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-176"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679633864"><span class="hs-identifier hs-var">dead</span></a></span><span> </span><span class="annot"><span class="annottext">Text -&gt; [Text] -&gt; Bool
@@ -580,42 +577,42 @@ forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
 </span><a href="#local-6989586621679633864"><span class="hs-identifier hs-var">dead</span></a></span><span> </span><span class="annot"><span class="annottext">Judgment
 </span><a href="Deps.html#Dataization"><span class="hs-identifier hs-var">Dataization</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679633862"><span class="hs-identifier hs-var">term</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-180"></span><span>      </span><span class="annot"><span class="annottext">(Maybe Bytes, State) -&gt; IO (Maybe Bytes, State)
+</span><span id="line-177"></span><span>      </span><span class="annot"><span class="annottext">(Maybe Bytes, State) -&gt; IO (Maybe Bytes, State)
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Bytes
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">State
 </span><a href="#local-6989586621679633863"><span class="hs-identifier hs-var">state'</span></a></span><span class="hs-special">{</span><span class="annot"><a href="Deps.html#_stuck"><span class="hs-identifier hs-var">_stuck</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="annot"><a href="#local-6989586621679633864"><span class="hs-identifier hs-type">dead</span></a></span><span class="hs-special">}</span><span class="hs-special">)</span><span>
-</span><span id="line-181"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679633867"><span class="annot"><span class="annottext">ReduceException
+</span><span id="line-178"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679633867"><span class="annot"><span class="annottext">ReduceException
 </span><a href="#local-6989586621679633867"><span class="hs-identifier hs-var">failure</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">ReduceException -&gt; IO (Maybe Bytes, State)
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">ReduceException
 </span><a href="#local-6989586621679633867"><span class="hs-identifier hs-var">failure</span></a></span><span>
-</span><span id="line-182"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-183"></span><span>    </span><span class="annot"><a href="#local-6989586621679633864"><span class="hs-identifier hs-type">dead</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">T.Text</span></span><span>
-</span><span id="line-184"></span><span>    </span><span id="local-6989586621679633864"><span class="annot"><span class="annottext">dead :: Text
+</span><span id="line-179"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-180"></span><span>    </span><span class="annot"><a href="#local-6989586621679633864"><span class="hs-identifier hs-type">dead</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">T.Text</span></span><span>
+</span><span id="line-181"></span><span>    </span><span id="local-6989586621679633864"><span class="annot"><span class="annottext">dead :: Text
 </span><a href="#local-6989586621679633864"><span class="hs-identifier hs-var hs-var">dead</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;&#8869;&quot;</span></span><span>
-</span><span id="line-185"></span><span>    </span><span class="annot"><a href="#local-6989586621679633861"><span class="hs-identifier hs-type">reached</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Dataize.html#Outcome"><span class="hs-identifier hs-type">Outcome</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span>
-</span><span id="line-186"></span><span>    </span><span id="local-6989586621679633861"><span class="annot"><span class="annottext">reached :: Outcome -&gt; Maybe Bytes
+</span><span id="line-182"></span><span>    </span><span class="annot"><a href="#local-6989586621679633861"><span class="hs-identifier hs-type">reached</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Dataize.html#Outcome"><span class="hs-identifier hs-type">Outcome</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span>
+</span><span id="line-183"></span><span>    </span><span id="local-6989586621679633861"><span class="annot"><span class="annottext">reached :: Outcome -&gt; Maybe Bytes
 </span><a href="#local-6989586621679633861"><span class="hs-identifier hs-var hs-var">reached</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Dataize.html#Dataized"><span class="hs-identifier hs-type">Dataized</span></a></span><span> </span><span id="local-6989586621679633868"><span class="annot"><span class="annottext">Bytes
 </span><a href="#local-6989586621679633868"><span class="hs-identifier hs-var">bytes</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bytes -&gt; Maybe Bytes
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Bytes
 </span><a href="#local-6989586621679633868"><span class="hs-identifier hs-var">bytes</span></a></span><span>
-</span><span id="line-187"></span><span>    </span><span class="annot"><a href="#local-6989586621679633861"><span class="hs-identifier hs-var">reached</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Dataize.html#Residual"><span class="hs-identifier hs-type">Residual</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-184"></span><span>    </span><span class="annot"><a href="#local-6989586621679633861"><span class="hs-identifier hs-var">reached</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Dataize.html#Residual"><span class="hs-identifier hs-type">Residual</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Bytes
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-188"></span><span>
-</span><span id="line-189"></span><span class="hs-comment">-- The datum every symbol dataizes to: 42 as a double, the same for all of them.</span><span>
-</span><span id="line-190"></span><span class="hs-comment">-- A symbolic run computes nothing, so what the datum is carries no meaning at</span><span>
-</span><span id="line-191"></span><span class="hs-comment">-- all; what matters is that &#120123; of an unknown answers rather than gets stuck, so</span><span>
-</span><span id="line-192"></span><span class="hs-comment">-- a &#955; function whose operands are unknowns still fires and still answers with</span><span>
-</span><span id="line-193"></span><span class="hs-comment">-- an unknown of its own.</span><span>
-</span><span id="line-194"></span><span class="annot"><a href="Dataize.html#datum"><span class="hs-identifier hs-type">datum</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span>
-</span><span id="line-195"></span><span id="datum"><span class="annot"><span class="annottext">datum :: Bytes
+</span><span id="line-185"></span><span>
+</span><span id="line-186"></span><span class="hs-comment">-- The datum every symbol dataizes to: 42 as a double, the same for all of them.</span><span>
+</span><span id="line-187"></span><span class="hs-comment">-- A symbolic run computes nothing, so what the datum is carries no meaning at</span><span>
+</span><span id="line-188"></span><span class="hs-comment">-- all; what matters is that &#120123; of an unknown answers rather than gets stuck, so</span><span>
+</span><span id="line-189"></span><span class="hs-comment">-- a &#955; function whose operands are unknowns still fires and still answers with</span><span>
+</span><span id="line-190"></span><span class="hs-comment">-- an unknown of its own.</span><span>
+</span><span id="line-191"></span><span class="annot"><a href="Dataize.html#datum"><span class="hs-identifier hs-type">datum</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span>
+</span><span id="line-192"></span><span id="datum"><span class="annot"><span class="annottext">datum :: Bytes
 </span><a href="Dataize.html#datum"><span class="hs-identifier hs-var hs-var">datum</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; Bytes
 </span><a href="AST.html#BtMany"><span class="hs-identifier hs-var">BtMany</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;40&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
@@ -626,4 +623,4 @@ forall a. Maybe a
 </span><span class="hs-string">&quot;00&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;00&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;00&quot;</span></span><span class="hs-special">]</span><span>
-</span><span id="line-196"></span></pre></body></html>
+</span><span id="line-193"></span></pre></body></html>

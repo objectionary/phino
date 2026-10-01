@@ -1263,13 +1263,9 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628750"><span class="hs-identifier hs-var">next</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-344"></span><span>    </span><span class="hs-comment">-- A condition that raises is treated as not met: that is the policy</span><span>
-</span><span id="line-345"></span><span>    </span><span class="hs-comment">-- #1079 questions, and it stays until the maintainers answer. The</span><span>
-</span><span id="line-346"></span><span>    </span><span class="hs-comment">-- silence on top of it is nobody's friend &#8212; say what raised, at debug</span><span>
-</span><span id="line-347"></span><span>    </span><span class="hs-comment">-- level, so a broken 'when'/'having' can be found with --log-level=debug</span><span>
-</span><span id="line-348"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679628752"><span class="annot"><span class="annottext">SomeException
+</span><span id="line-344"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679628752"><span class="annot"><span class="annottext">SomeException
 </span><a href="#local-6989586621679628752"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-349"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-345"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
@@ -1280,14 +1276,14 @@ forall a. Show a =&gt; a -&gt; String
 forall e. Exception e =&gt; e -&gt; String
 </span><span class="hs-identifier hs-var">displayException</span></span><span> </span><span class="annot"><span class="annottext">SomeException
 </span><a href="#local-6989586621679628752"><span class="hs-identifier hs-var">err</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-350"></span><span>      </span><span class="annot"><span class="annottext">Condition -&gt; [Subst] -&gt; RuleContext -&gt; IO [Subst]
+</span><span id="line-346"></span><span>      </span><span class="annot"><span class="annottext">Condition -&gt; [Subst] -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#meetCondition"><span class="hs-identifier hs-var">meetCondition</span></a></span><span> </span><span class="annot"><span class="annottext">Condition
 </span><a href="#local-6989586621679628744"><span class="hs-identifier hs-var">cond</span></a></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628746"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628747"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-351"></span><span>
-</span><span id="line-352"></span><span class="annot"><a href="Rule.html#meetMaybeCondition"><span class="hs-identifier hs-type">meetMaybeCondition</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Y.Condition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-353"></span><span id="meetMaybeCondition"><span class="annot"><span class="annottext">meetMaybeCondition :: Maybe Condition -&gt; [Subst] -&gt; RuleContext -&gt; IO [Subst]
+</span><span id="line-347"></span><span>
+</span><span id="line-348"></span><span class="annot"><a href="Rule.html#meetMaybeCondition"><span class="hs-identifier hs-type">meetMaybeCondition</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Y.Condition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-349"></span><span id="meetMaybeCondition"><span class="annot"><span class="annottext">meetMaybeCondition :: Maybe Condition -&gt; [Subst] -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#meetMaybeCondition"><span class="hs-identifier hs-var hs-var">meetMaybeCondition</span></a></span></span><span> </span><span class="annot"><span class="annottext">Maybe Condition
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span id="local-6989586621679628755"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628755"><span class="hs-identifier hs-var">substs</span></a></span></span><span> </span><span class="annot"><span class="annottext">RuleContext
@@ -1296,7 +1292,7 @@ forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628755"><span class="hs-identifier hs-var">substs</span></a></span><span>
-</span><span id="line-354"></span><span class="annot"><a href="Rule.html#meetMaybeCondition"><span class="hs-identifier hs-var">meetMaybeCondition</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679628756"><span class="annot"><span class="annottext">Condition
+</span><span id="line-350"></span><span class="annot"><a href="Rule.html#meetMaybeCondition"><span class="hs-identifier hs-var">meetMaybeCondition</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679628756"><span class="annot"><span class="annottext">Condition
 </span><a href="#local-6989586621679628756"><span class="hs-identifier hs-var">cond</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679628757"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628757"><span class="hs-identifier hs-var">substs</span></a></span></span><span> </span><span id="local-6989586621679628758"><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628758"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Condition -&gt; [Subst] -&gt; RuleContext -&gt; IO [Subst]
@@ -1304,10 +1300,10 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><a href="#local-6989586621679628756"><span class="hs-identifier hs-var">cond</span></a></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628757"><span class="hs-identifier hs-var">substs</span></a></span><span> </span><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628758"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-355"></span><span>
-</span><span id="line-356"></span><span class="hs-comment">-- Extend list of given substitutions with extra substitutions from 'where' yaml rule section</span><span>
-</span><span id="line-357"></span><span class="annot"><a href="Rule.html#extraSubstitutions"><span class="hs-identifier hs-type">extraSubstitutions</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-type">Y.Extra</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-358"></span><span id="extraSubstitutions"><span class="annot"><span class="annottext">extraSubstitutions :: [Subst] -&gt; Maybe [Extra] -&gt; RuleContext -&gt; IO [Subst]
+</span><span id="line-351"></span><span>
+</span><span id="line-352"></span><span class="hs-comment">-- Extend list of given substitutions with extra substitutions from 'where' yaml rule section</span><span>
+</span><span id="line-353"></span><span class="annot"><a href="Rule.html#extraSubstitutions"><span class="hs-identifier hs-type">extraSubstitutions</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Yaml.html#Extra"><span class="hs-identifier hs-type">Y.Extra</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-354"></span><span id="extraSubstitutions"><span class="annot"><span class="annottext">extraSubstitutions :: [Subst] -&gt; Maybe [Extra] -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#extraSubstitutions"><span class="hs-identifier hs-var hs-var">extraSubstitutions</span></a></span></span><span> </span><span id="local-6989586621679628760"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628760"><span class="hs-identifier hs-var">substs</span></a></span></span><span> </span><span id="local-6989586621679628761"><span class="annot"><span class="annottext">Maybe [Extra]
 </span><a href="#local-6989586621679628761"><span class="hs-identifier hs-var">extras</span></a></span></span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span class="hs-special">{</span><span id="local-6989586621679628762"><span id="local-6989586621679628763"><span id="local-6989586621679628764"><span class="annot"><span class="annottext">Maybe Expression
@@ -1321,15 +1317,15 @@ _universe :: Maybe Expression
 _normal :: Expression -&gt; Bool
 </span><a href="Rule.html#_buildTerm"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe [Extra]
 </span><a href="#local-6989586621679628761"><span class="hs-identifier hs-var">extras</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-359"></span><span>  </span><span class="annot"><span class="annottext">Maybe [Extra]
+</span><span id="line-355"></span><span>  </span><span class="annot"><span class="annottext">Maybe [Extra]
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628760"><span class="hs-identifier hs-var">substs</span></a></span><span>
-</span><span id="line-360"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679628765"><span class="annot"><span class="annottext">[Extra]
+</span><span id="line-356"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679628765"><span class="annot"><span class="annottext">[Extra]
 </span><a href="#local-6989586621679628765"><span class="hs-identifier hs-var">extras'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-361"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-357"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; Int -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
@@ -1338,81 +1334,81 @@ forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628760"><span class="hs-identifier hs-var">substs</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-362"></span><span>    </span><span id="local-6989586621679628766"><span class="annot"><span class="annottext">[Maybe Subst]
+</span><span id="line-358"></span><span>    </span><span id="local-6989586621679628766"><span class="annot"><span class="annottext">[Maybe Subst]
 </span><a href="#local-6989586621679628766"><span class="hs-identifier hs-var">res</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span>
-</span><span id="line-363"></span><span>      </span><span class="annot"><span class="annottext">[IO (Maybe Subst)] -&gt; IO [Maybe Subst]
+</span><span id="line-359"></span><span>      </span><span class="annot"><span class="annottext">[IO (Maybe Subst)] -&gt; IO [Maybe Subst]
 forall (t :: * -&gt; *) (m :: * -&gt; *) a.
 (Traversable t, Monad m) =&gt;
 t (m a) -&gt; m (t a)
 forall (m :: * -&gt; *) a. Monad m =&gt; [m a] -&gt; m [a]
 </span><span class="hs-identifier hs-var">sequence</span></span><span>
-</span><span id="line-364"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">(Maybe Subst -&gt; Extra -&gt; IO (Maybe Subst))
+</span><span id="line-360"></span><span>        </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">(Maybe Subst -&gt; Extra -&gt; IO (Maybe Subst))
 -&gt; Maybe Subst -&gt; [Extra] -&gt; IO (Maybe Subst)
 forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 (Foldable t, Monad m) =&gt;
 (b -&gt; a -&gt; m b) -&gt; b -&gt; t a -&gt; m b
 </span><span class="hs-identifier hs-var">foldlM</span></span><span>
-</span><span id="line-365"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679628768"><span class="annot"><span class="annottext">Maybe Subst
+</span><span id="line-361"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679628768"><span class="annot"><span class="annottext">Maybe Subst
 </span><a href="#local-6989586621679628768"><span class="hs-identifier hs-var">maybeSubst</span></a></span></span><span> </span><span id="local-6989586621679628769"><span class="annot"><span class="annottext">Extra
 </span><a href="#local-6989586621679628769"><span class="hs-identifier hs-var">extra</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe Subst
 </span><a href="#local-6989586621679628768"><span class="hs-identifier hs-var">maybeSubst</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-366"></span><span>                </span><span class="annot"><span class="annottext">Maybe Subst
+</span><span id="line-362"></span><span>                </span><span class="annot"><span class="annottext">Maybe Subst
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Subst -&gt; IO (Maybe Subst)
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe Subst
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-367"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679628770"><span class="annot"><span class="annottext">Subst
+</span><span id="line-363"></span><span>                </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679628770"><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679628770"><span class="hs-identifier hs-var">subst'</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-368"></span><span>                  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679628771"><span class="annot"><span class="annottext">maybeName :: Maybe Text
+</span><span id="line-364"></span><span>                  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679628771"><span class="annot"><span class="annottext">maybeName :: Maybe Text
 </span><a href="#local-6989586621679628771"><span class="hs-identifier hs-var hs-var">maybeName</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Extra -&gt; ExtraArgument
 </span><a href="Yaml.html#%24sel%3Ameta%3AExtra"><span class="hs-identifier hs-var">Y.meta</span></a></span><span> </span><span class="annot"><span class="annottext">Extra
 </span><a href="#local-6989586621679628769"><span class="hs-identifier hs-var">extra</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-369"></span><span>                        </span><span class="annot"><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-type">Y.ArgExpression</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExMeta"><span class="hs-identifier hs-type">ExMeta</span></a></span><span> </span><span id="local-6989586621679628773"><span class="annot"><span class="annottext">Text
+</span><span id="line-365"></span><span>                        </span><span class="annot"><a href="Yaml.html#ArgExpression"><span class="hs-identifier hs-type">Y.ArgExpression</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExMeta"><span class="hs-identifier hs-type">ExMeta</span></a></span><span> </span><span id="local-6989586621679628773"><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628773"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628773"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-370"></span><span>                        </span><span class="annot"><a href="Yaml.html#ArgAttribute"><span class="hs-identifier hs-type">Y.ArgAttribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtMeta"><span class="hs-identifier hs-type">AtMeta</span></a></span><span> </span><span id="local-6989586621679628775"><span class="annot"><span class="annottext">Text
+</span><span id="line-366"></span><span>                        </span><span class="annot"><a href="Yaml.html#ArgAttribute"><span class="hs-identifier hs-type">Y.ArgAttribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#AtMeta"><span class="hs-identifier hs-type">AtMeta</span></a></span><span> </span><span id="local-6989586621679628775"><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628775"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628775"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-371"></span><span>                        </span><span class="annot"><a href="Yaml.html#ArgBinding"><span class="hs-identifier hs-type">Y.ArgBinding</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiMeta"><span class="hs-identifier hs-type">BiMeta</span></a></span><span> </span><span id="local-6989586621679628777"><span class="annot"><span class="annottext">Text
+</span><span id="line-367"></span><span>                        </span><span class="annot"><a href="Yaml.html#ArgBinding"><span class="hs-identifier hs-type">Y.ArgBinding</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiMeta"><span class="hs-identifier hs-type">BiMeta</span></a></span><span> </span><span id="local-6989586621679628777"><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628777"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628777"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-372"></span><span>                        </span><span class="annot"><a href="Yaml.html#ArgBytes"><span class="hs-identifier hs-type">Y.ArgBytes</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BtMeta"><span class="hs-identifier hs-type">BtMeta</span></a></span><span> </span><span id="local-6989586621679628780"><span class="annot"><span class="annottext">Text
+</span><span id="line-368"></span><span>                        </span><span class="annot"><a href="Yaml.html#ArgBytes"><span class="hs-identifier hs-type">Y.ArgBytes</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BtMeta"><span class="hs-identifier hs-type">BtMeta</span></a></span><span> </span><span id="local-6989586621679628780"><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628780"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Maybe Text
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628780"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-373"></span><span>                        </span><span class="annot"><span class="annottext">ExtraArgument
+</span><span id="line-369"></span><span>                        </span><span class="annot"><span class="annottext">ExtraArgument
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Text
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-374"></span><span>                      </span><span id="local-6989586621679628781"><span class="annot"><span class="annottext">func :: String
+</span><span id="line-370"></span><span>                      </span><span id="local-6989586621679628781"><span class="annot"><span class="annottext">func :: String
 </span><a href="#local-6989586621679628781"><span class="hs-identifier hs-var hs-var">func</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Extra -&gt; String
 </span><a href="Yaml.html#%24sel%3Afunction%3AExtra"><span class="hs-identifier hs-var">Y.function</span></a></span><span> </span><span class="annot"><span class="annottext">Extra
 </span><a href="#local-6989586621679628769"><span class="hs-identifier hs-var">extra</span></a></span><span>
-</span><span id="line-375"></span><span>                      </span><span id="local-6989586621679628783"><span class="annot"><span class="annottext">args :: [ExtraArgument]
+</span><span id="line-371"></span><span>                      </span><span id="local-6989586621679628783"><span class="annot"><span class="annottext">args :: [ExtraArgument]
 </span><a href="#local-6989586621679628783"><span class="hs-identifier hs-var hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Extra -&gt; [ExtraArgument]
 </span><a href="Yaml.html#%24sel%3Aargs%3AExtra"><span class="hs-identifier hs-var">Y.args</span></a></span><span> </span><span class="annot"><span class="annottext">Extra
 </span><a href="#local-6989586621679628769"><span class="hs-identifier hs-var">extra</span></a></span><span>
-</span><span id="line-376"></span><span>                  </span><span id="local-6989586621679628785"><span class="annot"><span class="annottext">Term
+</span><span id="line-372"></span><span>                  </span><span id="local-6989586621679628785"><span class="annot"><span class="annottext">Term
 </span><a href="#local-6989586621679628785"><span class="hs-identifier hs-var">term</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">BuildTermFunc
 </span><a href="#local-6989586621679628786"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679628781"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="annot"><span class="annottext">[ExtraArgument]
 </span><a href="#local-6989586621679628783"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679628770"><span class="hs-identifier hs-var">subst'</span></a></span><span>
-</span><span id="line-377"></span><span>                  </span><span id="local-6989586621679628787"><span class="annot"><span class="annottext">MetaValue
+</span><span id="line-373"></span><span>                  </span><span id="local-6989586621679628787"><span class="annot"><span class="annottext">MetaValue
 </span><a href="#local-6989586621679628787"><span class="hs-identifier hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Term
 </span><a href="#local-6989586621679628785"><span class="hs-identifier hs-var">term</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-378"></span><span>                    </span><span class="annot"><a href="Deps.html#TeExpression"><span class="hs-identifier hs-type">TeExpression</span></a></span><span> </span><span id="local-6989586621679628789"><span class="annot"><span class="annottext">Expression
+</span><span id="line-374"></span><span>                    </span><span class="annot"><a href="Deps.html#TeExpression"><span class="hs-identifier hs-type">TeExpression</span></a></span><span> </span><span id="local-6989586621679628789"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628789"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-379"></span><span>                      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-375"></span><span>                      </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
@@ -1420,15 +1416,15 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="#local-6989586621679628781"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; String
 </span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var">printExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628789"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-380"></span><span>                      </span><span class="annot"><span class="annottext">MetaValue -&gt; IO MetaValue
+</span><span id="line-376"></span><span>                      </span><span class="annot"><span class="annottext">MetaValue -&gt; IO MetaValue
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; MetaValue
 </span><a href="Matcher.html#MvExpression"><span class="hs-identifier hs-var">MvExpression</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628789"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-381"></span><span>                    </span><span class="annot"><a href="Deps.html#TeAttribute"><span class="hs-identifier hs-type">TeAttribute</span></a></span><span> </span><span id="local-6989586621679628792"><span class="annot"><span class="annottext">Attribute
+</span><span id="line-377"></span><span>                    </span><span class="annot"><a href="Deps.html#TeAttribute"><span class="hs-identifier hs-type">TeAttribute</span></a></span><span> </span><span id="local-6989586621679628792"><span class="annot"><span class="annottext">Attribute
 </span><a href="#local-6989586621679628792"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-382"></span><span>                      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-378"></span><span>                      </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
@@ -1436,15 +1432,15 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="#local-6989586621679628781"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; String
 </span><a href="Printer.html#printAttribute"><span class="hs-identifier hs-var">printAttribute</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><a href="#local-6989586621679628792"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-383"></span><span>                      </span><span class="annot"><span class="annottext">MetaValue -&gt; IO MetaValue
+</span><span id="line-379"></span><span>                      </span><span class="annot"><span class="annottext">MetaValue -&gt; IO MetaValue
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; MetaValue
 </span><a href="Matcher.html#MvAttribute"><span class="hs-identifier hs-var">MvAttribute</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><a href="#local-6989586621679628792"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-384"></span><span>                    </span><span class="annot"><a href="Deps.html#TeBytes"><span class="hs-identifier hs-type">TeBytes</span></a></span><span> </span><span id="local-6989586621679628794"><span class="annot"><span class="annottext">Bytes
+</span><span id="line-380"></span><span>                    </span><span class="annot"><a href="Deps.html#TeBytes"><span class="hs-identifier hs-type">TeBytes</span></a></span><span> </span><span id="local-6989586621679628794"><span class="annot"><span class="annottext">Bytes
 </span><a href="#local-6989586621679628794"><span class="hs-identifier hs-var">bytes</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-385"></span><span>                      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-381"></span><span>                      </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
@@ -1452,15 +1448,15 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="#local-6989586621679628781"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bytes -&gt; String
 </span><a href="Printer.html#printBytes"><span class="hs-identifier hs-var">printBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
 </span><a href="#local-6989586621679628794"><span class="hs-identifier hs-var">bytes</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-386"></span><span>                      </span><span class="annot"><span class="annottext">MetaValue -&gt; IO MetaValue
+</span><span id="line-382"></span><span>                      </span><span class="annot"><span class="annottext">MetaValue -&gt; IO MetaValue
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bytes -&gt; MetaValue
 </span><a href="Matcher.html#MvBytes"><span class="hs-identifier hs-var">MvBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
 </span><a href="#local-6989586621679628794"><span class="hs-identifier hs-var">bytes</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-387"></span><span>                    </span><span class="annot"><a href="Deps.html#TeBindings"><span class="hs-identifier hs-type">TeBindings</span></a></span><span> </span><span id="local-6989586621679628798"><span class="annot"><span class="annottext">[Binding]
+</span><span id="line-383"></span><span>                    </span><span class="annot"><a href="Deps.html#TeBindings"><span class="hs-identifier hs-type">TeBindings</span></a></span><span> </span><span id="local-6989586621679628798"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628798"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-388"></span><span>                      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-384"></span><span>                      </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
@@ -1469,15 +1465,15 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="Printer.html#printExpression"><span class="hs-identifier hs-var">printExpression</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; Expression
 </span><a href="AST.html#ExFormation"><span class="hs-identifier hs-var">ExFormation</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628798"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-389"></span><span>                      </span><span class="annot"><span class="annottext">MetaValue -&gt; IO MetaValue
+</span><span id="line-385"></span><span>                      </span><span class="annot"><span class="annottext">MetaValue -&gt; IO MetaValue
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Binding] -&gt; MetaValue
 </span><a href="Matcher.html#MvBindings"><span class="hs-identifier hs-var">MvBindings</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628798"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-390"></span><span>                  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe Text
+</span><span id="line-386"></span><span>                  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Maybe Text
 </span><a href="#local-6989586621679628771"><span class="hs-identifier hs-var">maybeName</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-391"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679628799"><span class="annot"><span class="annottext">Text
+</span><span id="line-387"></span><span>                    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679628799"><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628799"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Subst -&gt; IO (Maybe Subst)
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
@@ -1487,54 +1483,54 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><a href="#local-6989586621679628799"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">MetaValue
 </span><a href="#local-6989586621679628787"><span class="hs-identifier hs-var">meta</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679628770"><span class="hs-identifier hs-var">subst'</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-392"></span><span>                    </span><span class="annot"><span class="annottext">Maybe Text
+</span><span id="line-388"></span><span>                    </span><span class="annot"><span class="annottext">Maybe Text
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Maybe Subst -&gt; IO (Maybe Subst)
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Maybe Subst
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-393"></span><span>            </span><span class="hs-special">)</span><span>
-</span><span id="line-394"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Subst -&gt; Maybe Subst
+</span><span id="line-389"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-390"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Subst -&gt; Maybe Subst
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679628802"><span class="hs-identifier hs-var">subst</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-395"></span><span>            </span><span class="annot"><span class="annottext">[Extra]
+</span><span id="line-391"></span><span>            </span><span class="annot"><span class="annottext">[Extra]
 </span><a href="#local-6989586621679628765"><span class="hs-identifier hs-var">extras'</span></a></span><span>
-</span><span id="line-396"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679628802"><span class="annot"><span class="annottext">Subst
+</span><span id="line-392"></span><span>        </span><span class="hs-glyph">|</span><span> </span><span id="local-6989586621679628802"><span class="annot"><span class="annottext">Subst
 </span><a href="#local-6989586621679628802"><span class="hs-identifier hs-var">subst</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628760"><span class="hs-identifier hs-var">substs</span></a></span><span>
-</span><span id="line-397"></span><span>        </span><span class="hs-special">]</span><span>
-</span><span id="line-398"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-393"></span><span>        </span><span class="hs-special">]</span><span>
+</span><span id="line-394"></span><span>    </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Extra substitutions have been built&quot;</span></span><span>
-</span><span id="line-399"></span><span>    </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
+</span><span id="line-395"></span><span>    </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Maybe Subst] -&gt; [Subst]
 forall a. [Maybe a] -&gt; [a]
 </span><span class="hs-identifier hs-var">catMaybes</span></span><span> </span><span class="annot"><span class="annottext">[Maybe Subst]
 </span><a href="#local-6989586621679628766"><span class="hs-identifier hs-var">res</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-400"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-401"></span><span>    </span><span class="annot"><a href="#local-6989586621679628786"><span class="hs-identifier hs-type">built</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Deps.html#BuildTermMethod"><span class="hs-identifier hs-type">BuildTermMethod</span></a></span><span>
-</span><span id="line-402"></span><span>    </span><span id="local-6989586621679628786"><span class="annot"><span class="annottext">built :: BuildTermFunc
+</span><span id="line-396"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-397"></span><span>    </span><span class="annot"><a href="#local-6989586621679628786"><span class="hs-identifier hs-type">built</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Deps.html#BuildTermMethod"><span class="hs-identifier hs-type">BuildTermMethod</span></a></span><span>
+</span><span id="line-398"></span><span>    </span><span id="local-6989586621679628786"><span class="annot"><span class="annottext">built :: BuildTermFunc
 </span><a href="#local-6989586621679628786"><span class="hs-identifier hs-var hs-var">built</span></a></span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;named&quot;</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe Expression -&gt; BuildTermMethod
 </span><a href="Functions.html#nameOf"><span class="hs-identifier hs-var">nameOf</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Expression
 </span><a href="#local-6989586621679628763"><span class="hs-identifier hs-var">_universe</span></a></span><span>
-</span><span id="line-403"></span><span>    </span><span class="annot"><a href="#local-6989586621679628786"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span id="local-6989586621679628803"><span class="annot"><span class="annottext">String
+</span><span id="line-399"></span><span>    </span><span class="annot"><a href="#local-6989586621679628786"><span class="hs-identifier hs-var">built</span></a></span><span> </span><span id="local-6989586621679628803"><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679628803"><span class="hs-identifier hs-var">func</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BuildTermFunc
 </span><a href="#local-6989586621679628762"><span class="hs-identifier hs-var">_buildTerm</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679628803"><span class="hs-identifier hs-var">func</span></a></span><span>
-</span><span id="line-404"></span><span>
-</span><span id="line-405"></span><span class="hs-comment">-- Collect the constrained expression meta-variables with the given</span><span>
-</span><span id="line-406"></span><span class="hs-comment">-- one-character prefix used in a pattern. Each kind ('&#119899;'/'!n' normal-form,</span><span>
-</span><span id="line-407"></span><span class="hs-comment">-- '&#119896;'/'!k' absolute) lives in its own 'n'-/'k'-prefixed key-space, so a</span><span>
-</span><span id="line-408"></span><span class="hs-comment">-- pattern may freely mix them with plain '&#119890;' captures. An anonymous meta</span><span>
-</span><span id="line-409"></span><span class="hs-comment">-- carries the same prefix as the sigil it was written with, so a bare '&#119899;' is</span><span>
-</span><span id="line-410"></span><span class="hs-comment">-- held to the normal form just as '&#119899;1' is.</span><span>
-</span><span id="line-411"></span><span class="annot"><a href="Rule.html#metasWithPrefix"><span class="hs-identifier hs-type">metasWithPrefix</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">T.Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-412"></span><span id="metasWithPrefix"><span class="annot"><span class="annottext">metasWithPrefix :: Text -&gt; Expression -&gt; [Expression]
+</span><span id="line-400"></span><span>
+</span><span id="line-401"></span><span class="hs-comment">-- Collect the constrained expression meta-variables with the given</span><span>
+</span><span id="line-402"></span><span class="hs-comment">-- one-character prefix used in a pattern. Each kind ('&#119899;'/'!n' normal-form,</span><span>
+</span><span id="line-403"></span><span class="hs-comment">-- '&#119896;'/'!k' absolute) lives in its own 'n'-/'k'-prefixed key-space, so a</span><span>
+</span><span id="line-404"></span><span class="hs-comment">-- pattern may freely mix them with plain '&#119890;' captures. An anonymous meta</span><span>
+</span><span id="line-405"></span><span class="hs-comment">-- carries the same prefix as the sigil it was written with, so a bare '&#119899;' is</span><span>
+</span><span id="line-406"></span><span class="hs-comment">-- held to the normal form just as '&#119899;1' is.</span><span>
+</span><span id="line-407"></span><span class="annot"><a href="Rule.html#metasWithPrefix"><span class="hs-identifier hs-type">metasWithPrefix</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">T.Text</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-408"></span><span id="metasWithPrefix"><span class="annot"><span class="annottext">metasWithPrefix :: Text -&gt; Expression -&gt; [Expression]
 </span><a href="Rule.html#metasWithPrefix"><span class="hs-identifier hs-var hs-var">metasWithPrefix</span></a></span></span><span> </span><span id="local-6989586621679628805"><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628805"><span class="hs-identifier hs-var">prefix</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Expression] -&gt; [Expression]
 forall a. Eq a =&gt; [a] -&gt; [a]
@@ -1543,37 +1539,37 @@ forall a. Eq a =&gt; [a] -&gt; [a]
 forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span>
-</span><span id="line-413"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-414"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-415"></span><span>    </span><span id="local-6989586621679628806"><span class="annot"><span class="annottext">go :: Expression -&gt; [Expression]
+</span><span id="line-409"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-410"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-411"></span><span>    </span><span id="local-6989586621679628806"><span class="annot"><span class="annottext">go :: Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span id="local-6989586621679628807"><span class="annot"><span class="annottext">expr :: Expression
 </span><a href="#local-6989586621679628807"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExMeta"><span class="hs-identifier hs-type">ExMeta</span></a></span><span> </span><span id="local-6989586621679628808"><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628808"><span class="hs-identifier hs-var">mt</span></a></span></span><span class="hs-special">)</span><span>
-</span><span id="line-416"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+</span><span id="line-412"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
 </span><span class="hs-identifier hs-var">T.isPrefixOf</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628805"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628808"><span class="hs-identifier hs-var">mt</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628807"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-417"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-413"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-418"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679628810"><span class="annot"><span class="annottext">expr :: Expression
+</span><span id="line-414"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679628810"><span class="annot"><span class="annottext">expr :: Expression
 </span><a href="#local-6989586621679628810"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExAny"><span class="hs-identifier hs-type">ExAny</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span id="local-6989586621679628812"><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628812"><span class="hs-identifier hs-var">kind</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-419"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
+</span><span id="line-415"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Bool
 </span><span class="hs-identifier hs-var">T.isPrefixOf</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628805"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><a href="#local-6989586621679628812"><span class="hs-identifier hs-var">kind</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628810"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-420"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-416"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-421"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679628813"><span class="annot"><span class="annottext">[Binding]
+</span><span id="line-417"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679628813"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628813"><span class="hs-identifier hs-var">bds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Binding -&gt; [Expression]) -&gt; [Binding] -&gt; [Expression]
 forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
 </span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="annot"><span class="annottext">Binding -&gt; [Expression]
 </span><a href="#local-6989586621679628815"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628813"><span class="hs-identifier hs-var">bds</span></a></span><span>
-</span><span id="line-422"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679628816"><span class="annot"><span class="annottext">Expression
+</span><span id="line-418"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679628816"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628816"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span id="local-6989586621679628817"><span class="annot"><span class="annottext">Argument
 </span><a href="#local-6989586621679628817"><span class="hs-identifier hs-var">arg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
@@ -1582,55 +1578,55 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Argument -&gt; [Expression]
 </span><a href="#local-6989586621679628818"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
 </span><a href="#local-6989586621679628817"><span class="hs-identifier hs-var">arg</span></a></span><span>
-</span><span id="line-423"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679628819"><span class="annot"><span class="annottext">Expression
+</span><span id="line-419"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679628819"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628819"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628819"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-424"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-type">ExPhiMeet</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
+</span><span id="line-420"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-type">ExPhiMeet</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679628821"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628821"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628821"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-425"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-type">ExPhiAgain</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
+</span><span id="line-421"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-type">ExPhiAgain</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679628823"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628823"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628823"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-426"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-422"></span><span>    </span><span class="annot"><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-427"></span><span>    </span><span class="annot"><a href="#local-6989586621679628815"><span class="hs-identifier hs-type">goBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-428"></span><span>    </span><span id="local-6989586621679628815"><span class="annot"><span class="annottext">goBinding :: Binding -&gt; [Expression]
+</span><span id="line-423"></span><span>    </span><span class="annot"><a href="#local-6989586621679628815"><span class="hs-identifier hs-type">goBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-424"></span><span>    </span><span id="local-6989586621679628815"><span class="annot"><span class="annottext">goBinding :: Binding -&gt; [Expression]
 </span><a href="#local-6989586621679628815"><span class="hs-identifier hs-var hs-var">goBinding</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679628824"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628824"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628824"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-429"></span><span>    </span><span class="annot"><a href="#local-6989586621679628815"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><span id="line-425"></span><span>    </span><span class="annot"><a href="#local-6989586621679628815"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-430"></span><span>    </span><span class="annot"><a href="#local-6989586621679628818"><span class="hs-identifier hs-type">goArgument</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-431"></span><span>    </span><span id="local-6989586621679628818"><span class="annot"><span class="annottext">goArgument :: Argument -&gt; [Expression]
+</span><span id="line-426"></span><span>    </span><span class="annot"><a href="#local-6989586621679628818"><span class="hs-identifier hs-type">goArgument</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-427"></span><span>    </span><span id="local-6989586621679628818"><span class="annot"><span class="annottext">goArgument :: Argument -&gt; [Expression]
 </span><a href="#local-6989586621679628818"><span class="hs-identifier hs-var hs-var">goArgument</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArTau"><span class="hs-identifier hs-type">ArTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679628825"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628825"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628825"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-432"></span><span>    </span><span class="annot"><a href="#local-6989586621679628818"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArAlpha"><span class="hs-identifier hs-type">ArAlpha</span></a></span><span> </span><span class="annot"><span class="annottext">Alpha
+</span><span id="line-428"></span><span>    </span><span class="annot"><a href="#local-6989586621679628818"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArAlpha"><span class="hs-identifier hs-type">ArAlpha</span></a></span><span> </span><span class="annot"><span class="annottext">Alpha
 </span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679628826"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628826"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628806"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628826"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-433"></span><span>
-</span><span id="line-434"></span><span class="hs-comment">-- Match a rewriting rule against an expression and every place inside it.</span><span>
-</span><span id="line-435"></span><span class="hs-comment">-- The deep matcher is asked only where the pattern fits somewhere in the term</span><span>
-</span><span id="line-436"></span><span class="hs-comment">-- at all (see 'reachable'), since trying it at every place of a term holding</span><span>
-</span><span id="line-437"></span><span class="hs-comment">-- copies of big objects is what a rule that fits nowhere used to cost (#1453).</span><span>
-</span><span id="line-438"></span><span class="hs-comment">-- A rule that matches only a redex never looks inside an inert term (see</span><span>
-</span><span id="line-439"></span><span class="hs-comment">-- 'redex').</span><span>
-</span><span id="line-440"></span><span class="annot"><a href="Rule.html#matchExpressionWithRule"><span class="hs-identifier hs-type">matchExpressionWithRule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-441"></span><span id="matchExpressionWithRule"><span class="annot"><span class="annottext">matchExpressionWithRule :: Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
+</span><span id="line-429"></span><span>
+</span><span id="line-430"></span><span class="hs-comment">-- Match a rewriting rule against an expression and every place inside it.</span><span>
+</span><span id="line-431"></span><span class="hs-comment">-- The deep matcher is asked only where the pattern fits somewhere in the term</span><span>
+</span><span id="line-432"></span><span class="hs-comment">-- at all (see 'reachable'), since trying it at every place of a term holding</span><span>
+</span><span id="line-433"></span><span class="hs-comment">-- copies of big objects is what a rule that fits nowhere used to cost (#1453).</span><span>
+</span><span id="line-434"></span><span class="hs-comment">-- A rule that matches only a redex never looks inside an inert term (see</span><span>
+</span><span id="line-435"></span><span class="hs-comment">-- 'redex').</span><span>
+</span><span id="line-436"></span><span class="annot"><a href="Rule.html#matchExpressionWithRule"><span class="hs-identifier hs-type">matchExpressionWithRule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-437"></span><span id="matchExpressionWithRule"><span class="annot"><span class="annottext">matchExpressionWithRule :: Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#matchExpressionWithRule"><span class="hs-identifier hs-var hs-var">matchExpressionWithRule</span></a></span></span><span> </span><span id="local-6989586621679628827"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628827"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679628828"><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628828"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
@@ -1641,16 +1637,16 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><a href="Matcher.html#substEmpty"><span class="hs-identifier hs-var">substEmpty</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628827"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628828"><span class="hs-identifier hs-var">rule</span></a></span><span>
-</span><span id="line-442"></span><span>
-</span><span id="line-443"></span><span class="hs-comment">-- The deep matcher of the rule, asked only where its pattern fits somewhere in</span><span>
-</span><span id="line-444"></span><span class="hs-comment">-- the term (see 'matchExpressionWithRule').</span><span>
-</span><span id="line-445"></span><span class="annot"><a href="Rule.html#deep"><span class="hs-identifier hs-type">deep</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Matcher.html#MatchExpressionFunc"><span class="hs-identifier hs-type">MatchExpressionFunc</span></a></span><span>
-</span><span id="line-446"></span><span id="deep"><span class="annot"><span class="annottext">deep :: Rule -&gt; MatchExpressionFunc
+</span><span id="line-438"></span><span>
+</span><span id="line-439"></span><span class="hs-comment">-- The deep matcher of the rule, asked only where its pattern fits somewhere in</span><span>
+</span><span id="line-440"></span><span class="hs-comment">-- the term (see 'matchExpressionWithRule').</span><span>
+</span><span id="line-441"></span><span class="annot"><a href="Rule.html#deep"><span class="hs-identifier hs-type">deep</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Matcher.html#MatchExpressionFunc"><span class="hs-identifier hs-type">MatchExpressionFunc</span></a></span><span>
+</span><span id="line-442"></span><span id="deep"><span class="annot"><span class="annottext">deep :: Rule -&gt; MatchExpressionFunc
 </span><a href="Rule.html#deep"><span class="hs-identifier hs-var hs-var">deep</span></a></span></span><span> </span><span id="local-6989586621679628830"><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628830"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span id="local-6989586621679628831"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628831"><span class="hs-identifier hs-var">ptn</span></a></span></span><span> </span><span id="local-6989586621679628832"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628832"><span class="hs-identifier hs-var">tgt</span></a></span></span><span>
-</span><span id="line-447"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expression -&gt; Expression -&gt; Bool
+</span><span id="line-443"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Expression -&gt; Expression -&gt; Bool
 </span><a href="Matcher.html#reachable%27"><span class="hs-identifier hs-var">reachable'</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Rule -&gt; Bool
 </span><a href="Rule.html#redex"><span class="hs-identifier hs-var">redex</span></a></span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628830"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expression
@@ -1661,31 +1657,31 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><a href="#local-6989586621679628830"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628831"><span class="hs-identifier hs-var">ptn</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628832"><span class="hs-identifier hs-var">tgt</span></a></span><span>
-</span><span id="line-448"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-444"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-449"></span><span>
-</span><span id="line-450"></span><span class="hs-comment">-- Whether every match of the rule its 'when' lets through stands at a place</span><span>
-</span><span id="line-451"></span><span class="hs-comment">-- no 'inert' term holds, judged by the pattern and the 'when' alone, so it</span><span>
-</span><span id="line-452"></span><span class="hs-comment">-- holds for a rule of phino and for a rule of the user alike. A pattern</span><span>
-</span><span id="line-453"></span><span class="hs-comment">-- dispatching on or applying a formation or &#8869; matches only such a place, and</span><span>
-</span><span id="line-454"></span><span class="hs-comment">-- so does a formation pattern holding both &#955; and &#916;, counting those its 'when'</span><span>
-</span><span id="line-455"></span><span class="hs-comment">-- demands of its binding metas through 'in', which is how 'dl' is one (#1453).</span><span>
-</span><span id="line-456"></span><span class="annot"><a href="Rule.html#redex"><span class="hs-identifier hs-type">redex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-457"></span><span id="redex"><span class="annot"><span class="annottext">redex :: Rule -&gt; Bool
+</span><span id="line-445"></span><span>
+</span><span id="line-446"></span><span class="hs-comment">-- Whether every match of the rule its 'when' lets through stands at a place</span><span>
+</span><span id="line-447"></span><span class="hs-comment">-- no 'inert' term holds, judged by the pattern and the 'when' alone, so it</span><span>
+</span><span id="line-448"></span><span class="hs-comment">-- holds for a rule of phino and for a rule of the user alike. A pattern</span><span>
+</span><span id="line-449"></span><span class="hs-comment">-- dispatching on or applying a formation or &#8869; matches only such a place, and</span><span>
+</span><span id="line-450"></span><span class="hs-comment">-- so does a formation pattern holding both &#955; and &#916;, counting those its 'when'</span><span>
+</span><span id="line-451"></span><span class="hs-comment">-- demands of its binding metas through 'in', which is how 'dl' is one (#1453).</span><span>
+</span><span id="line-452"></span><span class="annot"><a href="Rule.html#redex"><span class="hs-identifier hs-type">redex</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-453"></span><span id="redex"><span class="annot"><span class="annottext">redex :: Rule -&gt; Bool
 </span><a href="Rule.html#redex"><span class="hs-identifier hs-var hs-var">redex</span></a></span></span><span> </span><span id="local-6989586621679628835"><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628835"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628835"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">pattern</span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-458"></span><span>  </span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679628836"><span class="annot"><span class="annottext">Expression
+</span><span id="line-454"></span><span>  </span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679628836"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628836"><span class="hs-identifier hs-var">head'</span></a></span></span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
 </span><a href="#local-6989586621679628837"><span class="hs-identifier hs-var">stuck</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628836"><span class="hs-identifier hs-var">head'</span></a></span><span>
-</span><span id="line-459"></span><span>  </span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679628838"><span class="annot"><span class="annottext">Expression
+</span><span id="line-455"></span><span>  </span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679628838"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628838"><span class="hs-identifier hs-var">head'</span></a></span></span><span> </span><span class="annot"><span class="annottext">Argument
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Bool
 </span><a href="#local-6989586621679628837"><span class="hs-identifier hs-var">stuck</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628838"><span class="hs-identifier hs-var">head'</span></a></span><span>
-</span><span id="line-460"></span><span>  </span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679628839"><span class="annot"><span class="annottext">[Binding]
+</span><span id="line-456"></span><span>  </span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679628839"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628839"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Attribute -&gt; Bool) -&gt; [Attribute] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">all</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; [Attribute] -&gt; Bool
@@ -1706,38 +1702,38 @@ forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
 </span><a href="#local-6989586621679628835"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">when</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Attribute
 </span><a href="AST.html#AtLambda"><span class="hs-identifier hs-var">AtLambda</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Attribute
 </span><a href="AST.html#AtDelta"><span class="hs-identifier hs-var">AtDelta</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-461"></span><span>  </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-457"></span><span>  </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-462"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-463"></span><span>    </span><span class="annot"><a href="#local-6989586621679628837"><span class="hs-identifier hs-type">stuck</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-464"></span><span>    </span><span id="local-6989586621679628837"><span class="annot"><span class="annottext">stuck :: Expression -&gt; Bool
+</span><span id="line-458"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-459"></span><span>    </span><span class="annot"><a href="#local-6989586621679628837"><span class="hs-identifier hs-type">stuck</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-460"></span><span>    </span><span id="local-6989586621679628837"><span class="annot"><span class="annottext">stuck :: Expression -&gt; Bool
 </span><a href="#local-6989586621679628837"><span class="hs-identifier hs-var hs-var">stuck</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-465"></span><span>    </span><span class="annot"><a href="#local-6989586621679628837"><span class="hs-identifier hs-var">stuck</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-461"></span><span>    </span><span class="annot"><a href="#local-6989586621679628837"><span class="hs-identifier hs-var">stuck</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="AST.html#ExTermination"><span class="hs-identifier hs-var">ExTermination</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-466"></span><span>    </span><span class="annot"><a href="#local-6989586621679628837"><span class="hs-identifier hs-var">stuck</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-462"></span><span>    </span><span class="annot"><a href="#local-6989586621679628837"><span class="hs-identifier hs-var">stuck</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-467"></span><span>    </span><span class="annot"><a href="#local-6989586621679628841"><span class="hs-identifier hs-type">attribute</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-468"></span><span>    </span><span id="local-6989586621679628841"><span class="annot"><span class="annottext">attribute :: Binding -&gt; [Attribute]
+</span><span id="line-463"></span><span>    </span><span class="annot"><a href="#local-6989586621679628841"><span class="hs-identifier hs-type">attribute</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-464"></span><span>    </span><span id="local-6989586621679628841"><span class="annot"><span class="annottext">attribute :: Binding -&gt; [Attribute]
 </span><a href="#local-6989586621679628841"><span class="hs-identifier hs-var hs-var">attribute</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiLambda"><span class="hs-identifier hs-type">BiLambda</span></a></span><span> </span><span class="annot"><span class="annottext">Function
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Attribute
 </span><a href="AST.html#AtLambda"><span class="hs-identifier hs-var">AtLambda</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-469"></span><span>    </span><span class="annot"><a href="#local-6989586621679628841"><span class="hs-identifier hs-var">attribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiDelta"><span class="hs-identifier hs-type">BiDelta</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
+</span><span id="line-465"></span><span>    </span><span class="annot"><a href="#local-6989586621679628841"><span class="hs-identifier hs-var">attribute</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiDelta"><span class="hs-identifier hs-type">BiDelta</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">Attribute
 </span><a href="AST.html#AtDelta"><span class="hs-identifier hs-var">AtDelta</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-470"></span><span>    </span><span class="annot"><a href="#local-6989586621679628841"><span class="hs-identifier hs-var">attribute</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><span id="line-466"></span><span>    </span><span class="annot"><a href="#local-6989586621679628841"><span class="hs-identifier hs-var">attribute</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-471"></span><span>    </span><span class="annot"><a href="#local-6989586621679628843"><span class="hs-identifier hs-type">demanded</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Y.Condition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-472"></span><span>    </span><span id="local-6989586621679628843"><span class="annot"><span class="annottext">demanded :: [Binding] -&gt; Condition -&gt; [Attribute]
+</span><span id="line-467"></span><span>    </span><span class="annot"><a href="#local-6989586621679628843"><span class="hs-identifier hs-type">demanded</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Y.Condition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Attribute"><span class="hs-identifier hs-type">Attribute</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-468"></span><span>    </span><span id="local-6989586621679628843"><span class="annot"><span class="annottext">demanded :: [Binding] -&gt; Condition -&gt; [Attribute]
 </span><a href="#local-6989586621679628843"><span class="hs-identifier hs-var hs-var">demanded</span></a></span></span><span> </span><span id="local-6989586621679628844"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628844"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#In"><span class="hs-identifier hs-type">Y.In</span></a></span><span> </span><span id="local-6989586621679628845"><span class="annot"><span class="annottext">[Attribute]
 </span><a href="#local-6989586621679628845"><span class="hs-identifier hs-var">attrs</span></a></span></span><span> </span><span id="local-6989586621679628846"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628846"><span class="hs-identifier hs-var">metas</span></a></span></span><span class="hs-special">)</span><span>
-</span><span id="line-473"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">(Binding -&gt; Bool) -&gt; [Binding] -&gt; Bool
+</span><span id="line-469"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">(Binding -&gt; Bool) -&gt; [Binding] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">all</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679628847"><span class="annot"><span class="annottext">Binding
 </span><a href="#local-6989586621679628847"><span class="hs-identifier hs-var">meta</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Binding -&gt; Bool
@@ -1751,7 +1747,7 @@ forall (t :: * -&gt; *) a. (Foldable t, Eq a) =&gt; a -&gt; t a -&gt; Bool
 </span><a href="#local-6989586621679628844"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628846"><span class="hs-identifier hs-var">metas</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Attribute]
 </span><a href="#local-6989586621679628845"><span class="hs-identifier hs-var">attrs</span></a></span><span>
-</span><span id="line-474"></span><span>    </span><span class="annot"><a href="#local-6989586621679628843"><span class="hs-identifier hs-var">demanded</span></a></span><span> </span><span id="local-6989586621679628849"><span class="annot"><span class="annottext">[Binding]
+</span><span id="line-470"></span><span>    </span><span class="annot"><a href="#local-6989586621679628843"><span class="hs-identifier hs-var">demanded</span></a></span><span> </span><span id="local-6989586621679628849"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628849"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#And"><span class="hs-identifier hs-type">Y.And</span></a></span><span> </span><span id="local-6989586621679628850"><span class="annot"><span class="annottext">[Condition]
 </span><a href="#local-6989586621679628850"><span class="hs-identifier hs-var">conds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Condition -&gt; [Attribute]) -&gt; [Condition] -&gt; [Attribute]
 forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
@@ -1759,7 +1755,7 @@ forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
 </span><a href="#local-6989586621679628843"><span class="hs-identifier hs-var">demanded</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628849"><span class="hs-identifier hs-var">bds</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Condition]
 </span><a href="#local-6989586621679628850"><span class="hs-identifier hs-var">conds</span></a></span><span>
-</span><span id="line-475"></span><span>    </span><span class="annot"><a href="#local-6989586621679628843"><span class="hs-identifier hs-var">demanded</span></a></span><span> </span><span id="local-6989586621679628851"><span class="annot"><span class="annottext">[Binding]
+</span><span id="line-471"></span><span>    </span><span class="annot"><a href="#local-6989586621679628843"><span class="hs-identifier hs-var">demanded</span></a></span><span> </span><span id="local-6989586621679628851"><span class="annot"><span class="annottext">[Binding]
 </span><a href="#local-6989586621679628851"><span class="hs-identifier hs-var">bds</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Yaml.html#Or"><span class="hs-identifier hs-type">Y.Or</span></a></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679628852"><span class="annot"><span class="annottext">Condition
 </span><a href="#local-6989586621679628852"><span class="hs-identifier hs-var">cond</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679628853"><span class="annot"><span class="annottext">[Condition]
 </span><a href="#local-6989586621679628853"><span class="hs-identifier hs-var">conds</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Attribute] -&gt; Condition -&gt; [Attribute])
@@ -1781,37 +1777,37 @@ forall a. Eq a =&gt; [a] -&gt; [a] -&gt; [a]
 </span><a href="#local-6989586621679628851"><span class="hs-identifier hs-var">bds</span></a></span><span> </span><span class="annot"><span class="annottext">Condition
 </span><a href="#local-6989586621679628852"><span class="hs-identifier hs-var">cond</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Condition]
 </span><a href="#local-6989586621679628853"><span class="hs-identifier hs-var">conds</span></a></span><span>
-</span><span id="line-476"></span><span>    </span><span class="annot"><a href="#local-6989586621679628843"><span class="hs-identifier hs-var">demanded</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><span id="line-472"></span><span>    </span><span class="annot"><a href="#local-6989586621679628843"><span class="hs-identifier hs-var">demanded</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Condition
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-477"></span><span>    </span><span class="annot"><a href="#local-6989586621679628848"><span class="hs-identifier hs-type">isMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-478"></span><span>    </span><span id="local-6989586621679628848"><span class="annot"><span class="annottext">isMeta :: Binding -&gt; Bool
+</span><span id="line-473"></span><span>    </span><span class="annot"><a href="#local-6989586621679628848"><span class="hs-identifier hs-type">isMeta</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-474"></span><span>    </span><span id="local-6989586621679628848"><span class="annot"><span class="annottext">isMeta :: Binding -&gt; Bool
 </span><a href="#local-6989586621679628848"><span class="hs-identifier hs-var hs-var">isMeta</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiMeta"><span class="hs-identifier hs-type">BiMeta</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-479"></span><span>    </span><span class="annot"><a href="#local-6989586621679628848"><span class="hs-identifier hs-var">isMeta</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><span id="line-475"></span><span>    </span><span class="annot"><a href="#local-6989586621679628848"><span class="hs-identifier hs-var">isMeta</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-480"></span><span>
-</span><span id="line-481"></span><span class="hs-comment">-- Like 'matchExpressionWithRule' but matches the pattern against the whole</span><span>
-</span><span id="line-482"></span><span class="hs-comment">-- expression only (no deep, sub-expression matching). Used by the dataization</span><span>
-</span><span id="line-483"></span><span class="hs-comment">-- and morphing driver, where a rule applies to the entire configuration rather</span><span>
-</span><span id="line-484"></span><span class="hs-comment">-- than to nested redexes. The leading '[Subst]' seeds matching with pre-bound</span><span>
-</span><span id="line-485"></span><span class="hs-comment">-- meta-variables: the morphing driver passes the global universe bound to 'e',</span><span>
-</span><span id="line-486"></span><span class="hs-comment">-- the second argument of &#120132;(n, e), so the 'universe' rule reads it directly instead</span><span>
-</span><span id="line-487"></span><span class="hs-comment">-- of through a 'global()' build-term function. Pass '[substEmpty]' for no seed.</span><span>
-</span><span id="line-488"></span><span class="annot"><a href="Rule.html#matchExpressionWithRule%27"><span class="hs-identifier hs-type">matchExpressionWithRule'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-489"></span><span id="matchExpressionWithRule%27"><span class="annot"><span class="annottext">matchExpressionWithRule' :: [Subst] -&gt; Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
+</span><span id="line-476"></span><span>
+</span><span id="line-477"></span><span class="hs-comment">-- Like 'matchExpressionWithRule' but matches the pattern against the whole</span><span>
+</span><span id="line-478"></span><span class="hs-comment">-- expression only (no deep, sub-expression matching). Used by the dataization</span><span>
+</span><span id="line-479"></span><span class="hs-comment">-- and morphing driver, where a rule applies to the entire configuration rather</span><span>
+</span><span id="line-480"></span><span class="hs-comment">-- than to nested redexes. The leading '[Subst]' seeds matching with pre-bound</span><span>
+</span><span id="line-481"></span><span class="hs-comment">-- meta-variables: the morphing driver passes the global universe bound to 'e',</span><span>
+</span><span id="line-482"></span><span class="hs-comment">-- the second argument of &#120132;(n, e), so the 'universe' rule reads it directly instead</span><span>
+</span><span id="line-483"></span><span class="hs-comment">-- of through a 'global()' build-term function. Pass '[substEmpty]' for no seed.</span><span>
+</span><span id="line-484"></span><span class="annot"><a href="Rule.html#matchExpressionWithRule%27"><span class="hs-identifier hs-type">matchExpressionWithRule'</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-485"></span><span id="matchExpressionWithRule%27"><span class="annot"><span class="annottext">matchExpressionWithRule' :: [Subst] -&gt; Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#matchExpressionWithRule%27"><span class="hs-identifier hs-var hs-var">matchExpressionWithRule'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
 -&gt; [Subst] -&gt; Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#matchExpressionBy"><span class="hs-identifier hs-var">matchExpressionBy</span></a></span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
 </span><a href="Matcher.html#matchExpression%27"><span class="hs-identifier hs-var">matchExpression'</span></a></span><span>
-</span><span id="line-490"></span><span>
-</span><span id="line-491"></span><span class="hs-comment">-- The seed substitutions are combined into every match, so a pre-bound meta in</span><span>
-</span><span id="line-492"></span><span class="hs-comment">-- the seed is dropped only when the pattern binds the same name to a different</span><span>
-</span><span id="line-493"></span><span class="hs-comment">-- value; rules that do not mention the name simply carry it along unused.</span><span>
-</span><span id="line-494"></span><span class="annot"><a href="Rule.html#matchExpressionBy"><span class="hs-identifier hs-type">matchExpressionBy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Matcher.html#MatchExpressionFunc"><span class="hs-identifier hs-type">MatchExpressionFunc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-495"></span><span id="matchExpressionBy"><span class="annot"><span class="annottext">matchExpressionBy :: MatchExpressionFunc
+</span><span id="line-486"></span><span>
+</span><span id="line-487"></span><span class="hs-comment">-- The seed substitutions are combined into every match, so a pre-bound meta in</span><span>
+</span><span id="line-488"></span><span class="hs-comment">-- the seed is dropped only when the pattern binds the same name to a different</span><span>
+</span><span id="line-489"></span><span class="hs-comment">-- value; rules that do not mention the name simply carry it along unused.</span><span>
+</span><span id="line-490"></span><span class="annot"><a href="Rule.html#matchExpressionBy"><span class="hs-identifier hs-type">matchExpressionBy</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Matcher.html#MatchExpressionFunc"><span class="hs-identifier hs-type">MatchExpressionFunc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-491"></span><span id="matchExpressionBy"><span class="annot"><span class="annottext">matchExpressionBy :: MatchExpressionFunc
 -&gt; [Subst] -&gt; Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#matchExpressionBy"><span class="hs-identifier hs-var hs-var">matchExpressionBy</span></a></span></span><span> </span><span id="local-6989586621679628857"><span class="annot"><span class="annottext">MatchExpressionFunc
 </span><a href="#local-6989586621679628857"><span class="hs-identifier hs-var">matcher</span></a></span></span><span> </span><span id="local-6989586621679628858"><span class="annot"><span class="annottext">[Subst]
@@ -1819,7 +1815,7 @@ forall a. Eq a =&gt; [a] -&gt; [a] -&gt; [a]
 </span><a href="#local-6989586621679628859"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679628860"><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628860"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span id="local-6989586621679628861"><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628861"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-496"></span><span>  </span><span id="local-6989586621679628862"><span class="annot"><span class="annottext">[Subst]
+</span><span id="line-492"></span><span>  </span><span id="local-6989586621679628862"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628862"><span class="hs-identifier hs-var">when'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
 -&gt; [Subst] -&gt; Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#admitted"><span class="hs-identifier hs-var">admitted</span></a></span><span> </span><span class="annot"><span class="annottext">MatchExpressionFunc
@@ -1828,49 +1824,49 @@ forall a. Eq a =&gt; [a] -&gt; [a] -&gt; [a]
 </span><a href="#local-6989586621679628859"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628860"><span class="hs-identifier hs-var">rule</span></a></span><span> </span><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628861"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-497"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
+</span><span id="line-493"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628862"><span class="hs-identifier hs-var">when'</span></a></span><span>
-</span><span id="line-498"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
+</span><span id="line-494"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-499"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-500"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-495"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-496"></span><span>      </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Rule %s&quot;</span></span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628860"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">name</span><span class="hs-special">)</span><span>
-</span><span id="line-501"></span><span>      </span><span id="local-6989586621679628863"><span class="annot"><span class="annottext">[Subst]
+</span><span id="line-497"></span><span>      </span><span id="local-6989586621679628863"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628863"><span class="hs-identifier hs-var">extended</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Maybe [Extra] -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#extraSubstitutions"><span class="hs-identifier hs-var">extraSubstitutions</span></a></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628862"><span class="hs-identifier hs-var">when'</span></a></span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628860"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">where_</span><span> </span><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628861"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-502"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
+</span><span id="line-498"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628863"><span class="hs-identifier hs-var">extended</span></a></span><span>
-</span><span id="line-503"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-504"></span><span>          </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-499"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-500"></span><span>          </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Substitution is empty after extending, maybe some metas are duplicated&quot;</span></span><span>
-</span><span id="line-505"></span><span>          </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
+</span><span id="line-501"></span><span>          </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-506"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-507"></span><span>          </span><span id="local-6989586621679628864"><span class="annot"><span class="annottext">[Subst]
+</span><span id="line-502"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-503"></span><span>          </span><span id="local-6989586621679628864"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628864"><span class="hs-identifier hs-var">met</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe Condition -&gt; [Subst] -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#meetMaybeCondition"><span class="hs-identifier hs-var">meetMaybeCondition</span></a></span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628860"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">having</span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628863"><span class="hs-identifier hs-var">extended</span></a></span><span> </span><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628861"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-508"></span><span>          </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-504"></span><span>          </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
 forall a. [a] -&gt; Bool
@@ -1879,16 +1875,16 @@ forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><a href="#local-6989586621679628864"><span class="hs-identifier hs-var">met</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;The 'having' condition wasn't met&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-509"></span><span>          </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
+</span><span id="line-505"></span><span>          </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628864"><span class="hs-identifier hs-var">met</span></a></span><span>
-</span><span id="line-510"></span><span>
-</span><span id="line-511"></span><span class="hs-comment">-- The matches of the rule its pattern, its '&#119899;' and '&#119896;' metas and its 'when'</span><span>
-</span><span id="line-512"></span><span class="hs-comment">-- let through, before its 'where' and its 'having' are asked anything.</span><span>
-</span><span id="line-513"></span><span class="annot"><a href="Rule.html#admitted"><span class="hs-identifier hs-type">admitted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Matcher.html#MatchExpressionFunc"><span class="hs-identifier hs-type">MatchExpressionFunc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-514"></span><span id="admitted"><span class="annot"><span class="annottext">admitted :: MatchExpressionFunc
+</span><span id="line-506"></span><span>
+</span><span id="line-507"></span><span class="hs-comment">-- The matches of the rule its pattern, its '&#119899;' and '&#119896;' metas and its 'when'</span><span>
+</span><span id="line-508"></span><span class="hs-comment">-- let through, before its 'where' and its 'having' are asked anything.</span><span>
+</span><span id="line-509"></span><span class="annot"><a href="Rule.html#admitted"><span class="hs-identifier hs-type">admitted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Matcher.html#MatchExpressionFunc"><span class="hs-identifier hs-type">MatchExpressionFunc</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Rule.html#RuleContext"><span class="hs-identifier hs-type">RuleContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Matcher.html#Subst"><span class="hs-identifier hs-type">Subst</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-510"></span><span id="admitted"><span class="annot"><span class="annottext">admitted :: MatchExpressionFunc
 -&gt; [Subst] -&gt; Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#admitted"><span class="hs-identifier hs-var hs-var">admitted</span></a></span></span><span> </span><span id="local-6989586621679628865"><span class="annot"><span class="annottext">MatchExpressionFunc
 </span><a href="#local-6989586621679628865"><span class="hs-identifier hs-var">matcher</span></a></span></span><span> </span><span id="local-6989586621679628866"><span class="annot"><span class="annottext">[Subst]
@@ -1896,23 +1892,23 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><a href="#local-6989586621679628867"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span id="local-6989586621679628868"><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628868"><span class="hs-identifier hs-var">rule</span></a></span></span><span> </span><span id="local-6989586621679628869"><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628869"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-515"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679628871"><span class="annot"><span class="annottext">ptn :: Expression
+</span><span id="line-511"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679628871"><span class="annot"><span class="annottext">ptn :: Expression
 </span><a href="#local-6989586621679628871"><span class="hs-identifier hs-var hs-var">ptn</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628868"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">pattern</span><span>
-</span><span id="line-516"></span><span>      </span><span id="local-6989586621679628872"><span class="annot"><span class="annottext">matched :: [Subst]
+</span><span id="line-512"></span><span>      </span><span id="local-6989586621679628872"><span class="annot"><span class="annottext">matched :: [Subst]
 </span><a href="#local-6989586621679628872"><span class="hs-identifier hs-var hs-var">matched</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; [Subst] -&gt; [Subst]
 </span><a href="Matcher.html#combineMany"><span class="hs-identifier hs-var">combineMany</span></a></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628866"><span class="hs-identifier hs-var">seed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">MatchExpressionFunc
 </span><a href="#local-6989586621679628865"><span class="hs-identifier hs-var">matcher</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628871"><span class="hs-identifier hs-var">ptn</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628867"><span class="hs-identifier hs-var">expr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-517"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
+</span><span id="line-513"></span><span>   </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628872"><span class="hs-identifier hs-var">matched</span></a></span><span>
-</span><span id="line-518"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-519"></span><span>          </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-514"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-515"></span><span>          </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; String -&gt; String -&gt; String
 forall r. PrintfType r =&gt; String -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">String
@@ -1921,15 +1917,12 @@ forall r. PrintfType r =&gt; String -&gt; r
 </span><a href="Printer.html#printExpression%27"><span class="hs-identifier hs-var">printExpression'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628871"><span class="hs-identifier hs-var">ptn</span></a></span><span> </span><span class="annot"><span class="annottext">PrintConfig
 </span><a href="Printer.html#logPrintConfig"><span class="hs-identifier hs-var">logPrintConfig</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-520"></span><span>          </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
+</span><span id="line-516"></span><span>          </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-521"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-522"></span><span>          </span><span class="hs-comment">-- A '&#119896;' meta-variable is absolute (&#119974; &#8838; &#119977;): check it is xi-free first</span><span>
-</span><span id="line-523"></span><span>          </span><span class="hs-comment">-- (cheap, structural), then fold its name into the same normal-form</span><span>
-</span><span id="line-524"></span><span>          </span><span class="hs-comment">-- check used for '&#119899;' metas, so 'isNF' is applied in a single place.</span><span>
-</span><span id="line-525"></span><span>          </span><span id="local-6989586621679628876"><span class="annot"><span class="annottext">[Subst]
+</span><span id="line-517"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-518"></span><span>          </span><span id="local-6989586621679628876"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628876"><span class="hs-identifier hs-var">inXiFree</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">([Subst] -&gt; Expression -&gt; IO [Subst])
 -&gt; [Subst] -&gt; [Expression] -&gt; IO [Subst]
 forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
@@ -1946,7 +1939,7 @@ forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
 </span><a href="#local-6989586621679628872"><span class="hs-identifier hs-var">matched</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628879"><span class="hs-identifier hs-var">kMetas</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628871"><span class="hs-identifier hs-var">ptn</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-526"></span><span>          </span><span id="local-6989586621679628880"><span class="annot"><span class="annottext">[Subst]
+</span><span id="line-519"></span><span>          </span><span id="local-6989586621679628880"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628880"><span class="hs-identifier hs-var">inNf</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">([Subst] -&gt; Expression -&gt; IO [Subst])
 -&gt; [Subst] -&gt; [Expression] -&gt; IO [Subst]
 forall (t :: * -&gt; *) (m :: * -&gt; *) b a.
@@ -1967,27 +1960,27 @@ forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628879"><span class="hs-identifier hs-var">kMetas</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679628871"><span class="hs-identifier hs-var">ptn</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-527"></span><span>          </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
+</span><span id="line-520"></span><span>          </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628880"><span class="hs-identifier hs-var">inNf</span></a></span><span>
-</span><span id="line-528"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-529"></span><span>              </span><span class="annot"><span class="annottext">String -&gt; IO ()
+</span><span id="line-521"></span><span>            </span><span class="hs-keyword">then</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-522"></span><span>              </span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;A '&#119899;'/'&#119896;' meta-variable is not in normal form, or a '&#119896;' meta-variable is not xi-free&quot;</span></span><span>
-</span><span id="line-530"></span><span>              </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
+</span><span id="line-523"></span><span>              </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
-</span><span id="line-531"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-532"></span><span>              </span><span id="local-6989586621679628884"><span class="annot"><span class="annottext">[Subst]
+</span><span id="line-524"></span><span>            </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-525"></span><span>              </span><span id="local-6989586621679628884"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628884"><span class="hs-identifier hs-var">when'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe Condition -&gt; [Subst] -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#meetMaybeCondition"><span class="hs-identifier hs-var">meetMaybeCondition</span></a></span><span> </span><span class="annot"><span class="annottext">Rule
 </span><a href="#local-6989586621679628868"><span class="hs-identifier hs-var">rule</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">when</span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628880"><span class="hs-identifier hs-var">inNf</span></a></span><span> </span><span class="annot"><span class="annottext">RuleContext
 </span><a href="#local-6989586621679628869"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-533"></span><span>              </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-526"></span><span>              </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
 forall a. [a] -&gt; Bool
@@ -1996,21 +1989,21 @@ forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><a href="#local-6989586621679628884"><span class="hs-identifier hs-var">when'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;The 'when' condition wasn't met&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-534"></span><span>              </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
+</span><span id="line-527"></span><span>              </span><span class="annot"><span class="annottext">[Subst] -&gt; IO [Subst]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679628884"><span class="hs-identifier hs-var">when'</span></a></span><span>
-</span><span id="line-535"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-536"></span><span>    </span><span class="annot"><a href="#local-6989586621679628883"><span class="hs-identifier hs-type">nfMetas</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-537"></span><span>    </span><span id="local-6989586621679628883"><span class="annot"><span class="annottext">nfMetas :: Expression -&gt; [Expression]
+</span><span id="line-528"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-529"></span><span>    </span><span class="annot"><a href="#local-6989586621679628883"><span class="hs-identifier hs-type">nfMetas</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-530"></span><span>    </span><span id="local-6989586621679628883"><span class="annot"><span class="annottext">nfMetas :: Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628883"><span class="hs-identifier hs-var hs-var">nfMetas</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Expression -&gt; [Expression]
 </span><a href="Rule.html#metasWithPrefix"><span class="hs-identifier hs-var">metasWithPrefix</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;n&quot;</span></span><span>
-</span><span id="line-538"></span><span>
-</span><span id="line-539"></span><span>    </span><span class="annot"><a href="#local-6989586621679628879"><span class="hs-identifier hs-type">kMetas</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-540"></span><span>    </span><span id="local-6989586621679628879"><span class="annot"><span class="annottext">kMetas :: Expression -&gt; [Expression]
+</span><span id="line-531"></span><span>
+</span><span id="line-532"></span><span>    </span><span class="annot"><a href="#local-6989586621679628879"><span class="hs-identifier hs-type">kMetas</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-533"></span><span>    </span><span id="local-6989586621679628879"><span class="annot"><span class="annottext">kMetas :: Expression -&gt; [Expression]
 </span><a href="#local-6989586621679628879"><span class="hs-identifier hs-var hs-var">kMetas</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text -&gt; Expression -&gt; [Expression]
 </span><a href="Rule.html#metasWithPrefix"><span class="hs-identifier hs-var">metasWithPrefix</span></a></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;k&quot;</span></span><span>
-</span><span id="line-541"></span></pre></body></html>
+</span><span id="line-534"></span></pre></body></html>

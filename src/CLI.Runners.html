@@ -857,11 +857,7 @@ Maybe FilePath -&gt; PrintContext -&gt; (SaveEvalFunc -&gt; IO a) -&gt; IO a
 </span><a href="#local-6989586621679637634"><span class="hs-identifier hs-var">printCtx</span></a></span><span>
 </span><span id="line-178"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679637647"><span class="annot"><span class="annottext">SaveEvalFunc
 </span><a href="#local-6989586621679637647"><span class="hs-identifier hs-var">record</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-179"></span><span>          </span><span class="hs-comment">-- The deep walk belongs to &#120132; alone (the '--deep' of 'morph'), since &#120123;</span><span>
-</span><span id="line-180"></span><span>          </span><span class="hs-comment">-- reduces what dataization demands and ends in bytes, so it is off</span><span>
-</span><span id="line-181"></span><span>          </span><span class="hs-comment">-- here; the cycle guard of '--acyclic' is not, since &#120123; recurses into</span><span>
-</span><span id="line-182"></span><span>          </span><span class="hs-comment">-- itself and a formation it enters again is a loop of its own (#1290).</span><span>
-</span><span id="line-183"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637648"><span class="annot"><span class="annottext">ctx :: ReduceContext
+</span><span id="line-179"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637648"><span class="annot"><span class="annottext">ctx :: ReduceContext
 </span><a href="#local-6989586621679637648"><span class="hs-identifier hs-var hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression
 -&gt; Expression
 -&gt; Maybe Expression
@@ -922,7 +918,7 @@ forall k a. Map k a
 </span><a href="#local-6989586621679637638"><span class="hs-identifier hs-var">save</span></a></span><span> </span><span class="annot"><span class="annottext">SaveEvalFunc
 </span><a href="#local-6989586621679637647"><span class="hs-identifier hs-var">record</span></a></span><span> </span><span class="annot"><span class="annottext">Engine
 </span><a href="#local-6989586621679637643"><span class="hs-identifier hs-var">linked</span></a></span><span>
-</span><span id="line-184"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621679637654"><span class="annot"><span class="annottext">Expression
+</span><span id="line-180"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621679637654"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637654"><span class="hs-identifier hs-var">universe</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679637655"><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679637655"><span class="hs-identifier hs-var">aiming</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 -&gt; Expression -&gt; ReduceContext -&gt; IO (Expression, ReduceContext)
@@ -930,21 +926,21 @@ forall k a. Map k a
 </span><a href="#local-6989586621679637575"><span class="hs-identifier hs-var">_inside</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637632"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679637648"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-185"></span><span>          </span><span class="annot"><span class="annottext">SaveEvalFunc -&gt; PrintContext -&gt; Judgment -&gt; Expression -&gt; IO ()
+</span><span id="line-181"></span><span>          </span><span class="annot"><span class="annottext">SaveEvalFunc -&gt; PrintContext -&gt; Judgment -&gt; Expression -&gt; IO ()
 </span><a href="CLI.Helpers.html#heading"><span class="hs-identifier hs-var">heading</span></a></span><span> </span><span class="annot"><span class="annottext">SaveEvalFunc
 </span><a href="#local-6989586621679637647"><span class="hs-identifier hs-var">record</span></a></span><span> </span><span class="annot"><span class="annottext">PrintContext
 </span><a href="#local-6989586621679637634"><span class="hs-identifier hs-var">printCtx</span></a></span><span> </span><span class="annot"><span class="annottext">Judgment
 </span><a href="Deps.html#Dataization"><span class="hs-identifier hs-var">Dataization</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679637655"><span class="hs-identifier hs-var">aiming</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_locator</span><span>
-</span><span id="line-186"></span><span>          </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-182"></span><span>          </span><span class="annot"><span class="annottext">Expression
 -&gt; State -&gt; ReduceContext -&gt; IO (Outcome, [Rewritten], State)
 </span><a href="Dataize.html#dataize"><span class="hs-identifier hs-var">dataize</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637654"><span class="hs-identifier hs-var">universe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; State
 </span><a href="CLI.Helpers.html#started"><span class="hs-identifier hs-var">started</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637654"><span class="hs-identifier hs-var">universe</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679637655"><span class="hs-identifier hs-var">aiming</span></a></span><span>
-</span><span id="line-187"></span><span>      </span><span class="hs-special">)</span><span>
-</span><span id="line-188"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-183"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-184"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637550"><span class="hs-identifier hs-var">_sequence</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Rewritten] -&gt; IO [Rewritten]
@@ -963,7 +959,7 @@ forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><span class="hs-identifier hs-var">putStrLn</span></span><span class="hs-special">)</span><span>
-</span><span id="line-189"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-185"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637556"><span class="hs-identifier hs-var">_quiet</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">PrintContext
@@ -983,13 +979,13 @@ forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><span class="hs-identifier hs-var">putStrLn</span></span><span class="hs-special">)</span><span>
-</span><span id="line-190"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-191"></span><span>    </span><span class="hs-comment">-- The bytes the run reached or, when '--partial' let it end on a &#955; function</span><span>
-</span><span id="line-192"></span><span>    </span><span class="hs-comment">-- that could not fire, the residual program, rendered like a rewriting</span><span>
-</span><span id="line-193"></span><span>    </span><span class="hs-comment">-- result: narrowed by '--show' and '--hide', canonized, in the output</span><span>
-</span><span id="line-194"></span><span>    </span><span class="hs-comment">-- format, narrowed to '--focus'.</span><span>
-</span><span id="line-195"></span><span>    </span><span class="annot"><a href="#local-6989586621679637661"><span class="hs-identifier hs-type">printOutcome</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#PrintContext"><span class="hs-identifier hs-type">PrintContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Dataize.html#Outcome"><span class="hs-identifier hs-type">Outcome</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-196"></span><span>    </span><span id="local-6989586621679637661"><span class="annot"><span class="annottext">printOutcome :: PrintContext
+</span><span id="line-186"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-comment">-- The bytes the run reached or, when '--partial' let it end on a &#955; function</span><span>
+</span><span id="line-188"></span><span>    </span><span class="hs-comment">-- that could not fire, the residual program, rendered like a rewriting</span><span>
+</span><span id="line-189"></span><span>    </span><span class="hs-comment">-- result: narrowed by '--show' and '--hide', canonized, in the output</span><span>
+</span><span id="line-190"></span><span>    </span><span class="hs-comment">-- format, narrowed to '--focus'.</span><span>
+</span><span id="line-191"></span><span>    </span><span class="annot"><a href="#local-6989586621679637661"><span class="hs-identifier hs-type">printOutcome</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#PrintContext"><span class="hs-identifier hs-type">PrintContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Dataize.html#Outcome"><span class="hs-identifier hs-type">Outcome</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-192"></span><span>    </span><span id="local-6989586621679637661"><span class="annot"><span class="annottext">printOutcome :: PrintContext
 -&gt; (Expression -&gt; IO Expression) -&gt; Outcome -&gt; IO FilePath
 </span><a href="#local-6989586621679637661"><span class="hs-identifier hs-var hs-var">printOutcome</span></a></span></span><span> </span><span class="annot"><span class="annottext">PrintContext
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
@@ -1000,54 +996,54 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bytes -&gt; FilePath
 </span><a href="Printer.html#printBytes"><span class="hs-identifier hs-var">P.printBytes</span></a></span><span> </span><span class="annot"><span class="annottext">Bytes
 </span><a href="#local-6989586621679637666"><span class="hs-identifier hs-var">bytes</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-197"></span><span>    </span><span class="annot"><a href="#local-6989586621679637661"><span class="hs-identifier hs-var">printOutcome</span></a></span><span> </span><span id="local-6989586621679637668"><span class="annot"><span class="annottext">PrintContext
+</span><span id="line-193"></span><span>    </span><span class="annot"><a href="#local-6989586621679637661"><span class="hs-identifier hs-var">printOutcome</span></a></span><span> </span><span id="local-6989586621679637668"><span class="annot"><span class="annottext">PrintContext
 </span><a href="#local-6989586621679637668"><span class="hs-identifier hs-var">ctx</span></a></span></span><span> </span><span id="local-6989586621679637669"><span class="annot"><span class="annottext">Expression -&gt; IO Expression
 </span><a href="#local-6989586621679637669"><span class="hs-identifier hs-var">narrowed</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Dataize.html#Residual"><span class="hs-identifier hs-type">Residual</span></a></span><span> </span><span id="local-6989586621679637671"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637671"><span class="hs-identifier hs-var">residue</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-198"></span><span>      </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><span id="line-194"></span><span>      </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Dataization got stuck on a &#955; function that cannot fire, printing the residual program (--partial)&quot;</span></span><span>
-</span><span id="line-199"></span><span>      </span><span id="local-6989586621679637672"><span class="annot"><span class="annottext">Expression
+</span><span id="line-195"></span><span>      </span><span id="local-6989586621679637672"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637672"><span class="hs-identifier hs-var">answer</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; IO Expression
 </span><a href="#local-6989586621679637669"><span class="hs-identifier hs-var">narrowed</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637671"><span class="hs-identifier hs-var">residue</span></a></span><span>
-</span><span id="line-200"></span><span>      </span><span class="annot"><span class="annottext">IOFormat -&gt; Expression -&gt; IO ()
+</span><span id="line-196"></span><span>      </span><span class="annot"><span class="annottext">IOFormat -&gt; Expression -&gt; IO ()
 </span><a href="CLI.Validators.html#validateXmirTopLevel"><span class="hs-identifier hs-var">validateXmirTopLevel</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637543"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637672"><span class="hs-identifier hs-var">answer</span></a></span><span>
-</span><span id="line-201"></span><span>      </span><span class="annot"><span class="annottext">PrintContext -&gt; Expression -&gt; IO FilePath
+</span><span id="line-197"></span><span>      </span><span class="annot"><span class="annottext">PrintContext -&gt; Expression -&gt; IO FilePath
 </span><a href="CLI.Helpers.html#printAnswer"><span class="hs-identifier hs-var">printAnswer</span></a></span><span> </span><span class="annot"><span class="annottext">PrintContext
 </span><a href="#local-6989586621679637668"><span class="hs-identifier hs-var">ctx</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637672"><span class="hs-identifier hs-var">answer</span></a></span><span>
-</span><span id="line-202"></span><span>    </span><span class="annot"><a href="#local-6989586621679637622"><span class="hs-identifier hs-type">validateOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-203"></span><span>    </span><span id="local-6989586621679637622"><span class="annot"><span class="annottext">validateOpts :: IO ()
+</span><span id="line-198"></span><span>    </span><span class="annot"><a href="#local-6989586621679637622"><span class="hs-identifier hs-type">validateOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-199"></span><span>    </span><span id="local-6989586621679637622"><span class="annot"><span class="annottext">validateOpts :: IO ()
 </span><a href="#local-6989586621679637622"><span class="hs-identifier hs-var hs-var">validateOpts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-204"></span><span>      </span><span class="annot"><span class="annottext">IOFormat
+</span><span id="line-200"></span><span>      </span><span class="annot"><span class="annottext">IOFormat
 -&gt; [(Bool, FilePath)]
 -&gt; [(Maybe FilePath, FilePath)]
 -&gt; [(Maybe Int, FilePath)]
 -&gt; IO ()
 </span><a href="CLI.Validators.html#validateLatexOptions"><span class="hs-identifier hs-var">validateLatexOptions</span></a></span><span>
-</span><span id="line-205"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
+</span><span id="line-201"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637543"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span>
-</span><span id="line-206"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><span id="line-202"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637549"><span class="hs-identifier hs-var">_nonumber</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;nonumber&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637559"><span class="hs-identifier hs-var">_compress</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;compress&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-207"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-203"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637572"><span class="hs-identifier hs-var">_expression</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;expression&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637573"><span class="hs-identifier hs-var">_label</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;label&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637574"><span class="hs-identifier hs-var">_meetPrefix</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;meet-prefix&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-208"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int
+</span><span id="line-204"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637566"><span class="hs-identifier hs-var">_meetPopularity</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;meet-popularity&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637567"><span class="hs-identifier hs-var">_meetLength</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;meet-length&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-209"></span><span>      </span><span class="annot"><span class="annottext">IOFormat -&gt; [(Bool, FilePath)] -&gt; FilePath -&gt; IO ()
+</span><span id="line-205"></span><span>      </span><span class="annot"><span class="annottext">IOFormat -&gt; [(Bool, FilePath)] -&gt; FilePath -&gt; IO ()
 </span><a href="CLI.Validators.html#validateXmirOptions"><span class="hs-identifier hs-var">validateXmirOptions</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637543"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637547"><span class="hs-identifier hs-var">_omitListing</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
@@ -1055,7 +1051,7 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><a href="#local-6989586621679637548"><span class="hs-identifier hs-var">_omitComments</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;omit-comments&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637571"><span class="hs-identifier hs-var">_focus</span></a></span><span>
-</span><span id="line-210"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-206"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[FilePath] -&gt; Int
 forall a. [a] -&gt; Int
@@ -1068,7 +1064,7 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The option --show can be used only once&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-211"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-207"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Bool
 forall a. Maybe a -&gt; Bool
@@ -1081,10 +1077,10 @@ forall a. Maybe a -&gt; Bool
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The option --abridged requires --protocol, since only the protocol is abridged&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-212"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-208"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span>
-</span><span id="line-213"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Bool
+</span><span id="line-209"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Bool
 forall a. Maybe a -&gt; Bool
 </span><span class="hs-identifier hs-var">isJust</span></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637575"><span class="hs-identifier hs-var">_inside</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
@@ -1093,16 +1089,16 @@ forall a. Maybe a -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Q&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-214"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><span id="line-210"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-215"></span><span>    </span><span class="annot"><a href="#local-6989586621679637635"><span class="hs-identifier hs-type">toPrintCtx</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="XMIR.html#Atoms"><span class="hs-identifier hs-type">Atoms</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CLI.Types.html#PrintContext"><span class="hs-identifier hs-type">PrintContext</span></a></span><span>
-</span><span id="line-216"></span><span>    </span><span id="local-6989586621679637635"><span class="annot"><span class="annottext">toPrintCtx :: Atoms -&gt; Expression -&gt; PrintContext
+</span><span id="line-211"></span><span>    </span><span class="annot"><a href="#local-6989586621679637635"><span class="hs-identifier hs-type">toPrintCtx</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="XMIR.html#Atoms"><span class="hs-identifier hs-type">Atoms</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CLI.Types.html#PrintContext"><span class="hs-identifier hs-type">PrintContext</span></a></span><span>
+</span><span id="line-212"></span><span>    </span><span id="local-6989586621679637635"><span class="annot"><span class="annottext">toPrintCtx :: Atoms -&gt; Expression -&gt; PrintContext
 </span><a href="#local-6989586621679637635"><span class="hs-identifier hs-var hs-var">toPrintCtx</span></a></span></span><span> </span><span id="local-6989586621679637674"><span class="annot"><span class="annottext">Atoms
 </span><a href="#local-6989586621679637674"><span class="hs-identifier hs-var">atoms</span></a></span></span><span> </span><span id="local-6989586621679637675"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637675"><span class="hs-identifier hs-var">focus</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-217"></span><span>      </span><span class="annot"><span class="annottext">SugarType
+</span><span id="line-213"></span><span>      </span><span class="annot"><span class="annottext">SugarType
 -&gt; Bool
 -&gt; Maybe Int
 -&gt; LineFormat
@@ -1122,17 +1118,17 @@ forall a. FilePath -&gt; IO a
 -&gt; IOFormat
 -&gt; PrintContext
 </span><a href="CLI.Types.html#PrintCtx"><span class="hs-identifier hs-var">PrintCtx</span></a></span><span>
-</span><span id="line-218"></span><span>        </span><span class="annot"><span class="annottext">SugarType
+</span><span id="line-214"></span><span>        </span><span class="annot"><span class="annottext">SugarType
 </span><a href="#local-6989586621679637544"><span class="hs-identifier hs-var">_sugarType</span></a></span><span>
-</span><span id="line-219"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-215"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637545"><span class="hs-identifier hs-var">_hideRho</span></a></span><span>
-</span><span id="line-220"></span><span>        </span><span class="annot"><span class="annottext">Maybe Int
+</span><span id="line-216"></span><span>        </span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637578"><span class="hs-identifier hs-var">_abridged</span></a></span><span>
-</span><span id="line-221"></span><span>        </span><span class="annot"><span class="annottext">LineFormat
+</span><span id="line-217"></span><span>        </span><span class="annot"><span class="annottext">LineFormat
 </span><a href="#local-6989586621679637546"><span class="hs-identifier hs-var">_flat</span></a></span><span>
-</span><span id="line-222"></span><span>        </span><span class="annot"><span class="annottext">Int
+</span><span id="line-218"></span><span>        </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637565"><span class="hs-identifier hs-var">_margin</span></a></span><span>
-</span><span id="line-223"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><span id="line-219"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 -&gt; Bool -&gt; Bool -&gt; (Expression -&gt; FilePath) -&gt; Atoms -&gt; XmirContext
 </span><a href="XMIR.html#XmirContext"><span class="hs-identifier hs-var">XmirContext</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637547"><span class="hs-identifier hs-var">_omitListing</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
@@ -1140,37 +1136,37 @@ forall a. FilePath -&gt; IO a
 </span><a href="#local-6989586621679637545"><span class="hs-identifier hs-var">_hideRho</span></a></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; FilePath
 </span><a href="#local-6989586621679637676"><span class="hs-identifier hs-var">listing</span></a></span><span> </span><span class="annot"><span class="annottext">Atoms
 </span><a href="#local-6989586621679637674"><span class="hs-identifier hs-var">atoms</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-224"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-220"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637549"><span class="hs-identifier hs-var">_nonumber</span></a></span><span>
-</span><span id="line-225"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-221"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637559"><span class="hs-identifier hs-var">_compress</span></a></span><span>
-</span><span id="line-226"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-222"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637552"><span class="hs-identifier hs-var">_canonize</span></a></span><span>
-</span><span id="line-227"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-223"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637550"><span class="hs-identifier hs-var">_sequence</span></a></span><span>
-</span><span id="line-228"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-224"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637551"><span class="hs-identifier hs-var">_headers</span></a></span><span>
-</span><span id="line-229"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
+</span><span id="line-225"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
 </span><a href="CLI.Helpers.html#justMeetPopularity"><span class="hs-identifier hs-var">justMeetPopularity</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637566"><span class="hs-identifier hs-var">_meetPopularity</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-230"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
+</span><span id="line-226"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
 </span><a href="CLI.Helpers.html#justMeetLength"><span class="hs-identifier hs-var">justMeetLength</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637567"><span class="hs-identifier hs-var">_meetLength</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-231"></span><span>        </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-227"></span><span>        </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637675"><span class="hs-identifier hs-var">focus</span></a></span><span>
-</span><span id="line-232"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-228"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637572"><span class="hs-identifier hs-var">_expression</span></a></span><span>
-</span><span id="line-233"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-229"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637573"><span class="hs-identifier hs-var">_label</span></a></span><span>
-</span><span id="line-234"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-230"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637574"><span class="hs-identifier hs-var">_meetPrefix</span></a></span><span>
-</span><span id="line-235"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
+</span><span id="line-231"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637543"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span>
-</span><span id="line-236"></span><span>    </span><span class="hs-comment">-- The listing of a dataization result is the &#120593; text of the printed</span><span>
-</span><span id="line-237"></span><span>    </span><span class="hs-comment">-- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'</span><span>
-</span><span id="line-238"></span><span>    </span><span class="hs-comment">-- reach the XMIR writer through this context (#1076)</span><span>
-</span><span id="line-239"></span><span>    </span><span class="annot"><a href="#local-6989586621679637676"><span class="hs-identifier hs-type">listing</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-240"></span><span>    </span><span id="local-6989586621679637676"><span class="annot"><span class="annottext">listing :: Expression -&gt; FilePath
+</span><span id="line-232"></span><span>    </span><span class="hs-comment">-- The listing of a dataization result is the &#120593; text of the printed</span><span>
+</span><span id="line-233"></span><span>    </span><span class="hs-comment">-- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'</span><span>
+</span><span id="line-234"></span><span>    </span><span class="hs-comment">-- reach the XMIR writer through this context (#1076)</span><span>
+</span><span id="line-235"></span><span>    </span><span class="annot"><a href="#local-6989586621679637676"><span class="hs-identifier hs-type">listing</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-236"></span><span>    </span><span id="local-6989586621679637676"><span class="annot"><span class="annottext">listing :: Expression -&gt; FilePath
 </span><a href="#local-6989586621679637676"><span class="hs-identifier hs-var hs-var">listing</span></a></span></span><span> </span><span id="local-6989586621679637677"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637677"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath
 </span><a href="XMIR.html#escapeXMLText"><span class="hs-identifier hs-var">escapeXMLText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; PrintConfig -&gt; FilePath
@@ -1180,15 +1176,15 @@ forall a. FilePath -&gt; IO a
 </span><a href="Encoding.html#UNICODE"><span class="hs-identifier hs-var">UNICODE</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
 </span><a href="#local-6989586621679637546"><span class="hs-identifier hs-var">_flat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637565"><span class="hs-identifier hs-var">_margin</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-241"></span><span>
-</span><span id="line-242"></span><span class="hs-comment">-- Run &#120132; on its own, the way 'runDataize' runs &#120123;. The whole option surface of</span><span>
-</span><span id="line-243"></span><span class="hs-comment">-- 'dataize' applies unchanged, since the two commands differ only in the</span><span>
-</span><span id="line-244"></span><span class="hs-comment">-- judgment they run; what differs here is the answer printed: &#120132; is total and</span><span>
-</span><span id="line-245"></span><span class="hs-comment">-- always hands back a &#120593;-expression &#8212; a formation, or the terminator &#8869; where no</span><span>
-</span><span id="line-246"></span><span class="hs-comment">-- formation is reachable &#8212; so there are no bytes to print and no failure to</span><span>
-</span><span id="line-247"></span><span class="hs-comment">-- report where &#120123; would give up.</span><span>
-</span><span id="line-248"></span><span class="annot"><a href="CLI.Runners.html#runMorph"><span class="hs-identifier hs-type">runMorph</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMorph"><span class="hs-identifier hs-type">OptsMorph</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-249"></span><span id="runMorph"><span class="annot"><span class="annottext">runMorph :: OptsMorph -&gt; IO ()
+</span><span id="line-237"></span><span>
+</span><span id="line-238"></span><span class="hs-comment">-- Run &#120132; on its own, the way 'runDataize' runs &#120123;. The whole option surface of</span><span>
+</span><span id="line-239"></span><span class="hs-comment">-- 'dataize' applies unchanged, since the two commands differ only in the</span><span>
+</span><span id="line-240"></span><span class="hs-comment">-- judgment they run; what differs here is the answer printed: &#120132; is total and</span><span>
+</span><span id="line-241"></span><span class="hs-comment">-- always hands back a &#120593;-expression &#8212; a formation, or the terminator &#8869; where no</span><span>
+</span><span id="line-242"></span><span class="hs-comment">-- formation is reachable &#8212; so there are no bytes to print and no failure to</span><span>
+</span><span id="line-243"></span><span class="hs-comment">-- report where &#120123; would give up.</span><span>
+</span><span id="line-244"></span><span class="annot"><a href="CLI.Runners.html#runMorph"><span class="hs-identifier hs-type">runMorph</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMorph"><span class="hs-identifier hs-type">OptsMorph</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-245"></span><span id="runMorph"><span class="annot"><span class="annottext">runMorph :: OptsMorph -&gt; IO ()
 </span><a href="CLI.Runners.html#runMorph"><span class="hs-identifier hs-var hs-var">runMorph</span></a></span></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMorph"><span class="hs-identifier hs-type">OptsMorph</span></a></span><span class="hs-special">{</span><span id="local-6989586621679637680"><span id="local-6989586621679637681"><span id="local-6989586621679637682"><span id="local-6989586621679637683"><span id="local-6989586621679637684"><span id="local-6989586621679637685"><span id="local-6989586621679637686"><span id="local-6989586621679637687"><span id="local-6989586621679637688"><span id="local-6989586621679637689"><span id="local-6989586621679637690"><span id="local-6989586621679637691"><span id="local-6989586621679637692"><span id="local-6989586621679637693"><span id="local-6989586621679637694"><span id="local-6989586621679637695"><span id="local-6989586621679637696"><span id="local-6989586621679637697"><span id="local-6989586621679637698"><span id="local-6989586621679637699"><span id="local-6989586621679637700"><span id="local-6989586621679637701"><span id="local-6989586621679637702"><span id="local-6989586621679637703"><span id="local-6989586621679637704"><span id="local-6989586621679637705"><span id="local-6989586621679637706"><span id="local-6989586621679637707"><span id="local-6989586621679637708"><span id="local-6989586621679637709"><span id="local-6989586621679637710"><span id="local-6989586621679637711"><span id="local-6989586621679637712"><span id="local-6989586621679637713"><span id="local-6989586621679637714"><span id="local-6989586621679637715"><span id="local-6989586621679637716"><span id="local-6989586621679637717"><span id="local-6989586621679637718"><span id="local-6989586621679637719"><span id="local-6989586621679637720"><span id="local-6989586621679637721"><span id="local-6989586621679637722"><span class="annot"><span class="annottext">Bool
 Int
 FilePath
@@ -1287,113 +1283,113 @@ $sel:_abridged:OptsMorph :: OptsMorph -&gt; Maybe Int
 $sel:_symbolic:OptsMorph :: OptsMorph -&gt; Maybe FilePath
 $sel:_inputFile:OptsMorph :: OptsMorph -&gt; Maybe FilePath
 </span><a href="#local-6989586621679637680"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-250"></span><span>  </span><span class="annot"><span class="annottext">IO ()
+</span><span id="line-246"></span><span>  </span><span class="annot"><span class="annottext">IO ()
 </span><a href="#local-6989586621679637766"><span class="hs-identifier hs-var">validateOpts</span></a></span><span>
-</span><span id="line-251"></span><span>  </span><span id="local-6989586621679637767"><span class="annot"><span class="annottext">Maybe Deadline
+</span><span id="line-247"></span><span>  </span><span id="local-6989586621679637767"><span class="annot"><span class="annottext">Maybe Deadline
 </span><a href="#local-6989586621679637767"><span class="hs-identifier hs-var">deadline</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe Int -&gt; IO (Maybe Deadline)
 </span><a href="Morph.html#timed"><span class="hs-identifier hs-var">timed</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637706"><span class="hs-identifier hs-var">_maxSeconds</span></a></span><span>
-</span><span id="line-252"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-248"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">rtsSupportsBoundThreads</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; IO ()
 </span><span class="hs-identifier hs-var">setNumCapabilities</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637699"><span class="hs-identifier hs-var">_jobs</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-253"></span><span>  </span><span id="local-6989586621679637768"><span class="annot"><span class="annottext">Lambdas
+</span><span id="line-249"></span><span>  </span><span id="local-6989586621679637768"><span class="annot"><span class="annottext">Lambdas
 </span><a href="#local-6989586621679637768"><span class="hs-identifier hs-var">lambdas</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; IO Lambdas
 </span><a href="CLI.Helpers.html#lambdasOf"><span class="hs-identifier hs-var">lambdasOf</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637721"><span class="hs-identifier hs-var">_symbolic</span></a></span><span>
-</span><span id="line-254"></span><span>  </span><span id="local-6989586621679637769"><span class="annot"><span class="annottext">[Expression]
+</span><span id="line-250"></span><span>  </span><span id="local-6989586621679637769"><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637769"><span class="hs-identifier hs-var">excluded</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [FilePath] -&gt; IO [Expression]
 </span><a href="CLI.Validators.html#validatedDispatches"><span class="hs-identifier hs-var">validatedDispatches</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;hide&quot;</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
 </span><a href="#local-6989586621679637710"><span class="hs-identifier hs-var">_hide</span></a></span><span>
-</span><span id="line-255"></span><span>  </span><span id="local-6989586621679637770"><span class="annot"><span class="annottext">[Expression]
+</span><span id="line-251"></span><span>  </span><span id="local-6989586621679637770"><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637770"><span class="hs-identifier hs-var">included</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [FilePath] -&gt; IO [Expression]
 </span><a href="CLI.Validators.html#validatedDispatches"><span class="hs-identifier hs-var">validatedDispatches</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;show&quot;</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
 </span><a href="#local-6989586621679637711"><span class="hs-identifier hs-var">_show</span></a></span><span>
-</span><span id="line-256"></span><span>  </span><span class="hs-special">[</span><span id="local-6989586621679637771"><span class="annot"><span class="annottext">Expression
+</span><span id="line-252"></span><span>  </span><span class="hs-special">[</span><span id="local-6989586621679637771"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637771"><span class="hs-identifier hs-var">loc</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [FilePath] -&gt; IO [Expression]
 </span><a href="CLI.Validators.html#validatedDispatches"><span class="hs-identifier hs-var">validatedDispatches</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;locator&quot;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637712"><span class="hs-identifier hs-var">_locator</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-257"></span><span>  </span><span class="hs-special">[</span><span id="local-6989586621679637772"><span class="annot"><span class="annottext">Expression
+</span><span id="line-253"></span><span>  </span><span class="hs-special">[</span><span id="local-6989586621679637772"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637772"><span class="hs-identifier hs-var">foc</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; [FilePath] -&gt; IO [Expression]
 </span><a href="CLI.Validators.html#validatedDispatches"><span class="hs-identifier hs-var">validatedDispatches</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;focus&quot;</span></span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637713"><span class="hs-identifier hs-var">_focus</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-258"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; [Expression] -&gt; FilePath -&gt; [Expression] -&gt; IO ()
+</span><span id="line-254"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; [Expression] -&gt; FilePath -&gt; [Expression] -&gt; IO ()
 </span><a href="CLI.Validators.html#validateNoOverlap"><span class="hs-identifier hs-var">validateNoOverlap</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;show&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637770"><span class="hs-identifier hs-var">included</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;hide&quot;</span></span><span> </span><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637769"><span class="hs-identifier hs-var">excluded</span></a></span><span>
-</span><span id="line-259"></span><span>  </span><span id="local-6989586621679637773"><span class="annot"><span class="annottext">FilePath
+</span><span id="line-255"></span><span>  </span><span id="local-6989586621679637773"><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637773"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; IO FilePath
 </span><a href="CLI.Helpers.html#readInput"><span class="hs-identifier hs-var">readInput</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637722"><span class="hs-identifier hs-var">_inputFile</span></a></span><span>
-</span><span id="line-260"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679637774"><span class="annot"><span class="annottext">Expression
+</span><span id="line-256"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679637774"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637774"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679637775"><span class="annot"><span class="annottext">Atoms
 </span><a href="#local-6989586621679637775"><span class="hs-identifier hs-var">atoms</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IOFormat -&gt; IO (Expression, Atoms)
 </span><a href="CLI.Helpers.html#parseInputWithAtoms"><span class="hs-identifier hs-var">parseInputWithAtoms</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637773"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637682"><span class="hs-identifier hs-var">_inputFormat</span></a></span><span>
-</span><span id="line-261"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
+</span><span id="line-257"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
 forall (m :: * -&gt; *). MonadIO m =&gt; StdGen -&gt; m ()
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#setStdGen"><span class="hs-identifier hs-var">setStdGen</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; StdGen
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#mkStdGen"><span class="hs-identifier hs-var">mkStdGen</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637695"><span class="hs-identifier hs-var">_seed</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-262"></span><span>  </span><span class="annot"><span class="annottext">Expression -&gt; IO ()
+</span><span id="line-258"></span><span>  </span><span class="annot"><span class="annottext">Expression -&gt; IO ()
 </span><a href="Tau.html#seedTaus"><span class="hs-identifier hs-var">seedTaus</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637774"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-263"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637776"><span class="annot"><span class="annottext">printCtx :: PrintContext
+</span><span id="line-259"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637776"><span class="annot"><span class="annottext">printCtx :: PrintContext
 </span><a href="#local-6989586621679637776"><span class="hs-identifier hs-var hs-var">printCtx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Atoms -&gt; Expression -&gt; PrintContext
 </span><a href="#local-6989586621679637777"><span class="hs-identifier hs-var">toPrintCtx</span></a></span><span> </span><span class="annot"><span class="annottext">Atoms
 </span><a href="#local-6989586621679637775"><span class="hs-identifier hs-var">atoms</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637772"><span class="hs-identifier hs-var">foc</span></a></span><span>
-</span><span id="line-264"></span><span>      </span><span id="local-6989586621679637778"><span class="annot"><span class="annottext">exclude :: [Rewritten] -&gt; [Rewritten]
+</span><span id="line-260"></span><span>      </span><span id="local-6989586621679637778"><span class="annot"><span class="annottext">exclude :: [Rewritten] -&gt; [Rewritten]
 </span><a href="#local-6989586621679637778"><span class="hs-identifier hs-var hs-var">exclude</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Rewritten] -&gt; [Expression] -&gt; [Rewritten]
 </span><a href="Filter.html#exclude"><span class="hs-operator hs-var">`F.exclude`</span></a></span><span> </span><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637769"><span class="hs-identifier hs-var">excluded</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-265"></span><span>      </span><span id="local-6989586621679637779"><span class="annot"><span class="annottext">include :: [Rewritten] -&gt; IO [Rewritten]
+</span><span id="line-261"></span><span>      </span><span id="local-6989586621679637779"><span class="annot"><span class="annottext">include :: [Rewritten] -&gt; IO [Rewritten]
 </span><a href="#local-6989586621679637779"><span class="hs-identifier hs-var hs-var">include</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Rewritten] -&gt; [Expression] -&gt; IO [Rewritten]
 </span><a href="Filter.html#include"><span class="hs-operator hs-var">`F.include`</span></a></span><span> </span><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637770"><span class="hs-identifier hs-var">included</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-266"></span><span>  </span><span id="local-6989586621679637780"><span class="annot"><span class="annottext">Expression -&gt; IO ()
+</span><span id="line-262"></span><span>  </span><span id="local-6989586621679637780"><span class="annot"><span class="annottext">Expression -&gt; IO ()
 </span><a href="#local-6989586621679637780"><span class="hs-identifier hs-var">save</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; PrintContext -&gt; IO (Expression -&gt; IO ())
 </span><a href="CLI.Helpers.html#saveStepFunc"><span class="hs-identifier hs-var">saveStepFunc</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637718"><span class="hs-identifier hs-var">_stepsDir</span></a></span><span> </span><span class="annot"><span class="annottext">PrintContext
 </span><a href="#local-6989586621679637776"><span class="hs-identifier hs-var">printCtx</span></a></span><span>
-</span><span id="line-267"></span><span>  </span><span id="local-6989586621679637781"><span class="annot"><span class="annottext">Maybe Tally
+</span><span id="line-263"></span><span>  </span><span id="local-6989586621679637781"><span class="annot"><span class="annottext">Maybe Tally
 </span><a href="#local-6989586621679637781"><span class="hs-identifier hs-var">tally</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe Int -&gt; IO (Maybe Tally)
 </span><a href="Morph.html#tallied"><span class="hs-identifier hs-var">tallied</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637705"><span class="hs-identifier hs-var">_maxFirings</span></a></span><span>
-</span><span id="line-268"></span><span>  </span><span id="local-6989586621679637782"><span class="annot"><span class="annottext">Maybe Memo
+</span><span id="line-264"></span><span>  </span><span id="local-6989586621679637782"><span class="annot"><span class="annottext">Maybe Memo
 </span><a href="#local-6989586621679637782"><span class="hs-identifier hs-var">memo</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe Acyclic -&gt; IO (Maybe Memo)
 </span><a href="Morph.html#memoized"><span class="hs-identifier hs-var">memoized</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Acyclic
 </span><a href="#local-6989586621679637700"><span class="hs-identifier hs-var">_acyclic</span></a></span><span>
-</span><span id="line-269"></span><span>  </span><span id="local-6989586621679637783"><span class="annot"><span class="annottext">Engine
+</span><span id="line-265"></span><span>  </span><span id="local-6989586621679637783"><span class="annot"><span class="annottext">Engine
 </span><a href="#local-6989586621679637783"><span class="hs-identifier hs-var">linked</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Engine
 </span><a href="CLI.Helpers.html#engine"><span class="hs-identifier hs-var">engine</span></a></span><span>
-</span><span id="line-270"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679637784"><span class="annot"><span class="annottext">Expression
+</span><span id="line-266"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679637784"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637784"><span class="hs-identifier hs-var">morphed</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679637785"><span class="annot"><span class="annottext">[Rewritten]
 </span><a href="#local-6989586621679637785"><span class="hs-identifier hs-var">chain</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">State
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span>
-</span><span id="line-271"></span><span>    </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-267"></span><span>    </span><span class="annot"><span class="annottext">Maybe FilePath
 -&gt; PrintContext
 -&gt; (SaveEvalFunc -&gt; IO (Expression, [Rewritten], State))
 -&gt; IO (Expression, [Rewritten], State)
 forall a.
 Maybe FilePath -&gt; PrintContext -&gt; (SaveEvalFunc -&gt; IO a) -&gt; IO a
 </span><a href="CLI.Helpers.html#withEvalFunc"><span class="hs-identifier hs-var">withEvalFunc</span></a></span><span>
-</span><span id="line-272"></span><span>      </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-268"></span><span>      </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637719"><span class="hs-identifier hs-var">_protocol</span></a></span><span>
-</span><span id="line-273"></span><span>      </span><span class="annot"><span class="annottext">PrintContext
+</span><span id="line-269"></span><span>      </span><span class="annot"><span class="annottext">PrintContext
 </span><a href="#local-6989586621679637776"><span class="hs-identifier hs-var">printCtx</span></a></span><span>
-</span><span id="line-274"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679637786"><span class="annot"><span class="annottext">SaveEvalFunc
+</span><span id="line-270"></span><span>      </span><span class="hs-special">(</span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679637786"><span class="annot"><span class="annottext">SaveEvalFunc
 </span><a href="#local-6989586621679637786"><span class="hs-identifier hs-var">record</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-275"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637787"><span class="annot"><span class="annottext">ctx :: ReduceContext
+</span><span id="line-271"></span><span>          </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637787"><span class="annot"><span class="annottext">ctx :: ReduceContext
 </span><a href="#local-6989586621679637787"><span class="hs-identifier hs-var hs-var">ctx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression
 -&gt; Expression
 -&gt; Maybe Expression
@@ -1454,7 +1450,7 @@ forall k a. Map k a
 </span><a href="#local-6989586621679637780"><span class="hs-identifier hs-var">save</span></a></span><span> </span><span class="annot"><span class="annottext">SaveEvalFunc
 </span><a href="#local-6989586621679637786"><span class="hs-identifier hs-var">record</span></a></span><span> </span><span class="annot"><span class="annottext">Engine
 </span><a href="#local-6989586621679637783"><span class="hs-identifier hs-var">linked</span></a></span><span>
-</span><span id="line-276"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621679637789"><span class="annot"><span class="annottext">Expression
+</span><span id="line-272"></span><span>          </span><span class="hs-special">(</span><span id="local-6989586621679637789"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637789"><span class="hs-identifier hs-var">universe</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679637790"><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679637790"><span class="hs-identifier hs-var">aiming</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 -&gt; Expression -&gt; ReduceContext -&gt; IO (Expression, ReduceContext)
@@ -1462,21 +1458,21 @@ forall k a. Map k a
 </span><a href="#local-6989586621679637717"><span class="hs-identifier hs-var">_inside</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637774"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679637787"><span class="hs-identifier hs-var">ctx</span></a></span><span>
-</span><span id="line-277"></span><span>          </span><span class="annot"><span class="annottext">SaveEvalFunc -&gt; PrintContext -&gt; Judgment -&gt; Expression -&gt; IO ()
+</span><span id="line-273"></span><span>          </span><span class="annot"><span class="annottext">SaveEvalFunc -&gt; PrintContext -&gt; Judgment -&gt; Expression -&gt; IO ()
 </span><a href="CLI.Helpers.html#heading"><span class="hs-identifier hs-var">heading</span></a></span><span> </span><span class="annot"><span class="annottext">SaveEvalFunc
 </span><a href="#local-6989586621679637786"><span class="hs-identifier hs-var">record</span></a></span><span> </span><span class="annot"><span class="annottext">PrintContext
 </span><a href="#local-6989586621679637776"><span class="hs-identifier hs-var">printCtx</span></a></span><span> </span><span class="annot"><span class="annottext">Judgment
 </span><a href="Deps.html#Morphing"><span class="hs-identifier hs-var">Morphing</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679637790"><span class="hs-identifier hs-var">aiming</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_locator</span><span>
-</span><span id="line-278"></span><span>          </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-274"></span><span>          </span><span class="annot"><span class="annottext">Expression
 -&gt; State -&gt; ReduceContext -&gt; IO (Expression, [Rewritten], State)
 </span><a href="Morph.html#morph"><span class="hs-identifier hs-var">morph</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637789"><span class="hs-identifier hs-var">universe</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; State
 </span><a href="CLI.Helpers.html#started"><span class="hs-identifier hs-var">started</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637789"><span class="hs-identifier hs-var">universe</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679637790"><span class="hs-identifier hs-var">aiming</span></a></span><span>
-</span><span id="line-279"></span><span>      </span><span class="hs-special">)</span><span>
-</span><span id="line-280"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-275"></span><span>      </span><span class="hs-special">)</span><span>
+</span><span id="line-276"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637690"><span class="hs-identifier hs-var">_sequence</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Rewritten] -&gt; IO [Rewritten]
@@ -1495,13 +1491,13 @@ forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><span class="hs-identifier hs-var">putStrLn</span></span><span class="hs-special">)</span><span>
-</span><span id="line-281"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-277"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">unless</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637696"><span class="hs-identifier hs-var">_quiet</span></a></span><span> </span><span class="annot"><span class="annottext">(IO () -&gt; IO ()) -&gt; IO () -&gt; IO ()
 forall a b. (a -&gt; b) -&gt; a -&gt; b
 </span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-282"></span><span>    </span><span id="local-6989586621679637793"><span class="annot"><span class="annottext">Expression
+</span><span id="line-278"></span><span>    </span><span id="local-6989586621679637793"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637793"><span class="hs-identifier hs-var">answer</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; [Expression] -&gt; Expression
 </span><a href="Filter.html#exclude%27"><span class="hs-operator hs-var">`F.exclude'`</span></a></span><span> </span><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637769"><span class="hs-identifier hs-var">excluded</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Expression) -&gt; IO Expression -&gt; IO Expression
@@ -1510,11 +1506,11 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><a href="Filter.html#include%27"><span class="hs-identifier hs-var">F.include'</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637784"><span class="hs-identifier hs-var">morphed</span></a></span><span> </span><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637770"><span class="hs-identifier hs-var">included</span></a></span><span>
-</span><span id="line-283"></span><span>    </span><span class="annot"><span class="annottext">IOFormat -&gt; Expression -&gt; IO ()
+</span><span id="line-279"></span><span>    </span><span class="annot"><span class="annottext">IOFormat -&gt; Expression -&gt; IO ()
 </span><a href="CLI.Validators.html#validateXmirTopLevel"><span class="hs-identifier hs-var">validateXmirTopLevel</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637683"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637793"><span class="hs-identifier hs-var">answer</span></a></span><span>
-</span><span id="line-284"></span><span>    </span><span class="annot"><span class="annottext">PrintContext -&gt; Expression -&gt; IO FilePath
+</span><span id="line-280"></span><span>    </span><span class="annot"><span class="annottext">PrintContext -&gt; Expression -&gt; IO FilePath
 </span><a href="CLI.Helpers.html#printAnswer"><span class="hs-identifier hs-var">printAnswer</span></a></span><span> </span><span class="annot"><span class="annottext">PrintContext
 </span><a href="#local-6989586621679637776"><span class="hs-identifier hs-var">printCtx</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637793"><span class="hs-identifier hs-var">answer</span></a></span><span> </span><span class="annot"><span class="annottext">IO FilePath -&gt; (FilePath -&gt; IO ()) -&gt; IO ()
@@ -1522,36 +1518,36 @@ forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><span class="hs-identifier hs-var">putStrLn</span></span><span>
-</span><span id="line-285"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-286"></span><span>    </span><span class="annot"><a href="#local-6989586621679637766"><span class="hs-identifier hs-type">validateOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-287"></span><span>    </span><span id="local-6989586621679637766"><span class="annot"><span class="annottext">validateOpts :: IO ()
+</span><span id="line-281"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-282"></span><span>    </span><span class="annot"><a href="#local-6989586621679637766"><span class="hs-identifier hs-type">validateOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-283"></span><span>    </span><span id="local-6989586621679637766"><span class="annot"><span class="annottext">validateOpts :: IO ()
 </span><a href="#local-6989586621679637766"><span class="hs-identifier hs-var hs-var">validateOpts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-288"></span><span>      </span><span class="annot"><span class="annottext">IOFormat
+</span><span id="line-284"></span><span>      </span><span class="annot"><span class="annottext">IOFormat
 -&gt; [(Bool, FilePath)]
 -&gt; [(Maybe FilePath, FilePath)]
 -&gt; [(Maybe Int, FilePath)]
 -&gt; IO ()
 </span><a href="CLI.Validators.html#validateLatexOptions"><span class="hs-identifier hs-var">validateLatexOptions</span></a></span><span>
-</span><span id="line-289"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
+</span><span id="line-285"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637683"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span>
-</span><span id="line-290"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><span id="line-286"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637689"><span class="hs-identifier hs-var">_nonumber</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;nonumber&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637701"><span class="hs-identifier hs-var">_compress</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;compress&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-291"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-287"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637714"><span class="hs-identifier hs-var">_expression</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;expression&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637715"><span class="hs-identifier hs-var">_label</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;label&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637716"><span class="hs-identifier hs-var">_meetPrefix</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;meet-prefix&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-292"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int
+</span><span id="line-288"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637708"><span class="hs-identifier hs-var">_meetPopularity</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;meet-popularity&quot;</span></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637709"><span class="hs-identifier hs-var">_meetLength</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;meet-length&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span>
-</span><span id="line-293"></span><span>      </span><span class="annot"><span class="annottext">IOFormat -&gt; [(Bool, FilePath)] -&gt; FilePath -&gt; IO ()
+</span><span id="line-289"></span><span>      </span><span class="annot"><span class="annottext">IOFormat -&gt; [(Bool, FilePath)] -&gt; FilePath -&gt; IO ()
 </span><a href="CLI.Validators.html#validateXmirOptions"><span class="hs-identifier hs-var">validateXmirOptions</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637683"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637687"><span class="hs-identifier hs-var">_omitListing</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
@@ -1559,7 +1555,7 @@ forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><a href="#local-6989586621679637688"><span class="hs-identifier hs-var">_omitComments</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;omit-comments&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637713"><span class="hs-identifier hs-var">_focus</span></a></span><span>
-</span><span id="line-294"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-290"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[FilePath] -&gt; Int
 forall a. [a] -&gt; Int
@@ -1572,7 +1568,7 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The option --show can be used only once&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-295"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-291"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Bool
 forall a. Maybe a -&gt; Bool
@@ -1585,7 +1581,7 @@ forall a. Maybe a -&gt; Bool
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The option --abridged requires --protocol, since only the protocol is abridged&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-296"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-292"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637699"><span class="hs-identifier hs-var">_jobs</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
@@ -1598,10 +1594,10 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The option --jobs requires --deep, since only the deep walk runs on several workers&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-297"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-293"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span>
-</span><span id="line-298"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Bool
+</span><span id="line-294"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Bool
 forall a. Maybe a -&gt; Bool
 </span><span class="hs-identifier hs-var">isJust</span></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637717"><span class="hs-identifier hs-var">_inside</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
@@ -1610,16 +1606,16 @@ forall a. Maybe a -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Q&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-299"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><span id="line-295"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-300"></span><span>    </span><span class="annot"><a href="#local-6989586621679637777"><span class="hs-identifier hs-type">toPrintCtx</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="XMIR.html#Atoms"><span class="hs-identifier hs-type">Atoms</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CLI.Types.html#PrintContext"><span class="hs-identifier hs-type">PrintContext</span></a></span><span>
-</span><span id="line-301"></span><span>    </span><span id="local-6989586621679637777"><span class="annot"><span class="annottext">toPrintCtx :: Atoms -&gt; Expression -&gt; PrintContext
+</span><span id="line-296"></span><span>    </span><span class="annot"><a href="#local-6989586621679637777"><span class="hs-identifier hs-type">toPrintCtx</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="XMIR.html#Atoms"><span class="hs-identifier hs-type">Atoms</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CLI.Types.html#PrintContext"><span class="hs-identifier hs-type">PrintContext</span></a></span><span>
+</span><span id="line-297"></span><span>    </span><span id="local-6989586621679637777"><span class="annot"><span class="annottext">toPrintCtx :: Atoms -&gt; Expression -&gt; PrintContext
 </span><a href="#local-6989586621679637777"><span class="hs-identifier hs-var hs-var">toPrintCtx</span></a></span></span><span> </span><span id="local-6989586621679637795"><span class="annot"><span class="annottext">Atoms
 </span><a href="#local-6989586621679637795"><span class="hs-identifier hs-var">atoms</span></a></span></span><span> </span><span id="local-6989586621679637796"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637796"><span class="hs-identifier hs-var">focus</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-302"></span><span>      </span><span class="annot"><span class="annottext">SugarType
+</span><span id="line-298"></span><span>      </span><span class="annot"><span class="annottext">SugarType
 -&gt; Bool
 -&gt; Maybe Int
 -&gt; LineFormat
@@ -1639,17 +1635,17 @@ forall a. FilePath -&gt; IO a
 -&gt; IOFormat
 -&gt; PrintContext
 </span><a href="CLI.Types.html#PrintCtx"><span class="hs-identifier hs-var">PrintCtx</span></a></span><span>
-</span><span id="line-303"></span><span>        </span><span class="annot"><span class="annottext">SugarType
+</span><span id="line-299"></span><span>        </span><span class="annot"><span class="annottext">SugarType
 </span><a href="#local-6989586621679637684"><span class="hs-identifier hs-var">_sugarType</span></a></span><span>
-</span><span id="line-304"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-300"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637685"><span class="hs-identifier hs-var">_hideRho</span></a></span><span>
-</span><span id="line-305"></span><span>        </span><span class="annot"><span class="annottext">Maybe Int
+</span><span id="line-301"></span><span>        </span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637720"><span class="hs-identifier hs-var">_abridged</span></a></span><span>
-</span><span id="line-306"></span><span>        </span><span class="annot"><span class="annottext">LineFormat
+</span><span id="line-302"></span><span>        </span><span class="annot"><span class="annottext">LineFormat
 </span><a href="#local-6989586621679637686"><span class="hs-identifier hs-var">_flat</span></a></span><span>
-</span><span id="line-307"></span><span>        </span><span class="annot"><span class="annottext">Int
+</span><span id="line-303"></span><span>        </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637707"><span class="hs-identifier hs-var">_margin</span></a></span><span>
-</span><span id="line-308"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
+</span><span id="line-304"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 -&gt; Bool -&gt; Bool -&gt; (Expression -&gt; FilePath) -&gt; Atoms -&gt; XmirContext
 </span><a href="XMIR.html#XmirContext"><span class="hs-identifier hs-var">XmirContext</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637687"><span class="hs-identifier hs-var">_omitListing</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
@@ -1657,37 +1653,37 @@ forall a. FilePath -&gt; IO a
 </span><a href="#local-6989586621679637685"><span class="hs-identifier hs-var">_hideRho</span></a></span><span> </span><span class="annot"><span class="annottext">Expression -&gt; FilePath
 </span><a href="#local-6989586621679637797"><span class="hs-identifier hs-var">listing</span></a></span><span> </span><span class="annot"><span class="annottext">Atoms
 </span><a href="#local-6989586621679637795"><span class="hs-identifier hs-var">atoms</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-309"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-305"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637689"><span class="hs-identifier hs-var">_nonumber</span></a></span><span>
-</span><span id="line-310"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-306"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637701"><span class="hs-identifier hs-var">_compress</span></a></span><span>
-</span><span id="line-311"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-307"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637692"><span class="hs-identifier hs-var">_canonize</span></a></span><span>
-</span><span id="line-312"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-308"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637690"><span class="hs-identifier hs-var">_sequence</span></a></span><span>
-</span><span id="line-313"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-309"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637691"><span class="hs-identifier hs-var">_headers</span></a></span><span>
-</span><span id="line-314"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
+</span><span id="line-310"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
 </span><a href="CLI.Helpers.html#justMeetPopularity"><span class="hs-identifier hs-var">justMeetPopularity</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637708"><span class="hs-identifier hs-var">_meetPopularity</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-315"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
+</span><span id="line-311"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
 </span><a href="CLI.Helpers.html#justMeetLength"><span class="hs-identifier hs-var">justMeetLength</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
 </span><a href="#local-6989586621679637709"><span class="hs-identifier hs-var">_meetLength</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-316"></span><span>        </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-312"></span><span>        </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637796"><span class="hs-identifier hs-var">focus</span></a></span><span>
-</span><span id="line-317"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-313"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637714"><span class="hs-identifier hs-var">_expression</span></a></span><span>
-</span><span id="line-318"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-314"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637715"><span class="hs-identifier hs-var">_label</span></a></span><span>
-</span><span id="line-319"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-315"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637716"><span class="hs-identifier hs-var">_meetPrefix</span></a></span><span>
-</span><span id="line-320"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
+</span><span id="line-316"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637683"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span>
-</span><span id="line-321"></span><span>    </span><span class="hs-comment">-- The listing of a dataization result is the &#120593; text of the printed</span><span>
-</span><span id="line-322"></span><span>    </span><span class="hs-comment">-- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'</span><span>
-</span><span id="line-323"></span><span>    </span><span class="hs-comment">-- reach the XMIR writer through this context (#1076)</span><span>
-</span><span id="line-324"></span><span>    </span><span class="annot"><a href="#local-6989586621679637797"><span class="hs-identifier hs-type">listing</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-325"></span><span>    </span><span id="local-6989586621679637797"><span class="annot"><span class="annottext">listing :: Expression -&gt; FilePath
+</span><span id="line-317"></span><span>    </span><span class="hs-comment">-- The listing of a dataization result is the &#120593; text of the printed</span><span>
+</span><span id="line-318"></span><span>    </span><span class="hs-comment">-- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'</span><span>
+</span><span id="line-319"></span><span>    </span><span class="hs-comment">-- reach the XMIR writer through this context (#1076)</span><span>
+</span><span id="line-320"></span><span>    </span><span class="annot"><a href="#local-6989586621679637797"><span class="hs-identifier hs-type">listing</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-321"></span><span>    </span><span id="local-6989586621679637797"><span class="annot"><span class="annottext">listing :: Expression -&gt; FilePath
 </span><a href="#local-6989586621679637797"><span class="hs-identifier hs-var hs-var">listing</span></a></span></span><span> </span><span id="local-6989586621679637798"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637798"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath
 </span><a href="XMIR.html#escapeXMLText"><span class="hs-identifier hs-var">escapeXMLText</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; PrintConfig -&gt; FilePath
@@ -1697,9 +1693,9 @@ forall a. FilePath -&gt; IO a
 </span><a href="Encoding.html#UNICODE"><span class="hs-identifier hs-var">UNICODE</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
 </span><a href="#local-6989586621679637686"><span class="hs-identifier hs-var">_flat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637707"><span class="hs-identifier hs-var">_margin</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-326"></span><span>
-</span><span id="line-327"></span><span class="annot"><a href="CLI.Runners.html#runExplain"><span class="hs-identifier hs-type">runExplain</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsExplain"><span class="hs-identifier hs-type">OptsExplain</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-328"></span><span id="runExplain"><span class="annot"><span class="annottext">runExplain :: OptsExplain -&gt; IO ()
+</span><span id="line-322"></span><span>
+</span><span id="line-323"></span><span class="annot"><a href="CLI.Runners.html#runExplain"><span class="hs-identifier hs-type">runExplain</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsExplain"><span class="hs-identifier hs-type">OptsExplain</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-324"></span><span id="runExplain"><span class="annot"><span class="annottext">runExplain :: OptsExplain -&gt; IO ()
 </span><a href="CLI.Runners.html#runExplain"><span class="hs-identifier hs-var hs-var">runExplain</span></a></span></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsExplain"><span class="hs-identifier hs-type">OptsExplain</span></a></span><span class="hs-special">{</span><span id="local-6989586621679637801"><span id="local-6989586621679637802"><span id="local-6989586621679637803"><span id="local-6989586621679637804"><span id="local-6989586621679637805"><span id="local-6989586621679637806"><span id="local-6989586621679637807"><span id="local-6989586621679637808"><span id="local-6989586621679637809"><span id="local-6989586621679637810"><span class="annot"><span class="annottext">Bool
 Int
 [FilePath]
@@ -1726,25 +1722,25 @@ $sel:_shuffle:OptsExplain :: OptsExplain -&gt; Bool
 $sel:_seed:OptsExplain :: OptsExplain -&gt; Int
 $sel:_targetFile:OptsExplain :: OptsExplain -&gt; Maybe FilePath
 </span><a href="#local-6989586621679637801"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-329"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
+</span><span id="line-325"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
 forall (m :: * -&gt; *). MonadIO m =&gt; StdGen -&gt; m ()
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#setStdGen"><span class="hs-identifier hs-var">setStdGen</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; StdGen
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#mkStdGen"><span class="hs-identifier hs-var">mkStdGen</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637809"><span class="hs-identifier hs-var">_seed</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-330"></span><span>  </span><span class="annot"><span class="annottext">IO ()
+</span><span id="line-326"></span><span>  </span><span class="annot"><span class="annottext">IO ()
 </span><a href="#local-6989586621679637821"><span class="hs-identifier hs-var">validateOpts</span></a></span><span>
-</span><span id="line-331"></span><span>  </span><span class="annot"><span class="annottext">IO FilePath
+</span><span id="line-327"></span><span>  </span><span class="annot"><span class="annottext">IO FilePath
 </span><a href="#local-6989586621679637822"><span class="hs-identifier hs-var">explained</span></a></span><span> </span><span class="annot"><span class="annottext">IO FilePath -&gt; (FilePath -&gt; IO ()) -&gt; IO ()
 forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
 forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
 </span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; FilePath -&gt; IO ()
 </span><a href="CLI.Helpers.html#printOut"><span class="hs-identifier hs-var">printOut</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637810"><span class="hs-identifier hs-var">_targetFile</span></a></span><span>
-</span><span id="line-332"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-333"></span><span>    </span><span class="annot"><a href="#local-6989586621679637822"><span class="hs-identifier hs-type">explained</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-334"></span><span>    </span><span id="local-6989586621679637822"><span class="annot"><span class="annottext">explained :: IO FilePath
+</span><span id="line-328"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-329"></span><span>    </span><span class="annot"><a href="#local-6989586621679637822"><span class="hs-identifier hs-type">explained</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-330"></span><span>    </span><span id="local-6989586621679637822"><span class="annot"><span class="annottext">explained :: IO FilePath
 </span><a href="#local-6989586621679637822"><span class="hs-identifier hs-var hs-var">explained</span></a></span></span><span>
-</span><span id="line-335"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-331"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637805"><span class="hs-identifier hs-var">_morph</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[MorphRule] -&gt; FilePath
 </span><a href="LaTeX.html#explainMorphRules"><span class="hs-identifier hs-var">explainMorphRules</span></a></span><span> </span><span class="annot"><span class="annottext">([MorphRule] -&gt; FilePath) -&gt; IO [MorphRule] -&gt; IO FilePath
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -1752,7 +1748,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall a. [a] -&gt; IO [a]
 </span><a href="#local-6989586621679637824"><span class="hs-identifier hs-var">shuffled</span></a></span><span> </span><span class="annot"><span class="annottext">[MorphRule]
 </span><a href="Yaml.html#morphingRules"><span class="hs-identifier hs-var">Y.morphingRules</span></a></span><span>
-</span><span id="line-336"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-332"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637806"><span class="hs-identifier hs-var">_dataize</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[DataizeRule] -&gt; FilePath
 </span><a href="LaTeX.html#explainDataizeRules"><span class="hs-identifier hs-var">explainDataizeRules</span></a></span><span> </span><span class="annot"><span class="annottext">([DataizeRule] -&gt; FilePath) -&gt; IO [DataizeRule] -&gt; IO FilePath
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -1760,7 +1756,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall a. [a] -&gt; IO [a]
 </span><a href="#local-6989586621679637824"><span class="hs-identifier hs-var">shuffled</span></a></span><span> </span><span class="annot"><span class="annottext">[DataizeRule]
 </span><a href="Yaml.html#dataizationRules"><span class="hs-identifier hs-var">Y.dataizationRules</span></a></span><span>
-</span><span id="line-337"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-333"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637807"><span class="hs-identifier hs-var">_contextualize</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[ContextualizeRule] -&gt; FilePath
 </span><a href="LaTeX.html#explainContextualizeRules"><span class="hs-identifier hs-var">explainContextualizeRules</span></a></span><span> </span><span class="annot"><span class="annottext">([ContextualizeRule] -&gt; FilePath)
 -&gt; IO [ContextualizeRule] -&gt; IO FilePath
@@ -1769,7 +1765,7 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 forall a. [a] -&gt; IO [a]
 </span><a href="#local-6989586621679637824"><span class="hs-identifier hs-var">shuffled</span></a></span><span> </span><span class="annot"><span class="annottext">[ContextualizeRule]
 </span><a href="Yaml.html#contextualizationRules"><span class="hs-identifier hs-var">Y.contextualizationRules</span></a></span><span>
-</span><span id="line-338"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-334"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Rule] -&gt; FilePath
 </span><a href="LaTeX.html#explainRules"><span class="hs-identifier hs-var">explainRules</span></a></span><span> </span><span class="annot"><span class="annottext">([Rule] -&gt; FilePath) -&gt; IO [Rule] -&gt; IO FilePath
 forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
@@ -1778,25 +1774,25 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 </span><a href="#local-6989586621679637804"><span class="hs-identifier hs-var">_normalize</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637808"><span class="hs-identifier hs-var">_shuffle</span></a></span><span> </span><span class="annot"><span class="annottext">[FilePath]
 </span><a href="#local-6989586621679637803"><span class="hs-identifier hs-var">_rules</span></a></span><span>
-</span><span id="line-339"></span><span>    </span><span id="local-6989586621679637044"><span class="annot"><a href="#local-6989586621679637824"><span class="hs-identifier hs-type">shuffled</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679637044"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679637044"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
-</span><span id="line-340"></span><span>    </span><span id="local-6989586621679637824"><span class="annot"><span class="annottext">shuffled :: forall a. [a] -&gt; IO [a]
+</span><span id="line-335"></span><span>    </span><span id="local-6989586621679637044"><span class="annot"><a href="#local-6989586621679637824"><span class="hs-identifier hs-type">shuffled</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679637044"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679637044"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">]</span></span><span>
+</span><span id="line-336"></span><span>    </span><span id="local-6989586621679637824"><span class="annot"><span class="annottext">shuffled :: forall a. [a] -&gt; IO [a]
 </span><a href="#local-6989586621679637824"><span class="hs-identifier hs-var hs-var">shuffled</span></a></span></span><span> </span><span id="local-6989586621679637829"><span class="annot"><span class="annottext">[a]
 </span><a href="#local-6989586621679637829"><span class="hs-identifier hs-var">xs</span></a></span></span><span>
-</span><span id="line-341"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-337"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637808"><span class="hs-identifier hs-var">_shuffle</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; IO [a]
 forall a. [a] -&gt; IO [a]
 </span><a href="Random.html#shuffle"><span class="hs-identifier hs-var">R.shuffle</span></a></span><span> </span><span class="annot"><span class="annottext">[a]
 </span><a href="#local-6989586621679637829"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-342"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-338"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[a] -&gt; IO [a]
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">[a]
 </span><a href="#local-6989586621679637829"><span class="hs-identifier hs-var">xs</span></a></span><span>
-</span><span id="line-343"></span><span>    </span><span class="annot"><a href="#local-6989586621679637821"><span class="hs-identifier hs-type">validateOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-344"></span><span>    </span><span id="local-6989586621679637821"><span class="annot"><span class="annottext">validateOpts :: IO ()
+</span><span id="line-339"></span><span>    </span><span class="annot"><a href="#local-6989586621679637821"><span class="hs-identifier hs-type">validateOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-340"></span><span>    </span><span id="local-6989586621679637821"><span class="annot"><span class="annottext">validateOpts :: IO ()
 </span><a href="#local-6989586621679637821"><span class="hs-identifier hs-var hs-var">validateOpts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-345"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637832"><span class="annot"><span class="annottext">selected :: Int
+</span><span id="line-341"></span><span>      </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637832"><span class="annot"><span class="annottext">selected :: Int
 </span><a href="#local-6989586621679637832"><span class="hs-identifier hs-var hs-var">selected</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Bool] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
@@ -1808,7 +1804,7 @@ forall a. a -&gt; a
 </span><a href="#local-6989586621679637805"><span class="hs-identifier hs-var">_morph</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637806"><span class="hs-identifier hs-var">_dataize</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637807"><span class="hs-identifier hs-var">_contextualize</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
-</span><span id="line-346"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-342"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637832"><span class="hs-identifier hs-var">selected</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
@@ -1826,7 +1822,7 @@ forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Either --rule, --normalize, --morph, --dataize or --contextualize must be specified&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-347"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-343"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637832"><span class="hs-identifier hs-var">selected</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
@@ -1836,7 +1832,7 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Only one of --morph, --dataize or --contextualize can be specified&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-348"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-344"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637832"><span class="hs-identifier hs-var">selected</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
@@ -1852,9 +1848,9 @@ forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 forall a. FilePath -&gt; IO a
 </span><a href="CLI.Validators.html#invalidCLIArguments"><span class="hs-identifier hs-var">invalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The --rule option cannot be used together with --morph, --dataize or --contextualize&quot;</span></span><span class="hs-special">)</span><span>
-</span><span id="line-349"></span><span>
-</span><span id="line-350"></span><span class="annot"><a href="CLI.Runners.html#runMerge"><span class="hs-identifier hs-type">runMerge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMerge"><span class="hs-identifier hs-type">OptsMerge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-351"></span><span id="runMerge"><span class="annot"><span class="annottext">runMerge :: OptsMerge -&gt; IO ()
+</span><span id="line-345"></span><span>
+</span><span id="line-346"></span><span class="annot"><a href="CLI.Runners.html#runMerge"><span class="hs-identifier hs-type">runMerge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMerge"><span class="hs-identifier hs-type">OptsMerge</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-347"></span><span id="runMerge"><span class="annot"><span class="annottext">runMerge :: OptsMerge -&gt; IO ()
 </span><a href="CLI.Runners.html#runMerge"><span class="hs-identifier hs-var hs-var">runMerge</span></a></span></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMerge"><span class="hs-identifier hs-type">OptsMerge</span></a></span><span class="hs-special">{</span><span id="local-6989586621679637837"><span id="local-6989586621679637838"><span id="local-6989586621679637839"><span id="local-6989586621679637840"><span id="local-6989586621679637841"><span id="local-6989586621679637842"><span id="local-6989586621679637843"><span id="local-6989586621679637844"><span id="local-6989586621679637845"><span id="local-6989586621679637846"><span id="local-6989586621679637847"><span id="local-6989586621679637848"><span class="annot"><span class="annottext">Bool
 Int
 [FilePath]
@@ -1888,9 +1884,9 @@ $sel:_targetFile:OptsMerge :: OptsMerge -&gt; Maybe FilePath
 $sel:_inputs:OptsMerge :: OptsMerge -&gt; [FilePath]
 $sel:_seed:OptsMerge :: OptsMerge -&gt; Int
 </span><a href="#local-6989586621679637837"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-352"></span><span>  </span><span class="annot"><span class="annottext">IO ()
+</span><span id="line-348"></span><span>  </span><span class="annot"><span class="annottext">IO ()
 </span><a href="#local-6989586621679637861"><span class="hs-identifier hs-var">validateOpts</span></a></span><span>
-</span><span id="line-353"></span><span>  </span><span id="local-6989586621679637862"><span class="annot"><span class="annottext">[FilePath]
+</span><span id="line-349"></span><span>  </span><span id="local-6989586621679637862"><span class="annot"><span class="annottext">[FilePath]
 </span><a href="#local-6989586621679637862"><span class="hs-identifier hs-var">inputs'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; IO FilePath) -&gt; [FilePath] -&gt; IO [FilePath]
 forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (Traversable t, Applicative f) =&gt;
@@ -1906,12 +1902,12 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[FilePath]
 </span><a href="#local-6989586621679637847"><span class="hs-identifier hs-var">_inputs</span></a></span><span>
-</span><span id="line-354"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
+</span><span id="line-350"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
 forall (m :: * -&gt; *). MonadIO m =&gt; StdGen -&gt; m ()
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#setStdGen"><span class="hs-identifier hs-var">setStdGen</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; StdGen
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#mkStdGen"><span class="hs-identifier hs-var">mkStdGen</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637848"><span class="hs-identifier hs-var">_seed</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-355"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679637865"><span class="annot"><span class="annottext">[Expression]
+</span><span id="line-351"></span><span>  </span><span class="hs-special">(</span><span id="local-6989586621679637865"><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637865"><span class="hs-identifier hs-var">exprs</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679637866"><span class="annot"><span class="annottext">[Atoms]
 </span><a href="#local-6989586621679637866"><span class="hs-identifier hs-var">atoms</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[(Expression, Atoms)] -&gt; ([Expression], [Atoms])
 forall a b. [(a, b)] -&gt; ([a], [b])
@@ -1930,15 +1926,15 @@ Applicative f =&gt;
 </span><a href="CLI.Helpers.html#parseInputWithAtoms"><span class="hs-operator hs-var">`parseInputWithAtoms`</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637839"><span class="hs-identifier hs-var">_inputFormat</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[FilePath]
 </span><a href="#local-6989586621679637862"><span class="hs-identifier hs-var">inputs'</span></a></span><span>
-</span><span id="line-356"></span><span>  </span><span id="local-6989586621679637868"><span class="annot"><span class="annottext">Expression
+</span><span id="line-352"></span><span>  </span><span id="local-6989586621679637868"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637868"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">[Expression] -&gt; IO Expression
 </span><a href="Merge.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">[Expression]
 </span><a href="#local-6989586621679637865"><span class="hs-identifier hs-var">exprs</span></a></span><span>
-</span><span id="line-357"></span><span>  </span><span class="annot"><span class="annottext">IOFormat -&gt; Expression -&gt; IO ()
+</span><span id="line-353"></span><span>  </span><span class="annot"><span class="annottext">IOFormat -&gt; Expression -&gt; IO ()
 </span><a href="CLI.Validators.html#validateXmirTopLevel"><span class="hs-identifier hs-var">validateXmirTopLevel</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637840"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637868"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-358"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637869"><span class="annot"><span class="annottext">listing :: b -&gt; FilePath
+</span><span id="line-354"></span><span>  </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679637869"><span class="annot"><span class="annottext">listing :: b -&gt; FilePath
 </span><a href="#local-6989586621679637869"><span class="hs-identifier hs-var hs-var">listing</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; b -&gt; FilePath
 forall a b. a -&gt; b -&gt; a
 </span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath
@@ -1949,7 +1945,7 @@ forall a b. a -&gt; b -&gt; a
 </span><a href="Encoding.html#UNICODE"><span class="hs-identifier hs-var">UNICODE</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
 </span><a href="#local-6989586621679637842"><span class="hs-identifier hs-var">_flat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637845"><span class="hs-identifier hs-var">_margin</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-359"></span><span>      </span><span id="local-6989586621679637874"><span class="annot"><span class="annottext">xmirCtx :: XmirContext
+</span><span id="line-355"></span><span>      </span><span id="local-6989586621679637874"><span class="annot"><span class="annottext">xmirCtx :: XmirContext
 </span><a href="#local-6989586621679637874"><span class="hs-identifier hs-var hs-var">xmirCtx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 -&gt; Bool -&gt; Bool -&gt; (Expression -&gt; FilePath) -&gt; Atoms -&gt; XmirContext
 </span><a href="XMIR.html#XmirContext"><span class="hs-identifier hs-var">XmirContext</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
@@ -1963,24 +1959,24 @@ forall (f :: * -&gt; *) k a.
 f (Map k a) -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.unions</span></span><span> </span><span class="annot"><span class="annottext">[Atoms]
 </span><a href="#local-6989586621679637866"><span class="hs-identifier hs-var">atoms</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-360"></span><span>      </span><span id="local-6989586621679637876"><span class="annot"><span class="annottext">printCtx :: PrintContext
+</span><span id="line-356"></span><span>      </span><span id="local-6989586621679637876"><span class="annot"><span class="annottext">printCtx :: PrintContext
 </span><a href="#local-6989586621679637876"><span class="hs-identifier hs-var hs-var">printCtx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">XmirContext -&gt; PrintContext
 </span><a href="#local-6989586621679637877"><span class="hs-identifier hs-var">toPrintCtx</span></a></span><span> </span><span class="annot"><span class="annottext">XmirContext
 </span><a href="#local-6989586621679637874"><span class="hs-identifier hs-var">xmirCtx</span></a></span><span>
-</span><span id="line-361"></span><span>  </span><span id="local-6989586621679637878"><span class="annot"><span class="annottext">FilePath
+</span><span id="line-357"></span><span>  </span><span id="local-6989586621679637878"><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637878"><span class="hs-identifier hs-var">expr'</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">PrintContext -&gt; Expression -&gt; IO FilePath
 </span><a href="CLI.Helpers.html#printInFormat"><span class="hs-identifier hs-var">printInFormat</span></a></span><span> </span><span class="annot"><span class="annottext">PrintContext
 </span><a href="#local-6989586621679637876"><span class="hs-identifier hs-var">printCtx</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637868"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-362"></span><span>  </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; FilePath -&gt; IO ()
+</span><span id="line-358"></span><span>  </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; FilePath -&gt; IO ()
 </span><a href="CLI.Helpers.html#printOut"><span class="hs-identifier hs-var">printOut</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637846"><span class="hs-identifier hs-var">_targetFile</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637878"><span class="hs-identifier hs-var">expr'</span></a></span><span>
-</span><span id="line-363"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-364"></span><span>    </span><span class="annot"><a href="#local-6989586621679637861"><span class="hs-identifier hs-type">validateOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-365"></span><span>    </span><span id="local-6989586621679637861"><span class="annot"><span class="annottext">validateOpts :: IO ()
+</span><span id="line-359"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-360"></span><span>    </span><span class="annot"><a href="#local-6989586621679637861"><span class="hs-identifier hs-type">validateOpts</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-361"></span><span>    </span><span id="local-6989586621679637861"><span class="annot"><span class="annottext">validateOpts :: IO ()
 </span><a href="#local-6989586621679637861"><span class="hs-identifier hs-var hs-var">validateOpts</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-366"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-362"></span><span>      </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[FilePath] -&gt; Bool
 forall a. [a] -&gt; Bool
@@ -1991,7 +1987,7 @@ forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; CmdException
 </span><a href="CLI.Types.html#InvalidCLIArguments"><span class="hs-identifier hs-var">InvalidCLIArguments</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;At least one input file must be specified for 'merge' command&quot;</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-367"></span><span>      </span><span class="annot"><span class="annottext">IOFormat -&gt; [(Bool, FilePath)] -&gt; FilePath -&gt; IO ()
+</span><span id="line-363"></span><span>      </span><span class="annot"><span class="annottext">IOFormat -&gt; [(Bool, FilePath)] -&gt; FilePath -&gt; IO ()
 </span><a href="CLI.Validators.html#validateXmirOptions"><span class="hs-identifier hs-var">validateXmirOptions</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637840"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637843"><span class="hs-identifier hs-var">_omitListing</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
@@ -1999,11 +1995,11 @@ forall e a. Exception e =&gt; e -&gt; IO a
 </span><a href="#local-6989586621679637844"><span class="hs-identifier hs-var">_omitComments</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;omit-comments&quot;</span></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;Q&quot;</span></span><span>
-</span><span id="line-368"></span><span>    </span><span class="annot"><a href="#local-6989586621679637877"><span class="hs-identifier hs-type">toPrintCtx</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="XMIR.html#XmirContext"><span class="hs-identifier hs-type">XmirContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CLI.Types.html#PrintContext"><span class="hs-identifier hs-type">PrintContext</span></a></span><span>
-</span><span id="line-369"></span><span>    </span><span id="local-6989586621679637877"><span class="annot"><span class="annottext">toPrintCtx :: XmirContext -&gt; PrintContext
+</span><span id="line-364"></span><span>    </span><span class="annot"><a href="#local-6989586621679637877"><span class="hs-identifier hs-type">toPrintCtx</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="XMIR.html#XmirContext"><span class="hs-identifier hs-type">XmirContext</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="CLI.Types.html#PrintContext"><span class="hs-identifier hs-type">PrintContext</span></a></span><span>
+</span><span id="line-365"></span><span>    </span><span id="local-6989586621679637877"><span class="annot"><span class="annottext">toPrintCtx :: XmirContext -&gt; PrintContext
 </span><a href="#local-6989586621679637877"><span class="hs-identifier hs-var hs-var">toPrintCtx</span></a></span></span><span> </span><span id="local-6989586621679637882"><span class="annot"><span class="annottext">XmirContext
 </span><a href="#local-6989586621679637882"><span class="hs-identifier hs-var">xmirCtx</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
-</span><span id="line-370"></span><span>      </span><span class="annot"><span class="annottext">SugarType
+</span><span id="line-366"></span><span>      </span><span class="annot"><span class="annottext">SugarType
 -&gt; Bool
 -&gt; Maybe Int
 -&gt; LineFormat
@@ -2023,53 +2019,53 @@ forall e a. Exception e =&gt; e -&gt; IO a
 -&gt; IOFormat
 -&gt; PrintContext
 </span><a href="CLI.Types.html#PrintCtx"><span class="hs-identifier hs-var">PrintCtx</span></a></span><span>
-</span><span id="line-371"></span><span>        </span><span class="annot"><span class="annottext">SugarType
+</span><span id="line-367"></span><span>        </span><span class="annot"><span class="annottext">SugarType
 </span><a href="#local-6989586621679637841"><span class="hs-identifier hs-var">_sugarType</span></a></span><span>
-</span><span id="line-372"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-368"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-373"></span><span>        </span><span class="annot"><span class="annottext">Maybe Int
+</span><span id="line-369"></span><span>        </span><span class="annot"><span class="annottext">Maybe Int
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-374"></span><span>        </span><span class="annot"><span class="annottext">LineFormat
+</span><span id="line-370"></span><span>        </span><span class="annot"><span class="annottext">LineFormat
 </span><a href="#local-6989586621679637842"><span class="hs-identifier hs-var">_flat</span></a></span><span>
-</span><span id="line-375"></span><span>        </span><span class="annot"><span class="annottext">Int
+</span><span id="line-371"></span><span>        </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637845"><span class="hs-identifier hs-var">_margin</span></a></span><span>
-</span><span id="line-376"></span><span>        </span><span class="annot"><span class="annottext">XmirContext
+</span><span id="line-372"></span><span>        </span><span class="annot"><span class="annottext">XmirContext
 </span><a href="#local-6989586621679637882"><span class="hs-identifier hs-var">xmirCtx</span></a></span><span>
+</span><span id="line-373"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-374"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-375"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-376"></span><span>        </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
 </span><span id="line-377"></span><span>        </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-378"></span><span>        </span><span class="annot"><span class="annottext">Bool
-</span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-379"></span><span>        </span><span class="annot"><span class="annottext">Bool
-</span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-380"></span><span>        </span><span class="annot"><span class="annottext">Bool
-</span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-381"></span><span>        </span><span class="annot"><span class="annottext">Bool
-</span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-382"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
+</span><span id="line-378"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
 </span><a href="CLI.Helpers.html#justMeetPopularity"><span class="hs-identifier hs-var">justMeetPopularity</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span>
-</span><span id="line-383"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
+</span><span id="line-379"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe Int -&gt; Int
 </span><a href="CLI.Helpers.html#justMeetLength"><span class="hs-identifier hs-var">justMeetLength</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Int
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span>
-</span><span id="line-384"></span><span>        </span><span class="annot"><span class="annottext">Expression
+</span><span id="line-380"></span><span>        </span><span class="annot"><span class="annottext">Expression
 </span><a href="AST.html#ExRoot"><span class="hs-identifier hs-var">ExRoot</span></a></span><span>
-</span><span id="line-385"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-381"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-386"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-382"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-387"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
+</span><span id="line-383"></span><span>        </span><span class="annot"><span class="annottext">Maybe FilePath
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-388"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
+</span><span id="line-384"></span><span>        </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="#local-6989586621679637840"><span class="hs-identifier hs-var">_outputFormat</span></a></span><span>
-</span><span id="line-389"></span><span>
-</span><span id="line-390"></span><span class="annot"><a href="CLI.Runners.html#runMatch"><span class="hs-identifier hs-type">runMatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMatch"><span class="hs-identifier hs-type">OptsMatch</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-391"></span><span id="runMatch"><span class="annot"><span class="annottext">runMatch :: OptsMatch -&gt; IO ()
+</span><span id="line-385"></span><span>
+</span><span id="line-386"></span><span class="annot"><a href="CLI.Runners.html#runMatch"><span class="hs-identifier hs-type">runMatch</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMatch"><span class="hs-identifier hs-type">OptsMatch</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-387"></span><span id="runMatch"><span class="annot"><span class="annottext">runMatch :: OptsMatch -&gt; IO ()
 </span><a href="CLI.Runners.html#runMatch"><span class="hs-identifier hs-var hs-var">runMatch</span></a></span></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsMatch"><span class="hs-identifier hs-type">OptsMatch</span></a></span><span class="hs-special">{</span><span id="local-6989586621679637886"><span id="local-6989586621679637887"><span id="local-6989586621679637888"><span id="local-6989586621679637889"><span id="local-6989586621679637890"><span id="local-6989586621679637891"><span id="local-6989586621679637892"><span id="local-6989586621679637893"><span class="annot"><span class="annottext">Int
 Maybe FilePath
 LogLevel
@@ -2092,35 +2088,35 @@ $sel:_when:OptsMatch :: OptsMatch -&gt; Maybe FilePath
 $sel:_inputFile:OptsMatch :: OptsMatch -&gt; Maybe FilePath
 $sel:_seed:OptsMatch :: OptsMatch -&gt; Int
 </span><a href="#local-6989586621679637886"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-392"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
+</span><span id="line-388"></span><span>  </span><span class="annot"><span class="annottext">StdGen -&gt; IO ()
 forall (m :: * -&gt; *). MonadIO m =&gt; StdGen -&gt; m ()
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.html#setStdGen"><span class="hs-identifier hs-var">setStdGen</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; StdGen
 </span><a href="file:///Users/runner/.cabal/store/ghc-9.6.7/rndm-1.3.1-8de42cdc/share/doc/html/src/System.Random.Internal.html#mkStdGen"><span class="hs-identifier hs-var">mkStdGen</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679637893"><span class="hs-identifier hs-var">_seed</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-393"></span><span>  </span><span id="local-6989586621679637902"><span class="annot"><span class="annottext">FilePath
+</span><span id="line-389"></span><span>  </span><span id="local-6989586621679637902"><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637902"><span class="hs-identifier hs-var">input</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; IO FilePath
 </span><a href="CLI.Helpers.html#readInput"><span class="hs-identifier hs-var">readInput</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637892"><span class="hs-identifier hs-var">_inputFile</span></a></span><span>
-</span><span id="line-394"></span><span>  </span><span id="local-6989586621679637903"><span class="annot"><span class="annottext">Expression
+</span><span id="line-390"></span><span>  </span><span id="local-6989586621679637903"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637903"><span class="hs-identifier hs-var">expr</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IOFormat -&gt; IO Expression
 </span><a href="CLI.Helpers.html#parseInput"><span class="hs-identifier hs-var">parseInput</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637902"><span class="hs-identifier hs-var">input</span></a></span><span> </span><span class="annot"><span class="annottext">IOFormat
 </span><a href="CLI.Types.html#PHI"><span class="hs-identifier hs-var">PHI</span></a></span><span>
-</span><span id="line-395"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Bool
+</span><span id="line-391"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Maybe FilePath -&gt; Bool
 forall a. Maybe a -&gt; Bool
 </span><span class="hs-identifier hs-var">isNothing</span></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637890"><span class="hs-identifier hs-var">_pattern</span></a></span><span>
-</span><span id="line-396"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><span id="line-392"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var">logDebug</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The --pattern is not provided, no substitutions are built&quot;</span></span><span>
-</span><span id="line-397"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-398"></span><span>      </span><span id="local-6989586621679637905"><span class="annot"><span class="annottext">Expression
+</span><span id="line-393"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-394"></span><span>      </span><span id="local-6989586621679637905"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637905"><span class="hs-identifier hs-var">ptn</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Expression
 </span><a href="Parser.html#parseExpressionThrows"><span class="hs-identifier hs-var">parseExpressionThrows</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe FilePath -&gt; FilePath
 forall a. HasCallStack =&gt; Maybe a -&gt; a
 </span><span class="hs-identifier hs-var">fromJust</span></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637890"><span class="hs-identifier hs-var">_pattern</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-399"></span><span>      </span><span id="local-6989586621679637906"><span class="annot"><span class="annottext">Maybe Condition
+</span><span id="line-395"></span><span>      </span><span id="local-6989586621679637906"><span class="annot"><span class="annottext">Maybe Condition
 </span><a href="#local-6989586621679637906"><span class="hs-identifier hs-var">condition</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; IO Condition)
 -&gt; Maybe FilePath -&gt; IO (Maybe Condition)
 forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
@@ -2132,7 +2128,7 @@ Applicative f =&gt;
 </span><span class="hs-identifier hs-var">traverse</span></span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Condition
 </span><a href="Condition.html#parseConditionThrows"><span class="hs-identifier hs-var">parseConditionThrows</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe FilePath
 </span><a href="#local-6989586621679637891"><span class="hs-identifier hs-var">_when</span></a></span><span>
-</span><span id="line-400"></span><span>      </span><span class="annot"><span class="annottext">(Text -&gt; IO Any) -&gt; Maybe Text -&gt; IO ()
+</span><span id="line-396"></span><span>      </span><span class="annot"><span class="annottext">(Text -&gt; IO Any) -&gt; Maybe Text -&gt; IO ()
 forall (t :: * -&gt; *) (f :: * -&gt; *) a b.
 (Foldable t, Applicative f) =&gt;
 (a -&gt; f b) -&gt; t a -&gt; f ()
@@ -2150,10 +2146,10 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 forall a. Slots a =&gt; a -&gt; Maybe Text
 </span><a href="Slots.html#anonymous"><span class="hs-identifier hs-var">anonymous</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Condition
 </span><a href="#local-6989586621679637906"><span class="hs-identifier hs-var">condition</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-401"></span><span>      </span><span id="local-6989586621679637909"><span class="annot"><span class="annottext">Engine
+</span><span id="line-397"></span><span>      </span><span id="local-6989586621679637909"><span class="annot"><span class="annottext">Engine
 </span><a href="#local-6989586621679637909"><span class="hs-identifier hs-var">linked</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Engine
 </span><a href="CLI.Helpers.html#engine"><span class="hs-identifier hs-var">engine</span></a></span><span>
-</span><span id="line-402"></span><span>      </span><span id="local-6989586621679637910"><span class="annot"><span class="annottext">[Subst]
+</span><span id="line-398"></span><span>      </span><span id="local-6989586621679637910"><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679637910"><span class="hs-identifier hs-var">substs</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression -&gt; Rule -&gt; RuleContext -&gt; IO [Subst]
 </span><a href="Rule.html#matchExpressionWithRule"><span class="hs-identifier hs-var">matchExpressionWithRule</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637903"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; Maybe Condition -&gt; Rule
@@ -2167,16 +2163,16 @@ forall a. Slots a =&gt; a -&gt; Maybe Text
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="annot"><span class="annottext">Engine
 </span><a href="#local-6989586621679637909"><span class="hs-identifier hs-var">linked</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_normal</span><span class="hs-special">)</span><span>
-</span><span id="line-403"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
+</span><span id="line-399"></span><span>      </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">[Subst] -&gt; Bool
 forall a. [a] -&gt; Bool
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Bool
 </span><span class="hs-identifier hs-var">null</span></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679637910"><span class="hs-identifier hs-var">substs</span></a></span><span>
-</span><span id="line-404"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">CmdException -&gt; IO ()
+</span><span id="line-400"></span><span>        </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">CmdException -&gt; IO ()
 forall e a. Exception e =&gt; e -&gt; IO a
 </span><span class="hs-identifier hs-var">throwIO</span></span><span> </span><span class="annot"><span class="annottext">CmdException
 </span><a href="CLI.Types.html#EmptySubstsOnMatch"><span class="hs-identifier hs-var">EmptySubstsOnMatch</span></a></span><span>
-</span><span id="line-405"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><span id="line-401"></span><span>        </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><span class="hs-identifier hs-var">putStrLn</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Subst] -&gt; PrintConfig -&gt; FilePath
 </span><a href="Printer.html#printSubsts%27"><span class="hs-identifier hs-var">P.printSubsts'</span></a></span><span> </span><span class="annot"><span class="annottext">[Subst]
 </span><a href="#local-6989586621679637910"><span class="hs-identifier hs-var">substs</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">SugarType
@@ -2184,9 +2180,9 @@ forall e a. Exception e =&gt; e -&gt; IO a
 </span><a href="Encoding.html#UNICODE"><span class="hs-identifier hs-var">UNICODE</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">LineFormat
 </span><a href="#local-6989586621679637889"><span class="hs-identifier hs-var">_flat</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="Margin.html#defaultMargin"><span class="hs-identifier hs-var">defaultMargin</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-406"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-407"></span><span>    </span><span class="annot"><a href="#local-6989586621679637911"><span class="hs-identifier hs-type">rule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Y.Condition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span>
-</span><span id="line-408"></span><span>    </span><span id="local-6989586621679637911"><span class="annot"><span class="annottext">rule :: Expression -&gt; Maybe Condition -&gt; Rule
+</span><span id="line-402"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-403"></span><span>    </span><span class="annot"><a href="#local-6989586621679637911"><span class="hs-identifier hs-type">rule</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Yaml.html#Condition"><span class="hs-identifier hs-type">Y.Condition</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Yaml.html#Rule"><span class="hs-identifier hs-type">Y.Rule</span></a></span><span>
+</span><span id="line-404"></span><span>    </span><span id="local-6989586621679637911"><span class="annot"><span class="annottext">rule :: Expression -&gt; Maybe Condition -&gt; Rule
 </span><a href="#local-6989586621679637911"><span class="hs-identifier hs-var hs-var">rule</span></a></span></span><span> </span><span id="local-6989586621679637915"><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679637915"><span class="hs-identifier hs-var">ptn</span></a></span></span><span> </span><span id="local-6989586621679637916"><span class="annot"><span class="annottext">Maybe Condition
 </span><a href="#local-6989586621679637916"><span class="hs-identifier hs-var">cnd</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FilePath
@@ -2211,9 +2207,9 @@ forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="annot"><span class="annottext">Maybe Condition
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-409"></span><span>
-</span><span id="line-410"></span><span class="annot"><a href="CLI.Runners.html#runCompile"><span class="hs-identifier hs-type">runCompile</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsCompile"><span class="hs-identifier hs-type">OptsCompile</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-411"></span><span id="runCompile"><span class="annot"><span class="annottext">runCompile :: OptsCompile -&gt; IO ()
+</span><span id="line-405"></span><span>
+</span><span id="line-406"></span><span class="annot"><a href="CLI.Runners.html#runCompile"><span class="hs-identifier hs-type">runCompile</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="CLI.Types.html#OptsCompile"><span class="hs-identifier hs-type">OptsCompile</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-407"></span><span id="runCompile"><span class="annot"><span class="annottext">runCompile :: OptsCompile -&gt; IO ()
 </span><a href="CLI.Runners.html#runCompile"><span class="hs-identifier hs-var hs-var">runCompile</span></a></span></span><span> </span><span class="annot"><a href="CLI.Types.html#OptsCompile"><span class="hs-identifier hs-type">OptsCompile</span></a></span><span class="hs-special">{</span><span id="local-6989586621679637920"><span id="local-6989586621679637921"><span id="local-6989586621679637922"><span id="local-6989586621679637923"><span class="annot"><span class="annottext">Int
 FilePath
 [FilePath]
@@ -2227,13 +2223,13 @@ $sel:_logLines:OptsCompile :: OptsCompile -&gt; Int
 $sel:_rules:OptsCompile :: OptsCompile -&gt; [FilePath]
 $sel:_targetFile:OptsCompile :: OptsCompile -&gt; FilePath
 </span><a href="#local-6989586621679637920"><span class="hs-glyph hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">..</span></a></span></span></span></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-412"></span><span>  </span><span id="local-6989586621679637928"><span class="annot"><span class="annottext">[Rule]
+</span><span id="line-408"></span><span>  </span><span id="local-6989586621679637928"><span class="annot"><span class="annottext">[Rule]
 </span><a href="#local-6989586621679637928"><span class="hs-identifier hs-var">custom</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; [FilePath] -&gt; IO [Rule]
 </span><a href="CLI.Helpers.html#getRules"><span class="hs-identifier hs-var">getRules</span></a></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="annot"><span class="annottext">[FilePath]
 </span><a href="#local-6989586621679637922"><span class="hs-identifier hs-var">_rules</span></a></span><span>
-</span><span id="line-413"></span><span>  </span><span id="local-6989586621679637929"><span class="annot"><span class="annottext">FilePath
+</span><span id="line-409"></span><span>  </span><span id="local-6989586621679637929"><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637929"><span class="hs-identifier hs-var">source</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">(FilePath -&gt; IO FilePath)
 -&gt; (FilePath -&gt; IO FilePath)
 -&gt; Either FilePath FilePath
@@ -2262,31 +2258,31 @@ forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><a href="Yaml.html#morphingRules"><span class="hs-identifier hs-var">Y.morphingRules</span></a></span><span> </span><span class="annot"><span class="annottext">[DataizeRule]
 </span><a href="Yaml.html#dataizationRules"><span class="hs-identifier hs-var">Y.dataizationRules</span></a></span><span> </span><span class="annot"><span class="annottext">[FilePath]
 </span><a href="Engine.html#current"><span class="hs-identifier hs-var">current</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-414"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; IO ()
+</span><span id="line-410"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; IO ()
 </span><a href="Files.html#overwrite"><span class="hs-identifier hs-var">overwrite</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637923"><span class="hs-identifier hs-var">_targetFile</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637929"><span class="hs-identifier hs-var">source</span></a></span><span>
-</span><span id="line-415"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><span id="line-411"></span><span>  </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><a href="Logger.html#logInfo"><span class="hs-identifier hs-var">logInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; FilePath
 forall r. PrintfType r =&gt; FilePath -&gt; r
 </span><span class="hs-identifier hs-var">printf</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The rules were compiled into '%s'&quot;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><a href="#local-6989586621679637923"><span class="hs-identifier hs-var">_targetFile</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-416"></span><span>  </span><span id="local-6989586621679637934"><span class="annot"><span class="annottext">Bool
+</span><span id="line-412"></span><span>  </span><span id="local-6989586621679637934"><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637934"><span class="hs-identifier hs-var">exists</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO Bool
 </span><span class="hs-identifier hs-var">doesFileExist</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;cabal.project.local&quot;</span></span><span>
-</span><span id="line-417"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-413"></span><span>  </span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><a href="#local-6989586621679637934"><span class="hs-identifier hs-var">exists</span></a></span><span>
-</span><span id="line-418"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><span id="line-414"></span><span>    </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><span class="hs-identifier hs-var">putStrLn</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The file 'cabal.project.local' exists, so add these lines to it to link the compiled rules in:\npackage phino\n  flags: +compiled&quot;</span></span><span>
-</span><span id="line-419"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-420"></span><span>      </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; IO ()
+</span><span id="line-415"></span><span>    </span><span class="hs-keyword">else</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-416"></span><span>      </span><span class="annot"><span class="annottext">FilePath -&gt; FilePath -&gt; IO ()
 </span><a href="Files.html#overwrite"><span class="hs-identifier hs-var">overwrite</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;cabal.project.local&quot;</span></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;package phino\n  flags: +compiled\n&quot;</span></span><span>
-</span><span id="line-421"></span><span>      </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
+</span><span id="line-417"></span><span>      </span><span class="annot"><span class="annottext">FilePath -&gt; IO ()
 </span><a href="Logger.html#logInfo"><span class="hs-identifier hs-var">logInfo</span></a></span><span> </span><span class="annot"><span class="annottext">FilePath
 </span><span class="hs-string">&quot;The file 'cabal.project.local' was written, so the next build links the compiled rules in&quot;</span></span><span>
-</span><span id="line-422"></span></pre></body></html>
+</span><span id="line-418"></span></pre></body></html>
