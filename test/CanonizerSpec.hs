@@ -53,6 +53,11 @@ spec = do
         , ExFormation [BiLambda (Function "Foo")]
         , ExFormation [BiLambda (Function "Fn1")]
         )
+      ,
+        ( "preserves the package marker without consuming a function number"
+        , ExFormation [BiLambda (Function "Package"), BiLambda (Function "Foo")]
+        , ExFormation [BiLambda (Function "Package"), BiLambda (Function "Fn1")]
+        )
       , ("leaves a meta lambda binding untouched", metaLambda, metaLambda)
       , ("numbers several lambdas at different nesting depths in document order", nestedInput, nestedExpected)
       ,
