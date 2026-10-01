@@ -12,7 +12,7 @@ import Data.Either (fromRight)
 import Data.List (isInfixOf)
 import Emit (emitted)
 import Engine (current)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldNotSatisfy, shouldSatisfy)
 import Yaml qualified as Y
 
 spec :: Spec
@@ -24,6 +24,15 @@ spec = do
     it "writes a function for every built-in rule of normalization" $
       fromRight "" (emitted Y.normalizationRules [] Y.contextualizationRules Y.morphingRules Y.dataizationRules current)
         `shouldSatisfy` (\source -> all (\rule -> ("R.direct " ++ show rule.name) `isInfixOf` source) Y.normalizationRules)
+    it "asks a built-in rule of normalization in the one walk, told it is a redex" $
+      fromRight "" (emitted [Y.Rule "kq" Nothing Nothing (ExDispatch ExTermination (AtLabel "wv")) ExTermination Nothing Nothing Nothing] [] [] [] [] [])
+        `shouldSatisfy` ("(0, True, rewriteKq)" `isInfixOf`)
+    it "leaves a rule of '--rule' out of the one walk" $
+      fromRight "" (emitted [] [Y.Rule "jd" Nothing Nothing (ExDispatch ExXi (AtLabel "pe")) ExRoot Nothing Nothing Nothing] [] [] [] [])
+        `shouldNotSatisfy` ("rewriteJd)" `isInfixOf`)
+    it "hands the engine the rules matching a term" $
+      fromRight "" (emitted Y.normalizationRules [] Y.contextualizationRules Y.morphingRules Y.dataizationRules current)
+        `shouldSatisfy` ("En._matching = \\universe -> Set.fromList . matching universe" `isInfixOf`)
     it "writes an equation for every rule of contextualization" $
       fromRight "" (emitted Y.normalizationRules [] Y.contextualizationRules Y.morphingRules Y.dataizationRules current)
         `shouldSatisfy` (\source -> all (\rule -> ("(" ++ show rule.name ++ ", ") `isInfixOf` source) Y.contextualizationRules)

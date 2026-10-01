@@ -7,6 +7,7 @@ module EngineSpec where
 
 import AST
 import Data.Map.Strict qualified as Map
+import Data.Set qualified as Set
 import Deps (Term (TeExpression))
 import Engine (Engine (..), building, fresh, stepOf, yaml)
 import Matcher (substEmpty)
@@ -22,6 +23,10 @@ spec = do
     it "takes the step the engine compiled out of the very same rule" $
       let rule = Y.Rule "prv" Nothing Nothing ExTermination ExXi Nothing Nothing Nothing
        in _name (stepOf yaml{_rules = Map.fromList [(show rule, Step "zyx8" (\_ _ -> pure Nothing))]} rule) `shouldBe` "zyx8"
+  describe "yaml" $
+    it "names every rule of normalization as one matching a term" $
+      _matching yaml (Just (ExFormation [BiVoid (AtLabel "ug")])) (ExDispatch ExRoot (AtLabel "yb"))
+        `shouldBe` Set.fromList [0 .. length Y.normalizationRules - 1]
   describe "fresh" $ do
     it "accepts the engine interpreting the rules phino carries" $
       fresh yaml `shouldBe` True

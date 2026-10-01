@@ -309,24 +309,36 @@ sites redex rule tgt = go tgt []
     inside (BiTau _ expr) rest = go expr rest
     inside _ rest = rest
 
--- Whether a rule matches at some place of the term the deep matcher looks at,
--- told whether it matches only a redex (see 'sites').
-anywhere :: Bool -> (Expression -> Bool) -> Expression -> Bool
-anywhere redex rule = go
+-- The numbers of the rules matching at some place of the term the deep
+-- matcher looks at, in the order one walk over the term meets them. A rule is
+-- a function of the world the term stands in and of the place, the way 'phino
+-- compile' writes one, beside its number and whether it matches only a redex
+-- (see 'sites'). The walk asks every rule not met yet at every place, so the
+-- term is walked once for all the rules rather than once for each of them, and
+-- it ends once every rule is met. A place where no rule is asked, an inert
+-- term while only redexes are left, is not entered, since every place inside
+-- it is inert too. The list is lazy, so whoever asks only whether some rule
+-- matches ends the walk at the first one (#1643).
+hits :: forall a. [(Int, Bool, Maybe Expression -> Expression -> [a])] -> Maybe Expression -> Expression -> [Int]
+hits rules universe tgt = go [tgt] rules
   where
-    go :: Expression -> Bool
-    go expr
-      | redex && inert expr = False
-      | otherwise = rule expr || below expr
-    below :: Expression -> Bool
-    below (ExFormation bds) = any inside bds
-    below (ExDispatch expr _) = go expr
-    below (ExApplication expr (ArTau _ arg)) = go expr || go arg
-    below (ExApplication expr (ArAlpha _ arg)) = go expr || go arg
-    below _ = False
-    inside :: Binding -> Bool
-    inside (BiTau _ expr) = go expr
-    inside _ = False
+    go :: [Expression] -> [(Int, Bool, Maybe Expression -> Expression -> [a])] -> [Int]
+    go [] _ = []
+    go _ [] = []
+    go (expr : rest) pending
+      | inert expr && and [redex | (_, redex, _) <- pending] = go rest pending
+      | otherwise = case [idx | (idx, redex, rule) <- pending, not (redex && inert expr), not (null (rule universe expr))] of
+          [] -> go (below expr rest) pending
+          met -> met ++ go (below expr rest) [rule | rule@(idx, _, _) <- pending, idx `notElem` met]
+    below :: Expression -> [Expression] -> [Expression]
+    below (ExFormation bds) rest = foldr inside rest bds
+    below (ExDispatch expr _) rest = expr : rest
+    below (ExApplication expr (ArTau _ arg)) rest = expr : arg : rest
+    below (ExApplication expr (ArAlpha _ arg)) rest = expr : arg : rest
+    below _ rest = rest
+    inside :: Binding -> [Expression] -> [Expression]
+    inside (BiTau _ expr) rest = expr : rest
+    inside _ rest = rest
 
 -- Every way of cutting the bindings in two, the leading run first and the rest
 -- second, the shortest leading run first, which is the order a meta binding

@@ -110,28 +110,34 @@ those of `--rule`, into a list comprehension over the term it may match as a
 whole, 𝒞 into one function with an equation per rule, built on `concluded` of
 `Contextualize.hs`, and every rule of 𝕄 and 𝔻 into a list comprehension over
 the term and the universe (#1628). What runs the rules is an `Engine`
-(`Engine.hs`): the steps of normalization, a step per compiled rule keyed by
-the `show` text of the rule, the normal-form test, 𝒞, and the rules of 𝕄 and
-𝔻. `yaml` interprets the rules; the module `Compiled` holds the other one,
-and the Cabal flag `compiled` picks its source folder, `compiled/stub` (where
-`compiled = Nothing`) or `compiled/generated`. Only the CLI (`engine` in
-`CLI/Helpers.hs`) and the specs reach for `Compiled`; the library gets the
-engine through `_engine` of `ReduceContext`, `_normal` of `RewriteContext` and
+(`Engine.hs`): the steps of normalization, the test of which of them match a
+term, a step per compiled rule keyed by the `show` text of the rule, the
+normal-form test, 𝒞, and the rules of 𝕄 and 𝔻. `yaml` interprets the rules;
+the module `Compiled` holds the other one, and the Cabal flag `compiled` picks
+its source folder, `compiled/stub` (where `compiled = Nothing`) or
+`compiled/generated`. Only the CLI (`engine` in `CLI/Helpers.hs`) and the
+specs reach for `Compiled`; the library gets the engine through `_engine` of
+`ReduceContext`, `_normal` and `_matching` of `RewriteContext`, `_normal` of
 `RuleContext`, and `building`, which routes `contextualize` to the engine.
 
 A rewriting step is a `Step` of `Rule.hs`, a name and a function. `interpreted`
 of `Rewriter.hs` wraps the matcher and the replacer; `direct` wraps a compiled
 function, finds the places it matches at with `sites` of `Matcher.hs` in the
 order the deep matcher finds them, and hands them to the same
-`replaceExpression`, so the chain of steps is the same with either engine. A
-rule the generated code could not run that way is refused with the reason:
-`having`, a `where` function other than `contextualize` and `named`,
-`matches`, `part-of`, a rule of the fast shape (`fast` of `Rewriter.hs`), and
-a pattern applying Φ to a ρ. A compiled engine carries the texts of the
-built-in rules it was made from and the CLI refuses it once they changed
-(`fresh`). `CompiledSpec.hs` runs both engines over random terms and compares
-the chains, the normal-form test and 𝒞, and the chains 𝕄 and 𝔻 make of an
-object of random programs.
+`replaceExpression`, so the chain of steps is the same with either engine.
+`rewrite'` tries only the steps `_matching` names, asked again only once a step
+changed the term. The compiled engine finds them all in one walk over the term
+(`hits` of `Matcher.hs`) and builds its normal-form test on the same walk; the
+interpreted engine and the `rewrite` command name every step (`every` of
+`Rewriter.hs`), so each rule is tried as before (#1643). A rule the generated
+code could not run that way is refused with the reason: `having`, a `where`
+function other than `contextualize` and `named`, `matches`, `part-of`, a rule
+of the fast shape (`fast` of `Rewriter.hs`), and a pattern applying Φ to a ρ. A
+compiled engine carries the texts of the built-in rules it was made from and
+the CLI refuses it once they changed (`fresh`). `CompiledSpec.hs` runs both
+engines over random terms and compares the chains, the normal-form test and 𝒞,
+and the chains 𝕄 and 𝔻 make of an object of random programs; it also checks
+that the compiled test of which rules match never misses one.
 
 A rule of 𝕄 or 𝔻 is an `Inference` of `Inference.hs`: matched against a term
 and a universe it answers the `Premises` it runs beside its spine, in order —
