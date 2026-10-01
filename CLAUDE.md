@@ -20,6 +20,7 @@ make test          # cabal test --ghc-options=-Werror
 make compiled      # phino compile + the whole suite on the compiled rules
 make hlint         # hlint src app test
 make fourmolu      # --mode check src app test (2-space indent, leading commas)
+make ruff          # ruff check + ruff format --check over the whole tree
 make coverage      # cabal test --enable-coverage + hpc-codecov (threshold 65%)
 make bench         # prepare resources + cabal bench --enable-benchmarks
 make binary        # build stripped release binary into dist-release/phino[.exe]
