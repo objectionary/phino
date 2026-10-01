@@ -2075,15 +2075,14 @@ forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><a href="CST.html#CO_EMPTY"><span class="hs-identifier hs-var">CO_EMPTY</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;&quot;</span></span><span>
 </span><span id="line-304"></span><span>
-</span><span id="line-305"></span><span class="hs-comment">-- The union of binding groups, parenthesized when there is more than one.</span><span>
-</span><span id="line-306"></span><span class="annot"><a href="Render.html#union"><span class="hs-identifier hs-type">union</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-307"></span><span id="union"><span class="annot"><span class="annottext">union :: [BINDING] -&gt; Text
+</span><span id="line-305"></span><span class="annot"><a href="Render.html#union"><span class="hs-identifier hs-type">union</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="CST.html#BINDING"><span class="hs-identifier hs-type">BINDING</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-306"></span><span id="union"><span class="annot"><span class="annottext">union :: [BINDING] -&gt; Text
 </span><a href="Render.html#union"><span class="hs-identifier hs-var hs-var">union</span></a></span></span><span> </span><span class="hs-special">[</span><span id="local-6989586621679624329"><span class="annot"><span class="annottext">BINDING
 </span><a href="#local-6989586621679624329"><span class="hs-identifier hs-var">group</span></a></span></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
 </span><a href="#local-6989586621679624329"><span class="hs-identifier hs-var">group</span></a></span><span>
-</span><span id="line-308"></span><span class="annot"><a href="Render.html#union"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span id="local-6989586621679624330"><span class="annot"><span class="annottext">[BINDING]
+</span><span id="line-307"></span><span class="annot"><a href="Render.html#union"><span class="hs-identifier hs-var">union</span></a></span><span> </span><span id="local-6989586621679624330"><span class="annot"><span class="annottext">[BINDING]
 </span><a href="#local-6989586621679624330"><span class="hs-identifier hs-var">groups</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;\\lparen &quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
@@ -2098,9 +2097,9 @@ forall a. Render a =&gt; a -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; \\rparen&quot;</span></span><span>
-</span><span id="line-309"></span><span>
-</span><span id="line-310"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier hs-type">Render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA_ARG"><span class="hs-identifier hs-type">EXTRA_ARG</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-311"></span><span>  </span><span id="local-6989586621679624337"><span class="annot"><span class="annottext">render :: EXTRA_ARG -&gt; Text
+</span><span id="line-308"></span><span>
+</span><span id="line-309"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier hs-type">Render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA_ARG"><span class="hs-identifier hs-type">EXTRA_ARG</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-310"></span><span>  </span><span id="local-6989586621679624337"><span class="annot"><span class="annottext">render :: EXTRA_ARG -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var hs-var hs-var hs-var">render</span></a></span></span><span> </span><span class="annot"><a href="CST.html#ARG_ATTR"><span class="hs-identifier hs-type">ARG_ATTR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624339"><span class="annot"><span class="annottext">ATTRIBUTE
 attr :: ATTRIBUTE
 $sel:attr:ARG_EXPR :: EXTRA_ARG -&gt; ATTRIBUTE
@@ -2108,30 +2107,30 @@ $sel:attr:ARG_EXPR :: EXTRA_ARG -&gt; ATTRIBUTE
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">ATTRIBUTE
 </span><a href="#local-6989586621679624339"><span class="hs-identifier hs-var">attr</span></a></span><span>
-</span><span id="line-312"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#ARG_EXPR"><span class="hs-identifier hs-type">ARG_EXPR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624342"><span class="annot"><span class="annottext">EXPRESSION
+</span><span id="line-311"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#ARG_EXPR"><span class="hs-identifier hs-type">ARG_EXPR</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624342"><span class="annot"><span class="annottext">EXPRESSION
 expr :: EXPRESSION
 $sel:expr:ARG_EXPR :: EXTRA_ARG -&gt; EXPRESSION
 </span><a href="#local-6989586621679624342"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">EXPRESSION -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">EXPRESSION
 </span><a href="#local-6989586621679624342"><span class="hs-identifier hs-var">expr</span></a></span><span>
-</span><span id="line-313"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#ARG_BINDING"><span class="hs-identifier hs-type">ARG_BINDING</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624345"><span class="annot"><span class="annottext">BINDING
+</span><span id="line-312"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#ARG_BINDING"><span class="hs-identifier hs-type">ARG_BINDING</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624345"><span class="annot"><span class="annottext">BINDING
 binding :: BINDING
 $sel:binding:ARG_EXPR :: EXTRA_ARG -&gt; BINDING
 </span><a href="#local-6989586621679624345"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BINDING -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">BINDING
 </span><a href="#local-6989586621679624345"><span class="hs-identifier hs-var">binding</span></a></span><span>
-</span><span id="line-314"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#ARG_BYTES"><span class="hs-identifier hs-type">ARG_BYTES</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624348"><span class="annot"><span class="annottext">BYTES
+</span><span id="line-313"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#ARG_BYTES"><span class="hs-identifier hs-type">ARG_BYTES</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624348"><span class="annot"><span class="annottext">BYTES
 bytes :: BYTES
 $sel:bytes:ARG_EXPR :: EXTRA_ARG -&gt; BYTES
 </span><a href="#local-6989586621679624348"><span class="hs-glyph hs-var hs-var">..</span></a></span></span><span class="hs-special">}</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">BYTES -&gt; Text
 forall a. Render a =&gt; a -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><span class="annottext">BYTES
 </span><a href="#local-6989586621679624348"><span class="hs-identifier hs-var">bytes</span></a></span><span>
-</span><span id="line-315"></span><span>
-</span><span id="line-316"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier hs-type">Render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-317"></span><span>  </span><span id="local-6989586621679624410"><span class="annot"><span class="annottext">render :: EXTRA -&gt; Text
+</span><span id="line-314"></span><span>
+</span><span id="line-315"></span><span class="hs-keyword">instance</span><span> </span><span class="annot"><a href="Render.html#Render"><span class="hs-identifier hs-type">Render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-316"></span><span>  </span><span id="local-6989586621679624410"><span class="annot"><span class="annottext">render :: EXTRA -&gt; Text
 </span><a href="Render.html#render"><span class="hs-identifier hs-var hs-var hs-var hs-var">render</span></a></span></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:func:EXTRA :: EXTRA -&gt; String
 </span><a href="CST.html#%24sel%3Afunc%3AEXTRA"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;contextualize&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">$sel:args:EXTRA :: EXTRA -&gt; [EXTRA_ARG]
@@ -2170,11 +2169,7 @@ forall a. Render a =&gt; a -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; }&quot;</span></span><span>
-</span><span id="line-318"></span><span>  </span><span class="hs-comment">-- &#120132; carries the universe and threads a state, &#120132;(n, e, s_1), so a 'morph' extra</span><span>
-</span><span id="line-319"></span><span>  </span><span class="hs-comment">-- renders with the universe metavariable 'e' and the incoming state 's_1' as its</span><span>
-</span><span id="line-320"></span><span>  </span><span class="hs-comment">-- trailing arguments. This is a one-off application binding only 'meta', so the</span><span>
-</span><span id="line-321"></span><span>  </span><span class="hs-comment">-- returned state is dropped (the engine discards it too, see 'execBuildTerm').</span><span>
-</span><span id="line-322"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:func:EXTRA :: EXTRA -&gt; String
+</span><span id="line-317"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:func:EXTRA :: EXTRA -&gt; String
 </span><a href="CST.html#%24sel%3Afunc%3AEXTRA"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;morph&quot;</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679624418"><span id="local-6989586621679624419"><span class="annot"><span class="annottext">[EXTRA_ARG]
 EXTRA_ARG
@@ -2201,10 +2196,7 @@ forall a. Render a =&gt; a -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; }{ e }{ s_1 }&quot;</span></span><span>
-</span><span id="line-323"></span><span>  </span><span class="hs-comment">-- The name a formation goes by in the universe. The rule never writes the</span><span>
-</span><span id="line-324"></span><span>  </span><span class="hs-comment">-- universe, since phino knows it where the rule applies (#1460), so the name</span><span>
-</span><span id="line-325"></span><span>  </span><span class="hs-comment">-- and the formation it stands for are the two sides of one relation.</span><span>
-</span><span id="line-326"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:func:EXTRA :: EXTRA -&gt; String
+</span><span id="line-318"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span class="hs-special">{</span><span class="annot"><span class="annottext">$sel:func:EXTRA :: EXTRA -&gt; String
 </span><a href="CST.html#%24sel%3Afunc%3AEXTRA"><span class="hs-identifier hs-var">func</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;named&quot;</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">$sel:args:EXTRA :: EXTRA -&gt; [EXTRA_ARG]
 </span><a href="CST.html#%24sel%3Aargs%3AEXTRA"><span class="hs-identifier hs-var">args</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span id="local-6989586621679624420"><span class="annot"><span class="annottext">EXTRA_ARG
@@ -2229,7 +2221,7 @@ forall a. Render a =&gt; a -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; }&quot;</span></span><span>
-</span><span id="line-327"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624422"><span id="local-6989586621679624423"><span id="local-6989586621679624424"><span class="annot"><span class="annottext">String
+</span><span id="line-319"></span><span>  </span><span class="annot"><a href="Render.html#render"><span class="hs-identifier hs-var">render</span></a></span><span> </span><span class="annot"><a href="CST.html#EXTRA"><span class="hs-identifier hs-type">EXTRA</span></a></span><span class="hs-special">{</span><span id="local-6989586621679624422"><span id="local-6989586621679624423"><span id="local-6989586621679624424"><span class="annot"><span class="annottext">String
 [EXTRA_ARG]
 EXTRA_ARG
 $sel:func:EXTRA :: EXTRA -&gt; String
@@ -2264,17 +2256,17 @@ forall a. Render a =&gt; a -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot; }&quot;</span></span><span>
-</span><span id="line-328"></span><span>    </span><span class="hs-keyword">where</span><span>
-</span><span id="line-329"></span><span>      </span><span class="annot"><a href="#local-6989586621679624425"><span class="hs-identifier hs-type">macro</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
-</span><span id="line-330"></span><span>      </span><span id="local-6989586621679624425"><span class="annot"><span class="annottext">macro :: String -&gt; Text
+</span><span id="line-320"></span><span>    </span><span class="hs-keyword">where</span><span>
+</span><span id="line-321"></span><span>      </span><span class="annot"><a href="#local-6989586621679624425"><span class="hs-identifier hs-type">macro</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Text</span></span><span>
+</span><span id="line-322"></span><span>      </span><span id="local-6989586621679624425"><span class="annot"><span class="annottext">macro :: String -&gt; Text
 </span><a href="#local-6989586621679624425"><span class="hs-identifier hs-var hs-var">macro</span></a></span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;evaluate&quot;</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;\\phinoEvaluate&quot;</span></span><span>
-</span><span id="line-331"></span><span>      </span><span class="annot"><a href="#local-6989586621679624425"><span class="hs-identifier hs-var">macro</span></a></span><span> </span><span id="local-6989586621679624426"><span class="annot"><span class="annottext">String
+</span><span id="line-323"></span><span>      </span><span class="annot"><a href="#local-6989586621679624425"><span class="hs-identifier hs-var">macro</span></a></span><span> </span><span id="local-6989586621679624426"><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679624426"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Text
 </span><span class="hs-string">&quot;\\&quot;</span></span><span> </span><span class="annot"><span class="annottext">Text -&gt; Text -&gt; Text
 forall a. Semigroup a =&gt; a -&gt; a -&gt; a
 </span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; Text
 </span><span class="hs-identifier hs-var">T.pack</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679624426"><span class="hs-identifier hs-var">name</span></a></span><span>
-</span><span id="line-332"></span></pre></body></html>
+</span><span id="line-324"></span></pre></body></html>

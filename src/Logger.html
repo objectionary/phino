@@ -176,14 +176,11 @@ forall a. IORef a -&gt; a -&gt; IO ()
 </span><a href="#local-6989586621679614200"><span class="hs-identifier hs-var">lvl</span></a></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679614201"><span class="hs-identifier hs-var">cnt</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-33"></span><span>
-</span><span id="line-34"></span><span class="hs-comment">-- Whether a message of this level reaches the console at all, so a caller</span><span>
-</span><span id="line-35"></span><span class="hs-comment">-- whose message costs something to put together skips the work when it would</span><span>
-</span><span id="line-36"></span><span class="hs-comment">-- be thrown away.</span><span>
-</span><span id="line-37"></span><span class="annot"><a href="Logger.html#logging"><span class="hs-identifier hs-type">logging</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
-</span><span id="line-38"></span><span id="logging"><span class="annot"><span class="annottext">logging :: LogLevel -&gt; IO Bool
+</span><span id="line-34"></span><span class="annot"><a href="Logger.html#logging"><span class="hs-identifier hs-type">logging</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-35"></span><span id="logging"><span class="annot"><span class="annottext">logging :: LogLevel -&gt; IO Bool
 </span><a href="Logger.html#logging"><span class="hs-identifier hs-var hs-var">logging</span></a></span></span><span> </span><span id="local-6989586621679614202"><span class="annot"><span class="annottext">LogLevel
 </span><a href="#local-6989586621679614202"><span class="hs-identifier hs-var">lvl</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-39"></span><span>  </span><span class="annot"><a href="Logger.html#Logger"><span class="hs-identifier hs-type">Logger</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614203"><span id="local-6989586621679614204"><span class="annot"><span class="annottext">Int
+</span><span id="line-36"></span><span>  </span><span class="annot"><a href="Logger.html#Logger"><span class="hs-identifier hs-type">Logger</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614203"><span id="local-6989586621679614204"><span class="annot"><span class="annottext">Int
 LogLevel
 level :: Logger -&gt; LogLevel
 lns :: Logger -&gt; Int
@@ -193,7 +190,7 @@ lns :: Int
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef Logger
 </span><a href="Logger.html#logger"><span class="hs-identifier hs-var">logger</span></a></span><span>
-</span><span id="line-40"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO Bool
+</span><span id="line-37"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO Bool
 forall a. a -&gt; IO a
 forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
 </span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
@@ -206,13 +203,13 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">)</span><span>
-</span><span id="line-41"></span><span>
-</span><span id="line-42"></span><span class="annot"><a href="Logger.html#logMessage"><span class="hs-identifier hs-type">logMessage</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-43"></span><span id="logMessage"><span class="annot"><span class="annottext">logMessage :: LogLevel -&gt; String -&gt; IO ()
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="annot"><a href="Logger.html#logMessage"><span class="hs-identifier hs-type">logMessage</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Logger.html#LogLevel"><span class="hs-identifier hs-type">LogLevel</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-40"></span><span id="logMessage"><span class="annot"><span class="annottext">logMessage :: LogLevel -&gt; String -&gt; IO ()
 </span><a href="Logger.html#logMessage"><span class="hs-identifier hs-var hs-var">logMessage</span></a></span></span><span> </span><span id="local-6989586621679614208"><span class="annot"><span class="annottext">LogLevel
 </span><a href="#local-6989586621679614208"><span class="hs-identifier hs-var">lvl</span></a></span></span><span> </span><span id="local-6989586621679614209"><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679614209"><span class="hs-identifier hs-var">message</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-44"></span><span>  </span><span class="annot"><a href="Logger.html#Logger"><span class="hs-identifier hs-type">Logger</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614210"><span id="local-6989586621679614211"><span class="annot"><span class="annottext">Int
+</span><span id="line-41"></span><span>  </span><span class="annot"><a href="Logger.html#Logger"><span class="hs-identifier hs-type">Logger</span></a></span><span class="hs-special">{</span><span id="local-6989586621679614210"><span id="local-6989586621679614211"><span class="annot"><span class="annottext">Int
 LogLevel
 level :: Logger -&gt; LogLevel
 lns :: Logger -&gt; Int
@@ -222,10 +219,10 @@ lns :: Int
 forall a. IORef a -&gt; IO a
 </span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">IORef Logger
 </span><a href="Logger.html#logger"><span class="hs-identifier hs-var">logger</span></a></span><span>
-</span><span id="line-45"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
+</span><span id="line-42"></span><span>  </span><span class="annot"><span class="annottext">Bool -&gt; IO () -&gt; IO ()
 forall (f :: * -&gt; *). Applicative f =&gt; Bool -&gt; f () -&gt; f ()
 </span><span class="hs-identifier hs-var">when</span></span><span>
-</span><span id="line-46"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
+</span><span id="line-43"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LogLevel
 </span><a href="#local-6989586621679614208"><span class="hs-identifier hs-var">lvl</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; LogLevel -&gt; Bool
 forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">&gt;=</span></span><span> </span><span class="annot"><span class="annottext">LogLevel
@@ -235,25 +232,25 @@ forall a. Ord a =&gt; a -&gt; a -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">0</span></span><span class="hs-special">)</span><span>
-</span><span id="line-47"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679614212"><span class="annot"><span class="annottext">split :: [String]
+</span><span id="line-44"></span><span>    </span><span class="hs-special">(</span><span> </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679614212"><span class="annot"><span class="annottext">split :: [String]
 </span><a href="#local-6989586621679614212"><span class="hs-identifier hs-var hs-var">split</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">String -&gt; [String]
 </span><span class="hs-identifier hs-var">DL.lines</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679614209"><span class="hs-identifier hs-var">message</span></a></span><span>
-</span><span id="line-48"></span><span>          </span><span id="local-6989586621679614214"><span class="annot"><span class="annottext">toPrint :: [String]
+</span><span id="line-45"></span><span>          </span><span id="local-6989586621679614214"><span class="annot"><span class="annottext">toPrint :: [String]
 </span><a href="#local-6989586621679614214"><span class="hs-identifier hs-var hs-var">toPrint</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [String] -&gt; [String]
 forall a. Int -&gt; [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">take</span></span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679614211"><span class="hs-identifier hs-var">lns</span></a></span><span> </span><span class="annot"><span class="annottext">[String]
 </span><a href="#local-6989586621679614212"><span class="hs-identifier hs-var">split</span></a></span><span>
-</span><span id="line-49"></span><span>          </span><span id="local-6989586621679614223"><span class="annot"><span class="annottext">msg :: [String]
+</span><span id="line-46"></span><span>          </span><span id="local-6989586621679614223"><span class="annot"><span class="annottext">msg :: [String]
 </span><a href="#local-6989586621679614223"><span class="hs-identifier hs-var hs-var">msg</span></a></span></span><span>
-</span><span id="line-50"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
+</span><span id="line-47"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679614211"><span class="hs-identifier hs-var">lns</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="hs-glyph">-</span><span class="annot"><span class="annottext">Int
 </span><span class="hs-number">1</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><span class="annottext">String
 </span><a href="#local-6989586621679614209"><span class="hs-identifier hs-var">message</span></a></span><span class="hs-special">]</span><span>
-</span><span id="line-51"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; Int
+</span><span id="line-48"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">[String] -&gt; Int
 forall a. [a] -&gt; Int
 forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
 </span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[String]
@@ -273,10 +270,10 @@ forall a. Show a =&gt; a -&gt; String
 forall a. [a] -&gt; [a] -&gt; [a]
 </span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot; option |---&quot;</span></span><span class="hs-special">]</span><span>
-</span><span id="line-52"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-49"></span><span>            </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[String]
 </span><a href="#local-6989586621679614214"><span class="hs-identifier hs-var">toPrint</span></a></span><span>
-</span><span id="line-53"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Handle -&gt; String -&gt; IO ()
+</span><span id="line-50"></span><span>       </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Handle -&gt; String -&gt; IO ()
 </span><span class="hs-identifier hs-var">hPutStrLn</span></span><span> </span><span class="annot"><span class="annottext">Handle
 </span><span class="hs-identifier hs-var">stderr</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;[&quot;</span></span><span> </span><span class="annot"><span class="annottext">String -&gt; ShowS
@@ -294,19 +291,19 @@ forall a. [a] -&gt; [[a]] -&gt; [a]
 </span><span class="hs-identifier hs-var">DL.intercalate</span></span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">[String]
 </span><a href="#local-6989586621679614223"><span class="hs-identifier hs-var">msg</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-54"></span><span>    </span><span class="hs-special">)</span><span>
-</span><span id="line-55"></span><span>
-</span><span id="line-56"></span><span class="annot"><a href="Logger.html#logDebug"><span class="hs-identifier hs-type">logDebug</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Logger.html#logInfo"><span class="hs-identifier hs-type">logInfo</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Logger.html#logError"><span class="hs-identifier hs-type">logError</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
-</span><span id="line-57"></span><span id="logDebug"><span class="annot"><span class="annottext">logDebug :: String -&gt; IO ()
+</span><span id="line-51"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-52"></span><span>
+</span><span id="line-53"></span><span class="annot"><a href="Logger.html#logDebug"><span class="hs-identifier hs-type">logDebug</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Logger.html#logInfo"><span class="hs-identifier hs-type">logInfo</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Logger.html#logError"><span class="hs-identifier hs-type">logError</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-54"></span><span id="logDebug"><span class="annot"><span class="annottext">logDebug :: String -&gt; IO ()
 </span><a href="Logger.html#logDebug"><span class="hs-identifier hs-var hs-var">logDebug</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; String -&gt; IO ()
 </span><a href="Logger.html#logMessage"><span class="hs-identifier hs-var">logMessage</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel
 </span><a href="Logger.html#DEBUG"><span class="hs-identifier hs-var">DEBUG</span></a></span><span>
-</span><span id="line-58"></span><span id="logInfo"><span class="annot"><span class="annottext">logInfo :: String -&gt; IO ()
+</span><span id="line-55"></span><span id="logInfo"><span class="annot"><span class="annottext">logInfo :: String -&gt; IO ()
 </span><a href="Logger.html#logInfo"><span class="hs-identifier hs-var hs-var">logInfo</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; String -&gt; IO ()
 </span><a href="Logger.html#logMessage"><span class="hs-identifier hs-var">logMessage</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel
 </span><a href="Logger.html#INFO"><span class="hs-identifier hs-var">INFO</span></a></span><span>
-</span><span id="line-59"></span><span id="logError"><span class="annot"><span class="annottext">logError :: String -&gt; IO ()
+</span><span id="line-56"></span><span id="logError"><span class="annot"><span class="annottext">logError :: String -&gt; IO ()
 </span><a href="Logger.html#logError"><span class="hs-identifier hs-var hs-var">logError</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">LogLevel -&gt; String -&gt; IO ()
 </span><a href="Logger.html#logMessage"><span class="hs-identifier hs-var">logMessage</span></a></span><span> </span><span class="annot"><span class="annottext">LogLevel
 </span><a href="Logger.html#ERROR"><span class="hs-identifier hs-var">ERROR</span></a></span><span>
-</span><span id="line-60"></span></pre></body></html>
+</span><span id="line-57"></span></pre></body></html>
