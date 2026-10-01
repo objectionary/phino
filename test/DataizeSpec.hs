@@ -90,8 +90,6 @@ looping action = loopingLambdas (readLambdas >=> action)
 
 spec :: Spec
 spec = do
-  -- Every λ function a case may fire comes from the fixture file, read once
-  -- here: phino carries none of its own (see 'Fixtures').
   known <- runIO fixtureLambdas
 
   -- Symmetric to the morphing fallback above: every normal form 𝔻 actually
@@ -191,10 +189,6 @@ spec = do
               `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
     failsOn "throws on ⊥ instead of mapping it to empty bytes" ExTermination
     failsOn "throws on a data-less formation, which dataizes ⊥" (ExFormation [])
-    -- A void slot fed a non-absolute argument morphs to ⊥ via 'mad' (#959) and
-    -- then fails through the same terminator path. The regression is that this
-    -- test terminates at all: before the fix 'ma' re-morphed the stuck term
-    -- forever and dataization never returned.
     failsOn
       "throws on a void slot fed a non-absolute argument instead of looping forever"
       (ExApplication (ExFormation [BiVoid (AtLabel "x")]) (ArTau (AtLabel "x") (ExDispatch ExXi (AtLabel "foo"))))
@@ -258,8 +252,6 @@ spec = do
         Residual (ExFormation bds) -> do
           let rho = [value | BiTau AtRho value <- bds]
           length rho `shouldBe` 1
-          -- the times application is gone: ρ is the number it answered, named
-          -- by the path it is reached by instead of copied out (#1446)
           [() | ExApplication (ExDispatch ExRoot (AtLabel "number")) (ArTau AtPhi _) <- rho] `shouldBe` [()]
         other -> expectationFailure ("expected a residual formation, got " ++ show other)
     it "writes the firing that answered into the protocol and stops at the stuck one" $ do

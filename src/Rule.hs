@@ -341,10 +341,6 @@ meetCondition cond (subst : rest) ctx = do
       case first of
         [] -> pure next
         sbt : _ -> pure (sbt : next)
-    -- A condition that raises is treated as not met: that is the policy
-    -- #1079 questions, and it stays until the maintainers answer. The
-    -- silence on top of it is nobody's friend — say what raised, at debug
-    -- level, so a broken 'when'/'having' can be found with --log-level=debug
     Left err -> do
       logDebug (printf "Condition %s raised and was treated as not met: %s" (show cond) (displayException err))
       meetCondition cond rest ctx
@@ -519,9 +515,6 @@ admitted matcher seed expr rule ctx =
           logDebug (printf "Pattern from rule '%s' was not matched:\n%s" rule.name (printExpression' ptn logPrintConfig))
           pure []
         else do
-          -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check it is xi-free first
-          -- (cheap, structural), then fold its name into the same normal-form
-          -- check used for '𝑛' metas, so 'isNF' is applied in a single place.
           inXiFree <- foldlM (\substs mt -> meetCondition (Y.Absolute mt) substs ctx) matched (kMetas ptn)
           inNf <- foldlM (\substs mt -> meetCondition (Y.NF mt) substs ctx) inXiFree (nfMetas ptn ++ kMetas ptn)
           if null inNf

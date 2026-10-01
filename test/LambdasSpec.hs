@@ -160,9 +160,6 @@ spec = do
       known <- lambdasOf "- λ: L_pair\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       map (_spelling . fst) (maybe [] _dataized (matched known "L_pair")) `shouldBe` []
 
-    -- Everything a file may be wrong about fails where it is read, before any
-    -- reduction starts, so a run never gets half-way through a derivation to
-    -- discover that one of its λ functions cannot be read at all
     forM_
       [ ("a file which is no list of entries" :: String, "λ: L_pair\n" :: T.Text, "cannot be read" :: String)
       , ("an entry with no λ key", "- 𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "no 'λ' key")
@@ -400,8 +397,6 @@ spec = do
       made <- joining "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ y ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧" 4
       made `shouldBe` Just (term, [], 4)
 
-    -- The join is strict and a datum is never joined with anything, which is
-    -- why a branch carrying one goes through 'symbolized' first
     forM_
       [ ("a datum with a symbol" :: String, "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧" :: String, "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" :: String)
       , ("two different data", "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧", "⟦ φ ↦ ⟦ Δ ⤍ FF- ⟧ ⟧")

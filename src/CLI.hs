@@ -30,12 +30,9 @@ runCLI args = handle handler $ do
       let (msg, code) = renderFailure failure "phino"
       case code of
         ExitSuccess -> do
-          putStrLn msg -- --version/--help output as-is
+          putStrLn msg
           exitWith code
         _ -> do
-          -- Keep the full optparse message (including the Usage/synopsis
-          -- block that follows a parse error), but without the GHC
-          -- HasCallStack backtrace; prefix just the first line with [ERROR]:.
           hPutStrLn stderr (prefixFirstLine "[ERROR]: " msg)
           exitWith code
     CompletionInvoked _ -> handleParseResult parsed
@@ -55,8 +52,8 @@ runCLI args = handle handler $ do
     prefixFirstLine prefix msg = prefix ++ msg
     handler :: SomeException -> IO ()
     handler e = case fromException e of
-      Just ExitSuccess -> pure () -- prevent printing error on --version etc.
-      Just (ExitFailure _) -> exitFailure -- already logged by the Failure branch above
+      Just ExitSuccess -> pure ()
+      Just (ExitFailure _) -> exitFailure
       _ -> do
         logError (show e)
         exitFailure

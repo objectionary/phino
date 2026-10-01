@@ -469,9 +469,6 @@ spec = do
       ]
 
   describe "matches an anonymous meta independently at every occurrence" $
-    -- Two anonymous metas of one kind sit at different offsets, so they are
-    -- different keys and bind different terms. That is what lets a pattern say
-    -- "any two attributes" without inventing a name for either of them (#218).
     forM_
       [
         ( "[[ !t -> !e, !t -> !e ]] => [[ a -> Q, b -> $ ]] => both bindings bind their own slots"
