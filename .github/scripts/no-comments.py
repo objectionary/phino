@@ -2,138 +2,101 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 
-"""Fail if a .hs file carries a comment that documents nothing named.
+"""Fail if a .hs file carries a comment.
 
-A comment is allowed only where it documents a module, a data/type/newtype/
-class/instance declaration, a record field, a data constructor, a function's
-type signature (top-level, where-bound or let-bound), a function equation, or
-an hspec 'describe'/'it'/'context' block. A comment sitting inside a case
-alternative, an if/then/else branch, a do-block statement, a let-bound value
-carrying no signature of its own, or trailing a call-site argument, is banned.
+Only two kinds of comment are allowed: an SPDX header, the copyright and
+license lines on top of every file, and a PDD puzzle together with the
+line comments right below it whose text is indented by two spaces or more.
+GHC pragmas ('{-# ... #-}') are not comments and are always allowed.
 
-SPDX license headers and GHC pragmas ('{-# ... #-}') are not comments for
-this purpose and are always allowed.
+The file is lexed the way GHC lexes it, so a '--' or a '{-' inside a string
+or a character literal is no comment, and neither is an operator such as
+'-->' or '|--'.
 """
 
 import re
 import sys
 
-PRAGMA = re.compile(r"^\{-#")
-BLOCK_OPEN = re.compile(r"^\{-(?!#)")
-LEADING_MARKER = re.compile(r"^([|=,]|\{)\s*(.*)$")
-DECL_HEAD = re.compile(
-    r"^("
-    r"module\b|data\b|type\b|newtype\b|class\b|instance\b|"
-    r"pattern\s+[A-Za-z_][A-Za-z0-9_']*\s*::|"
-    r"let\s+[A-Za-z_][A-Za-z0-9_']*\s*::|"
-    r"_?[A-Za-z][A-Za-z0-9_']*\s*::|"
-    r"(describe|it|context)\s+\""
-    r")"
-)
-FIELD_CONT = re.compile(r"^[A-Za-z_][A-Za-z0-9_']*\s*,\s*$")
-ASSIGN = re.compile(r"(?<![=!<>/])=(?!=)")
-LET_NOSIG = re.compile(r"^let\s+[A-Za-z_]")
-TRAILING_COMMENT = re.compile(r"--(?![-!#$%&*+./<=>?@\\^|~:])")
+SYMBOL = set("!#$%&*+./<=>?@\\^|~:-")
+CHAR = re.compile(r"'(?:[^'\\\n]|\\[^\n][^'\n]*)'")
+PUZZLE = "\x40todo"
 
 
-def strip_marker(line):
-    m = LEADING_MARKER.match(line)
-    return (m.group(2), True) if m else (line, False)
+def named(char):
+    """Tell whether the character may end a name, which a prime then extends."""
+    return char.isalnum() or char in "_'"
 
 
-def is_decl_like(line):
-    core, marker = strip_marker(line.strip())
-    if marker:
-        return True
-    if LET_NOSIG.match(line.strip()) and "::" not in line:
-        return False
-    if DECL_HEAD.match(line.strip()):
-        return True
-    if FIELD_CONT.match(line.strip()):
-        return True
-    return bool(ASSIGN.search(line.strip()))
-
-
-def prev_opens_slot(line):
-    s = line.rstrip("\n").rstrip()
-    return bool(re.search(r"[|=,]\s*$", s)) or s.endswith("{")
-
-
-def scan(path):
-    with open(path, encoding="utf-8") as handle:
-        lines = handle.readlines()
-    n = len(lines)
-    violations = []
-    i = 0
-    in_block = False
-    while i < n:
-        raw = lines[i]
-        stripped = raw.strip()
-
-        if in_block:
-            if "-}" in raw:
-                in_block = False
-            i += 1
-            continue
-
-        if PRAGMA.match(stripped):
-            i += 1
-            continue
-
-        core, had_marker = strip_marker(stripped)
-        starts_comment = (
-            stripped.startswith("--")
-            or BLOCK_OPEN.match(stripped)
-            or (had_marker and (core.startswith("--") or BLOCK_OPEN.match(core)))
-        )
-
-        if starts_comment:
-            start = i
-            while i < n:
-                s = lines[i].strip()
-                if s == "":
-                    i += 1
-                    continue
-                c, m = strip_marker(s)
-                if s.startswith("--") or (m and c.startswith("--")):
-                    i += 1
-                    continue
-                if BLOCK_OPEN.match(s) or (m and BLOCK_OPEN.match(c)):
-                    while i < n and "-}" not in lines[i]:
-                        i += 1
-                    i += 1
-                    continue
-                break
-
-            if had_marker:
-                i = max(i, start + 1)
-                continue
-
-            p = start - 1
-            while p >= 0 and lines[p].strip() == "":
-                p -= 1
-            prevline = lines[p] if p >= 0 else ""
-            nxt = lines[i] if i < n else ""
-
-            keep = prev_opens_slot(prevline) or nxt.strip() == "" or is_decl_like(nxt)
-            if not keep:
-                violations.append((path, start + 1, lines[start].strip()[:100]))
-            continue
-
-        if not stripped.startswith("\\"):
-            segments = raw.rstrip("\n").split('"')
-            for idx, segment in enumerate(segments):
-                if idx % 2 == 0:
-                    match = TRAILING_COMMENT.search(segment)
-                    if match:
-                        code_before = segment[: match.start()].strip()
-                        if code_before and not is_decl_like(code_before):
-                            violations.append((path, i + 1, raw.strip()[:100]))
+def comments(text):
+    """Yield the offset and the text of every comment."""
+    size = len(text)
+    pos = 0
+    while pos < size:
+        if text.startswith("{-#", pos):
+            end = text.find("#-}", pos + 3)
+            pos = size if end < 0 else end + 3
+        elif text.startswith("{-", pos):
+            start = pos
+            depth = 0
+            while pos < size:
+                if text.startswith("{-", pos):
+                    depth += 1
+                    pos += 2
+                elif text.startswith("-}", pos):
+                    depth -= 1
+                    pos += 2
+                    if depth == 0:
                         break
+                else:
+                    pos += 1
+            yield start, text[start:pos]
+        elif text.startswith("--", pos) and (pos == 0 or text[pos - 1] not in SYMBOL):
+            end = pos
+            while end < size and text[end] == "-":
+                end += 1
+            if end < size and text[end] in SYMBOL:
+                pos = end
+                continue
+            stop = text.find("\n", pos)
+            stop = size if stop < 0 else stop
+            yield pos, text[pos:stop]
+            pos = stop
+        elif text[pos] == '"':
+            pos += 1
+            while pos < size and text[pos] != '"':
+                if text[pos] == "\\" and pos + 1 < size and text[pos + 1].isspace():
+                    gap = text.find("\\", pos + 1)
+                    pos = size if gap < 0 else gap + 1
+                elif text[pos] == "\\":
+                    pos += 2
+                else:
+                    pos += 1
+            pos += 1
+        elif text[pos] == "'" and not (pos > 0 and named(text[pos - 1])):
+            match = CHAR.match(text, pos)
+            pos = match.end() if match else pos + 1
+        else:
+            pos += 1
 
-        i += 1
 
-    return violations
+def banned(text):
+    """Yield the line and the text of every comment that is not allowed."""
+    puzzle = None
+    for offset, comment in comments(text):
+        line = text.count("\n", 0, offset) + 1
+        column = offset - text.rfind("\n", 0, offset)
+        body = comment.lstrip("-{").rstrip("}-")
+        if comment.startswith("--") and body.lstrip().startswith("SPDX-"):
+            continue
+        if body.lstrip().startswith(PUZZLE):
+            puzzle = (line, column)
+            continue
+        follows = puzzle == (line - 1, column) and comment.startswith("--")
+        if follows and body.startswith("  "):
+            puzzle = (line, column)
+            continue
+        puzzle = None
+        yield line, comment.splitlines()[0]
 
 
 def main(argv):
@@ -141,17 +104,16 @@ def main(argv):
     if not paths:
         print("usage: no-comments.py FILE...", file=sys.stderr)
         return 2
-
-    violations = []
+    found = 0
     for path in paths:
-        violations.extend(scan(path))
-
-    for path, line, text in violations:
-        print(f"{path}:{line}: inline comment is not documenting a declaration: {text}")
-
-    if violations:
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+        for line, comment in banned(text):
+            print(f"{path}:{line}: comment is not allowed: {comment[:100]}")
+            found += 1
+    if found:
         print(
-            f"\n{len(violations)} inline comment(s) found; see CLAUDE.md",
+            f"\n{found} comment(s) found, only SPDX headers and PDD puzzles may stay",
             file=sys.stderr,
         )
         return 1

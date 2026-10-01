@@ -58,7 +58,6 @@ inRange (MtRange minVal maxVal) actual =
     checkMin = maybe True (<= actual) minVal
     checkMax = maybe True (>= actual) maxVal
 
--- | Check if a value exceeds the upper bound of the range
 exceedsUpperBound :: Must -> Int -> Bool
 exceedsUpperBound MtDisabled _ = False
 exceedsUpperBound (MtExact n) current = current > n

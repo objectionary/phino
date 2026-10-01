@@ -26,10 +26,6 @@ import Tau (freshTau)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
--- Names of build-term functions that need the full evaluation context
--- (expression plus atom evaluation) and are therefore provided only by
--- 'Dataize.execBuildTerm', not by 'buildTerm'. They are available while
--- executing dataization and morphing rules, but not rewriting rules.
 execFunctions :: [String]
 execFunctions = ["evaluate", "morph"]
 
@@ -76,8 +72,6 @@ argToNumber arg subst = do
 _contextualize :: BuildTermMethod
 _contextualize = contextualizing contextualize
 
--- The 'contextualize' function of a rule, carried out by the given 𝒞: the
--- one of YAML or the one 'phino compile' wrote (#1617).
 contextualizing :: (Expression -> Expression -> IO Expression) -> BuildTermMethod
 contextualizing judgment [Y.ArgExpression expr, Y.ArgExpression context] subst = do
   expr' <- buildExpressionThrows expr subst
@@ -85,22 +79,12 @@ contextualizing judgment [Y.ArgExpression expr, Y.ArgExpression context] subst =
   TeExpression <$> judgment expr' context'
 contextualizing _ _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
 
--- The name the formation of the only argument goes by in the given world, or
--- the formation itself where it has none (see 'pathOf'). The world is not an
--- argument a rule writes: 'Rule' hands over the one its context knows. Where
--- no world is known — the 'rewrite' command, and 'isNF' asking about a term on
--- its own — the formation is answered as it is, exactly as 'dot' answered
--- before any object of the world had a name.
 nameOf :: Maybe Expression -> BuildTermMethod
 nameOf universe [Y.ArgExpression expr] subst = do
   form <- buildExpressionThrows expr subst
   pure (TeExpression (nameIn universe form))
 nameOf _ _ _ = throwIO (userError "Function named() requires exactly 1 argument as expression")
 
--- Uniqueness is the engine's job: 'freshTau' draws from the document-wide
--- avoid-set seeded at the start of the run, so no collision list is needed.
--- The function takes no arguments and rejects any extras so rule mistakes are
--- not silently accepted.
 _randomTau :: BuildTermMethod
 _randomTau [] _ = TeAttribute . AtLabel <$> freshTau
 _randomTau _ _ = throwIO (userError "Function random-tau() requires exactly 0 arguments")
@@ -156,7 +140,6 @@ _sed args subst = do
                 "" -> pure (pat, rep, False)
                 _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
-    -- Cut part from given string until regular slash.
     nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
     nextUntilSlash input acc escape = case B.uncons input of
       Nothing -> (acc, B.empty)

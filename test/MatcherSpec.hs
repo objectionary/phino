@@ -653,12 +653,7 @@ spec = do
       splits [BiVoid (AtLabel "a"), BiVoid AtRho]
         `shouldBe` [([], [BiVoid (AtLabel "a"), BiVoid AtRho]), ([BiVoid (AtLabel "a")], [BiVoid AtRho]), ([BiVoid (AtLabel "a"), BiVoid AtRho], [])]
   where
-    -- The pattern of the 'dot' normalization rule, the one every dispatch of a
-    -- program is matched against: a meta binding on either side of the binding
-    -- the dispatch names.
     dot :: Expression
     dot = ExDispatch (ExFormation [BiMeta "B1", BiTau (AtMeta "t1") (ExMeta "n1"), BiMeta "B2"]) (AtMeta "t1")
-    -- A formation of that many bindings, none of which the pattern above says
-    -- anything about beyond standing in one of its two runs.
     crowd :: Int -> Expression
     crowd size = ExFormation [BiTau (AtLabel (T.pack ("d" <> show idx))) (ExFormation [BiDelta (BtOne "00")]) | idx <- [1 .. size]]

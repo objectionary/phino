@@ -57,14 +57,8 @@ data XmirContext = XmirContext
   , _atoms :: Atoms
   }
 
--- The result type an atom of the EO parser carries in its @atom attribute,
--- like 'Φ.number', keyed by the name of its λ function. The type is no name
--- phino can read, so it lives beside the λ binding and not in it (#1389)
 type Atoms = M.Map T.Text String
 
--- The 7-character Git SHA of the phino build that produced the document,
--- matching the XMIR schema pattern [0-9a-f]{7}. When built outside a git
--- checkout gitrev yields "UNKNOWN", which the schema allows us to omit.
 gitRevision :: String
 gitRevision = take 7 $(gitHash)
 
@@ -178,16 +172,12 @@ formationBinding (BiVoid AtPhi) _ = pure (Just (object [("name", show AtPhi), ("
 formationBinding (BiVoid (AtLabel label)) _ = pure (Just (object [("name", T.unpack label), ("base", "∅")] []))
 formationBinding binding _ = throwIO (UnsupportedBinding binding)
 
--- Render a bound attribute as a named element: a formation nests its bindings
--- right inside it, while any other expression is carried by the @base attribute
 namedBinding :: String -> Expression -> XmirContext -> IO Node
 namedBinding name (ExFormation bds) ctx = object [("name", name)] <$> nestedBindings bds ctx
 namedBinding name expr ctx = do
   (base, children) <- expression expr ctx
   pure (object [("name", name), ("base", base)] children)
 
--- Render a formation's bindings as child nodes, honoring '--hide-rho' by
--- dropping every ρ, void or bound, before it reaches the nodes (#1076)
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
 nestedBindings bds ctx@XmirContext{..} = catMaybes <$> mapM (`formationBinding` ctx) bds'
   where
@@ -206,10 +196,6 @@ expressionToXMIR expr@(ExFormation bds) ctx
       ExDispatch _ _ -> programToXMIR expr ctx
       ExRoot -> programToXMIR expr ctx
       _ -> throwIO (UnsupportedTopExpression expr)
--- The top of a '--partial' residual and the result of 'merge' are arbitrary
--- formations: several τ/λ bindings, voids and a bound ρ. The schema allows a
--- single <o> under <object>, so the formation goes beneath one attribute-free
--- <o> whose children are its bindings; 'xmirToPhi' reads that shape back (#1076)
 expressionToXMIR expr@(ExFormation bds) ctx =
   documentWith ctx [] expr rootNodes
   where
@@ -223,23 +209,14 @@ expressionToXMIR expr@(ExFormation bds) ctx =
     isElement _ = False
 expressionToXMIR expr _ = throwIO (UnsupportedTopExpression expr)
 
--- The bindings of a formation on the package spine, without the void ρ it may
--- declare: the spine holds no object a dispatch could bind ρ in, so a ρ ↦ ∅
--- there has nowhere to go in XMIR and is not what tells a program apart
 withoutVoidRho :: [Binding] -> [Binding]
 withoutVoidRho = filter (/= BiVoid AtRho)
 
--- A program document: the package spine is peeled off the top level into
--- <metas> and the single binding left becomes the root <o> element
 programToXMIR :: Expression -> XmirContext -> IO Document
 programToXMIR expr ctx = do
   (pckg, expr') <- getPackage expr
   documentWith ctx pckg expr (rootNodes expr' ctx)
   where
-    -- Extract package from given expression
-    -- The function returns tuple (X, Y), where
-    -- - X: list of package parts
-    -- - Y: root object expression
     getPackage :: Expression -> IO ([String], Expression)
     getPackage ex@(ExFormation bds) = case withoutVoidRho bds of
       [BiTau (AtLabel label) inner@(ExFormation inner')] | packaged inner' -> nested label inner
@@ -252,8 +229,6 @@ programToXMIR expr ctx = do
     nested label inner = do
       (pckg, expr') <- getPackage inner
       pure (T.unpack label : pckg, expr')
-    -- A formation of one binding and the λ marking a package, whatever void ρ
-    -- it may declare besides
     packaged :: [Binding] -> Bool
     packaged bds = case withoutVoidRho bds of
       [_, BiLambda (Function "Package")] -> True
@@ -264,8 +239,6 @@ programToXMIR expr ctx = do
     rootNodes (ExFormation [bd]) c = nestedBindings [bd] c
     rootNodes ex _ = throwIO (UnsupportedExpression ex)
 
--- Assemble the <object> document: timing attributes, the listing, <metas>
--- when the expression carries a package, and the root nodes below them
 documentWith :: XmirContext -> [String] -> Expression -> IO [Node] -> IO Document
 documentWith XmirContext{..} pckg expr rootsIO = do
   started <- getCurrentTime
@@ -305,14 +278,6 @@ documentWith XmirContext{..} pckg expr rootsIO = do
         []
     )
   where
-    -- Returns metas Node with package:
-    -- <metas>
-    --   <meta>
-    --     <head>package</head>
-    --     <tail><!-- package here --></tail>
-    --     <part><!-- package here --></part>
-    --   </meta>
-    -- </metas>
     metasWithPackage :: String -> Node
     metasWithPackage package =
       NodeElement
@@ -350,9 +315,6 @@ escapeXML = concatMap escapeChar
     escapeChar '\'' = "&apos;"
     escapeChar ch = [ch]
 
--- Escape just the characters that are mandatory in XML text content ('&' and
--- '<'); '>' and the quotes are optional there and staying literal keeps the
--- content readable, e.g. the '->' arrow inside a <listing>.
 escapeXMLText :: String -> String
 escapeXMLText = concatMap escapeChar
   where
@@ -361,7 +323,6 @@ escapeXMLText = concatMap escapeChar
     escapeChar '<' = "&lt;"
     escapeChar ch = [ch]
 
--- Add indentation (2 spaces per level).
 indent :: Int -> TB.Builder
 indent n = TB.fromText (T.replicate n (T.pack "  "))
 
@@ -372,8 +333,6 @@ newline' False = ""
 newline :: TB.Builder
 newline = TB.fromString "\n"
 
--- >>> printElement 0 (element "doc" [("a", ""), ("b", ""), ("c", ""), ("d", ""), ("e", "")] []) True
--- "<doc a=\"\" b=\"\" c=\"\" d=\"\" e=\"\"/>\n"
 printElement :: Int -> Element -> Bool -> TB.Builder
 printElement indentLevel (Element name attrs nodes) eol
   | null nodes =
@@ -420,11 +379,9 @@ printElement indentLevel (Element name attrs nodes) eol
     printRawText (NodeContent t) = TB.fromText t
     printRawText _ = mempty
 
--- >>> printNode 0 (NodeComment (T.pack "--hello--"))
--- "<!-- &#45;&#45;hello&#45;&#45; -->\n"
 printNode :: Int -> Node -> TB.Builder
-printNode _ (NodeContent t) = TB.fromText t -- print text exactly as-is
-printNode i (NodeElement e) = printElement i e True -- pretty-print elements
+printNode _ (NodeContent t) = TB.fromText t
+printNode i (NodeElement e) = printElement i e True
 printNode i (NodeComment t) =
   indent i
     <> TB.fromString "<!-- "
@@ -451,10 +408,6 @@ parseXMIR xmir = case parseText def (TL.pack xmir) of
 parseXMIRThrows :: String -> IO Document
 parseXMIRThrows xmir = orThrow CouldNotParseXMIR (parseXMIR xmir)
 
--- Children of <object> that no document may carry: processing instructions
--- and bare text. Comments, the listing and the <o> bindings are legitimate;
--- anything else makes the element unrenderable back to 𝜑, so the reader
--- rejects the document whole (the cursor is shown by the error verbatim)
 strayNodes :: C.Cursor -> [Node]
 strayNodes doc = filter bad (map C.node (C.child doc))
   where
@@ -498,8 +451,6 @@ xmirToPhi xmir =
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
         _ -> throwIO (InvalidXMIRFormat "NodeElement is expected as root element" doc)
 
--- The single <o> of a residual document carries no attributes of its own:
--- it is the formation, not one of its bindings (#1076)
 bareRoot :: C.Cursor -> Bool
 bareRoot o = not (any (`hasAttr` o) ["name", "base", "as"])
 
@@ -528,25 +479,14 @@ xmirToFormationBinding cur fqn
           expr <- xmirToExpression cur fqn
           pure (BiTau attr expr)
 
--- The λ function name is carried by the text of the marker element. XMIR
--- coming from elsewhere holds no name, so fall back to the position in the
--- tree, which is the only hint left. The @atom attribute the EO parser writes
--- is the result type of the atom and never its name (#1389)
 lambdaName :: C.Cursor -> [String] -> IO T.Text
 lambdaName cur fqn
   | hasText cur = T.strip . T.pack <$> getText cur
   | otherwise = pure (T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn))))
   where
-    -- A binding label admits nearly any character, while 'function' admits a
-    -- digit, an ASCII lowercase letter, '_' and 'φ' only, so everything else
-    -- folds into '_' and the derived name stays readable back (#1188)
     spell :: Char -> Char
     spell ch = if isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ' then ch else '_'
 
--- The result types of the atoms in a document, keyed by the names 'xmirToPhi'
--- gives their λ functions, so that 'expressionToXMIR' writes them back (#1389).
--- The reader grows the locator of a λ marker by every formation it descends
--- into, that is by every enclosing <o> with @name and neither @base nor @as
 xmirAtoms :: Document -> IO Atoms
 xmirAtoms xmir = M.fromList <$> mapM entry markers
   where
@@ -570,11 +510,6 @@ xmirAtoms xmir = M.fromList <$> mapM entry markers
       , label <- C.attribute (toName "name") enclosing
       ]
 
--- A formation keeps its Δ data in the text content of its own element, the way
--- the printer emits a Δ binding, while the rest of the bindings live in the
--- nested <o> elements; the text stands among them where the binding stands in
--- the formation, so the children are read in document order and a run of text
--- between two <o> elements is the Δ binding at that position (#1430)
 xmirToFormation :: C.Cursor -> [String] -> IO Expression
 xmirToFormation cur fqn = do
   bds <- concat <$> mapM binding (groupBy (\left right -> not (nested left) && not (nested right)) (C.child cur))

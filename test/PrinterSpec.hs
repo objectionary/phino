@@ -3,10 +3,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Printer module that converts AST to string representation.
-The module provides functions to print phi-calculus expressions with
-various configurations for sugar, encoding, and line format.
--}
 module PrinterSpec where
 
 import AST
@@ -166,10 +162,6 @@ spec = do
       str `shouldNotContain` "as-bytes"
 
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
-    -- A \phinoMeet is a single \overbracket visual unit, so its body must stay
-    -- on one line even when the surrounding margin forces the outer formation to
-    -- wrap. A newline inside the braced argument would raise "! Missing }
-    -- inserted" in an aligned/gathered LaTeX context (see #978).
     it "renders the meet body on a single line even when the margin wraps its parent" $ do
       let body = ExFormation [BiTau (AtLabel "alpha") ExRoot, BiTau (AtLabel "beta") ExRoot, BiTau (AtLabel "gamma") ExRoot]
           expr = ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 5 body)]

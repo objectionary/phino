@@ -88,15 +88,11 @@ spec = do
       found <- direct (\_ _ -> [] :: [Premises Expression]) context ExXi ExXi
       isNothing found `shouldBe` True
 
--- The context a rule of the specs checks its conditions in: the functions of
--- the engine of YAML and no world.
 context :: RuleContext
 context = RuleContext (building yaml) Nothing yaml._normal
 
--- The built-in rule of 𝕄 of the given name.
 morphingRule :: String -> Y.MorphRule
 morphingRule name = fromMaybe (error (printf "no morphing rule is named '%s'" name)) (find (\rule -> rule.name == name) Y.morphingRules)
 
--- The built-in rule of 𝔻 of the given name.
 dataizationRule :: String -> Y.DataizeRule
 dataizationRule name = fromMaybe (error (printf "no dataization rule is named '%s'" name)) (find (\rule -> rule.name == name) Y.dataizationRules)

@@ -32,8 +32,6 @@ instance WithMargin EXPRESSION where
   withMargin' cfg EX_DISPATCH{..} = EX_DISPATCH (withMargin' cfg expr) space attr
   withMargin' cfg EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (withMargin' cfg expr)
   withMargin' _ EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSingleLine expr)
-  -- The asset of a one-binding sugar is followed by a colon and the attribute,
-  -- so it gets that much less of the margin to be laid out in
   withMargin' cfg@(extra, margin) ex@EX_SINGLE{pair = PA_TAU{..}, ..} =
     let single = toSingleLine ex
         asset = withMargin' (extra, margin - lengthOf attr - 1) expr
@@ -42,7 +40,7 @@ instance WithMargin EXPRESSION where
     let single = toSingleLine ex
         main = withMargin' cfg expr
         singleMain = toSingleLine main
-        extra' = T.length (last (T.lines (render main))) + 4 -- 2 spaces + 2 braces around argument
+        extra' = T.length (last (T.lines (render main))) + 4
         arg' = withMargin' (indt, margin) argument
         singleArg = toSingleLine arg'
      in if
@@ -82,17 +80,17 @@ instance WithMargin BINDINGS where
 instance WithMargin PAIR where
   withMargin' (extra, margin) pa@PA_TAU{..} =
     let single = toSingleLine pa
-        extra' = extra + lengthOf attr + lengthOf arrow + 2 -- indent + attr + arrow + 2 spaces
+        extra' = extra + lengthOf attr + lengthOf arrow + 2
         pa' = PA_TAU attr arrow (withMargin' (extra', margin) expr)
      in if lengthOf single + extra <= margin then single else pa'
   withMargin' (extra, margin) pa@PA_ALPHA{..} =
     let single = toSingleLine pa
-        extra' = extra + lengthOf alpha + lengthOf arrow + 2 -- indent + alpha + arrow + 2 spaces
+        extra' = extra + lengthOf alpha + lengthOf arrow + 2
         pa' = PA_ALPHA alpha arrow (withMargin' (extra', margin) expr)
      in if lengthOf single + extra <= margin then single else pa'
   withMargin' (extra, margin) pa@PA_FORMATION{..} =
     let single = toSingleLine pa
-        extra' = extra + lengthOf attr + lengthOf voids + lengthOf arrow + 4 -- indent + 2 braces + 2 spaces + voids
+        extra' = extra + lengthOf attr + lengthOf voids + lengthOf arrow + 4
         pa' = PA_FORMATION attr voids arrow (withMargin' (extra', margin) expr)
      in if lengthOf single + extra <= margin then single else pa'
   withMargin' _ pa = pa

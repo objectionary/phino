@@ -24,15 +24,12 @@ instance Show ConditionException where
 
 type Parser = Parsec Void String
 
--- White space consumer
 whiteSpace :: Parser ()
 whiteSpace = L.space hspace1 empty empty
 
--- Lexeme that ignores white spaces after
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme whiteSpace
 
--- Strict symbol (or sequence of symbols) with ignored white spaces after
 symbol :: String -> Parser String
 symbol = L.symbol whiteSpace
 

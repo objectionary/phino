@@ -78,10 +78,6 @@ spec = do
     (decodeYaml' "name: kvz\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\ne-match: '𝑒2'\nresult: '𝑒2'" :: Either Yaml.ParseException Rule)
       `shouldSatisfy` failsWith "The rule 'kvz' carries an 'e-match'"
   describe "rejects an anonymous meta outside a pattern" $ do
-    -- An anonymous meta is bound by the pattern it stands in and forgotten as
-    -- soon as that pattern matches, so no other part of a rule has a name to
-    -- read it back by. Writing one there is a mistake in the rule, caught as
-    -- the rule loads rather than left to surface as a silent non-match.
     let rewriting :: String -> String
         rewriting field = "name: foo\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\n" ++ field
         inferring :: String -> String
@@ -175,10 +171,6 @@ spec = do
       (\(desc, rejected) -> it ("rejects an anonymous meta " ++ desc) (rejected `shouldBe` True))
 
   describe "keeps effective labels unique across rule sets" $
-    -- The effective label of a rule is its 'label' when present, else its
-    -- 'name'. 'explain' typesets that label as the rule's token, so two rules
-    -- sharing an effective label become indistinguishable. Collect every
-    -- effective label from the three embedded rule sets and assert no repeats.
     it "across morphing, dataization and contextualization rules" $ do
       let labels :: [String]
           labels =
@@ -188,11 +180,6 @@ spec = do
       (labels \\ nub labels) `shouldBe` []
 
   describe "keeps one rule per file in every rule directory" $ do
-    -- Each judgment lives in its own directory, one YAML per rule, embedded
-    -- wholesale by 'embedDir', which sorts by path. The clauses of a judgment
-    -- are disjoint, so nothing orders them and a file is named after the rule
-    -- it carries and nothing else. Compare the directory listing against the
-    -- embedded rule set, position by position.
     let named :: FilePath -> IO [String]
         named dir = map takeBaseName . sort . filter ((== ".yaml") . takeExtension) <$> allPathsIn dir
     morphed <- runIO (named "resources/morphing")
@@ -206,16 +193,6 @@ spec = do
       contextualized `shouldBe` map (\ContextualizeRule{name} -> name) contextualizationRules
 
   describe "reserves 𝑛-family metas for normal forms" $
-    -- 𝒞 ('contextualize') returns an expression that is not necessarily a normal
-    -- form — that is why a 'normalize' premise follows it — so binding its result
-    -- to an 𝑛-reserved meta (internal prefix "n") in a morphing or dataization
-    -- rule conflates the calculus's 'e' (expression) with 'n' (normal form). Such
-    -- a slip is notational, not functional (the meta name is only a
-    -- substitution-map key), so it is easy to miss by eye; flag it automatically
-    -- instead. 𝔼 ('evaluate') is excluded on purpose (partially reverting #971):
-    -- it normalizes its atom's result internally, so its codomain is 𝓝 and an
-    -- 𝑛-family result is exactly right (see #990). Contextualization keeps being
-    -- flagged: its 𝒞-valued results are non-normal (see #971).
     it "no contextualize premise in a morphing or dataization rule binds an 𝑛-reserved meta" $ do
       let expressionValued :: Operation -> Bool
           expressionValued OpContextualize{} = True
@@ -272,8 +249,6 @@ spec = do
       ]
       (\(desc, yaml) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Premise) `shouldSatisfy` isLeft))
 
-  -- 𝕄 and 𝔻 take the universe as their second argument, so a 'morph' or a
-  -- 'dataize' premise names it beside the term, the way 'evaluate' does (#1512)
   describe "reads the universe a premise names" $
     forM_
       [ ("beside the term of 'morph'", "n-result: 𝑛1\nmorph: [𝑛2, 𝑒1]", Premise{result = T.pack "n1", operation = OpMorph (ExMeta (T.pack "n2")) (ExMeta (T.pack "e1"))})

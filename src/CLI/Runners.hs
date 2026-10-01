@@ -185,10 +185,6 @@ runDataize OptsDataize{..} = do
   when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
   unless _quiet (printOutcome printCtx (\residue -> (`F.exclude'` excluded) <$> F.include' residue included) outcome >>= putStrLn)
   where
-    -- The bytes the run reached or, when '--partial' let it end on a λ function
-    -- that could not fire, the residual program, rendered like a rewriting
-    -- result: narrowed by '--show' and '--hide', canonized, in the output
-    -- format, narrowed to '--focus'.
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
     printOutcome ctx narrowed (Residual residue) = do
@@ -230,18 +226,9 @@ runDataize OptsDataize{..} = do
         _label
         _meetPrefix
         _outputFormat
-    -- The listing of a dataization result is the 𝜑 text of the printed
-    -- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'
-    -- reach the XMIR writer through this context (#1076)
     listing :: Expression -> String
     listing e = escapeXMLText (P.printExpression' e (_sugarType, UNICODE, _flat, _margin))
 
--- Run 𝕄 on its own, the way 'runDataize' runs 𝔻. The whole option surface of
--- 'dataize' applies unchanged, since the two commands differ only in the
--- judgment they run; what differs here is the answer printed: 𝕄 is total and
--- always hands back a 𝜑-expression — a formation, or the terminator ⊥ where no
--- formation is reachable — so there are no bytes to print and no failure to
--- report where 𝔻 would give up.
 runMorph :: OptsMorph -> IO ()
 runMorph OptsMorph{..} = do
   validateOpts
@@ -315,9 +302,6 @@ runMorph OptsMorph{..} = do
         _label
         _meetPrefix
         _outputFormat
-    -- The listing of a dataization result is the 𝜑 text of the printed
-    -- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'
-    -- reach the XMIR writer through this context (#1076)
     listing :: Expression -> String
     listing e = escapeXMLText (P.printExpression' e (_sugarType, UNICODE, _flat, _margin))
 

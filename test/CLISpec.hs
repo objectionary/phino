@@ -86,9 +86,6 @@ withTempFileContent pattern content action =
     hClose h
     action path
 
--- A fresh, uniquely-named directory under the system temp directory, removed
--- afterwards even when the action throws (an assertion failure included), so a
--- red run never leaves it behind for the next run to depend on.
 withTempDirectory :: String -> (FilePath -> IO a) -> IO a
 withTempDirectory prefix action = do
   tmp <- getTemporaryDirectory
@@ -116,9 +113,6 @@ testCLI' args outputs exit = do
 testCLISucceeded :: [String] -> [String] -> Expectation
 testCLISucceeded args outputs = testCLI' args outputs (Right ())
 
--- phino implements no λ function of its own, so a case that needs one to
--- answer hands the fixture file to the command as '--symbolic' (see
--- 'Fixtures').
 symbolic :: String
 symbolic = "--symbolic=" ++ lambdasFile
 
@@ -337,11 +331,6 @@ spec = do
         ]
         (\(desc, input, args, expected) -> it desc (withStdin input (testCLIFailed args expected)))
 
-      -- Only assert the stable parts of the parse error: phino's envelope and
-      -- that megaparsec reports an 'unexpected' token. The exact line:column and
-      -- offending token depend on megaparsec's internal try/longest-match error
-      -- merging, which shifts between megaparsec releases (deps are unpinned), so
-      -- pinning them here makes the test brittle without testing anything extra.
       it "with wrong attribute and valid error message" $
         testCLIFailed
           ["rewrite", resource "with-$this-attribute.phi"]
@@ -1088,9 +1077,6 @@ spec = do
               ]
           ]
 
-    -- 'matches' inside 'when' raises while dataizing a formation: the
-    -- substitution is still dropped (the policy #1079 questions), but the
-    -- reason surfaces in the debug log instead of vanishing
     it "reports a condition that raised while being evaluated" $
       withStdin "[[ x -> [[ y -> ∅ ]] ]]" $
         testCLISucceeded
@@ -1140,9 +1126,6 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLIFailed ["dataize", "--max-steps=-1"] ["--max-steps must be positive"]
 
-    -- The 𝕄/𝔻 recursion used to be unbounded, so a λ function answering with a
-    -- firing of itself kept morphing forever and no option could stop it
-    -- (#1052)
     it "fails on --max-steps instead of dataizing forever" $
       loopingLambdas $ \endless ->
         withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
@@ -1150,8 +1133,6 @@ spec = do
             ["dataize", "--symbolic=" ++ endless, "--max-steps=40"]
             ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
-    -- Under '--partial' the same term does not fail: the spent budget is a
-    -- stuck site too, and the run ends on the residual the spine reached (#1078)
     it "parks --max-steps on a residual with --partial" $
       loopingLambdas $ \endless ->
         withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
@@ -1159,8 +1140,6 @@ spec = do
             ["dataize", "--symbolic=" ++ endless, "--max-steps=40", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ L_loop ⟧"]
 
-    -- The firing budget counts every firing of the run, so a recursion that
-    -- stays well inside '--max-steps' is still stopped by it (#1472)
     it "fails on --max-firings before --max-steps is spent" $
       loopingLambdas $ \endless ->
         withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
@@ -1168,11 +1147,6 @@ spec = do
             ["dataize", "--symbolic=" ++ endless, "--max-steps=400", "--max-firings=5"]
             ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=5"]
 
-    -- '--acyclic' used to be the 'morph' command's alone, so a program coming
-    -- back to a term through 𝔻 rather than 𝕄 — a body dispatching the very
-    -- object it stands in, which 𝕄 stops at a formation of every round and
-    -- only 𝔻 walks round — spent the whole budget and failed on the limit
-    -- (#1290)
     describe "--acyclic=proven" $ do
       let circling = "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧"
       it "spends the whole budget and fails on the limit without the flag" $
@@ -1181,28 +1155,18 @@ spec = do
             ["dataize", "--locator=Q.t", "--max-steps=40"]
             ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
-      -- The budget here is far larger than the one the run above failed on, so
-      -- what ends this one is the cut and not the limit
       it "names the term it came back to with the flag" $
         withStdin circling $
           testCLIFailed
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-steps=4000"]
             ["[ERROR]: Reduction entered a formation it is already inside:"]
 
-      -- 𝔻 insists on bytes and a parked term carries none, so what a cut run
-      -- prints is the residual program, exactly as it prints one for a λ
-      -- function that cannot fire. The frame the repeat was reached from is
-      -- the one handed the call whose formation came back, so the call stands
-      -- in the residue as it was written (#1420)
       it "prints the residue and exits successfully with --partial" $
         withStdin circling $
           testCLISucceeded
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
             ["⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧, t ↦ Φ.cyc( α0 ↦ ⟦⟧ ) ⟧"]
 
-      -- A cut is written where the formation it refused would have opened,
-      -- carrying the term of the one that was entered, so the two lines read
-      -- as a pair and nobody has to infer the cut from the residue (#1434)
       it "writes the cut to the protocol where the formation would have opened" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1217,8 +1181,6 @@ spec = do
                        , "    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t), proven"
                        ]
 
-      -- The markup of a cut is one self-closing element, since nothing runs
-      -- under it, with the attributes a '<formation>' carries (#1434)
       it "writes the cut to the XML protocol as a self-closing element" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
@@ -1236,9 +1198,6 @@ spec = do
                        , "</dataize>"
                        ]
 
-      -- A formation entered again as it was is within itself, so the embedding
-      -- cuts every loop the renaming does, and the cut says which one made it
-      -- (#1451)
       it "writes a plausible cut to the protocol as plausible" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1249,8 +1208,6 @@ spec = do
           records <- readProtocol path
           lines records `shouldContain` ["    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t), plausible"]
 
-      -- The mode is what the guard compares by, and the command has no
-      -- business guessing one for a user who asked for the guard (#1451)
       it "refuses the flag without a mode" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic"] ["The option `--acyclic` expects an argument"]
@@ -1259,8 +1216,6 @@ spec = do
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=sure"] ["The value 'sure' can't be used for '--acyclic' option"]
 
-      -- The guard reads nothing but the formations the frames above it have
-      -- entered, so a run that never enters one twice answers as it always did
       it "answers a terminating program the same way with the flag" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
           testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=proven"] ["01-02"]
@@ -1325,10 +1280,6 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--quiet"] []
 
-    -- A formation spelled flat in the protocol can run for tens of thousands
-    -- of characters, so '--abridged' folds a long one down to what says what
-    -- it holds and fires, and cuts a long byte string to its ends (#1465);
-    -- the width past which it folds is the value of the option (#1530)
     describe "--abridged" $ do
       let wide = "⟦ t ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01-02 ⟧, anfang ↦ ξ.schluss, mitte ↦ ξ.anfang, schluss ↦ ξ.mitte, rand ↦ ξ.schluss ⟧ ⟧"
       it "folds a long formation in the text protocol" $
@@ -1371,10 +1322,6 @@ spec = do
         withStdin wide $
           testCLIFailed ["dataize", "--locator=Q.t", "--abridged"] ["The option --abridged requires --protocol"]
 
-    -- Every firing of the run reaches the protocol as a tree: the run itself,
-    -- one line per firing, one per operand it brought down or reduced and one
-    -- per answer it gave. Nothing but the symbols ties them together, so the
-    -- lines a firing writes are what a reader of the file walks back (#1226).
     describe "--protocol" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
           chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
@@ -1388,8 +1335,6 @@ spec = do
           records <- readProtocol path
           records `shouldBe` "𝔻(Φ)\n"
 
-      -- The totals close the protocol once the run is over, so a caller never
-      -- has to count '𝔼(' itself or time the process from outside (#1638)
       it "closes the protocol with its msec on the third line from the end" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1414,8 +1359,6 @@ spec = do
           records <- readUtf8 path
           last (lines records) `shouldSatisfy` isPrefixOf "fps("
 
-      -- A run firing nothing still closes with its totals, zero firings and
-      -- all, so the shape of the file never depends on what the run did
       it "closes the protocol with zero firings when the run fires nothing" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1424,10 +1367,6 @@ spec = do
           records <- readUtf8 path
           lines records `shouldContain` ["firings(0)"]
 
-      -- An operand line says what the meta was bound to and, after two spaces
-      -- and '#', the term the entry wrote under it, so a reader never has to
-      -- open the '--symbolic' file beside the protocol to see what came down
-      -- to what (#1265)
       it "writes one line per operand and one per answer of a firing" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1449,9 +1388,6 @@ spec = do
                        , "    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)"
                        ]
 
-      -- The second firing of one entry numbers its own metas 𝛿1.2 and 𝛿2.2,
-      -- and the operand it brings down is the answer of the first, which the
-      -- protocol names rather than dataizes: every symbol answers the same 42
       it "numbers the firings of one entry apart and names the symbol between them" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1481,11 +1417,6 @@ spec = do
                        , "    formation(⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)"
                        ]
 
-      -- A meta is a variable bound exactly once, so its name has to be unique
-      -- in the whole file and the protocol refers back to it as a name. The
-      -- firings are therefore numbered across the run and not per λ function:
-      -- the first firing of 'L_number_times' calls its operand 𝛿1.2, never the
-      -- 𝛿1.1 the first firing of 'L_number_plus' has already taken (#1261)
       it "numbers the firings of different entries apart" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1515,8 +1446,6 @@ spec = do
                        , "    formation(⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧)  # 𝔻(Φ)"
                        ]
 
-      -- An operand is brought down by a whole run of 𝔻, so a λ function it
-      -- fires on the way sits one level deeper than the firing waiting for it
       it "nests the firing an operand of another firing brought down" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1546,12 +1475,6 @@ spec = do
                        , "    formation(⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)"
                        ]
 
-      -- A 'symbolize' line stands the data of a term an earlier line bound
-      -- into unknowns, so the protocol says what is known about each fresh
-      -- symbol before it writes the term carrying them. The fact is no
-      -- assignment to the symbol: a 𝜎 is the name of a λ function and
-      -- nothing binds bytes to it, so what is known is that dataizing the
-      -- formation it names answers them (#1269)
       it "writes what is known about every symbol a 'symbolize' line minted" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1569,9 +1492,6 @@ spec = do
                        , "    𝑛.1.2 := 𝜎1:λ:z  # 𝕄(𝑛.1.1)"
                        ]
 
-      -- A firing the memo answers with a kept stall, a firing that ends stuck
-      -- and a step budget running out each leave an element of their own in
-      -- the markup, the way a cut leaves '<looped>' (#1524)
       it "writes a told stall to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
@@ -1629,8 +1549,6 @@ spec = do
           records <- readProtocol path
           records `shouldBe` "𝔻(Φ)\n"
 
-      -- The protocol is a tree of one-line 𝜑 records whatever the run prints
-      -- its own answer as, so a program reading it back never has to know
       it "writes the lines in 𝜑 even with --output=xmir" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1639,12 +1557,6 @@ spec = do
           records <- readProtocol path
           records `shouldEndWith` "    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)\n"
 
-      -- The same facts as markup, so a program reading the protocol back never
-      -- has to parse 𝜑 to learn them: the name of an element says what its
-      -- record is, the value a meta took is the text of the element and each
-      -- symbol a firing minted stands in a record of its own (#1245, #1257,
-      -- #1280). Which of the two formats is written is decided by the name of
-      -- the file and by nothing else
       describe "as XML" $ do
         it "writes the document when the file is named .xml" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -1677,9 +1589,6 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- The judgment nests one level inside a '<protocol>' root, which is
-        -- what carries the totals the run closes with, '<msec>' and
-        -- '<firings>' siblings of their own standing after it (#1638)
         it "nests the judgment one level inside a '<protocol>' root" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1717,9 +1626,6 @@ spec = do
             records <- readUtf8 path
             drop 6 (lines records) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
 
-        -- A formation 𝔻 gets into through 'box' is an element of its own, and
-        -- whatever its φ body fires stands inside it, so a reader sees which
-        -- object a firing was made on the way into (#1420)
         it "nests what a φ body fires inside the formation element it was boxed from" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1731,8 +1637,6 @@ spec = do
                               , "    <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                               ]
 
-        -- A run firing nothing still writes a document a parser can read,
-        -- since the root is closed on the way out and not by the last firing
         it "closes the document even when nothing fires" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1745,11 +1649,6 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- An operand that came down to a manufactured datum is a 'dataize'
-        -- holding the formation its symbol names, never the 42 every symbol
-        -- answers and never the bare name a 𝔻 cannot be applied to (#1278),
-        -- while one that came down to data is a 'bind' holding that data: the
-        -- name of the element is what tells the two apart (#1257)
         it "tells a manufactured datum from data by the name of the element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1794,11 +1693,6 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- The fact a 'symbolize' line knows about a symbol is an element of
-        -- its own, next to '<bind>' and '<dataize>': the symbol stands in the
-        -- attribute a reader joins lines on and the data it stands for is the
-        -- text, so a consumer reads a constant off the markup without parsing
-        -- 𝜑 (#1269)
         it "writes what is known about a symbol as an element of its own" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1819,14 +1713,6 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- What a 'join' line knows about the symbol it minted is an element of
-        -- its own too, the way the fact a 'symbolize' line writes is: the
-        -- fresh symbol stands in the attribute a reader joins lines on and the
-        -- two symbols it was minted for are the text, in the order the line
-        -- lists the metas it joins. The meta it binds is a '<bind>' like every
-        -- other meta of the firing (#1246). The branches differ under φ, that
-        -- being where the value of a branch is reached and so the only place a
-        -- join looks at all (#1293)
         it "writes what a 'join' line knows as an element of its own" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1848,10 +1734,6 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- A 'join' line one side of which is ⊥ joins nothing: the program
-        -- raises on that side of the condition, so the markup names the
-        -- symbol the condition was dataized to and the side that raises, and
-        -- the meta is bound to the other side as it stands (#1405)
         it "writes on which side of the condition a fork raises" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1874,11 +1756,6 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- Which symbols a firing minted is a fact about the firing and not a
-        -- property of one term of it, so each of them stands in a record of
-        -- its own, the way what is known about a symbol does: an answer
-        -- minting two writes two, and nothing is left to guess which of the
-        -- two an attribute summarizing the term would have named (#1280)
         it "writes one 'minted' element per symbol the answer asked for" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1899,9 +1776,6 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- An entry answering a meta it already bound asks for no symbol of its
-        -- own, so its block holds no 'minted' at all: the records say what the
-        -- firing did and never stand empty to say that it did nothing (#1280)
         it "writes no 'minted' element for a firing minting nothing" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1920,9 +1794,6 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- A firing taken while an operand of another was coming down stands
-        -- inside that firing's element, which is where the indented tree of
-        -- the text format stands it too
         it "nests a firing an operand took inside the firing that asked" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -1967,10 +1838,6 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- Nothing fired, so the element stands alone and nothing opens under
-        -- it, exactly as 'unanswered(…)' stands alone in the text format; the formation
-        -- 𝔼 was asked about stands as the text of it, the way the comment of
-        -- the text format carries it (#1300)
         it "records a λ function no entry answers as a childless element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -2001,10 +1868,6 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- The root is named after the judgment the run ran, the way every
-        -- record under it is named after the judgment it carries, and the term
-        -- the run was aimed at stands in its one attribute: a morphing opens
-        -- 'morph' where the text format opens 𝕄(Φ.x) (#1279)
         it "names the root after the judgment a morphing ran" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -2018,10 +1881,6 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- A document a parser chokes on is worth nothing, so what the run left
-        -- open is closed on the way out and not by the last record: a run that
-        -- dies half-way through a derivation still leaves the firings it paid
-        -- for, inside elements that end
         it "closes the document even when the run fails" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -2052,12 +1911,6 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- A 'morph' operand 𝕄 answered the terminator for says what it is by
-        -- being ⊥ and nothing else, the way every other bound meta says what
-        -- it is by its own term. The entry answers with a fresh symbol and the
-        -- dispatch '.foo' then stands on it, so the run ends on the symbol the
-        -- way it ends on a λ name nothing answers, and the markup carries that
-        -- site too (#1287)
         it "writes the terminator as the term a meta was bound to" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
@@ -2078,8 +1931,6 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- The extension decides and nothing else, so a name ending in
-        -- anything but '.xml' keeps the indented text it has always written
         it "keeps writing text when the file is named anything else" $
           withTempFile "protocolXXXXXX.xmir" $ \(path, stream) -> do
             hClose stream
@@ -2088,10 +1939,6 @@ spec = do
             records <- readProtocol path
             take 1 (lines records) `shouldBe` ["𝔻(Φ)"]
 
-    -- A λ function no entry of the '--symbolic' file answers cannot fire — a
-    -- placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input, or
-    -- an operation the caller left out of its file on purpose. The run used
-    -- to die on it, discarding what it had already evaluated (#1060)
     describe "--partial" $ do
       let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
           dispatched = "[[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.foo.bar ]]"
@@ -2108,8 +1955,6 @@ spec = do
             ["dataize", symbolic, "--partial", "--sweet", "--hide-rho"]
             ["L_number_nope:λ"]
 
-      -- What the firing before the stuck one answered is a symbol, and the
-      -- residue carries it where the value nobody worked out belongs
       it "keeps what was evaluated before the stuck site in the residue" $
         withStdin stuck $
           testCLISucceeded
@@ -2153,8 +1998,6 @@ spec = do
             ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir", "--hide-rho", "--omit-listing"]
             ["<o name=\"λ\">L_number_nope</o>", "line(s)</listing>"]
 
-      -- XMIR carries a single binding at the top, the shape 'rewrite' insists
-      -- on, so a residual of several is refused the same way (#1444)
       it "cannot print a residual of several top bindings as XMIR" $
         withStdin dispatched $
           testCLIFailed
@@ -2171,12 +2014,8 @@ spec = do
         withStdin "[[ ]]" $
           testCLIFailed ["dataize", "--partial"] ["terminator ⊥"]
 
-    -- Which λ functions exist is not phino's business: the file given with
-    -- '--symbolic' decides, and phino carries none of its own
     describe "--symbolic" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
-      -- Nothing is worked out: the entry answers a number standing for the sum
-      -- and the run brings that symbol down to the datum every symbol answers
       it "fires the λ function an entry of the file answers" $
         withStdin sum' $
           testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
@@ -2193,27 +2032,17 @@ spec = do
         withStdin sum' $
           testCLIFailed ["dataize", "--symbolic=no-such-file.yaml"] ["no-such-file.yaml"]
 
-      -- A file that is no list of entries is refused where it is read, which
-      -- is before the input is even parsed, rather than when a λ function of
-      -- it fires
       it "fails on a file that carries no entries at all, before dataizing anything" $
         withTempFileContent "symbolicXXXXXX.yaml" "nope: true\n" $ \path ->
           withStdin sum' $
             testCLIFailed ["dataize", "--symbolic=" ++ path] ["cannot be read"]
 
-    -- An expression the program does not carry is reduced inside it all the
-    -- same: '--inside' binds it to a synthetic attribute of the universe and
-    -- aims the run at it, which is what the 'dataize' block of a λ function
-    -- does for every operand it names
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $
         withStdin universe $
           testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )"] ["40-45-00-00-00-00-00-00"]
 
-      -- The expression is normalized first, so a dispatch off a formation —
-      -- the very shape an operand reaches 𝔻 as, '⟦ x ↦ 6, ρ ↦ 5 ⟧.x' —
-      -- reduces too
       it "normalizes what it is handed before dataizing it" $
         withStdin universe $
           testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x"] ["2A-"]
@@ -2289,9 +2118,6 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
 
-  -- 𝕄 was reachable only from inside 𝔻, through the 'norm' rule of the
-  -- dataization relation, so there was no way to ask phino for 𝕄(n, Φ) on its
-  -- own (#1114)
   describe "morph" $ do
     let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
     it "prints help" $
@@ -2307,20 +2133,14 @@ spec = do
           ["morph", symbolic, "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
           ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
 
-    -- The same term under 𝔻, which insists on bytes and fires what 𝕄 left bare
     it "leaves to dataize the firing that takes the same term to bytes" $
       withStdin chained $
         testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
 
-    -- 'mf' hands a formation back as it is, so '--locator' is how one aims 𝕄 at
-    -- a subterm worth navigating: here it resolves Φ against the universe and
-    -- peels the dispatch through 𝒩
     it "morphs the subterm --locator aims at" $
       withStdin "[[ ex -> Q.x, x -> [[ D> 42- ]] ]]" $
         testCLISucceeded ["morph", "--locator=Q.ex", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 42- ⟧"]
 
-    -- 𝕄 is total and 𝔻 is not: where the derivation dies, 𝕄 answers ⊥ ('xi'
-    -- here) and the run succeeds, while 𝔻 has no bytes to give and fails
     it "canonizes the answer it prints" $
       withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
         testCLISucceeded ["morph", "--canonize", "--flat", "--sweet"] ["⟦ x ↦ Fn1:λ, y ↦ Fn2:λ ⟧"]
@@ -2341,11 +2161,6 @@ spec = do
       withStdin "[[ x -> $ ]]" $
         testCLIFailed ["dataize", "--locator=Q.x"] ["terminator ⊥"]
 
-    -- The chain carries the spine: the morphing rules that reduced the term
-    -- ('maa', then the terminal 'mf') with the normalization steps they spliced
-    -- in ('alpha', 'copy'). The 'ml' firing of the inner call is not there by
-    -- design — it happens in a side premise, which reduces on a chain of its
-    -- own and discards it
     it "prints the chain of morphing steps with --sequence" $
       withStdin chained $
         testCLISucceeded
@@ -2410,26 +2225,18 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["morph", "--seed=7", "--shuffle", "--depth-sensitive", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
 
-    -- The division 𝔻 cannot finish, whatever '--max-steps' it is given (#1052),
-    -- is no work at all for 𝕄: the term is already a formation, so 'mf' hands
-    -- it back and the λ function is never fired
     it "returns the λ-formation dataize cannot finish on" $
       withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
         testCLISucceeded
           ["morph", "--locator=Q.@", "--max-steps=40", "--flat", "--hide-rho"]
           ["⟦ λ ⤍ L_number_div"]
 
-    -- '--max-steps' bounds the 𝕄 recursion just as it bounds the 𝕄/𝔻 one
     it "fails once the --max-steps budget is spent" $
       withStdin chained $
         testCLIFailed
           ["morph", "--locator=Q.@", "--max-steps=3"]
           ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
 
-    -- '--max-steps' bounds one branch and not the whole run, so an entry
-    -- morphing two operands that each fire it again doubles its work at every
-    -- level and never reaches the limit it is given; '--max-firings' counts
-    -- every firing of the run and so ends it (#1472)
     describe "--max-firings" $ do
       let splitting = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: Φ.s.foo\n    𝑛2: Φ.s.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
           split = "⟦ s ↦ ⟦ λ ⤍ L_split ⟧, x ↦ Φ.s.foo ⟧"
@@ -2444,8 +2251,6 @@ spec = do
               ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-firings=64"]
               ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=64"]
 
-      -- The answer holds no 'foo', so what the dispatch reaches once every
-      -- operand is parked is the terminator
       it "ends the widening recursion with --partial" $
         splitting $ \table ->
           withStdin split $
@@ -2460,9 +2265,6 @@ spec = do
               ["morph", "--symbolic=" ++ table, "--deep", "--max-firings=64", "--partial", "--flat", "--hide-rho", "--sweet"]
               ["x ↦ Φ.s.foo"]
 
-      -- A parked frame hands back the state it started from, so a count kept
-      -- in that state would refund every firing made inside it; the tally is
-      -- shared by the whole run and never goes back
       it "fires no more λ functions than --max-firings allows" $
         splitting $ \table ->
           withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -2474,12 +2276,6 @@ spec = do
             records <- readProtocol path
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
 
-    -- '--max-steps' and '--max-firings' count work, so a run inside both of
-    -- them may still take longer than its caller can wait, and a caller that
-    -- kills it leaves a protocol nobody can read. '--max-seconds' stops the
-    -- run by the clock, writes where it stopped and closes the protocol. The
-    -- ladder below doubles its firings at every rung and stays 24 rungs deep,
-    -- so it spends neither budget and never ends (#1607).
     describe "--max-seconds" $ do
       let ladder = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: ξ.n.foo\n    𝑛2: ξ.n.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
           rungs = "⟦ " ++ intercalate ", " [printf "l%d ↦ ⟦ λ ⤍ L_split, n ↦ Φ.l%d ⟧" rung (rung + 1) | rung <- [0 .. 23 :: Int]] ++ ", l24 ↦ ⟦⟧, x ↦ Φ.l0.foo ⟧"
@@ -2505,8 +2301,6 @@ spec = do
                 ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
                 ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
 
-      -- A passed deadline is no stuck site, so '--partial' parks nothing and
-      -- the run ends where the clock stopped it (#1619)
       forM_ [["--locator=Q.x", "--partial"], ["--deep", "--partial"]] $ \opts ->
         it ("fails once the --max-seconds budget is spent with " ++ unwords opts) $
           ladder $ \table ->
@@ -2516,11 +2310,6 @@ spec = do
                   (["morph", "--symbolic=" ++ table, "--max-seconds=1"] ++ opts)
                   ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
 
-      -- Every worker of '--jobs' reads the clock and ends its binding at its
-      -- own refusal, and only the records of the first binding that failed
-      -- are written, so that binding has to carry the refusal itself. Where
-      -- the clock stops the run is a matter of timing, an operand or a binding
-      -- whose worker started late, so the site is left unchecked
       forM_ [["--locator=Q.x"], ["--locator=Q.x", "--partial"], ["--deep", "--partial"], ["--deep", "--partial", "--jobs=4"]] $ \opts ->
         it ("writes the timeout as the last line of the protocol with " ++ unwords opts) $
           ladder $ \table ->
@@ -2534,8 +2323,6 @@ spec = do
               records <- readProtocol path
               dropWhile (== ' ') (last (lines records)) `shouldStartWith` "timeout(1)  # 𝕄("
 
-      -- Only the first refusal of the deadline is written, and the run ends
-      -- on it, so the markup carries one timeout and nothing after it
       it "writes the timeout once to the XML protocol of a deep run" $
         ladder $ \table ->
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2560,10 +2347,6 @@ spec = do
             document <- X.readFile X.def path
             X.nameLocalName (X.elementName (X.documentRoot document)) `shouldBe` T.pack "protocol"
 
-    -- Every binding of the formation the walk starts at is morphed on a
-    -- worker of its own, from the state the spine left, and what the workers
-    -- made is written in the order of the bindings, the symbols of a later
-    -- binding numbered after those of the bindings before it (#1534)
     describe "--jobs" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
           recorded :: [String] -> IO [String]
@@ -2618,16 +2401,12 @@ spec = do
         withStdin twins $
           testCLIFailed ["morph", "--jobs=2"] ["The option --jobs requires --deep, since only the deep walk runs on several workers"]
 
-    -- '--partial' parks a spent 𝕄 budget the same way it parks a stuck λ:
-    -- the answer is the term the walk had reached, dispatch intact (#1078)
     it "parks the spent budget as a residual with --partial" $
       withStdin "⟦ φ ↦ 5.gt(Φ.nan) ⟧" $
         testCLISucceeded
           ["morph", "--locator=Q.@", "--max-steps=10", "--partial", "--flat", "--hide-rho", "--sweet"]
           ["5.gt( Φ.nan )"]
 
-    -- 𝕄 never fires a bare λ-formation, so only the λ functions sitting under
-    -- a dispatch ('ml') can get stuck; '--partial' parks them as under 𝔻
     describe "--partial" $ do
       let stuck = "[[ @ -> [[ L> Sym_arg_0 ]].foo ]]"
       it "fails on a λ function that cannot fire without the flag" $
@@ -2640,10 +2419,6 @@ spec = do
             ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
 
-    -- 𝕄 stops at the first formation and hands its bindings back as they were
-    -- written, so a program whose parts nothing demands is never reduced;
-    -- '--deep' enters every binding and finishes what 'mf' left, while what no
-    -- λ function touched keeps its name and the answer stays a program (#1124)
     describe "--deep" $ do
       let program =
             "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, \
@@ -2656,26 +2431,18 @@ spec = do
             ["morph", symbolic, "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
             ["⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧"]
 
-      -- No entry answers 'L_bar', so the call to it stays as written and keeps
-      -- its name, while the arithmetic in the argument nothing demands folds
-      -- into the symbol standing for the number nobody worked out
       it "reduces every binding it can and leaves the rest in place" $
         withStdin program $
           testCLISucceeded
             ["morph", symbolic, "--deep", "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
             ["⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ L_number_times:λ ⟧ ) ⟧"]
 
-      -- The same term the run above stops at as a bare λ-formation: 'mf' leaves
-      -- it to 𝔻, and the walk fires it instead of demanding bytes
       it "fires the bare saturated λ-formation mf hands back" $
         withStdin chained $
           testCLISucceeded
             ["morph", symbolic, "--deep", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
             ["⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"]
 
-      -- The default locator walks the whole program: the method table of the
-      -- object model keeps every one of its λ-formations, since not one of them
-      -- is saturated, while the one place that can be computed is
       it "keeps the object model intact while it folds the program" $
         withStdin program $
           testCLISucceeded
@@ -2694,15 +2461,6 @@ spec = do
         withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
           testCLIFailed ["morph", "--deep"] ["No entry of --symbolic answers the λ function 'Sym_arg_0'"]
 
-    -- Two bindings spelling one term are two firings of one formation, inner
-    -- sum and outer sum alike, so the walk fires four λ functions for two
-    -- values and charges four to '--max-firings'. Under '--acyclic=plausible'
-    -- the first firing of a formation is kept and the second takes its answer,
-    -- reducing and minting nothing, so the walk over the second binding is
-    -- charged nothing and lands it on the symbol the first came to; the
-    -- protocol still writes that firing at its own site, with the answer of
-    -- the first named after the line that made it, and no operand line under
-    -- it (#1476)
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
           recorded :: String -> IO [String]
@@ -2744,11 +2502,6 @@ spec = do
             ["dataize", symbolic, "--acyclic=plausible", "--locator=Q.@"]
             ["40-45-00-00-00-00-00-00"]
 
-    -- The step budget used to be the only thing ending the 𝕄/𝔻 recursion, so an
-    -- entry answering with a firing of itself spent the whole of it and then
-    -- failed on the limit; '--acyclic' stops the moment morphing comes back to a
-    -- term a frame above it is already reducing and parks that site the way
-    -- '--partial' parks a λ function that cannot fire
     describe "--acyclic=proven" $ do
       let looping = "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧"
       it "spends the whole budget and fails on the limit without the flag" $
@@ -2758,8 +2511,6 @@ spec = do
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--max-steps=40"]
               ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
-      -- The budget here is far larger than the one the run above failed on, so
-      -- what ends this one is the cut and not the limit
       it "prints the residue and exits successfully with the flag" $
         loopingLambdas $ \endless ->
           withStdin looping $
@@ -2767,17 +2518,12 @@ spec = do
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
               ["⟦ λ ⤍ L_loop ⟧.foo"]
 
-      -- The guard reads nothing but the formations the frames above it have
-      -- entered, so a run that never enters one twice answers exactly as it did before
       it "answers a terminating program the same way with the flag" $
         withStdin chained $
           testCLISucceeded
             ["morph", symbolic, "--acyclic=proven", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
             ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
 
-      -- The deep walk parks the one binding that loops and walks on, the way it
-      -- walks on past a λ function '--partial' could not fire, so what the loop
-      -- costs is that binding and not the rest of the program
       it "parks the looping binding and keeps walking with --deep" $
         loopingLambdas $ \endless ->
           withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧" $
@@ -2948,9 +2694,6 @@ spec = do
         ["merge", resource "desugar.phi", "--output=xmir"]
         ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<listing>⟦ foo ↦ ξ.x ⟧</listing>", "<o base=\"ξ.x\" name=\"foo\"/>"]
 
-    -- The @atom of an EO atom is its result type, not the name of its λ
-    -- function, so the merged 𝜑 names the function after its locator and
-    -- the XMIR printed back restores the type (#1389)
     it "names an atom of XMIR after its locator and keeps its type" $ do
       let xmir = "<object><o name=\"number\"><o name=\"plus\"><o base=\"∅\" name=\"b\"/><o atom=\"Φ.number\" name=\"λ\"/></o></o></object>"
       withTempFileContent "phino-atom.xmir" xmir $ \file -> do

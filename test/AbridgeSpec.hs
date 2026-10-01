@@ -3,9 +3,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Abridge module, which shortens how a long formation and a
-long byte string are spelled in a protocol written under '--abridged'.
--}
 module AbridgeSpec where
 
 import AST

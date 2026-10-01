@@ -3,12 +3,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- These are direct unit tests of a few 'CLI.Helpers' branches that the CLI
--- itself makes unreachable by construction: the option parser never hands
--- '--input' a 'LATEX' value, and '--output=xmir' is only ever validated
--- together with '--focus=Q', which keeps 'printExpression' out of its own
--- XMIR branch. Both branches still exist as defensive, exhaustive pattern
--- matches, so they are exercised here by calling the functions directly.
 module CLIHelpersSpec (spec) where
 
 import AST (Expression (ExRoot))

@@ -1,9 +1,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Must module that provides constraint specification
-for rewriting rules with exact counts and ranges.
--}
 module MustSpec where
 
 import Control.Monad (forM_)

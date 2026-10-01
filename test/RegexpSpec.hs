@@ -1,9 +1,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Regexp module that provides regular expression
-matching and replacement using PCRE.
--}
 module RegexpSpec where
 
 import Control.Exception (SomeException, displayException, try)

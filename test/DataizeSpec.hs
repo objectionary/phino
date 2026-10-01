@@ -42,11 +42,6 @@ test func useCases =
       ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultReduceContext ExRoot)
       res `shouldBe` output
 
--- One case of 𝔻, as a pack of 'test-resources/dataization-packs' spells it: the
--- program under 'input', wrapped in the fixture object model where 'model' says
--- so and run against the fixture λ functions where 'symbolic' does, entered at
--- 'location' and answering either the bytes under 'result' or the failure under
--- 'fails'.
 data DataizePack = DataizePack
   { location :: Maybe String
   , input :: String
@@ -57,7 +52,6 @@ data DataizePack = DataizePack
   }
   deriving (Generic, Show, FromJSON)
 
--- Dataize one such pack and check what it answers
 testDataize :: Lambdas -> FilePath -> Expectation
 testDataize known pth = do
   DataizePack{..} <- Decode.decodeFileThrow pth
@@ -73,8 +67,6 @@ testDataize known pth = do
       dataize expr emptyState ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
     _ -> expectationFailure "The pack holds neither a single 'result' nor a single 'fails'"
 
--- Dataize under '--partial', handing back the protocol of '--protocol'
--- alongside the answer, verbatim
 partially :: Lambdas -> String -> IO ((Outcome, [Rewritten]), String)
 partially known src = do
   expr <- parseExpressionThrows (primitives src)
@@ -83,8 +75,6 @@ partially known src = do
     (outcome, chain, _) <- dataize expr emptyState ctx
     pure (outcome, chain)
 
--- The one λ function that answers with a firing of itself, read the way
--- '--symbolic' reads it, so that a run fires it until the step budget is gone
 looping :: (Lambdas -> IO a) -> IO a
 looping action = loopingLambdas (readLambdas >=> action)
 
@@ -92,23 +82,11 @@ spec :: Spec
 spec = do
   known <- runIO fixtureLambdas
 
-  -- Symmetric to the morphing fallback above: every normal form 𝔻 actually
-  -- receives is covered by 'delta'/'box'/'fire'/'none' (formations) or 'norm'
-  -- (everything else, disjoint from ⊥ and formations), so this fallback is
-  -- unreachable through the public 'dataize'/'dataize'' entry points on any
-  -- term produced by normalization. A raw meta again reaches it directly,
-  -- proving the fallback itself is live code, not dead weight.
   describe "dataize' fails when no dataization rule matches the term" $
     it "throws instead of treating the unmatched meta as ⊥" $
       dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "no dataization rule matched" `isInfixOf` show (e :: SomeException))
 
-  -- 'norm' matches the bare meta 𝑛, which unifies with any expression, so it is
-  -- guarded to fire only when 𝑛 is neither a formation ('not (formation 𝑛)',
-  -- left to 'delta'/'box'/'fire'/'none') nor the termination ⊥ ('not (𝑛 = ⊥)').
-  -- 𝔻 is partial: ⊥ matches no clause and lands on the unmatched-term error
-  -- (#955). The dataization clauses are therefore disjoint and their order in
-  -- 'resources/dataization' cannot change behavior.
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
     let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot)) Nothing (_normal linked)
         dataizeRule :: String -> Yaml.DataizeRule
@@ -125,16 +103,6 @@ spec = do
       substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (dataizeRule "norm")) rctx
       null substs `shouldBe` False
 
-  -- Most cases of 𝔻 are four plain values — the program, where the run enters
-  -- it, which λ functions answer it and what it must dataize to — so they are
-  -- packs of 'test-resources/dataization-packs' rather than Haskell (#1201).
-  -- Which λ functions exist is no longer phino's business: the YAML file given
-  -- with '--symbolic' decides, and each entry of it answers the firing with a
-  -- term of the calculus (see 'Lambdas'). What a pack with 'symbolic' on
-  -- asserts is that such an answer lands in the derivation exactly where a
-  -- built-in atom's answer used to: 𝔼 normalizes it and 𝔻 carries on. Nothing
-  -- is computed on the way, so every one of them ends on the datum a symbol is
-  -- manufactured for.
   describe "dataize" $ do
     let resources = "test-resources/dataization-packs"
     packs <- runIO (allPathsIn resources)
@@ -178,10 +146,6 @@ spec = do
         )
       ]
 
-  -- 𝔻 is partial (#955): the terminator ⊥ signals an error and lies outside its
-  -- domain, so it matches no dataization clause and 𝔻 stops there instead of
-  -- yielding empty bytes. A data-less formation ⟦⟧ ('none') dataizes ⊥, so it
-  -- fails through the very same path — it has nothing to dataize.
   describe "fails to dataize the terminator" $ do
     let failsOn desc input =
           it desc $
@@ -193,13 +157,6 @@ spec = do
       "throws on a void slot fed a non-absolute argument instead of looping forever"
       (ExApplication (ExFormation [BiVoid (AtLabel "x")]) (ArTau (AtLabel "x") (ExDispatch ExXi (AtLabel "foo"))))
 
-  -- '--max-cycles' and '--max-depth' reach only the normalization run inside a
-  -- single step, so the 𝕄/𝔻 recursion itself was unbounded: a λ function that
-  -- answers with a firing of itself sent 'morph'' through md → ma → universe →
-  -- mf → mphi → ml forever and no CLI option could stop it (#1052). Recursion
-  -- is nothing phino prevents — whether a λ function ends is the object model's
-  -- business — so '--max-steps' is what bounds that recursion and fails once
-  -- the budget is gone.
   describe "stops a dataization that never reaches bytes" $ do
     it "fails on the step limit instead of morphing forever" $
       looping $ \endless -> do
@@ -207,9 +164,6 @@ spec = do
         dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty endless (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
-    -- A budget spent on a cycle is a stuck site just as a λ function that
-    -- cannot fire is: under '_partial' the run ends on the residual the spine
-    -- had reached instead of failing hard (#1078)
     it "parks the step limit as a residual with --partial" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
@@ -218,9 +172,6 @@ spec = do
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
 
-  -- Unlike the step limit, a passed deadline of '--max-seconds' is no stuck
-  -- site: the run is out of time wherever it stands, so '--partial' has no
-  -- residual to hand back and the run fails the way it fails without it (#1619)
   describe "stops a dataization by the clock of --max-seconds" $
     it "fails a partial dataization once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ @ -> [[ D> 7E- ]] ]]"
@@ -228,13 +179,6 @@ spec = do
       dataize expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline, _partial = True}
         `shouldThrow` (\e -> "--max-seconds=29" `isInfixOf` show (e :: SomeException))
 
-  -- A λ function no entry of the '--symbolic' file answers — a name the file
-  -- does not carry, such as the placeholder ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a
-  -- data input (#1060) — fails the run. Under '_partial' the run ends on the
-  -- residue instead: the working expression the spine had reached, with the
-  -- stuck application intact and everything the calculus demanded before it
-  -- already evaluated, while the protocol of '--protocol' keeps the firings
-  -- that did answer.
   describe "partially evaluates around a λ function that cannot fire (--partial)" $ do
     let placeholder = ExFormation [BiLambda (Function "Sym_arg_0")]
     it "fails on it without the flag, naming the λ function" $ do
@@ -278,9 +222,6 @@ spec = do
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"
       outcome `shouldBe` Dataized (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
-    -- An operand that reaches the terminator ⊥ never comes down to data, which
-    -- is a property of the program just as an unanswered λ function is, so it
-    -- parks the firing rather than ending the run (#1401)
     it "parks a firing whose operand dataizes the terminator ⊥" $ do
       ((outcome, _), protocol) <- partially known "5.plus( ⟦ ⟧ )"
       case outcome of
@@ -311,9 +252,6 @@ spec = do
       expr <- parseExpressionThrows boxed
       (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
       value `shouldBe` Dataized (BtOne "00")
-    -- A normalization that ran out of cycles hands back a term that is not a
-    -- normal form, so the run names the budget even without --depth-sensitive
-    -- rather than going on with it (#1496)
     it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
       expr <- parseExpressionThrows boxed
       dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
@@ -370,10 +308,6 @@ spec = do
           loc' <- parseExpressionThrows loc
           (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc'))
           pure [label | (_, Just (_, label)) <- chain]
-    -- 'evaluate' is followed straight by the 'contextualize' of the answer's
-    -- own 𝔻 and not by the 'ma'/'copy'/'mf' that used to reduce it on the
-    -- spine: 𝔼 morphs what it answers before it hands it over, so the spine is
-    -- given a formation and has nothing left to peel (#1268)
     it "dataizes 5.plus(6) through the expected rules" $ do
       labels <-
         labelsOf

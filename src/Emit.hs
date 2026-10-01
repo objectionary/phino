@@ -5,23 +5,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The Haskell module 'phino compile' writes out of the rules of YAML: every
--- rewriting rule a function of the term it may match as a whole, answering
--- what it rewrites the term to; the built-in ones one walk over a term,
--- telling which of them match anywhere inside it, and the normal form a test
--- of whether any of them does (#1643); 𝒞 one function with an equation per
--- rule of 'resources/contextualization' (#1617); and every rule of 𝕄 and of 𝔻
--- a function of the term and the universe it may match, answering the premises
--- it runs and the conclusion it comes to (#1628). A pattern becomes the
--- generators of a list comprehension, a meta the variable a generator binds, a
--- meta met twice a guard of equality, the 'when' of a rule a guard, a function
--- of its 'where' a binding, a premise a function of the answer it is handed,
--- and its result the constructors that build it. No substitution is made and
--- no template is filled, which is what a rule of YAML costs at every step.
--- What the module does is what the matcher, the builder and the replacer do
--- for the same rule, in the same order, so the steps a chain is made of do not
--- depend on which of the two ran; a rule the module could not run that way is
--- refused, with the reason.
 module Emit (emitted) where
 
 import AST
@@ -40,12 +23,8 @@ import Rule (redex)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
--- What the emitter knows while it walks one rule: the variable every meta
--- matched so far is held in, and the number the next fresh variable takes.
 data Scope = Scope (Map.Map Meta String) Int
 
--- A walk over one rule, which either writes a piece of Haskell or refuses the
--- rule, saying why.
 newtype Emitting a = Emitting (Scope -> Either String (a, Scope))
 
 instance Functor Emitting where
@@ -64,14 +43,11 @@ instance Monad Emitting where
     let Emitting walk' = next value
     walk' scope'
 
--- One qualifier of a list comprehension: a generator binding a pattern to
--- every element of a list, a guard, or a binding of a variable.
 data Qual
   = Gen Pat String
   | Guard String
   | Let String String
 
--- A pattern a generator matches an element with.
 data Pat
   = PVar String
   | PCon String [Pat]
@@ -79,10 +55,6 @@ data Pat
   | PCons Pat Pat
   | PNil
 
--- The module of the given rules: the built-in rules of normalization, the
--- rules of '--rule', the rules of contextualization, of morphing and of
--- dataization, and the texts of the built-in rules the engine is compiled
--- from; or the reason one of the rules cannot be compiled.
 emitted :: [Y.Rule] -> [Y.Rule] -> [Y.ContextualizeRule] -> [Y.MorphRule] -> [Y.DataizeRule] -> [String] -> Either String String
 emitted builtin custom contextual morphs dataizes sources = do
   let rules = zip (named (map (.name) (builtin ++ custom))) (builtin ++ custom)
@@ -200,8 +172,6 @@ emitted builtin custom contextual morphs dataizes sources = do
     isUpperStart (first : _) = first `elem` ['A' .. 'Z']
     isUpperStart [] = False
 
--- The names the functions of the rules go by, one per rule, told apart where
--- two rules carry the same name.
 named :: [String] -> [String]
 named names = zipWith unique [0 :: Int ..] (map camel names)
   where
@@ -219,10 +189,6 @@ named names = zipWith unique [0 :: Int ..] (map camel names)
     upper (first : rest) = toUpper first : rest
     upper [] = []
 
--- The functions of one rewriting rule: its step and what it rewrites a term
--- matching it as a whole to. A normal form is asked of its '𝑛' and '𝑘' metas
--- the way the matcher asks it (see 'Ru.normalHeld'), so a term that is itself
--- a meta is no normal form under either engine.
 rewriting :: (String, Y.Rule) -> Either String String
 rewriting (name, rule) = do
   refused
@@ -277,10 +243,6 @@ rewriting (name, rule) = do
           bind (Named meta) var
           pure [Let var value]
 
--- The function of one contextualization rule: the conclusion it comes to for
--- a term and a context matching it, once for every way they match it, beside
--- its name. The letters '𝑛' and '𝑘' of these rules are only names, so no
--- normal form is asked of anything (see 'Contextualize').
 contextualizing :: String -> Y.ContextualizeRule -> Either String String
 contextualizing name rule = do
   (quals, result) <- walked $ do
@@ -318,23 +280,12 @@ contextualizing name rule = do
         (intercalate "; " [printf "%s <- %s" var call | (var, call) <- premises])
         (parens result)
 
--- The function of one rule of 𝕄: what it comes to for a term and a universe
--- matching it, once for every way they match it (see 'inferring').
 morphing :: String -> Y.MorphRule -> Either String String
 morphing name rule = inferring "morphing" ("morphing" ++ name, "Expression") (Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing) rule.ematch (built True) (In.morphingSpine rule)
 
--- The function of one rule of 𝔻, the way 'morphing' writes one of 𝕄.
 dataizing :: String -> Y.DataizeRule -> Either String String
 dataizing name rule = inferring "dataization" ("dataization" ++ name, "Bytes") (Y.Rule rule.name Nothing Nothing rule.match ExRoot rule.when Nothing Nothing) rule.ematch builtBytes (In.dataizationSpine rule)
 
--- The function of one rule of 𝕄 or 𝔻, of the given kind, name and type of
--- answer: the premises it runs beside its spine, each a function of the answer
--- it is handed, and the conclusion it comes to, once for every way the term
--- and the universe match it, checked the way the matcher checks them — the
--- pattern of the universe against the universe first, then the pattern of the
--- rule against the term, its 'when', and its '𝑛' and '𝑘' metas (see
--- 'matchExpressionWithRule''). What the premises and the conclusion are is
--- read off the rule by 'Inference', the very way the engine of YAML reads it.
 inferring :: forall value. String -> (String, String) -> Y.Rule -> Expression -> (value -> Emitting (Maybe String)) -> Either String ([Y.Premise], In.Conclusion value) -> Either String String
 inferring kind (name, answer) rule ematch builder spine = do
   (sides, conclusion) <- either (Left . refusal) Right spine
@@ -385,9 +336,6 @@ inferring kind (name, answer) rule ematch builder spine = do
     stepped :: (Judgment, String) -> String
     stepped (judgment, verb) = printf "(D.%s, %s)" (show judgment) (show verb)
 
--- The comprehension of the qualifiers and the result, every variable a
--- generator binds and nothing after it reads written as a wildcard and every
--- binding nothing reads dropped, so the module compiles without a warning.
 comprehension :: [Qual] -> String -> String
 comprehension quals result = case fst (foldr written ([], Set.fromList (tokens result)) quals) of
   [] -> "  [" ++ result ++ "]"
@@ -414,15 +362,9 @@ comprehension quals result = case fst (foldr written ([], Set.fromList (tokens r
     atomic used pat@(PCon _ (_ : _)) = "(" ++ pattern' used pat ++ ")"
     atomic used pat = pattern' used pat
 
--- The words of a piece of Haskell, which is how the emitter tells whether a
--- variable is read after it was bound.
 tokens :: String -> [String]
 tokens = words . map (\char -> if isAlphaNum char || char == '_' || char == '\'' then char else ' ')
 
--- The generators and guards matching the pattern against the term the
--- variable holds, in the order the matcher matches it (see 'matchExpression''):
--- the attribute of a dispatch before its head, the head of an application
--- before its argument, and the bindings of a formation left to right.
 matching :: Expression -> String -> Emitting [Qual]
 matching (ExMeta meta) var = meta' (Named meta) var
 matching (ExAny slot) var = meta' (Anon slot) var
@@ -457,10 +399,6 @@ matching (ExApplication expr (ArAlpha alpha arg)) var = do
   pure (Gen (PCon "ExApplication" [PVar head', PCon "ArAlpha" [PVar alpha', PVar arg']]) (single var) : expression ++ index ++ argument)
 matching expr _ = refuse (printf "its pattern holds the term '%s', which only a rule of YAML can match" (show expr))
 
--- The generators and guards matching the bindings of a pattern against the
--- list the variable holds, a meta binding trying every leading run of it,
--- the shortest first, and taking the whole rest where it is the last one (see
--- 'matchBindingsMeta').
 bindings :: [Binding] -> String -> Emitting [Qual]
 bindings [] var = pure [Gen PNil (single var)]
 bindings [BiMeta meta] var = meta' (Named meta) var
@@ -482,8 +420,6 @@ bindings (bd : rest) var = do
   others <- bindings rest after
   pure (Gen (PCons (PVar first) (PVar after)) (single var) : binding' ++ others)
 
--- The generators and guards matching one binding of a pattern against the
--- binding the variable holds (see 'matchBinding').
 binding :: Binding -> String -> Emitting [Qual]
 binding (BiVoid attr) var = do
   attr' <- fresh
@@ -517,16 +453,11 @@ binding (BiLambda func) var = do
   pure [Gen (PCon "BiLambda" [PVar func']) (single var), Guard (printf "%s == %s" func' literal)]
 binding bd _ = refuse (printf "its pattern holds the binding '%s' where a single binding stands" (show bd))
 
--- The guards matching an attribute of a pattern against the attribute the
--- variable holds (see 'matchAttribute').
 attribute :: Attribute -> String -> Emitting [Qual]
 attribute (AtMeta meta) var = meta' (Named meta) var
 attribute (AtAny _) _ = pure []
 attribute attr var = (\literal -> [Guard (printf "%s == %s" var literal)]) <$> attributed attr
 
--- The generators and guards matching an index of a pattern against the one
--- the variable holds, which a meta matches only where it is a number (see
--- 'matchAlpha').
 indexed :: Alpha -> String -> Emitting [Qual]
 indexed (AlMeta meta) var = do
   index <- fresh
@@ -535,16 +466,12 @@ indexed (AlMeta meta) var = do
 indexed (AlAny _) var = pure [Gen (PCon "Alpha" [PVar "_"]) (single var)]
 indexed (Alpha idx) var = pure [Guard (printf "%s == Alpha %d" var idx)]
 
--- A meta matched against what the variable holds: bound to it the first time,
--- and asked to equal what it was bound to every time after.
 meta' :: Meta -> String -> Emitting [Qual]
 meta' key var =
   known key >>= \case
     Just bound -> pure [Guard (printf "%s == %s" bound var)]
     Nothing -> bind key var >> pure []
 
--- The metas of the pattern a normal form or an absolute term is asked of,
--- '𝑛' or '𝑘' by the prefix, in the order they are met (see 'metasWithPrefix').
 prefixed :: String -> Expression -> [Meta]
 prefixed prefix = nub . go
   where
@@ -559,9 +486,6 @@ prefixed prefix = nub . go
     go (ExDispatch expr _) = go expr
     go _ = []
 
--- The Haskell of a condition, which holds exactly where the condition of the
--- rule does (see 'meetCondition'''): a condition naming a meta the pattern
--- does not bind never holds.
 condition :: Y.Condition -> Emitting String
 condition (Y.And conds) = parens . intercalate " && " <$> mapM condition conds
 condition (Y.Or conds) = parens . intercalate " || " <$> mapM condition conds
@@ -587,9 +511,6 @@ condition (Y.IsFormation _) = pure "False"
 condition (Y.Matches _ _) = refuse "its condition 'matches' needs a run of dataization"
 condition (Y.PartOf _ _) = refuse "its condition 'part-of' is not compiled yet"
 
--- A condition asking whether the attributes are present among the bindings
--- the metas hold, all of them or none of them, which never holds where an
--- attribute or a binding cannot be worked out.
 present :: Bool -> [Attribute] -> [Binding] -> Emitting String
 present every attrs bds = do
   attrs' <- mapM attr' attrs
@@ -608,20 +529,15 @@ present every attrs bds = do
     bindingsOf (BiAny _) = pure Nothing
     bindingsOf bd = fmap listed . sequence <$> mapM (builtBinding False) [bd]
 
--- A condition asking a question of the term a meta holds.
 asked :: String -> Expression -> Emitting String
 asked question (ExMeta meta) = maybe "False" ((question ++ " ") ++) <$> known (Named meta)
 asked question (ExAny slot) = maybe "False" ((question ++ " ") ++) <$> known (Anon slot)
 asked _ _ = refuse "its condition asks about a term that is no meta"
 
--- The comparison of the two sides, which never holds where either of them
--- cannot be worked out.
 compared :: String -> Maybe String -> Maybe String -> String
 compared operator (Just left) (Just right) = printf "%s %s %s" (parens left) operator (parens right)
 compared _ _ _ = "False"
 
--- The Haskell of a number of a condition, where it can be worked out (see
--- 'numToInt').
 number :: Y.Number -> Emitting (Maybe String)
 number (Y.MetaIndex meta) = known (Named meta)
 number (Y.Length (BiMeta meta)) = fmap ("length " ++) <$> known (Named meta)
@@ -629,11 +545,6 @@ number (Y.Domain (BiMeta meta)) = fmap ("Ru.domainOf " ++) <$> known (Named meta
 number (Y.Literal num) = pure (Just (show num))
 number _ = pure Nothing
 
--- The Haskell building the term of a template out of the metas bound, the way
--- 'buildExpression' builds it, or nothing where a meta of it is not bound. A
--- formation is checked to carry no attribute twice where the flag says so,
--- which is what a result and a function of 'where' are built with, and a
--- condition is not.
 built :: Bool -> Expression -> Emitting (Maybe String)
 built _ (ExMeta meta) = known (Named meta)
 built _ ExXi = pure (Just "ExXi")
@@ -675,7 +586,6 @@ built checked (ExApplication expr (ArAlpha alpha arg)) = do
   pure (printf "ExApplication %s (ArAlpha %s %s)" <$> fmap parens expr' <*> fmap parens alpha' <*> fmap parens arg')
 built _ expr = refuse (printf "it builds the term '%s', which only a rule of YAML can build" (show expr))
 
--- The Haskell building one binding of a template (see 'built').
 builtBinding :: Bool -> Binding -> Emitting (Maybe String)
 builtBinding checked (BiTau attr expr) = do
   attr' <- builtAttribute attr
@@ -691,25 +601,21 @@ builtBinding _ (BiLambda (FnFresh _)) = refuse "it builds a fresh symbol"
 builtBinding _ (BiLambda func) = Just . ("BiLambda " ++) . parens <$> function func
 builtBinding _ bd = refuse (printf "it builds the binding '%s'" (show bd))
 
--- The Haskell of the data of a template (see 'buildBytes').
 builtBytes :: Bytes -> Emitting (Maybe String)
 builtBytes (BtMeta meta) = known (Named meta)
 builtBytes (BtAny slot) = known (Anon slot)
 builtBytes bts = pure (Just (parens (show bts)))
 
--- The Haskell of an attribute of a template (see 'buildAttribute').
 builtAttribute :: Attribute -> Emitting (Maybe String)
 builtAttribute (AtMeta meta) = known (Named meta)
 builtAttribute (AtAny _) = pure Nothing
 builtAttribute attr = Just <$> attributed attr
 
--- The Haskell of an index of a template (see 'buildAlpha').
 builtAlpha :: Alpha -> Emitting (Maybe String)
 builtAlpha (AlMeta meta) = fmap ("Alpha " ++) <$> known (Named meta)
 builtAlpha (AlAny _) = pure Nothing
 builtAlpha (Alpha idx) = pure (Just (printf "Alpha %d" idx))
 
--- The Haskell of an attribute no meta stands for.
 attributed :: Attribute -> Emitting String
 attributed (AtLabel label) = pure (printf "AtLabel (%s)" (texted label))
 attributed AtPhi = pure "AtPhi"
@@ -718,19 +624,14 @@ attributed AtLambda = pure "AtLambda"
 attributed AtDelta = pure "AtDelta"
 attributed attr = refuse (printf "it holds the attribute '%s' where a literal one stands" (show attr))
 
--- The Haskell of a λ function no meta stands for.
 function :: Function -> Emitting String
 function (Function name) = pure (printf "Function (%s)" (texted name))
 function (FnSymbol idx) = pure (printf "FnSymbol %d" idx)
 function func = refuse (printf "it holds the λ function '%s' where a literal one stands" (show func))
 
--- The Haskell of a text.
 texted :: T.Text -> String
 texted text = "T.pack " ++ show (T.unpack text)
 
--- Whether the pattern applies Φ to a ρ anywhere, which the builder turns into
--- Φ alone, so the place the matcher matched is not the term the replacer
--- looks for (see 'buildExpression').
 rooted :: Expression -> Bool
 rooted (ExApplication ExRoot (ArTau AtRho _)) = True
 rooted (ExApplication expr (ArTau _ arg)) = rooted expr || rooted arg
@@ -739,24 +640,18 @@ rooted (ExDispatch expr _) = rooted expr
 rooted (ExFormation bds) = or [rooted expr | BiTau _ expr <- bds]
 rooted _ = False
 
--- The variable a meta is held in where the pattern bound it.
 known :: Meta -> Emitting (Maybe String)
 known key = Emitting (\scope@(Scope bound _) -> Right (Map.lookup key bound, scope))
 
--- The variable a meta is held in, where the pattern bound it, or a refusal.
 held :: Meta -> Emitting String
 held key = known key >>= maybe (refuse "it asks a normal form of a meta its pattern does not bind") pure
 
--- Remember the variable a meta is held in.
 bind :: Meta -> String -> Emitting ()
 bind key var = Emitting (\(Scope bound next) -> Right ((), Scope (Map.insert key var bound) next))
 
--- A variable no meta and no other variable of the rule is held in.
 fresh :: Emitting String
 fresh = Emitting (\(Scope bound next) -> Right ("x" ++ show next, Scope bound (next + 1)))
 
--- The variable a premise binds its meta in, which neither the pattern nor a
--- premise before it may have bound.
 introduced :: T.Text -> Emitting String
 introduced result =
   known (Named result) >>= \case
@@ -766,32 +661,25 @@ introduced result =
       bind (Named result) var
       pure var
 
--- A refusal of the rule, saying why.
 refuse :: String -> Emitting a
 refuse reason = Emitting (const (Left reason))
 
--- The variable a meta a rule binds by itself is held in, named after the
--- meta where its name is a plain one.
 variable :: Meta -> String
 variable (Named meta) = case T.unpack meta of
   first : rest | all isDigit rest -> toLower first : rest
   name -> "m_" ++ map (\char -> if isAlphaNum char then char else '_') name
 variable (Anon (Slot kind offset)) = printf "a_%s%d" (T.unpack kind) offset
 
--- A list of one element.
 single :: String -> String
 single var = "[" ++ var ++ "]"
 
--- The Haskell of a list of the elements.
 listed :: [String] -> String
 listed items = "[" ++ intercalate ", " items ++ "]"
 
--- The same, one element per line, indented by the given number of spaces.
 listed' :: Int -> [String] -> String
 listed' _ [] = "[]"
 listed' indent items = "[ " ++ intercalate ("\n" ++ replicate indent ' ' ++ ", ") items ++ "\n" ++ replicate indent ' ' ++ "]"
 
--- The piece of Haskell in parentheses, unless it is one word.
 parens :: String -> String
 parens text
   | all (\char -> isAlphaNum char || char == '_' || char == '\'') text = text

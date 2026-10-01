@@ -27,7 +27,6 @@ import Parser
 import Slots
 import Text.Printf (printf)
 
--- Fail unless the object names exactly one of the expected keys
 validateYamlObject :: (MonadFail a) => Object -> [String] -> a ()
 validateYamlObject v keys
   | length current > 1 = fail ("Exactly one condition type is expected, when multiple condition types specified: " ++ show current)
@@ -368,9 +367,6 @@ instance Metas Operation where
   bare names (OpContextualize expr context) = OpContextualize (bare names expr) (bare names context)
   bare names (OpDataize expr universe) = OpDataize (bare names expr) (bare names universe)
 
--- A rule is the scope an index counts in: the reader meets the metas of one
--- inference within it and nowhere else, so a kind the rule names just once
--- carries no index anywhere in the rule.
 instance Metas Rule where
   metas rule = metas rule.pattern ++ metas rule.result ++ metas rule.when ++ metas rule.having ++ metas rule.where_
   bare names rule =
@@ -414,15 +410,6 @@ instance Metas ContextualizeRule where
       , premises = bare names rule.premises
       }
 
--- An anonymous meta-variable is bound by the pattern it stands in and is
--- forgotten as soon as that pattern matches, so it has no name for any other
--- part of a rule to read it back by. Writing one outside the pattern is
--- therefore a mistake in the rule, not a term to be resolved later, and the
--- rule is rejected as it loads.
--- A rewriting rule is about a term and knows nothing of the world around it,
--- so it has no 'e-match' to match that world with: only a morphing and a
--- dataization rule carry one. A rule written with it anyway is refused where
--- it is read, since ignoring the key would rewrite with a meta nobody binds.
 universeless :: String -> Value -> Parser ()
 universeless rule (Object fields)
   | KeyMap.member "e-match" fields = fail (printf "The rule '%s' carries an 'e-match', which only a morphing or a dataization rule may" rule)
@@ -440,9 +427,6 @@ referenceless rule field term = case anonymous term of
           rule
       )
 
--- Decode one rule out of the file that carries it, naming that file when its
--- YAML is broken. A rule set is a directory 'embedDir' embeds wholesale, one
--- rule per file, the file named after the rule it carries.
 decodeRule :: (FromJSON a) => (FilePath, BS.ByteString) -> a
 decodeRule (path, bs) = case Yaml.decodeEither' bs of
   Right rule -> rule
@@ -455,20 +439,12 @@ normalizationRules = map decodeRule $(embedDir "resources/normalize")
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
 
--- One premise above the inference line of a morphing or dataization rule: bind
--- the meta named 'result' to the value of applying 'operation' to its argument.
--- A 'morph' or 'dataize' premise names the universe it reduces in beside the
--- term, the second argument of 𝕄(n, e, s) and 𝔻(n, e, s), the way 'evaluate'
--- names the one 𝔼 fires in: the rule says where each of its premises runs, and
--- nothing is handed to a premise behind the rule's back (#1512).
 data Premise = Premise
   { result :: Text
   , operation :: Operation
   }
   deriving (Eq, Generic, Show)
 
--- The reduction a premise performs, mirroring the build-term functions and the
--- 𝒩 and 𝔻 reducers the engine already provides.
 data Operation
   = OpMorph Expression Expression
   | OpNormalize Expression
@@ -477,11 +453,6 @@ data Operation
   | OpDataize Expression Expression
   deriving (Eq, Generic, Show)
 
--- One morphing rule in inference-rule form: when 'match' matches the term and
--- 'ematch' matches the universe (binding 'e'), the rule yields 'nresult' (a
--- premise meta or a literal) provided 'when' holds and the ordered 'premises'
--- reduce as stated. 'ematch' is the universe-argument matcher of 𝕄(n, e, s), in
--- practice always the '𝑒' meta.
 data MorphRule = MorphRule
   { name :: String
   , label :: Maybe String
@@ -493,8 +464,6 @@ data MorphRule = MorphRule
   }
   deriving (Generic, Show)
 
--- One dataization rule in inference-rule form, structured like 'MorphRule' but
--- terminating with bytes ('dresult').
 data DataizeRule = DataizeRule
   { name :: String
   , label :: Maybe String
@@ -506,10 +475,6 @@ data DataizeRule = DataizeRule
   }
   deriving (Generic, Show)
 
--- One contextualization rule in inference-rule form, structured like 'MorphRule'
--- but binary in 𝒞(n, c): the second argument is the context 'c' ('cmatch',
--- always the 'c' meta) rather than the universe 'e', and the conclusion is the
--- contextualized term 'cresult'.
 data ContextualizeRule = ContextualizeRule
   { name :: String
   , label :: Maybe String
@@ -526,8 +491,6 @@ instance FromJSON Premise where
       "Premise"
       (\o -> Premise <$> premiseResult o <*> premiseOperation o)
 
--- The meta a premise binds, taken from its 'n-result' (an expression meta) or
--- 'd-result' (a bytes meta).
 premiseResult :: Object -> Parser Text
 premiseResult o = do
   expr <- o .:? "n-result"
@@ -543,9 +506,6 @@ premiseResult o = do
         Just _ -> fail "'d-result' must be a bytes meta"
         Nothing -> fail "a premise needs an 'n-result' or 'd-result' meta"
 
--- The single verb of a premise. Every judgment but 𝒩 is binary here: 𝕄, 𝔼 and
--- 𝔻 take the term and the universe, 𝒞 the term and the context, each as a
--- list of two.
 premiseOperation :: Object -> Parser Operation
 premiseOperation o =
   asum
@@ -563,10 +523,6 @@ premiseOperation o =
         [expr, second] -> verb <$> parseJSON expr <*> parseJSON second
         _ -> fail (printf "'%s' expects exactly two arguments" (Key.toString key))
 
--- Parse the optional 'label', rejecting one that merely repeats the rule's
--- 'name'. A label equal to the name typesets the same token across two macros
--- and adds nothing, so it is forbidden: 'label' is meant to carry a symbol that
--- differs from the plain name (for example '\lambda' or 'disp').
 parseLabel :: String -> Object -> Parser (Maybe String)
 parseLabel ruleName o = do
   label' <- o .:? "label"

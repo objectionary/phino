@@ -3,8 +3,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- Tests for the languages of '--symbolic' keys, which tell whether two keys
--- match one λ name, whether or not either of them spells it.
 module LanguageSpec where
 
 import Control.Monad (forM_)
@@ -14,7 +12,6 @@ import Data.Text (Text)
 import Language (language, shared)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
--- The name two keys both match, or nothing, or the reason one cannot be read.
 common :: Text -> Text -> Either String (Maybe Text)
 common first second = shared <$> language first <*> language second
 

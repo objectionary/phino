@@ -91,14 +91,6 @@ spec = do
       loc <- withLocatedExpression ExRoot target input'
       loc `shouldBe` target
 
-    -- locatedInBindings only ever matches a BiTau binding, so a lone `x -> ?`
-    -- (BiVoid) target can never satisfy the "Just" check that gates the
-    -- replace in withLocatedExpression', even though withReplacedExpression
-    -- itself does have a case for replacing a BiVoid. The only way to reach
-    -- that case is a duplicate attribute name where a later BiTau binding
-    -- with the same attribute makes locatedInBindings succeed, while
-    -- withReplacedExpression still replaces the earlier (BiVoid) occurrence
-    -- first.
     it "replaces the first (BiVoid) occurrence of a duplicated attribute" $ do
       let input' = ExFormation [BiVoid (AtLabel "x"), BiTau (AtLabel "x") ExXi]
       locator' <- parseExpressionThrows "Q.x"

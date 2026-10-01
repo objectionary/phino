@@ -1,10 +1,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to collect the anonymous meta-variable slots a
--- term was written with. A rule binds them where it matches and nowhere else,
--- so every other part of a rule is asked for its slots and rejected when it
--- has any.
 module Slots (Slots (..), anonymous) where
 
 import AST
@@ -13,8 +9,6 @@ import Data.Text (Text)
 class Slots a where
   slots :: a -> [Slot]
 
--- The kind sigil of the first anonymous meta a term was written with, if any,
--- so a caller can word its own complaint about a term that must have none
 anonymous :: (Slots a) => a -> Maybe Text
 anonymous term = case slots term of
   [] -> Nothing

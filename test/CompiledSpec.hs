@@ -31,8 +31,6 @@ import System.Random (StdGen, mkStdGen, randomR)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 import Yaml qualified as Y
 
--- The one part of a pack of 'test-resources/rewriter-packs' both engines are
--- run on here: the term it rewrites.
 newtype Pack = Pack {input :: String}
   deriving (Generic, FromJSON)
 

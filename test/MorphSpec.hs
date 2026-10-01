@@ -47,11 +47,6 @@ test' func useCases =
       ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultReduceContext ExRoot)
       res `shouldBe` output
 
--- One case of 𝕄, as a pack of 'test-resources/morph-packs' — or, for the deep
--- walk, of 'test-resources/morph-deep-packs' — spells it: the program under
--- 'input', wrapped in the fixture object model where 'model' says so and run
--- against the fixture λ functions where 'symbolic' does, entered at 'location'
--- and answering either the program under 'result' or the failure under 'fails'.
 data MorphPack = MorphPack
   { location :: Maybe String
   , input :: String
@@ -63,8 +58,6 @@ data MorphPack = MorphPack
   }
   deriving (Generic, Show, FromJSON)
 
--- Morph one such pack and check what it answers, walking every binding where
--- 'deep' says so, since that is what tells the two pack directories apart.
 testMorph :: Lambdas -> Bool -> FilePath -> Expectation
 testMorph known deep pth = do
   MorphPack{..} <- Decode.decodeFileThrow pth
@@ -90,17 +83,11 @@ spec :: Spec
 spec = do
   known <- runIO fixtureLambdas
 
-  -- The top-level 𝕄 entry point, the one the 'morph' command runs: it locates
-  -- the subterm, threads the whole input expression as the universe and hands
-  -- back the morphed expression together with the chain that led to it (#1114).
   describe "morph" $ do
     let resources = "test-resources/morph-packs"
     packs <- runIO (allPathsIn resources)
     forM_ packs (\pth -> it (makeRelative resources pth) (testMorph known False pth))
 
-    -- The chain runs oldest step first and carries the rule that produced the
-    -- step after it, exactly as 'dataize' reports its own, so '--sequence'
-    -- prints both the same way
     it "reports the chain of steps oldest first" $ do
       expr <- parseExpressionThrows "[[ D> 00- ]]"
       (morphed, chain, _) <- morph expr emptyState (defaultReduceContext ExRoot)
@@ -108,10 +95,6 @@ spec = do
       map snd chain `shouldBe` [Just (Morphing, "mf"), Nothing]
       map fst chain `shouldBe` [expr, expr]
 
-    -- The 'universe' rule resolves Φ to the world in normal form, and the run
-    -- has named that world before its first step, so no part of the program is
-    -- normalized again for it: the steps reducing the body of 'w' used to be
-    -- taken, and saved, on every resolution of Φ (#1453)
     it "resolves Φ to the world it has already normalized" $ do
       expr <- parseExpressionThrows "[[ w -> [[ k -> [[ ]] ]].k, y -> Q.w ]]"
       loc <- parseExpressionThrows "Q.y"
@@ -119,20 +102,11 @@ spec = do
       _ <- morph expr emptyState (defaultReduceContext loc){_saveStep = const (modifyIORef' saved (+ 1))}
       readIORef saved `shouldReturn` 2
 
-  -- 𝕄 stops at the first formation 'mf' hands back and leaves its bindings as
-  -- they were written, since firing a bare λ is 𝔻's business, so a program
-  -- whose parts nothing demands is never reduced (#1124). The deep walk
-  -- ('_deep') enters every binding and finishes what 'mf' left, while what no
-  -- atom touched keeps the shape it was written in and the answer stays a
-  -- program.
   describe "morph with '_deep'" $ do
     let resources = "test-resources/morph-deep-packs"
     packs <- runIO (allPathsIn resources)
     forM_ packs (\pth -> it (makeRelative resources pth) (testMorph known True pth))
 
-    -- The walk enters a dispatch through its target and fires the box it finds
-    -- there before 𝕄 is ever asked about the dispatch, while 'ml' demands that
-    -- λ only where the dispatched attribute is none of the box's own (#1187)
     describe "a dispatch naming an attribute of the formation it stands on" $
       it "cannot fire the λ the dispatch does not demand" $
         withLambdasOf "- λ: L_answer\n  𝑛: ⟦ Δ ⤍ FF- ⟧\n" $ \file -> do
@@ -160,30 +134,19 @@ spec = do
         , ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid AtRho])]
         , ExFormation [BiTau AtRho ExRoot]
         )
-      , -- A void slot fed a non-absolute argument can never be filled, so 'copy'
-        -- cannot fire and the application is a stuck normal form. Before #959,
-        -- 'ma' re-morphed this identical term forever; now the 'mad' axiom
-        -- morphs it straight to ⊥, keeping 𝕄 total.
-
+      ,
         ( "[[ x -> ? ]](x -> $.foo) => T"
         , ExApplication (ExFormation [BiVoid (AtLabel "x")]) (ArTau (AtLabel "x") (ExDispatch ExXi (AtLabel "foo")))
         , ExRoot
         , ExTermination
         )
-      , -- Same as above but through the alpha-argument sibling 'maad' instead of
-        -- 'mad': a void slot fed a non-absolute alpha-indexed argument also
-        -- morphs straight to ⊥.
-
+      ,
         ( "[[ ^ -> ? ]](α0 -> $.foo) => T"
         , ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "foo")))
         , ExRoot
         , ExTermination
         )
-      , -- 'universe' fires only when the universe 'e' differs from Φ itself
-        -- ('not (eq(e, Φ))'); it then normalizes and re-morphs that universe.
-        -- Here the universe is a plain formation, already a normal form, so
-        -- re-morphing it lands straight on 'mf' and returns it unchanged.
-
+      ,
         ( "Q => [[]] (a universe distinct from Φ) => [[]]"
         , ExRoot
         , ExFormation []
@@ -191,11 +154,6 @@ spec = do
         )
       ]
 
-  -- A 'morph' premise names the universe 𝕄 runs in beside the term, as its
-  -- rule's conclusion does, so it is reduced in that universe and not in the
-  -- one the frame around it was handed: here the frame is in Φ, where Φ morphs
-  -- to ⊥ through 'mg', while the premise names a world where Φ morphs to that
-  -- world through 'universe' (#1512).
   describe "inferred" $
     it "morphs a premise in the universe it names, not in the one the frame is in" $ do
       world <- parseExpressionThrows "[[ x -> [[ ]] ]]"
@@ -208,22 +166,11 @@ spec = do
           [direct (\_ _ -> [Morphs ExRoot world (pure . Concludes . Answered (Morphing, "premise"))])]
       answer `shouldBe` world
 
-  -- Every normal form is covered by some morphing clause (an axiom like
-  -- 'mf'/'dead'/'xi'/'universe'/'mg' or a recursive rule), so the "no rule
-  -- matched" fallback fires only on a term that is not a normal form: one the
-  -- user handed 'morph' unnormalized (#1442), or a raw meta 𝑛, an AST node the
-  -- matcher never binds to any concrete pattern, handed to 'morph'' directly.
   describe "morph' fails when no morphing rule matches the term" $
     it "throws instead of looping when handed a bare, unmatched meta" $
       morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "Morphing expects a normal form" `isInfixOf` show (e :: SomeException))
 
-  -- 'execBuildTerm's "morph" case exposes 𝕄 to the matcher's condition path
-  -- (guards in 'when'/'having'), the way its "evaluate" case exposes 𝔼 (see
-  -- 'EvaluateSpec'). No built-in rule's guard actually calls the function, so
-  -- these error paths — reachable only by malformed arguments — are exercised
-  -- here directly through the exported 'execBuildTerm', the same way the
-  -- matcher would call it.
   describe "execBuildTerm 'morph'" $ do
     let univ = ExFormation []
         ctx = defaultReduceContext ExRoot
@@ -236,10 +183,6 @@ spec = do
         TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "00")]
         _ -> expectationFailure "expected TeExpression"
 
-  -- An expression that is not part of the program is bound to a synthetic
-  -- attribute of the universe and that attribute is what 𝔻 is aimed at. This is
-  -- what the '--inside' option runs, and what the 'dataize' block of a λ
-  -- function runs for every operand it names.
   describe "insideUniverse" $ do
     let universe = "[[ y -> [[ D> 02- ]] ]]"
         reduced src = do
@@ -251,10 +194,6 @@ spec = do
     it "reduces an expression the program does not contain" $ do
       value <- reduced "Q.y"
       value `shouldBe` Dataized (BtOne "02")
-    -- 𝔻 accepts normal forms only, and a dispatch off a formation is not one:
-    -- 'dot' still applies to it. So the expression is normalized first, which
-    -- is the whole reason an operand cannot simply be spliced into the universe
-    -- as it was written.
     it "normalizes what it is handed before 𝔻 sees it" $ do
       value <- reduced "[[ x -> [[ D> 01- ]] ]].x"
       value `shouldBe` Dataized (BtOne "01")
@@ -263,14 +202,6 @@ spec = do
       insideUniverse target ExRoot (defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "not a formation" `isInfixOf` show (e :: SomeException))
 
-  -- 'defaultReduceContext' runs with '_shuffle' on, so 'morph'' walks the
-  -- morphing rules in a random order on every step. Every clause is
-  -- order-independent (the known overlaps were removed in #856 and #860), so the
-  -- outcome must never depend on that order: morphing each input many times under
-  -- a shuffling context yields exactly the formation the fixed declaration order
-  -- does, proving the rules may be applied in any order with the same result.
-  -- Were a hidden overlap re-introduced, some of these random orders would
-  -- disagree and 'nub' would collect more than the single expected form.
   describe "morphing is order-independent under --shuffle" $ do
     let cases =
           [ ("a byte formation", ExFormation [BiDelta (BtOne "00")], ExRoot, ExFormation [BiDelta (BtOne "00")])
@@ -289,10 +220,6 @@ spec = do
         results <- replicateM 100 (fst . fst <$> morph' (input, (univ, Nothing) :| []) univ emptyState (defaultReduceContext ExRoot))
         nub results `shouldBe` [expected]
 
-  -- 'md' fires only when its head is not a formation ('not (formation 𝑛)'),
-  -- so a formation head — λ-bearing or not — is left to 'ml'/'mf'. The
-  -- two clauses are mutually exclusive and their order in 'resources/morphing'
-  -- cannot change behavior.
   describe "morphing 'md' is disjoint from 'ml'" $ do
     let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot)) Nothing (_normal linked)
         morphRule :: String -> Yaml.MorphRule
@@ -306,21 +233,12 @@ spec = do
     it "still fires on a non-λ-formation dispatch" $ do
       substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (morphRule "md")) rctx
       null substs `shouldBe` False
-    -- ⟦λ ⤍ F⟧.a.b.c : 'md' peels .c then .b (their heads are dispatches,
-    -- not λ-formations, so 'λ ∉ 𝐵' holds), then 'ml' handles the base
-    -- ⟦λ ⤍ F⟧.a and fires the atom. The chain therefore routes
-    -- md → md → ml; firing the undefined atom 'F' is what
-    -- raises the error, proving the base λ-formation reached 'ml'.
     it "drills a chained λ-formation dispatch down to the base 'ml'" $ do
       let base = ExFormation [BiLambda (Function "F")]
           chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
       morph' (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "No entry of --symbolic answers the λ function 'F'" `isInfixOf` show (e :: SomeException))
 
-  -- '--max-seconds' is read at every step of 𝕄 and not only where a λ function
-  -- fires, so a run spending its time on rewriting stops on time too, and a
-  -- passed deadline ends the run with or without '--partial', since a run out
-  -- of time has nothing left to go on with (#1619).
   describe "stops by the clock of --max-seconds" $ do
     it "fails a morphing that fires nothing once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ k -> [[ D> 3F- ]] ]]"
@@ -333,10 +251,6 @@ spec = do
       morph expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline, _partial = True}
         `shouldThrow` (\e -> "--max-seconds=23" `isInfixOf` show (e :: SomeException))
 
-  -- Under '--acyclic=plausible' one comparison of 'within' may take longer than
-  -- the whole run may, since it looks for the formation entered above at every
-  -- depth of the one about to be entered, so the clock cuts the comparison while
-  -- it runs and does not wait for the next step (#1622).
   describe "stops an entrance by the clock of --max-seconds" $
     it "fails a comparison that outlasts the deadline" $ do
       due <- (+ 0.2) <$> getMonotonicTime

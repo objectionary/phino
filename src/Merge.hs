@@ -48,8 +48,6 @@ mergeBindings xs ys = do
   ws <- mapM (uncurry mergeBinding) collisions
   pure (unmarked (xs' <> ys' <> ws))
   where
-    -- A 'Package' λ marks a pure path segment; when only one side carries it,
-    -- the other side is a real object and the marker goes away (#1197)
     unmarked :: [Binding] -> [Binding]
     unmarked bindings
       | any marker xs == any marker ys = bindings

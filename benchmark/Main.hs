@@ -41,17 +41,6 @@ iterations = 10
 targetBatchMs :: Double
 targetBatchMs = 20.0
 
--- The wall-clock, in microseconds, one case may spend on its warmups and its
--- measured batches together. Every case that only parses, prints or rewrites
--- runs in microseconds and batches up to the window above, so ten batches of
--- it cost a fraction of a second and the budget never binds. A symbolic
--- morphing takes whole seconds per run, and inside a world the size of
--- 'native.phi' tens of them, so three warmups plus ten batches of one would
--- outlast the jobs the workflows run the suite in — 'regression-check' runs
--- the whole binary ten times over, once per round per side. The warmups and
--- the iterations are therefore cut to what the budget affords, never below one
--- measured batch, so an expensive case still reports the same lines as every
--- other one.
 budget :: Double
 budget = 30.0 * 1e6
 
@@ -70,15 +59,6 @@ rewriteCtx =
     Nothing
     dontSaveStep
 
--- The step budget, the rewriting bounds and the flags the symbolic cases morph
--- with, which are the defaults of the 'morph' command plus the three switches
--- the regression was seen under: '--deep', so a λ function standing anywhere
--- inside the term is fired and not only the one on the spine; '--acyclic', so
--- a term coming back to itself parks instead of spending the whole step
--- budget, under whichever mode the case asks for; and '--partial', so a λ function no entry answers parks too and the
--- run still reaches an answer to measure. Nothing is written anywhere: the
--- protocol of '--protocol' and the steps of '--steps-dir' are files, and a
--- benchmark measuring the calculus has no business measuring the disk.
 symbolicCtx :: Acyclic -> Maybe Memo -> Lambdas -> Expression -> ReduceContext
 symbolicCtx acyclic memo lambdas locator =
   ReduceContext
@@ -110,9 +90,6 @@ symbolicCtx acyclic memo lambdas locator =
     dontSaveEval
     linked
 
--- The engine the rules run on: the one 'phino compile' wrote, where the build
--- links it in, and the one interpreting the rules of YAML otherwise, so the
--- same suite times either (#1617).
 linked :: Engine
 linked = fromMaybe yaml compiled
 
@@ -185,44 +162,20 @@ main = do
   aimed "native" merged lambdas probe
   mapM_ (\count -> looped count (padded method count accum) counters) paddings
   where
-    -- The entries of the demo world, each one term the λ functions of
-    -- 'benchmark/atoms.yaml' answer and each one case of the suite, so that a
-    -- slowdown of one of them is a line of its own rather than a share of a
-    -- single total.
     entries :: [String]
     entries = ["e1", "e2", "e3", "e4", "e5"]
-    -- The one entry timed inside 'native.phi' as well, whose two numbers say
-    -- between them what the world around an entry costs — the very comparison
-    -- nothing in the suite used to make, and the one 'number.neg' was seen to
-    -- lose two orders of magnitude on (#1291). It is the smallest entry of the
-    -- demo world, a single λ function fired against one unknown, because the
-    -- cost measured here is the world's and not the term's: the bigger entries
-    -- pay the same price per firing and merely pay it more often, which inside
-    -- a megabyte of 'native.phi' is more than a benchmark can wait for.
     probe :: String
     probe = "e5"
-    -- One case of the symbolic suite: the entry of the demo world 𝕄 is aimed
-    -- at, inside the world it is aimed in.
     aimed :: String -> Expression -> Lambdas -> String -> IO ()
     aimed label universe lambdas name = do
       locator <- parseExpressionThrows ("Φ.l🌵." ++ name)
       runBench (printf "morph/symbolic/%s/%s" label name) (symbolic Proven universe lambdas locator)
-    -- How many methods 'number' of 'benchmark/accum.phi' gets that the loop
-    -- never calls. A step of the loop should cost the redex it rewrites and
-    -- not the objects standing around it, so the two numbers should be close,
-    -- and they were sixteen-fold apart before #1453 made them so.
     paddings :: [Int]
     paddings = [0, 400]
-    -- One case of the accumulator suite: the loop of #1453 over a 'number'
-    -- carrying so many unused methods, cut by '--acyclic=plausible'.
     looped :: Int -> Expression -> Lambdas -> IO ()
     looped count universe counters = do
       locator <- parseExpressionThrows "Φ.l🌵"
       runBench (printf "morph/symbolic/accum/%d" count) (symbolic Plausible universe counters locator)
-    -- The world with 'number' declaring the given number of copies of the
-    -- method besides its own, each under a name of its own. They are made
-    -- here rather than checked in, since four hundred of them are a file
-    -- nobody would read.
     padded :: Expression -> Int -> Expression -> Expression
     padded method count (ExFormation bds) = ExFormation (map grown bds)
       where
@@ -234,12 +187,6 @@ main = do
         copy :: Int -> Binding
         copy index = BiTau (AtLabel (fromString (printf "m%d" index))) method
     padded _ _ universe = universe
-    -- One symbolic morphing of one entry, the way the 'morph' command runs it:
-    -- the 𝜏-labels of the universe are scanned once, the run starts from the
-    -- state that world already carries and 𝕄 is aimed at the entry. The answer
-    -- is hashed rather than merely forced to weak head normal form, since a
-    -- term left as a thunk is work the benchmark asked for and did not wait
-    -- for.
     symbolic :: Acyclic -> Expression -> Lambdas -> Expression -> IO Int
     symbolic acyclic universe lambdas locator = do
       seedTaus universe

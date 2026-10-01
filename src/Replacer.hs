@@ -1,8 +1,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to traverse through the expression with replacing
--- pattern sub expression with target expressions
 module Replacer
   ( replaceExpression
   , replaceExpressionFast
@@ -39,10 +37,6 @@ replaceArgument (ArAlpha alpha expr, ptns, repls) func =
   let (expr', ptns', repls') = func (expr, ptns, repls)
    in (ArAlpha alpha expr', ptns', repls')
 
--- A term equal to a pattern is inert only when the pattern is, and a term
--- inside an inert one is inert too, so a pattern that is not inert is never
--- looked for inside an inert term, which is where the copies of big objects
--- a normalization carries along are (#1453).
 replaceExpression' :: ReplaceExpressionFunc'
 replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls))
   | inert expr && not (inert ptn) = state
@@ -61,11 +55,6 @@ replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls))
       _ -> state
 replaceExpression' state = state
 
--- Every pair of a pattern and a replacement stands for one match, so a pair
--- is spent once it replaces something in the bindings of a formation, and the
--- bindings a replacement brings in are searched only with the pairs still
--- left. That is what ends the walk, as it ends the regular one, rather than a
--- cap on how deep the walk goes, which dropped every match below it (#1391).
 replaceBindingsFast :: Expression -> ReplaceState [Binding] -> ReplaceState [Binding]
 replaceBindingsFast _ state@(_, [], _) = state
 replaceBindingsFast _ state@(_, _, []) = state

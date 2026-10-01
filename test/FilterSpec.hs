@@ -6,9 +6,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Filter module that provides include and exclude
-functions for filtering phi-calculus expressions by FQN expressions.
--}
 module FilterSpec where
 
 import AST (Expression (ExRoot))

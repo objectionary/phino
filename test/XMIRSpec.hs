@@ -46,7 +46,6 @@ parsePack = Yaml.decodeFileThrow
 printPack :: FilePath -> IO PrintPack
 printPack = Yaml.decodeFileThrow
 
--- | An XPath predicate that filters cursors.
 data Predicate
   = AttrEquals String String
   | ChildText String String
@@ -55,13 +54,9 @@ data Predicate
   | AndPred Predicate Predicate
   deriving (Show)
 
--- | An XPath step with element name and predicates.
 data Step = Step String [Predicate]
   deriving (Show)
 
-{- | Parse a simple XPath expression into steps.
-Supports: /element/element[@attr="val" and child="val" and child[N][@attr="val"]]
--}
 xpath :: String -> [Step]
 xpath ('/' : rest) = steps rest
 xpath _ = []
@@ -137,9 +132,6 @@ extractQuoted (q : rest)
   | q == '"' || q == '\'' = takeWhile (/= q) rest
 extractQuoted s = s
 
-{- | Evaluate an XPath expression on a document, returning matched cursors.
-Note: fromDocument returns cursor at root element, so first step must match root.
--}
 evaluate :: Document -> [Step] -> [C.Cursor]
 evaluate doc [] = [C.fromDocument doc]
 evaluate doc (Step name preds : rest) =
@@ -184,7 +176,6 @@ hasChild name nested cur =
   let children = cur C.$/ C.element (toName name)
    in not (null (applyPredicates children nested))
 
--- | Check if an XPath expression matches anything in the document.
 matches :: Document -> String -> Bool
 matches doc path = not (null (evaluate doc (xpath path)))
 
@@ -209,8 +200,6 @@ spec = do
               xmir'' `shouldBe` phi''
       )
 
-  -- A '--partial' residual tops in an arbitrary formation: several bindings,
-  -- voids, a bound ρ. Such a top now prints to XMIR and reads back whole (#1076)
   describe "round-trips non-program tops as XMIR (#1076)" $
     forM_
       [ "[[ x -> ? ]]"
@@ -225,8 +214,6 @@ spec = do
           back `shouldBe` expr
       )
 
-  -- A λ marker with no text is named after the enclosing bindings, whose
-  -- labels admit characters the 'function' parser refuses (#1188)
   describe "derived λ function name" $
     it "spells itself in the alphabet the parser accepts" $ do
       doc <- parseXMIRThrows "<object><o name=\"foo\"><o name=\"l🌵ab12\"><o base=\"∅\" name=\"v0\"/><o name=\"λ\"/></o></o></object>"
@@ -244,8 +231,6 @@ spec = do
       let printed = printXMIR result
       printed `shouldContain` "atom=\"Φ.number\""
       printed `shouldNotContain` "<o name=\"λ\">"
-    -- The @atom attribute is the result type of the atom, not its name, so
-    -- the λ function is still named after its locator (#1389)
     it "names the λ function after its locator, not after the type" $ do
       expr <- parseXMIRThrows atom >>= xmirToPhi
       printExpression expr `shouldContain` "L_number_plus"
