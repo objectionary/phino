@@ -151,7 +151,7 @@ def main(argv):
 
     if violations:
         print(
-            f"\n{len(violations)} inline comment(s) found; see CONTRIBUTING or CLAUDE.md for the policy",
+            f"\n{len(violations)} inline comment(s) found; see CLAUDE.md",
             file=sys.stderr,
         )
         return 1
