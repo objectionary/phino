@@ -3,7 +3,7 @@
 
 .ONESHELL:
 .SHELLFLAGS := -e -o pipefail -c
-.PHONY: all test compiled hlint fourmolu coverage bench binary phino clean
+.PHONY: all test compiled hlint fourmolu ruff coverage bench binary phino clean
 
 SHELL := bash
 
@@ -26,7 +26,7 @@ else
   endif
 endif
 
-all: test hlint fourmolu
+all: test hlint fourmolu ruff
 
 .SILENT:
 test:
@@ -44,6 +44,11 @@ hlint:
 .SILENT:
 fourmolu:
 	fourmolu --mode check src app test
+
+.SILENT:
+ruff:
+	ruff check .
+	ruff format --check .
 
 .SILENT:
 coverage:
