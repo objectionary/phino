@@ -365,6 +365,18 @@ instance ToCST Expression EXPRESSION where
      in if length ts' == 1 && dataPrimitive obj && sweetCollapsible obj
           then applicationToPrimitive obj tabs rs
           else
+            if length ts' > 1 && null exs && dataPrimitive obj && sweetCollapsible obj
+              then
+                EX_APPLICATION
+                  (applicationToPrimitive obj tabs rs)
+                  NO_SPACE
+                  eol
+                  (TAB next)
+                  (AA_TAUS (toCST (drop 1 ts') (next, eol) :: BINDING))
+                  eol
+                  (TAB tabs)
+                  next
+              else
             if null exs
               then
                 EX_APPLICATION
