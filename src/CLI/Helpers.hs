@@ -39,7 +39,7 @@ import Morph (ReduceContext, emptyState, insideUniverse)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
-import Rewriter (Rewritten, Rewrittens', stepHeaders)
+import Rewriter (Rewrittens', stepHeaders)
 import Sugar (SugarType (SALTY), withoutRho)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory, takeExtension)
