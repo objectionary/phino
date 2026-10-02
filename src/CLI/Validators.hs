@@ -8,7 +8,9 @@ import CLI.Types
 import Control.Exception
 import Control.Monad (forM_, when, (>=>))
 import Data.Foldable (for_)
+import Data.List (isPrefixOf)
 import Data.Maybe (isJust)
+import Misc (fqnToAttrs)
 import Must
 import Parser (parseExpressionThrows)
 import Printer
@@ -37,7 +39,7 @@ validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
 validateNoOverlap :: String -> [Expression] -> String -> [Expression] -> IO ()
 validateNoOverlap showOpt shown hideOpt hidden =
   for_ shown $ \shown' ->
-    for_ hidden $ \hidden' ->
+    for_ hidden $ \hidden' -> do
       when (printExpression shown' == printExpression hidden') $
         invalidCLIArguments
           ( printf
@@ -46,6 +48,19 @@ validateNoOverlap showOpt shown hideOpt hidden =
               (printExpression shown')
               hideOpt
           )
+      when (inside (fqnToAttrs shown') (fqnToAttrs hidden')) $
+        invalidCLIArguments
+          ( printf
+              "The --%s locator '%s' lies inside the --%s locator '%s', which would hide it from the result"
+              showOpt
+              (printExpression shown')
+              hideOpt
+              (printExpression hidden')
+          )
+  where
+    inside :: Maybe [Attribute] -> Maybe [Attribute] -> Bool
+    inside (Just inner) (Just outer) = length outer < length inner && outer `isPrefixOf` inner
+    inside _ _ = False
 
 validateLatexOptions :: IOFormat -> [(Bool, String)] -> [(Maybe String, String)] -> [(Maybe Int, String)] -> IO ()
 validateLatexOptions LATEX _ _ _ = pure ()
