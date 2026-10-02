@@ -16,6 +16,7 @@ import Data.Char (isDigit)
 import Data.List (intercalate)
 import Data.Map qualified as M
 import Data.Text qualified as T
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import GHC.Generics (Generic)
@@ -25,7 +26,6 @@ import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
-import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirTime, xmirToPhi)
 
 data ParsePack = ParsePack
