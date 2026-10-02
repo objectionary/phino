@@ -20,12 +20,12 @@ import Bytes (btsToUnescapedStr)
 import Control.Exception (Exception (displayException))
 import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
-import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
 import Data.List (foldl', intersect, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import Deps (BuildTermFunc, BuildTermMethod, Term (..))
 import Functions (buildTerm, nameOf)
 import GHC.IO (unsafePerformIO)
@@ -229,7 +229,7 @@ _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   _ -> pure []
 _matches pat expr subst ctx = do
   (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression expr] subst
-  matched <- match (B.pack pat) (B.pack (btsToUnescapedStr tgt))
+  matched <- match (T.encodeUtf8 (T.pack pat)) (T.encodeUtf8 (T.pack (btsToUnescapedStr tgt)))
   pure [subst | matched]
 
 _partOf :: Expression -> Binding -> Subst -> RuleContext -> IO [Subst]
