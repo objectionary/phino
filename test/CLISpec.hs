@@ -1347,7 +1347,7 @@ spec = do
           lines records `shouldContain` ["  <formation at=\"Φ.t\" term=\"⟦ φ ↦ 01-02:Δ, +4 ⟧\">"]
       forM_
         [ ("textXXXXXX.txt", "    𝛿1.1 := 01-02-..(8b)..-0B-0C  # 𝔻(ξ.arg)")
-        , ("XMLXXXXXX.xml", "      <bind meta=\"𝛿1.1\">01-02-..(8b)..-0B-0C</bind>")
+        , ("XMLXXXXXX.xml", "    <bind meta=\"𝛿1.1\">01-02-..(8b)..-0B-0C</bind>")
         ]
         ( \(template, line) ->
             it ("cuts a long datum a firing came down to, as " ++ line) $
