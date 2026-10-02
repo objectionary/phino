@@ -1528,13 +1528,13 @@ tally across all bindings.
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
-defined in the `my-rule.yml` YAML file (here, the `!d` is a capturing group,
-similar to regular expressions):
+defined in the `my-rule.yml` YAML file (here, the `!d1` and `!B1` are capturing
+groups, similar to regular expressions):
 
 ```yaml
 name: My custom rule
-pattern: Δ ⤍ !d
-result: Δ ⤍ 62-79-65
+pattern: ⟦ Δ ⤍ !d1, !B1 ⟧
+result: ⟦ Δ ⤍ 62-79-65, !B1 ⟧
 ```
 
 Then, rewrite:
