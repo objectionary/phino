@@ -83,6 +83,7 @@ instance FromJSON Lambda where
     sigmas (T.unpack key) lambda._answer
     dataless (T.unpack key) lambda._answer
     earlier (T.unpack key) lambda
+    once (T.unpack key) lambda
     pure lambda
     where
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
@@ -189,6 +190,22 @@ instance FromJSON Lambda where
       sigmas key answer = case [kind | Slot kind _ <- slots answer, kind /= "S"] of
         [] -> pure ()
         kind : _ -> fail (printf "The anonymous meta '!%s' cannot be referenced in the '𝑛' of λ function '%s'" (T.unpack kind) key)
+      once :: String -> Lambda -> Yaml.Parser ()
+      once key lambda = case twice [] bound of
+        Nothing -> pure ()
+        Just meta -> fail (printf "The meta '%s' of λ function '%s' is bound by more than one line, while each meta may be bound once" (T.unpack meta) key)
+        where
+          bound :: [Text]
+          bound =
+            map (_spelling . fst) lambda._morphed
+              ++ map (_spelling . fst) lambda._rewritten
+              ++ map (_spelling . fst) lambda._symbolized
+              ++ map (_spelling . fst) lambda._paired
+          twice :: [Text] -> [Text] -> Maybe Text
+          twice _ [] = Nothing
+          twice seen (meta : rest)
+            | meta `elem` seen = Just meta
+            | otherwise = twice (meta : seen) rest
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
