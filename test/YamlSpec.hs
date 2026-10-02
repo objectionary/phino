@@ -66,7 +66,7 @@ spec = do
       , ("a malformed embedded 𝜑-syntax: an index meta that does not parse", "'bogus'", isLeft (decodeYaml' "'bogus'" :: Either Yaml.ParseException Number))
       , ("a malformed embedded 𝜑-syntax: an attribute that does not parse", "'123'", isLeft (decodeYaml' "'123'" :: Either Yaml.ParseException Attribute))
       , ("a malformed embedded 𝜑-syntax: an alpha that does not parse", "'bogus'", isLeft (decodeYaml' "'bogus'" :: Either Yaml.ParseException Alpha))
-      , ("a malformed embedded 𝜑-syntax: bytes that do not parse", "'0a-'", isLeft (decodeYaml' "'0a-'" :: Either Yaml.ParseException Bytes))
+      , ("a malformed embedded 𝜑-syntax: bytes that do not parse", "'0g-'", isLeft (decodeYaml' "'0g-'" :: Either Yaml.ParseException Bytes))
       , ("a malformed embedded 𝜑-syntax: an expression that does not parse", "'L>'", isLeft (decodeYaml' "'L>'" :: Either Yaml.ParseException Expression))
       , ("a malformed embedded 𝜑-syntax: a binding that does not parse", "'L>'", isLeft (decodeYaml' "'L>'" :: Either Yaml.ParseException Binding))
       ]
