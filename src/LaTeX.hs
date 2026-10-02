@@ -42,7 +42,7 @@ import Misc
 import Render (Render (render))
 import Replacer (replaceExpression)
 import Rewriter (Rewritten, Rewrittens', stepHeaders)
-import Sugar (SugarType (SWEET), ToSalty, withSugarType)
+import Sugar (SugarType (SWEET), ToSalty, withSugarType, withoutRho)
 import Text.Printf (printf)
 import Text.Read (readMaybe)
 import qualified Yaml as Y
@@ -61,10 +61,11 @@ data LatexContext = LatexContext
   , _label :: Maybe String
   , _meetPrefix :: Maybe String
   , _headers :: Bool
+  , _hideRho :: Bool
   }
 
 defaultLatexContext :: LatexContext
-defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False False defaultMeetPopularity defaultMeetLength ExRoot Nothing Nothing Nothing False
+defaultLatexContext = LatexContext SWEET SINGLELINE defaultMargin False False False defaultMeetPopularity defaultMeetLength ExRoot Nothing Nothing Nothing False False
 
 defaultMeetPopularity :: Int
 defaultMeetPopularity = 50
@@ -220,7 +221,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
   pure
     ( concat
         [ preamble ctx
-        , body (stepComments rewrittens ctx) (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
+        , body (stepComments rewrittens ctx) (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\tabs expr -> renderToLatex (shown ctx (expressionToCSTFrom tabs expr)) ctx)
         , ending exceeded (last (arrows (map snd rewrittens))) ctx
         ]
     )
@@ -230,16 +231,21 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
   pure
     ( concat
         [ preamble ctx
-        , body (stepComments rewrittens ctx) (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
+        , body (stepComments rewrittens ctx) (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\tabs expr -> renderToLatex (shown ctx (expressionToCSTFrom tabs expr)) ctx)
         , ending exceeded (last (arrows (map snd rewrittens))) ctx
         ]
     )
+
+shown :: LatexContext -> EXPRESSION -> EXPRESSION
+shown LatexContext{..}
+  | _hideRho = withoutRho _sugar
+  | otherwise = id
 
 expressionToLaTeX :: Expression -> LatexContext -> String
 expressionToLaTeX ex ctx =
   concat
     [ preamble ctx
-    , renderToLatex (expressionToCST ex) ctx
+    , renderToLatex (shown ctx (expressionToCST ex)) ctx
     , period ctx
     ]
 
