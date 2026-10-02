@@ -383,7 +383,7 @@ formationBindings = do
     [ rsb >> return []
     , do
         bs <- ((,) <$> getOffset <*> binding) `sepBy1` symbol ","
-        either (\msg -> parseError (FancyError (repeating [] bs) (Set.singleton (ErrorFail msg)))) (const (pure ())) (uniqueBindings (map snd bs))
+        either (parseError . FancyError (repeating [] bs) . Set.singleton . ErrorFail) (const (pure ())) (uniqueBindings (map snd bs))
         rsb >> return (map snd bs)
     ]
   where
