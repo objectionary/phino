@@ -8,6 +8,7 @@ import CLI.Helpers (started)
 import Compiled (compiled)
 import Control.Exception (evaluate)
 import Control.Monad (replicateM, replicateM_)
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
 import Data.String (fromString)
@@ -148,7 +149,7 @@ main = do
   counters <- readLambdas "benchmark/accum.yaml"
   runBench "parse/phi" (parseExpressionThrows src)
   runBench "parse/xmir" (parseXMIRThrows xsrc >>= xmirToPhi)
-  runBench "rewrite/normalize" (rewrite expr (map (stepOf linked) normalizationRules) rewriteCtx)
+  runBench "rewrite/normalize" (hashExpression . fst . NE.last . fst <$> rewrite expr (map (stepOf linked) normalizationRules) rewriteCtx)
   runBench
     "print/sweet/multiline"
     (evaluate (length (printExpression' expr (SWEET, UNICODE, MULTILINE, defaultMargin))))
