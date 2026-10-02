@@ -311,6 +311,24 @@ spec = do
           , ["--update requires an input file"]
           )
         ,
+          ( "when --sequence is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--sequence", "--in-place", "input.phi"]
+          , ["--in-place and --sequence cannot be used together"]
+          )
+        ,
+          ( "when --focus is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--focus=Q.y", "--in-place", "input.phi"]
+          , ["--in-place and --focus cannot be used together"]
+          )
+        ,
+          ( "when --show is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--show=Q.y", "--in-place", "input.phi"]
+          , ["--in-place and --show cannot be used together"]
+          )
+        ,
           ( "when --update is used with --in-place"
           , "[[ ]]"
           , ["rewrite", "--update", "--in-place", "input.phi"]
