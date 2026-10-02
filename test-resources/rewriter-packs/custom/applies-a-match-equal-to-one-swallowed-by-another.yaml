@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+repeat: 1
+input: '[[ a -> [[ x -> [[ x -> Q ]] ]], b -> [[ x -> Q ]] ]]'
+output: '[[ a -> [[ y -> Q ]], b -> [[ y -> Q ]] ]]'
+rules:
+  custom:
+    - name: rename-x
+      pattern: '[[ x -> !e1, !B1 ]]'
+      result: '[[ y -> Q, !B1 ]]'
