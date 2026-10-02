@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The memo of '--acyclic=plausible' keeps what a firing answered by the λ
+# function and the operands it brought down, beside the formation it fired.
+# Here 'm' is read twice, from 'φ' and then as a binding of the same object,
+# and the two reads carry two formations: the 'target' of each is the object
+# minus the attribute it was read through, so the formation differs and the
+# memo missed it. Before #1661 the second read fired 'L_dataized' afresh and
+# minted '𝜎4' for the very datum '𝜎2' already named, so the answer compared
+# one value under two names. Now the second firing brings its operand down,
+# finds the firing already answered and takes '𝜎2', minting nothing.
+symbolic: |
+  - λ: L_bytes_eq
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.b
+    𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_dataized
+    dataize:
+      𝛿1: $.target
+    𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.e'
+deep: true
+partial: true
+acyclic: plausible
+input: >
+  ⟦ bytes(φ) ↦ ⟦ eq(ρ, b) ↦ L_bytes_eq:λ ⟧,
+    dataized(target) ↦ L_dataized:λ,
+    same(left) ↦ ⟦ φ ↦ m.eq( b ↦ Φ.bytes( φ ↦ 00-:Δ ) ), m ↦ Φ.dataized( target ↦ left ) ⟧,
+    e ↦ Φ.same( left ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ) ⟧
+result: >
+  ⟦ left ↦ Φ.bytes( φ ↦ 𝜎1:λ ),
+    φ ↦ ⟦ φ ↦ 𝜎3:λ, eq(b) ↦ L_bytes_eq:λ ⟧,
+    m ↦ ⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧ ⟧
+protocol: |
+  𝕄(Φ.e)
+    𝔼(L_dataized)  # 𝕄(Φ.e.φ)
+      formation(⟦ φ ↦ 𝜎1:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵0)
+      𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.target)
+      𝑛.1.1 := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_bytes_eq)  # 𝕄(Φ.e.φ)
+      formation(⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵1)
+      𝛿1.2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)
+      formation(⟦ φ ↦ 00-:Δ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵2)
+      𝛿2.2 := 00-  # 𝔻(ξ.b)
+      𝑛.2.1 := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝑛
+      𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, eq(b) ↦ L_bytes_eq:λ ⟧  # 𝕄(𝑛.2.1)
+    𝔼(L_dataized)  # 𝕄(Φ.e.m)
+      formation(⟦ φ ↦ 𝜎1:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵3)
+      𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.target)
+      𝑛.3.1 := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝑛
+      𝑛.3.2 := 𝑛.1.2  # 𝕄(𝑛.3.1)

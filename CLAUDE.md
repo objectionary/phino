@@ -261,7 +261,20 @@ formation it fired (`Memo`, `recalled` and `retained` in `Morph.hs`, made by
 `Evaluate.hs`), and a later firing of the same formation, ρ and all, takes
 the answer with the symbols the first one minted: it is charged nothing and
 reduces nothing, and it is written to the protocol as a firing at its own
-site carrying that answer and no operand line (#1476). The store is an
+site carrying that answer and no operand line (#1476). The memo keeps the
+answer by the firing too, the λ name with the data, the symbols and the normal
+forms its operands came down to (`Firing`, `remembered` and `remember` in
+`Morph.hs`), since an entry answers from its operands alone: a firing of
+another formation, such as the attribute an object reads through `ξ` and the
+walk reads as a binding, two formations since `ξ` is the object minus the
+attribute read, brings its operands down, finds the firing answered and takes
+that answer, minting nothing, so one value never gets two names (#1661). A
+symbol is kept as the symbol it is, not as the datum every symbol
+manufactures, so two firings over two symbols stay two. Such a firing is
+charged to `--max-firings` like one made, since the tally charges a firing as
+it starts bringing its operands down, the only place a recursion widening
+inside its operands can be cut, and a recalled answer counts as nothing new
+to a stall. The store is an
 `IORef` in the context for the reason the tally is. A firing a cut stopped on
 its way to an answer keeps the cut (`Looped` of `Kept`), and a later firing of
 the same formation is cut at its own site without reducing anything (#1480). A
