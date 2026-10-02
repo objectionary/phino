@@ -6,6 +6,7 @@
 
 module Condition (parseCondition, parseConditionThrows) where
 
+import AST (Attribute (AtDelta, AtLambda))
 import Control.Exception (Exception)
 import Data.Void (Void)
 import Misc (orThrow)
@@ -41,6 +42,9 @@ rparen = symbol ")"
 
 comma :: Parser String
 comma = symbol ","
+
+several :: Parser a -> Parser [a]
+several item = choice [try (between (symbol "[") (symbol "]") (item `sepBy1` comma)), pure <$> item]
 
 number :: Parser Y.Number
 number =
@@ -91,11 +95,11 @@ condition =
         return (Y.Or args)
     , do
         _ <- symbol "in" >> lparen
-        attr <- _attribute phiParser
+        attrs <- several (choice [AtLambda <$ symbol "λ", AtDelta <$ symbol "Δ", _attribute phiParser])
         _ <- comma
-        bd <- _binding phiParser
+        bds <- several (_binding phiParser)
         _ <- rparen
-        return (Y.In [attr] [bd])
+        return (Y.In attrs bds)
     , do
         _ <- symbol "not" >> lparen
         cond <- condition
