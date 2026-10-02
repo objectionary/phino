@@ -1152,6 +1152,12 @@ spec = do
         withStdin "[[ x -> $ ]]" $
           testCLISucceeded ["rewrite", "--rule=" ++ fix, "--max-depth=1", "--depth-sensitive", "--flat"] ["⟦ x ↦ Φ ⟧"]
 
+    it "keeps the rewritten expression when the --breakpoint rule fired" $
+      withStdin "⟦ a ↦ ⟦ b ↦ Φ ⟧.b ⟧" $
+        testCLISucceeded
+          ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
+          ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
