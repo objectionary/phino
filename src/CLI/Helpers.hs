@@ -12,7 +12,7 @@ import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
-import Canonizer (canonize, canonizeExpr)
+import Canonizer (canonizeExpr, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
 import Control.Monad ((>=>))
@@ -39,13 +39,13 @@ import Morph (ReduceContext, emptyState, insideUniverse)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
-import Rewriter (Rewritten, Rewrittens', stepHeaders)
+import Rewriter (Rewrittens', stepHeaders)
 import Sugar (SugarType (SALTY), withoutRho)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory, takeExtension)
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
-import XMIR (Atoms, expressionToXMIR, parseXMIRThrows, printXMIR, xmirAtoms, xmirToPhi)
+import XMIR (Atoms, expressionToXMIR, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -168,10 +168,8 @@ parseInputWithAtoms input format = (,M.empty) <$> parseInput input format
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
-  | otherwise = withHeaders <$> mapM (printFocused ctx . fst) (canonized chain)
+  | otherwise = withHeaders <$> mapM (printAnswer ctx . fst) chain
   where
-    canonized :: [Rewritten] -> [Rewritten]
-    canonized = if _canonize then canonize else id
     withHeaders :: [String] -> String
     withHeaders rendered
       | _headers && _sequence = intercalate "\n" (zipWith prefixed (stepHeaders chain) rendered)
@@ -181,7 +179,12 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
         prefixed = printf "\n%s\n%s"
 
 printAnswer :: PrintContext -> Expression -> IO String
-printAnswer ctx@PrintCtx{..} expr = printFocused ctx (if _canonize then canonizeExpr expr else expr)
+printAnswer ctx@PrintCtx{..} expr
+  | _canonize = printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
+  | otherwise = printFocused ctx expr
+  where
+    canonized :: Expression
+    canonized = canonizeExpr expr
 
 printFocused :: PrintContext -> Expression -> IO String
 printFocused ctx@PrintCtx{..} expr
