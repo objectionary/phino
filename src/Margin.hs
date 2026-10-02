@@ -25,7 +25,7 @@ instance WithMargin EXPRESSION where
   withMargin' _ ex@EX_FORMATION{binding = BI_EMPTY{}} = ex
   withMargin' (extra, margin) ex@EX_FORMATION{tab = tab@(TAB indent), ..} =
     let single = toSingleLine ex
-        ex' = EX_FORMATION lsb EOL tab (withMargin' (indent, margin) binding) EOL tab' rsb
+        ex' = EX_FORMATION lsb EOL tab (withMargin' (2 * indent, margin) binding) EOL tab' rsb
      in if lengthOf single + extra <= margin then single else ex'
   withMargin' _ num@EX_NUMBER{} = num
   withMargin' _ str@EX_STRING{} = str
@@ -41,7 +41,7 @@ instance WithMargin EXPRESSION where
         main = withMargin' cfg expr
         singleMain = toSingleLine main
         extra' = T.length (last (T.lines (render main))) + 4
-        arg' = withMargin' (indt, margin) argument
+        arg' = withMargin' (2 * indt, margin) argument
         singleArg = toSingleLine arg'
      in if
           | lengthOf single + extra <= margin -> single
