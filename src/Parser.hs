@@ -26,6 +26,7 @@ import Control.Exception (Exception)
 import Control.Monad (guard, when)
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.Scientific (toRealFloat)
+import qualified Data.Set as Set
 import qualified Data.Text as T
 import Data.Void
 import GHC.Char
@@ -381,12 +382,18 @@ formationBindings = do
   choice
     [ rsb >> return []
     , do
-        bs <- binding `sepBy1` symbol ","
-        rsb >> return bs
+        bs <- ((,) <$> getOffset <*> binding) `sepBy1` symbol ","
+        either (\msg -> parseError (FancyError (repeating [] bs) (Set.singleton (ErrorFail msg)))) (const (pure ())) (uniqueBindings (map snd bs))
+        rsb >> return (map snd bs)
     ]
   where
     rsb :: Parser String
     rsb = choice [symbol "]]", symbol "⟧"]
+    repeating :: [Attribute] -> [(Int, Binding)] -> Int
+    repeating _ [] = 0
+    repeating seen ((offset, bd) : rest)
+      | any (`elem` seen) (attributesFromBindings [bd]) = offset
+      | otherwise = repeating (seen ++ attributesFromBindings [bd]) rest
 
 exHead :: Parser Expression
 exHead =
