@@ -413,6 +413,16 @@ spec = do
     fromLeft "" (parseExpression "⟦\n  a ↦ ξ,\n  b ↦ ξ,\n  b ↦ Φ\n⟧\n\n\n")
       `shouldSatisfy` isInfixOf "expression:4:3:"
 
+  describe "an arrow ends an attribute name" $
+    forM_
+      [ ("⟦ a ↦ ξ.b(c↦ξ) ⟧", "⟦ a ↦ ξ.b(c ↦ ξ) ⟧")
+      , ("[[ a -> $.b(c->$) ]]", "[[ a -> $.b(c -> $) ]]")
+      , ("⟦ a ↦ ξ.as-bytes(x-y↦ξ) ⟧", "⟦ a ↦ ξ.as-bytes(x-y ↦ ξ) ⟧")
+      ]
+      ( \(tight, spaced) ->
+          it tight (parseExpression tight `shouldBe` parseExpression spaced)
+      )
+
   describe "parse number" $
     test
       parseNumber
