@@ -9,10 +9,12 @@ import AST
 import Bytes (numToBts, strToBts)
 import CST
 import Control.Monad (forM_)
+import qualified Data.Text as T
 import Lining (toSingleLine)
 import Margin (withMargin)
+import Parser (parseExpressionThrows)
 import Render (render)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
 
 bigLabel :: Attribute
 bigLabel = AtLabel "aVeryLongAttributeNameThatWontFitOnOneLine"
@@ -54,6 +56,10 @@ spec = do
         )
       ]
       (\(desc, margin, expression, expected) -> it desc (render (withMargin margin (expressionToCST expression)) `shouldBe` expected))
+
+  it "counts the indentation of a nested formation in columns, not in levels" $ do
+    deep <- parseExpressionThrows "⟦ a ↦ ⟦ b ↦ ⟦ c ↦ ⟦ d ↦ ⟦ e ↦ ⟦ x ↦ ξ.yyyyyyyy, z ↦ ξ.w ⟧ ⟧ ⟧ ⟧ ⟧ ⟧"
+    maximum (map T.length (T.lines (render (withMargin 36 (expressionToCST deep))))) `shouldSatisfy` (<= 36)
 
   describe "withMargin leaves data primitives untouched" $ do
     it "a number literal is never wrapped" $
