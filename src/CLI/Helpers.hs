@@ -13,7 +13,6 @@ import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
 import Canonizer (canonize, canonizeExpr)
-import qualified Filter as F
 import Compiled (compiled)
 import Control.Exception
 import Control.Monad ((>=>))
@@ -28,6 +27,7 @@ import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
+import qualified Filter as F
 import Functions (buildFunctions, execFunctions)
 import GHC.Clock (getMonotonicTime)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
