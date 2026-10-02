@@ -188,9 +188,10 @@ instance FromJSON Lambda where
                   key
               )
       sigmas :: String -> Expression -> Yaml.Parser ()
-      sigmas key answer = case [kind | Slot kind _ <- slots answer, kind /= "S"] of
-        [] -> pure ()
-        kind : _ -> fail (printf "The anonymous meta '!%s' cannot be referenced in the '𝑛' of λ function '%s'" (T.unpack kind) key)
+      sigmas key answer = case ([kind | Slot kind _ <- slots answer, kind /= "S"], symbols answer) of
+        ([], []) -> pure ()
+        (kind : _, _) -> fail (printf "The anonymous meta '!%s' cannot be referenced in the '𝑛' of λ function '%s'" (T.unpack kind) key)
+        (_, idx : _) -> fail (printf "The '𝑛' of λ function '%s' writes the numbered symbol '𝜎%d', while only a bare 𝜎 mints a fresh one" key idx)
       once :: String -> Lambda -> Yaml.Parser ()
       once key lambda = case twice [] bound of
         Nothing -> pure ()
