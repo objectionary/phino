@@ -343,6 +343,11 @@ spec = do
         , ["XMIR does not support such expression", "a ↦ Φ.y"]
         )
       ,
+        ( "names the attribute that is empty"
+        , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"\"/></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["The attribute 'base' is not expected to be empty"]
+        )
+      ,
         ( "explains an unsupported binding"
         , try (void (expressionToXMIR (ExFormation [BiTau (AtLabel "x") (ExFormation [BiMeta "n", BiVoid AtRho]), BiVoid AtRho]) defaultXmirContext)) ::
             IO (Either SomeException ())

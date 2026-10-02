@@ -662,7 +662,7 @@ getAttr key cur =
         at : _ ->
           let attr = T.unpack at
            in if null attr
-                then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" attr) cur)
+                then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" key) cur)
                 else pure attr
 
 hasText :: C.Cursor -> Bool
