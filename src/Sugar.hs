@@ -62,8 +62,19 @@ withoutRho sugar = goExpr
       | otherwise = Just (AA_TAU (APP_BINDING (goPair pair)))
     goArgument (AA_TAUS binding) = case goArgBinding binding of
       BI_EMPTY{} -> Nothing
-      binding' -> Just (AA_TAUS binding')
+      binding'
+        | sugar == SWEET, Just args <- positional binding' -> Just (AA_EXPRS args)
+        | otherwise -> Just (AA_TAUS binding')
     goArgument (AA_EXPRS args) = Just (AA_EXPRS (goAppArg args))
+    positional :: BINDING -> Maybe APP_ARG
+    positional (BI_PAIR (PA_ALPHA (AL_IDX _ 0) _ first) rest _) = APP_ARG first <$> following 1 rest
+      where
+        following :: Int -> BINDINGS -> Maybe APP_ARGS
+        following _ BDS_EMPTY{} = Just AAS_EMPTY
+        following next (BDS_PAIR eol' tab' (PA_ALPHA (AL_IDX _ index) _ arg) more)
+          | index == next = AAS_EXPR eol' tab' arg <$> following (next + 1) more
+        following _ _ = Nothing
+    positional _ = Nothing
     goArgBinding :: BINDING -> BINDING
     goArgBinding empty@BI_EMPTY{} = empty
     goArgBinding BI_META{..} = BI_META meta (goArgBindings bindings) tab
