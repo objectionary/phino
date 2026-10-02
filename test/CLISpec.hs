@@ -2852,6 +2852,10 @@ spec = do
       firstRun `shouldBe` secondRun
       removeFile file
 
+    it "numbers two anonymous captures of one kind, so they stay apart" $
+      withStdin "[[ a -> [[ ]], b -> Q ]]" $
+        testCLISucceeded ["match", "--pattern=[[ !t -> !e, !t -> !e ]]"] ["e#1 >> ⟦⟧\ne#2 >> Φ\nt#1 >> a\nt#2 >> b"]
+
     it "prints many substitutions" $
       withStdin "[[ x -> Q.x, y -> Q.y ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
