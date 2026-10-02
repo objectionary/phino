@@ -1152,6 +1152,19 @@ spec = do
         withStdin "[[ x -> $ ]]" $
           testCLISucceeded ["rewrite", "--rule=" ++ fix, "--max-depth=1", "--depth-sensitive", "--flat"] ["⟦ x ↦ Φ ⟧"]
 
+  describe "morph --focus under --locator" $ do
+    it "finds the same object for the steps and for the answer" $
+      withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $ do
+        (out, _) <- withStdout (runCLI ["morph", "--locator=Q.t", "--focus=Q.a", "--flat", "--sequence"])
+        filter (not . null) (lines out) `shouldSatisfy` all (== "⟦ Δ ⤍ 02- ⟧")
+    it "prints the answer when --focus names the object at --locator" $
+      withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" $
+        testCLISucceeded ["morph", "--locator=Q.t", "--focus=Q.t", "--flat", "--sequence"] ["⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"]
+    it "fails on a --focus it cannot find before it prints any step" $
+      withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" $ do
+        (out, _) <- withStdout (try (runCLI ["morph", "--locator=Q.t", "--focus=Q.nope", "--flat", "--sequence"]) :: IO (Either ExitCode ()))
+        out `shouldNotContain` "⟦ t ↦"
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
