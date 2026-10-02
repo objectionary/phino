@@ -226,6 +226,12 @@ spec = do
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
         , ["⟦ x(y) ↦ 42:a ⟧"]
         )
+      ,
+        ( "drops the rho from the LaTeX output too"
+        , "[[ n -> [[ ^ -> ?, k -> $ ]] ]]"
+        , ["rewrite", "--flat", "--hide-rho", "--output=latex"]
+        , ["[[ |n| -> [[ |k| -> \\phiTerminal{\\xi} ]] ]]"]
+        )
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 

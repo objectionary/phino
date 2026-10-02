@@ -210,7 +210,7 @@ hidden PrintCtx{..} sugar
 
 printCtxToLatexCtx :: PrintContext -> LatexContext
 printCtxToLatexCtx PrintCtx{..} =
-  LatexContext _sugar _line _margin _nonumber _compress _canonize _meetPopularity _meetLength _focus _expression _label _meetPrefix _headers
+  LatexContext _sugar _line _margin _nonumber _compress _canonize _meetPopularity _meetLength _focus _expression _label _meetPrefix _headers _hideRho
 
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
 getRules normalize shuffle rules = do
