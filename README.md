@@ -553,6 +553,10 @@ The run ends there, with or without `--partial`, so it is always the last line
 of the protocol.
 The markup spells it `<timeout limit="5" by="morph" at="…"/>`.
 
+`spent(3)  # 𝔻(…)` is where `--max-firings=3` ran out, commented the same way
+and written where the firing it refused would have started.
+The markup spells it `<spent limit="3" by="dataize" at="…"/>`.
+
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
 what the run printed. The file is truncated at the beginning of every run, so

@@ -176,7 +176,9 @@ charged ctx = do
     billed :: Tally -> IO ()
     billed (Tally cap count) = do
       fired <- readIORef count
-      when (fired >= cap) (throwIO (OutOfSteps (Firings cap)))
+      when (fired >= cap) $ do
+        ctx._saveEval (EvSpent ctx._nesting cap ctx._judgment ctx._site)
+        throwIO (OutOfSteps (Firings cap))
       writeIORef count (fired + 1)
 
 clocked :: ReduceContext -> IO ()
