@@ -1165,7 +1165,7 @@ spec = do
         withStdin circling $
           testCLISucceeded
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
-            ["⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧, t ↦ Φ.cyc( α0 ↦ ⟦⟧ ) ⟧"]
+            ["Φ.cyc( α0 ↦ ⟦⟧ )"]
 
       it "writes the cut to the protocol where the formation would have opened" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1986,17 +1986,16 @@ spec = do
         withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
           testCLISucceeded ["dataize", symbolic, "--partial"] ["40-45-00-00-00-00-00-00"]
 
-      it "prints the residual to XMIR, with its real listing by default" $
+      it "prints the residual at --locator, which XMIR has no top level for" $
         withStdin wrapped $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir"]
-            ["<o name=\"λ\">L_number_nope</o>", "<o name=\"app\">", "<listing>⟦"]
+          testCLIFailed
+            ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir", "--hide-rho"]
+            ["[ERROR]:", "its top level must be a single binding"]
 
-      it "honors --hide-rho and --omit-listing when printing the residual to XMIR" $
-        withStdin wrapped $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir", "--hide-rho", "--omit-listing"]
-            ["<o name=\"λ\">L_number_nope</o>", "line(s)</listing>"]
+      it "prints the residual at --locator, not the whole program" $
+        withStdin wrapped $ do
+          (out, _) <- withStdout (runCLI ["dataize", symbolic, "--partial", "--locator=Q.app", "--hide-rho", "--flat"])
+          lines out `shouldBe` ["⟦ λ ⤍ L_number_nope ⟧"]
 
       it "cannot print a residual of several top bindings as XMIR" $
         withStdin dispatched $

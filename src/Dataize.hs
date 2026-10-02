@@ -38,10 +38,15 @@ dataize universe state ctx@ReduceContext{..} = do
   result <- try (dataize' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
     Right ((bytes, seq), state') -> pure (Dataized bytes, reverse seq, state')
-    Left (StuckAt func seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked{_stuck = Just func})
-    Left (OutOfStepsAt _ seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked)
-    Left (LoopingAt _ seq parked) | _partial -> pure (Residual (fst (NE.head seq)), reverse (NE.toList seq), parked)
+    Left (StuckAt func seq parked) | _partial -> residual seq parked{_stuck = Just func}
+    Left (OutOfStepsAt _ seq parked) | _partial -> residual seq parked
+    Left (LoopingAt _ seq parked) | _partial -> residual seq parked
     Left failure -> throwIO (failure :: ReduceException)
+  where
+    residual :: NonEmpty Rewritten -> State -> IO (Outcome, [Rewritten], State)
+    residual seq parked = do
+      residue <- locatedExpression _locator (fst (NE.head seq))
+      pure (Residual residue, reverse (NE.toList seq), parked)
 
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
