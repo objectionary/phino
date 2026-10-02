@@ -98,6 +98,7 @@ data Evaluation
   | EvStuckOn Int T.Text
   | EvStarved Int Int Judgment Expression
   | EvTimeout Int Int Judgment Expression
+  | EvSpent Int Int Judgment Expression
   | EvData Int T.Text Expression (Either Int Bytes)
   | EvTerm Int T.Text Expression Expression
   | EvSymbolize Int T.Text Expression Expression
@@ -121,6 +122,7 @@ renumbered floor' offset = record
     record (EvStuck depth key judgment self) = EvStuck depth key judgment (term self)
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (term site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (term site)
+    record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (term site)
     record (EvData depth spelling operand value) = EvData depth spelling (term operand) (datum value)
     record (EvTerm depth spelling operand value) = EvTerm depth spelling (term operand) (term value)
     record (EvSymbolize depth spelling source value) = EvSymbolize depth spelling (term source) (term value)
@@ -216,6 +218,9 @@ saveEval handle cursor render salted report = do
     written (EvTimeout depth limit judgment site) protocol = do
       locator <- render site
       pure (protocol, Just (indented depth (printf "timeout(%d)  # %s(%s)" limit (letter judgment) locator)))
+    written (EvSpent depth limit judgment site) protocol = do
+      locator <- render site
+      pure (protocol, Just (indented depth (printf "spent(%d)  # %s(%s)" limit (letter judgment) locator)))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
       line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) Dataization operand
@@ -356,6 +361,10 @@ saveEvalXml handle cursor render report = do
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<timeout limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
+    elements (EvSpent depth limit judgment site) nesting = do
+      locator <- render site
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<spent limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
     elements (EvData depth spelling _ value) nesting = do
       record <- stood value
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth record])

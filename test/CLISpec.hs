@@ -1519,6 +1519,19 @@ spec = do
           records <- readProtocol path
           lines records `shouldContain` ["        <starved limit=\"3\" by=\"dataize\" at=\"Φ.a🌵0\"/>"]
 
+      forM_
+        [("XMLXXXXXX.xml", "<spent limit=\"5\" by="), ("textXXXXXX.txt", "spent(5)  # ")]
+        ( \(template, record) ->
+            it ("writes a spent firing budget to the protocol as " ++ record) $
+              withTempFile template $ \(path, stream) -> do
+                hClose stream
+                loopingLambdas $ \endless ->
+                  withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
+                    testCLIFailed ["dataize", "--symbolic=" ++ endless, "--max-steps=400", "--max-firings=5", "--protocol=" ++ path] ["--max-firings=5"]
+                records <- readProtocol path
+                any (record `isInfixOf`) (lines records) `shouldBe` True
+        )
+
       it "keeps the lines of a run that fails" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
