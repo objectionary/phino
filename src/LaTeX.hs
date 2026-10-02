@@ -155,7 +155,7 @@ body comments printed toLatex =
         ( \idx comment (item, rule) reached ->
             let item' = toLatex (baseTab idx) item
                 opening = if idx == 0 then item' else printf "  %s %s" (relation reached) item'
-             in comment ++ maybe opening (\(judgment, name) -> printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) name) rule
+             in comment ++ maybe opening (\(judgment, name) -> printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) (escaped name)) rule
         )
         [0 ..]
         comments
@@ -468,11 +468,14 @@ premiseToLatex index premise = case premise.operation of
 inference :: String -> String -> Maybe String -> Maybe Y.Condition -> [String] -> String -> String
 inference env name label cond premises conclusion =
   intercalate "\n" $
-    ["\\begin{" ++ env ++ "}", "  \\phinoName{" ++ name ++ "}"]
+    ["\\begin{" ++ env ++ "}", "  \\phinoName{" ++ escaped name ++ "}"]
       ++ maybe [] (\symbol -> ["  \\phinoLabel{" ++ symbol ++ "}"]) label
       ++ maybe [] (\rendered -> ["  \\phinoCondition{ " ++ rendered ++ " }"]) (conditionInLatex cond)
       ++ map (\premise -> "  \\phinoPremise{ " ++ premise ++ " }") premises
       ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{" ++ env ++ "}"]
+
+escaped :: String -> String
+escaped = T.unpack . toLaTeX . T.pack
 
 renderExpr :: Expression -> String
 renderExpr expr = renderToLatex (expressionToCST expr) defaultLatexContext
@@ -484,7 +487,7 @@ trrule :: String -> Maybe String -> String -> String -> String -> Maybe Y.Condit
 trrule macro label name lhs rhs cond extras =
   intercalate
     "\n  "
-    [ macro ++ labelArg ++ "{" ++ name ++ "}"
+    [ macro ++ labelArg ++ "{" ++ escaped name ++ "}"
     , braced lhs
     , braced rhs
     , conditionToLatex cond
