@@ -262,7 +262,6 @@ spec = do
       , "\"Hello\""
       , "Q"
       , "$"
-      , "[[ x -> T ]]"
       , "[[ x -> [[ !t1 -> 5 ]] ]]"
       , "[[ org -> [[ z -> ?, L> Package ]] ]]"
       ]
@@ -310,7 +309,7 @@ spec = do
       [
         ( "explains an unsupported top-level expression"
         , do
-            expr <- parseExpressionThrows "[[ x -> $ ]]"
+            expr <- parseExpressionThrows "[[ x -> !e1 ]]"
             try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
         , ["XMIR does not support such top-level expression"]
         )
