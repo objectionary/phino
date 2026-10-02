@@ -195,6 +195,8 @@ expressionToXMIR expr@(ExFormation bds) ctx
       ExApplication _ _ -> programToXMIR expr ctx
       ExDispatch _ _ -> programToXMIR expr ctx
       ExRoot -> programToXMIR expr ctx
+      ExTermination -> programToXMIR expr ctx
+      ExXi -> programToXMIR expr ctx
       _ -> throwIO (UnsupportedTopExpression expr)
 expressionToXMIR expr@(ExFormation bds) ctx =
   documentWith ctx [] expr rootNodes
