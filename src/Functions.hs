@@ -204,6 +204,7 @@ _number [Y.ArgExpression expr] subst = do
 _number _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ.string'")
 
 _sum :: BuildTermMethod
+_sum [] _ = throwIO (userError "Function sum() requires at least 1 argument")
 _sum args subst = do
   nums <- traverse (`argToNumber` subst) args
   pure (TeExpression (DataNumber (numToBts (sum nums))))
