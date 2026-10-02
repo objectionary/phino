@@ -235,8 +235,8 @@ applicable :: Expression -> [Step] -> RewriteContext -> IO Bool
 applicable _ [] _ = pure False
 applicable expression (rule : rest) ctx@RewriteContext{..} =
   _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
-    Nothing -> applicable expression rest ctx
-    Just _ -> pure True
+    Just changed | changed /= expression -> pure True
+    _ -> applicable expression rest ctx
 
 rewrite :: Expression -> [Step] -> RewriteContext -> IO Rewrittens
 rewrite expr rules ctx@RewriteContext{..} = do

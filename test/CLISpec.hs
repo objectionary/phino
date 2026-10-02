@@ -1106,6 +1106,11 @@ spec = do
           , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"
           ]
 
+    it "finishes under --depth-sensitive when the only match left would not change the term" $
+      withTempFileContent "phino-fixpoint.yaml" "name: fix\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ x -> Q, !B1 ]]'\n" $ \fix ->
+        withStdin "[[ x -> $ ]]" $
+          testCLISucceeded ["rewrite", "--rule=" ++ fix, "--max-depth=1", "--depth-sensitive", "--flat"] ["⟦ x ↦ Φ ⟧"]
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
