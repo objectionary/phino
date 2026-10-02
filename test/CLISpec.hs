@@ -1152,6 +1152,10 @@ spec = do
         withStdin "[[ x -> $ ]]" $
           testCLISucceeded ["rewrite", "--rule=" ++ fix, "--max-depth=1", "--depth-sensitive", "--flat"] ["⟦ x ↦ Φ ⟧"]
 
+  it "fails on a --hide locator that matches nothing, as --show does" $
+    withStdin "[[ x -> Q.y ]]" $
+      testCLIFailed ["rewrite", "--hide=Q.nope"] ["Can't find object by locator: 'Φ.nope'"]
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
