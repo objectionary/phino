@@ -13,6 +13,7 @@ import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
 import Canonizer (canonize, canonizeExpr)
+import qualified Filter as F
 import Compiled (compiled)
 import Control.Exception
 import Control.Monad ((>=>))
@@ -54,14 +55,16 @@ justMeetPopularity = fromMaybe defaultMeetPopularity
 justMeetLength :: Maybe Int -> Int
 justMeetLength = fromMaybe defaultMeetLength
 
-saveStepFunc :: Maybe FilePath -> PrintContext -> IO SaveStepFunc
-saveStepFunc stepsDir ctx@PrintCtx{..} = do
+saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> IO SaveStepFunc
+saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
   counter <- newIORef (0 :: Int)
   let ioToExt :: String
       ioToExt
         | _outputFormat == LATEX = "tex"
         | otherwise = show _outputFormat
-      render = printInFormat ctx
+      render expr = do
+        shown <- F.include' expr included
+        printInFormat ctx ((if _canonize then canonizeExpr else id) (F.exclude' shown excluded))
       save :: SaveStepFunc
       save expr = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))

@@ -447,6 +447,18 @@ spec = do
           doesFileExist (dir ++ "/00001.phi") `shouldReturn` True
           doesFileExist (dir ++ "/00003.phi") `shouldReturn` True
 
+    it "gives the saved steps the --canonize and --hide of the printed ones" $
+      withTempDirectory "phino-steps-filtered" $ \dir ->
+        withStdin "[[ m -> [[ x -> [[ L> Plus ]], y -> $.x ]].y, k -> [[ L> Minus ]] ]]" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--hide=Q.k", "--canonize", "--steps-dir=" ++ dir, "--flat"]
+            ["Fn1"]
+          files <- listDirectory dir
+          null files `shouldBe` False
+          saved <- mapM (\file -> readFile (dir ++ "/" ++ file)) files
+          concat saved `shouldNotContain` "Minus"
+          concat saved `shouldNotContain` "Plus"
+
     it "saves dataize steps to dir with --steps-dir" $
       withTempDirectory "phino-steps-dataize" $ \dir ->
         withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
