@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, parking, recalled, retained, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, parking, recalled, remember, remembered, retained, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, pathOf)
@@ -70,9 +70,12 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef Int) (IORef Int) (IORef (Set.Set (Expression, Attribute)))
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IORef Int) (IORef Int) (IORef (Set.Set (Expression, Attribute)))
 
 type Answer = (Expression, Expression)
+
+data Firing = Firing T.Text [Either Int Bytes] [Expression]
+  deriving (Eq, Ord)
 
 data Kept
   = Answered Answer
@@ -157,7 +160,7 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   where
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
-    starve (Just (Memo _ _ exhausted _)) = modifyIORef' exhausted (+ 1)
+    starve (Just (Memo _ _ _ exhausted _)) = modifyIORef' exhausted (+ 1)
 
 tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
@@ -190,12 +193,12 @@ expired ctx cap = do
   throwIO (OutOfTime cap)
 
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> newIORef Set.empty)
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> newIORef Set.empty)
 memoized _ = pure Nothing
 
 recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
 recalled Nothing _ _ = pure Nothing
-recalled (Just (Memo store answers _ _)) form spent = do
+recalled (Just (Memo store _ answers _ _)) form spent = do
   kept <- readIORef store
   count <- readIORef answers
   let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
@@ -210,27 +213,34 @@ recalled (Just (Memo store answers _ _)) form spent = do
 
 counted :: Maybe Memo -> IO Int
 counted Nothing = pure 0
-counted (Just (Memo _ answers _ _)) = readIORef answers
+counted (Just (Memo _ _ answers _ _)) = readIORef answers
 
 starved :: Maybe Memo -> IO Int
 starved Nothing = pure 0
-starved (Just (Memo _ _ exhausted _)) = readIORef exhausted
+starved (Just (Memo _ _ _ exhausted _)) = readIORef exhausted
 
 retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
 retained Nothing _ _ _ = pure ()
-retained (Just (Memo store answers _ _)) form stamp kept = do
+retained (Just (Memo store _ _ _ _)) form stamp kept =
   modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
-  case kept of
-    Answered _ -> modifyIORef' answers (+ 1)
-    _ -> pure ()
+
+remembered :: Maybe Memo -> Firing -> IO (Maybe Answer)
+remembered Nothing _ = pure Nothing
+remembered (Just (Memo _ firings _ _ _)) firing = Map.lookup firing <$> readIORef firings
+
+remember :: Maybe Memo -> Firing -> Answer -> IO ()
+remember Nothing _ _ = pure ()
+remember (Just (Memo _ firings answers _ _)) firing answer = do
+  modifyIORef' firings (Map.insert firing answer)
+  modifyIORef' answers (+ 1)
 
 visited :: Maybe Memo -> Expression -> Attribute -> IO Bool
 visited Nothing _ _ = pure False
-visited (Just (Memo _ _ _ walked)) object attr = Set.member (object, attr) <$> readIORef walked
+visited (Just (Memo _ _ _ _ walked)) object attr = Set.member (object, attr) <$> readIORef walked
 
 visit :: Maybe Memo -> Expression -> Attribute -> IO ()
 visit Nothing _ _ = pure ()
-visit (Just (Memo _ _ _ walked)) object attr = modifyIORef' walked (Set.insert (object, attr))
+visit (Just (Memo _ _ _ _ walked)) object attr = modifyIORef' walked (Set.insert (object, attr))
 
 parking :: NonEmpty Rewritten -> State -> IO a -> IO a
 parking seq state action = action `catch` rethrow

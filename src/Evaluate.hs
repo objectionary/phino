@@ -19,7 +19,7 @@ import Deps (Evaluation (..), State (..))
 import Engine (Engine (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, retained, starved, unparked)
+import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, remember, remembered, retained, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -69,11 +69,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       let ctx = caller{_nesting = caller._nesting + 1}
       outcome <- try $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-        (bound', morphed) <- foldM (through ctx) (bound, dataized) entry._morphed
-        rewrote <- foldM (reshaped ctx) bound' entry._rewritten
-        (bound'', stood) <- foldM (masked ctx) (rewrote, morphed) entry._symbolized
-        (bound''', forked) <- foldM (paired ctx (listToMaybe (reverse conditions))) (bound'', stood) entry._paired
-        answered ctx entry (reverse conditions) bound''' forked
+        (bound', morphed, normals) <- foldM (through ctx) (bound, dataized, []) entry._morphed
+        let firing = Firing func (reverse conditions) (reverse normals)
+        known <- remembered caller._memo firing
+        maybe (worked ctx entry firing bound' morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
       case outcome of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
@@ -83,6 +82,18 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) failure)
           mapM_ (caller._saveEval . EvStuckOn (caller._nesting + 1)) (stranded failure)
           throwIO failure
+    worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
+    worked ctx entry firing@(Firing _ operands _) bound state' = do
+      rewrote <- foldM (reshaped ctx) bound entry._rewritten
+      (bound', stood) <- foldM (masked ctx) (rewrote, state') entry._symbolized
+      (bound'', forked) <- foldM (paired ctx (listToMaybe operands)) (bound', stood) entry._paired
+      (answer, state'') <- answered ctx entry operands bound'' forked
+      remember caller._memo firing answer
+      pure (answer, state'')
+    shown :: Int -> Answer -> IO ()
+    shown depth (built, normal) = do
+      caller._saveEval (EvBuilt depth built)
+      caller._saveEval (EvAnswer depth normal)
     kept :: Bool -> ReduceException -> Maybe Kept
     kept _ (Looping term) = Just (Looped term)
     kept _ (LoopingAt term _ _) = Just (Looped term)
@@ -97,11 +108,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     stranded (StuckAt name _ _) = Just name
     stranded _ = Nothing
     told :: Kept -> IO (Expression, State)
-    told (Answered (built, normal)) = do
+    told (Answered answer) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
-      caller._saveEval (EvBuilt (caller._nesting + 1) built)
-      caller._saveEval (EvAnswer (caller._nesting + 1) normal)
-      pure (normal, state)
+      shown (caller._nesting + 1) answer
+      pure (snd answer, state)
     told (Looped term) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       mapM_ (\mode -> caller._saveEval (EvLooped (caller._nesting + 1) caller._judgment mode term caller._site)) caller._acyclic
@@ -121,13 +131,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           ctx._saveEval (EvData ctx._nesting meta._spelling term datum)
           bound' <- bind meta (MvBytes bytes) bound
           pure (bound', state'', datum : conditions)
-    through :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
-    through ctx (bound, state') (meta, term) = do
+    through :: ReduceContext -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
+    through ctx (bound, state', normals) (meta, term) = do
       placed <- operand term
       (normal, state'') <- morphing univ ctx placed state'
       ctx._saveEval (EvTerm ctx._nesting meta._spelling term normal)
       bound' <- bind meta (MvExpression normal) bound
-      pure (bound', state'')
+      pure (bound', state'', normal : normals)
     reshaped :: ReduceContext -> Subst -> (Meta, (Meta, [Y.Rule])) -> IO Subst
     reshaped ctx bound (meta, (source, rules)) = do
       term <- buildExpressionThrows (ExMeta source._name) bound

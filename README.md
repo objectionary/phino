@@ -1401,14 +1401,26 @@ and what it answered there; the two under `b` carry the answer lines of the
 two under `a` and no operand line, since nothing was reduced for them, and
 they are not charged to `--max-firings`, which counts the firings the run
 made. The formation is compared with everything it carries, `ρ` included, so
-a firing on another object is another firing. A firing cut by the mode on its
-way to an answer keeps the cut, and the next firing of the same formation is
-cut at its own site without reducing anything first. A firing that got stuck
-keeps the λ function it got stuck on, and the next firing of the same
-formation gets stuck at its own site the same way, with nothing reduced
-under it, as long as nothing new was answered in between. Once something
-was, the formation is fired again, since an operand that could not be
-brought down the first time may come down now.
+a firing on another object is another firing, yet it may take the same answer
+all the same: the run keeps every answer by the λ name and what the operands
+came down to as well, and a firing whose operands come down to the data, the
+symbols and the normal forms of one already answered takes that answer once
+they are down, minting nothing. An attribute read from the `φ` of an object
+and then reached as a binding of it is read through two `ξ`, each the object
+minus the attribute being read, so it is two formations, but one firing, and
+so one symbol. A symbol counts as the symbol it is, not as the datum every
+symbol manufactures, so two firings over two symbols stay two. The protocol
+writes such a firing with its operand lines and the answer lines of the one
+it took the answer from, and `--max-firings` charges it like a firing made,
+since a firing is charged as it starts bringing its operands down, which is
+the only place a recursion widening inside its operands can be cut. A firing
+cut by the mode on its way to an answer keeps the cut, and the next firing of
+the same formation is cut at its own site without reducing anything first. A
+firing that got stuck keeps the λ function it got stuck on, and the next
+firing of the same formation gets stuck at its own site the same way, with
+nothing reduced under it, as long as nothing new was answered in between.
+Once something was, the formation is fired again, since an operand that could
+not be brought down the first time may come down now.
 
 The mode also walks a binding of the world once. Every dispatch on an object
 of the world copies it, and `--deep` walks every copy, so the tests of an
