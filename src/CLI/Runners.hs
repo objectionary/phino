@@ -77,7 +77,7 @@ runRewrite OptsRewrite{..} = do
   save <- saveStepFunc _stepsDir printCtx included excluded
   let steps = map (stepOf linked) rules
   (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save)
-  rewrittens' <- exclude <$> include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
+  rewrittens' <- include (if _sequence then NE.toList rewrittens else [NE.last rewrittens]) >>= exclude
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
   output _targetFile exprs
@@ -188,8 +188,8 @@ runDataize OptsDataize{..} = do
           started universe aiming
           dataize universe emptyState aiming
       )
-  when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (\residue -> (`F.exclude'` excluded) <$> F.include' residue included) outcome >>= putStrLn)
+  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
+  unless _quiet (printOutcome printCtx (\residue -> F.include' residue included >>= (`F.exclude'` excluded)) outcome >>= putStrLn)
   where
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
@@ -273,10 +273,10 @@ runMorph OptsMorph{..} = do
     if _quiet
       then pure Nothing
       else do
-        answer <- (`F.exclude'` excluded) <$> F.include' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) included
+        answer <- F.include' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) included >>= (`F.exclude'` excluded)
         validateXmirTopLevel _outputFormat answer
         Just <$> printAnswer printCtx answer
-  when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
+  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
   mapM_ putStrLn printed
   where
     lastMaybe :: [a] -> Maybe a

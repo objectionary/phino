@@ -1181,6 +1181,10 @@ spec = do
         (out, _) <- withStdout (try (runCLI ["morph", "--locator=Q.t", "--focus=Q.nope", "--flat", "--sequence"]) :: IO (Either ExitCode ()))
         out `shouldNotContain` "⟦ t ↦"
 
+  it "fails on a --hide locator that matches nothing, as --show does" $
+    withStdin "[[ x -> Q.y ]]" $
+      testCLIFailed ["rewrite", "--hide=Q.nope"] ["Can't find object by locator: 'Φ.nope'"]
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
