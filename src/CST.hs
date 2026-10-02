@@ -365,27 +365,39 @@ instance ToCST Expression EXPRESSION where
      in if length ts' == 1 && dataPrimitive obj && sweetCollapsible obj
           then applicationToPrimitive obj tabs rs
           else
-            if null exs
+            if length ts' > 1 && null exs && dataPrimitive obj && sweetCollapsible obj
               then
                 EX_APPLICATION
-                  ex'
+                  (applicationToPrimitive obj tabs rs)
                   NO_SPACE
                   eol
                   (TAB next)
-                  (AA_TAUS (toCST ts (next, eol) :: BINDING))
+                  (AA_TAUS (toCST (drop 1 ts') (next, eol) :: BINDING))
                   eol
                   (TAB tabs)
                   next
               else
-                EX_APPLICATION
-                  ex'
-                  NO_SPACE
-                  eol
-                  (TAB next)
-                  (AA_EXPRS (toCST exs (next, eol)))
-                  eol
-                  (TAB tabs)
-                  next
+                if null exs
+                  then
+                    EX_APPLICATION
+                      ex'
+                      NO_SPACE
+                      eol
+                      (TAB next)
+                      (AA_TAUS (toCST ts (next, eol) :: BINDING))
+                      eol
+                      (TAB tabs)
+                      next
+                  else
+                    EX_APPLICATION
+                      ex'
+                      NO_SPACE
+                      eol
+                      (TAB next)
+                      (AA_EXPRS (toCST exs (next, eol)))
+                      eol
+                      (TAB tabs)
+                      next
     where
       primitives :: [T.Text]
       primitives = ["number", "string"]
