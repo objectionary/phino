@@ -216,11 +216,14 @@ spec = do
           back `shouldBe` expr
       )
 
-  describe "derived λ function name" $
+  describe "derived λ function name" $ do
     it "spells itself in the alphabet the parser accepts" $ do
       doc <- parseXMIRThrows "<object><o name=\"foo\"><o name=\"l🌵ab12\"><o base=\"∅\" name=\"v0\"/><o name=\"λ\"/></o></o></object>"
       expr <- xmirToPhi doc
       parseExpressionThrows (printExpression expr) `shouldReturn` expr
+    it "stays unique when two paths spell alike, and keeps the type of each atom" $ do
+      doc <- parseXMIRThrows "<object><o name=\"top\"><o name=\"as-int\"><o atom=\"Φ.number\" name=\"λ\"/></o><o name=\"as_int\"><o atom=\"Φ.string\" name=\"λ\"/></o></o></object>"
+      xmirAtoms doc `shouldReturn` M.fromList [("L_top_as_int", "Φ.number"), ("L_top_as_int_2", "Φ.string")]
 
   describe "atom result types in XMIR" $ do
     let atom :: String
