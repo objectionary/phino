@@ -9,7 +9,7 @@ import AST
 import Bytes (numToBts, strToBts)
 import CST
 import Control.Monad (forM_)
-import qualified Data.Text as T
+import Data.Text qualified as T
 import Lining (toSingleLine)
 import Margin (withMargin)
 import Parser (parseExpressionThrows)
