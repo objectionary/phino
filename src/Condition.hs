@@ -59,13 +59,10 @@ number =
     , do
         sign <- optional (choice [char '-', char '+'])
         unsigned <- lexeme L.decimal
-        return
-          ( Y.Literal
-              ( case sign of
-                  Just '-' -> negate unsigned
-                  _ -> unsigned
-              )
-          )
+        let signed = if sign == Just '-' then negate unsigned else unsigned :: Integer
+        if signed < toInteger (minBound :: Int) || signed > toInteger (maxBound :: Int)
+          then fail (printf "the literal %d does not fit into Int" signed)
+          else return (Y.Literal (fromInteger signed))
     ]
 
 comparable :: Parser Y.Comparable
