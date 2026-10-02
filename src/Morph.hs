@@ -316,7 +316,7 @@ isLambda _ = False
 
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
 morph' (expr, seq) univ state caller = do
-  ctx <- deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
+  ctx <- deeper =<< entering expr =<< parking seq state (universed univ caller{_judgment = Morphing})
   parking seq state $ do
     reached <- inferred expr univ state ctx ctx._engine._morphing
     case reached of
@@ -330,22 +330,26 @@ morph' (expr, seq) univ state caller = do
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do
-  ctx <- universed universe caller
   expr <- locatedExpression _locator universe
-  result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
-  case result of
-    Right ((morphed, seq), state') -> walked (walking ctx) morphed seq state'
-    Left (StuckAt func seq parked) | _partial -> do
-      residue <- locatedExpression _locator (fst (NE.head seq))
-      walked (marked ctx func) residue seq parked{_stuck = Just func}
-    Left (OutOfStepsAt _ seq parked) | _partial -> do
-      residue <- locatedExpression _locator (fst (NE.head seq))
-      walked (walking ctx) residue seq parked
-    Left (LoopingAt _ seq parked) -> do
-      residue <- locatedExpression _locator (fst (NE.head seq))
-      walked (walking ctx) residue seq parked
+  try (universed universe caller) >>= \case
+    Left (OutOfSteps _) | _partial -> pure (expr, [(universe, Nothing)], state)
     Left failure -> throwIO (failure :: ReduceException)
+    Right ctx -> reduced expr ctx
   where
+    reduced :: Expression -> ReduceContext -> IO (Expression, [Rewritten], State)
+    reduced expr ctx =
+      try (morph' (expr, (universe, Nothing) :| []) universe state ctx) >>= \case
+        Right ((morphed, seq), state') -> walked (walking ctx) morphed seq state'
+        Left (StuckAt func seq parked) | _partial -> do
+          residue <- locatedExpression _locator (fst (NE.head seq))
+          walked (marked ctx func) residue seq parked{_stuck = Just func}
+        Left (OutOfStepsAt _ seq parked) | _partial -> do
+          residue <- locatedExpression _locator (fst (NE.head seq))
+          walked (walking ctx) residue seq parked
+        Left (LoopingAt _ seq parked) -> do
+          residue <- locatedExpression _locator (fst (NE.head seq))
+          walked (walking ctx) residue seq parked
+        Left failure -> throwIO (failure :: ReduceException)
     walking :: ReduceContext -> ReduceContext
     walking ctx = ctx{_judgment = Morphing}
     marked :: ReduceContext -> T.Text -> ReduceContext
