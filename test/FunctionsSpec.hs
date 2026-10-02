@@ -112,6 +112,12 @@ spec = describe "Functions" $ do
         , \term -> expectExpression term (DataString (strToBts "heLLo"))
         )
       ,
+        ( "sed keeps every character above U+00FF"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "a ф 𝜑")), ArgExpression (DataString (strToBts "s/a/b/g"))]
+        , \term -> expectExpression term (DataString (strToBts "b ф 𝜑"))
+        )
+      ,
         ( "sed replaces only the first occurrence without the 'g' flag"
         , "sed"
         , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/l/L/"))]

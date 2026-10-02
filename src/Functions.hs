@@ -14,6 +14,9 @@ import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor
 import qualified Data.Set as Set
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Encoding.Error as T
 import Deps
 import Logger (logDebug)
 import Matcher
@@ -113,11 +116,11 @@ _sed args subst = do
     traverse
       ( \arg -> do
           bts <- argToString arg subst
-          pure (B.pack bts)
+          pure (T.encodeUtf8 (T.pack bts))
       )
       args
   res <- sed first rest
-  pure (TeExpression (DataString (strToBts (B.unpack res))))
+  pure (TeExpression (DataString (strToBts (T.unpack (T.decodeUtf8With T.lenientDecode res)))))
   where
     sed :: B.ByteString -> [B.ByteString] -> IO B.ByteString
     sed tgt [] = pure tgt
