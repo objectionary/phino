@@ -102,6 +102,13 @@ spec = do
     it "still fires on a non-formation, non-termination normal form" $ do
       substs <- matchExpressionWithRule' [substEmpty] (ExDispatch ExXi (AtLabel "x")) (asRule (dataizeRule "norm")) rctx
       null substs `shouldBe` False
+    forM_
+      ["delta", "fire"]
+      ( \name ->
+          it ("leaves '" ++ name ++ "' off a formation holding both Δ and λ") $ do
+            substs <- matchExpressionWithRule' [substEmpty] (ExFormation [BiDelta (BtOne "01"), BiLambda (Function "Foo")]) (asRule (dataizeRule name)) rctx
+            substs `shouldBe` []
+      )
 
   describe "dataize" $ do
     let resources = "test-resources/dataization-packs"

@@ -6,5 +6,6 @@ latex: |-
   \begin{phinoDataizationInference}
     \phinoName{delta}
     \phinoLabel{\Delta}
+    \phinoCondition{ [ L ] \cap \lparen B_1 \cup B_2 \rparen = \emptyset }
     \phinoConclusion{ \phinoDataize{ [[ B_1, D> \delta, B_2 ]] }{ e }{ s }{ \delta }{ s } }
   \end{phinoDataizationInference}
