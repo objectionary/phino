@@ -33,6 +33,8 @@ spec = do
       , ("L_a{,2}", "L_a\\{,2}", Just "L_a{,2}")
       , ("", "x?", Just "")
       , ("L_é+", "L_[^a-z]", Just "L_é")
+      , ("L_[\\d-z]", "L_A", Nothing)
+      , ("L_[\\d-z]", "L_-", Just "L_-")
       ]
       ( \(first, second, answer) ->
           it ("tells what '" <> show first <> "' and '" <> show second <> "' both match") $
