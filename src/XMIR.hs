@@ -43,6 +43,7 @@ import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import Misc
 import Paths_phino (version)
+import Parser (parseAttribute)
 import Printer
 import Text.Printf (printf)
 import qualified Text.Read as TR
@@ -469,7 +470,7 @@ xmirToFormationBinding cur fqn
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         "φ" -> BiTau AtPhi <$> xmirToFormation cur (name : fqn)
         "ρ" -> BiTau AtRho <$> xmirToFormation cur (name : fqn)
-        _ -> BiTau (AtLabel (T.pack name)) <$> xmirToFormation cur (name : fqn)
+        _ -> toAttr name cur >>= \attr -> BiTau attr <$> xmirToFormation cur (name : fqn)
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
@@ -477,7 +478,7 @@ xmirToFormationBinding cur fqn
         "φ" -> pure AtPhi
         "ρ" -> pure AtRho
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
-        _ -> pure (AtLabel (T.pack name))
+        _ -> toAttr name cur
       case base of
         "∅" -> pure (BiVoid attr)
         _ -> do
@@ -619,6 +620,7 @@ toAttr attr cur = case attr of
   ch : _
     | ch `notElem` ['a' .. 'z'] -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' must start with ['a'..'z']" attr) cur)
     | '.' `elem` attr -> throwIO (InvalidXMIRFormat "Attribute can't contain dots" cur)
+    | parseAttribute attr /= Right (AtLabel (T.pack attr)) -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not a label the phi grammar reads" attr) cur)
     | otherwise -> pure (AtLabel (T.pack attr))
   _ -> throwIO (InvalidXMIRFormat (printf "Invalid attribute given: %s" attr) cur)
 
