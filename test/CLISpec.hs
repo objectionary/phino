@@ -238,6 +238,12 @@ spec = do
         , ["rewrite", "--sweet", "--hide-rho", "--margin=3"]
         , ["⟦\n  b(c) ↦ ⟦⟧\n⟧:x:a"]
         )
+      ,
+        ( "prints positional arguments as such once the rho is gone"
+        , "⟦ a ↦ ξ.b(ρ ↦ ξ, α0 ↦ ξ.c, α1 ↦ ξ.d) ⟧"
+        , ["rewrite", "--flat", "--sweet", "--hide-rho"]
+        , ["b( c, d ):a"]
+        )
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 
