@@ -42,8 +42,8 @@ import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import Misc
-import Paths_phino (version)
 import Parser (parseAttribute)
+import Paths_phino (version)
 import Printer
 import Text.Printf (printf)
 import qualified Text.Read as TR
