@@ -85,6 +85,9 @@ instance FromJSON Lambda where
     dataless (T.unpack key) lambda._answer
     earlier (T.unpack key) lambda
     once (T.unpack key) lambda
+    mapM_ (metaless (T.unpack key) "dataize") lambda._dataized
+    mapM_ (metaless (T.unpack key) "morph") lambda._morphed
+    answered (T.unpack key) lambda
     pure lambda
     where
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
@@ -207,6 +210,30 @@ instance FromJSON Lambda where
           twice seen (meta : rest)
             | meta `elem` seen = Just meta
             | otherwise = twice (meta : seen) rest
+      metaless :: String -> String -> (Meta, Expression) -> Yaml.Parser ()
+      metaless key block (meta, term) = case metas term of
+        [] -> pure ()
+        name : _ ->
+          fail
+            ( printf
+                "The operand '%s' of '%s' of λ function '%s' reads the meta '%s', while only a path from '$' can be reduced there"
+                (T.unpack meta._spelling)
+                block
+                key
+                (T.unpack name)
+            )
+      answered :: String -> Lambda -> Yaml.Parser ()
+      answered key lambda = case filter (`notElem` ("S" : known)) (metas lambda._answer) of
+        [] -> pure ()
+        name : _ -> fail (printf "The '𝑛' of λ function '%s' reads the meta '%s' that no block binds" key (T.unpack name))
+        where
+          known :: [Text]
+          known =
+            map (_name . fst) lambda._dataized
+              ++ map (_name . fst) lambda._morphed
+              ++ map (_name . fst) lambda._rewritten
+              ++ map (_name . fst) lambda._symbolized
+              ++ map (_name . fst) lambda._paired
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
