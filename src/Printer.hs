@@ -123,7 +123,7 @@ printSubst (Subst mp) config =
       where
         kin :: [Slot]
         kin = [other | Anon other@(Slot kind' _) <- Map.keys mp, kind' == kind]
-    numbered meta = printMeta meta
+    numbered other = printMeta other
 
 printSubsts' :: [Subst] -> PrintConfig -> String
 printSubsts' [] _ = "------"
