@@ -12,9 +12,9 @@ expression: |
   ]]
 result: |-
   ⟦
-    nan ↦ Φ.nan,
-    pinf ↦ Φ.pinf,
-    ninf ↦ Φ.ninf,
-    with-rho ↦ Φ.nan,
+    nan ↦ Φ.number( Φ.bytes( 7F-F8-00-00-00-00-00-00:Δ ) ),
+    pinf ↦ Φ.number( Φ.bytes( 7F-F0-00-00-00-00-00-00:Δ ) ),
+    ninf ↦ Φ.number( Φ.bytes( FF-F0-00-00-00-00-00-00:Δ ) ),
+    with-rho ↦ Φ.number( α0 ↦ Φ.bytes( 7F-F8-00-00-00-00-00-00:Δ ), ρ ↦ Φ.x.y.z ),
     payload ↦ Φ.number( Φ.bytes( 7F-F8-00-00-00-00-00-01:Δ ) )
   ⟧

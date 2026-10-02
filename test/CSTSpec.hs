@@ -164,9 +164,9 @@ spec = do
     forM_
       [ ("is true for a finite integral value", BtMany ["40", "45", "00", "00", "00", "00", "00", "00"], True)
       , ("is true for a finite fractional value", BtMany ["BF", "D0", "00", "00", "00", "00", "00", "00"], True)
-      , ("is true for NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], True)
-      , ("is true for positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], True)
-      , ("is true for negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], True)
+      , ("is false for NaN", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], False)
+      , ("is false for positive infinity", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], False)
+      , ("is false for negative infinity", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], False)
       , ("is false for a NaN carrying a payload", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"], False)
       , ("is false for the negative quiet NaN", BtMany ["FF", "F8", "00", "00", "00", "00", "00", "00"], False)
       , ("is false for fewer than eight bytes", BtOne "21", False)
@@ -217,23 +217,19 @@ spec = do
       ]
       (\(desc, metaName, expected) -> it desc (exMetaHead metaName `shouldBe` expected))
 
-  describe "expressionToCST on the non-finite doubles" $
+  describe "expressionToCST keeps a non-finite double in byte form" $
     forM_
-      [ ("NaN becomes Φ.nan", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"], NfNan)
-      , ("positive infinity becomes Φ.pinf", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"], NfPinf)
-      , ("negative infinity becomes Φ.ninf", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"], NfNinf)
+      [ ("leaves NaN as an application", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "00"])
+      , ("leaves positive infinity as an application", BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])
+      , ("leaves negative infinity as an application", BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])
+      , ("leaves a NaN carrying a payload as an application", BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"])
       ]
-      ( \(desc, bts, value) ->
-          it desc (expressionToCST (DataNumber bts) `shouldBe` EX_NONFINITE Φ value (TAB 0) [])
+      ( \(desc, bts) ->
+          let isApplication :: EXPRESSION -> Bool
+              isApplication EX_APPLICATION{} = True
+              isApplication _ = False
+           in it desc (expressionToCST (DataNumber bts) `shouldSatisfy` isApplication)
       )
-
-  describe "expressionToCST keeps a non-canonical non-finite double in byte form" $
-    it "leaves a NaN carrying a payload as an application" $ do
-      let payloaded = DataNumber (BtMany ["7F", "F8", "00", "00", "00", "00", "00", "01"])
-          isApplication :: EXPRESSION -> Bool
-          isApplication EX_APPLICATION{} = True
-          isApplication _ = False
-      expressionToCST payloaded `shouldSatisfy` isApplication
 
   describe "expressionToCST on rendering-only and meta nodes" $
     forM_

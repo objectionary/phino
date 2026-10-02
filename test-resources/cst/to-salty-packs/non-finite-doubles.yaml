@@ -4,29 +4,29 @@
 ---
 expression: |
   [[
-    nan -> Q.nan,
-    pinf -> Q.pinf,
+    nan -> Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])),
+    pinf -> Q.number(Q.bytes([[ D> 7F-F0-00-00-00-00-00-00 ]])),
     ninf -> Q.number(~0 -> Q.bytes([[D> FF-F0-00-00-00-00-00-00]]), ^ -> Q.x)
   ]]
 result: |-
   ⟦
     nan ↦ Φ.number(
-      φ ↦ Φ.bytes(
-        φ ↦ ⟦
+      α0 ↦ Φ.bytes(
+        α0 ↦ ⟦
           Δ ⤍ 7F-F8-00-00-00-00-00-00
         ⟧
       )
     ),
     pinf ↦ Φ.number(
-      φ ↦ Φ.bytes(
-        φ ↦ ⟦
+      α0 ↦ Φ.bytes(
+        α0 ↦ ⟦
           Δ ⤍ 7F-F0-00-00-00-00-00-00
         ⟧
       )
     ),
     ninf ↦ Φ.number(
-      φ ↦ Φ.bytes(
-        φ ↦ ⟦
+      α0 ↦ Φ.bytes(
+        α0 ↦ ⟦
           Δ ⤍ FF-F0-00-00-00-00-00-00
         ⟧
       )
