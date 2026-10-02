@@ -18,6 +18,7 @@ import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir)
+import Data.Scientific (isInteger)
 import Data.Text (Text, unpack)
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
@@ -80,8 +81,9 @@ instance FromJSON Number where
         , Domain <$> o .: "domain"
         ]
     Number num
-      | toRational (round num :: Integer) == toRational num -> pure (Literal (round num))
-      | otherwise -> fail (printf "Expected an integer, got a fractional number %s" (show num))
+      | toRational (round num :: Integer) /= toRational num -> fail (printf "Expected an integer, got a fractional number %s" (show num))
+      | (round num :: Integer) < toInteger (minBound :: Int) || (round num :: Integer) > toInteger (maxBound :: Int) -> fail (printf "The literal %s does not fit into Int" (show num))
+      | otherwise -> pure (Literal (round num))
     String txt -> case parseIndex (unpack txt) of
       Right (Right mt) -> pure (MetaIndex mt)
       Right (Left slot) -> pure (AnyIndex slot)
@@ -90,6 +92,9 @@ instance FromJSON Number where
       fail "Expected a numerable expression (object, number or index meta)"
 
 instance FromJSON Comparable where
+  parseJSON (Number num)
+    | isInteger num && ((round num :: Integer) < toInteger (minBound :: Int) || (round num :: Integer) > toInteger (maxBound :: Int)) =
+        fail (printf "The literal %s does not fit into Int" (show num))
   parseJSON v =
     asum
       [ CmpAttr <$> parseJSON v

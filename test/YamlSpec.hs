@@ -74,6 +74,10 @@ spec = do
           it ("rejects " ++ desc) (unless valid (expectationFailure ("expected rejection for: " ++ yaml)))
       )
 
+  it "rejects a condition literal that does not fit into Int" $
+    (decodeYaml' "name: big\npattern: '⟦ 𝐵1 ⟧'\nresult: '⟦ 𝐵1 ⟧'\nwhen:\n  eq: [{length: '𝐵1'}, 18446744073709551617]" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` failsWith "does not fit into Int"
+
   it "rejects an 'e-match' in a rewriting rule" $
     (decodeYaml' "name: kvz\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\ne-match: '𝑒2'\nresult: '𝑒2'" :: Either Yaml.ParseException Rule)
       `shouldSatisfy` failsWith "The rule 'kvz' carries an 'e-match'"

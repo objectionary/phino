@@ -2856,6 +2856,10 @@ spec = do
       withStdin "[[ x -> Q.x, y -> Q.y ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
 
+    it "does not match a length against a literal that wraps around Int" $
+      withStdin "[[ a -> $, b -> Q ]]" $
+        testCLIFailed ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),18446744073709551618)"] ["no substitutions are built"]
+
     it "builds substitutions with conditions" $
       withStdin "[[ x -> Q.y ]].x" $
         testCLISucceeded
