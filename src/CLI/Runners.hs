@@ -330,6 +330,7 @@ runExplain OptsExplain{..} = do
       when (selected == 0 && null _rules && not _normalize) (invalidCLIArguments "Either --rule, --normalize, --morph, --dataize or --contextualize must be specified")
       when (selected > 1) (invalidCLIArguments "Only one of --morph, --dataize or --contextualize can be specified")
       when (selected == 1 && not (null _rules)) (invalidCLIArguments "The --rule option cannot be used together with --morph, --dataize or --contextualize")
+      when (selected == 1 && _normalize) (invalidCLIArguments "The --normalize option cannot be used together with --morph, --dataize or --contextualize")
 
 runMerge :: OptsMerge -> IO ()
 runMerge OptsMerge{..} = do

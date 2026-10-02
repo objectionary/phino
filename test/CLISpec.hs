@@ -2587,6 +2587,13 @@ spec = do
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
 
   describe "explain" $ do
+    forM_
+      ["--morph", "--dataize", "--contextualize"]
+      ( \judgment ->
+          it ("refuses --normalize together with " ++ judgment) $
+            testCLIFailed ["explain", judgment, "--normalize"] ["The --normalize option cannot be used together with"]
+      )
+
     it "prints help" $
       testCLISucceeded
         ["explain", "--help"]
