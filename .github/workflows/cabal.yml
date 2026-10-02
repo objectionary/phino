@@ -20,15 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - id: setup
-        uses: haskell-actions/setup@v2.12.1
+        uses: ./.github/actions/ghc
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: '3.12.1.0'
       - uses: actions/cache@v6
         with:
           path: |
-            ${{ steps.setup.outputs.ghc-path }}
-            ${{ steps.setup.outputs.cabal-path }}
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
           key: ${{ runner.os }}-ghc${{ matrix.ghc }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}

@@ -13,15 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - id: setup
-        uses: haskell-actions/setup@v2.12.1
+        uses: ./.github/actions/ghc
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
       - uses: actions/cache@v6
         with:
           path: |
-            ${{ steps.setup.outputs.ghc-path }}
-            ${{ steps.setup.outputs.cabal-path }}
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
           key: ${{ runner.os }}-coverage-${{ hashFiles('**/*.cabal') }}
