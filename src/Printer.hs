@@ -118,8 +118,8 @@ printSubst (Subst mp) config =
     (map (\(key, value) -> numbered key <> " >> " <> printMetaValue value config) (Map.toList mp))
   where
     numbered :: Meta -> String
-    numbered meta@(Anon slot@(Slot kind _))
-      | length kin > 1 = printMeta meta <> "#" <> show (length (takeWhile (/= slot) kin) + 1)
+    numbered anon@(Anon slot@(Slot kind _))
+      | length kin > 1 = printMeta anon <> "#" <> show (length (takeWhile (/= slot) kin) + 1)
       where
         kin :: [Slot]
         kin = [other | Anon other@(Slot kind' _) <- Map.keys mp, kind' == kind]
