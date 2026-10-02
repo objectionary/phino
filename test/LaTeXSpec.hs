@@ -242,6 +242,11 @@ spec = do
           , "\\end{phiquation}"
           ]
 
+    it "renders a 'where' function with a hyphen as a valid macro" $ do
+      ptn <- parseExpressionThrows "Q.x"
+      explainRules [Y.Rule "rt" Nothing Nothing ptn ptn Nothing (Just [Y.Extra (Y.ArgAttribute (AtMeta "t1")) "random-tau" []]) Nothing]
+        `shouldContain` "\\randomTau{"
+
     it "prefixes each step with a '% === Step' header when '_headers' is set" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
       step2 <- parseExpressionThrows "[[ x -> Q.z ]]"
