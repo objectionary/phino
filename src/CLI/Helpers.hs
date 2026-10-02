@@ -27,6 +27,7 @@ import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
+import qualified Filter as F
 import Functions (buildFunctions, execFunctions)
 import GHC.Clock (getMonotonicTime)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
@@ -54,14 +55,16 @@ justMeetPopularity = fromMaybe defaultMeetPopularity
 justMeetLength :: Maybe Int -> Int
 justMeetLength = fromMaybe defaultMeetLength
 
-saveStepFunc :: Maybe FilePath -> PrintContext -> IO SaveStepFunc
-saveStepFunc stepsDir ctx@PrintCtx{..} = do
+saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> IO SaveStepFunc
+saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
   counter <- newIORef (0 :: Int)
   let ioToExt :: String
       ioToExt
         | _outputFormat == LATEX = "tex"
         | otherwise = show _outputFormat
-      render = printInFormat ctx
+      render expr = do
+        shown <- F.include' expr included
+        printInFormat ctx ((if _canonize then canonizeExpr else id) (F.exclude' shown excluded))
       save :: SaveStepFunc
       save expr = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))

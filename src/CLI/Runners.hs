@@ -73,7 +73,7 @@ runRewrite OptsRewrite{..} = do
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx
+  save <- saveStepFunc _stepsDir printCtx included excluded
   let steps = map (stepOf linked) rules
   (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save)
   rewrittens' <- exclude <$> include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
@@ -171,7 +171,7 @@ runDataize OptsDataize{..} = do
   let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx
+  save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
   memo <- memoized _acyclic
   linked <- engine
@@ -250,7 +250,7 @@ runMorph OptsMorph{..} = do
   let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx
+  save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
   memo <- memoized _acyclic
   linked <- engine
