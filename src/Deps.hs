@@ -17,7 +17,7 @@ import Files (overwrite)
 import GHC.Clock (getMonotonicTime)
 import Logger (logDebug, logInfo)
 import Matcher
-import Printer (printBytes, printFunction)
+import Printer (printFunction)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
 import System.IO (Handle, hPutStrLn)
@@ -228,7 +228,7 @@ saveEval handle cursor render salted report = do
       where
         spelled :: Either Int Bytes -> IO String
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
-        spelled (Right bytes) = pure (printBytes bytes)
+        spelled (Right bytes) = render (ExBytes bytes)
     written (EvTerm depth spelling operand term) protocol = do
       let naming = labelled protocol depth spelling
       (protocol', value) <- valued protocol naming term
@@ -241,7 +241,8 @@ saveEval handle cursor render salted report = do
       pure (protocol', Just (indented depth line))
     written (EvKnown depth symbol bytes) protocol = do
       form <- render (standing symbol)
-      pure (protocol, Just (indented depth (printf "𝔻(%s) == %s" form (printBytes bytes))))
+      value <- render (ExBytes bytes)
+      pure (protocol, Just (indented depth (printf "𝔻(%s) == %s" form value)))
     written (EvJoin depth spelling (left, right) term) protocol = do
       let naming = labelled protocol depth spelling
       (protocol', value) <- valued protocol naming term
@@ -257,7 +258,7 @@ saveEval handle cursor render salted report = do
       where
         spelled :: Either Int Bytes -> IO String
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
-        spelled (Right bytes) = pure (printBytes bytes)
+        spelled (Right bytes) = render (ExBytes bytes)
     written EvMinted{} protocol = pure (protocol, Nothing)
     written (EvBuilt depth term) protocol = do
       value <- borrowed protocol term
@@ -374,7 +375,9 @@ saveEvalXml handle cursor render report = do
         stood (Left symbol) = do
           form <- render (standing symbol)
           pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText form))
-        stood (Right bytes) = pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText (printBytes bytes)))
+        stood (Right bytes) = do
+          value <- render (ExBytes bytes)
+          pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText value))
     elements (EvTerm depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
@@ -383,12 +386,10 @@ saveEvalXml handle cursor render report = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
-    elements (EvKnown depth symbol bytes) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth known])
-      where
-        (kept, closers) = closed depth nesting._closing
-        known :: String
-        known = printf "<known symbol=\"%s\">%s</known>" (sigma symbol) (escapeXMLText (printBytes bytes))
+    elements (EvKnown depth symbol bytes) nesting = do
+      value <- render (ExBytes bytes)
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<known symbol=\"%s\">%s</known>" (sigma symbol) (escapeXMLText value))])
     elements (EvJoin depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
@@ -399,26 +400,25 @@ saveEvalXml handle cursor render report = do
         (kept, closers) = closed depth nesting._closing
         joint :: String
         joint = printf "<joined symbol=\"%s\">%s %s</joined>" (sigma fresh) (sigma one) (sigma two)
-    elements (EvTerminate depth condition side _) nesting =
+    elements (EvTerminate depth condition side _) nesting = do
+      terminal <- case condition of
+        Just (Left symbol) -> pure (printf "<terminate symbol=\"%s\" branch=\"%s\"/>" (sigma symbol) (quoted side))
+        Just (Right bytes) -> printf "<terminate branch=\"%s\">%s</terminate>" (quoted side) . escapeXMLText <$> render (ExBytes bytes)
+        Nothing -> pure (printf "<terminate branch=\"%s\"/>" (quoted side))
+      let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth terminal])
-      where
-        (kept, closers) = closed depth nesting._closing
-        terminal :: String
-        terminal = case condition of
-          Just (Left symbol) -> printf "<terminate symbol=\"%s\" branch=\"%s\"/>" (sigma symbol) (quoted side)
-          Just (Right bytes) -> printf "<terminate branch=\"%s\">%s</terminate>" (quoted side) (escapeXMLText (printBytes bytes))
-          Nothing -> printf "<terminate branch=\"%s\"/>" (quoted side)
-    elements (EvMinted depth symbol operands) nesting =
+    elements (EvMinted depth symbol operands) nesting = do
+      spelledOperands <- mapM spelled operands
+      let (kept, closers) = closed depth nesting._closing
+          mint :: String
+          mint
+            | null operands = printf "<minted symbol=\"%s\"/>" (sigma symbol)
+            | otherwise = printf "<minted symbol=\"%s\">%s</minted>" (sigma symbol) (escapeXMLText (unwords spelledOperands))
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth mint])
       where
-        (kept, closers) = closed depth nesting._closing
-        mint :: String
-        mint
-          | null operands = printf "<minted symbol=\"%s\"/>" (sigma symbol)
-          | otherwise = printf "<minted symbol=\"%s\">%s</minted>" (sigma symbol) (escapeXMLText (unwords (map spelled operands)))
-        spelled :: Either Int Bytes -> String
-        spelled (Left fresh) = sigma fresh
-        spelled (Right bytes) = printBytes bytes
+        spelled :: Either Int Bytes -> IO String
+        spelled (Left fresh) = pure (sigma fresh)
+        spelled (Right bytes) = render (ExBytes bytes)
     elements (EvBuilt depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing

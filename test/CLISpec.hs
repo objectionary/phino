@@ -1345,6 +1345,20 @@ spec = do
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           lines records `shouldContain` ["  <formation at=\"Φ.t\" term=\"⟦ φ ↦ 01-02:Δ, +4 ⟧\">"]
+      forM_
+        [ ("textXXXXXX.txt", "    𝛿1.1 := 01-02-..(8b)..-0B-0C  # 𝔻(ξ.arg)")
+        , ("XMLXXXXXX.xml", "      <bind meta=\"𝛿1.1\">01-02-..(8b)..-0B-0C</bind>")
+        ]
+        ( \(template, line) ->
+            it ("cuts a long datum a firing came down to, as " ++ line) $
+              withTempFile template $ \(path, stream) -> do
+                hClose stream
+                withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
+                  withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ Δ ⤍ 01-02-03-04-05-06-07-08-09-0A-0B-0C ⟧, λ ⤍ L_outer ⟧ ⟧" $
+                    testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
+                records <- readProtocol path
+                lines records `shouldContain` [line]
+        )
       it "folds a long formation under the width given as the value" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
