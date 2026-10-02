@@ -1,14 +1,15 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 module Files (FsException (..), ensuredFile, allPathsIn, overwrite) where
 
-import Control.Exception (Exception, onException, throwIO)
+import Control.Exception (Exception, IOException, catch, onException, throwIO)
 import Control.Monad (forM, when)
-import System.Directory (copyPermissions, createDirectoryIfMissing, doesDirectoryExist, doesFileExist, listDirectory, pathIsSymbolicLink, removeFile, renameFile)
+import System.Directory (canonicalizePath, copyPermissions, createDirectoryIfMissing, doesDirectoryExist, doesFileExist, listDirectory, pathIsSymbolicLink, removeFile, renameFile)
 import System.FilePath (takeDirectory, takeFileName, (</>))
 import System.IO (Handle, hClose, hPutStr, hSetEncoding, openTempFileWithDefaultPermissions, utf8)
 import Text.Printf (printf)
@@ -28,13 +29,15 @@ ensuredFile pth = do
   if exists then pure pth else throwIO (FileDoesNotExist pth)
 
 overwrite :: FilePath -> String -> IO ()
-overwrite file content = do
+overwrite path content = do
+  link <- pathIsSymbolicLink path `catch` \(_ :: IOException) -> pure False
+  file <- if link then canonicalizePath path else pure path
   createDirectoryIfMissing True (takeDirectory file)
   (temp, handle) <- openTempFileWithDefaultPermissions (takeDirectory file) (takeFileName file)
-  replace temp handle `onException` (hClose handle >> removeFile temp)
+  replace file temp handle `onException` (hClose handle >> removeFile temp)
   where
-    replace :: FilePath -> Handle -> IO ()
-    replace temp handle = do
+    replace :: FilePath -> FilePath -> Handle -> IO ()
+    replace file temp handle = do
       hSetEncoding handle utf8
       hPutStr handle content
       hClose handle
