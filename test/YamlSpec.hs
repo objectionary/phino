@@ -9,7 +9,7 @@ module YamlSpec where
 import AST (Alpha, Attribute, Binding, Bytes, Expression (ExMeta, ExRoot))
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
-import Data.Either (isLeft)
+import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf, nub, sort, (\\))
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
@@ -85,6 +85,20 @@ spec = do
   it "rejects a 'where' step whose meta is not a meta" $
     (decodeYaml' "name: nometa\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒1 ⟧'\nwhere:\n  - meta: 'z'\n    function: concat\n    args: ['\"a\"']" :: Either Yaml.ParseException Rule)
       `shouldSatisfy` failsWith "whose 'meta' is not a meta"
+
+  describe "rejects a meta that nothing binds" $
+    forM_
+      [ ("in 'when'", "name: w\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ y ↦ 𝑒1 ⟧'\nwhen:\n  not:\n    eq: ['𝑒9', '𝑒1']", "'e9'")
+      , ("in 'result'", "name: r\npattern: '⟦ x ↦ 𝑒1, 𝐵1 ⟧'\nresult: '⟦ y ↦ 𝑒9, 𝐵1 ⟧'", "'e9'")
+      , ("in a 'where' argument", "name: a\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒2 ⟧'\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    args: ['𝑒7']", "'e7'")
+      ]
+      ( \(desc, yaml, meta) ->
+          it desc ((decodeYaml' yaml :: Either Yaml.ParseException Rule) `shouldSatisfy` failsWith ("reads the meta " ++ meta))
+      )
+
+  it "accepts a meta that an earlier 'where' step binds" $
+    (decodeYaml' "name: ok\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒3 ⟧'\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    args: ['𝑒1']\n  - meta: '𝑒3'\n    function: concat\n    args: ['𝑒2']" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` isRight
 
   it "rejects an 'e-match' in a rewriting rule" $
     (decodeYaml' "name: kvz\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\ne-match: '𝑒2'\nresult: '𝑒2'" :: Either Yaml.ParseException Rule)
