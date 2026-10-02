@@ -151,6 +151,7 @@ spec = do
       , ("an operand of 'symbolize' standing the term of a line below it", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛3\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "names no meta")
       , ("an operand referencing a meta the entry never matched", "- λ: L_pair\n  dataize:\n    𝛿1: '!n'\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "cannot be referenced")
       , ("an answer reading the data its operands came down to", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ Δ ⤍ 𝛿1 ⟧\n", "reads data")
+      , ("a meta bound by 'morph' and again by 'symbolize'", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_pair' is bound by more than one line")
       , ("an answer carrying an anonymous meta of another kind", "- λ: L_pair\n  𝑛: '⟦ φ ↦ !n ⟧'\n", "cannot be referenced")
       , ("a 'join' line joining one meta alone", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛2: [𝑛1]\n  𝑛: 𝑛2\n", "must join exactly two metas")
       , ("a 'join' line joining three metas", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  join:\n    𝑛4: [𝑛1, 𝑛2, 𝑛3]\n  𝑛: 𝑛4\n", "must join exactly two metas")
