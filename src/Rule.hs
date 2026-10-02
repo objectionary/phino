@@ -175,21 +175,34 @@ _gt _ _ _ _ = pure []
 
 _nf :: Expression -> Subst -> RuleContext -> IO [Subst]
 _nf (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
+  Just (MvExpression expr) | bound expr -> pure [Subst mp | _normal ctx expr]
   Just (MvExpression expr) -> _nf expr (Subst mp) ctx
   _ -> pure []
 _nf (ExAny slot) (Subst mp) ctx = case M.lookup (Anon slot) mp of
+  Just (MvExpression expr) | bound expr -> pure [Subst mp | _normal ctx expr]
   Just (MvExpression expr) -> _nf expr (Subst mp) ctx
   _ -> pure []
-_nf expr subst ctx = pure [subst | _normal ctx expr]
+_nf expr subst ctx = do
+  built <- buildExpressionThrows expr subst
+  pure [subst | _normal ctx built]
 
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
+  Just (MvExpression expr) | bound expr -> pure [Subst mp | xiFree expr]
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
 _absolute (ExAny slot) (Subst mp) ctx = case M.lookup (Anon slot) mp of
+  Just (MvExpression expr) | bound expr -> pure [Subst mp | xiFree expr]
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_absolute expr subst _ = pure [subst | xiFree expr]
+_absolute expr subst _ = do
+  built <- buildExpressionThrows expr subst
+  pure [subst | xiFree built]
+
+bound :: Expression -> Bool
+bound (ExMeta _) = False
+bound (ExAny _) = False
+bound _ = True
 
 xiFree :: Expression -> Bool
 xiFree (ExFormation _) = True
