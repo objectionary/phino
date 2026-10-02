@@ -1993,10 +1993,9 @@ spec = do
             ["[ERROR]:", "its top level must be a single binding"]
 
       it "prints the residual at --locator, not the whole program" $
-        withStdin wrapped $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--locator=Q.app", "--hide-rho", "--flat"]
-            ["⟦ λ ⤍ L_number_nope ⟧"]
+        withStdin wrapped $ do
+          (out, _) <- withStdout (runCLI ["dataize", symbolic, "--partial", "--locator=Q.app", "--hide-rho", "--flat"])
+          lines out `shouldBe` ["⟦ λ ⤍ L_number_nope ⟧"]
 
       it "cannot print a residual of several top bindings as XMIR" $
         withStdin dispatched $
