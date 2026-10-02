@@ -409,6 +409,16 @@ spec = do
       , ("", Nothing)
       ]
 
+  describe "an arrow ends an attribute name" $
+    forM_
+      [ ("⟦ a ↦ ξ.b(c↦ξ) ⟧", "⟦ a ↦ ξ.b(c ↦ ξ) ⟧")
+      , ("[[ a -> $.b(c->$) ]]", "[[ a -> $.b(c -> $) ]]")
+      , ("⟦ a ↦ ξ.as-bytes(x-y↦ξ) ⟧", "⟦ a ↦ ξ.as-bytes(x-y ↦ ξ) ⟧")
+      ]
+      ( \(tight, spaced) ->
+          it tight (parseExpression tight `shouldBe` parseExpression spaced)
+      )
+
   describe "parse number" $
     test
       parseNumber
