@@ -30,9 +30,9 @@ import Control.Monad (unless)
 import Data.Bifunctor (bimap)
 import Data.Char (isAsciiLower, isDigit)
 import Data.Foldable (foldlM)
-import Data.List (groupBy, intercalate, nub)
+import Data.List (find, groupBy, intercalate, nub)
 import qualified Data.Map as M
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
@@ -513,7 +513,7 @@ derivedNames xmir = snd (foldl assign ([], M.empty) paths)
     assign :: ([T.Text], Derived) -> [String] -> ([T.Text], Derived)
     assign (used, names) path =
       let base = spelled path
-          name = head [candidate | candidate <- base : [base <> T.pack ('_' : show n) | n <- [2 :: Int ..]], candidate `notElem` used, candidate == base || candidate `notElem` bases]
+          name = fromMaybe base (find (\candidate -> candidate `notElem` used && (candidate == base || candidate `notElem` bases)) (base : [base <> T.pack ('_' : show n) | n <- [2 :: Int ..]]))
        in (name : used, M.insert path name names)
 
 lambdaPath :: C.Cursor -> [String]
