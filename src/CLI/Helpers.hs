@@ -201,7 +201,24 @@ printInFormat ctx@PrintCtx{..} expr = case _outputFormat of
   LATEX -> pure (expressionToLaTeX expr (printCtxToLatexCtx ctx))
 
 printPhi :: PrintContext -> Expression -> String
-printPhi ctx@PrintCtx{..} expr = P.printExpressionWith (hidden ctx) expr (_sugar, UNICODE, _line, _margin)
+printPhi PrintCtx{..} expr = P.printExpression' (if _hideRho then rholess expr else expr) (_sugar, UNICODE, _line, _margin)
+  where
+    rholess :: Expression -> Expression
+    rholess (ExFormation bds) = ExFormation [binding bd | bd <- bds, not (rho bd)]
+    rholess (ExDispatch inner attr) = ExDispatch (rholess inner) attr
+    rholess (ExApplication inner (ArTau AtRho _)) = rholess inner
+    rholess (ExApplication inner (ArTau attr arg)) = ExApplication (rholess inner) (ArTau attr (rholess arg))
+    rholess (ExApplication inner (ArAlpha alpha arg)) = ExApplication (rholess inner) (ArAlpha alpha (rholess arg))
+    rholess (ExPhiMeet prefix idx inner) = ExPhiMeet prefix idx (rholess inner)
+    rholess (ExPhiAgain prefix idx inner) = ExPhiAgain prefix idx (rholess inner)
+    rholess other = other
+    binding :: Binding -> Binding
+    binding (BiTau attr inner) = BiTau attr (rholess inner)
+    binding other = other
+    rho :: Binding -> Bool
+    rho (BiTau AtRho _) = True
+    rho (BiVoid AtRho) = True
+    rho _ = False
 
 hidden :: PrintContext -> SugarType -> EXPRESSION -> EXPRESSION
 hidden PrintCtx{..} sugar
