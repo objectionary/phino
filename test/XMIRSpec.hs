@@ -332,6 +332,13 @@ spec = do
         , ["XMIR does not support such expression", "ρ ↦"]
         )
       ,
+        ( "refuses an application of a formation, which XMIR has no shape for"
+        , do
+            expr <- parseExpressionThrows "[[ x -> [[ a -> ? ]](a -> Q.y) ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such expression", "a ↦ Φ.y"]
+        )
+      ,
         ( "explains an unsupported binding"
         , try (void (expressionToXMIR (ExFormation [BiTau (AtLabel "x") (ExFormation [BiMeta "n", BiVoid AtRho]), BiVoid AtRho]) defaultXmirContext)) ::
             IO (Either SomeException ())
