@@ -432,8 +432,9 @@ xmirToPhi xmir =
                     , let heads = meta C.$/ C.element (toName "head") C.&/ C.content
                     , heads == ["package"]
                     , tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content
-                    , t <- T.splitOn "." tail'
+                    , t <- T.splitOn "." (T.strip tail')
                     ]
+              mapM_ (`toAttr` doc) pckg
               if bareRoot o
                 then
                   if null pckg
