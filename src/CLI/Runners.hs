@@ -374,6 +374,7 @@ runMerge OptsMerge{..} = do
 
 runMatch :: OptsMatch -> IO ()
 runMatch OptsMatch{..} = do
+  when (isJust _when && isNothing _pattern) (invalidCLIArguments "The option --when requires --pattern, since there is nothing to check it against")
   setStdGen (mkStdGen _seed)
   input <- readInput _inputFile
   expr <- parseInput input PHI
