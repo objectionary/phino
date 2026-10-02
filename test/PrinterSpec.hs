@@ -67,6 +67,17 @@ spec = do
             parseExpression (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)) `shouldBe` Right expr
       )
 
+  describe "printExpression writes data with meta bytes in full instead of crashing" $
+    forM_
+      [ ("a number, sweet", DataNumber (BtMeta "d1"), SWEET)
+      , ("a number, salty", DataNumber (BtMeta "d1"), SALTY)
+      , ("a string, sweet", DataString (BtMeta "d1"), SWEET)
+      , ("a string, salty", DataString (BtMeta "d1"), SALTY)
+      ]
+      ( \(desc, expr, sugar) ->
+          it desc (printExpression' expr (sugar, UNICODE, SINGLELINE, defaultMargin) `shouldContain` "𝛿1")
+      )
+
   describe "printExpression with SWEET UNICODE renders the pretty function meta" $
     it "meta lambda becomes 𝑓" $
       printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "𝑓:λ"
