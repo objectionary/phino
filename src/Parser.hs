@@ -74,7 +74,7 @@ symbol = L.symbol whiteSpace
 label' :: Parser T.Text
 label' = lexeme $ do
   first <- oneOf ['a' .. 'z']
-  rest <- many (satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦") <?> "allowed character")
+  rest <- many (choice [try (char '-' <* notFollowedBy (char '>')), satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦-↦⤍>\"ξΦ⊥")] <?> "allowed character")
   return (T.pack (first : rest))
 
 function :: Parser String
