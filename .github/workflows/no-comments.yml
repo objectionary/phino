@@ -13,7 +13,7 @@ name: no-comments
 jobs:
   no-comments:
     timeout-minutes: 15
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - run: git ls-files -z '*.hs' | xargs -0 python3 .github/scripts/no-comments.py

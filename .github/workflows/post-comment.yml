@@ -11,7 +11,7 @@ name: post-comment
 jobs:
   post-comment:
     timeout-minutes: 15
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       pull-requests: write
       actions: read
