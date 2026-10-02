@@ -25,7 +25,8 @@ import AST
 import Control.Exception (Exception, throwIO)
 import Control.Monad (void)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object), withObject, (.!=), (.:), (.:?))
-import Data.List (find)
+import Data.Char (isDigit)
+import Data.List (find, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
@@ -89,7 +90,7 @@ instance FromJSON Lambda where
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
       operands key kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Expression)
-        mapM bound (Map.toAscList mapping)
+        mapM bound (numbered mapping)
         where
           bound :: (Text, Expression) -> Yaml.Parser (Meta, Expression)
           bound (meta, term) = do
@@ -106,7 +107,7 @@ instance FromJSON Lambda where
       pairs :: String -> Object -> Yaml.Parser [(Meta, (Meta, Meta))]
       pairs key entry = do
         mapping <- entry .:? "join" .!= (Map.empty :: Map Text [Text])
-        mapM joins (Map.toAscList mapping)
+        mapM joins (numbered mapping)
         where
           joins :: (Text, [Text]) -> Yaml.Parser (Meta, (Meta, Meta))
           joins (meta, [left, right]) = do
@@ -123,7 +124,7 @@ instance FromJSON Lambda where
       rewrites :: String -> Object -> Yaml.Parser [(Meta, (Meta, [Y.Rule]))]
       rewrites key entry = do
         mapping <- entry .:? "rewrite" .!= (Map.empty :: Map Text Object)
-        mapM line (Map.toAscList mapping)
+        mapM line (numbered mapping)
         where
           line :: (Text, Object) -> Yaml.Parser (Meta, (Meta, [Y.Rule]))
           line (meta, body) = do
@@ -210,6 +211,14 @@ instance FromJSON Lambda where
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
         | otherwise = pure ()
+
+numbered :: Map Text a -> [(Text, a)]
+numbered = sortOn (order . fst) . Map.toList
+  where
+    order :: Text -> (Text, Integer)
+    order meta = case T.takeWhileEnd isDigit meta of
+      digits | T.null digits -> (meta, 0)
+      digits -> (T.dropWhileEnd isDigit meta, read (T.unpack digits))
 
 computes :: Expression -> Bool
 computes = goExpr

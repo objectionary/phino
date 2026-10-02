@@ -67,6 +67,14 @@ spec = do
       known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿2: $.x\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       map (_spelling . fst) (maybe [] _dataized (matched known "L_pair")) `shouldBe` ["𝛿1", "𝛿2"]
 
+    it "reads the operands of 'dataize' in numeric order past nine" $ do
+      known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿10: $.b\n    𝛿9: $.a\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+      map (_spelling . fst) (maybe [] _dataized (matched known "L_pair")) `shouldBe` ["𝛿1", "𝛿9", "𝛿10"]
+
+    it "reads a 'symbolize' line that stands the term of line nine as line ten" $ do
+      known <- lambdasOf "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛9: 𝑛1\n    𝑛10: 𝑛9\n  𝑛: 𝑛10\n"
+      map (_spelling . fst) (maybe [] _symbolized (matched known "L_pair")) `shouldBe` ["𝑛9", "𝑛10"]
+
     it "reads a meta under both the name it is spelled with and the name it binds" $ do
       known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       map (_name . fst) (maybe [] _dataized (matched known "L_pair")) `shouldBe` ["d1"]
