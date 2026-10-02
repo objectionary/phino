@@ -143,7 +143,9 @@ expression (DataString bytes) XmirContext{..} =
               , bts
               ]
         )
-expression app@(ExApplication _ (ArTau AtRho _)) _ = throwIO (UnsupportedExpression app)
+expression app@(ExApplication expr (ArTau AtRho _)) ctx@XmirContext{..}
+  | _hideRho = expression expr ctx
+  | otherwise = throwIO (UnsupportedExpression app)
 expression (ExApplication expr arg) ctx = do
   (base, children) <- expression expr ctx
   (base', children') <- expression texpr ctx

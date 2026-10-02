@@ -246,13 +246,17 @@ spec = do
       )
         `shouldReturn` M.fromList [("Foo", "?")]
 
-  describe "--hide-rho in XMIR" $
+  describe "--hide-rho in XMIR" $ do
     it "drops every bound ρ from the printed document" $ do
       expr <- parseExpressionThrows "[[ x -> 4, ^ -> [[ y -> 5 ]] ]]"
       doc <- expressionToXMIR expr (XmirContext True False True (const "") M.empty)
       let printed = printXMIR doc
       printed `shouldContain` "name=\"x\""
       printed `shouldNotContain` "name=\"ρ\""
+    it "drops an application argument bound to ρ instead of refusing it" $ do
+      expr <- parseExpressionThrows "[[ m -> Q.a(^ -> [[]]) ]]"
+      doc <- expressionToXMIR expr (XmirContext True False True (const "") M.empty)
+      printXMIR doc `shouldContain` "base=\"Φ.a\""
 
   describe "prohibit to convert to XMIR" $
     forM_
