@@ -30,9 +30,9 @@ import Control.Monad (unless)
 import Data.Bifunctor (bimap)
 import Data.Char (isAsciiLower, isDigit)
 import Data.Foldable (foldlM)
-import Data.List (groupBy, intercalate)
+import Data.List (find, groupBy, intercalate, nub)
 import qualified Data.Map as M
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
@@ -423,6 +423,7 @@ strayNodes doc = filter bad (map C.node (C.child doc))
 xmirToPhi :: Document -> IO Expression
 xmirToPhi xmir =
   let doc = C.fromDocument xmir
+      derived = derivedNames xmir
    in case C.node doc of
         NodeElement el
           | nameLocalName (elementName el) == "object" -> do
@@ -442,15 +443,15 @@ xmirToPhi xmir =
               if bareRoot o
                 then
                   if null pckg
-                    then xmirToFormation o []
+                    then xmirToFormation derived o []
                     else throwIO (InvalidXMIRFormat "A <object> with <metas> package must hold a named <o>" doc)
                 else
                   if null pckg
                     then do
-                      bd <- xmirToFormationBinding o []
+                      bd <- xmirToFormationBinding derived o []
                       pure (ExFormation [bd])
                     else do
-                      obj <- xmirToFormationBinding o []
+                      obj <- xmirToFormationBinding derived o []
                       let bd = foldr (\part acc -> BiTau (AtLabel (T.pack part)) (ExFormation [acc, BiLambda (Function "Package")])) obj pckg
                       pure (ExFormation [bd])
           | otherwise -> throwIO (InvalidXMIRFormat "Expected single <object> element" doc)
@@ -459,17 +460,17 @@ xmirToPhi xmir =
 bareRoot :: C.Cursor -> Bool
 bareRoot o = not (any (`hasAttr` o) ["name", "base", "as"])
 
-xmirToFormationBinding :: C.Cursor -> [String] -> IO Binding
-xmirToFormationBinding cur fqn
+xmirToFormationBinding :: Derived -> C.Cursor -> [String] -> IO Binding
+xmirToFormationBinding derived cur fqn
   | not (hasAttr "name" cur) = throwIO (InvalidXMIRFormat "Formation children must have @name attribute" cur)
   | not (hasAttr "base" cur) = do
       name <- getAttr "name" cur
       case name of
-        "λ" -> BiLambda . Function <$> lambdaName cur fqn
+        "λ" -> BiLambda . Function <$> lambdaName derived cur fqn
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
-        "φ" -> BiTau AtPhi <$> xmirToFormation cur (name : fqn)
-        "ρ" -> BiTau AtRho <$> xmirToFormation cur (name : fqn)
-        _ -> BiTau (AtLabel (T.pack name)) <$> xmirToFormation cur (name : fqn)
+        "φ" -> BiTau AtPhi <$> xmirToFormation derived cur (name : fqn)
+        "ρ" -> BiTau AtRho <$> xmirToFormation derived cur (name : fqn)
+        _ -> BiTau (AtLabel (T.pack name)) <$> xmirToFormation derived cur (name : fqn)
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
@@ -481,16 +482,48 @@ xmirToFormationBinding cur fqn
       case base of
         "∅" -> pure (BiVoid attr)
         _ -> do
-          expr <- xmirToExpression cur fqn
+          expr <- xmirToExpression derived cur fqn
           pure (BiTau attr expr)
 
-lambdaName :: C.Cursor -> [String] -> IO T.Text
-lambdaName cur fqn
+type Derived = M.Map [String] T.Text
+
+lambdaName :: Derived -> C.Cursor -> [String] -> IO T.Text
+lambdaName derived cur fqn
   | hasText cur = T.strip . T.pack <$> getText cur
-  | otherwise = pure (T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn))))
+  | otherwise = pure (M.findWithDefault (spelled fqn) fqn derived)
+
+spelled :: [String] -> T.Text
+spelled fqn = T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn)))
   where
     spell :: Char -> Char
     spell ch = if isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ' then ch else '_'
+
+derivedNames :: Document -> Derived
+derivedNames xmir = snd (foldl assign ([], M.empty) paths)
+  where
+    paths :: [[String]]
+    paths =
+      nub
+        [ lambdaPath cur
+        | cur <- C.fromDocument xmir C.$// C.element (toName "o") C.>=> C.attributeIs (toName "name") "λ"
+        , not (hasText cur)
+        ]
+    bases :: [T.Text]
+    bases = map spelled paths
+    assign :: ([T.Text], Derived) -> [String] -> ([T.Text], Derived)
+    assign (used, names) path =
+      let base = spelled path
+          name = fromMaybe base (find (\candidate -> candidate `notElem` used && (candidate == base || candidate `notElem` bases)) (base : [base <> T.pack ('_' : show n) | n <- [2 :: Int ..]]))
+       in (name : used, M.insert path name names)
+
+lambdaPath :: C.Cursor -> [String]
+lambdaPath cur =
+  [ T.unpack label
+  | enclosing <- cur C.$| (C.ancestor C.>=> C.element (toName "o"))
+  , not (hasAttr "base" enclosing)
+  , not (hasAttr "as" enclosing)
+  , label <- C.attribute (toName "name") enclosing
+  ]
 
 xmirAtoms :: Document -> IO Atoms
 xmirAtoms xmir = M.fromList <$> mapM entry markers
@@ -501,36 +534,30 @@ xmirAtoms xmir = M.fromList <$> mapM entry markers
         C.$// C.element (toName "o")
         C.>=> C.attributeIs (toName "name") "λ"
         C.>=> C.check (hasAttr "atom")
+    derived :: Derived
+    derived = derivedNames xmir
     entry :: C.Cursor -> IO (T.Text, String)
     entry cur = do
-      name <- lambdaName cur (locator cur)
+      name <- lambdaName derived cur (lambdaPath cur)
       atom <- getAttr "atom" cur
       pure (name, atom)
-    locator :: C.Cursor -> [String]
-    locator cur =
-      [ T.unpack label
-      | enclosing <- cur C.$| (C.ancestor C.>=> C.element (toName "o"))
-      , not (hasAttr "base" enclosing)
-      , not (hasAttr "as" enclosing)
-      , label <- C.attribute (toName "name") enclosing
-      ]
 
-xmirToFormation :: C.Cursor -> [String] -> IO Expression
-xmirToFormation cur fqn = do
+xmirToFormation :: Derived -> C.Cursor -> [String] -> IO Expression
+xmirToFormation derived cur fqn = do
   bds <- concat <$> mapM binding (groupBy (\left right -> not (nested left) && not (nested right)) (C.child cur))
   ExFormation <$> uniqueBindings' bds
   where
     nested :: C.Cursor -> Bool
     nested node = not (null (C.element (toName "o") node))
     binding :: [C.Cursor] -> IO [Binding]
-    binding [node] | nested node = pure <$> xmirToFormationBinding node fqn
+    binding [node] | nested node = pure <$> xmirToFormationBinding derived node fqn
     binding nodes = pure [BiDelta (bytesToBts (T.unpack text)) | not (T.null text)]
       where
         text :: T.Text
         text = T.strip (T.concat [content | NodeContent content <- map C.node nodes])
 
-xmirToExpression :: C.Cursor -> [String] -> IO Expression
-xmirToExpression cur fqn
+xmirToExpression :: Derived -> C.Cursor -> [String] -> IO Expression
+xmirToExpression derived cur fqn
   | hasAttr "base" cur = do
       base <- getAttr "base" cur
       case base of
@@ -542,10 +569,10 @@ xmirToExpression cur fqn
                in case args of
                     [] -> throwIO (InvalidXMIRFormat (printf "Element with @base='%s' must have at least one child" base) cur)
                     arg : args' -> do
-                      expr <- xmirToExpression arg fqn
+                      expr <- xmirToExpression derived arg fqn
                       attr <- toAttr rest cur
                       let disp = ExDispatch expr attr
-                      xmirToApplication disp args' fqn
+                      xmirToApplication derived disp args' fqn
         "ξ" ->
           if null (cur C.$/ C.element (toName "o"))
             then pure ExXi
@@ -554,12 +581,12 @@ xmirToExpression cur fqn
           if null (cur C.$/ C.element (toName "o"))
             then pure ExRoot
             else throwIO (InvalidXMIRFormat "Application of 'Φ' is illegal in XMIR" cur)
-        "⊥" -> xmirToApplication ExTermination (cur C.$/ C.element (toName "o")) fqn
+        "⊥" -> xmirToApplication derived ExTermination (cur C.$/ C.element (toName "o")) fqn
         '⊥' : '.' : rest -> xmirToExpression' ExTermination "⊥" rest cur fqn
         'Φ' : '.' : rest -> xmirToExpression' ExRoot "Φ" rest cur fqn
         'ξ' : '.' : rest -> xmirToExpression' ExXi "ξ" rest cur fqn
         _ -> throwIO (InvalidXMIRFormat "The @base attribute must be either ['∅'|'Φ'] or start with ['Φ.'|'ξ.'|'.']" cur)
-  | otherwise = xmirToFormation cur fqn
+  | otherwise = xmirToFormation derived cur fqn
   where
     xmirToExpression' :: Expression -> String -> String -> C.Cursor -> [String] -> IO Expression
     xmirToExpression' start symbol rst c names =
@@ -571,10 +598,10 @@ xmirToExpression cur fqn
               (\acc part -> ExDispatch acc <$> toAttr (T.unpack part) c)
               start
               (T.splitOn "." (T.pack rst))
-          xmirToApplication head' (c C.$/ C.element (toName "o")) names
+          xmirToApplication derived head' (c C.$/ C.element (toName "o")) names
 
-xmirToApplication :: Expression -> [C.Cursor] -> [String] -> IO Expression
-xmirToApplication = xmirToApplication' 0
+xmirToApplication :: Derived -> Expression -> [C.Cursor] -> [String] -> IO Expression
+xmirToApplication derived = xmirToApplication' 0
   where
     xmirToApplication' :: Int -> Expression -> [C.Cursor] -> [String] -> IO Expression
     xmirToApplication' _ expr [] _ = pure expr
@@ -583,7 +610,7 @@ xmirToApplication = xmirToApplication' 0
             | hasAttr "name" arg = throwIO (InvalidXMIRFormat "Application argument can't have @name attribute" arg)
             | hasAttr "base" arg && hasText arg = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" arg)
             | not (hasAttr "base" arg) && not (hasText arg) = do
-                bds <- mapM (`xmirToFormationBinding` fqn) (arg C.$/ C.element (toName "o"))
+                bds <- mapM (\node -> xmirToFormationBinding derived node fqn) (arg C.$/ C.element (toName "o"))
                 key <- asToKey arg idx
                 pure (ExApplication expr (mkArg key (ExFormation bds)))
             | not (hasAttr "base" arg) && hasText arg = do
@@ -592,7 +619,7 @@ xmirToApplication = xmirToApplication' 0
                 pure (ExApplication expr (mkArg key (ExFormation [BiDelta (bytesToBts bytes)])))
             | otherwise = do
                 key <- asToKey arg idx
-                arg' <- xmirToExpression arg fqn
+                arg' <- xmirToExpression derived arg fqn
                 pure (ExApplication expr (mkArg key arg'))
       app' <- app
       xmirToApplication' (idx + 1) app' args fqn
