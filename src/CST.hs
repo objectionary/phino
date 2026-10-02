@@ -377,27 +377,27 @@ instance ToCST Expression EXPRESSION where
                   (TAB tabs)
                   next
               else
-            if null exs
-              then
-                EX_APPLICATION
-                  ex'
-                  NO_SPACE
-                  eol
-                  (TAB next)
-                  (AA_TAUS (toCST ts (next, eol) :: BINDING))
-                  eol
-                  (TAB tabs)
-                  next
-              else
-                EX_APPLICATION
-                  ex'
-                  NO_SPACE
-                  eol
-                  (TAB next)
-                  (AA_EXPRS (toCST exs (next, eol)))
-                  eol
-                  (TAB tabs)
-                  next
+                if null exs
+                  then
+                    EX_APPLICATION
+                      ex'
+                      NO_SPACE
+                      eol
+                      (TAB next)
+                      (AA_TAUS (toCST ts (next, eol) :: BINDING))
+                      eol
+                      (TAB tabs)
+                      next
+                  else
+                    EX_APPLICATION
+                      ex'
+                      NO_SPACE
+                      eol
+                      (TAB next)
+                      (AA_EXPRS (toCST exs (next, eol)))
+                      eol
+                      (TAB tabs)
+                      next
     where
       primitives :: [T.Text]
       primitives = ["number", "string"]
