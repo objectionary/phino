@@ -80,6 +80,12 @@ spec = describe "Functions" $ do
     it "extracts bytes from a data-object expression" $ do
       term <- buildTerm "dataize" [ArgExpression (DataNumber (numToBts 5))] substEmpty
       expectBytes term (numToBts 5)
+    it "extracts bytes from a bare formation of data" $ do
+      term <- buildTerm "dataize" [ArgExpression (ExFormation [BiDelta (numToBts 1)])] substEmpty
+      expectBytes term (numToBts 1)
+    it "extracts bytes from an application of Φ.bytes" $ do
+      term <- buildTerm "dataize" [ArgExpression (ExApplication (ExDispatch ExRoot (AtLabel "bytes")) (ArTau AtPhi (ExFormation [BiDelta (numToBts 1)])))] substEmpty
+      expectBytes term (numToBts 1)
 
   describe "size" $
     it "counts the bindings bound to a meta" $ do
