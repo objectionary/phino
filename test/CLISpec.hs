@@ -246,6 +246,16 @@ spec = do
               testCLISucceeded ["rewrite", "--log-level=" ++ flagValue] ["⟧"]
       )
 
+  describe "--log-level prints nothing below its level" $
+    forM_
+      [("NONE", ["[DEBUG]", "[INFO]"]), ("ERROR", ["[DEBUG]", "[INFO]"]), ("INFO", ["[DEBUG]"])]
+      ( \(level, hidden) ->
+          it ("--log-level=" ++ level) $
+            withStdin "[[]]" $ do
+              (out, _) <- withStdout (try (runCLI ["rewrite", "--log-level=" ++ level]) :: IO (Either ExitCode ()))
+              forM_ hidden (out `shouldNotContain`)
+      )
+
   it "fails on an unrecognized --log-level value" $
     withStdin "[[]]" $
       testCLIFailed ["rewrite", "--log-level=verbose"] ["unknown log-level: verbose"]
