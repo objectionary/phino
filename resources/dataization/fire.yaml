@@ -5,6 +5,10 @@ name: fire
 match: ⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧
 universe: 𝑒1
 conclusion: 𝛿1
+when:
+  disjoint:
+    - [Δ]
+    - [𝐵1, 𝐵2]
 premises:
   - n-result: 𝑛1
     evaluate:

@@ -6,3 +6,7 @@ label: \Delta
 match: ⟦𝐵1, Δ ⤍ 𝛿1, 𝐵2⟧
 universe: 𝑒1
 conclusion: 𝛿1
+when:
+  disjoint:
+    - [λ]
+    - [𝐵1, 𝐵2]
