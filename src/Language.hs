@@ -134,8 +134,8 @@ language key = do
     collect done ('\\' : rest) = do
       (span', left) <- escape rest
       case (span', left) of
-        (Span [(low, single)], '-' : high : after)
-          | low == single && high /= ']' -> ranged done low (high : after)
+        (Span [(low, top)], '-' : high : after)
+          | low == top && high /= ']' -> ranged done low (high : after)
         _ -> collect (span' : done) left
     collect done (low : '-' : high : rest)
       | high /= ']' = ranged done low (high : rest)
