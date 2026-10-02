@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: ghc
+description: Set up GHC and Cabal, restoring GHC from the cache so that ghcup does not install it again in every job
+inputs:
+  ghc-version:
+    description: The version of GHC to set up
+    required: true
+  cabal-version:
+    description: The version of Cabal to set up
+    required: true
+outputs:
+  cabal-store:
+    description: The folder of the Cabal store
+    value: ${{ steps.setup.outputs.cabal-store }}
+runs:
+  using: composite
+  steps:
+    - id: place
+      shell: bash
+      env:
+        GHC_VERSION: ${{ inputs.ghc-version }}
+      run: |
+        if [ "$RUNNER_OS" = Windows ]; then
+          root=C:/ghcup
+        else
+          root="${GHCUP_INSTALL_BASE_PREFIX:-$HOME}/.ghcup"
+        fi
+        echo "path=$root/ghc/$GHC_VERSION" >> "$GITHUB_OUTPUT"
+        echo "image=$ImageOS" >> "$GITHUB_OUTPUT"
+    - uses: actions/cache@v6
+      with:
+        path: ${{ steps.place.outputs.path }}
+        key: ghc-${{ steps.place.outputs.image }}-${{ runner.arch }}-${{ inputs.ghc-version }}
+    - id: setup
+      uses: haskell-actions/setup@v2.12.1
+      with:
+        ghc-version: ${{ inputs.ghc-version }}
+        cabal-version: ${{ inputs.cabal-version }}

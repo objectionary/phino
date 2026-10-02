@@ -26,7 +26,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: setup
-        uses: haskell-actions/setup@v2.12.1
+        uses: ./.github/actions/ghc
         with:
           ghc-version: ${{ env.GHC_VERSION }}
           cabal-version: ${{ env.CABAL_VERSION }}
