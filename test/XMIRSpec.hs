@@ -205,6 +205,8 @@ spec = do
       [ "[[ x -> ? ]]"
       , "[[ ^ -> 5 ]]"
       , "[[ x -> 4, L> L_number_plus, ^ -> [[ y -> 5 ]] ]]"
+      , "[[ a -> T ]]"
+      , "[[ a -> $ ]]"
       ]
       ( \phi' -> it phi' $ do
           expr <- parseExpressionThrows phi'
