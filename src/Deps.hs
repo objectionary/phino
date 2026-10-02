@@ -376,8 +376,8 @@ saveEvalXml handle cursor render report = do
           form <- render (standing symbol)
           pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText form))
         stood (Right bytes) = do
-          value <- render (ExBytes bytes)
-          pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText value))
+          form <- render (ExBytes bytes)
+          pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText form))
     elements (EvTerm depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
