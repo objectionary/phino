@@ -76,7 +76,7 @@ runRewrite OptsRewrite{..} = do
   save <- saveStepFunc _stepsDir printCtx included excluded
   let steps = map (stepOf linked) rules
   (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save)
-  rewrittens' <- exclude <$> include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
+  rewrittens' <- include (if _sequence then NE.toList rewrittens else [NE.last rewrittens]) >>= exclude
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
   output _targetFile exprs
@@ -185,8 +185,8 @@ runDataize OptsDataize{..} = do
           heading record printCtx Dataization aiming._locator
           dataize universe (started universe) aiming
       )
-  when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (\residue -> (`F.exclude'` excluded) <$> F.include' residue included) outcome >>= putStrLn)
+  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
+  unless _quiet (printOutcome printCtx (\residue -> F.include' residue included >>= (`F.exclude'` excluded)) outcome >>= putStrLn)
   where
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
@@ -264,9 +264,9 @@ runMorph OptsMorph{..} = do
           heading record printCtx Morphing aiming._locator
           morph universe (started universe) aiming
       )
-  when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
+  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
   unless _quiet $ do
-    answer <- (`F.exclude'` excluded) <$> F.include' morphed included
+    answer <- F.include' morphed included >>= (`F.exclude'` excluded)
     validateXmirTopLevel _outputFormat answer
     printAnswer printCtx answer >>= putStrLn
   where

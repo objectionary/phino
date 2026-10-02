@@ -63,8 +63,8 @@ saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
         | _outputFormat == LATEX = "tex"
         | otherwise = show _outputFormat
       render expr = do
-        shown <- F.include' expr included
-        printInFormat ctx ((if _canonize then canonizeExpr else id) (F.exclude' shown excluded))
+        shown <- F.include' expr included >>= (`F.exclude'` excluded)
+        printInFormat ctx ((if _canonize then canonizeExpr else id) shown)
       save :: SaveStepFunc
       save expr = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))
