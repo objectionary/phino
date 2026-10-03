@@ -921,7 +921,7 @@ spec = do
       withStdin "[[ app -> [[]] ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat"]
-          ["  <listing>[[ app -> [[]] ]]</listing>"]
+          ["  <listing>[[ app -&gt; [[]] ]]</listing>"]
 
     it "print expression in listing in XMIRs with --sequence" $
       withStdin "[[ x -> \"foo\" ]]" $
