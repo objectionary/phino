@@ -10,6 +10,7 @@ name: copyrights
   pull_request:
     branches:
       - master
+permissions: read-all
 jobs:
   copyrights:
     timeout-minutes: 15

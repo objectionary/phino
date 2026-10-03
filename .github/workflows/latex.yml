@@ -10,6 +10,7 @@ name: latex
   pull_request:
     branches:
       - master
+permissions: read-all
 jobs:
   cabal:
     runs-on: ubuntu-24.04

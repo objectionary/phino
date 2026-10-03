@@ -10,6 +10,7 @@ name: Release binary to S3
   push:
     tags:
       - '*'
+permissions: read-all
 jobs:
   build-and-release:
     strategy:

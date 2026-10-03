@@ -10,6 +10,7 @@ name: typos
   pull_request:
     branches:
       - master
+permissions: read-all
 jobs:
   typos:
     timeout-minutes: 15

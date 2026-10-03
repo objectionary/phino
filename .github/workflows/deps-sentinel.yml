@@ -6,6 +6,7 @@ name: deps-sentinel
 'on':
   schedule:
     - cron: '0 * * * *'
+permissions: read-all
 jobs:
   merge:
     timeout-minutes: 15

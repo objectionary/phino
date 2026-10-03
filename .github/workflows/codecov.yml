@@ -7,6 +7,7 @@ name: codecov
   push:
     branches:
       - master
+permissions: read-all
 jobs:
   codecov:
     runs-on: macos-26

@@ -7,6 +7,7 @@ name: jeo-update
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
+permissions: read-all
 jobs:
   update:
     runs-on: ubuntu-24.04

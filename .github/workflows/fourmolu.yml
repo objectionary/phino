@@ -9,6 +9,7 @@ name: fourmolu
   push:
     branches:
       - master
+permissions: read-all
 jobs:
   fourmolu:
     runs-on: ubuntu-24.04

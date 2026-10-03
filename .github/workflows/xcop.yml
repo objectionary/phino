@@ -24,6 +24,7 @@ name: xcop
       - '**.html'
       - '**.xsd'
       - '.github/workflows/xcop.yml'
+permissions: read-all
 jobs:
   xcop:
     timeout-minutes: 15
