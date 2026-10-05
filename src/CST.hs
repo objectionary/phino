@@ -263,6 +263,8 @@ expressionToCSTFrom :: Int -> Expression -> EXPRESSION
 expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
 
 sweetNumber :: Bytes -> Bool
+sweetNumber (BtMeta _) = False
+sweetNumber (BtAny _) = False
 sweetNumber bts
   | btsSize bts /= 8 = False
 sweetNumber bts = case btsToNum bts of
@@ -270,7 +272,9 @@ sweetNumber bts = case btsToNum bts of
   _ -> True
 
 sweetString :: Bytes -> Bool
-sweetString = btsIsUtf8
+sweetString (BtMeta _) = False
+sweetString (BtAny _) = False
+sweetString bts = btsIsUtf8 bts
 
 sweetCollapsible :: Expression -> Bool
 sweetCollapsible (DataNumber bts) = sweetNumber bts
