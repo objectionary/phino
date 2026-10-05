@@ -365,6 +365,22 @@ binding minted by what the bindings before it minted (`lifted` in `AST.hs`,
 the order the workers finished in (#1534). The executable is built
 `-threaded` and the run sets as many capabilities as it has jobs.
 
+A cut at the φ of a copy the walk placed answers the copy, the way a deferred
+one is answered (#1735). The firing the walk asks for writes no cut of its
+own: `fired` asks `admitted`, which is `enter` without the record and the
+throw, and throws `Refused` with the mode, the formation the ancestor entered
+and the state. The step that fired catches it (`cut` of `deepened`). If the
+step walks the φ of a formation at a place of the walk (its `standing` is
+given) and the formation is `copied`, the shape `deferrable` asks for too, the
+step writes `looped(…)` with a fresh symbol and the call `called` makes of the
+copy. It then throws `Severed` with the bare symbol, which the step of the copy
+catches around its walk and answers with. Any other step writes the plain
+record and answers nothing, as `refused` does for the second firing of
+`fired`. Under `--jobs` a worker hands `Severed` to `gathered`, which raises
+its symbols as it raises an answer. The markup writes the formation of a cut
+in `<e>`, and for an answered one `of` and `<with>` as for `deferred`, where
+an argument whose φ chain ends in a symbol is spelled as that symbol.
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at

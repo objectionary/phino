@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -12,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, parking, recalled, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Refused (..), Steps (..), Tally (..), admitted, boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, pathOf)
@@ -153,6 +152,18 @@ instance Show ReduceException where
   show (Undataizable _ _) = "no dataization rule matched"
   show (Unmorphable term) = printf "Morphing expects a normal form, but no morphing rule matches: %s" (printExpression term)
 
+data Refused = Refused Acyclic Expression State
+  deriving anyclass (Exception)
+
+instance Show Refused where
+  show (Refused _ before _) = show (Looping before)
+
+data Severed = Severed Expression State
+  deriving anyclass (Exception)
+
+instance Show Severed where
+  show (Severed answer _) = printf "The deep walk answered a copy it cut with %s" (printExpression answer)
+
 deeper :: ReduceContext -> IO ReduceContext
 deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   clocked ctx
@@ -270,15 +281,20 @@ entering :: Expression -> ReduceContext -> IO ReduceContext
 entering term ctx = maybe (pure ctx) (`enter` ctx) (entrance ctx._judgment term)
 
 enter :: Expression -> ReduceContext -> IO ReduceContext
-enter form ctx = maybe (pure ctx) remembered ctx._acyclic
+enter form ctx = admitted form ctx >>= either refuse pure
   where
-    remembered :: Acyclic -> IO ReduceContext
+    refuse :: (Acyclic, Expression) -> IO ReduceContext
+    refuse (mode, before) = do
+      looped ctx mode before Nothing
+      throwIO (Looping form)
+
+admitted :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) ReduceContext)
+admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
+  where
+    remembered :: Acyclic -> IO (Either (Acyclic, Expression) ReduceContext)
     remembered mode =
-      awaited (find (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered)) >>= \case
-        Just before -> do
-          ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
-          throwIO (Looping form)
-        Nothing -> pure ctx{_entered = seenInsert (digest mode form) form ctx._entered}
+      maybe (Right ctx{_entered = seenInsert (digest mode form) form ctx._entered}) (Left . (mode,))
+        <$> awaited (find (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered))
     awaited :: Maybe Expression -> IO (Maybe Expression)
     awaited found = case ctx._deadline of
       Nothing -> pure found
@@ -291,6 +307,12 @@ enter form ctx = maybe (pure ctx) remembered ctx._acyclic
     repeated :: Acyclic -> Expression -> Expression -> Bool
     repeated Proven form before = alike form before
     repeated Plausible form before = within before form
+
+refused :: ReduceContext -> Refused -> IO (Maybe Expression, State)
+refused ctx (Refused mode before reached) = (Nothing, reached) <$ looped ctx mode before Nothing
+
+looped :: ReduceContext -> Acyclic -> Expression -> Maybe (Int, Maybe Expression) -> IO ()
+looped ctx mode before answer = ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site answer)
 
 entrance :: Judgment -> Expression -> Maybe Expression
 entrance Dataization term@(ExFormation bds)
@@ -404,15 +426,33 @@ deepened focus expr univ state ctx = do
       case copy of
         Just form -> deferred form state' here
         Nothing -> do
-          (walked, walkedState) <- walk standing frame term state' here
-          placed <- ctx._engine._contextualize walked =<< context frame
-          current <- readIORef world
-          (answer, answered) <- ctx'._fire dispatched placed current walkedState ctx'{_universe = Just current}
-          mapM_ (noted here._site frame walked) answer
-          pure (fromMaybe walked answer, answered)
+          outcome <- try (walk standing frame term state' here)
+          case outcome of
+            Left (Severed answer reached) -> pure (answer, reached)
+            Right (walked, walkedState) -> do
+              placed <- ctx._engine._contextualize walked =<< context frame
+              current <- readIORef world
+              (answer, answered) <- ctx'._fire dispatched placed current walkedState ctx'{_universe = Just current} `catch` cut standing frame ctx'
+              mapM_ (noted here._site frame walked) answer
+              pure (fromMaybe walked answer, answered)
+    cut :: Maybe Expression -> Frame -> ReduceContext -> Refused -> IO (Maybe Expression, State)
+    cut (Just _) (Frame _ store path (Just AtPhi)) caller refusal@(Refused mode before reached) = do
+      form <- held path store
+      if copied form
+        then do
+          looped caller mode before (Just (fresh, called form))
+          throwIO (Severed (ExFormation [BiLambda (FnSymbol fresh)]) reached{_minted = fresh})
+        else refused caller refusal
+      where
+        fresh :: Int
+        fresh = reached._minted + 1
+    cut _ _ caller refusal = refused caller refusal
+    copied :: Expression -> Bool
+    copied (ExFormation bds) = boxed bds && not (any abstract bds) && any code bds
+    copied _ = False
     deferrable :: Maybe Attribute -> IORef Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression)
     deferrable dispatched world form@(ExFormation bds) state' caller
-      | boxed bds && not (any abstract bds) && any code bds && maybe True (\attr -> not (any (named attr) bds)) dispatched = do
+      | copied form && maybe True (\attr -> not (any (named attr) bds)) dispatched = do
           current <- readIORef world
           known <- mapM (resolved current form state' caller) bds
           pure (if any bare known then Just (ExFormation known) else Nothing)
@@ -518,15 +558,15 @@ deepened focus expr univ state ctx = do
       where
         floor' :: Int
         floor' = state'._minted
-        planned :: Maybe (Expression, [Attribute]) -> (Int, Binding) -> IO (IO ([Evaluation], Either SomeException (Int -> (Binding, Maybe State))))
+        planned :: Maybe (Expression, [Attribute]) -> (Int, Binding) -> IO (IO ([Evaluation], Either SomeException (Int -> IO (Binding, Maybe State))))
         planned alias (idx, BiTau attr body)
           | attr /= AtRho = do
               new <- if closed body then fresh alias attr caller else pure True
               pure (if new then worker idx attr body else kept (BiTau attr body))
         planned _ (_, bd) = pure (kept bd)
-        kept :: Binding -> IO ([Evaluation], Either SomeException (Int -> (Binding, Maybe State)))
-        kept bd = pure ([], Right (const (bd, Nothing)))
-        worker :: Int -> Attribute -> Expression -> IO ([Evaluation], Either SomeException (Int -> (Binding, Maybe State)))
+        kept :: Binding -> IO ([Evaluation], Either SomeException (Int -> IO (Binding, Maybe State)))
+        kept bd = pure ([], Right (const (pure (bd, Nothing))))
+        worker :: Int -> Attribute -> Expression -> IO ([Evaluation], Either SomeException (Int -> IO (Binding, Maybe State)))
         worker idx attr body = do
           buffer <- newIORef []
           tau <- tausOf idx
@@ -535,19 +575,21 @@ deepened focus expr univ state ctx = do
           copy <- newIORef =<< readIORef world
           (store, path) <- home standing copy form
           let own = caller{_jobs = 1, _tally = tally, _memo = memo, _saveEval = modifyIORef' buffer . (:), _buildTerm = minting tau caller._buildTerm}
-          outcome <- try (go (fmap (`ExDispatch` attr) standing) Nothing (Frame copy store path (Just attr)) body state' own)
+          outcome <- try (try (go (fmap (`ExDispatch` attr) standing) Nothing (Frame copy store path (Just attr)) body state' own))
           records <- reverse <$> readIORef buffer
-          pure (records, fmap (\(term, walked) offset -> (BiTau attr (lifted floor' offset term), Just (moved offset walked))) outcome)
+          pure (records, fmap (either severed (\(term, walked) offset -> pure (BiTau attr (lifted floor' offset term), Just (moved offset walked)))) outcome)
+        severed :: Severed -> Int -> IO (Binding, Maybe State)
+        severed (Severed answer reached) offset = throwIO (Severed (lifted floor' offset answer) (moved offset reached))
         moved :: Int -> State -> State
         moved offset walked =
           walked
             { _minted = walked._minted + offset
             , _manufactured = fmap (\sym -> if sym > floor' then sym + offset else sym) walked._manufactured
             }
-        gathered :: ([Binding], Int, State) -> ([Evaluation], Either SomeException (Int -> (Binding, Maybe State))) -> IO ([Binding], Int, State)
+        gathered :: ([Binding], Int, State) -> ([Evaluation], Either SomeException (Int -> IO (Binding, Maybe State))) -> IO ([Binding], Int, State)
         gathered (done, offset, current) (records, outcome) = do
           mapM_ (caller._saveEval . renumbered floor' offset) records
-          (bd, walked) <- either throwIO (pure . ($ offset)) outcome
+          (bd, walked) <- either throwIO ($ offset) outcome
           pure (bd : done, maybe offset (\after -> after._minted - floor') walked, fromMaybe current walked)
     spread standing frame term state' caller = parts standing frame term state' caller
     minting :: IO T.Text -> BuildTermFunc -> BuildTermFunc
