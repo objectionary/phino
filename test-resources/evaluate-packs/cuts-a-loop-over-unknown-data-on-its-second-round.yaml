@@ -6,7 +6,9 @@
 # '--acyclic=plausible'. The first round holds the number '0', the second holds
 # the symbol 'plus' answered in its place, and a symbol stands for a term that
 # holds no symbol of its own, so the fork of the second round is cut against
-# the fork of the first one rather than a round later (#1491).
+# the fork of the first one rather than a round later (#1491). The cut fork is
+# the φ of a copy of 'rec', so the cut answers that copy with a fresh symbol,
+# which the 'join' of the first fork pairs with the other branch (#1735).
 symbolic: |
   - λ: L_id
     morph:
@@ -84,12 +86,15 @@ protocol: |
         𝔼(L_plus)  # 𝕄(Φ.a🌵7.φ)
           𝑛.8.1 := Φ.num( φ ↦ 𝜎5:λ )  # 𝑛
           𝑛.8.2 := 𝑛.7.2  # 𝕄(𝑛.8.1)
-        looped(⟦ λ ⤍ L_fork, left ↦ Φ.num( φ ↦ 00-:Δ ), right ↦ ⟦ index ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, φ ↦ index.eq( ρ.size ).if( accum, ρ.rec( index ↦ index.plus( Φ.num( φ ↦ 01-:Δ ) ), accum ↦ accum.plus( Φ.num( φ ↦ 01-:Δ ) ) ) ) ⟧, φ ↦ 𝜎2:λ ⟧)  # 𝕄(Φ.a🌵7.φ), plausible
-        𝑛2.5 := ⟦ index ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, φ ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎4:λ ⟧ ):φ.if( accum, ρ.rec( index ↦ ⟦ φ ↦ 𝜎5:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎5:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧ ) ) ⟧  # 𝕄(ξ.right)
-        𝔻(𝜎6:λ) == 00-
-        𝑛3.5 := ⟦ φ ↦ 𝜎6:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧  # 𝑛1
-        𝑛4.5 := ⟦ index ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, φ ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎4:λ ⟧ ):φ.if( accum, ρ.rec( index ↦ ⟦ φ ↦ 𝜎5:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎5:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧ ) ) ⟧  # 𝑛2
-        stuck(L_fork)
-      𝑛1.1 := ⟦ index ↦ Φ.num( φ ↦ 00-:Δ ), accum ↦ Φ.num( φ ↦ 00-:Δ ), φ ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ):φ.if( accum, ρ.rec( index ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧ ) ) ⟧  # 𝕄(ξ.x.φ)
-      𝑛.1.1 := ⟦ index ↦ Φ.num( φ ↦ 00-:Δ ), accum ↦ Φ.num( φ ↦ 00-:Δ ), φ ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ):φ.if( accum, ρ.rec( index ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧ ) ) ⟧  # 𝑛
-      𝑛.1.2 := ⟦ index ↦ Φ.num( φ ↦ 00-:Δ ), accum ↦ Φ.num( φ ↦ 00-:Δ ), φ ↦ Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ):φ.if( accum, ρ.rec( index ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧ ) ) ⟧  # 𝕄(𝑛.1.1)
+        looped(⟦ λ ⤍ L_fork, left ↦ Φ.num( φ ↦ 00-:Δ ), right ↦ ⟦ index ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, accum ↦ ⟦ φ ↦ 𝜎3:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧, φ ↦ index.eq( ρ.size ).if( accum, ρ.rec( index ↦ index.plus( Φ.num( φ ↦ 01-:Δ ) ), accum ↦ accum.plus( Φ.num( φ ↦ 01-:Δ ) ) ) ) ⟧, φ ↦ 𝜎2:λ ⟧) := 𝜎6  # 𝕄(Φ.a🌵7.φ), plausible
+        𝑛2.5 := 𝜎6:λ  # 𝕄(ξ.right)
+        𝔻(𝜎7:λ) == 00-
+        𝑛3.5 := ⟦ φ ↦ 𝜎7:λ, plus(b) ↦ L_plus:λ, eq(b) ↦ L_eq:λ ⟧  # 𝑛1
+        𝑛4.5 := 𝑛2.5  # 𝑛2
+        𝔻(𝜎8:λ) ∈ { 𝔻(𝜎7:λ), 𝔻(𝜎6:λ) }
+        𝑛5.5 := 𝜎8:λ  # [𝑛3, 𝑛4]
+        𝑛.5.1 := 𝑛5.5  # 𝑛
+        𝑛.5.2 := 𝑛5.5  # 𝕄(𝑛.5.1)
+      𝑛1.1 := ⟦ index ↦ Φ.num( φ ↦ 00-:Δ ), accum ↦ Φ.num( φ ↦ 00-:Δ ), φ ↦ 𝜎8:λ ⟧  # 𝕄(ξ.x.φ)
+      𝑛.1.1 := 𝑛1.1  # 𝑛
+      𝑛.1.2 := 𝑛1.1  # 𝕄(𝑛.1.1)

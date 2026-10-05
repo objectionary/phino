@@ -9,7 +9,7 @@ module Evaluate (evaluation, fired) where
 
 import AST
 import Builder (buildExpressionThrows)
-import Control.Exception (throwIO, try)
+import Control.Exception (catch, throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -19,7 +19,7 @@ import Deps (Evaluation (..), State (..))
 import Engine (Engine (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, enter, isLambda, lambda, morphing, normalized, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Refused (..), Steps (..), admitted, charged, counted, deeper, isLambda, lambda, morphing, normalized, recalled, refused, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -114,7 +114,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (snd answer, state)
     told (Looped term) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
-      mapM_ (\mode -> caller._saveEval (EvLooped (caller._nesting + 1) caller._judgment mode term caller._site)) caller._acyclic
+      mapM_ (\mode -> caller._saveEval (EvLooped (caller._nesting + 1) caller._judgment mode term caller._site Nothing)) caller._acyclic
       throwIO (Looping term)
     told (Stalled name _) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -255,10 +255,10 @@ fired dispatched term univ state caller = do
     evaluated ctx state' form (func, self)
       | isNothing (matched ctx._symbolic func) = pure (Nothing, state')
       | otherwise = do
-          made <- try (enter form ctx >>= symbol func form self univ state')
+          made <- try (admitted form ctx >>= either (\(mode, before) -> throwIO (Refused mode before state')) (symbol func form self univ state'))
           case made of
             Right (answer, answered) -> do
-              (again, reached) <- fired dispatched answer univ answered ctx
+              (again, reached) <- fired dispatched answer univ answered ctx `catch` refused ctx
               pure (Just (fromMaybe answer again), reached)
             Left failure -> parked state' failure
     parked :: State -> ReduceException -> IO (Maybe Expression, State)

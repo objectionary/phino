@@ -1259,7 +1259,7 @@ spec = do
                        , "    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t), proven"
                        ]
 
-      it "writes the cut to the XML protocol as a self-closing element" $
+      it "writes the cut to the XML protocol with the formation in an element of its own" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
           withStdin circling $
@@ -1271,7 +1271,7 @@ spec = do
             `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                        , "<dataize at=\"Φ.t\">"
                        , "  <formation at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\">"
-                       , "    <looped by=\"dataize\" match=\"proven\" at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\"/>"
+                       , "    <looped by=\"dataize\" match=\"proven\" at=\"Φ.t\"><e>⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧</e></looped>"
                        , "  </formation>"
                        , "</dataize>"
                        ]
@@ -1600,6 +1600,15 @@ spec = do
           records <- readProtocol path
           lines records `shouldContain` ["  deferred(𝜎2) := ⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧  # 𝕄(Φ.y)"]
 
+      it "writes the symbol a cut answers a copy with" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_loop\n  morph:\n    𝑛1: $.x\n  𝑛: 𝑛1\n") $ \loops ->
+            withStdin "⟦ box(n) ↦ ⟦ φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ ⟦ Δ ⤍ 01- ⟧ ) ) ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=proven", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["    looped(⟦ x ↦ Φ.box( n ↦ 01-:Δ ), λ ⤍ L_loop ⟧) := 𝜎1  # 𝕄(Φ.a🌵0.φ), proven"]
+
       it "writes a told stall to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
@@ -1925,7 +1934,7 @@ spec = do
               withStdin "⟦ bytes(φ) ↦ ⟦⟧, dataized(target) ↦ L_dataized:λ, joined(items) ↦ ⟦ φ ↦ step( tup ↦ items, s ↦ sep ), sep ↦ Φ.dataized( target ↦ items ), step(ρ, tup, s) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
                 testCLISucceeded ["morph", "--deep", "--symbolic=" ++ dataized, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr><attr name=\"s\">?</attr></with><e>⟦ tup ↦ 𝜎1:λ, s ↦ 𝜎2:λ:φ, φ ↦ tup.next ⟧</e></deferred>"]
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr><attr name=\"s\">𝜎2</attr></with><e>⟦ tup ↦ 𝜎1:λ, s ↦ 𝜎2:λ:φ, φ ↦ tup.next ⟧</e></deferred>"]
 
         it "writes a question mark for an argument of a deferred copy that is no bare symbol" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -1950,6 +1959,15 @@ spec = do
               testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
             lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\"><e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e></deferred>"]
+
+        it "writes the copy a cut answers as a call of the object it was made of" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_loop\n  morph:\n    𝑛1: $.x\n  𝑛: 𝑛1\n") $ \loops ->
+              withStdin "⟦ num(φ) ↦ ⟦⟧, box(n) ↦ ⟦ φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ) ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=plausible", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["    <looped symbol=\"𝜎2\" by=\"morph\" match=\"plausible\" at=\"Φ.a🌵0.φ\" of=\"Φ.box\"><with><attr name=\"n\">𝜎1</attr></with><e>⟦ x ↦ Φ.box( n ↦ Φ.num( φ ↦ 𝜎1:λ ) ), λ ⤍ L_loop ⟧</e></looped>"]
 
         it "writes no 'minted' element for a firing minting nothing" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2704,6 +2722,20 @@ spec = do
             testCLISucceeded
               ["morph", "--symbolic=" ++ endless, "--deep", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
               ["⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧"]
+
+      it "answers a copy with a fresh symbol once it cuts the φ of the copy" $
+        withLambdasOf (T.pack "- λ: L_loop\n  morph:\n    𝑛1: $.x\n  𝑛: 𝑛1\n") $ \loops ->
+          withStdin "⟦ box(n) ↦ ⟦ φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ ⟦ Δ ⤍ 01- ⟧ ) ) ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=proven", "--locator=Q.y", "--flat", "--hide-rho", "--sweet"]
+              ["𝜎1:λ"]
+
+      it "answers a cut copy with the symbol one walk gives it whatever --jobs says" $
+        withLambdasOf (T.pack "- λ: L_loop\n  morph:\n    𝑛1: $.x\n  𝑛: 𝑛1\n- λ: L_mint\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \loops ->
+          withStdin "⟦ mint ↦ L_mint:λ, box(n) ↦ ⟦ k ↦ Φ.mint, φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ ⟦ Δ ⤍ 01- ⟧ ) ) ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=proven", "--jobs=2", "--locator=Q.y", "--flat", "--hide-rho", "--sweet"]
+              ["𝜎2:λ"]
 
     describe "fails" $ do
       it "with --output=xmir on a top formation of several bindings" $

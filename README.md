@@ -589,9 +589,11 @@ says, and the copy as it stood stands in `<e>`, abridged as usual:
 </deferred>
 ```
 
-Every argument of the call is an `<attr>` of `<with>`, and an argument that
-is not a bare symbol is spelled `?`. A copy with no object of the world has
-neither `of` nor `<with>`, only `<e>`.
+Every argument of the call is an `<attr>` of `<with>`. An argument that is a
+bare symbol, or a carrier of one whose `φ` leads to it, such as
+`Φ.number( φ ↦ 𝜎1:λ )` or `𝜎1:λ:φ`, is spelled as that symbol, and any other
+argument is spelled `?`. A copy with no object of the world has neither `of`
+nor `<with>`, only `<e>`.
 
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
@@ -1385,10 +1387,32 @@ the frame belonged to, the site it was cut at and the mode that cut it. What it
 carries is the formation the frame above entered, as that frame had it, so the
 two are paired by their terms and no reader has to rename symbols by eye or
 find the cut in the residue. Nothing runs under a cut, so no block opens under
-the line. In the XML protocol it is a self-closing element,
-`<looped by="morph" match="proven" at="Φ.a🌵7" term="…"/>`, with the
-attributes a `<formation>` carries and the mode. Without the option the same
-run nests one round inside another until `--max-steps` runs out.
+the line. In the XML protocol it is
+`<looped by="morph" match="proven" at="Φ.a🌵7"><e>…</e></looped>`, with the
+site and the mode as attributes and the formation in `<e>`. Without the option
+the same run nests one round inside another until `--max-steps` runs out.
+
+A cut at the `φ` of a copy the walk of `--deep` has placed, such as
+`Φ.a🌵4.φ`, answers that copy with a fresh symbol, the way a deferred copy is
+answered. A fork above it then joins that symbol with its other branch,
+instead of getting stuck on a copy nobody can read. The line names the
+symbol, as in `looped(…) := 𝜎6  # 𝕄(Φ.a🌵4.φ), plausible`, and the markup
+writes the object the copy was made of and its arguments the way it writes
+them for a deferred copy, on one line, broken here for reading:
+
+<!-- markdownlint-disable MD013 -->
+
+```xml
+<looped symbol="𝜎6" by="morph" match="plausible" at="Φ.a🌵4.φ" of="Φ.fact">
+  <with><attr name="n">𝜎3</attr><attr name="acc">?</attr></with>
+  <e>⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ:φ, acc ↦ Φ.pair( head ↦ 𝜎1:λ:φ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧</e>
+</looped>
+```
+
+<!-- markdownlint-enable MD013 -->
+
+A cut anywhere else, or at the `φ` of a copy nested inside a term, answers
+nothing and leaves the copy as it stood.
 
 What a frame remembers is the branch from the run down to it, never everything
 the run has touched, so two siblings entering one formation enter it twice and

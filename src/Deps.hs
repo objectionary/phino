@@ -8,10 +8,11 @@ module Deps where
 
 import AST
 import Control.Monad (unless, when)
+import Data.Bifunctor (bimap)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Files (overwrite)
 import GHC.Clock (getMonotonicTime)
@@ -92,7 +93,7 @@ data Evaluation
   = EvRun Judgment T.Text
   | EvFiring Int T.Text Judgment Expression
   | EvFormation Int Expression Expression
-  | EvLooped Int Judgment Acyclic Expression Expression
+  | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Maybe Expression))
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
@@ -119,7 +120,7 @@ renumbered floor' offset = record
     record :: Evaluation -> Evaluation
     record (EvFiring depth key judgment site) = EvFiring depth key judgment (term site)
     record (EvFormation depth self site) = EvFormation depth (term self) (term site)
-    record (EvLooped depth judgment mode self site) = EvLooped depth judgment mode (term self) (term site)
+    record (EvLooped depth judgment mode self site answered) = EvLooped depth judgment mode (term self) (term site) (fmap (bimap symbol (fmap term)) answered)
     record (EvStuck depth key judgment self) = EvStuck depth key judgment (term self)
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (term site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (term site)
@@ -203,10 +204,13 @@ saveEval handle cursor render salted report = do
       form <- render self
       locator <- render site
       pure (protocol, Just (indented depth (printf "formation(%s)  # %s(%s)" form (letter Dataization) locator)))
-    written (EvLooped depth judgment mode self site) protocol = do
+    written (EvLooped depth judgment mode self site answered) protocol = do
       form <- render self
       locator <- render site
-      pure (protocol, Just (indented depth (printf "looped(%s)  # %s(%s), %s" form (letter judgment) locator (certainty mode))))
+      pure (protocol, Just (indented depth (printf "looped(%s)%s  # %s(%s), %s" form (maybe "" symbolized answered) (letter judgment) locator (certainty mode))))
+      where
+        symbolized :: (Int, Maybe Expression) -> String
+        symbolized (symbol, _) = printf " := %s" (printFunction (FnSymbol symbol))
     written (EvStuck depth key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented depth (printf "unanswered(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -345,11 +349,15 @@ saveEvalXml handle cursor render report = do
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = (depth, "formation") : kept}, closers ++ [indentedXml depth (printf "<formation at=\"%s\" term=\"%s\">" (escapeXML locator) (escapeXML form))])
-    elements (EvLooped depth judgment mode self site) nesting = do
+    elements (EvLooped depth judgment mode self site answered) nesting = do
       form <- render self
       locator <- render site
+      (origin, given) <- maybe (pure ("", "")) called (answered >>= snd)
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<looped by=\"%s\" match=\"%s\" at=\"%s\" term=\"%s\"/>" (opened judgment) (certainty mode) (escapeXML locator) (escapeXML form))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<looped%s by=\"%s\" match=\"%s\" at=\"%s\"%s>%s<e>%s</e></looped>" (maybe "" symbolized answered) (opened judgment) (certainty mode) (escapeXML locator) origin given (escapeXMLText form))])
+      where
+        symbolized :: (Int, Maybe Expression) -> String
+        symbolized (symbol, _) = printf " symbol=\"%s\"" (sigma symbol)
     elements (EvStuck depth key judgment self) nesting = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing
@@ -431,20 +439,6 @@ saveEvalXml handle cursor render report = do
       (origin, given) <- maybe (pure ("", "")) called call
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"%s>%s<e>%s</e></deferred>" (sigma symbol) (opened judgment) (escapeXML locator) origin given (escapeXMLText form))])
-      where
-        called :: Expression -> IO (String, String)
-        called term = do
-          let (object, arguments) = invoked term
-          path <- render object
-          pure (printf " of=\"%s\"" (escapeXML path), printf "<with>%s</with>" (concat arguments))
-        invoked :: Expression -> (Expression, [String])
-        invoked (ExApplication term (ArTau attr value)) =
-          let (object, arguments) = invoked term
-           in (object, arguments ++ [printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) (escapeXMLText (valued value))])
-        invoked term = (term, [])
-        valued :: Expression -> String
-        valued (ExFormation [BiLambda (FnSymbol idx)]) = sigma idx
-        valued _ = "?"
     elements (EvBuilt depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
@@ -460,6 +454,21 @@ saveEvalXml handle cursor render report = do
     labelled :: Nesting -> Int -> T.Text -> String
     labelled nesting depth spelling =
       printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) nesting._openedAt))
+    called :: Expression -> IO (String, String)
+    called term = do
+      let (object, arguments) = invoked term
+      path <- render object
+      pure (printf " of=\"%s\"" (escapeXML path), printf "<with>%s</with>" (concat arguments))
+    invoked :: Expression -> (Expression, [String])
+    invoked (ExApplication term (ArTau attr value)) =
+      let (object, arguments) = invoked term
+       in (object, arguments ++ [printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) (escapeXMLText (valued value))])
+    invoked term = (term, [])
+    valued :: Expression -> String
+    valued (ExFormation [BiLambda (FnSymbol idx)]) = sigma idx
+    valued (ExFormation bds) = maybe "?" valued (listToMaybe [body | BiTau AtPhi body <- bds])
+    valued (ExApplication _ (ArTau AtPhi body)) = valued body
+    valued _ = "?"
     sigma :: Int -> String
     sigma = printFunction . FnSymbol
     quoted :: T.Text -> String
