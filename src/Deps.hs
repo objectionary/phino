@@ -17,7 +17,7 @@ import Files (overwrite)
 import GHC.Clock (getMonotonicTime)
 import Logger (logDebug, logInfo)
 import Matcher
-import Printer (printFunction)
+import Printer (printAttribute, printFunction)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
 import System.IO (Handle, hPutStrLn)
@@ -107,7 +107,7 @@ data Evaluation
   | EvJoined Int Int (Int, Int)
   | EvTerminate Int (Maybe (Either Int Bytes)) T.Text T.Text
   | EvMinted Int Int [Either Int Bytes]
-  | EvDeferred Int Int Judgment Expression Expression
+  | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
 
@@ -132,7 +132,7 @@ renumbered floor' offset = record
     record (EvJoined depth fresh (one, two)) = EvJoined depth (symbol fresh) (symbol one, symbol two)
     record (EvTerminate depth condition side raising) = EvTerminate depth (fmap datum condition) side raising
     record (EvMinted depth sym operands) = EvMinted depth (symbol sym) (map datum operands)
-    record (EvDeferred depth sym judgment copy site) = EvDeferred depth (symbol sym) judgment (term copy) (term site)
+    record (EvDeferred depth sym judgment copy call site) = EvDeferred depth (symbol sym) judgment (term copy) (fmap term call) (term site)
     record (EvBuilt depth value) = EvBuilt depth (term value)
     record (EvAnswer depth value) = EvAnswer depth (term value)
     record other = other
@@ -262,8 +262,8 @@ saveEval handle cursor render salted report = do
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
         spelled (Right bytes) = render (ExBytes bytes)
     written EvMinted{} protocol = pure (protocol, Nothing)
-    written (EvDeferred depth symbol judgment copy site) protocol = do
-      form <- render copy
+    written (EvDeferred depth symbol judgment copy call site) protocol = do
+      form <- render (fromMaybe copy call)
       locator <- render site
       pure (protocol, Just (indented depth (printf "deferred(%s) := %s  # %s(%s)" (printFunction (FnSymbol symbol)) form (letter judgment) locator)))
     written (EvBuilt depth term) protocol = do
@@ -425,11 +425,26 @@ saveEvalXml handle cursor render report = do
         spelled :: Either Int Bytes -> IO String
         spelled (Left fresh) = pure (sigma fresh)
         spelled (Right bytes) = render (ExBytes bytes)
-    elements (EvDeferred depth symbol judgment copy site) nesting = do
+    elements (EvDeferred depth symbol judgment copy call site) nesting = do
       form <- render copy
       locator <- render site
+      (origin, given) <- maybe (pure ("", "")) called call
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\">%s</deferred>" (sigma symbol) (opened judgment) (escapeXML locator) (escapeXMLText form))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"%s>%s<e>%s</e></deferred>" (sigma symbol) (opened judgment) (escapeXML locator) origin given (escapeXMLText form))])
+      where
+        called :: Expression -> IO (String, String)
+        called term = do
+          let (object, arguments) = invoked term
+          path <- render object
+          pure (printf " of=\"%s\"" (escapeXML path), printf "<with>%s</with>" (concat arguments))
+        invoked :: Expression -> (Expression, [String])
+        invoked (ExApplication term (ArTau attr value)) =
+          let (object, arguments) = invoked term
+           in (object, arguments ++ [printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) (escapeXMLText (valued value))])
+        invoked term = (term, [])
+        valued :: Expression -> String
+        valued (ExFormation [BiLambda (FnSymbol idx)]) = sigma idx
+        valued _ = "?"
     elements (EvBuilt depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
