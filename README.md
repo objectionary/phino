@@ -1274,6 +1274,8 @@ $ cat fact.txt
         𝔻(𝜎6:λ) == 01-
         𝑛3.4 := 𝜎6:λ  # 𝑛1
         𝑛4.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+        stuck(L_if)
+    stuck(L_if)
   𝔼(L_if)  # 𝕄(Φ.x.φ)
     𝛿1.7 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
     𝑛1.7 := 01-:Δ  # 𝕄(ξ.left)
@@ -1296,10 +1298,16 @@ $ cat fact.txt
           𝔻(𝜎6:λ) == 01-
           𝑛3.9 := 𝑛3.4  # 𝑛1
           𝑛4.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+          stuck(L_if)
+      stuck(L_if)
     𝑛2.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
     𝔻(𝜎4:λ) == 01-
     𝑛3.7 := 𝑛.10.2  # 𝑛1
     𝑛4.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+    stuck(L_if)
+msec(31)
+firings(11)
+fps(355)
 ```
 
 <!-- markdownlint-enable MD013 -->
