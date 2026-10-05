@@ -2878,6 +2878,10 @@ spec = do
       withStdin "[[]]" $
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]: The --pattern is not provided, no substitutions are built"]
 
+    it "refuses --when without --pattern" $
+      withStdin "[[]]" $
+        testCLIFailed ["match", "--when=bogus"] ["The option --when requires --pattern"]
+
     it "reproduces the same output for the same --seed" $ do
       dir <- getTemporaryDirectory
       let file = dir ++ "/phino-match-seed-test.phi"
