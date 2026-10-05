@@ -10,7 +10,7 @@ module ParserSpec where
 import AST
 import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_)
-import Data.Either (isLeft, isRight)
+import Data.Either (fromLeft, isLeft, isRight)
 import Data.List (isInfixOf)
 import Files (allPathsIn)
 import Parser
@@ -408,6 +408,10 @@ spec = do
       , ("123", Nothing)
       , ("", Nothing)
       ]
+
+  it "points at the binding that repeats an attribute, not past the formation" $
+    fromLeft "" (parseExpression "⟦\n  a ↦ ξ,\n  b ↦ ξ,\n  b ↦ Φ\n⟧\n\n\n")
+      `shouldSatisfy` isInfixOf "expression:4:3:"
 
   describe "parse number" $
     test
