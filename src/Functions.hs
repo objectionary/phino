@@ -97,8 +97,14 @@ _dataize [Y.ArgExpression expr] subst = do
   expr' <- buildExpressionThrows expr subst
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
-    ExFormation [BiDelta bytes, BiVoid AtRho] -> pure (TeBytes bytes)
+    ExApplication (BaseObject "bytes") (ArTau AtPhi (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
+    ExFormation bds | Just bytes <- delta bds -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
+  where
+    delta :: [Binding] -> Maybe Bytes
+    delta bds = case filter (/= BiVoid AtRho) bds of
+      [BiDelta bytes] -> Just bytes
+      _ -> Nothing
 _dataize _ _ = throwIO (userError "Function dataize() requires exactly 1 argument as expression or bytes")
 
 _concat :: BuildTermMethod
