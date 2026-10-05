@@ -372,7 +372,7 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_ABSOLUTE{..} = CO_ABSOLUTE (toLaTeX expr) belongs
   toLaTeX CO_NOT{..} = CO_NOT (toLaTeX condition)
   toLaTeX CO_COMPARE{..} = CO_COMPARE (toLaTeX left) equal (toLaTeX right)
-  toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)
+  toLaTeX CO_MATCHES{..} = CO_MATCHES (T.unpack (toLaTeX (T.pack regex))) (toLaTeX expr)
   toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
   toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
   toLaTeX CO_SUBSET{..} = CO_SUBSET (map toLaTeX attrs) belongs (map toLaTeX groups)
