@@ -182,6 +182,9 @@ spec = do
       , ("a rule of 'rewrite' writing a symbol nobody minted", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: naming\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ λ ⤍ 𝜎1 ⟧\n  𝑛: 𝑛2\n", "writes a symbol 𝜎 into its result")
       , ("a rule of 'rewrite' reading a meta it never binds", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: unbound\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ φ ↦ 𝑒2 ⟧\n  𝑛: 𝑛2\n", "reads the meta 'e2' it never binds")
       , ("a rule of 'rewrite' with no result", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: empty\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n  𝑛: 𝑛2\n", "cannot be read")
+      , ("an answer naming a meta no block binds", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: 𝑛7\n", "reads the meta 'n7' that no block binds")
+      , ("an operand of 'dataize' reading a meta", "- λ: L_pair\n  dataize:\n    𝛿1: 𝑛5\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "of 'dataize' of λ function 'L_pair' reads the meta 'n5'")
+      , ("an operand of 'morph' reading a meta", "- λ: L_pair\n  morph:\n    𝑛1: $.x.𝜏1\n  𝑛: 𝑛1\n", "of 'morph' of λ function 'L_pair' reads the meta 't1'")
       , ("a 'symbolize' line standing what a 'join' line made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛5: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛5\n", "names no meta bound by 'morph' or by a line above it")
       ]
       ( \(desc, text, message) ->
