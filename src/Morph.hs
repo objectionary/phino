@@ -319,19 +319,22 @@ isLambda (BiLambda _) = True
 isLambda _ = False
 
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
-morph' (expr, seq) univ state caller = do
-  ctx <- deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
-  parking seq state $ do
-    reached <- inferred expr univ state ctx ctx._engine._morphing
-    case reached of
-      Just (In.Answered step built, state') -> do
-        seq' <- leadsTo seq step built ctx
-        pure ((built, seq'), state')
-      Just (In.Onward way built world, state') -> do
-        (walked, state'') <- prewalked way built univ state' ctx
-        (morphed, state''') <- onward seq state'' way walked ctx
-        morph' morphed world state''' ctx
-      Nothing -> throwIO (Unmorphable expr)
+morph' start univ state entry = go start univ state entry
+  where
+    go :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
+    go (expr, seq) univ state caller = do
+      ctx <- deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
+      parking seq state $ do
+        reached <- inferred expr univ state ctx ctx._engine._morphing
+        case reached of
+          Just (In.Answered step built, state') -> do
+            seq' <- leadsTo seq step built ctx
+            pure ((built, seq'), state')
+          Just (In.Onward way built world, state') -> do
+            (walked, state'') <- prewalked way built univ state' ctx{_steps = entry._steps}
+            (morphed, state''') <- onward seq state'' way walked ctx
+            go morphed world state''' ctx
+          Nothing -> throwIO (Unmorphable expr)
 
 prewalked :: In.Way -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 prewalked (In.Normalized _) expr univ state ctx

@@ -322,6 +322,10 @@ the formation, so every copy `dot` makes carries the answer. It skips a read
 of ρ, which the walk never writes back, and fires nothing else in the
 binding: the head pass reduces the rest itself, and the walk keeps only what
 a λ answered, so a part it settled to anything else would be reduced twice.
+The reads spend the step budget from the depth the head pass began at, the
+way the walk at the end of 𝕄 does, and not from the step the pass stands at:
+every step of the pass is one deeper, so a read fired after a few of them
+would start with the budget nearly gone (#1731).
 
 The walk does not enter a copy over a bare symbol (#1729). Before a step
 walks a formation (`deferrable` of `deepened`), it checks that the formation
