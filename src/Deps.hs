@@ -107,6 +107,7 @@ data Evaluation
   | EvJoined Int Int (Int, Int)
   | EvTerminate Int (Maybe (Either Int Bytes)) T.Text T.Text
   | EvMinted Int Int [Either Int Bytes]
+  | EvDeferred Int Int Judgment Expression Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
 
@@ -131,6 +132,7 @@ renumbered floor' offset = record
     record (EvJoined depth fresh (one, two)) = EvJoined depth (symbol fresh) (symbol one, symbol two)
     record (EvTerminate depth condition side raising) = EvTerminate depth (fmap datum condition) side raising
     record (EvMinted depth sym operands) = EvMinted depth (symbol sym) (map datum operands)
+    record (EvDeferred depth sym judgment copy site) = EvDeferred depth (symbol sym) judgment (term copy) (term site)
     record (EvBuilt depth value) = EvBuilt depth (term value)
     record (EvAnswer depth value) = EvAnswer depth (term value)
     record other = other
@@ -260,6 +262,10 @@ saveEval handle cursor render salted report = do
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
         spelled (Right bytes) = render (ExBytes bytes)
     written EvMinted{} protocol = pure (protocol, Nothing)
+    written (EvDeferred depth symbol judgment copy site) protocol = do
+      form <- render copy
+      locator <- render site
+      pure (protocol, Just (indented depth (printf "deferred(%s) := %s  # %s(%s)" (printFunction (FnSymbol symbol)) form (letter judgment) locator)))
     written (EvBuilt depth term) protocol = do
       value <- borrowed protocol term
       pure (protocol, Just (indented depth (printf "%s.1 := %s  # %s" (labelled protocol depth answer) value (T.unpack answer))))
@@ -419,6 +425,11 @@ saveEvalXml handle cursor render report = do
         spelled :: Either Int Bytes -> IO String
         spelled (Left fresh) = pure (sigma fresh)
         spelled (Right bytes) = render (ExBytes bytes)
+    elements (EvDeferred depth symbol judgment copy site) nesting = do
+      form <- render copy
+      locator <- render site
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\">%s</deferred>" (sigma symbol) (opened judgment) (escapeXML locator) (escapeXMLText form))])
     elements (EvBuilt depth term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
