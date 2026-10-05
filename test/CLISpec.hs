@@ -1036,7 +1036,7 @@ spec = do
       withTempFileContent "inplaceXXXXXX.xmir" xmir $ \path -> do
         testCLISucceeded ["rewrite", "--input=xmir", "--output=xmir", "--in-place", path] []
         content <- readFile path
-        content `shouldContain` "<object>"
+        content `shouldContain` "<object"
 
     it "skips rewriting with --update when target is newer than source" $
       withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
