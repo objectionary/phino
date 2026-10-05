@@ -226,6 +226,18 @@ spec = do
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
         , ["⟦ x(y) ↦ 42:a ⟧"]
         )
+      ,
+        ( "prints a lone void as the term without the rho would be printed"
+        , "⟦ a ↦ ⟦ x ↦ ⟦ ρ ↦ ξ, y ↦ ∅ ⟧ ⟧ ⟧"
+        , ["rewrite", "--sweet", "--hide-rho"]
+        , ["⟦ x(y) ↦ ⟦⟧ ⟧:a"]
+        )
+      ,
+        ( "indents the body as the term without the rho would be indented"
+        , "⟦ a ↦ ⟦ x ↦ ⟦ ρ ↦ ∅, b ↦ ⟦ c ↦ ∅, ρ ↦ ∅ ⟧ ⟧ ⟧ ⟧"
+        , ["rewrite", "--sweet", "--hide-rho", "--margin=3"]
+        , ["⟦\n  b(c) ↦ ⟦⟧\n⟧:x:a"]
+        )
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 
