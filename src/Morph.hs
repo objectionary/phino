@@ -5,6 +5,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
 
@@ -83,6 +84,8 @@ data Kept
   | Stalled T.Text Int
 
 type Store answer = Map.Map Int [(Expression, answer)]
+
+data Frame = Frame (IORef Expression) (IORef Expression) Expression (Maybe Attribute)
 
 data ReduceContext = ReduceContext
   { _locator :: Expression
@@ -359,40 +362,46 @@ morph universe state caller@ReduceContext{..} = do
           pure (deep, reverse (NE.toList seq'), state'')
 
 deepened :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-deepened expr univ state ctx = step (if ctx._jobs > 1 then spread else parts) (Just ctx._site) Nothing ExXi expr state ctx
+deepened expr univ state ctx = do
+  world <- newIORef (fromMaybe univ ctx._universe)
+  step (if ctx._jobs > 1 then spread else parts) (Just ctx._site) Nothing (Frame world world ctx._site Nothing) expr state ctx
   where
-    go :: Maybe Expression -> Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    go :: Maybe Expression -> Maybe Attribute -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
     go = step parts
-    step :: (Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)) -> Maybe Expression -> Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    step walk standing dispatched context term state' caller = do
+    step :: (Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)) -> Maybe Expression -> Maybe Attribute -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    step walk standing dispatched frame@(Frame world _ _ _) term state' caller = do
       let here = sited standing caller
       ctx' <- deeper here
-      (walked, walkedState) <- walk standing context term state' here
-      placed <- ctx._engine._contextualize walked context
-      (answer, answered) <- ctx'._fire dispatched placed univ walkedState ctx'
+      (walked, walkedState) <- walk standing frame term state' here
+      placed <- ctx._engine._contextualize walked =<< context frame
+      current <- readIORef world
+      (answer, answered) <- ctx'._fire dispatched placed current walkedState ctx'{_universe = Just current}
+      mapM_ (noted here._site frame walked) answer
       pure (fromMaybe walked answer, answered)
     sited :: Maybe Expression -> ReduceContext -> ReduceContext
     sited Nothing caller = caller
     sited (Just loc) caller = caller{_site = loc}
-    parts :: Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    parts :: Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
     parts _ _ term@(ExFormation bds) state' _
       | any abstract bds = pure (term, state')
-    parts standing _ form@(ExFormation bds) state' caller = do
-      (entered, state'') <- bindings standing (synonym caller._universe form) bds bds state' caller
-      pure (ExFormation entered, state'')
-    parts _ context (ExDispatch target attr) state' caller = do
-      (entered, state'') <- go Nothing (Just attr) context target state' caller
+    parts standing (Frame world _ _ _) form@(ExFormation bds) state' caller = do
+      (store, path) <- home standing world form
+      state'' <- bindings standing (synonym caller._universe form) (Frame world store path Nothing) [attr | BiTau attr _ <- bds, attr /= AtRho] state' caller
+      entered <- held path store
+      pure (entered, state'')
+    parts _ frame (ExDispatch target attr) state' caller = do
+      (entered, state'') <- go Nothing (Just attr) frame target state' caller
       pure (ExDispatch entered attr, state'')
-    parts _ context (ExApplication target arg) state' caller = do
-      (entered, state'') <- go Nothing Nothing context target state' caller
-      (applied, state''') <- argument context arg state'' caller
+    parts _ frame (ExApplication target arg) state' caller = do
+      (entered, state'') <- go Nothing Nothing frame target state' caller
+      (applied, state''') <- argument frame arg state'' caller
       pure (ExApplication entered applied, state''')
     parts _ _ term state' _ = pure (term, state')
     abstract :: Binding -> Bool
     abstract (BiVoid _) = True
     abstract _ = False
-    spread :: Maybe Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    spread standing _ form@(ExFormation bds) state' caller
+    spread :: Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    spread standing (Frame world _ _ _) form@(ExFormation bds) state' caller
       | not (any abstract bds) = do
           jobs <- mapM (planned (synonym caller._universe form)) (zip [1 ..] bds)
           (entered, _, state'') <- pooled caller._jobs jobs gathered ([], 0, state')
@@ -414,8 +423,10 @@ deepened expr univ state ctx = step (if ctx._jobs > 1 then spread else parts) (J
           tau <- tausOf idx
           tally <- tallied (fmap (\(Tally cap _) -> cap) caller._tally)
           memo <- memoized caller._acyclic
+          copy <- newIORef =<< readIORef world
+          (store, path) <- home standing copy form
           let own = caller{_jobs = 1, _tally = tally, _memo = memo, _saveEval = modifyIORef' buffer . (:), _buildTerm = minting tau caller._buildTerm}
-          outcome <- try (go (fmap (`ExDispatch` attr) standing) Nothing (scope attr bds) body state' own)
+          outcome <- try (go (fmap (`ExDispatch` attr) standing) Nothing (Frame copy store path (Just attr)) body state' own)
           records <- reverse <$> readIORef buffer
           pure (records, fmap (\(term, walked) offset -> (BiTau attr (lifted floor' offset term), Just (moved offset walked))) outcome)
         moved :: Int -> State -> State
@@ -429,25 +440,64 @@ deepened expr univ state ctx = step (if ctx._jobs > 1 then spread else parts) (J
           mapM_ (caller._saveEval . renumbered floor' offset) records
           (bd, walked) <- either throwIO (pure . ($ offset)) outcome
           pure (bd : done, maybe offset (\after -> after._minted - floor') walked, fromMaybe current walked)
-    spread standing context term state' caller = parts standing context term state' caller
+    spread standing frame term state' caller = parts standing frame term state' caller
     minting :: IO T.Text -> BuildTermFunc -> BuildTermFunc
     minting tau build func
       | func == "random-tau" = \args subst -> if null args then TeAttribute . AtLabel <$> tau else build func args subst
       | otherwise = build func
-    bindings :: Maybe Expression -> Maybe (Expression, [Attribute]) -> [Binding] -> [Binding] -> State -> ReduceContext -> IO ([Binding], State)
-    bindings _ _ _ [] state' _ = pure ([], state')
-    bindings standing alias whole (BiTau attr body : rest) state' caller
-      | attr /= AtRho = do
-          new <- if closed body then fresh alias attr caller else pure True
-          (entered, state'') <-
-            if new
-              then go (fmap (`ExDispatch` attr) standing) Nothing (scope attr whole) body state' caller
-              else pure (body, state')
-          (others, state''') <- bindings standing alias whole rest state'' caller
-          pure (BiTau attr entered : others, state''')
-    bindings standing alias whole (bd : rest) state' caller = do
-      (others, state'') <- bindings standing alias whole rest state' caller
-      pure (bd : others, state'')
+    bindings :: Maybe Expression -> Maybe (Expression, [Attribute]) -> Frame -> [Attribute] -> State -> ReduceContext -> IO State
+    bindings _ _ _ [] state' _ = pure state'
+    bindings standing alias frame@(Frame world store path _) (attr : rest) state' caller = do
+      body <- held (ExDispatch path attr) store
+      new <- if closed body then fresh alias attr caller else pure True
+      state'' <-
+        if new
+          then do
+            (entered, walked) <- go (fmap (`ExDispatch` attr) standing) Nothing (Frame world store path (Just attr)) body state' caller
+            walked <$ when (entered /= body) (stored store (ExDispatch path attr) entered)
+          else pure state'
+      bindings standing alias frame rest state'' caller
+    home :: Maybe Expression -> IORef Expression -> Expression -> IO (IORef Expression, Expression)
+    home (Just path) world form = do
+      placed <- put path form <$> readIORef world
+      case placed of
+        Just whole -> (world, path) <$ writeIORef world whole
+        Nothing -> home Nothing world form
+    home Nothing _ form = (,ExRoot) <$> newIORef form
+    context :: Frame -> IO Expression
+    context (Frame _ _ _ Nothing) = pure ExXi
+    context (Frame _ store path (Just attr)) = scope attr <$> held path store
+    noted :: Expression -> Frame -> Expression -> Expression -> IO ()
+    noted site frame@(Frame world _ _ _) walked answer = case address frame walked of
+      Just (store, path@(ExDispatch _ _))
+        | store /= world || not (above path site) -> stored store path answer
+      _ -> pure ()
+    address :: Frame -> Expression -> Maybe (IORef Expression, Expression)
+    address (Frame world _ _ _) ExRoot = Just (world, ExRoot)
+    address (Frame _ store path (Just _)) ExXi = Just (store, path)
+    address frame (ExDispatch target attr) = fmap (`ExDispatch` attr) <$> address frame target
+    address _ _ = Nothing
+    above :: Expression -> Expression -> Bool
+    above path (ExDispatch target _) = path == target || above path target
+    above _ _ = False
+    held :: Expression -> IORef Expression -> IO Expression
+    held path store = readIORef store >>= maybe (throwIO (userError (printf "The deep walk lost the object at %s" (printExpression path)))) pure . located path
+    stored :: IORef Expression -> Expression -> Expression -> IO ()
+    stored store path value = modifyIORef' store (\whole -> fromMaybe whole (put path value whole))
+    put :: Expression -> Expression -> Expression -> Maybe Expression
+    put ExRoot value _ = Just value
+    put (ExDispatch path attr) value whole = case located path whole of
+      Just (ExFormation bds)
+        | attr /= AtRho && not (any abstract bds) && any (named attr) bds ->
+            put path (ExFormation (map (\bd -> if named attr bd then BiTau attr value else bd) bds)) whole
+      _ -> Nothing
+    put _ _ _ = Nothing
+    located :: Expression -> Expression -> Maybe Expression
+    located ExRoot whole = Just whole
+    located (ExDispatch path attr) whole = case located path whole of
+      Just (ExFormation bds) -> listToMaybe [body | BiTau attr' body <- bds, attr' == attr]
+      _ -> Nothing
+    located _ _ = Nothing
     synonym :: Maybe Expression -> Expression -> Maybe (Expression, [Attribute])
     synonym Nothing _ = Nothing
     synonym (Just world) form = case pathOf world form of
@@ -475,18 +525,18 @@ deepened expr univ state ctx = step (if ctx._jobs > 1 then spread else parts) (J
     closed (ExApplication target (ArTau _ arg)) = closed target && closed arg
     closed (ExApplication target (ArAlpha _ arg)) = closed target && closed arg
     closed _ = True
-    scope :: Attribute -> [Binding] -> Expression
-    scope attr bds = ExFormation (filter (not . named) bds)
-      where
-        named :: Binding -> Bool
-        named (BiTau attr' _) = attr' == attr
-        named _ = False
-    argument :: Expression -> Argument -> State -> ReduceContext -> IO (Argument, State)
-    argument context (ArTau attr arg) state' caller = do
-      (entered, state'') <- go Nothing Nothing context arg state' caller
+    scope :: Attribute -> Expression -> Expression
+    scope attr (ExFormation bds) = ExFormation (filter (not . named attr) bds)
+    scope _ other = other
+    named :: Attribute -> Binding -> Bool
+    named attr (BiTau attr' _) = attr' == attr
+    named _ _ = False
+    argument :: Frame -> Argument -> State -> ReduceContext -> IO (Argument, State)
+    argument frame (ArTau attr arg) state' caller = do
+      (entered, state'') <- go Nothing Nothing frame arg state' caller
       pure (ArTau attr entered, state'')
-    argument context (ArAlpha alpha arg) state' caller = do
-      (entered, state'') <- go Nothing Nothing context arg state' caller
+    argument frame (ArAlpha alpha arg) state' caller = do
+      (entered, state'') <- go Nothing Nothing frame arg state' caller
       pure (ArAlpha alpha entered, state'')
 
 inferred :: Expression -> Expression -> State -> ReduceContext -> [In.Inference value] -> IO (Maybe (In.Conclusion value, State))
