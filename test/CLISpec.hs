@@ -2815,6 +2815,13 @@ spec = do
           ["merge", "--input=xmir", "--output=xmir", file]
           ["<o atom=\"Φ.number\" name=\"λ\">L_number_plus</o>"]
 
+    it "keeps the type of an atom of XMIR under --canonize" $ do
+      let xmir = "<object><o name=\"number\"><o name=\"plus\"><o base=\"∅\" name=\"b\"/><o atom=\"Φ.number\" name=\"λ\"/></o></o></object>"
+      withTempFileContent "phino-canonized-atom.xmir" xmir $ \file ->
+        testCLISucceeded
+          ["rewrite", "--input=xmir", "--output=xmir", "--canonize", file]
+          ["<o atom=\"Φ.number\" name=\"λ\">Fn1</o>"]
+
     it "reproduces the same output for the same --seed" $ do
       let args =
             [ "merge"

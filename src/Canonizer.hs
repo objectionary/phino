@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Canonizer (canonize, canonizeExpr) where
+module Canonizer (canonize, canonizeExpr, lambdaNames) where
 
 import AST
 import qualified Data.Text as T
@@ -50,6 +50,20 @@ canonizeArgument (ArTau attr expr) idx =
 canonizeArgument (ArAlpha alpha expr) idx =
   let (expr', idx') = canonizeExpression expr idx
    in (ArAlpha alpha expr', idx')
+
+lambdaNames :: Expression -> [T.Text]
+lambdaNames (ExFormation bds) = concatMap named bds
+  where
+    named :: Binding -> [T.Text]
+    named (BiLambda (Function name)) = [name]
+    named (BiTau _ expr) = lambdaNames expr
+    named _ = []
+lambdaNames (ExDispatch expr _) = lambdaNames expr
+lambdaNames (ExApplication expr (ArTau _ arg)) = lambdaNames expr ++ lambdaNames arg
+lambdaNames (ExApplication expr (ArAlpha _ arg)) = lambdaNames expr ++ lambdaNames arg
+lambdaNames (ExPhiMeet _ _ expr) = lambdaNames expr
+lambdaNames (ExPhiAgain _ _ expr) = lambdaNames expr
+lambdaNames _ = []
 
 canonizeExpr :: Expression -> Expression
 canonizeExpr expr = fst (canonizeExpression expr 1)

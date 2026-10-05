@@ -15,6 +15,7 @@ module XMIR
   , parseXMIRThrows
   , xmirToPhi
   , xmirAtoms
+  , renameAtoms
   , Atoms
   , defaultXmirContext
   , escapeXML
@@ -306,6 +307,10 @@ documentWith XmirContext{..} pckg expr rootsIO = do
           fractional = realToFrac posix - fromInteger (floor posix)
           nanos = floor (fractional * 1_000_000_000) :: Int
        in base ++ "." ++ printf "%09d" nanos ++ "Z"
+
+renameAtoms :: [(T.Text, T.Text)] -> XmirContext -> XmirContext
+renameAtoms renames ctx@XmirContext{..} =
+  ctx{_atoms = M.fromList [(new, atom) | (old, new) <- renames, Just atom <- [M.lookup old _atoms]]}
 
 escapeXML :: String -> String
 escapeXML = concatMap escapeChar
