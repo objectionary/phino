@@ -121,6 +121,7 @@ spec = do
       , ("empty (Or [])", Y.Or [], "{ }")
       , ("normal form", Y.NF (ExMeta "n"), "{ \\isnormal{ n } }")
       , ("matches", Y.Matches "abc" (ExMeta "n"), "{ matches\\lparen abc, n \\rparen }")
+      , ("matches with a regex LaTeX would read", Y.Matches "^a_b$" (ExMeta "n"), "{ matches\\lparen \\char94{}a\\char95{}b\\char36{}, n \\rparen }")
       , ("part-of", Y.PartOf (ExMeta "n") (BiVoid AtRho), "{ part-of\\lparen n, \\phiTerminal{\\rho} -> ? \\rparen }")
       , ("compare equal", Y.Eq (Y.CmpAttr AtRho) (Y.CmpAttr AtPhi), "{ \\phiTerminal{\\rho} = @ }")
       , ("compare greater", Y.Gt (Y.CmpNum (Y.Literal 3)) (Y.CmpNum (Y.Literal 4)), "{ 3 > 4 }")
@@ -241,6 +242,11 @@ spec = do
           , "  \\phiDataize |07-| : D{.}"
           , "\\end{phiquation}"
           ]
+
+    it "renders a 'where' function with a hyphen as a valid macro" $ do
+      ptn <- parseExpressionThrows "Q.x"
+      explainRules [Y.Rule "rt" Nothing Nothing ptn ptn Nothing (Just [Y.Extra (Y.ArgAttribute (AtMeta "t1")) "random-tau" []]) Nothing]
+        `shouldContain` "\\randomTau{"
 
     it "prefixes each step with a '% === Step' header when '_headers' is set" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"

@@ -10,6 +10,9 @@ name: compiled
   pull_request:
     branches:
       - master
+concurrency:
+  group: compiled-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   compiled:
     runs-on: ubuntu-24.04

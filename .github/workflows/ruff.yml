@@ -7,9 +7,20 @@ name: ruff
   pull_request:
     branches:
       - master
+    paths:
+      - '**.py'
+      - 'ruff.toml'
+      - '.github/workflows/ruff.yml'
   push:
     branches:
       - master
+    paths:
+      - '**.py'
+      - 'ruff.toml'
+      - '.github/workflows/ruff.yml'
+concurrency:
+  group: ruff-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   ruff:
     timeout-minutes: 15

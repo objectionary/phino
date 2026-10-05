@@ -12,7 +12,7 @@ import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
-import Canonizer (canonize, canonizeExpr)
+import Canonizer (canonizeExpr, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
 import Control.Monad ((>=>))
@@ -39,13 +39,13 @@ import Morph (ReduceContext, emptyState, insideUniverse)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
-import Rewriter (Rewritten, Rewrittens', stepHeaders)
+import Rewriter (Rewrittens', stepHeaders)
 import Sugar (SugarType (SALTY), withoutRho)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory, takeExtension)
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
-import XMIR (Atoms, expressionToXMIR, parseXMIRThrows, printXMIR, xmirAtoms, xmirToPhi)
+import XMIR (Atoms, expressionToXMIR, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -168,10 +168,8 @@ parseInputWithAtoms input format = (,M.empty) <$> parseInput input format
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
-  | otherwise = withHeaders <$> mapM (printFocused ctx . fst) (canonized chain)
+  | otherwise = withHeaders <$> mapM (printAnswer ctx . fst) chain
   where
-    canonized :: [Rewritten] -> [Rewritten]
-    canonized = if _canonize then canonize else id
     withHeaders :: [String] -> String
     withHeaders rendered
       | _headers && _sequence = intercalate "\n" (zipWith prefixed (stepHeaders chain) rendered)
@@ -181,7 +179,12 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
         prefixed = printf "\n%s\n%s"
 
 printAnswer :: PrintContext -> Expression -> IO String
-printAnswer ctx@PrintCtx{..} expr = printFocused ctx (if _canonize then canonizeExpr expr else expr)
+printAnswer ctx@PrintCtx{..} expr
+  | _canonize = printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
+  | otherwise = printFocused ctx expr
+  where
+    canonized :: Expression
+    canonized = canonizeExpr expr
 
 printFocused :: PrintContext -> Expression -> IO String
 printFocused ctx@PrintCtx{..} expr
@@ -201,7 +204,24 @@ printInFormat ctx@PrintCtx{..} expr = case _outputFormat of
   LATEX -> pure (expressionToLaTeX expr (printCtxToLatexCtx ctx))
 
 printPhi :: PrintContext -> Expression -> String
-printPhi ctx@PrintCtx{..} expr = P.printExpressionWith (hidden ctx) expr (_sugar, UNICODE, _line, _margin)
+printPhi PrintCtx{..} expr = P.printExpression' (if _hideRho then rholess expr else expr) (_sugar, UNICODE, _line, _margin)
+  where
+    rholess :: Expression -> Expression
+    rholess (ExFormation bds) = ExFormation [binding bd | bd <- bds, not (rho bd)]
+    rholess (ExDispatch inner attr) = ExDispatch (rholess inner) attr
+    rholess (ExApplication inner (ArTau AtRho _)) = rholess inner
+    rholess (ExApplication inner (ArTau attr arg)) = ExApplication (rholess inner) (ArTau attr (rholess arg))
+    rholess (ExApplication inner (ArAlpha alpha arg)) = ExApplication (rholess inner) (ArAlpha alpha (rholess arg))
+    rholess (ExPhiMeet prefix idx inner) = ExPhiMeet prefix idx (rholess inner)
+    rholess (ExPhiAgain prefix idx inner) = ExPhiAgain prefix idx (rholess inner)
+    rholess other = other
+    binding :: Binding -> Binding
+    binding (BiTau attr inner) = BiTau attr (rholess inner)
+    binding other = other
+    rho :: Binding -> Bool
+    rho (BiTau AtRho _) = True
+    rho (BiVoid AtRho) = True
+    rho _ = False
 
 hidden :: PrintContext -> SugarType -> EXPRESSION -> EXPRESSION
 hidden PrintCtx{..} sugar

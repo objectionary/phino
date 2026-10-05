@@ -18,6 +18,7 @@ import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir)
+import Data.Maybe (fromMaybe)
 import Data.Scientific (isInteger)
 import Data.Text (Text, unpack)
 import Data.Yaml (Parser)
@@ -195,7 +196,21 @@ instance FromJSON Rule where
     referenceless rule.name "when" rule.when
     referenceless rule.name "where" rule.where_
     referenceless rule.name "having" rule.having
+    targets rule (metas rule.pattern) (fromMaybe [] rule.where_)
     pure rule
+    where
+      targets :: Rule -> [Text] -> [Extra] -> Parser ()
+      targets _ _ [] = pure ()
+      targets rule known (extra : rest) = case extra.meta of
+        ArgExpression (ExMeta bound) -> fresh rule known bound >> targets rule (bound : known) rest
+        ArgAttribute (AtMeta bound) -> fresh rule known bound >> targets rule (bound : known) rest
+        ArgBinding (BiMeta bound) -> fresh rule known bound >> targets rule (bound : known) rest
+        ArgBytes (BtMeta bound) -> fresh rule known bound >> targets rule (bound : known) rest
+        _ -> fail (printf "The rule '%s' has a 'where' step whose 'meta' is not a meta, while only a meta can take its result" rule.name)
+      fresh :: Rule -> [Text] -> Text -> Parser ()
+      fresh rule known bound
+        | bound `elem` known = fail (printf "The rule '%s' has a 'where' step that binds the meta '%s' again, while it is already bound" rule.name (unpack bound))
+        | otherwise = pure ()
 
 data Number
   = MetaIndex Text

@@ -10,6 +10,9 @@ name: Release binary to S3
   push:
     tags:
       - '*'
+concurrency:
+  group: release-binary-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build-and-release:
     strategy:

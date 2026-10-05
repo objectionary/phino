@@ -7,13 +7,16 @@ module Functions (buildTerm, buildFunctions, contextualizing, execFunctions, nam
 
 import AST
 import Builder
-import Bytes (btsSize, btsToNum, btsToUnescapedStr, numToBts, strToBts)
+import Bytes (btsConcat, btsSize, btsToNum, btsToUnescapedStr, numToBts, strToBts)
 import Contextualize (contextualize)
 import Control.Exception (throwIO)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor
 import qualified Data.Set as Set
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Encoding.Error as T
 import Deps
 import Logger (logDebug)
 import Matcher
@@ -97,14 +100,20 @@ _dataize [Y.ArgExpression expr] subst = do
   expr' <- buildExpressionThrows expr subst
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
-    ExFormation [BiDelta bytes, BiVoid AtRho] -> pure (TeBytes bytes)
+    ExApplication (BaseObject "bytes") (ArTau AtPhi (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
+    ExFormation bds | Just bytes <- delta bds -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
+  where
+    delta :: [Binding] -> Maybe Bytes
+    delta bds = case filter (/= BiVoid AtRho) bds of
+      [BiDelta bytes] -> Just bytes
+      _ -> Nothing
 _dataize _ _ = throwIO (userError "Function dataize() requires exactly 1 argument as expression or bytes")
 
 _concat :: BuildTermMethod
 _concat args subst = do
-  args' <- traverse (`argToString` subst) args
-  pure (TeExpression (DataString (strToBts (concat args'))))
+  args' <- traverse (`argToBytes` subst) args
+  pure (TeExpression (DataString (foldl btsConcat BtEmpty args')))
 
 _sed :: BuildTermMethod
 _sed args subst = do
@@ -113,11 +122,11 @@ _sed args subst = do
     traverse
       ( \arg -> do
           bts <- argToString arg subst
-          pure (B.pack bts)
+          pure (T.encodeUtf8 (T.pack bts))
       )
       args
   res <- sed first rest
-  pure (TeExpression (DataString (strToBts (B.unpack res))))
+  pure (TeExpression (DataString (strToBts (T.unpack (T.decodeUtf8With T.lenientDecode res)))))
   where
     sed :: B.ByteString -> [B.ByteString] -> IO B.ByteString
     sed tgt [] = pure tgt

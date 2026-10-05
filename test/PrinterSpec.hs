@@ -15,7 +15,7 @@ import Matcher (Meta (Named), MetaValue (..), Subst (Subst))
 import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))
-import Test.Hspec (Spec, describe, it, shouldBe, shouldContain, shouldNotContain)
+import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldContain, shouldNotContain, shouldSatisfy)
 import Yaml (ExtraArgument (..))
 
 spec :: Spec
@@ -65,6 +65,17 @@ spec = do
           it desc $ do
             let expr = ExFormation [BiDelta (BtMeta name), BiVoid AtRho]
             parseExpression (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)) `shouldBe` Right expr
+      )
+
+  describe "printExpression writes data with meta bytes in full instead of crashing" $
+    forM_
+      [ ("a number, sweet", DataNumber (BtMeta "d1"), SWEET)
+      , ("a number, salty", DataNumber (BtMeta "d1"), SALTY)
+      , ("a string, sweet", DataString (BtMeta "d1"), SWEET)
+      , ("a string, salty", DataString (BtMeta "d1"), SALTY)
+      ]
+      ( \(desc, expr, sugar) ->
+          it desc (printExpression' expr (sugar, UNICODE, SINGLELINE, defaultMargin) `shouldContain` "𝛿1")
       )
 
   describe "printExpression with SWEET UNICODE renders the pretty function meta" $
@@ -160,6 +171,11 @@ spec = do
               (SALTY, UNICODE, SINGLELINE, defaultMargin)
       number `shouldNotContain` "as-bytes"
       str `shouldNotContain` "as-bytes"
+
+  it "keeps every line of a deep formation within --margin, counting indentation in columns" $
+    case parseExpression "⟦ a ↦ ⟦ b ↦ ⟦ c ↦ ⟦ d ↦ ⟦ e ↦ ⟦ x ↦ ξ.yyyyyyyy, z ↦ ξ.w ⟧ ⟧ ⟧ ⟧ ⟧ ⟧" of
+      Right deep -> maximum (map length (lines (printExpression' deep (SALTY, UNICODE, MULTILINE, 36)))) `shouldSatisfy` (<= 36)
+      Left err -> expectationFailure err
 
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
     it "renders the meet body on a single line even when the margin wraps its parent" $ do

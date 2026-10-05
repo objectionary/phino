@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.144
+cabal install --overwrite-policy=always phino-0.0.145
 phino --version
 ```
 
@@ -286,6 +286,15 @@ aborting the run. A fork whose branches differ in structure, such as a `Φ.true`
 and a `Φ.false` written as `φ ↦ ξ.left` against `φ ↦ ξ.right`, is stuck, and
 bringing two such branches to one shape is the program's job and not `phino`'s,
 which its entry does in a `rewrite` block.
+
+A bare symbol, `⟦ λ ⤍ 𝜎A ⟧` with no carrier around it, is what the deep walk
+answers a copy it deferred with (see Deep morphing below), and it joins with
+a formation too. It has no `φ` chain of its own, only the symbol, so the join
+pairs `𝜎A` with the symbol the `φ` chain of the other term ends in, mints a
+fresh `𝜎C` for that pair the usual way, and answers the bare `⟦ λ ⤍ 𝜎C ⟧`.
+The methods of the formation are dropped, since the other branch may have
+none of them. A formation whose `φ` chain ends in a datum, or which has no `φ`
+at all, does not join with a bare symbol.
 
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
@@ -556,6 +565,35 @@ The markup spells it `<timeout limit="5" by="morph" at="…"/>`.
 `spent(3)  # 𝔻(…)` is where `--max-firings=3` ran out, commented the same way
 and written where the firing it refused would have started.
 The markup spells it `<spent limit="3" by="dataize" at="…"/>`.
+
+`deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)` is a copy the deep walk
+deferred instead of entering it. The fresh symbol it answered the copy with
+stands in parentheses. The copy is written as a call of the object of the world
+it was made of, given the arguments that fill its voids, read. The comment
+names the judgment and the site of the walk.
+The object is found through the `ρ` of the copy: no `ρ` means `Φ`, a `ρ` that
+is a name means that name with its applications erased, and a `ρ` that is a
+formation means the object that formation was made of. Among the formations
+declared there, the copy was made of the one whose attributes cover its own,
+whose voids it fills the most, and which shares the most bindings with it.
+When the world declares no such object, or two of them tie, the copy is
+written as it stood, such as `⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧`.
+The markup spells it on one line, broken here for reading. The object stands
+in `of` and the arguments in `<with>`, both written whatever `--abridged`
+says, and the copy as it stood stands in `<e>`, abridged as usual:
+
+```xml
+<deferred symbol="𝜎2" by="morph" at="Φ.y" of="Φ.box">
+  <with><attr name="x">𝜎1</attr></with>
+  <e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e>
+</deferred>
+```
+
+Every argument of the call is an `<attr>` of `<with>`. An argument that is a
+bare symbol, or a carrier of one whose `φ` leads to it, such as
+`Φ.number( φ ↦ 𝜎1:λ )` or `𝜎1:λ:φ`, is spelled as that symbol, and any other
+argument is spelled `?`. A copy with no object of the world has neither `of`
+nor `<with>`, only `<e>`.
 
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
@@ -1126,6 +1164,32 @@ $ phino morph --deep --symbolic=atoms.yaml --sweet --hide-rho gap.phi
 ⟧
 ```
 
+One kind of formation the walk does not enter at all: a copy with a `φ`
+written as code and an argument that is a bare symbol, a `⟦ λ ⤍ 𝜎1 ⟧` with
+no carrier around it. The symbol stands for a value nobody knows, so the body
+can only ask it questions nobody can answer, and every firing spent inside
+that body is wasted. The walk defers such a copy instead: it answers the copy
+with a fresh symbol and writes a `deferred` line to the protocol, tying that
+symbol to the copy it stands for, which only a run of the program can work out.
+The walk reads every argument written as a dispatch before it decides, so
+`tup ↦ items.tail` counts when `items.tail` comes to a bare symbol, but it
+fires nothing while reading. A copy with no `φ`, such as a tuple, only holds
+its arguments, so reading one of them reaches the symbol and defers nothing.
+Here the walk defers the copy of `box`:
+
+```bash
+$ cat box.phi
+⟦
+  box(x) ↦ ⟦ φ ↦ x.next ⟧,
+  y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+⟧
+$ phino morph --deep --locator=Q.y --protocol=p.txt --sweet --hide-rho box.phi
+𝜎2:λ
+$ head -2 p.txt
+𝕄(Φ.y)
+  deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
+```
+
 ### Acyclic morphing
 
 Whether a program terminates is the object model's business, not the
@@ -1274,6 +1338,8 @@ $ cat fact.txt
         𝔻(𝜎6:λ) == 01-
         𝑛3.4 := 𝜎6:λ  # 𝑛1
         𝑛4.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+        stuck(L_if)
+    stuck(L_if)
   𝔼(L_if)  # 𝕄(Φ.x.φ)
     𝛿1.7 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
     𝑛1.7 := 01-:Δ  # 𝕄(ξ.left)
@@ -1296,10 +1362,16 @@ $ cat fact.txt
           𝔻(𝜎6:λ) == 01-
           𝑛3.9 := 𝑛3.4  # 𝑛1
           𝑛4.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+          stuck(L_if)
+      stuck(L_if)
     𝑛2.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
     𝔻(𝜎4:λ) == 01-
     𝑛3.7 := 𝑛.10.2  # 𝑛1
     𝑛4.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+    stuck(L_if)
+msec(31)
+firings(11)
+fps(355)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1315,10 +1387,32 @@ the frame belonged to, the site it was cut at and the mode that cut it. What it
 carries is the formation the frame above entered, as that frame had it, so the
 two are paired by their terms and no reader has to rename symbols by eye or
 find the cut in the residue. Nothing runs under a cut, so no block opens under
-the line. In the XML protocol it is a self-closing element,
-`<looped by="morph" match="proven" at="Φ.a🌵7" term="…"/>`, with the
-attributes a `<formation>` carries and the mode. Without the option the same
-run nests one round inside another until `--max-steps` runs out.
+the line. In the XML protocol it is
+`<looped by="morph" match="proven" at="Φ.a🌵7"><e>…</e></looped>`, with the
+site and the mode as attributes and the formation in `<e>`. Without the option
+the same run nests one round inside another until `--max-steps` runs out.
+
+A cut at the `φ` of a copy the walk of `--deep` has placed, such as
+`Φ.a🌵4.φ`, answers that copy with a fresh symbol, the way a deferred copy is
+answered. A fork above it then joins that symbol with its other branch,
+instead of getting stuck on a copy nobody can read. The line names the
+symbol, as in `looped(…) := 𝜎6  # 𝕄(Φ.a🌵4.φ), plausible`, and the markup
+writes the object the copy was made of and its arguments the way it writes
+them for a deferred copy, on one line, broken here for reading:
+
+<!-- markdownlint-disable MD013 -->
+
+```xml
+<looped symbol="𝜎6" by="morph" match="plausible" at="Φ.a🌵4.φ" of="Φ.fact">
+  <with><attr name="n">𝜎3</attr><attr name="acc">?</attr></with>
+  <e>⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ:φ, acc ↦ Φ.pair( head ↦ 𝜎1:λ:φ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧</e>
+</looped>
+```
+
+<!-- markdownlint-enable MD013 -->
+
+A cut anywhere else, or at the `φ` of a copy nested inside a term, answers
+nothing and leaves the copy as it stood.
 
 What a frame remembers is the branch from the run down to it, never everything
 the run has touched, so two siblings entering one formation enter it twice and
@@ -1528,13 +1622,13 @@ tally across all bindings.
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
-defined in the `my-rule.yml` YAML file (here, the `!d` is a capturing group,
-similar to regular expressions):
+defined in the `my-rule.yml` YAML file (here, the `!d1` and `!B1` are capturing
+groups, similar to regular expressions):
 
 ```yaml
 name: My custom rule
-pattern: Δ ⤍ !d
-result: Δ ⤍ 62-79-65
+pattern: ⟦ Δ ⤍ !d1, !B1 ⟧
+result: ⟦ Δ ⤍ 62-79-65, !B1 ⟧
 ```
 
 Then, rewrite:

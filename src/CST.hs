@@ -263,6 +263,8 @@ expressionToCSTFrom :: Int -> Expression -> EXPRESSION
 expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
 
 sweetNumber :: Bytes -> Bool
+sweetNumber (BtMeta _) = False
+sweetNumber (BtAny _) = False
 sweetNumber bts
   | btsSize bts /= 8 = False
 sweetNumber bts = case btsToNum bts of
@@ -270,7 +272,9 @@ sweetNumber bts = case btsToNum bts of
   _ -> True
 
 sweetString :: Bytes -> Bool
-sweetString = btsIsUtf8
+sweetString (BtMeta _) = False
+sweetString (BtAny _) = False
+sweetString bts = btsIsUtf8 bts
 
 sweetCollapsible :: Expression -> Bool
 sweetCollapsible (DataNumber bts) = sweetNumber bts
@@ -365,27 +369,39 @@ instance ToCST Expression EXPRESSION where
      in if length ts' == 1 && dataPrimitive obj && sweetCollapsible obj
           then applicationToPrimitive obj tabs rs
           else
-            if null exs
+            if length ts' > 1 && null exs && dataPrimitive obj && sweetCollapsible obj
               then
                 EX_APPLICATION
-                  ex'
+                  (applicationToPrimitive obj tabs rs)
                   NO_SPACE
                   eol
                   (TAB next)
-                  (AA_TAUS (toCST ts (next, eol) :: BINDING))
+                  (AA_TAUS (toCST (drop 1 ts') (next, eol) :: BINDING))
                   eol
                   (TAB tabs)
                   next
               else
-                EX_APPLICATION
-                  ex'
-                  NO_SPACE
-                  eol
-                  (TAB next)
-                  (AA_EXPRS (toCST exs (next, eol)))
-                  eol
-                  (TAB tabs)
-                  next
+                if null exs
+                  then
+                    EX_APPLICATION
+                      ex'
+                      NO_SPACE
+                      eol
+                      (TAB next)
+                      (AA_TAUS (toCST ts (next, eol) :: BINDING))
+                      eol
+                      (TAB tabs)
+                      next
+                  else
+                    EX_APPLICATION
+                      ex'
+                      NO_SPACE
+                      eol
+                      (TAB next)
+                      (AA_EXPRS (toCST exs (next, eol)))
+                      eol
+                      (TAB tabs)
+                      next
     where
       primitives :: [T.Text]
       primitives = ["number", "string"]

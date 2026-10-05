@@ -9,6 +9,9 @@ name: haddock
       - master
 permissions:
   contents: write
+concurrency:
+  group: haddock-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   haddock:
     env:

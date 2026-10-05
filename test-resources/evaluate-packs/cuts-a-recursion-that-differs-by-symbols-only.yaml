@@ -11,7 +11,9 @@
 # so the second firing is cut before it opens and writes a 'looped' line where
 # its block would have stood, carrying the term of the round that was kept
 # (#1434). The budget is generous here, so what ends the run is the cut and not
-# the limit.
+# the limit. The argument 'n' and every symbol 'dec' answers stand in a
+# carrier '⟦ φ ↦ 𝜎 ⟧', since the walk defers a copy one of whose arguments is
+# a bare symbol instead of entering it (#1729).
 symbolic: |
   - λ: L_zero
     dataize:
@@ -20,7 +22,7 @@ symbolic: |
   - λ: L_dec
     dataize:
       𝛿1: $.x
-    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+    𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
   - λ: L_mul
     dataize:
       𝛿1: $.a
@@ -49,73 +51,81 @@ input: >
     dec ↦ ⟦ x ↦ ∅, λ ⤍ L_dec ⟧,
     mul ↦ ⟦ a ↦ ∅, b ↦ ∅, λ ⤍ L_mul ⟧,
     fact ↦ ⟦ n ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ⟦ Δ ⤍ 01- ⟧, right ↦ Φ.mul( a ↦ ξ.n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ) ) ) ) ⟧,
-    x ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧
+    x ↦ Φ.fact( n ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ) ⟧
 result: |-
   ⟦
-    n ↦ 𝜎1:λ,
+    n ↦ 𝜎1:λ:φ,
     φ ↦ Φ.if(
       c ↦ 𝜎2:λ,
       left ↦ 01-:Δ,
-      right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ 𝜎3:λ ) )
+      right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ) )
     )
   ⟧
 protocol: |
   𝕄(Φ.x)
     𝔼(L_zero)  # 𝕄(Φ.x.φ)
+      formation(𝜎1:λ:φ)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
       𝑛.1.1 := 𝜎2:λ  # 𝑛
       𝑛.1.2 := 𝜎2:λ  # 𝕄(𝑛.1.1)
     𝔼(L_dec)  # 𝕄(Φ.x.φ)
+      formation(𝜎1:λ:φ)  # 𝔻(Φ.a🌵1)
       𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-      𝑛.2.1 := 𝜎3:λ  # 𝑛
-      𝑛.2.2 := 𝜎3:λ  # 𝕄(𝑛.2.1)
+      𝑛.2.1 := 𝜎3:λ:φ  # 𝑛
+      𝑛.2.2 := 𝜎3:λ:φ  # 𝕄(𝑛.2.1)
     𝔼(L_mul)  # 𝕄(Φ.x.φ)
+      formation(𝜎1:λ:φ)  # 𝔻(Φ.a🌵2)
       𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
-      formation(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵3)
+      formation(⟦ n ↦ 𝜎3:λ:φ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵3)
         𝔼(L_if)  # 𝔻(Φ.a🌵3)
           𝔼(L_zero)  # 𝔻(Φ.a🌵4)
+            formation(𝜎3:λ:φ)  # 𝔻(Φ.a🌵5)
             𝛿1.5 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
             𝑛.5.1 := 𝜎4:λ  # 𝑛
             𝑛.5.2 := 𝜎4:λ  # 𝕄(𝑛.5.1)
           𝛿1.4 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
           𝑛1.4 := 01-:Δ  # 𝕄(ξ.left)
           𝔼(L_dec)  # 𝕄(Φ.a🌵7.b)
+            formation(𝜎3:λ:φ)  # 𝔻(Φ.a🌵8)
             𝛿1.6 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-            𝑛.6.1 := 𝜎5:λ  # 𝑛
-            𝑛.6.2 := 𝜎5:λ  # 𝕄(𝑛.6.1)
-          looped(⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵7), proven
-          𝑛2.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
+            𝑛.6.1 := 𝜎5:λ:φ  # 𝑛
+            𝑛.6.2 := 𝜎5:λ:φ  # 𝕄(𝑛.6.1)
+          looped(⟦ a ↦ 𝜎1:λ:φ, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵7), proven
+          𝑛2.4 := ⟦ a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ 𝜎5:λ:φ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
           𝔻(𝜎6:λ) == 01-
           𝑛3.4 := 𝜎6:λ  # 𝑛1
-          𝑛4.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+          𝑛4.4 := ⟦ a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ 𝜎5:λ:φ ), λ ⤍ L_mul ⟧  # 𝑛2
           stuck(L_if)
       stuck(L_if)
     𝔼(L_if)  # 𝕄(Φ.x.φ)
       𝛿1.7 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
       𝑛1.7 := 01-:Δ  # 𝕄(ξ.left)
       𝔼(L_mul)  # 𝕄(Φ.a🌵11)
+        formation(𝜎1:λ:φ)  # 𝔻(Φ.a🌵12)
         𝛿1.8 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
-        formation(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵13)
+        formation(⟦ n ↦ 𝜎3:λ:φ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵13)
           𝔼(L_if)  # 𝔻(Φ.a🌵13)
             𝔼(L_zero)  # 𝔻(Φ.a🌵14)
+              formation(𝜎3:λ:φ)  # 𝔻(Φ.a🌵15)
               𝛿1.10 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
               𝑛.10.1 := 𝑛.5.2  # 𝑛
               𝑛.10.2 := 𝑛.5.2  # 𝕄(𝑛.10.1)
             𝛿1.9 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
             𝑛1.9 := 01-:Δ  # 𝕄(ξ.left)
             𝔼(L_dec)  # 𝕄(Φ.a🌵17.b)
+              formation(𝜎3:λ:φ)  # 𝔻(Φ.a🌵18)
               𝛿1.11 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
               𝑛.11.1 := 𝑛.6.2  # 𝑛
               𝑛.11.2 := 𝑛.6.2  # 𝕄(𝑛.11.1)
-            looped(⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵17), proven
-            𝑛2.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
+            looped(⟦ a ↦ 𝜎1:λ:φ, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵17), proven
+            𝑛2.9 := ⟦ a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ 𝜎5:λ:φ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
             𝔻(𝜎6:λ) == 01-
             𝑛3.9 := 𝑛3.4  # 𝑛1
-            𝑛4.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+            𝑛4.9 := ⟦ a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ 𝜎5:λ:φ ), λ ⤍ L_mul ⟧  # 𝑛2
             stuck(L_if)
         stuck(L_if)
-      𝑛2.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
+      𝑛2.7 := ⟦ a ↦ 𝜎1:λ:φ, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
       𝔻(𝜎4:λ) == 01-
       𝑛3.7 := 𝑛.10.2  # 𝑛1
-      𝑛4.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+      𝑛4.7 := ⟦ a ↦ 𝜎1:λ:φ, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ), λ ⤍ L_mul ⟧  # 𝑛2
       stuck(L_if)

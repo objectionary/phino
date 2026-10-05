@@ -14,6 +14,9 @@ name: actionlint
       - master
     paths:
       - '.github/**'
+concurrency:
+  group: actionlint-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   actionlint:
     timeout-minutes: 15
@@ -22,7 +25,7 @@ jobs:
       - uses: actions/checkout@v7
       - name: Download actionlint
         id: get_actionlint
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/011a6d15e749bb3f2d771eed9c7aa0e7e3e10ee7/scripts/download-actionlint.bash)
         shell: bash
       - name: Check workflow files
         run: ${{ steps.get_actionlint.outputs.executable }} -color

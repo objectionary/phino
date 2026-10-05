@@ -8,7 +8,8 @@
 # #1514 the stall was kept, and the firings of the same formation under
 # 'Φ.q.φ' and 'Φ.f', where the budget is enough, were told it bare, with
 # nothing answered in between. Now the firing under 'Φ.q.φ' brings 'arg'
-# down and answers, and the one under 'Φ.f' takes that answer.
+# down and answers, and the walk leaves that answer in 'f', so it fires
+# nothing more when it reaches 'Φ.f' (#1720).
 symbolic: |
   - λ: L_outer
     dataize:
@@ -45,6 +46,3 @@ protocol: |
       𝛿1.3 := 01-  # 𝔻(ξ.arg)
       𝑛.3.1 := 𝜎1:λ  # 𝑛
       𝑛.3.2 := 𝜎1:λ  # 𝕄(𝑛.3.1)
-    𝔼(L_outer)  # 𝕄(Φ.f)
-      𝑛.4.1 := 𝑛.3.2  # 𝑛
-      𝑛.4.2 := 𝑛.3.2  # 𝕄(𝑛.4.1)

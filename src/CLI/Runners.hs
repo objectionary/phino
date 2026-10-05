@@ -264,12 +264,19 @@ runMorph OptsMorph{..} = do
           heading record printCtx Morphing aiming._locator
           morph universe (started universe) aiming
       )
+  printed <-
+    if _quiet
+      then pure Nothing
+      else do
+        answer <- (`F.exclude'` excluded) <$> F.include' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) included
+        validateXmirTopLevel _outputFormat answer
+        Just <$> printAnswer printCtx answer
   when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
-  unless _quiet $ do
-    answer <- (`F.exclude'` excluded) <$> F.include' morphed included
-    validateXmirTopLevel _outputFormat answer
-    printAnswer printCtx answer >>= putStrLn
+  mapM_ putStrLn printed
   where
+    lastMaybe :: [a] -> Maybe a
+    lastMaybe [] = Nothing
+    lastMaybe items = Just (last items)
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions
@@ -374,6 +381,7 @@ runMerge OptsMerge{..} = do
 
 runMatch :: OptsMatch -> IO ()
 runMatch OptsMatch{..} = do
+  when (isJust _when && isNothing _pattern) (invalidCLIArguments "The option --when requires --pattern, since there is nothing to check it against")
   setStdGen (mkStdGen _seed)
   input <- readInput _inputFile
   expr <- parseInput input PHI

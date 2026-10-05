@@ -80,6 +80,12 @@ spec = describe "Functions" $ do
     it "extracts bytes from a data-object expression" $ do
       term <- buildTerm "dataize" [ArgExpression (DataNumber (numToBts 5))] substEmpty
       expectBytes term (numToBts 5)
+    it "extracts bytes from a bare formation of data" $ do
+      term <- buildTerm "dataize" [ArgExpression (ExFormation [BiDelta (numToBts 1)])] substEmpty
+      expectBytes term (numToBts 1)
+    it "extracts bytes from an application of Φ.bytes" $ do
+      term <- buildTerm "dataize" [ArgExpression (ExApplication (ExDispatch ExRoot (AtLabel "bytes")) (ArTau AtPhi (ExFormation [BiDelta (numToBts 1)])))] substEmpty
+      expectBytes term (numToBts 1)
 
   describe "size" $
     it "counts the bindings bound to a meta" $ do
@@ -106,10 +112,22 @@ spec = describe "Functions" $ do
         , \term -> expectExpression term (DataString (strToBts "foobar"))
         )
       ,
+        ( "concat joins the bytes of a number that is not UTF-8"
+        , "concat"
+        , [ArgExpression (DataString (strToBts "a")), ArgExpression (DataNumber (numToBts 0.5))]
+        , \term -> expectExpression term (DataString (BtMany ["61", "3F", "E0", "00", "00", "00", "00", "00", "00"]))
+        )
+      ,
         ( "sed replaces every occurrence with the 'g' flag"
         , "sed"
         , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/l/L/g"))]
         , \term -> expectExpression term (DataString (strToBts "heLLo"))
+        )
+      ,
+        ( "sed keeps every character above U+00FF"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "a ф 𝜑")), ArgExpression (DataString (strToBts "s/a/b/g"))]
+        , \term -> expectExpression term (DataString (strToBts "b ф 𝜑"))
         )
       ,
         ( "sed replaces only the first occurrence without the 'g' flag"

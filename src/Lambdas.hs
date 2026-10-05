@@ -29,6 +29,7 @@ import Data.Char (isDigit)
 import Data.List (find, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
@@ -85,6 +86,9 @@ instance FromJSON Lambda where
     dataless (T.unpack key) lambda._answer
     earlier (T.unpack key) lambda
     once (T.unpack key) lambda
+    mapM_ (metaless (T.unpack key) "dataize") lambda._dataized
+    mapM_ (metaless (T.unpack key) "morph") lambda._morphed
+    answered (T.unpack key) lambda
     pure lambda
     where
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
@@ -188,9 +192,10 @@ instance FromJSON Lambda where
                   key
               )
       sigmas :: String -> Expression -> Yaml.Parser ()
-      sigmas key answer = case [kind | Slot kind _ <- slots answer, kind /= "S"] of
-        [] -> pure ()
-        kind : _ -> fail (printf "The anonymous meta '!%s' cannot be referenced in the '𝑛' of λ function '%s'" (T.unpack kind) key)
+      sigmas key answer = case ([kind | Slot kind _ <- slots answer, kind /= "S"], symbols answer) of
+        ([], []) -> pure ()
+        (kind : _, _) -> fail (printf "The anonymous meta '!%s' cannot be referenced in the '𝑛' of λ function '%s'" (T.unpack kind) key)
+        (_, idx : _) -> fail (printf "The '𝑛' of λ function '%s' writes the numbered symbol '𝜎%d', while only a bare 𝜎 mints a fresh one" key idx)
       once :: String -> Lambda -> Yaml.Parser ()
       once key lambda = case twice [] bound of
         Nothing -> pure ()
@@ -207,6 +212,30 @@ instance FromJSON Lambda where
           twice seen (meta : rest)
             | meta `elem` seen = Just meta
             | otherwise = twice (meta : seen) rest
+      metaless :: String -> String -> (Meta, Expression) -> Yaml.Parser ()
+      metaless key block (meta, term) = case metas term of
+        [] -> pure ()
+        name : _ ->
+          fail
+            ( printf
+                "The operand '%s' of '%s' of λ function '%s' reads the meta '%s', while only a path from '$' can be reduced there"
+                (T.unpack meta._spelling)
+                block
+                key
+                (T.unpack name)
+            )
+      answered :: String -> Lambda -> Yaml.Parser ()
+      answered key lambda = case filter (`notElem` ("S" : known)) (metas lambda._answer) of
+        [] -> pure ()
+        name : _ -> fail (printf "The '𝑛' of λ function '%s' reads the meta '%s' that no block binds" key (T.unpack name))
+        where
+          known :: [Text]
+          known =
+            map (_name . fst) lambda._dataized
+              ++ map (_name . fst) lambda._morphed
+              ++ map (_name . fst) lambda._rewritten
+              ++ map (_name . fst) lambda._symbolized
+              ++ map (_name . fst) lambda._paired
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
@@ -270,6 +299,7 @@ readLambdas path = do
       throwIO (BrokenLambdas path (printf "the key '%s' is not a regular expression: %s" (T.unpack key) failure))
 
     overlaps :: FilePath -> [(Regex, Lambda)] -> IO ()
+    overlaps _ [_] = pure ()
     overlaps file registered = mapM (spoken . snd) registered >>= check
       where
         spoken :: Lambda -> IO (Lambda, Language)
@@ -357,6 +387,12 @@ joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
     taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
     taking (term, (spent', _, made)) = (term, reverse made, spent')
     goExpr :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goExpr one@(ExFormation _) two@(ExFormation _) joining
+      | bare one /= bare two = do
+          mine <- ending one
+          theirs <- ending two
+          (bd, joining') <- goBinding mine theirs joining
+          pure (ExFormation [bd], joining')
     goExpr (ExFormation one) (ExFormation two) joining = do
       (bds, joining') <- goBindings one two joining
       pure (ExFormation bds, joining')
@@ -398,6 +434,13 @@ joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
     goBinding one two joining
       | one == two = Just (one, joining)
       | otherwise = Nothing
+    bare :: Expression -> Bool
+    bare (ExFormation [BiLambda (FnSymbol _)]) = True
+    bare _ = False
+    ending :: Expression -> Maybe Binding
+    ending (ExFormation [bd@(BiLambda (FnSymbol _))]) = Just bd
+    ending (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds] >>= ending
+    ending _ = Nothing
     goArgument :: Argument -> Argument -> Joining -> Maybe (Argument, Joining)
     goArgument (ArTau attr one) (ArTau attr' two) joining
       | attr == attr' = do

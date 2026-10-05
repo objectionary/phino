@@ -7,9 +7,20 @@ name: no-comments
   pull_request:
     branches:
       - master
+    paths:
+      - '**.hs'
+      - '.github/scripts/no-comments.py'
+      - '.github/workflows/no-comments.yml'
   push:
     branches:
       - master
+    paths:
+      - '**.hs'
+      - '.github/scripts/no-comments.py'
+      - '.github/workflows/no-comments.yml'
+concurrency:
+  group: no-comments-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   no-comments:
     timeout-minutes: 15

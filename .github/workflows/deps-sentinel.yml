@@ -6,6 +6,9 @@ name: deps-sentinel
 'on':
   schedule:
     - cron: '0 * * * *'
+concurrency:
+  group: deps-sentinel-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   merge:
     timeout-minutes: 15

@@ -26,6 +26,7 @@ import Control.Exception (Exception)
 import Control.Monad (guard, when)
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.Scientific (toRealFloat)
+import qualified Data.Set as Set
 import qualified Data.Text as T
 import Data.Void
 import GHC.Char
@@ -35,7 +36,6 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Printf (printf)
-import Text.Read (readMaybe)
 
 type Parser = Parsec Void String
 
@@ -147,9 +147,10 @@ sigma :: Parser Function
 sigma = metaVar 'S' "𝜎" >>= either (pure . FnFresh) numbered
   where
     numbered :: T.Text -> Parser Function
-    numbered named = case readMaybe (T.unpack (T.drop 1 named)) of
-      Just idx -> pure (FnSymbol idx)
-      Nothing -> fail (printf "the symbol '%s' is numbered by something that is not an integer" (T.unpack named))
+    numbered named = case T.unpack (T.drop 1 named) of
+      digits@(first : _)
+        | all isDigit digits && first /= '0' && (read digits :: Integer) <= toInteger (maxBound :: Int) -> pure (FnSymbol (read digits))
+      _ -> fail (printf "the symbol '%s' is not numbered by a positive integer without leading zeros that fits into Int" (T.unpack named))
 
 byte :: Parser String
 byte = do
@@ -357,10 +358,15 @@ alpha :: Parser Alpha
 alpha = do
   _ <- choice [symbol "~", symbol "α"]
   choice
-    [ Alpha <$> lexeme L.decimal
+    [ lexeme L.decimal >>= ranged
     , either AlAny AlMeta <$> indexVar
     ]
     <?> "alpha"
+  where
+    ranged :: Integer -> Parser Alpha
+    ranged idx
+      | idx > toInteger (maxBound :: Int) = fail (printf "the index of 'α%d' is too big, while it must fit into %d" idx (maxBound :: Int))
+      | otherwise = pure (Alpha (fromInteger idx))
 
 argument :: Parser Argument
 argument =
@@ -381,12 +387,18 @@ formationBindings = do
   choice
     [ rsb >> return []
     , do
-        bs <- binding `sepBy1` symbol ","
-        rsb >> return bs
+        bs <- ((,) <$> getOffset <*> binding) `sepBy1` symbol ","
+        either (parseError . FancyError (repeating [] bs) . Set.singleton . ErrorFail) (const (pure ())) (uniqueBindings (map snd bs))
+        rsb >> return (map snd bs)
     ]
   where
     rsb :: Parser String
     rsb = choice [symbol "]]", symbol "⟧"]
+    repeating :: [Attribute] -> [(Int, Binding)] -> Int
+    repeating _ [] = 0
+    repeating seen ((offset, bd) : rest)
+      | any (`elem` seen) (attributesFromBindings [bd]) = offset
+      | otherwise = repeating (seen ++ attributesFromBindings [bd]) rest
 
 exHead :: Parser Expression
 exHead =

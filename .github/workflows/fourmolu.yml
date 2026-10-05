@@ -6,9 +6,20 @@ name: fourmolu
   pull_request:
     branches:
       - master
+    paths:
+      - '**.hs'
+      - 'fourmolu.yaml'
+      - '.github/workflows/fourmolu.yml'
   push:
     branches:
       - master
+    paths:
+      - '**.hs'
+      - 'fourmolu.yaml'
+      - '.github/workflows/fourmolu.yml'
+concurrency:
+  group: fourmolu-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   fourmolu:
     runs-on: ubuntu-24.04

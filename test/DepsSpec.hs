@@ -5,13 +5,13 @@
 
 module DepsSpec where
 
-import AST (Binding (BiLambda), Bytes (BtOne), Expression (ExFormation, ExRoot, ExXi), Function (FnSymbol), symbols)
+import AST (Argument (ArTau), Attribute (AtLabel), Binding (BiLambda, BiTau), Bytes (BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol), symbols)
 import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Evaluation (EvFiring, EvFormation, EvJoined, EvMinted, EvRun, EvTerm), Judgment (Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvDeferred, EvFiring, EvFormation, EvJoined, EvLooped, EvMinted, EvRun, EvTerm), Judgment (Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, saveStep)
 import Fixtures (readUtf8)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -115,6 +115,18 @@ spec = do
     it "does not change the depth a record stands at" $
       case renumbered 0 9 (EvJoined 7 1 (2, 3)) of
         EvJoined depth fresh pair -> (depth, fresh, pair) `shouldBe` (7, 10, (11, 12))
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "raises the symbol a deferred copy stands for and the symbols it carries above the floor" $
+      case renumbered 2 5 (EvDeferred 3 4 Morphing (ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 1)]), BiTau (AtLabel "y") (ExFormation [BiLambda (FnSymbol 3)])]) Nothing ExXi) of
+        EvDeferred _ fresh _ copy _ _ -> (fresh, symbols copy) `shouldBe` (9, [1, 8])
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "raises the symbols the call a deferred copy stands for carries above the floor" $
+      case renumbered 2 5 (EvDeferred 3 4 Morphing (ExFormation []) (Just (ExApplication (ExDispatch ExRoot (AtLabel "box")) (ArTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 7)])))) ExXi) of
+        EvDeferred _ _ _ _ call _ -> fmap symbols call `shouldBe` Just [12]
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "raises the symbol a cut answers a copy with and the symbols of its call above the floor" $
+      case renumbered 2 5 (EvLooped 3 Morphing Proven (ExFormation []) ExXi (Just (4, Just (ExApplication (ExDispatch ExRoot (AtLabel "box")) (ArTau (AtLabel "n") (ExFormation [BiLambda (FnSymbol 7)])))))) of
+        EvLooped _ _ _ _ _ answer -> fmap (fmap (fmap symbols)) answer `shouldBe` Just (9, Just [12])
         _ -> expectationFailure "The record did not stay the record it was"
 
   describe "perSecond" $ do
