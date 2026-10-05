@@ -326,6 +326,7 @@ escapeXMLText = concatMap escapeChar
     escapeChar :: Char -> String
     escapeChar '&' = "&amp;"
     escapeChar '<' = "&lt;"
+    escapeChar '>' = "&gt;"
     escapeChar ch = [ch]
 
 indent :: Int -> TB.Builder
