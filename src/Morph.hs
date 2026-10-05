@@ -19,6 +19,7 @@ import Builder (buildExpressionThrows, pathOf)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, SomeException, catch, evaluate, throwIO, try)
 import Control.Monad (unless, when)
+import Data.Bifunctor (first)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -327,9 +328,26 @@ morph' (expr, seq) univ state caller = do
         seq' <- leadsTo seq step built ctx
         pure ((built, seq'), state')
       Just (In.Onward way built world, state') -> do
-        (morphed, state'') <- onward seq state' way built ctx
-        morph' morphed world state'' ctx
+        (walked, state'') <- prewalked way built univ state' ctx
+        (morphed, state''') <- onward seq state'' way walked ctx
+        morph' morphed world state''' ctx
       Nothing -> throwIO (Unmorphable expr)
+
+prewalked :: In.Way -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+prewalked (In.Normalized _) expr univ state ctx
+  | ctx._deep = go expr
+  where
+    go :: Expression -> IO (Expression, State)
+    go (ExDispatch target@(ExDispatch _ _) attr) = first (`ExDispatch` attr) <$> go target
+    go (ExDispatch form@(ExFormation bds) attr)
+      | attr /= AtRho && reading attr bds && all tau bds = first (`ExDispatch` attr) <$> deepened (Just attr) form univ state ctx
+    go term = pure (term, state)
+    tau :: Binding -> Bool
+    tau (BiTau _ _) = True
+    tau _ = False
+    reading :: Attribute -> [Binding] -> Bool
+    reading attr bds = maybe False (not . closed) (listToMaybe [body | BiTau attr' body <- bds, attr' == attr])
+prewalked _ expr _ state _ = pure (expr, state)
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do
@@ -357,14 +375,21 @@ morph universe state caller@ReduceContext{..} = do
     walked walker morphed seq state'
       | not _deep = pure (morphed, reverse (NE.toList seq), state')
       | otherwise = do
-          (deep, state'') <- deepened morphed universe state' walker
+          (deep, state'') <- deepened Nothing morphed universe state' walker
           seq' <- leadsTo seq (Morphing, "deep") deep walker
           pure (deep, reverse (NE.toList seq'), state'')
 
-deepened :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-deepened expr univ state ctx = do
+deepened :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+deepened focus expr univ state ctx = do
   world <- newIORef (fromMaybe univ ctx._universe)
-  step (if ctx._jobs > 1 then spread else parts) (Just ctx._site) Nothing (Frame world world ctx._site Nothing) expr state ctx
+  case focus of
+    Just attr -> do
+      (store, path) <- home Nothing world expr
+      body <- held (ExDispatch path attr) store
+      (entered, state') <- sibling Nothing (Frame world store path (Just attr)) body state ctx
+      when (entered /= body) (stored store (ExDispatch path attr) entered)
+      (,state') <$> held path store
+    Nothing -> step (if ctx._jobs > 1 then spread else parts) (Just ctx._site) Nothing (Frame world world ctx._site Nothing) expr state ctx
   where
     go :: Maybe Expression -> Maybe Attribute -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
     go = step parts
@@ -394,9 +419,17 @@ deepened expr univ state ctx = do
       pure (ExDispatch entered attr, state'')
     parts _ frame (ExApplication target arg) state' caller = do
       (entered, state'') <- go Nothing Nothing frame target state' caller
-      (applied, state''') <- argument frame arg state'' caller
+      (applied, state''') <- argument (go Nothing Nothing) frame arg state'' caller
       pure (ExApplication entered applied, state''')
     parts _ _ term state' _ = pure (term, state')
+    sibling :: Maybe Attribute -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    sibling dispatched frame term@(ExDispatch ExXi attr) state' caller
+      | attr /= AtRho = go Nothing dispatched frame term state' caller
+    sibling _ frame (ExDispatch target attr) state' caller = first (`ExDispatch` attr) <$> sibling (Just attr) frame target state' caller
+    sibling _ frame (ExApplication target arg) state' caller = do
+      (entered, state'') <- sibling Nothing frame target state' caller
+      first (ExApplication entered) <$> argument (sibling Nothing) frame arg state'' caller
+    sibling _ _ term state' _ = pure (term, state')
     abstract :: Binding -> Bool
     abstract (BiVoid _) = True
     abstract _ = False
@@ -519,25 +552,26 @@ deepened expr univ state ctx = do
           unless seen (visit caller._memo object attr)
           pure (not seen)
     fresh _ _ _ = pure True
-    closed :: Expression -> Bool
-    closed ExXi = False
-    closed (ExDispatch target _) = closed target
-    closed (ExApplication target (ArTau _ arg)) = closed target && closed arg
-    closed (ExApplication target (ArAlpha _ arg)) = closed target && closed arg
-    closed _ = True
     scope :: Attribute -> Expression -> Expression
     scope attr (ExFormation bds) = ExFormation (filter (not . named attr) bds)
     scope _ other = other
     named :: Attribute -> Binding -> Bool
     named attr (BiTau attr' _) = attr' == attr
     named _ _ = False
-    argument :: Frame -> Argument -> State -> ReduceContext -> IO (Argument, State)
-    argument frame (ArTau attr arg) state' caller = do
-      (entered, state'') <- go Nothing Nothing frame arg state' caller
+    argument :: (Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)) -> Frame -> Argument -> State -> ReduceContext -> IO (Argument, State)
+    argument walk frame (ArTau attr arg) state' caller = do
+      (entered, state'') <- walk frame arg state' caller
       pure (ArTau attr entered, state'')
-    argument frame (ArAlpha alpha arg) state' caller = do
-      (entered, state'') <- go Nothing Nothing frame arg state' caller
+    argument walk frame (ArAlpha alpha arg) state' caller = do
+      (entered, state'') <- walk frame arg state' caller
       pure (ArAlpha alpha entered, state'')
+
+closed :: Expression -> Bool
+closed ExXi = False
+closed (ExDispatch target _) = closed target
+closed (ExApplication target (ArTau _ arg)) = closed target && closed arg
+closed (ExApplication target (ArAlpha _ arg)) = closed target && closed arg
+closed _ = True
 
 inferred :: Expression -> Expression -> State -> ReduceContext -> [In.Inference value] -> IO (Maybe (In.Conclusion value, State))
 inferred expr univ state ctx rules = do
