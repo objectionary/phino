@@ -36,7 +36,6 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Printf (printf)
-import Text.Read (readMaybe)
 
 type Parser = Parsec Void String
 
@@ -148,9 +147,10 @@ sigma :: Parser Function
 sigma = metaVar 'S' "𝜎" >>= either (pure . FnFresh) numbered
   where
     numbered :: T.Text -> Parser Function
-    numbered named = case readMaybe (T.unpack (T.drop 1 named)) of
-      Just idx -> pure (FnSymbol idx)
-      Nothing -> fail (printf "the symbol '%s' is numbered by something that is not an integer" (T.unpack named))
+    numbered named = case T.unpack (T.drop 1 named) of
+      digits@(first : _)
+        | all isDigit digits && first /= '0' && (read digits :: Integer) <= toInteger (maxBound :: Int) -> pure (FnSymbol (read digits))
+      _ -> fail (printf "the symbol '%s' is not numbered by a positive integer without leading zeros that fits into Int" (T.unpack named))
 
 byte :: Parser String
 byte = do
