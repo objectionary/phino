@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+failure: true
+expression: '[[ k -> [[ x -> "D" ]] ]]'
+pattern: '[[ !t1 -> !e1, !B1 ]]'
+condition:
+  matches: ['^ф$', '!e1']
