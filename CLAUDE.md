@@ -265,9 +265,8 @@ site carrying that answer and no operand line (#1476). The memo keeps the
 answer by the firing too, the λ name with the data, the symbols and the normal
 forms its operands came down to (`Firing`, `remembered` and `remember` in
 `Morph.hs`), since an entry answers from its operands alone: a firing of
-another formation, such as the attribute an object reads through `ξ` and the
-walk reads as a binding, two formations since `ξ` is the object minus the
-attribute read, brings its operands down, finds the firing answered and takes
+another formation, such as one whose operand reads another object holding the
+same datum, brings its operands down, finds the firing answered and takes
 that answer, minting nothing, so one value never gets two names (#1661). A
 symbol is kept as the symbol it is, not as the datum every symbol
 manufactures, so two firings over two symbols stay two. Such a firing is
@@ -299,11 +298,26 @@ the voids a copy filled, which belong to that copy alone (#1480), and a body
 reading ξ outside the formations nested in it, which reads the copy it stands
 in and is walked in every copy (`closed` of `deepened`, #1485).
 
+The walk writes back what it made, so one λ fires once per object and not
+once per read (#1720). A `Frame` of `deepened` holds the world, the formation
+the walk stands in and the binding it walks: the formation is a place in the
+world when the walk reached it from the locator, and a store of its own when
+it is a copy or a formation nested in a term (`home`). What a binding comes to
+replaces the binding there (`bindings`), and the answer of a read the walk
+fired through Φ or ξ replaces the binding it read (`noted` and `address`),
+unless that binding holds the site the walk stands at, which it replaces
+anyway once it is done. Every step fires against the world as it stands, as
+the universe and as `_universe`, so a later read of the same attribute, by the
+walk or by a rule, finds the answer and fires nothing. The answer of a read
+through ξ is worked out against the object minus the attribute walked, the way
+#967 reads a dot, and lands in the whole object.
+
 `--jobs` has the walk take the bindings of the formation it starts at side
 by side (`spread` of `deepened`, over `pooled` of `Pool.hs`), each a root of
-its own: it starts from the state the spine left, with a memo, a tally and a
-source of fresh names of its own (`tausOf` in `Tau.hs`, names like `a🌵4-0`
-that carry the binding), and its protocol records are kept aside. They are
+its own: it starts from the state the spine left, with a world, a memo, a
+tally and a source of fresh names of its own (`tausOf` in `Tau.hs`, names
+like `a🌵4-0` that carry the binding), and its protocol records are kept
+aside. One binding never sees what another wrote back. They are
 gathered in the order of the bindings, and gathering raises the symbols a
 binding minted by what the bindings before it minted (`lifted` in `AST.hs`,
 `renumbered` in `Deps.hs`), so the answer and the protocol do not depend on

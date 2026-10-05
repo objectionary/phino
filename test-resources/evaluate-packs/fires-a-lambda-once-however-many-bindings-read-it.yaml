@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The deep walk writes what it morphed back into the world (#1720). Before,
+# the world stayed as written, so 'b' read 'Φ.a' as 'Φ.foo.x' and fired 'Fn'
+# twice more, and the walk fired it once again when it reached 'foo'. Now the
+# read of 'Φ.foo' under 'a' leaves the answer in 'foo', the walk leaves what
+# it made of 'a' in 'a', and 'Fn' fires once, as it does in EO.
+symbolic: |
+  - λ: Fn
+    𝑛: ⟦ x ↦ ⟦ y ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧ ⟧
+deep: true
+partial: true
+acyclic: plausible
+input: >
+  ⟦ a ↦ Φ.foo.x, b ↦ Φ.a.y, foo ↦ ⟦ λ ⤍ Fn ⟧ ⟧
+result: >
+  ⟦ a ↦ ⟦ x ↦ ⟦ y ↦ 𝜎1:λ ⟧ ⟧.x, b ↦ Φ.a.y, foo ↦ ⟦ x ↦ ⟦ y ↦ 𝜎1:λ ⟧ ⟧ ⟧
+protocol: |
+  𝕄(Φ)
+    𝔼(Fn)  # 𝕄(Φ.a)
+      𝑛.1.1 := 𝜎1:λ:y:x  # 𝑛
+      𝑛.1.2 := 𝜎1:λ:y:x  # 𝕄(𝑛.1.1)
