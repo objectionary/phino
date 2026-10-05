@@ -40,7 +40,7 @@ replaceArgument (ArAlpha alpha expr, ptns, repls) func =
 replaceExpression' :: ReplaceExpressionFunc'
 replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls))
   | inert expr && not (inert ptn) = state
-  | expr == ptn = replaceExpression' (repl expr, _ptns, _repls)
+  | expr == ptn = let (ptns', repls') = swallowed expr (_ptns, _repls) in replaceExpression' (repl expr, ptns', repls')
   | otherwise = case expr of
       ExDispatch inner attr ->
         let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls)
@@ -88,6 +88,24 @@ replaceExpressionFast' state@(expr, ptns, repls) = case expr of
         (arg', ptns'', repls'') = replaceArgument (arg, ptns', repls') replaceExpressionFast'
      in (ExApplication expr' arg', ptns'', repls'')
   _ -> state
+
+swallowed :: Expression -> ([Expression], [Expression -> Expression]) -> ([Expression], [Expression -> Expression])
+swallowed replaced = go []
+  where
+    go :: [Expression] -> ([Expression], [Expression -> Expression]) -> ([Expression], [Expression -> Expression])
+    go dropped (ptn : ptns, _ : repls)
+      | length (filter (== ptn) dropped) < sum (map (occurrences ptn) (children replaced)) = go (ptn : dropped) (ptns, repls)
+    go _ pending = pending
+    occurrences :: Expression -> Expression -> Int
+    occurrences ptn term = (if term == ptn then 1 else 0) + sum (map (occurrences ptn) (children term))
+    children :: Expression -> [Expression]
+    children (ExFormation bds) = [inner | BiTau _ inner <- bds]
+    children (ExDispatch inner _) = [inner]
+    children (ExApplication inner (ArTau _ arg)) = [inner, arg]
+    children (ExApplication inner (ArAlpha _ arg)) = [inner, arg]
+    children (ExPhiMeet _ _ inner) = [inner]
+    children (ExPhiAgain _ _ inner) = [inner]
+    children _ = []
 
 replaceExpression :: ReplaceExpressionFunc
 replaceExpression state =
