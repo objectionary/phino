@@ -566,12 +566,32 @@ The markup spells it `<timeout limit="5" by="morph" at="…"/>`.
 and written where the firing it refused would have started.
 The markup spells it `<spent limit="3" by="dataize" at="…"/>`.
 
-`deferred(𝜎2) := ⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧  # 𝕄(Φ.y)` is a copy the deep walk
+`deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)` is a copy the deep walk
 deferred instead of entering it. The fresh symbol it answered the copy with
-stands in parentheses, and the copy is written as it stood, with its arguments
-read. The comment names the judgment and the site of the walk.
-The markup spells it
-`<deferred symbol="𝜎2" by="morph" at="Φ.y">⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</deferred>`.
+stands in parentheses. The copy is written as a call of the object of the world
+it was made of, given the arguments that fill its voids, read. The comment
+names the judgment and the site of the walk.
+The object is found through the `ρ` of the copy: no `ρ` means `Φ`, a `ρ` that
+is a name means that name with its applications erased, and a `ρ` that is a
+formation means the object that formation was made of. Among the formations
+declared there, the copy was made of the one whose attributes cover its own,
+whose voids it fills the most, and which shares the most bindings with it.
+When the world declares no such object, or two of them tie, the copy is
+written as it stood, such as `⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧`.
+The markup spells it on one line, broken here for reading. The object stands
+in `of` and the arguments in `<with>`, both written whatever `--abridged`
+says, and the copy as it stood stands in `<e>`, abridged as usual:
+
+```xml
+<deferred symbol="𝜎2" by="morph" at="Φ.y" of="Φ.box">
+  <with><attr name="x">𝜎1</attr></with>
+  <e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e>
+</deferred>
+```
+
+Every argument of the call is an `<attr>` of `<with>`, and an argument that
+is not a bare symbol is spelled `?`. A copy with no object of the world has
+neither `of` nor `<with>`, only `<e>`.
 
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
@@ -1165,7 +1185,7 @@ $ phino morph --deep --locator=Q.y --protocol=p.txt --sweet --hide-rho box.phi
 𝜎2:λ
 $ head -2 p.txt
 𝕄(Φ.y)
-  deferred(𝜎2) := ⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧  # 𝕄(Φ.y)
+  deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
 ```
 
 ### Acyclic morphing
