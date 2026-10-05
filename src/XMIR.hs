@@ -26,7 +26,7 @@ where
 import AST
 import Bytes (btsIsUtf8, btsSize, btsToNum, btsToStr, bytesToBts)
 import Control.Exception (Exception (displayException), throwIO)
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.Bifunctor (bimap)
 import Data.Char (isAsciiLower, isDigit)
 import Data.Foldable (foldlM)
@@ -146,16 +146,15 @@ expression (DataString bytes) XmirContext{..} =
 expression app@(ExApplication expr (ArTau AtRho _)) ctx@XmirContext{..}
   | _hideRho = expression expr ctx
   | otherwise = throwIO (UnsupportedExpression app)
-expression (ExApplication expr arg) ctx = do
+expression app@(ExApplication expr arg) ctx = do
   (base, children) <- expression expr ctx
+  when (null base) (throwIO (UnsupportedExpression app))
   (base', children') <- expression texpr ctx
   let attrs =
         if null base'
           then [("as", as)]
           else [("as", as), ("base", base')]
-  if null base && not (null children)
-    then pure ("", [object [] (children ++ [object attrs children'])])
-    else pure (base, children ++ [object attrs children'])
+  pure (base, children ++ [object attrs children'])
   where
     (as, texpr) = case arg of
       ArTau attr value -> (printAttribute attr, value)
