@@ -59,6 +59,10 @@ spec = do
       known <- lambdasOf (entry "L_number_plus")
       answering known "L_number_plus_twice" `shouldBe` Nothing
 
+    it "reads a single key that no other key is compared with, even an anchored one" $ do
+      known <- lambdasOf (entry "^L_a$")
+      answering known "L_a" `shouldBe` Just "^L_a$"
+
     it "cannot read a λ function no entry answers" $ do
       known <- lambdasOf (entry "L_number_plus")
       answering known "L_bytes_not" `shouldBe` Nothing
@@ -149,7 +153,7 @@ spec = do
         , entry "L_[a-z]+_plus" <> entry "L_number_[a-z]+"
         , "such as 'L_number_plus'"
         )
-      , ("a key with a back reference phino cannot compare", entry "L_(a)\\1", "cannot be compared")
+      , ("a key with a back reference phino cannot compare", entry "L_(a)\\1" <> entry "L_b", "cannot be compared")
       , ("a key which is no regular expression", entry "L_[pair", "is not a regular expression")
       , ("an operand of 'dataize' which is no bytes meta", "- λ: L_pair\n  dataize:\n    𝑛1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not a bytes meta")
       , ("an operand of 'morph' which is no expression meta", "- λ: L_pair\n  morph:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not an expression meta")
