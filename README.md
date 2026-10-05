@@ -287,6 +287,15 @@ and a `Φ.false` written as `φ ↦ ξ.left` against `φ ↦ ξ.right`, is stuck
 bringing two such branches to one shape is the program's job and not `phino`'s,
 which its entry does in a `rewrite` block.
 
+A bare symbol, `⟦ λ ⤍ 𝜎A ⟧` with no carrier around it, is what the deep walk
+answers a copy it deferred with (see Deep morphing below), and it joins with
+a formation too. It has no `φ` chain of its own, only the symbol, so the join
+pairs `𝜎A` with the symbol the `φ` chain of the other term ends in, mints a
+fresh `𝜎C` for that pair the usual way, and answers the bare `⟦ λ ⤍ 𝜎C ⟧`.
+The methods of the formation are dropped, since the other branch may have
+none of them. A formation whose `φ` chain ends in a datum, or which has no `φ`
+at all, does not join with a bare symbol.
+
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
 has a perfectly good value on the other. The join then mints nothing, binds
@@ -556,6 +565,13 @@ The markup spells it `<timeout limit="5" by="morph" at="…"/>`.
 `spent(3)  # 𝔻(…)` is where `--max-firings=3` ran out, commented the same way
 and written where the firing it refused would have started.
 The markup spells it `<spent limit="3" by="dataize" at="…"/>`.
+
+`deferred(𝜎2) := ⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧  # 𝕄(Φ.y)` is a copy the deep walk
+deferred instead of entering it. The fresh symbol it answered the copy with
+stands in parentheses, and the copy is written as it stood, with its arguments
+read. The comment names the judgment and the site of the walk.
+The markup spells it
+`<deferred symbol="𝜎2" by="morph" at="Φ.y">⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</deferred>`.
 
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
@@ -1124,6 +1140,32 @@ $ phino morph --deep --symbolic=atoms.yaml --sweet --hide-rho gap.phi
   bar(x) ↦ L_bar:λ,
   demo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ L_number_times:λ ⟧ ) ⟧:foo
 ⟧
+```
+
+One kind of formation the walk does not enter at all: a copy with a `φ`
+written as code and an argument that is a bare symbol, a `⟦ λ ⤍ 𝜎1 ⟧` with
+no carrier around it. The symbol stands for a value nobody knows, so the body
+can only ask it questions nobody can answer, and every firing spent inside
+that body is wasted. The walk defers such a copy instead: it answers the copy
+with a fresh symbol and writes a `deferred` line to the protocol, tying that
+symbol to the copy it stands for, which only a run of the program can work out.
+The walk reads every argument written as a dispatch before it decides, so
+`tup ↦ items.tail` counts when `items.tail` comes to a bare symbol, but it
+fires nothing while reading. A copy with no `φ`, such as a tuple, only holds
+its arguments, so reading one of them reaches the symbol and defers nothing.
+Here the walk defers the copy of `box`:
+
+```bash
+$ cat box.phi
+⟦
+  box(x) ↦ ⟦ φ ↦ x.next ⟧,
+  y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+⟧
+$ phino morph --deep --locator=Q.y --protocol=p.txt --sweet --hide-rho box.phi
+𝜎2:λ
+$ head -2 p.txt
+𝕄(Φ.y)
+  deferred(𝜎2) := ⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧  # 𝕄(Φ.y)
 ```
 
 ### Acyclic morphing
