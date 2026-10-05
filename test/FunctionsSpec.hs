@@ -112,6 +112,12 @@ spec = describe "Functions" $ do
         , \term -> expectExpression term (DataString (strToBts "foobar"))
         )
       ,
+        ( "concat joins the bytes of a number that is not UTF-8"
+        , "concat"
+        , [ArgExpression (DataString (strToBts "a")), ArgExpression (DataNumber (numToBts 0.5))]
+        , \term -> expectExpression term (DataString (BtMany ["61", "3F", "E0", "00", "00", "00", "00", "00", "00"]))
+        )
+      ,
         ( "sed replaces every occurrence with the 'g' flag"
         , "sed"
         , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/l/L/g"))]

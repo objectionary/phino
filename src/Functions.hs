@@ -7,7 +7,7 @@ module Functions (buildTerm, buildFunctions, contextualizing, execFunctions, nam
 
 import AST
 import Builder
-import Bytes (btsSize, btsToNum, btsToUnescapedStr, numToBts, strToBts)
+import Bytes (btsConcat, btsSize, btsToNum, btsToUnescapedStr, numToBts, strToBts)
 import Contextualize (contextualize)
 import Control.Exception (throwIO)
 import Control.Monad (when)
@@ -109,8 +109,8 @@ _dataize _ _ = throwIO (userError "Function dataize() requires exactly 1 argumen
 
 _concat :: BuildTermMethod
 _concat args subst = do
-  args' <- traverse (`argToString` subst) args
-  pure (TeExpression (DataString (strToBts (concat args'))))
+  args' <- traverse (`argToBytes` subst) args
+  pure (TeExpression (DataString (foldl btsConcat BtEmpty args')))
 
 _sed :: BuildTermMethod
 _sed args subst = do
