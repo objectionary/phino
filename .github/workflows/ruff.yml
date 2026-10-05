@@ -7,9 +7,17 @@ name: ruff
   pull_request:
     branches:
       - master
+    paths:
+      - '**.py'
+      - 'ruff.toml'
+      - '.github/workflows/ruff.yml'
   push:
     branches:
       - master
+    paths:
+      - '**.py'
+      - 'ruff.toml'
+      - '.github/workflows/ruff.yml'
 jobs:
   ruff:
     timeout-minutes: 15
