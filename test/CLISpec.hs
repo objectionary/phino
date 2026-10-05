@@ -229,6 +229,10 @@ spec = do
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 
+  it "keeps a data literal sugared when it is applied to more arguments" $
+    withStdin "⟦ i ↦ 42(z ↦ ξ.f), s ↦ \"Hello\"(z ↦ ξ.f) ⟧" $
+      testCLISucceeded ["rewrite", "--sweet", "--flat"] ["⟦ i ↦ 42( z ↦ f ), s ↦ \"Hello\"( z ↦ f ) ⟧"]
+
   it "prints the one-binding sugar after inline voids with --sweet" $
     withStdin "[[ x(y) -> [[ a -> 42 ]] ]]" $
       testCLISucceeded ["rewrite", "--sweet"] ["⟦ x(y) ↦ 42:a ⟧"]
