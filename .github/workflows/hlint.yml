@@ -18,6 +18,9 @@ name: hlint
       - '**.hs'
       - '.hlint.yaml'
       - '.github/workflows/hlint.yml'
+concurrency:
+  group: hlint-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   hlint:
     runs-on: ubuntu-24.04

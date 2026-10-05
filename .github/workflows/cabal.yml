@@ -10,6 +10,9 @@ name: cabal
   pull_request:
     branches:
       - master
+concurrency:
+  group: cabal-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   cabal:
     strategy:

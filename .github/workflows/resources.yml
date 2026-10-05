@@ -10,6 +10,9 @@ name: resources
   pull_request:
     branches:
       - master
+concurrency:
+  group: resources-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   check-resources:
     runs-on: ubuntu-24.04

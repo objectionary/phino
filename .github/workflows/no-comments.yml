@@ -18,6 +18,9 @@ name: no-comments
       - '**.hs'
       - '.github/scripts/no-comments.py'
       - '.github/workflows/no-comments.yml'
+concurrency:
+  group: no-comments-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   no-comments:
     timeout-minutes: 15
