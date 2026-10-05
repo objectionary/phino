@@ -15,7 +15,7 @@ import Matcher (Meta (Named), MetaValue (..), Subst (Subst))
 import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))
-import Test.Hspec (Spec, describe, it, shouldBe, shouldContain, shouldNotContain)
+import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldContain, shouldNotContain, shouldSatisfy)
 import Yaml (ExtraArgument (..))
 
 spec :: Spec
@@ -171,6 +171,11 @@ spec = do
               (SALTY, UNICODE, SINGLELINE, defaultMargin)
       number `shouldNotContain` "as-bytes"
       str `shouldNotContain` "as-bytes"
+
+  it "keeps every line of a deep formation within --margin, counting indentation in columns" $
+    case parseExpression "⟦ a ↦ ⟦ b ↦ ⟦ c ↦ ⟦ d ↦ ⟦ e ↦ ⟦ x ↦ ξ.yyyyyyyy, z ↦ ξ.w ⟧ ⟧ ⟧ ⟧ ⟧ ⟧" of
+      Right deep -> maximum (map length (lines (printExpression' deep (SALTY, UNICODE, MULTILINE, 36)))) `shouldSatisfy` (<= 36)
+      Left err -> expectationFailure err
 
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
     it "renders the meet body on a single line even when the margin wraps its parent" $ do
