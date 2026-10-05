@@ -22,7 +22,7 @@ jobs:
           cabal-version: '3.12.1.0'
       - uses: zauguin/install-texlive@v4.4.0
         with:
-          packages: scheme-basic eolang mathtools
+          packages: scheme-basic eolang mathtools upgreek
           texlive_version: 2026
       - uses: actions/cache@v6
         with:
