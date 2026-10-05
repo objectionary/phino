@@ -5,7 +5,7 @@
 
 module DepsSpec where
 
-import AST (Attribute (AtLabel), Binding (BiLambda, BiTau), Bytes (BtOne), Expression (ExFormation, ExRoot, ExXi), Function (FnSymbol), symbols)
+import AST (Argument (ArTau), Attribute (AtLabel), Binding (BiLambda, BiTau), Bytes (BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol), symbols)
 import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
@@ -117,8 +117,12 @@ spec = do
         EvJoined depth fresh pair -> (depth, fresh, pair) `shouldBe` (7, 10, (11, 12))
         _ -> expectationFailure "The record did not stay the record it was"
     it "raises the symbol a deferred copy stands for and the symbols it carries above the floor" $
-      case renumbered 2 5 (EvDeferred 3 4 Morphing (ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 1)]), BiTau (AtLabel "y") (ExFormation [BiLambda (FnSymbol 3)])]) ExXi) of
-        EvDeferred _ fresh _ copy _ -> (fresh, symbols copy) `shouldBe` (9, [1, 8])
+      case renumbered 2 5 (EvDeferred 3 4 Morphing (ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 1)]), BiTau (AtLabel "y") (ExFormation [BiLambda (FnSymbol 3)])]) Nothing ExXi) of
+        EvDeferred _ fresh _ copy _ _ -> (fresh, symbols copy) `shouldBe` (9, [1, 8])
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "raises the symbols the call a deferred copy stands for carries above the floor" $
+      case renumbered 2 5 (EvDeferred 3 4 Morphing (ExFormation []) (Just (ExApplication (ExDispatch ExRoot (AtLabel "box")) (ArTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 7)])))) ExXi) of
+        EvDeferred _ _ _ _ call _ -> fmap symbols call `shouldBe` Just [12]
         _ -> expectationFailure "The record did not stay the record it was"
 
   describe "perSecond" $ do

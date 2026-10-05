@@ -1584,6 +1584,22 @@ spec = do
                        , "    𝑛.1.2 := 𝜎1:λ:z  # 𝕄(𝑛.1.1)"
                        ]
 
+      it "writes a deferred copy as a call of the object of the world it was made of" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ box(x) ↦ ⟦ φ ↦ x.next ⟧, y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
+            testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["  deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)"]
+
+      it "writes a deferred copy as it stands when the world declares no object it was made of" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ wrap(v) ↦ ⟦⟧, y ↦ Φ.wrap( v ↦ ⟦ b(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.b( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
+            testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["  deferred(𝜎2) := ⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧  # 𝕄(Φ.y)"]
+
       it "writes a told stall to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
@@ -1890,9 +1906,50 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
-                         , "  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\">⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</deferred>"
+                         , "  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr></with><e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e></deferred>"
                          , "</morph>"
                          ]
+
+        it "names the object a deferred copy was made of through the formation its ρ holds" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>⟦ tup ↦ 𝜎1:λ, φ ↦ tup.next ⟧</e></deferred>"]
+
+        it "names the object a deferred copy was made of after the walk wrote an answer into its ρ" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n") $ \dataized ->
+              withStdin "⟦ bytes(φ) ↦ ⟦⟧, dataized(target) ↦ L_dataized:λ, joined(items) ↦ ⟦ φ ↦ step( tup ↦ items, s ↦ sep ), sep ↦ Φ.dataized( target ↦ items ), step(ρ, tup, s) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
+                testCLISucceeded ["morph", "--deep", "--symbolic=" ++ dataized, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr><attr name=\"s\">?</attr></with><e>⟦ tup ↦ 𝜎1:λ, s ↦ 𝜎2:λ:φ, φ ↦ tup.next ⟧</e></deferred>"]
+
+        it "writes a question mark for an argument of a deferred copy that is no bare symbol" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧, w ↦ ⟦ z ↦ Φ ⟧ ) ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">?</attr></with><e>⟦ x ↦ 𝜎1:λ, w ↦ Φ:z, φ ↦ x.next ⟧</e></deferred>"]
+
+        it "writes the object a deferred copy was made of whatever --abridged says" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--abridged=20", "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>⟦ φ ↦ tup.next, +1 ⟧</e></deferred>"]
+
+        it "writes no object for a deferred copy of a formation the world does not declare" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ wrap(v) ↦ ⟦⟧, y ↦ Φ.wrap( v ↦ ⟦ b(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.b( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\"><e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e></deferred>"]
 
         it "writes no 'minted' element for a firing minting nothing" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do

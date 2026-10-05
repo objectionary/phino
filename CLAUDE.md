@@ -340,6 +340,19 @@ copy with its arguments read. The `join` of `Lambdas.hs` pairs such a bare
 symbol with the symbol the φ chain of the other branch ends in, and answers
 a bare fresh symbol, dropping the methods.
 
+The record also carries the copy as a call of the object of the world it was
+made of (#1732): `called` of `deepened` applies the locator `origin` finds to
+the arguments filling the voids of that object. `origin` follows the ρ of the
+copy, which is Φ when absent, a name with its applications erased (`erased`,
+shared with `synonym`), or a formation, whose own origin it finds first. Of
+the formations declared there whose attributes cover those of the copy,
+`chosen` keeps the one whose voids the copy fills the most and then the one
+sharing the most bindings, so a declaration wins over a copy the walk wrote
+into the world. With no such object, or a tie, the record has no call. The
+text protocol writes the call in place of the copy; the markup writes it as
+`of` and `<with>`, an `<attr>` per argument, `?` for one that is no bare
+symbol, and the copy in `<e>`.
+
 `--jobs` has the walk take the bindings of the formation it starts at side
 by side (`spread` of `deepened`, over `pooled` of `Pool.hs`), each a root of
 its own: it starts from the state the spine left, with a world, a memo, a

@@ -448,11 +448,37 @@ deepened focus expr univ state ctx = do
         }
     deferred :: Expression -> State -> ReduceContext -> IO (Expression, State)
     deferred copy state' caller = do
-      caller._saveEval (EvDeferred caller._nesting fresh caller._judgment copy caller._site)
+      caller._saveEval (EvDeferred caller._nesting fresh caller._judgment copy (called copy) caller._site)
       pure (ExFormation [BiLambda (FnSymbol fresh)], state'{_minted = fresh})
       where
         fresh :: Int
         fresh = state'._minted + 1
+    called :: Expression -> Maybe Expression
+    called copy@(ExFormation bds) = do
+      (path, declared) <- origin copy
+      pure (foldl ExApplication path [ArTau attr value | BiTau attr value <- bds, attr /= AtRho, BiVoid attr `elem` declared])
+    called _ = Nothing
+    origin :: Expression -> Maybe (Expression, [Binding])
+    origin (ExFormation bds) = do
+      parent <- case filter ((== Just AtRho) . attributeFromBinding) bds of
+        [] -> Just ExRoot
+        [BiTau AtRho form@(ExFormation _)] -> fst <$> origin form
+        [BiTau AtRho path] -> Just (erased path)
+        _ -> Nothing
+      ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
+      chosen bds [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
+      where
+        fits :: [Binding] -> Bool
+        fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- bds, attributeFromBinding bd /= Just AtRho]
+    origin _ = Nothing
+    chosen :: [Binding] -> [(Expression, [Binding])] -> Maybe (Expression, [Binding])
+    chosen _ [] = Nothing
+    chosen bds candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
+      [one] -> Just one
+      _ -> Nothing
+      where
+        agreed :: (Expression, [Binding]) -> (Int, Int)
+        agreed (_, declared) = (length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
     sited :: Maybe Expression -> ReduceContext -> ReduceContext
     sited Nothing caller = caller
     sited (Just loc) caller = caller{_site = loc}
@@ -588,13 +614,13 @@ deepened focus expr univ state ctx = do
       ExFormation _ -> Nothing
       name -> Just (erased name, supplied name)
       where
-        erased :: Expression -> Expression
-        erased (ExApplication target _) = erased target
-        erased (ExDispatch target attr) = ExDispatch (erased target) attr
-        erased other = other
         supplied :: Expression -> [Attribute]
         supplied (ExApplication target (ArTau attr _)) = attr : supplied target
         supplied _ = []
+    erased :: Expression -> Expression
+    erased (ExApplication target _) = erased target
+    erased (ExDispatch target attr) = ExDispatch (erased target) attr
+    erased other = other
     fresh :: Maybe (Expression, [Attribute]) -> Attribute -> ReduceContext -> IO Bool
     fresh (Just (object, filled)) attr caller
       | attr `notElem` filled = do
