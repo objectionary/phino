@@ -7,13 +7,15 @@ name: haddock
   push:
     branches:
       - master
-permissions:
-  contents: write
+permissions: read-all
 concurrency:
   group: haddock-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   haddock:
+    permissions:
+      contents: write
     env:
       GHC_VERSION: 9.6.7
     runs-on: macos-26

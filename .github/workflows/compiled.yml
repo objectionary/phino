@@ -10,6 +10,7 @@ name: compiled
   pull_request:
     branches:
       - master
+permissions: read-all
 concurrency:
   group: compiled-${{ github.ref }}
   cancel-in-progress: true

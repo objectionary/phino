@@ -7,9 +7,11 @@ name: coverage
   pull_request:
     branches:
       - master
+permissions: read-all
 concurrency:
   group: coverage-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   coverage:
     runs-on: ubuntu-24.04
