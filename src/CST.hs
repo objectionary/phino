@@ -261,9 +261,6 @@ expressionToCST = toCST'
 expressionToCSTFrom :: Int -> Expression -> EXPRESSION
 expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
 
--- A number can be rendered in sweet form when it is finite, and so has a
--- numeric literal. Every non-finite pattern is kept in its byte form, since
--- `Φ.nan`, `Φ.pinf` and `Φ.ninf` are ordinary root dispatches (see #1427).
 sweetNumber :: Bytes -> Bool
 sweetNumber bts
   | btsSize bts /= 8 = False

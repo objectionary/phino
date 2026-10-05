@@ -376,15 +376,6 @@ formationBindings = do
     rsb :: Parser String
     rsb = choice [symbol "]]", symbol "⟧"]
 
--- head part of expression
--- 1. formation
--- 2. this
--- 3. global
--- 4. termination
--- 5. meta expression
--- 6. full attribute -> sugar for $.attr
--- 7. one-binding formation of a Δ, λ or void binding -> sugar for ⟦ Δ ⤍ FF- ⟧,
---    each standing before the first head it could be taken for
 exHead :: Parser Expression
 exHead =
   choice

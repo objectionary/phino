@@ -442,8 +442,7 @@ spec = do
       , ("Φ.pinf", Just (ExDispatch ExRoot (AtLabel "pinf")))
       , ("Q.ninf", Just (ExDispatch ExRoot (AtLabel "ninf")))
       , ("Φ.ninf", Just (ExDispatch ExRoot (AtLabel "ninf")))
-      , -- only the exact names are special, everything else stays an ordinary dispatch
-        ("Q.number", Just (ExDispatch ExRoot (AtLabel "number")))
+      , ("Q.number", Just (ExDispatch ExRoot (AtLabel "number")))
       , ("Q.nanny", Just (ExDispatch ExRoot (AtLabel "nanny")))
       , ("Q.x.nan", Just (ExDispatch (ExDispatch ExRoot (AtLabel "x")) (AtLabel "nan")))
       , ("nan", Just (ExDispatch ExXi (AtLabel "nan")))
