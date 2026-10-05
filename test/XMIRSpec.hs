@@ -16,6 +16,7 @@ import Data.Char (isDigit)
 import Data.List (intercalate)
 import Data.Map qualified as M
 import Data.Text qualified as T
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import GHC.Generics (Generic)
@@ -25,7 +26,7 @@ import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
-import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirToPhi)
+import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirTime, xmirToPhi)
 
 data ParsePack = ParsePack
   { failure :: Maybe Bool
@@ -366,6 +367,12 @@ spec = do
             Left err -> mapM_ (displayException err `shouldContain`) messages
             Right () -> expectationFailure "expected an exception"
       )
+
+  describe "xmirTime" $ do
+    it "keeps every nanosecond of the time" $
+      xmirTime (posixSecondsToUTCTime 1790000000.123456789) `shouldBe` "2026-09-21T14:13:20.123456789Z"
+    it "never carries the fraction past nine digits" $
+      xmirTime (posixSecondsToUTCTime 1790000000.99999995) `shouldBe` "2026-09-21T14:13:20.999999950Z"
 
   describe "escapeXML" $
     it "escapes an apostrophe alongside the other reserved characters" $

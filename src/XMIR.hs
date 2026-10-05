@@ -20,6 +20,7 @@ module XMIR
   , defaultXmirContext
   , escapeXML
   , escapeXMLText
+  , xmirTime
   , XmirContext (XmirContext)
   )
 where
@@ -37,8 +38,7 @@ import Data.Maybe (catMaybes, fromMaybe)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
-import Data.Time (UTCTime, diffUTCTime, getCurrentTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Data.Time (UTCTime (utctDayTime), diffTimeToPicoseconds, diffUTCTime, getCurrentTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
 import Development.GitRev (gitHash)
@@ -262,7 +262,7 @@ documentWith XmirContext{..} pckg expr rootsIO = do
         [ ("author", "phino")
         , ("dob", formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" now)
         , ("ms", show ms)
-        , ("time", time now)
+        , ("time", xmirTime now)
         , ("version", showVersion version)
         , ("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
         , ("xsi:noNamespaceSchemaLocation", "https://raw.githubusercontent.com/objectionary/eo/refs/heads/gh-pages/XMIR.xsd")
@@ -299,14 +299,11 @@ documentWith XmirContext{..} pckg expr rootsIO = do
                 )
             ]
         )
-    time :: UTCTime -> String
-    time stamp =
-      let base = formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" stamp
-          posix = utcTimeToPOSIXSeconds stamp
-          fractional :: Double
-          fractional = realToFrac posix - fromInteger (floor posix)
-          nanos = floor (fractional * 1_000_000_000) :: Int
-       in base ++ "." ++ printf "%09d" nanos ++ "Z"
+
+xmirTime :: UTCTime -> String
+xmirTime stamp =
+  formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" stamp
+    ++ printf ".%09dZ" ((diffTimeToPicoseconds (utctDayTime stamp) `div` 1_000) `mod` 1_000_000_000)
 
 renameAtoms :: [(T.Text, T.Text)] -> XmirContext -> XmirContext
 renameAtoms renames ctx@XmirContext{..} =
