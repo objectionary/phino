@@ -309,8 +309,8 @@ unless that binding holds the site the walk stands at, which it replaces
 anyway once it is done. Every step fires against the world as it stands, as
 the universe and as `_universe`, so a later read of the same attribute, by the
 walk or by a rule, finds the answer and fires nothing. The answer of a read
-through ξ is worked out against the object minus the attribute walked, the way
-#967 reads a dot, and lands in the whole object.
+through ξ is worked out against the object minus the attribute walked, the
+way #967 reads a dot, and lands in the whole object.
 
 Under `--deep` the head pass of 𝕄 writes back too (#1727). The normalize
 premise of a rule like `md` or `mphi` reads an attribute of a formation, and
@@ -319,9 +319,9 @@ anything fires, so each copy would fire on its own. Before the premise runs,
 `prewalked` fires the reads of siblings through ξ in that binding, the way the
 walk fires them (`sibling` of `deepened`), and writes their answers back into
 the formation, so every copy `dot` makes carries the answer. It skips a read
-of ρ, which the walk never writes back, and fires nothing else in the binding: the head pass reduces the rest itself, and the walk keeps
-only what a λ answered, so a part it settled to anything else would be reduced
-twice.
+of ρ, which the walk never writes back, and fires nothing else in the
+binding: the head pass reduces the rest itself, and the walk keeps only what
+a λ answered, so a part it settled to anything else would be reduced twice.
 
 `--jobs` has the walk take the bindings of the formation it starts at side
 by side (`spread` of `deepened`, over `pooled` of `Pool.hs`), each a root of
