@@ -12,7 +12,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, parking, recalled, remember, remembered, retained, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, parking, recalled, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, pathOf)
@@ -28,11 +28,11 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep, renumbered)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveEval, dontSaveStep, renumbered)
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
-import Lambdas (Lambdas)
+import Lambdas (Lambdas, emptyLambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
 import Must (Must (..))
@@ -397,12 +397,59 @@ deepened focus expr univ state ctx = do
     step walk standing dispatched frame@(Frame world _ _ _) term state' caller = do
       let here = sited standing caller
       ctx' <- deeper here
-      (walked, walkedState) <- walk standing frame term state' here
-      placed <- ctx._engine._contextualize walked =<< context frame
-      current <- readIORef world
-      (answer, answered) <- ctx'._fire dispatched placed current walkedState ctx'{_universe = Just current}
-      mapM_ (noted here._site frame walked) answer
-      pure (fromMaybe walked answer, answered)
+      copy <- deferrable dispatched world term state' here
+      case copy of
+        Just form -> deferred form state' here
+        Nothing -> do
+          (walked, walkedState) <- walk standing frame term state' here
+          placed <- ctx._engine._contextualize walked =<< context frame
+          current <- readIORef world
+          (answer, answered) <- ctx'._fire dispatched placed current walkedState ctx'{_universe = Just current}
+          mapM_ (noted here._site frame walked) answer
+          pure (fromMaybe walked answer, answered)
+    deferrable :: Maybe Attribute -> IORef Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression)
+    deferrable dispatched world form@(ExFormation bds) state' caller
+      | boxed bds && not (any abstract bds) && any code bds && maybe True (\attr -> not (any (named attr) bds)) dispatched = do
+          current <- readIORef world
+          known <- mapM (resolved current form state' caller) bds
+          pure (if any bare known then Just (ExFormation known) else Nothing)
+    deferrable _ _ _ _ _ = pure Nothing
+    code :: Binding -> Bool
+    code (BiTau AtPhi (ExFormation _)) = False
+    code (BiTau AtPhi _) = True
+    code _ = False
+    bare :: Binding -> Bool
+    bare (BiTau attr (ExFormation [BiLambda (FnSymbol _)])) = attr /= AtPhi && attr /= AtRho
+    bare _ = False
+    resolved :: Expression -> Expression -> State -> ReduceContext -> Binding -> IO Binding
+    resolved current form state' caller bd@(BiTau attr body@(ExDispatch _ _))
+      | attr /= AtPhi && attr /= AtRho = do
+          placed <- ctx._engine._contextualize body (scope attr form)
+          outcome <- try (settled placed current state' (reading current caller))
+          case outcome of
+            Right (made@(ExFormation [BiLambda (FnSymbol _)]), _) -> pure (BiTau attr made)
+            Left (OutOfTime cap) -> expired caller cap
+            _ -> pure bd
+    resolved _ _ _ _ bd = pure bd
+    reading :: Expression -> ReduceContext -> ReduceContext
+    reading current caller =
+      caller
+        { _universe = Just current
+        , _symbolic = emptyLambdas
+        , _memo = Nothing
+        , _tally = Nothing
+        , _acyclic = Nothing
+        , _deep = False
+        , _saveStep = dontSaveStep
+        , _saveEval = dontSaveEval
+        }
+    deferred :: Expression -> State -> ReduceContext -> IO (Expression, State)
+    deferred copy state' caller = do
+      caller._saveEval (EvDeferred caller._nesting fresh caller._judgment copy caller._site)
+      pure (ExFormation [BiLambda (FnSymbol fresh)], state'{_minted = fresh})
+      where
+        fresh :: Int
+        fresh = state'._minted + 1
     sited :: Maybe Expression -> ReduceContext -> ReduceContext
     sited Nothing caller = caller
     sited (Just loc) caller = caller{_site = loc}
@@ -644,6 +691,12 @@ insideUniverse expr univ ctx@ReduceContext{_buildTerm = buildTerm} = case univ o
     extended attr normal = case ctx._universe of
       Just (ExFormation bds) -> Just (ExFormation (BiTau attr normal : bds))
       _ -> Nothing
+
+settled :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+settled term univ state ctx = do
+  (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
+  ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
+  pure (morphed, state')
 
 morphing :: Expression -> ReduceContext -> Expression -> State -> IO (Expression, State)
 morphing univ ctx expr state = do

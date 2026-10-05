@@ -323,6 +323,19 @@ of ρ, which the walk never writes back, and fires nothing else in the
 binding: the head pass reduces the rest itself, and the walk keeps only what
 a λ answered, so a part it settled to anything else would be reduced twice.
 
+The walk does not enter a copy over a bare symbol (#1729). Before a step
+walks a formation (`deferrable` of `deepened`), it checks that the formation
+is `boxed`, has no void, has a φ written as code rather than as a formation,
+and is not the target of a dispatch to an attribute it has. If so, it reads
+every argument written as a dispatch, other than ρ and φ, with `settled`
+under a context that cannot fire and writes nothing (`resolved` and
+`reading`: an empty table, no memo, no tally, no cut). If an argument comes
+to a bare `⟦ λ ⤍ 𝜎k ⟧`, the step answers the formation with a fresh bare
+symbol and writes `deferred(…)` (`EvDeferred` of `Deps.hs`), carrying the
+copy with its arguments read. The `join` of `Lambdas.hs` pairs such a bare
+symbol with the symbol the φ chain of the other branch ends in, and answers
+a bare fresh symbol, dropping the methods.
+
 `--jobs` has the walk take the bindings of the formation it starts at side
 by side (`spread` of `deepened`, over `pooled` of `Pool.hs`), each a root of
 its own: it starts from the state the spine left, with a world, a memo, a

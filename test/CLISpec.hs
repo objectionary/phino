@@ -1881,6 +1881,19 @@ spec = do
                          , "</morph>"
                          ]
 
+        it "writes the copy a deferred symbol stands for as an element of its own" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ box(x) ↦ ⟦ φ ↦ x.next ⟧, y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\">⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</deferred>"
+                         , "</morph>"
+                         ]
+
         it "writes no 'minted' element for a firing minting nothing" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream

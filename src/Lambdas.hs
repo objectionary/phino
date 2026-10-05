@@ -29,6 +29,7 @@ import Data.Char (isDigit)
 import Data.List (find, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
@@ -386,6 +387,12 @@ joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
     taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
     taking (term, (spent', _, made)) = (term, reverse made, spent')
     goExpr :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goExpr one@(ExFormation _) two@(ExFormation _) joining
+      | bare one /= bare two = do
+          mine <- ending one
+          theirs <- ending two
+          (bd, joining') <- goBinding mine theirs joining
+          pure (ExFormation [bd], joining')
     goExpr (ExFormation one) (ExFormation two) joining = do
       (bds, joining') <- goBindings one two joining
       pure (ExFormation bds, joining')
@@ -427,6 +434,13 @@ joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
     goBinding one two joining
       | one == two = Just (one, joining)
       | otherwise = Nothing
+    bare :: Expression -> Bool
+    bare (ExFormation [BiLambda (FnSymbol _)]) = True
+    bare _ = False
+    ending :: Expression -> Maybe Binding
+    ending (ExFormation [bd@(BiLambda (FnSymbol _))]) = Just bd
+    ending (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds] >>= ending
+    ending _ = Nothing
     goArgument :: Argument -> Argument -> Joining -> Maybe (Argument, Joining)
     goArgument (ArTau attr one) (ArTau attr' two) joining
       | attr == attr' = do

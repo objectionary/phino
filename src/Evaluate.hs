@@ -19,7 +19,7 @@ import Deps (Evaluation (..), State (..))
 import Engine (Engine (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, enter, isLambda, lambda, morph', morphing, normalized, recalled, remember, remembered, retained, starved, unparked)
+import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, enter, isLambda, lambda, morphing, normalized, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -271,12 +271,6 @@ fired dispatched term univ state caller = do
     parked _ (StuckAt func _ _) = throwIO (Stuck func)
     parked _ (OutOfStepsAt budget _ _) = throwIO (OutOfSteps budget)
     parked _ failure = throwIO failure
-
-settled :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-settled term univ state ctx = do
-  (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
-  ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
-  pure (morphed, state')
 
 saturated :: Expression -> [Binding] -> Maybe (T.Text, Expression)
 saturated term bds = case lambda bds of
