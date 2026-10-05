@@ -78,6 +78,14 @@ spec = do
     (decodeYaml' "name: big\npattern: '⟦ 𝐵1 ⟧'\nresult: '⟦ 𝐵1 ⟧'\nwhen:\n  eq: [{length: '𝐵1'}, 18446744073709551617]" :: Either Yaml.ParseException Rule)
       `shouldSatisfy` failsWith "does not fit into Int"
 
+  it "rejects a 'where' step that binds a meta the pattern already binds" $
+    (decodeYaml' "name: again\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒1 ⟧'\nwhere:\n  - meta: '𝑒1'\n    function: concat\n    args: ['\"a\"']" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` failsWith "binds the meta 'e1' again"
+
+  it "rejects a 'where' step whose meta is not a meta" $
+    (decodeYaml' "name: nometa\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒1 ⟧'\nwhere:\n  - meta: 'z'\n    function: concat\n    args: ['\"a\"']" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` failsWith "whose 'meta' is not a meta"
+
   it "rejects an 'e-match' in a rewriting rule" $
     (decodeYaml' "name: kvz\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\ne-match: '𝑒2'\nresult: '𝑒2'" :: Either Yaml.ParseException Rule)
       `shouldSatisfy` failsWith "The rule 'kvz' carries an 'e-match'"
