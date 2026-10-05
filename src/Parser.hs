@@ -358,10 +358,15 @@ alpha :: Parser Alpha
 alpha = do
   _ <- choice [symbol "~", symbol "α"]
   choice
-    [ Alpha <$> lexeme L.decimal
+    [ lexeme L.decimal >>= ranged
     , either AlAny AlMeta <$> indexVar
     ]
     <?> "alpha"
+  where
+    ranged :: Integer -> Parser Alpha
+    ranged idx
+      | idx > toInteger (maxBound :: Int) = fail (printf "the index of 'α%d' is too big, while it must fit into %d" idx (maxBound :: Int))
+      | otherwise = pure (Alpha (fromInteger idx))
 
 argument :: Parser Argument
 argument =
