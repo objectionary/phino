@@ -17,7 +17,7 @@ import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Deps
@@ -156,7 +156,9 @@ interpreted rule = Step rule.name applied
     applied ctx expr =
       R.matchExpressionWithRule expr rule ctx >>= \case
         [] -> pure Nothing
-        matched -> Just <$> tryBuildAndReplaceFast (expr, rule.pattern, rule.result, matched)
+        matched
+          | isNothing rule.when -> Just <$> tryBuildAndReplaceFast (expr, rule.pattern, rule.result, matched)
+          | otherwise -> Just <$> buildAndReplace' (expr, rule.pattern, rule.result, matched) replaceExpression
 
 direct :: String -> Bool -> (Maybe Expression -> Expression -> [Expression]) -> Step
 direct name redex rewritten = Step name applied
