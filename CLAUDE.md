@@ -208,7 +208,11 @@ as a whole, so an application made again is spelled out again (#1756). The
 markup writes the head in `of` and the argument in an `<attr>`: its name, the
 symbol where it is a bare one, or the term. Under `--inside` the universe is
 normalized before the heading, so `aimed` of `CLI/Helpers.hs` holds those
-records back and writes them after it.
+records back and writes them after it. The `--deep` walk makes no new object
+when it stands its answers inside one, so the object keeps its name (#1757):
+a step of `deepened` whose walk changed its term writes `EvComputed` with the
+term before and after, which writes no line and has both writers give the
+term after the name of the term before (`namedCarry`).
 
 ### Dependency inversion for circular imports
 

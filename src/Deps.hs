@@ -116,6 +116,7 @@ data Evaluation
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
   | EvApplied Int Judgment Expression Expression Expression
+  | EvComputed Int Expression Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
 
@@ -142,6 +143,7 @@ renumbered floor' offset = record
     record (EvMinted depth sym operands) = EvMinted depth (symbol sym) (map datum operands)
     record (EvDeferred depth sym judgment copy call site) = EvDeferred depth (symbol sym) judgment (term copy) (fmap term call) (term site)
     record (EvApplied depth judgment call object site) = EvApplied depth judgment (term call) (term object) (term site)
+    record (EvComputed depth before after) = EvComputed depth (term before) (term after)
     record (EvBuilt depth value) = EvBuilt depth (term value)
     record (EvAnswer depth value) = EvAnswer depth (term value)
     record other = other
@@ -175,6 +177,7 @@ tier (EvTerminate depth _ _ _) = depth
 tier (EvMinted depth _ _) = depth
 tier (EvDeferred depth _ _ _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
+tier (EvComputed depth _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 
@@ -188,6 +191,9 @@ namedInsert term naming = Map.alter renamed (hashExpression term)
   where
     renamed :: Maybe [(Expression, a)] -> Maybe [(Expression, a)]
     renamed entries = Just ((term, naming) : filter ((/= term) . fst) (fromMaybe [] entries))
+
+namedCarry :: Expression -> Expression -> Named a -> Named a
+namedCarry before after names = maybe names (\naming -> namedInsert after naming names) (namedLookup before names)
 
 abbreviated :: Named Expression -> Expression -> Expression
 abbreviated names term
@@ -338,6 +344,7 @@ saveEval handle cursor printed printed' report = do
       form <- printed (abbreviatedInside protocol._made call)
       locator <- render site
       pure (counted{_made = namedInsert call aliased (namedInsert object aliased counted._made)}, Just (indented depth (printf "applied(%s.%d) := %s  # %s(%s)" (labelled protocol answer) index form (letter judgment) locator)))
+    written (EvComputed _ before after) protocol = pure (protocol{_made = namedCarry before after protocol._made}, Nothing)
     written (EvBuilt depth term) protocol = do
       let (index, counted) = numbered protocol
       value <- borrowed protocol term
@@ -531,6 +538,7 @@ saveEvalXml handle cursor printed report = do
           aliased :: Expression
           aliased = alias (opener nesting) index
       pure (counted{_closing = kept, _objects = namedInsert call aliased (namedInsert object aliased counted._objects)}, closers ++ [indentedXml depth (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\" of=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXML origin) given)])
+    elements (EvComputed _ before after) nesting = pure (nesting{_objects = namedCarry before after nesting._objects}, [])
     elements (EvBuilt depth term) nesting = do
       body <- render term
       let (index, counted) = numbered nesting

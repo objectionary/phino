@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The '--deep' walk stands its answers in the place of what it computed, inside
+# the bindings of the object it walks, and makes no new object by doing so
+# (#1757). The operand of 'L_entry' is the object 'Φ.dbl' made, named 𝑛.1.1 by
+# its 'applied' line, and the walk computes its 'φ' and its 'v' before 𝕄 hands
+# it back. It is still 𝑛.1.1 then: in the line binding the operand, in the term
+# the entry wrote, in the argument 'root' was applied to, and in the formation
+# 𝔻 gets into when 'L_root' brings that argument down.
+symbolic: |
+  - λ: L_entry
+    morph:
+      𝑛1: $.x
+    𝑛: Φ.root( v ↦ 𝑛1 )
+  - λ: L_root
+    dataize:
+      𝛿1: $.v
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_twice
+    dataize:
+      𝛿1: $.ρ
+    𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.y'
+deep: true
+input: >
+  ⟦ num ↦ ⟦ φ ↦ ∅, twice ↦ ⟦ ρ ↦ ∅, λ ⤍ L_twice ⟧ ⟧,
+    dbl ↦ ⟦ v ↦ ∅, φ ↦ ξ.v.twice ⟧,
+    root(v) ↦ ⟦ λ ⤍ L_root ⟧,
+    y ↦ ⟦ λ ⤍ L_entry, x ↦ Φ.dbl( v ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 2A- ⟧ ) ) ⟧ ⟧
+result: '𝜎2:λ'
+protocol: |
+  𝕄(Φ.y)
+    applied(𝑛.0.1) := Φ.num( φ ↦ 2A-:Δ )  # 𝕄(Φ.y.x)
+    applied(𝑛.0.2) := Φ.dbl( v ↦ 𝑛.0.1 )  # 𝕄(Φ.y.x)
+    𝔼(L_entry)  # 𝕄(Φ.y)
+      applied(𝑛.1.1) := Φ.dbl( v ↦ 𝑛.0.1 )  # 𝕄(Φ.a🌵0)
+      applied(𝑛.1.2) := Φ.num( φ ↦ 2A-:Δ )  # 𝕄(Φ.a🌵0.v)
+      applied(𝑛.1.3) := Φ.num( φ ↦ 2A-:Δ )  # 𝕄(Φ.a🌵0.φ)
+      applied(𝑛.1.4) := Φ.num( φ ↦ 2A-:Δ )  # 𝕄(Φ.a🌵0.φ)
+      𝔼(L_twice)  # 𝕄(Φ.a🌵0.φ)
+        applied(𝑛.2.1) := Φ.num( φ ↦ 2A-:Δ )  # 𝕄(Φ.a🌵1)
+        formation(𝑛.2.1)  # 𝔻(Φ.a🌵1)
+        𝛿1.2 := 2A-  # 𝔻(ξ.ρ)
+        𝑛.2.2 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
+        applied(𝑛.2.3) := Φ.num( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵0.φ)
+        𝑛.2.4 := 𝑛.2.3  # 𝕄(𝑛.2.2)
+      𝑛1.1 := 𝑛.1.1  # 𝕄(ξ.x)
+      𝑛.1.5 := Φ.root( v ↦ 𝑛.1.1 )  # 𝑛
+      applied(𝑛.1.6) := Φ.root( v ↦ 𝑛.1.1 )  # 𝕄(Φ.y)
+      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
+    𝔼(L_root)  # 𝕄(Φ.y)
+      formation(𝑛.1.1)  # 𝔻(Φ.a🌵2)
+        formation(𝑛.2.3)  # 𝔻(Φ.a🌵2)
+      𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.v)
+      𝑛.3.1 := 𝜎2:λ  # 𝑛
+      𝑛.3.2 := 𝜎2:λ  # 𝕄(𝑛.3.1)
