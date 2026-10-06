@@ -215,6 +215,7 @@ spec = do
       ]
       ( \(judgment, arrow) ->
           it ("ends a step taken by " ++ show judgment ++ " with " ++ arrow ++ " and opens the next one with it") $ do
+            let reference = if judgment == Contextualization then "" else "[\\nameref{r:tv}]"
             first <- parseExpressionThrows "[[ q -> Q.f ]]"
             second <- parseExpressionThrows "[[ q -> Q.j ]]"
             latex <- rewrittensToLatex ([(first, Just (judgment, "tv")), (second, Nothing)], False) defaultLatexContext
@@ -222,7 +223,7 @@ spec = do
               `shouldBe` intercalate
                 "\n"
                 [ "\\begin{phiquation}"
-                , "Q . |f| : |q| " ++ arrow ++ "[\\nameref{r:tv}]"
+                , "Q . |f| : |q| " ++ arrow ++ reference
                 , "  " ++ arrow ++ " Q . |j| : |q|{.}"
                 , "\\end{phiquation}"
                 ]
