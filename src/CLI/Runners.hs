@@ -23,7 +23,7 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromJust, isJust, isNothing)
 import qualified Data.Text as T
 import Dataize
-import Deps (Judgment (..))
+import Deps (Judgment (..), dontSaveMade)
 import Emit (emitted)
 import Encoding
 import Engine (Engine (..), building, current, stepOf)
@@ -76,7 +76,7 @@ runRewrite OptsRewrite{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx included excluded
   let steps = map (stepOf linked) rules
-  (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save)
+  (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save dontSaveMade)
   rewrittens' <- include (if _sequence then NE.toList rewrittens else [NE.last rewrittens]) >>= exclude
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
@@ -184,8 +184,7 @@ runDataize OptsDataize{..} = do
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
-          (universe, aiming) <- aimed _inside expr ctx
-          heading record printCtx Dataization aiming._locator
+          (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
           started universe aiming
           dataize universe emptyState aiming
       )
@@ -267,8 +266,7 @@ runMorph OptsMorph{..} = do
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
-          (universe, aiming) <- aimed _inside expr ctx
-          heading record printCtx Morphing aiming._locator
+          (universe, aiming) <- aimed printCtx Morphing _inside expr ctx
           started universe aiming
           morph universe emptyState aiming
       )

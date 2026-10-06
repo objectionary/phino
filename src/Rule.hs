@@ -45,7 +45,7 @@ data RuleContext = RuleContext
 
 data Step = Step
   { _name :: String
-  , _applied :: RuleContext -> Expression -> IO (Maybe Expression)
+  , _applied :: RuleContext -> Expression -> IO (Maybe (Expression, [(Expression, Expression)]))
   }
 
 matchesAnyNormalizationRule :: Expression -> RuleContext -> Bool

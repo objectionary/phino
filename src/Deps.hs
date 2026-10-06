@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -57,6 +58,11 @@ saveStep (Just dir) ext render step expr = do
 dontSaveStep :: SaveStepFunc
 dontSaveStep = saveStep Nothing "" (\_ -> pure "") 0
 
+type SaveMadeFunc = Expression -> Expression -> IO ()
+
+dontSaveMade :: SaveMadeFunc
+dontSaveMade _ _ = pure ()
+
 data Judgment
   = Normalization
   | Morphing
@@ -108,6 +114,7 @@ data Evaluation
   | EvTerminate Int (Maybe (Either Int Bytes)) T.Text T.Text
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
+  | EvApplied Int Judgment Expression Expression Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
 
@@ -133,6 +140,7 @@ renumbered floor' offset = record
     record (EvTerminate depth condition side raising) = EvTerminate depth (fmap datum condition) side raising
     record (EvMinted depth sym operands) = EvMinted depth (symbol sym) (map datum operands)
     record (EvDeferred depth sym judgment copy call site) = EvDeferred depth (symbol sym) judgment (term copy) (fmap term call) (term site)
+    record (EvApplied depth judgment call object site) = EvApplied depth judgment (term call) (term object) (term site)
     record (EvBuilt depth value) = EvBuilt depth (term value)
     record (EvAnswer depth value) = EvAnswer depth (term value)
     record other = other
@@ -145,41 +153,97 @@ renumbered floor' offset = record
     datum :: Either Int Bytes -> Either Int Bytes
     datum = either (Left . symbol) Right
 
-type Named = Map.Map Int [(Expression, T.Text)]
+tier :: Evaluation -> Int
+tier EvRun{} = 0
+tier (EvFiring depth _ _ _) = depth
+tier (EvFormation depth _ _) = depth
+tier (EvLooped depth _ _ _ _ _) = depth
+tier (EvStuck depth _ _ _) = depth
+tier (EvStall depth _) = depth
+tier (EvStuckOn depth _) = depth
+tier (EvStarved depth _ _ _) = depth
+tier (EvTimeout depth _ _ _) = depth
+tier (EvSpent depth _ _ _) = depth
+tier (EvData depth _ _ _) = depth
+tier (EvTerm depth _ _ _) = depth
+tier (EvSymbolize depth _ _ _) = depth
+tier (EvKnown depth _ _) = depth
+tier (EvJoin depth _ _ _) = depth
+tier (EvJoined depth _ _) = depth
+tier (EvTerminate depth _ _ _) = depth
+tier (EvMinted depth _ _) = depth
+tier (EvDeferred depth _ _ _ _ _) = depth
+tier (EvApplied depth _ _ _ _) = depth
+tier (EvBuilt depth _) = depth
+tier (EvAnswer depth _) = depth
 
-namedLookup :: Expression -> Named -> Maybe T.Text
+type Named a = Map.Map Int [(Expression, a)]
+
+namedLookup :: Expression -> Named a -> Maybe a
 namedLookup term names = lookup term (Map.findWithDefault [] (hashExpression term) names)
 
-namedInsert :: Expression -> T.Text -> Named -> Named
+namedInsert :: forall a. Expression -> a -> Named a -> Named a
 namedInsert term naming = Map.alter renamed (hashExpression term)
   where
-    renamed :: Maybe [(Expression, T.Text)] -> Maybe [(Expression, T.Text)]
+    renamed :: Maybe [(Expression, a)] -> Maybe [(Expression, a)]
     renamed entries = Just ((term, naming) : filter ((/= term) . fst) (fromMaybe [] entries))
+
+abbreviated :: Named Expression -> Expression -> Expression
+abbreviated names
+  | Map.null names = id
+  | otherwise = goExpr
+  where
+    goExpr :: Expression -> Expression
+    goExpr term = fromMaybe (goInside term) (namedLookup term names)
+    goInside :: Expression -> Expression
+    goInside (ExFormation bds) = ExFormation (map goBinding bds)
+    goInside (ExApplication expr arg) = ExApplication (goExpr expr) (goArgument arg)
+    goInside (ExDispatch expr attr) = ExDispatch (goExpr expr) attr
+    goInside term = term
+    goBinding :: Binding -> Binding
+    goBinding (BiTau attr expr) = BiTau attr (goExpr expr)
+    goBinding bd = bd
+    goArgument :: Argument -> Argument
+    goArgument (ArTau attr expr) = ArTau attr (goExpr expr)
+    goArgument (ArAlpha alpha expr) = ArAlpha alpha (goExpr expr)
 
 data Protocol = Protocol
   { _fired :: Int
-  , _named :: Named
-  , _open :: Map.Map Int Int
+  , _named :: Named T.Text
+  , _open :: [(Int, Int)]
   , _begun :: Bool
+  , _made :: Named Expression
+  , _counted :: Map.Map Int Int
+  , _built :: Map.Map Int Int
   }
 
 emptyProtocol :: Protocol
-emptyProtocol = Protocol 0 Map.empty Map.empty False
+emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty
 
 data Nesting = Nesting
   { _fires :: Int
-  , _openedAt :: Map.Map Int Int
+  , _openedAt :: [(Int, Int)]
   , _closing :: [(Int, String)]
+  , _objects :: Named Expression
+  , _numbered :: Map.Map Int Int
   }
 
 emptyNesting :: Nesting
-emptyNesting = Nesting 0 Map.empty []
+emptyNesting = Nesting 0 [] [] Map.empty Map.empty
 
 saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
-saveEval handle cursor render salted report = do
-  line <- atomicModify cursor (written report)
+saveEval handle cursor printed printed' report = do
+  line <- atomicModify cursor (written report . outer (tier report))
   mapM_ saved line
   where
+    render :: Expression -> IO String
+    render term = do
+      protocol <- readIORef cursor
+      printed (abbreviated protocol._made term)
+    salted :: Expression -> IO String
+    salted term = do
+      protocol <- readIORef cursor
+      printed' (abbreviated protocol._made term)
     saved :: String -> IO ()
     saved line = do
       hPutStrLn handle line
@@ -192,7 +256,7 @@ saveEval handle cursor render salted report = do
       pure
         ( protocol
             { _fired = firings
-            , _open = Map.insert depth firings protocol._open
+            , _open = (depth, firings) : protocol._open
             }
         , Just (indented depth (printf "𝔼(%s)  # %s(%s)" (T.unpack key) (letter judgment) locator))
         )
@@ -228,19 +292,19 @@ saveEval handle cursor render salted report = do
       pure (protocol, Just (indented depth (printf "spent(%d)  # %s(%s)" limit (letter judgment) locator)))
     written (EvData depth spelling operand value) protocol = do
       datum <- spelled value
-      line <- commented (printf "%s := %s" (labelled protocol depth spelling) datum) Dataization operand
+      line <- commented (printf "%s := %s" (labelled protocol spelling) datum) Dataization operand
       pure (protocol, Just (indented depth line))
       where
         spelled :: Either Int Bytes -> IO String
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
         spelled (Right bytes) = render (ExBytes bytes)
     written (EvTerm depth spelling operand term) protocol = do
-      let naming = labelled protocol depth spelling
+      let naming = labelled protocol spelling
       (protocol', value) <- valued protocol naming term
       line <- commented (printf "%s := %s" naming value) Morphing operand
       pure (protocol', Just (indented depth line))
     written (EvSymbolize depth spelling source term) protocol = do
-      let naming = labelled protocol depth spelling
+      let naming = labelled protocol spelling
       (protocol', value) <- valued protocol naming term
       line <- commented' (printf "%s := %s" naming value) source
       pure (protocol', Just (indented depth line))
@@ -249,7 +313,7 @@ saveEval handle cursor render salted report = do
       value <- render (ExBytes bytes)
       pure (protocol, Just (indented depth (printf "𝔻(%s) == %s" form value)))
     written (EvJoin depth spelling (left, right) term) protocol = do
-      let naming = labelled protocol depth spelling
+      let naming = labelled protocol spelling
       (protocol', value) <- valued protocol naming term
       pure (protocol', Just (indented depth (printf "%s := %s  # [%s, %s]" naming value (T.unpack left) (T.unpack right))))
     written (EvJoined depth fresh (one, two)) protocol = do
@@ -269,16 +333,23 @@ saveEval handle cursor render salted report = do
       form <- render (fromMaybe copy call)
       locator <- render site
       pure (protocol, Just (indented depth (printf "deferred(%s) := %s  # %s(%s)" (printFunction (FnSymbol symbol)) form (letter judgment) locator)))
+    written (EvApplied depth judgment call object site) protocol = do
+      let (index, counted) = numbered protocol
+      form <- render call
+      locator <- render site
+      pure (counted{_made = namedInsert object (alias (opener protocol) index) counted._made}, Just (indented depth (printf "applied(%s.%d) := %s  # %s(%s)" (labelled protocol answer) index form (letter judgment) locator)))
     written (EvBuilt depth term) protocol = do
+      let (index, counted) = numbered protocol
       value <- borrowed protocol term
-      pure (protocol, Just (indented depth (printf "%s.1 := %s  # %s" (labelled protocol depth answer) value (T.unpack answer))))
+      pure (counted{_built = Map.insert (opener protocol) index counted._built}, Just (indented depth (printf "%s.%d := %s  # %s" (labelled protocol answer) index value (T.unpack answer))))
     written (EvAnswer depth term) protocol = do
-      let stem :: String
-          stem = labelled protocol depth answer
+      let (index, counted) = numbered protocol
+          stem :: String
+          stem = labelled protocol answer
           naming :: String
-          naming = printf "%s.2" stem
-      (protocol', value) <- valued protocol naming term
-      pure (protocol', Just (indented depth (printf "%s := %s  # 𝕄(%s.1)" naming value stem)))
+          naming = printf "%s.%d" stem index
+      (protocol', value) <- valued counted naming term
+      pure (protocol', Just (indented depth (printf "%s := %s  # 𝕄(%s.%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
     valued :: Protocol -> String -> Expression -> IO (Protocol, String)
     valued protocol naming term = case denoted term of
       Nothing -> (,) protocol <$> render term
@@ -293,9 +364,17 @@ saveEval handle cursor render salted report = do
     commented line judgment operand = printf "%s  # %s(%s)" line (letter judgment) <$> salted operand
     commented' :: String -> Expression -> IO String
     commented' line source = printf "%s  # %s" line <$> salted source
-    labelled :: Protocol -> Int -> T.Text -> String
-    labelled protocol depth spelling =
-      printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) protocol._open))
+    outer :: Int -> Protocol -> Protocol
+    outer depth protocol = protocol{_open = dropWhile ((>= depth) . fst) protocol._open}
+    labelled :: Protocol -> T.Text -> String
+    labelled protocol spelling = printf "%s.%d" (T.unpack spelling) (opener protocol)
+    opener :: Protocol -> Int
+    opener protocol = maybe 0 snd (listToMaybe protocol._open)
+    numbered :: Protocol -> (Int, Protocol)
+    numbered protocol = (index, protocol{_counted = Map.insert (opener protocol) index protocol._counted})
+      where
+        index :: Int
+        index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._counted)
 
 endEval :: Handle -> IORef Protocol -> Double -> IO ()
 endEval handle cursor began = do
@@ -314,11 +393,15 @@ perSecond :: Int -> Int -> Int
 perSecond firings taken = round (fromIntegral firings * 1000 / fromIntegral (max 1 taken) :: Double)
 
 saveEvalXml :: Handle -> IORef Nesting -> (Expression -> IO String) -> SaveEvalFunc
-saveEvalXml handle cursor render report = do
-  written <- atomicModify cursor (elements report)
+saveEvalXml handle cursor printed report = do
+  written <- atomicModify cursor (elements report . outer (tier report))
   mapM_ (hPutStrLn handle) written
   logDebug (printf "Saved %d line(s) of the XML protocol" (length written))
   where
+    render :: Expression -> IO String
+    render term = do
+      nesting <- readIORef cursor
+      printed (abbreviated nesting._objects term)
     elements :: Evaluation -> Nesting -> IO (Nesting, [String])
     elements (EvRun judgment locator) nesting =
       pure
@@ -334,7 +417,7 @@ saveEvalXml handle cursor render report = do
       pure
         ( nesting
             { _fires = fires
-            , _openedAt = Map.insert depth fires nesting._openedAt
+            , _openedAt = (depth, fires) : nesting._openedAt
             , _closing = (depth, "evaluate") : kept
             }
         , closers ++ [indentedXml depth (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) (escapeXML locator))]
@@ -387,18 +470,18 @@ saveEvalXml handle cursor render report = do
         stood :: Either Int Bytes -> IO String
         stood (Left symbol) = do
           form <- render (standing symbol)
-          pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText form))
+          pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting spelling)) (escapeXMLText form))
         stood (Right bytes) = do
           form <- render (ExBytes bytes)
-          pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText form))
+          pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) (escapeXMLText form))
     elements (EvTerm depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) (escapeXMLText body))])
     elements (EvSymbolize depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) (escapeXMLText body))])
     elements (EvKnown depth symbol bytes) nesting = do
       value <- render (ExBytes bytes)
       let (kept, closers) = closed depth nesting._closing
@@ -406,7 +489,7 @@ saveEvalXml handle cursor render report = do
     elements (EvJoin depth spelling _ term) nesting = do
       body <- render term
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting depth spelling)) (escapeXMLText body))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) (escapeXMLText body))])
     elements (EvJoined depth fresh (one, two)) nesting =
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth joint])
       where
@@ -438,21 +521,39 @@ saveEvalXml handle cursor render report = do
       (origin, given) <- maybe (pure ("", "")) called call
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"%s>%s<e>%s</e></deferred>" (sigma symbol) (opened judgment) (escapeXML locator) origin given (escapeXMLText form))])
+    elements (EvApplied depth judgment call object site) nesting = do
+      form <- render call
+      locator <- render site
+      let (index, counted) = numbered nesting
+          (kept, closers) = closed depth nesting._closing
+          naming :: String
+          naming = printf "%s.%d" (labelled nesting answer) index
+      pure (counted{_closing = kept, _objects = namedInsert object (alias (opener nesting) index) counted._objects}, closers ++ [indentedXml depth (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXMLText form))])
     elements (EvBuilt depth term) nesting = do
       body <- render term
-      let (kept, closers) = closed depth nesting._closing
+      let (index, counted) = numbered nesting
+          (kept, closers) = closed depth nesting._closing
           naming :: String
-          naming = printf "%s.1" (labelled nesting depth answer)
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))])
+          naming = printf "%s.%d" (labelled nesting answer) index
+      pure (counted{_closing = kept}, closers ++ [indentedXml depth (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))])
     elements (EvAnswer depth term) nesting = do
       body <- render term
-      let (kept, closers) = closed depth nesting._closing
+      let (index, counted) = numbered nesting
+          (kept, closers) = closed depth nesting._closing
           naming :: String
-          naming = printf "%s.2" (labelled nesting depth answer)
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
-    labelled :: Nesting -> Int -> T.Text -> String
-    labelled nesting depth spelling =
-      printf "%s.%d" (T.unpack spelling) (fromMaybe 0 (Map.lookup (depth - 1) nesting._openedAt))
+          naming = printf "%s.%d" (labelled nesting answer) index
+      pure (counted{_closing = kept}, closers ++ [indentedXml depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
+    outer :: Int -> Nesting -> Nesting
+    outer depth nesting = nesting{_openedAt = dropWhile ((>= depth) . fst) nesting._openedAt}
+    labelled :: Nesting -> T.Text -> String
+    labelled nesting spelling = printf "%s.%d" (T.unpack spelling) (opener nesting)
+    opener :: Nesting -> Int
+    opener nesting = maybe 0 snd (listToMaybe nesting._openedAt)
+    numbered :: Nesting -> (Int, Nesting)
+    numbered nesting = (index, nesting{_numbered = Map.insert (opener nesting) index nesting._numbered})
+      where
+        index :: Int
+        index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._numbered)
     called :: Expression -> IO (String, String)
     called term = do
       let (object, arguments) = invoked term
@@ -505,6 +606,9 @@ standing symbol = ExFormation [BiLambda (FnSymbol symbol)]
 
 answer :: T.Text
 answer = "𝑛"
+
+alias :: Int -> Int -> Expression
+alias firing index = ExMeta (T.pack (printf "n.%d.%d" firing index))
 
 dontSaveEval :: SaveEvalFunc
 dontSaveEval _ = pure ()

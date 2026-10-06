@@ -75,6 +75,7 @@ data RewriteContext = RewriteContext
   , _must :: Must
   , _breakpoint :: Maybe String
   , _saveStep :: SaveStepFunc
+  , _saveMade :: SaveMadeFunc
   }
 
 data RewriteException
@@ -109,13 +110,13 @@ instance Show RewriteException where
       rul
       expr
 
-buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO Expression
+buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO (Expression, [(Expression, Expression)])
 buildAndReplace' (expr, ptn, res, substs) func = do
   ptns <- buildExpressionsThrows ptn substs
   repls <- buildExpressionsThrows res substs
-  pure (func (expr, ptns, map const repls))
+  pure (func (expr, ptns, map const repls), zip ptns repls)
 
-tryBuildAndReplaceFast :: ToReplace -> IO Expression
+tryBuildAndReplaceFast :: ToReplace -> IO (Expression, [(Expression, Expression)])
 tryBuildAndReplaceFast state@(expr, ptn@(ExFormation (_ : pbds)), res@(ExFormation (_ : rbds)), substs)
   | fast ptn res = do
       logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
@@ -152,7 +153,7 @@ fast _ _ = False
 interpreted :: Y.Rule -> Step
 interpreted rule = Step rule.name applied
   where
-    applied :: RuleContext -> Expression -> IO (Maybe Expression)
+    applied :: RuleContext -> Expression -> IO (Maybe (Expression, [(Expression, Expression)]))
     applied ctx expr =
       R.matchExpressionWithRule expr rule ctx >>= \case
         [] -> pure Nothing
@@ -163,10 +164,10 @@ interpreted rule = Step rule.name applied
 direct :: String -> Bool -> (Maybe Expression -> Expression -> [Expression]) -> Step
 direct name redex rewritten = Step name applied
   where
-    applied :: RuleContext -> Expression -> IO (Maybe Expression)
+    applied :: RuleContext -> Expression -> IO (Maybe (Expression, [(Expression, Expression)]))
     applied (RuleContext _ universe _) expr = pure $ case sites redex (rewritten universe) expr of
       [] -> Nothing
-      found -> Just (replaceExpression (expr, map fst found, map (const . snd) found))
+      found -> Just (replaceExpression (expr, map fst found, map (const . snd) found), found)
 
 every :: [Step] -> Maybe Expression -> Expression -> Set Int
 every steps _ _ = Set.fromList (zipWith const [0 ..] steps)
@@ -205,7 +206,7 @@ rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iterati
                       logDebug (printf "Rule '%s' is a breakpoint, dropping down all the previous rewritings..." ruleName)
                       pure (_rewrittens, expression, _unique, True, _found)
                     else pure (_rewrittens, expression, _unique, False, _found)
-                Just expr -> do
+                Just (expr, rewritten) -> do
                   logDebug (printf "Rule '%s' has been matched and applied" ruleName)
                   if expression == expr
                     then do
@@ -226,6 +227,7 @@ rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iterati
                                 )
                               updated <- withLocatedExpression _locator expr current
                               _saveStep updated
+                              mapM_ (uncurry _saveMade) [(redex, object) | (redex@(ExApplication head' _), object@(ExFormation _)) <- rewritten, object /= head']
                               _rewrite (leadsTo updated, expr, seenInsert digest expr _unique, False, Nothing) (_count + 1)
       where
         leadsTo :: Expression -> NonEmpty Rewritten
@@ -237,7 +239,7 @@ applicable :: Expression -> [Step] -> RewriteContext -> IO Bool
 applicable _ [] _ = pure False
 applicable expression (rule : rest) ctx@RewriteContext{..} =
   _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
-    Just changed | changed /= expression -> pure True
+    Just (changed, _) | changed /= expression -> pure True
     _ -> applicable expression rest ctx
 
 rewrite :: Expression -> [Step] -> RewriteContext -> IO Rewrittens

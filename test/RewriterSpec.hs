@@ -9,16 +9,17 @@
 
 module RewriterSpec where
 
-import AST (Argument (ArTau), Attribute (AtLabel), Binding (BiMeta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExTermination, ExXi))
+import AST (Argument (ArTau), Attribute (AtLabel, AtRho), Binding (BiMeta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExTermination, ExXi))
 import Control.Exception (SomeException)
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, nub)
 import Data.List.NonEmpty qualified as NE
 import Data.Set qualified as Set
 import Data.Yaml qualified as Yaml
-import Deps (Judgment (..), dontSaveStep)
+import Deps (Judgment (..), dontSaveMade, dontSaveStep)
 import Engine (Engine (_matching, _normal), building, stepOf)
 import Files (allPathsIn, ensuredFile)
 import Fixtures (linked)
@@ -116,7 +117,7 @@ spec = do
       ]
       ( \(desc, input', (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
           expr <- parseExpressionThrows input'
-          let action = rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep)
+          let action = rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot maxDepth maxCycles depthSensitive Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep dontSaveMade)
           case expected of
             Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
             Right predicate -> do
@@ -144,7 +145,7 @@ spec = do
       ]
       ( \(desc, must', expected) -> it desc $ do
           expr <- parseExpressionThrows "⟦ t ↦ ⊥.a.b.c ⟧"
-          let action = rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 1 1 False Nothing (building linked) (_normal linked) (_matching linked) must' Nothing dontSaveStep)
+          let action = rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 1 1 False Nothing (building linked) (_normal linked) (_matching linked) must' Nothing dontSaveStep dontSaveMade)
           case expected of
             Left fragment -> action `shouldThrow` (\exc -> fragment `isInfixOf` show (exc :: SomeException))
             Right predicate -> do
@@ -155,17 +156,27 @@ spec = do
   describe "judges the steps it takes" $
     it "takes every step by normalization" $ do
       expr <- parseExpressionThrows "⟦ k ↦ ⟦ w ↦ ⟦ Δ ⤍ 1F- ⟧ ⟧.w ⟧"
-      (rewrittens, _) <- rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep)
+      (rewrittens, _) <- rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep dontSaveMade)
       nub [judgment | (_, Just (judgment, _)) <- NE.toList rewrittens] `shouldBe` [Normalization]
+
+  describe "tells what an application made" $ do
+    it "tells the application a step turned into an object, beside the object" $ do
+      made <- newIORef []
+      _ <- rewrite (ExApplication (ExFormation [BiVoid (AtLabel "ж")]) (ArTau (AtLabel "ж") (ExFormation []))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
+      readIORef made `shouldReturn` [(ExApplication (ExFormation [BiVoid (AtLabel "ж")]) (ArTau (AtLabel "ж") (ExFormation [])), ExFormation [BiTau (AtLabel "ж") (ExFormation [])])]
+    it "tells nothing of an application a step left the object it was" $ do
+      made <- newIORef []
+      _ <- rewrite (ExApplication (ExFormation [BiTau (AtLabel "ъ") (ExFormation [])]) (ArTau AtRho (ExFormation []))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
+      readIORef made `shouldReturn` []
 
   describe "rewrites by a locator" $ do
     it "rewrites the located part step after step" $ do
       expr <- parseExpressionThrows "⟦ t ↦ ⊥.a.b, u ↦ ⊥.c ⟧"
-      (rewrittens, _) <- rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext (ExDispatch ExRoot (AtLabel "t")) 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep)
+      (rewrittens, _) <- rewrite expr (map (stepOf linked) normalizationRules) (RewriteContext (ExDispatch ExRoot (AtLabel "t")) 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep dontSaveMade)
       fst (NE.last rewrittens) `shouldBe` ExFormation [BiTau (AtLabel "t") ExTermination, BiTau (AtLabel "u") (ExDispatch ExTermination (AtLabel "c"))]
     it "fails on a locator that points nowhere even when no rule runs" $ do
       expr <- parseExpressionThrows "⟦ t ↦ ⊥.a ⟧"
-      rewrite expr [] (RewriteContext (ExDispatch ExRoot (AtLabel "w")) 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep)
+      rewrite expr [] (RewriteContext (ExDispatch ExRoot (AtLabel "w")) 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep dontSaveMade)
         `shouldThrow` (\exc -> "Can't find object by locator" `isInfixOf` show (exc :: SomeException))
 
   describe "rewrite packs" $ do
@@ -225,6 +236,7 @@ spec = do
                       must'
                       Nothing
                       dontSaveStep
+                      dontSaveMade
                   )
               let (rewritten, _) = NE.last rewrittens
               result' <- parseExpressionThrows (output pack)
@@ -238,10 +250,10 @@ spec = do
       )
   describe "asks which steps match" $ do
     it "does not try a step the matching does not name" $
-      (fst . NE.last . fst <$> rewrite ExXi [direct "qv" False (\_ expr -> [ExRoot | ExXi <- [expr]])] (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (\_ _ -> Set.empty) MtDisabled Nothing dontSaveStep))
+      (fst . NE.last . fst <$> rewrite ExXi [direct "qv" False (\_ expr -> [ExRoot | ExXi <- [expr]])] (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (\_ _ -> Set.empty) MtDisabled Nothing dontSaveStep dontSaveMade))
         `shouldReturn` ExXi
     it "asks the matching again once a step changed the term" $
-      (fst . NE.last . fst <$> rewrite ExXi [direct "xr" False (\_ expr -> [ExRoot | ExXi <- [expr]]), direct "rt" False (\_ expr -> [ExTermination | ExRoot <- [expr]])] (RewriteContext ExRoot 25 1 False Nothing (building linked) (_normal linked) (\_ expr -> Set.fromList [idx | (idx, ptn) <- [(0, ExXi), (1, ExRoot)], ptn == expr]) MtDisabled Nothing dontSaveStep))
+      (fst . NE.last . fst <$> rewrite ExXi [direct "xr" False (\_ expr -> [ExRoot | ExXi <- [expr]]), direct "rt" False (\_ expr -> [ExTermination | ExRoot <- [expr]])] (RewriteContext ExRoot 25 1 False Nothing (building linked) (_normal linked) (\_ expr -> Set.fromList [idx | (idx, ptn) <- [(0, ExXi), (1, ExRoot)], ptn == expr]) MtDisabled Nothing dontSaveStep dontSaveMade))
         `shouldReturn` ExTermination
   describe "every" $
     it "names each of the steps it is handed" $
@@ -249,13 +261,16 @@ spec = do
         `shouldBe` Set.fromList [0, 1, 2]
   describe "direct" $ do
     it "rewrites every place the function matches at" $
-      _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch (ExApplication ExXi (ArTau (AtLabel "o") ExXi)) (AtLabel "m"))
+      fmap fst <$> _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch (ExApplication ExXi (ArTau (AtLabel "o") ExXi)) (AtLabel "m"))
         `shouldReturn` Just (ExDispatch (ExApplication ExRoot (ArTau (AtLabel "o") ExRoot)) (AtLabel "m"))
+    it "tells every place it rewrote, beside what it rewrote it to" $
+      fmap snd <$> _applied (direct "tq" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExApplication ExXi (ArTau (AtLabel "ё") ExXi))
+        `shouldReturn` Just [(ExXi, ExRoot), (ExXi, ExRoot)]
     it "tells it matched nowhere" $
       _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch ExTermination (AtLabel "m"))
         `shouldReturn` Nothing
     it "hands the world to the function" $
-      _applied (direct "tw" False (\universe expr -> [world | ExXi <- [expr], Just world <- [universe]])) (RuleContext buildTerm (Just ExTermination) (const True)) ExXi
+      fmap fst <$> _applied (direct "tw" False (\universe expr -> [world | ExXi <- [expr], Just world <- [universe]])) (RuleContext buildTerm (Just ExTermination) (const True)) ExXi
         `shouldReturn` Just ExTermination
   describe "fast" $ do
     it "holds for a formation rewritten between the same two meta bindings" $

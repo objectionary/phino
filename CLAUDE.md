@@ -190,6 +190,19 @@ a run that fails still leaves a complete file; the markup references a value by
 the symbol it denotes and spells it `𝜎1` as everywhere else, where the text
 names a line by counting.
 
+An application writes a line too, `applied(…)` (`EvApplied`, #1745). A `Step`
+answers the term it made and the pairs of redex and result it replaced, and
+`rewrite'` hands every pair where an application became a formation other than
+its head, which of the built-in rules only `copy` does, to `_saveMade` of
+`RewriteContext`. `normalized` of `Morph.hs` writes it with the judgment and
+the site, spelling the call with `nameIn` of `Builder.hs`; the `rewrite`
+command saves nothing (`dontSaveMade`). The name of the object is counted with
+`built` and `answer` of the innermost open firing, which both writers keep as
+a stack every record prunes by its depth (`tier`), and from then on
+`abbreviated` writes the object by that name wherever a later line holds it
+whole. Under `--inside` the universe is normalized before the heading, so
+`aimed` of `CLI/Helpers.hs` holds those records back and writes them after it.
+
 ### Dependency inversion for circular imports
 
 `Deps.hs` exists solely to break the cycle
