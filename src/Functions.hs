@@ -141,24 +141,25 @@ _sed args subst = do
     parse :: B.ByteString -> IO (B.ByteString, B.ByteString, Bool)
     parse input =
       case B.stripPrefix "s/" input of
-        Just body
-          | B.elem '/' body ->
-              let (pat, rest) = nextUntilSlash body B.empty False
-                  (rep, flag) = nextUntilSlash rest B.empty True
-               in case flag of
-                    "g" -> pure (pat, rep, True)
-                    "" -> pure (pat, rep, False)
-                    _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
-          | otherwise -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+        Just body ->
+          let (pat, rest, separator) = nextUntilSlash body B.empty False
+           in if separator
+                then
+                  let (rep, flag, _) = nextUntilSlash rest B.empty True
+                   in case flag of
+                        "g" -> pure (pat, rep, True)
+                        "" -> pure (pat, rep, False)
+                        _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+                else throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
-    nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
+    nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString, Bool)
     nextUntilSlash input acc escape = case B.uncons input of
-      Nothing -> (acc, B.empty)
+      Nothing -> (acc, B.empty, False)
       Just (h, rest)
         | h == '\\' -> case B.uncons rest of
             Just (h', rest') -> nextUntilSlash rest' ((if escape then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
-            Nothing -> (if escape then acc else B.snoc acc '\\', B.empty)
-        | h == '/' -> (acc, rest)
+            Nothing -> (if escape then acc else B.snoc acc '\\', B.empty, False)
+        | h == '/' -> (acc, rest, True)
         | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
 
 _randomString :: BuildTermMethod
