@@ -44,30 +44,33 @@ spec = do
           included <- traverse parseExpressionThrows shown
           excluded <- traverse parseExpressionThrows hidden
           res <- parseExpressionThrows result
-          [(expr', _)] <- (`F.exclude` excluded) <$> F.include [(expr, Nothing)] included
+          [(expr', _)] <- F.include [(expr, Nothing)] included >>= (`F.exclude` excluded)
           expr' `shouldBe` res
       )
 
   describe "direct unit tests" $ do
     describe "exclude" $ do
-      it "leaves the expression untouched when the fqn is not a Q-dispatch chain" $ do
-        expr <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
-        badFqn <- parseExpressionThrows "$.x"
-        let [(expr', _)] = F.exclude [(expr, Nothing)] [badFqn]
-        expr' `shouldBe` expr
-
-      it "leaves a non-formation expression untouched" $ do
-        expr <- parseExpressionThrows "Q.x"
-        fqn <- parseExpressionThrows "Q.y"
-        let [(expr', _)] = F.exclude [(expr, Nothing)] [fqn]
-        expr' `shouldBe` expr
+      forM_
+        [ ("fails when the fqn is not a Q-dispatch chain", "[[ x -> ?, y -> ? ]]", "$.x")
+        , ("fails when the fqn is the whole program", "[[ x -> ?, y -> ? ]]", "Q")
+        , ("fails when nothing matches the fqn", "[[ x -> ? ]]", "Q.nope")
+        , ("fails when a nested fqn stops short of its last attribute", "[[ x -> [[ y -> ? ]] ]]", "Q.x.nope")
+        , ("fails for a non-formation expression", "Q.x", "Q.y")
+        , ("fails when the fqn walks into something that is not a formation", "[[ org -> [[ eolang -> Q.x ]] ]]", "Q.org.eolang.number")
+        ]
+        ( \(desc, phi, locator) ->
+            it desc $ do
+              expr <- parseExpressionThrows phi
+              fqn <- parseExpressionThrows locator
+              F.exclude [(expr, Nothing)] [fqn] `shouldThrow` anyException
+        )
 
       it "recurses over a multi-element rewrite list, preserving each rule label" $ do
         first' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         second' <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         fqn <- parseExpressionThrows "Q.x"
         expected <- parseExpressionThrows "[[ y -> ? ]]"
-        let excluded = F.exclude [(first', Just (Normalization, "rule-a")), (second', Just (Evaluation, "rule-b"))] [fqn]
+        excluded <- F.exclude [(first', Just (Normalization, "rule-a")), (second', Just (Evaluation, "rule-b"))] [fqn]
         map fst excluded `shouldBe` [expected, expected]
         map snd excluded `shouldBe` [Just (Normalization, "rule-a"), Just (Evaluation, "rule-b")]
 
