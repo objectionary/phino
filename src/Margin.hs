@@ -5,11 +5,11 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Margin (defaultMargin, withMargin, WithMargin) where
+module Margin (defaultMargin, withMargin, withLines, WithMargin) where
 
 import CST
 import qualified Data.Text as T
-import Lining (ToSingleLine (..))
+import Lining (LineFormat (..), ToSingleLine (..))
 import Render (Render (..))
 
 defaultMargin :: Int
@@ -17,6 +17,10 @@ defaultMargin = 80
 
 withMargin :: (WithMargin a) => Int -> a -> a
 withMargin margin = withMargin' (0, margin)
+
+withLines :: (WithMargin a, ToSingleLine a) => LineFormat -> Int -> a -> a
+withLines SINGLELINE _ = toSingleLine
+withLines MULTILINE margin = withMargin margin
 
 class WithMargin a where
   withMargin' :: (Int, Int) -> a -> a

@@ -9,8 +9,8 @@ import AST
 import Bytes (numToBts, strToBts)
 import CST
 import Control.Monad (forM_)
-import Lining (toSingleLine)
-import Margin (withMargin)
+import Lining (LineFormat (..), toSingleLine)
+import Margin (withLines, withMargin)
 import Render (render)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe)
 
@@ -183,3 +183,28 @@ spec = do
     it "threads the margin into its body" $ do
       let again = expressionToCST (ExPhiAgain Nothing 3 bigFormation)
       withMargin 1 again `shouldNotBe` withMargin 1000 again
+
+  describe "withLines" $
+    forM_ terms $ \(desc, expression) ->
+      forM_ margins $ \margin -> do
+        it ("flattens " ++ desc ++ " at margin " ++ show margin ++ " as the margin pass would") $
+          withLines SINGLELINE margin (expressionToCST expression)
+            `shouldBe` toSingleLine (withMargin margin (expressionToCST expression))
+        it ("wraps " ++ desc ++ " at margin " ++ show margin ++ " as the margin pass does") $
+          withLines MULTILINE margin (expressionToCST expression)
+            `shouldBe` withMargin margin (expressionToCST expression)
+  where
+    terms :: [(String, Expression)]
+    terms =
+      [ ("an empty formation", ExFormation [])
+      , ("a wide formation", bigFormation)
+      , ("a nested formation", nestedFormation)
+      , ("a long callee with a short argument", longCalleeShortArg)
+      , ("a short callee with a long argument", shortCalleeLongArg)
+      , ("a phi meet", ExPhiMeet Nothing 3 bigFormation)
+      , ("a phi again", ExPhiAgain Nothing 3 bigFormation)
+      , ("a number literal", DataNumber (numToBts 42))
+      , ("a string literal", DataString (strToBts "hello"))
+      ]
+    margins :: [Int]
+    margins = [0, 1, 40, 80, 1000]
