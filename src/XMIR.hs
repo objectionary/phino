@@ -473,6 +473,7 @@ xmirToFormationBinding derived cur fqn
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         "φ" -> BiTau AtPhi <$> xmirToFormation derived cur (name : fqn)
         "ρ" -> BiTau AtRho <$> xmirToFormation derived cur (name : fqn)
+        ('+' : test) -> toAttr test cur >> BiTau (AtLabel (T.pack name)) <$> xmirToFormation derived cur (name : fqn)
         _ -> toAttr name cur >>= \attr -> BiTau attr <$> xmirToFormation derived cur (name : fqn)
   | otherwise = do
       name <- getAttr "name" cur
@@ -481,6 +482,7 @@ xmirToFormationBinding derived cur fqn
         "φ" -> pure AtPhi
         "ρ" -> pure AtRho
         ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
+        ('+' : test) -> toAttr test cur >> pure (AtLabel (T.pack name))
         _ -> toAttr name cur
       case base of
         "∅" -> pure (BiVoid attr)
