@@ -431,6 +431,7 @@ deepened focus expr univ state ctx = do
           case outcome of
             Left (Severed answer reached) -> pure (answer, reached)
             Right (walked, walkedState) -> do
+              when (walked /= term) (here._saveEval (EvComputed here._nesting term walked))
               placed <- ctx._engine._contextualize walked =<< context frame
               current <- readIORef world
               (answer, answered) <- ctx'._fire dispatched placed current walkedState ctx'{_universe = Just current} `catch` cut standing frame ctx'
