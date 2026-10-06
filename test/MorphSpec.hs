@@ -44,7 +44,7 @@ test' :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> St
 test' func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultReduceContext ExRoot)
+      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState =<< defaultReduceContext ExRoot
       res `shouldBe` output
 
 data MorphPack = MorphPack
@@ -64,8 +64,9 @@ testMorph known deep pth = do
   expr <- parseExpressionThrows (if model == Just True then primitives input else input)
   seedTaus expr
   loc <- parseExpressionThrows (fromMaybe "Q" location)
+  base <- defaultReduceContext loc
   let ctx =
-        (defaultReduceContext loc)
+        base
           { _deep = deep
           , _partial = partial == Just True
           , _symbolic = if symbolic == Just True then known else emptyLambdas
@@ -90,7 +91,7 @@ spec = do
 
     it "reports the chain of steps oldest first" $ do
       expr <- parseExpressionThrows "[[ D> 00- ]]"
-      (morphed, chain, _) <- morph expr emptyState (defaultReduceContext ExRoot)
+      (morphed, chain, _) <- morph expr emptyState =<< defaultReduceContext ExRoot
       morphed `shouldBe` expr
       map snd chain `shouldBe` [Just (Morphing, "mf"), Nothing]
       map fst chain `shouldBe` [expr, expr]
@@ -99,7 +100,8 @@ spec = do
       expr <- parseExpressionThrows "[[ w -> [[ k -> [[ ]] ]].k, y -> Q.w ]]"
       loc <- parseExpressionThrows "Q.y"
       saved <- newIORef (0 :: Int)
-      _ <- morph expr emptyState (defaultReduceContext loc){_saveStep = const (modifyIORef' saved (+ 1))}
+      ctx <- defaultReduceContext loc
+      _ <- morph expr emptyState ctx{_saveStep = const (modifyIORef' saved (+ 1))}
       readIORef saved `shouldReturn` 2
 
   describe "morph with '_deep'" $ do
@@ -112,7 +114,8 @@ spec = do
         withLambdasOf "- λ: L_answer\n  𝑛: ⟦ Δ ⤍ FF- ⟧\n" $ \file -> do
           box <- readLambdas file
           world <- parseExpressionThrows "[[ foo -> [[ f -> [[ a -> ?, @ -> $.a, L> L_answer ]] ]], x -> Q.foo.f( a -> [[ D> 01- ]] ).@ ]]"
-          (morphed, _, _) <- morph world emptyState (withLambdas box (defaultReduceContext ExRoot)){_deep = True}
+          ctx <- withLambdas box <$> defaultReduceContext ExRoot
+          (morphed, _, _) <- morph world emptyState ctx{_deep = True}
           morphed `shouldBe` world
 
   describe "morph'" $
@@ -157,27 +160,29 @@ spec = do
   describe "inferred" $
     it "morphs a premise in the universe it names, not in the one the frame is in" $ do
       world <- parseExpressionThrows "[[ x -> [[ ]] ]]"
+      ctx <- defaultReduceContext ExRoot
       Just (Answered _ answer, _) <-
         inferred
           ExRoot
           ExRoot
           emptyState
-          (defaultReduceContext ExRoot)
+          ctx
           [direct (\_ _ -> [Morphs ExRoot world (pure . Concludes . Answered (Morphing, "premise"))])]
       answer `shouldBe` world
 
   describe "morph' fails when no morphing rule matches the term" $
     it "throws instead of looping when handed a bare, unmatched meta" $
-      morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
+      (morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "Morphing expects a normal form" `isInfixOf` show (e :: SomeException))
 
   describe "execBuildTerm 'morph'" $ do
     let univ = ExFormation []
-        ctx = defaultReduceContext ExRoot
-    it "throws when not given exactly one expression argument" $
+    it "throws when not given exactly one expression argument" $ do
+      ctx <- defaultReduceContext ExRoot
       execBuildTerm univ ctx "morph" [] substEmpty
         `shouldThrow` (\e -> "requires exactly 1 expression argument" `isInfixOf` show (e :: SomeException))
     it "morphs a single expression argument to its already-normal form" $ do
+      ctx <- defaultReduceContext ExRoot
       result <- execBuildTerm univ ctx "morph" [ArgExpression (ExFormation [BiDelta (BtOne "00")])] substEmpty
       case result of
         TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "00")]
@@ -188,7 +193,7 @@ spec = do
         reduced src = do
           univ <- parseExpressionThrows universe
           target <- parseExpressionThrows src
-          (extended, ctx) <- insideUniverse target univ (defaultReduceContext ExRoot)
+          (extended, ctx) <- insideUniverse target univ =<< defaultReduceContext ExRoot
           (outcome, _, _) <- dataize extended emptyState ctx
           pure outcome
     it "reduces an expression the program does not contain" $ do
@@ -199,7 +204,7 @@ spec = do
       value `shouldBe` Dataized (BtOne "01")
     it "refuses a universe which is not a formation" $ do
       target <- parseExpressionThrows "Q.y"
-      insideUniverse target ExRoot (defaultReduceContext ExRoot)
+      (insideUniverse target ExRoot =<< defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "not a formation" `isInfixOf` show (e :: SomeException))
 
   describe "morphing is order-independent under --shuffle" $ do
@@ -217,11 +222,12 @@ spec = do
           ]
     forM_ cases $ \(desc, input, univ, expected) ->
       it ("morphs " ++ desc ++ " to the same form across 100 random rule orders") $ do
-        results <- replicateM 100 (fst . fst <$> morph' (input, (univ, Nothing) :| []) univ emptyState (defaultReduceContext ExRoot))
+        results <- replicateM 100 (fst . fst <$> (morph' (input, (univ, Nothing) :| []) univ emptyState =<< defaultReduceContext ExRoot))
         nub results `shouldBe` [expected]
 
   describe "morphing 'md' is disjoint from 'ml'" $ do
-    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot)) Nothing (_normal linked)
+    ctx <- runIO (defaultReduceContext ExRoot)
+    let rctx = RuleContext (execBuildTerm ExRoot ctx) Nothing (_normal linked)
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule
@@ -236,19 +242,21 @@ spec = do
     it "drills a chained λ-formation dispatch down to the base 'ml'" $ do
       let base = ExFormation [BiLambda (Function "F")]
           chain = ExDispatch (ExDispatch (ExDispatch base (AtLabel "a")) (AtLabel "b")) (AtLabel "c")
-      morph' (chain, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
+      (morph' (chain, (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "No entry of --symbolic answers the λ function 'F'" `isInfixOf` show (e :: SomeException))
 
   describe "stops by the clock of --max-seconds" $ do
     it "fails a morphing that fires nothing once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ k -> [[ D> 3F- ]] ]]"
       deadline <- overdue 17
-      morph expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline}
+      ctx <- defaultReduceContext ExRoot
+      morph expr emptyState ctx{_deadline = Just deadline}
         `shouldThrow` (\e -> "--max-seconds=17" `isInfixOf` show (e :: SomeException))
     it "fails a partial morphing once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ q -> [[ D> 5A- ]] ]]"
       deadline <- overdue 23
-      morph expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline, _partial = True}
+      ctx <- defaultReduceContext ExRoot
+      morph expr emptyState ctx{_deadline = Just deadline, _partial = True}
         `shouldThrow` (\e -> "--max-seconds=23" `isInfixOf` show (e :: SomeException))
 
   describe "stops an entrance by the clock of --max-seconds" $
@@ -256,6 +264,7 @@ spec = do
       due <- (+ 0.2) <$> getMonotonicTime
       let formation :: Expression -> Int -> Expression
           formation base depth = ExFormation [BiTau (AtLabel "x") (iterate (`ExDispatch` AtLabel "w") base !! depth), BiLambda (Function "L_q")]
-      ctx <- enter (formation ExRoot 1300) (defaultReduceContext ExRoot){_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
+      base <- defaultReduceContext ExRoot
+      ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
       timeout 10000000 (enter (formation ExXi 1700) ctx)
         `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))

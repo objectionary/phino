@@ -87,11 +87,11 @@ spec =
     matched :: Expression -> IO (Set.Set Int)
     matched expr = Set.fromList . map fst <$> filterM (\(_, rule) -> not . null <$> matchExpressionWithRule expr rule (RuleContext (building yaml) Nothing (_normal yaml))) (zip [0 ..] Y.normalizationRules)
     morphed :: Lambdas -> Engine -> Expression -> IO (Either String String)
-    morphed lambdas engine world = settled (show . fst <$> morph' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState (reducing lambdas engine))
+    morphed lambdas engine world = settled (show . fst <$> (morph' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState =<< reducing lambdas engine))
     dataized :: Lambdas -> Engine -> Expression -> IO (Either String String)
-    dataized lambdas engine world = settled (show . fst <$> dataize' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState (reducing lambdas engine))
-    reducing :: Lambdas -> Engine -> ReduceContext
-    reducing lambdas engine = (defaultReduceContext ExRoot){_engine = engine, _buildTerm = building engine, _shuffle = False, _steps = Steps 40 0, _symbolic = lambdas}
+    dataized lambdas engine world = settled (show . fst <$> (dataize' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState =<< reducing lambdas engine))
+    reducing :: Lambdas -> Engine -> IO ReduceContext
+    reducing lambdas engine = (\ctx -> ctx{_engine = engine, _buildTerm = building engine, _shuffle = False, _steps = Steps 40 0, _symbolic = lambdas}) <$> defaultReduceContext ExRoot
     program :: Int -> Expression
     program seed = fst (formation False 4 (mkStdGen seed))
     contextualized :: Engine -> Expression -> Expression -> IO (Either String String)

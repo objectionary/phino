@@ -26,7 +26,7 @@ import Lambdas (readLambdas)
 import Lining (LineFormat (SINGLELINE))
 import Margin (defaultMargin)
 import Matcher (substEmpty)
-import Morph (ReduceContext (..), Steps (..), execBuildTerm, memoized, morph)
+import Morph (ReduceContext (..), Steps (..), emptyState, execBuildTerm, memoized, morph)
 import Parser (parseExpressionThrows)
 import Printer (printExpression, printExpression', printExpressionHidingRho')
 import Sugar (SugarType (SWEET))
@@ -65,8 +65,9 @@ testSymbols pth = do
     (_, written) <- recorded' hidden $ \record -> do
       let mode = named <$> acyclic
       cells <- memoized mode
+      base <- defaultReduceContext loc
       let ctx =
-            (defaultReduceContext loc)
+            base
               { _deep = deep == Just True
               , _partial = partial == Just True
               , _acyclic = mode
@@ -76,11 +77,12 @@ testSymbols pth = do
               , _saveEval = record
               }
       record (EvRun Morphing (T.pack (printExpression loc)))
+      started expr ctx
       case fails of
         Just message ->
-          morph expr (started expr) ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
+          morph expr emptyState ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
         Nothing -> do
-          (morphed, _, _) <- morph expr (started expr) ctx
+          (morphed, _, _) <- morph expr emptyState ctx
           forM_ result $ \res -> do
             expected <- parseExpressionThrows res
             spelled hidden morphed `shouldBe` spelled False expected
@@ -103,8 +105,9 @@ spec = do
 
   describe "execBuildTerm 'evaluate'" $ do
     let univ = ExFormation []
-        ctx = withLambdas known (defaultReduceContext ExRoot)
-        runEvaluate args = execBuildTerm univ ctx "evaluate" args substEmpty
+        runEvaluate args = do
+          ctx <- withLambdas known <$> defaultReduceContext ExRoot
+          execBuildTerm univ ctx "evaluate" args substEmpty
     forM_
       [
         ( "the first argument is not a formation"
@@ -124,7 +127,8 @@ spec = do
 
     it "gets stuck on a λ naming a symbol, instead of refusing the formation" $ do
       (_, written) <- recorded $ \record -> do
-        let stuck = (withLambdas known (defaultReduceContext ExRoot)){_saveEval = record}
+        ctx <- withLambdas known <$> defaultReduceContext ExRoot
+        let stuck = ctx{_saveEval = record}
             fire = execBuildTerm univ stuck "evaluate" [ArgExpression (ExFormation [BiLambda (FnSymbol 1)]), ArgExpression univ] substEmpty
         fire `shouldThrow` (\e -> "No entry of --symbolic answers the λ function '𝜎1'" `isInfixOf` show (e :: SomeException))
       written `shouldBe` "  unanswered(𝜎1)  # 𝕄(𝜎1:λ)\n"
@@ -147,7 +151,8 @@ spec = do
     it "evaluates a λ-bearing formation to the answer of its entry, normalized" $ do
       let form = ExFormation [BiLambda (Function "L_answer"), BiTau AtRho (ExFormation [BiDelta (BtOne "00")])]
       answered <- withLambdasOf "- λ: L_answer\n  𝑛: ⟦ Δ ⤍ FF- ⟧\n" readLambdas
-      result <- execBuildTerm univ (withLambdas answered ctx) "evaluate" [ArgExpression form, ArgExpression univ] substEmpty
+      ctx <- withLambdas answered <$> defaultReduceContext ExRoot
+      result <- execBuildTerm univ ctx "evaluate" [ArgExpression form, ArgExpression univ] substEmpty
       case result of
         TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "FF")]
         _ -> expectationFailure "expected TeExpression"
