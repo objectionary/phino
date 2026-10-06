@@ -139,6 +139,7 @@ runRewrite OptsRewrite{..} = do
         _sugarType
         _hideRho
         Nothing
+        False
         _flat
         _margin
         xmirCtx
@@ -208,6 +209,7 @@ runDataize OptsDataize{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
@@ -217,6 +219,7 @@ runDataize OptsDataize{..} = do
         _sugarType
         _hideRho
         _abridged
+        _abridgedData
         _flat
         _margin
         (XmirContext _omitListing _omitComments _hideRho listing atoms)
@@ -292,6 +295,7 @@ runMorph OptsMorph{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_jobs > 1 && not _deep) (invalidCLIArguments "The option --jobs requires --deep, since only the deep walk runs on several workers")
       when
         (isJust _inside && _locator /= "Q")
@@ -302,6 +306,7 @@ runMorph OptsMorph{..} = do
         _sugarType
         _hideRho
         _abridged
+        _abridgedData
         _flat
         _margin
         (XmirContext _omitListing _omitComments _hideRho listing atoms)
@@ -368,6 +373,7 @@ runMerge OptsMerge{..} = do
         _sugarType
         False
         Nothing
+        False
         _flat
         _margin
         xmirCtx
