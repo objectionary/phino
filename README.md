@@ -466,7 +466,10 @@ that way, each on its own, and never the application as a whole, so a line
 spells out every application, even one making an object an earlier one already
 made, the way `applied(𝑛.1.1) := 5` does, and a later line names the latest of
 them. Only an object still standing as it was made is named: once a rule
-rewrote a part of it, it is another object and it is spelled out again.
+rewrote a part of it, it is another object and it is spelled out again. The
+walk of `--deep` is no such rule. It stands its answers in the place of what it
+computed, inside the bindings of the object it walks, and makes no new object
+by doing so, so the object keeps its name once the walk is done with it.
 
 Where an operand came down to the datum a symbol stands for, the protocol writes
 `𝔻(𝜎1:λ)` in place of that 42 (`𝜎1:λ` is the formation `⟦ λ ⤍ 𝜎1 ⟧`, in the
