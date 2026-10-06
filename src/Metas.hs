@@ -1,13 +1,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to collect the meta-variables a term was written
--- with and to drop the index from the ones that stand alone in their kind.
--- Every name starts with the sigil of the kind it belongs to -- 'e', 'n', 'k',
--- 't', 'B', 'd', 'F' or 'i' -- and carries an index after it, which is there to
--- tell one meta of a kind from another. A term naming a kind just once has
--- nothing to tell apart, so the index counts nothing and the sigil may stand
--- alone, the way an anonymous meta stands.
 module Metas (Metas (..), lonely) where
 
 import AST
@@ -18,15 +11,10 @@ import qualified Data.Text as T
 import Text.Read (readMaybe)
 
 class Metas a where
-  -- The names of the meta-variables the term was written with, an anonymous
-  -- one named by the sigil of its kind alone
   metas :: a -> [Text]
 
-  -- The term with each of the given names cut down to the sigil it starts with
   bare :: [Text] -> a -> a
 
--- The term with the index dropped from every name whose kind it mentions once,
--- since an index that tells a meta from no other only slows the reader down
 lonely :: (Metas a) => a -> a
 lonely term = bare (filter alone named) term
   where
@@ -39,14 +27,10 @@ lonely term = bare (filter alone named) term
     indexed :: Text -> Bool
     indexed name = isJust (readMaybe (T.unpack (T.drop 1 name)) :: Maybe Int)
 
--- A name stands for the meta-variable it names, so it answers with itself and
--- sheds its index when asked to
 instance Metas Text where
   metas name = [name]
   bare names name = if name `elem` names then T.take 1 name else name
 
--- An anonymous meta is known by the sigil of its kind, which is the name every
--- meta of that kind is cut down to, and there is nothing in it to shed
 instance Metas Slot where
   metas (Slot kind _) = [kind]
   bare _ slot = slot
@@ -119,8 +103,6 @@ instance Metas Bytes where
   bare names (BtMeta name) = BtMeta (bare names name)
   bare _ bts = bts
 
--- A symbol 𝜎1 is a name and not a meta-variable, so nothing counts it among
--- the metas and nothing sheds the index that tells one symbol from another
 instance Metas Function where
   metas (FnMeta name) = metas name
   metas (FnAny slot) = metas slot

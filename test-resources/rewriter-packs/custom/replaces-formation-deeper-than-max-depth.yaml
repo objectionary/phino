@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+repeat: 1
+must: 1
+input: |
+  [[
+    first -> [[
+      second -> [[
+        target -> "hello"
+      ]]
+    ]]
+  ]]
+output: |
+  [[
+    first -> [[
+      second -> [[
+        target -> ?
+      ]]
+    ]]
+  ]]
+rules:
+  custom:
+    - name: void target
+      pattern: |
+        [[ !B1, target -> !e1, !B2 ]]
+      result: |
+        [[ !B1, target -> ?, !B2 ]]

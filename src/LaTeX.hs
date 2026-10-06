@@ -28,9 +28,10 @@ import AST
 import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
-import Data.List (intercalate, nub)
+import Data.List (intercalate, nub, zipWith4)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
+import Deps (Judgment (..))
 import Encoding
 import Lining
 import Locator (locatedExpression)
@@ -94,16 +95,6 @@ meetInExpression expr len = meetIn expr
     argExpr (ArTau _ ex) = ex
     argExpr (ArAlpha _ ex) = ex
 
-{- | Here we're trying to compress a sequence of expressions with \phinoMeet{} and \phinoAgain LaTeX functions.
-We process the sequence of expressions and trying to find all sub-expressions in the first expression which are present
-in the following expressions. Then we find the one which is the most frequently encountered.
-If it's encountered in more than specific percentage (_meetPopularity) of the following expressions - we replace
-it with \phinoAgain{} in the following expressions and with \phinoMeet{} in the first expression.
-We then keep re-scanning that same first expression for further meets: the parts already factored out become
-\phinoMeet{}/\phinoAgain{}, which the scanner skips, so each pass yields strictly fewer candidates and the loop
-terminates. This lets a single step host several \phinoMeet{}s when it carries several independent recurring
-sub-expressions, rather than only the single most frequent one.
--}
 meetInExpressions :: [Expression] -> LatexContext -> [Expression]
 meetInExpressions exprs LatexContext{..} = go exprs 1
   where
@@ -156,60 +147,54 @@ preamble ctx@LatexContext{..} =
     , maybe "" (printf "\\phiExpression{%s} ") _expression
     ]
 
--- Join the rendered steps with '\leadsto'. Every step after the first carries
--- the two-space '\leadsto' indent, so it is rendered from base tab 1 rather
--- than 0 (via 'baseTab'); this keeps a wrapped multi-line step's members nested
--- one level below its '\leadsto [[' line and its closing bracket aligned with
--- that line. The first step has no '\leadsto' prefix and stays at base tab 0.
--- Each step is prefixed with the matching entry from 'comments', which is
--- either empty or a '% ...'-commented header line ending in a newline (see
--- 'stepComments'), so headers stay on their own line above the equation.
-body :: [String] -> [(a, Maybe String)] -> (Int -> a -> String) -> String
+body :: [String] -> [(a, Maybe (Judgment, String))] -> (Int -> a -> String) -> String
 body comments printed toLatex =
   intercalate
     "\n"
-    ( zipWith3
-        ( \idx comment (item, maybeName) ->
+    ( zipWith4
+        ( \idx comment (item, rule) reached ->
             let item' = toLatex (baseTab idx) item
-                leadsto = if idx == 0 then item' else "  \\leadsto " ++ item'
-             in comment ++ maybe leadsto (printf "%s \\leadsto_{\\nameref{r:%s}}" leadsto) maybeName
+                opening = if idx == 0 then item' else printf "  %s %s" (relation reached) item'
+             in comment ++ maybe opening (\(judgment, name) -> printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) (escaped name)) rule
         )
         [0 ..]
         comments
         printed
+        (arrows (map snd printed))
     )
   where
     baseTab :: Int -> Int
     baseTab 0 = 0
     baseTab _ = 1
 
--- LaTeX comment header lines for each step (see 'stepHeaders' in "Rewriter"),
--- or empty strings when '--headers' is off. A '%' starts a LaTeX comment, so
--- the header documents the '--sequence' chain without affecting the rendered
--- equation. Each comment ends in a newline so the following step starts on a
--- fresh line.
+arrows :: [Maybe (Judgment, String)] -> [Judgment]
+arrows = scanl (\current rule -> maybe current fst rule) Normalization
+
+relation :: Judgment -> String
+relation Normalization = "\\phiNormalize"
+relation Morphing = "\\phiMorph"
+relation Dataization = "\\phiDataize"
+relation Evaluation = "\\phiEvaluate"
+relation Contextualization = "\\phiContextualize"
+
 stepComments :: [Rewritten] -> LatexContext -> [String]
 stepComments rewrittens LatexContext{_headers = enabled} =
   if enabled
     then map (printf "%% %s\n") (stepHeaders rewrittens)
     else map (const "") rewrittens
 
-ending :: Bool -> LatexContext -> String
-ending True ctx = printf " \\leadsto\n  \\leadsto \\dots\n\\end{%s}" (phiquation ctx)
-ending False ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
+ending :: Bool -> Judgment -> LatexContext -> String
+ending True judgment ctx = printf " %s\n  %s \\dots\n\\end{%s}" (relation judgment) (relation judgment) (phiquation ctx)
+ending False _ ctx = period ctx
+
+period :: LatexContext -> String
+period ctx = printf "{.}\n\\end{%s}" (phiquation ctx)
 
 compressedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
 compressedRewrittens rewrittens ctx@LatexContext{..} =
   let (exprs, rules) = unzip rewrittens
    in if _compress then zip (meetInExpressions exprs ctx) rules else rewrittens
 
--- Canonization runs after the meet compression, never before it: 'canonize'
--- renumbers λ bindings by traversal position and restarts the counter for every
--- expression, so the same logical lambda ends up with a different 'Fn' in
--- different steps. Feeding those unstable names to the meet pass (which compares
--- sub-expressions by structural equality) would stop identical sub-expressions
--- from ever matching. So the meet pass sees the original names first, and only
--- its output is canonized.
 canonizedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
 canonizedRewrittens rewrittens LatexContext{_canonize = shouldCanonize} =
   if shouldCanonize then canonize rewrittens else rewrittens
@@ -218,10 +203,6 @@ canonizedExpressions :: [Expression] -> LatexContext -> [Expression]
 canonizedExpressions exprs LatexContext{_canonize = shouldCanonize} =
   if shouldCanonize then map canonizeExpr exprs else exprs
 
--- Compress a sequence of focused sub-expressions the way 'compressedRewrittens'
--- compresses whole expressions: the meet machinery factors recurring
--- sub-expressions out across the sequence. Focusing happens before this, so the
--- meet never replaces a root the focus must still descend through.
 compressedExpressions :: [Expression] -> LatexContext -> [Expression]
 compressedExpressions exprs ctx@LatexContext{..} =
   if _compress then meetInExpressions exprs ctx else exprs
@@ -232,7 +213,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{_focus = ExRoot} =
     ( concat
         [ preamble ctx
         , body (stepComments rewrittens ctx) (canonizedRewrittens (compressedRewrittens rewrittens ctx) ctx) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
-        , ending exceeded ctx
+        , ending exceeded (last (arrows (map snd rewrittens))) ctx
         ]
     )
 rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
@@ -242,7 +223,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
     ( concat
         [ preamble ctx
         , body (stepComments rewrittens ctx) (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\tabs expr -> renderToLatex (expressionToCSTFrom tabs expr) ctx)
-        , ending exceeded ctx
+        , ending exceeded (last (arrows (map snd rewrittens))) ctx
         ]
     )
 
@@ -251,7 +232,7 @@ expressionToLaTeX ex ctx =
   concat
     [ preamble ctx
     , renderToLatex (expressionToCST ex) ctx
-    , ending False ctx
+    , period ctx
     ]
 
 piped :: T.Text -> T.Text
@@ -269,13 +250,10 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (toLaTeX expr)
   toLaTeX EX_META{..} = EX_META (toLaTeX meta)
   toLaTeX EX_XI{} = EX_XI XI'
-  -- A non-finite double is printed as a dispatch off the root, so it becomes
-  -- one here too, with its name piped the way any other label is (see #1065)
   toLaTeX EX_NONFINITE{..} = EX_DISPATCH (EX_GLOBAL global) SPACE (toLaTeX (AT_LABEL (nonFiniteName nonfinite)))
   toLaTeX EX_BYTES{..} = EX_BYTES (toLaTeX bytes)
-  -- The eolang LaTeX package knows no one-binding sugar, so the full
-  -- formation is written instead (see #1385)
-  toLaTeX EX_SINGLE{..} = toLaTeX formation
+  toLaTeX EX_SINGLE{..} = EX_SINGLE (toLaTeX pair) SPACE (toLaTeX formation)
+  toLaTeX EX_STRING{..} = EX_STRING (T.unpack (toLaTeX (T.pack str))) tab rhos
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where
@@ -359,10 +337,17 @@ instance ToLaTeX APP_ARGS where
 instance ToLaTeX T.Text where
   toLaTeX = T.concatMap escape
     where
+      escape '#' = "\\char35{}"
       escape '$' = "\\char36{}"
+      escape '%' = "\\char37{}"
+      escape '&' = "\\char38{}"
       escape '@' = "\\char64{}"
       escape '^' = "\\char94{}"
+      escape '\\' = "\\char92{}"
       escape '_' = "\\char95{}"
+      escape '{' = "\\char123{}"
+      escape '}' = "\\char125{}"
+      escape '~' = "\\char126{}"
       escape ch = T.singleton ch
 
 instance ToLaTeX SET where
@@ -387,7 +372,7 @@ instance ToLaTeX CONDITION where
   toLaTeX CO_ABSOLUTE{..} = CO_ABSOLUTE (toLaTeX expr) belongs
   toLaTeX CO_NOT{..} = CO_NOT (toLaTeX condition)
   toLaTeX CO_COMPARE{..} = CO_COMPARE (toLaTeX left) equal (toLaTeX right)
-  toLaTeX CO_MATCHES{..} = CO_MATCHES regex (toLaTeX expr)
+  toLaTeX CO_MATCHES{..} = CO_MATCHES (T.unpack (toLaTeX (T.pack regex))) (toLaTeX expr)
   toLaTeX CO_PART_OF{..} = CO_PART_OF (toLaTeX expr) (toLaTeX binding)
   toLaTeX CO_DISJOINT{..} = CO_DISJOINT (map toLaTeX attrs) (map toLaTeX groups)
   toLaTeX CO_SUBSET{..} = CO_SUBSET (map toLaTeX attrs) belongs (map toLaTeX groups)
@@ -414,16 +399,12 @@ explainRule rule =
     (joinedConditions rule.when rule.having)
     rule.where_
   where
-    -- Join two maybe conditions into single one using Y.And if at least one is just.
     joinedConditions :: Maybe Y.Condition -> Maybe Y.Condition -> Maybe Y.Condition
     joinedConditions Nothing Nothing = Nothing
     joinedConditions first@(Just _) Nothing = first
     joinedConditions Nothing second@(Just _) = second
     joinedConditions (Just first) (Just second) = Just (Y.And [first, second])
 
--- Render a morphing rule as a LaTeX inference rule: each premise becomes a
--- judgment above the line and the conclusion is 𝕄(match, e, s_1) ⟿ ⟨conclusion, s_k⟩
--- below, where s_k is the final state threaded through the premises.
 explainMorphRule :: Y.MorphRule -> String
 explainMorphRule rule =
   inference
@@ -434,11 +415,8 @@ explainMorphRule rule =
     premises
     (phinoMorph (renderExpr rule.match) (renderExpr rule.ematch) (conclusionStateName final 1) (conclusionStateName final final) (renderExpr rule.nresult))
   where
-    (premises, final) = premisesToLatex (renderExpr rule.ematch) rule.premises
+    (premises, final) = premisesToLatex rule.premises
 
--- Render a dataization rule as a LaTeX inference rule, with 𝔻(match, e, s_1) ⟿
--- ⟨conclusion, s_k⟩ as the conclusion below the line, s_k being the final threaded
--- state.
 explainDataizeRule :: Y.DataizeRule -> String
 explainDataizeRule rule =
   inference
@@ -449,11 +427,8 @@ explainDataizeRule rule =
     premises
     (phinoDataize (renderExpr rule.match) (renderExpr rule.ematch) (conclusionStateName final 1) (conclusionStateName final final) (renderBytes rule.dresult))
   where
-    (premises, final) = premisesToLatex (renderExpr rule.ematch) rule.premises
+    (premises, final) = premisesToLatex rule.premises
 
--- Render a contextualization rule as a LaTeX inference rule, with 𝒞(match, c) ⟿
--- c-result as the conclusion below the line. 𝒞 carries no state, so its premises
--- (all contextualizations) leave the state index untouched.
 explainContextualizeRule :: Y.ContextualizeRule -> String
 explainContextualizeRule rule =
   inference
@@ -461,65 +436,46 @@ explainContextualizeRule rule =
     rule.name
     rule.label
     Nothing
-    (fst (premisesToLatex "e" rule.premises))
+    (fst (premisesToLatex rule.premises))
     (phinoContextualize (renderExpr rule.match) (renderExpr rule.cmatch) (renderExpr rule.cresult))
 
--- The state metavariable for index 'n', rendered as s_1, s_2, … to mirror the
--- n/n_1 convention used for terms.
 stateName :: Int -> String
 stateName n = "s_" ++ show n
 
--- The state name for a rule's conclusion. The subscript exists only to
--- distinguish the several states threaded through a rule's premises; when a
--- rule threads a single state ('final' == 1) it carries no information, so the
--- conclusion drops it and renders a bare 's'. Otherwise it keeps the
--- subscripted form (s_1 … s_final) shared with the premises.
 conclusionStateName :: Int -> Int -> String
 conclusionStateName final index
   | final == 1 = "s"
   | otherwise = stateName index
 
--- Render a rule's premises in order, threading the state through them. The rule
--- starts in state s_1; each state-changing premise (𝕄, 𝔻, 𝔼) consumes the
--- current state and yields the next (s_2, s_3, …), matching how the engine folds
--- the state through the premises ('sidePremise' in 'Dataize.hs'). The 'universe'
--- is the rule's own 'universe' key, threaded into 𝕄/𝔻 premises (bound by the conclusion)
--- rather than a free 'e'. Returns the rendered judgments and the final state
--- index, which the conclusion returns.
-premisesToLatex :: String -> [Y.Premise] -> ([String], Int)
-premisesToLatex universe = go 1
+premisesToLatex :: [Y.Premise] -> ([String], Int)
+premisesToLatex = go 1
   where
     go :: Int -> [Y.Premise] -> ([String], Int)
     go index [] = ([], index)
     go index (premise : rest) = (rendered : more, final)
       where
-        (rendered, next) = premiseToLatex universe index premise
+        (rendered, next) = premiseToLatex index premise
         (more, final) = go next rest
 
--- One premise judgment in state s_index, rendered per its operation. The
--- state-changing operations 𝕄 ('morph'), 𝔻 ('dataize') and 𝔼 ('evaluate') consume
--- s_index and yield s_index+1 (so they return the bumped index); the rest are
--- stateless and leave the index as is. 𝕄 and 𝔻 carry the rule's own 'universe'
--- (its 'universe' key) so the premise stays bound by the conclusion instead of naming a
--- free 'e'; 𝔼 carries the explicit universe from its own operation.
-premiseToLatex :: String -> Int -> Y.Premise -> (String, Int)
-premiseToLatex universe index premise = case premise.operation of
-  Y.OpMorph arg -> (phinoMorph (renderExpr arg) universe (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
-  Y.OpDataize arg -> (phinoDataize (renderExpr arg) universe (stateName index) (stateName (index + 1)) (renderBytes (BtMeta premise.result)), index + 1)
+premiseToLatex :: Int -> Y.Premise -> (String, Int)
+premiseToLatex index premise = case premise.operation of
+  Y.OpMorph arg universe -> (phinoMorph (renderExpr arg) (renderExpr universe) (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
+  Y.OpDataize arg universe -> (phinoDataize (renderExpr arg) (renderExpr universe) (stateName index) (stateName (index + 1)) (renderBytes (BtMeta premise.result)), index + 1)
   Y.OpNormalize arg -> (phinoNormalize (renderExpr arg) (renderExpr (ExMeta premise.result)), index)
   Y.OpEvaluate arg evalUniverse -> (phinoEvaluate (renderExpr arg) (renderExpr evalUniverse) (stateName index) (stateName (index + 1)) (renderExpr (ExMeta premise.result)), index + 1)
   Y.OpContextualize arg context -> (phinoContextualize (renderExpr arg) (renderExpr context) (renderExpr (ExMeta premise.result)), index)
 
--- Assemble an inference block from a name, optional label, optional side
--- condition, the premise judgments and the conclusion judgment.
 inference :: String -> String -> Maybe String -> Maybe Y.Condition -> [String] -> String -> String
 inference env name label cond premises conclusion =
   intercalate "\n" $
-    ["\\begin{" ++ env ++ "}", "  \\phinoName{" ++ name ++ "}"]
+    ["\\begin{" ++ env ++ "}", "  \\phinoName{" ++ escaped name ++ "}"]
       ++ maybe [] (\symbol -> ["  \\phinoLabel{" ++ symbol ++ "}"]) label
       ++ maybe [] (\rendered -> ["  \\phinoCondition{ " ++ rendered ++ " }"]) (conditionInLatex cond)
       ++ map (\premise -> "  \\phinoPremise{ " ++ premise ++ " }") premises
       ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{" ++ env ++ "}"]
+
+escaped :: String -> String
+escaped = T.unpack . toLaTeX . T.pack
 
 renderExpr :: Expression -> String
 renderExpr expr = renderToLatex (expressionToCST expr) defaultLatexContext
@@ -527,18 +483,11 @@ renderExpr expr = renderToLatex (expressionToCST expr) defaultLatexContext
 renderBytes :: Bytes -> String
 renderBytes bytes = T.unpack (render (toLaTeX (toCST' bytes :: BYTES)))
 
--- Render a single normalization rule row through the \phinoNormalizationRule
--- macro: an optional typeset label, name, left-hand side, right-hand side, the
--- optional 'if' condition and 'where' extras. When the label is present it
--- becomes the macro's first optional argument ('\macro[label]{name}'); when
--- absent the optional argument is omitted entirely ('\macro{name}').
--- Morphing and dataization rules render as inference rules instead (see
--- 'explainMorphRule' and 'explainDataizeRule').
 trrule :: String -> Maybe String -> String -> String -> String -> Maybe Y.Condition -> Maybe [Y.Extra] -> String
 trrule macro label name lhs rhs cond extras =
   intercalate
     "\n  "
-    [ macro ++ labelArg ++ "{" ++ name ++ "}"
+    [ macro ++ labelArg ++ "{" ++ escaped name ++ "}"
     , braced lhs
     , braced rhs
     , conditionToLatex cond
@@ -547,12 +496,6 @@ trrule macro label name lhs rhs cond extras =
   where
     labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
 
--- 𝕄, 𝔻 and 𝔼 carry the universe and thread the state from 'sIn' to a new
--- 'sOut', 𝕄(input, e, sIn) ⟿ ⟨output, sOut⟩, so they render with the universe
--- and incoming state as the middle arguments and the new term and outgoing
--- state as the last two arguments:
--- \phinoMorph{ input }{ e }{ sIn }{ output }{ sOut }. 𝒩 and 𝒞 carry neither
--- universe nor state.
 phinoMorph :: String -> String -> String -> String -> String -> String
 phinoMorph input univ sIn sOut output = printf "\\phinoMorph{ %s }{ %s }{ %s }{ %s }{ %s }" input univ sIn output sOut
 
@@ -589,10 +532,6 @@ extraArgumentsToLatex (Just extras) =
   let extras' = map ((`renderToLatex` defaultLatexContext) . extraToCST) extras
    in braced (intercalate (" " <> T.unpack (render AND) <> " ") extras')
 
--- Every rule is bared before it is rendered: an index that tells a meta from no
--- other within the rule is dropped, so a rule naming a single expression meta
--- says 'e' and not 'e_1', the way a rule threading a single state says 's' and
--- not 's_1' (see 'conclusionStateName' and #1260).
 explainRules :: [Y.Rule] -> String
 explainRules = intercalate "\n" . map (explainRule . lonely)
 

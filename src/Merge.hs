@@ -39,17 +39,19 @@ mergeBinding x y
   | otherwise = throwIO (CanNotMergeBinding x y)
 
 mergeBindings :: [Binding] -> [Binding] -> IO [Binding]
-mergeBindings xs ys = do
-  let as = attributesFromBindings' xs
-      bs = attributesFromBindings' ys
-      xs' = [x | x <- xs, attributeFromBinding x `notElem` bs]
-      ys' = [y | y <- ys, attributeFromBinding y `notElem` as]
-      collisions = [(x, y) | x <- xs, y <- ys, attributeFromBinding x == attributeFromBinding y]
-  ws <- mapM (uncurry mergeBinding) collisions
-  pure (unmarked (xs' <> ys' <> ws))
+mergeBindings xs ys = unmarked <$> anchored xs ys
   where
-    -- A 'Package' λ marks a pure path segment; when only one side carries it,
-    -- the other side is a real object and the marker goes away (#1197)
+    anchored :: [Binding] -> [Binding] -> IO [Binding]
+    anchored [] rest = pure rest
+    anchored (x : more) rest = case break (same x) rest of
+      (before, y : after) -> do
+        let later = attributesFromBindings' more
+            (pending, ahead) = (filter ((`elem` later) . attributeFromBinding) before, filter ((`notElem` later) . attributeFromBinding) before)
+        united <- mergeBinding x y
+        (ahead <>) . (united :) <$> anchored more (pending <> after)
+      (_, []) -> (x :) <$> anchored more rest
+    same :: Binding -> Binding -> Bool
+    same x y = attributeFromBinding x == attributeFromBinding y
     unmarked :: [Binding] -> [Binding]
     unmarked bindings
       | any marker xs == any marker ys = bindings

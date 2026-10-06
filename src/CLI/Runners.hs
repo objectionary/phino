@@ -12,9 +12,11 @@ import CLI.Helpers
 import CLI.Types
 import CLI.Validators
 import Condition (parseConditionThrows)
+import Control.Concurrent (rtsSupportsBoundThreads, setNumCapabilities)
 import Control.Exception
 import Control.Monad (unless, when)
 import Data.Foldable (traverse_)
+import Data.IORef (newIORef)
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
@@ -22,11 +24,12 @@ import Data.Maybe (fromJust, isJust, isNothing)
 import qualified Data.Text as T
 import Dataize
 import Deps (Judgment (..))
+import Emit (emitted)
 import Encoding
+import Engine (Engine (..), building, current, stepOf)
 import Evaluate (evaluation, fired)
 import Files (overwrite)
 import qualified Filter as F
-import Functions (buildTerm)
 import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules, explainRules)
 import Logger
 import Margin (defaultMargin)
@@ -57,23 +60,24 @@ runRewrite OptsRewrite{..} = do
   validateNoOverlap "show" included "hide" excluded
   setStdGen (mkStdGen _seed)
   rules <- getRules _normalize _shuffle _rules
+  linked <- engine
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   (expr, atoms) <- parseInputWithAtoms input _inputFormat
   validateXmirTopLevel _outputFormat expr
   seedTaus expr
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
-  let listing = case (rules, _inputFormat, _outputFormat) of
-        ([], XMIR, XMIR) -> (\_ -> escapeXML input)
-        ([], _, _) -> (\_ -> escapeXMLText input)
-        (_, _, _) -> (\rewritten -> escapeXMLText (P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin)))
+  let listing = case (rules, _inputFormat) of
+        ([], PHI) -> (\_ -> escapeXMLText input)
+        (_, _) -> (\rewritten -> escapeXMLText (P.printExpression' rewritten (_sugarType, UNICODE, _flat, _margin)))
       xmirCtx = XmirContext _omitListing _omitComments _hideRho listing atoms
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx
-  (rewrittens, exceeded) <- rewrite expr rules (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing buildTerm _must _breakpoint save)
-  let rewrittens' = exclude $ include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
+  save <- saveStepFunc _stepsDir printCtx included excluded
+  let steps = map (stepOf linked) rules
+  (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save)
+  rewrittens' <- include (if _sequence then NE.toList rewrittens else [NE.last rewrittens]) >>= exclude
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
   output _targetFile exprs
@@ -83,6 +87,9 @@ runRewrite OptsRewrite{..} = do
       when (_inPlace && isNothing _inputFile) (invalidCLIArguments "The option --in-place requires an input file")
       when (_inPlace && isJust _targetFile) (invalidCLIArguments "The options --in-place and --target cannot be used together")
       when (_inPlace && _outputFormat /= PHI) (invalidCLIArguments "The option --in-place can only be used together with --output=phi")
+      when (_inPlace && _sequence) (invalidCLIArguments "The options --in-place and --sequence cannot be used together, since the file must keep one program")
+      when (_inPlace && _focus /= "Q") (invalidCLIArguments "The options --in-place and --focus cannot be used together, since the file must keep the whole program")
+      when (_inPlace && not (null _show)) (invalidCLIArguments "The options --in-place and --show cannot be used together, since the file must keep the whole program")
       when (_update && _inPlace) (invalidCLIArguments "The options --update and --in-place cannot be used together")
       when (_update && isNothing _targetFile) (invalidCLIArguments "The option --update requires --target")
       when (_update && isNothing _inputFile) (invalidCLIArguments "The option --update requires an input file")
@@ -131,6 +138,7 @@ runRewrite OptsRewrite{..} = do
       PrintCtx
         _sugarType
         _hideRho
+        Nothing
         False
         _flat
         _margin
@@ -151,6 +159,7 @@ runRewrite OptsRewrite{..} = do
 runDataize :: OptsDataize -> IO ()
 runDataize OptsDataize{..} = do
   validateOpts
+  deadline <- timed _maxSeconds
   lambdas <- lambdasOf _symbolic
   excluded <- validatedDispatches "hide" _hide
   included <- validatedDispatches "show" _show
@@ -164,34 +173,32 @@ runDataize OptsDataize{..} = do
   let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx
+  save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
+  minted <- newIORef 0
   memo <- memoized _acyclic
+  linked <- engine
   (outcome, chain, _) <-
     withEvalFunc
       _protocol
       printCtx
       ( \record -> do
-          -- The deep walk belongs to 𝕄 alone (the '--deep' of 'morph'), since 𝔻
-          -- reduces what dataization demands and ends in bytes, so it is off
-          -- here; the cycle guard of '--acyclic' is not, since 𝔻 recurses into
-          -- itself and a formation it enters again is a loop of its own (#1290).
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally memo 1 _depthSensitive _shuffle _partial False _acyclic Dataization [] Map.empty lambdas buildTerm reduction evaluation fired save record
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Dataization aiming._locator
-          dataize universe (started universe) aiming
+          started universe aiming
+          dataize universe emptyState aiming
       )
-  when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx outcome >>= putStrLn)
+  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
+  unless _quiet (printOutcome printCtx (\residue -> F.include' residue included >>= (`F.exclude'` excluded)) outcome >>= putStrLn)
   where
-    -- The bytes the run reached or, when '--partial' let it end on a λ function
-    -- that could not fire, the residual program, rendered like a rewriting
-    -- result: in the output format, narrowed to '--focus'.
-    printOutcome :: PrintContext -> Outcome -> IO String
-    printOutcome _ (Dataized bytes) = pure (P.printBytes bytes)
-    printOutcome ctx (Residual residue) = do
+    printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
+    printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
+    printOutcome ctx narrowed (Residual residue) = do
       logDebug "Dataization got stuck on a λ function that cannot fire, printing the residual program (--partial)"
-      printFocused ctx residue
+      answer <- narrowed residue
+      validateXmirTopLevel _outputFormat answer
+      printAnswer ctx answer
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions
@@ -201,7 +208,8 @@ runDataize OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-      when (_abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
@@ -211,6 +219,7 @@ runDataize OptsDataize{..} = do
         _sugarType
         _hideRho
         _abridged
+        _abridgedData
         _flat
         _margin
         (XmirContext _omitListing _omitComments _hideRho listing atoms)
@@ -226,21 +235,14 @@ runDataize OptsDataize{..} = do
         _label
         _meetPrefix
         _outputFormat
-    -- The listing of a dataization result is the 𝜑 text of the printed
-    -- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'
-    -- reach the XMIR writer through this context (#1076)
     listing :: Expression -> String
     listing e = escapeXMLText (P.printExpression' e (_sugarType, UNICODE, _flat, _margin))
 
--- Run 𝕄 on its own, the way 'runDataize' runs 𝔻. The whole option surface of
--- 'dataize' applies unchanged, since the two commands differ only in the
--- judgment they run; what differs here is the answer printed: 𝕄 is total and
--- always hands back a 𝜑-expression — a formation, or the terminator ⊥ where no
--- formation is reachable — so there are no bytes to print and no failure to
--- report where 𝔻 would give up.
 runMorph :: OptsMorph -> IO ()
 runMorph OptsMorph{..} = do
   validateOpts
+  deadline <- timed _maxSeconds
+  when rtsSupportsBoundThreads (setNumCapabilities _jobs)
   lambdas <- lambdasOf _symbolic
   excluded <- validatedDispatches "hide" _hide
   included <- validatedDispatches "show" _show
@@ -254,22 +256,35 @@ runMorph OptsMorph{..} = do
   let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx
+  save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
+  minted <- newIORef 0
   memo <- memoized _acyclic
+  linked <- engine
   (morphed, chain, _) <-
     withEvalFunc
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally memo 1 _depthSensitive _shuffle _partial _deep _acyclic Morphing [] Map.empty lambdas buildTerm reduction evaluation fired save record
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Morphing aiming._locator
-          morph universe (started universe) aiming
+          started universe aiming
+          morph universe emptyState aiming
       )
-  when _sequence (printRewrittens printCtx (exclude $ include chain, False) >>= putStrLn)
-  unless _quiet (printFocused printCtx morphed >>= putStrLn)
+  printed <-
+    if _quiet
+      then pure Nothing
+      else do
+        answer <- F.include' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) included >>= (`F.exclude'` excluded)
+        validateXmirTopLevel _outputFormat answer
+        Just <$> printAnswer printCtx answer
+  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
+  mapM_ putStrLn printed
   where
+    lastMaybe :: [a] -> Maybe a
+    lastMaybe [] = Nothing
+    lastMaybe items = Just (last items)
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions
@@ -279,7 +294,9 @@ runMorph OptsMorph{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-      when (_abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
+      when (_jobs > 1 && not _deep) (invalidCLIArguments "The option --jobs requires --deep, since only the deep walk runs on several workers")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
@@ -289,6 +306,7 @@ runMorph OptsMorph{..} = do
         _sugarType
         _hideRho
         _abridged
+        _abridgedData
         _flat
         _margin
         (XmirContext _omitListing _omitComments _hideRho listing atoms)
@@ -304,9 +322,6 @@ runMorph OptsMorph{..} = do
         _label
         _meetPrefix
         _outputFormat
-    -- The listing of a dataization result is the 𝜑 text of the printed
-    -- expression, the way 'rewrite' does it; the omit flags and '--hide-rho'
-    -- reach the XMIR writer through this context (#1076)
     listing :: Expression -> String
     listing e = escapeXMLText (P.printExpression' e (_sugarType, UNICODE, _flat, _margin))
 
@@ -332,6 +347,7 @@ runExplain OptsExplain{..} = do
       when (selected == 0 && null _rules && not _normalize) (invalidCLIArguments "Either --rule, --normalize, --morph, --dataize or --contextualize must be specified")
       when (selected > 1) (invalidCLIArguments "Only one of --morph, --dataize or --contextualize can be specified")
       when (selected == 1 && not (null _rules)) (invalidCLIArguments "The --rule option cannot be used together with --morph, --dataize or --contextualize")
+      when (selected == 1 && _normalize) (invalidCLIArguments "The --normalize option cannot be used together with --morph, --dataize or --contextualize")
 
 runMerge :: OptsMerge -> IO ()
 runMerge OptsMerge{..} = do
@@ -356,6 +372,7 @@ runMerge OptsMerge{..} = do
       PrintCtx
         _sugarType
         False
+        Nothing
         False
         _flat
         _margin
@@ -375,6 +392,7 @@ runMerge OptsMerge{..} = do
 
 runMatch :: OptsMatch -> IO ()
 runMatch OptsMatch{..} = do
+  when (isJust _when && isNothing _pattern) (invalidCLIArguments "The option --when requires --pattern, since there is nothing to check it against")
   setStdGen (mkStdGen _seed)
   input <- readInput _inputFile
   expr <- parseInput input PHI
@@ -384,10 +402,24 @@ runMatch OptsMatch{..} = do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
       traverse_ (throwIO . AnonymousMetaInCondition . T.unpack) (anonymous condition)
-      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext buildTerm Nothing)
+      linked <- engine
+      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext (building linked) Nothing linked._normal)
       if null substs
         then throwIO EmptySubstsOnMatch
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
     rule ptn cnd = Y.Rule "custom" Nothing Nothing ptn ExRoot cnd Nothing Nothing
+
+runCompile :: OptsCompile -> IO ()
+runCompile OptsCompile{..} = do
+  custom <- getRules False False _rules
+  source <- either (throwIO . CouldNotCompile) pure (emitted Y.normalizationRules custom Y.contextualizationRules Y.morphingRules Y.dataizationRules current)
+  overwrite _targetFile source
+  logInfo (printf "The rules were compiled into '%s'" _targetFile)
+  exists <- doesFileExist "cabal.project.local"
+  if exists
+    then putStrLn "The file 'cabal.project.local' exists, so add these lines to it to link the compiled rules in:\npackage phino\n  flags: +compiled"
+    else do
+      overwrite "cabal.project.local" "package phino\n  flags: +compiled\n"
+      logInfo "The file 'cabal.project.local' was written, so the next build links the compiled rules in"

@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.140
+cabal install --overwrite-policy=always phino-0.0.148
 phino --version
 ```
 
@@ -287,6 +287,15 @@ and a `Φ.false` written as `φ ↦ ξ.left` against `φ ↦ ξ.right`, is stuck
 bringing two such branches to one shape is the program's job and not `phino`'s,
 which its entry does in a `rewrite` block.
 
+A bare symbol, `⟦ λ ⤍ 𝜎A ⟧` with no carrier around it, is what the deep walk
+answers a copy it deferred with (see Deep morphing below), and it joins with
+a formation too. It has no `φ` chain of its own, only the symbol, so the join
+pairs `𝜎A` with the symbol the `φ` chain of the other term ends in, mints a
+fresh `𝜎C` for that pair the usual way, and answers the bare `⟦ λ ⤍ 𝜎C ⟧`.
+The methods of the formation are dropped, since the other branch may have
+none of them. A formation whose `φ` chain ends in a datum, or which has no `φ`
+at all, does not join with a bare symbol.
+
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
 has a perfectly good value on the other. The join then mints nothing, binds
@@ -314,8 +323,8 @@ a λ name stands. In a term, `𝜎1` is a concrete symbol: a λ function nothing
 answers, which is what makes the value the term carries unknown. Firing it is
 therefore the same question as firing a λ name the `--symbolic` file does not
 carry, and gets the same answer: 𝔼 stops there, the protocol records the site as
-`?(𝜎1)`, and `--partial` leaves the term where it stands. Dispatching an
-attribute off a symbol — `⟦ λ ⤍ 𝜎1 ⟧.plus( 5 )` — therefore taints its own
+`unanswered(𝜎1)`, and `--partial` leaves the term where it stands. Dispatching
+an attribute off a symbol — `⟦ λ ⤍ 𝜎1 ⟧.plus( 5 )` — therefore taints its own
 binding and nothing else; what stands beside it still computes. In an answer, a
 bare `𝜎` asks for a fresh one, minted as the firing happens and numbered by the
 run, so no two unknowns are ever spelled alike. Minting starts after the symbols
@@ -484,8 +493,8 @@ that meta, spelled the way the calculus reads it — `$` is read as `ξ` — so 
 reader never has to open the `--symbolic` file beside the protocol and match
 every line by λ name and meta number.
 
-`?(…)` is a λ name no entry answers, standing where the block of its firing
-would have stood. Nothing fired, so nothing opens under it. The line is
+`unanswered(…)` is a λ name no entry answers, standing where the block of its
+firing would have stood. Nothing fired, so nothing opens under it. The line is
 commented with the judgment that asked and the formation it was asking about,
 `𝕄(L_none:λ)`, the way an operand line is commented with the term it was
 reduced from: 𝔼 is fired by the `ml` rule of morphing and by the `fire` rule
@@ -515,7 +524,7 @@ $ cat atoms.txt
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
       𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)
-    ?(L_number_nope)  # 𝔻(L_number_nope:λ)
+    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -523,6 +532,68 @@ $ cat atoms.txt
 The very same file comes back with `--partial`, where the run answers the
 residue instead of failing: what `phino` could not decide is a property of the
 program and not of the option that decides what to do about it.
+
+Three more lines say why a firing gave no answer.
+`stuck(L_outer)` is the last line of a firing that got stuck, naming the λ
+function it got stuck on, which is seldom the one `unanswered(…)` names: that
+one is written where it was asked for, and this one closes every firing the
+failure passed on its way out.
+`stall(L_outer)` stands under a firing that `--acyclic=plausible` answered
+with the stall an earlier firing of the same formation kept, so a told stall
+never reads as a fresh firing that wrote nothing.
+`starved(4)  # 𝔻(Φ.a🌵1)` is where `--max-steps=4` ran out, commented with the
+judgment and the site the reduction stood at, whether or not `--partial` goes
+on to park it:
+
+```text
+𝕄(Φ.x)
+  𝔼(L_outer)  # 𝕄(Φ.x)
+    𝔼(L_outer)  # 𝔻(Φ.a🌵0)
+      starved(4)  # 𝔻(Φ.a🌵1)
+    stuck(L_outer)
+```
+
+The markup spells them `<unfinished λ="L_outer"/>`, `<stall λ="L_outer"/>`
+and `<starved limit="4" by="dataize" at="Φ.a🌵1"/>`.
+
+`timeout(5)  # 𝕄(…)` is where `--max-seconds=5` ran out, commented the same
+way and written at the first step the deadline refused.
+The run ends there, with or without `--partial`, so it is always the last line
+of the protocol.
+The markup spells it `<timeout limit="5" by="morph" at="…"/>`.
+
+`spent(3)  # 𝔻(…)` is where `--max-firings=3` ran out, commented the same way
+and written where the firing it refused would have started.
+The markup spells it `<spent limit="3" by="dataize" at="…"/>`.
+
+`deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)` is a copy the deep walk
+deferred instead of entering it. The fresh symbol it answered the copy with
+stands in parentheses. The copy is written as a call of the object of the world
+it was made of, given the arguments that fill its voids, read. The comment
+names the judgment and the site of the walk.
+The object is found through the `ρ` of the copy: no `ρ` means `Φ`, a `ρ` that
+is a name means that name with its applications erased, and a `ρ` that is a
+formation means the object that formation was made of. Among the formations
+declared there, the copy was made of the one whose attributes cover its own,
+whose voids it fills the most, and which shares the most bindings with it.
+When the world declares no such object, or two of them tie, the copy is
+written as it stood, such as `⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧`.
+The markup spells it on one line, broken here for reading. The object stands
+in `of` and the arguments in `<with>`, both written whatever `--abridged`
+says, and the copy as it stood stands in `<e>`, abridged as usual:
+
+```xml
+<deferred symbol="𝜎2" by="morph" at="Φ.y" of="Φ.box">
+  <with><attr name="x">𝜎1</attr></with>
+  <e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e>
+</deferred>
+```
+
+Every argument of the call is an `<attr>` of `<with>`. An argument that is a
+bare symbol, or a carrier of one whose `φ` leads to it, such as
+`Φ.number( φ ↦ 𝜎1:λ )` or `𝜎1:λ:φ`, is spelled as that symbol, and any other
+argument is spelled `?`. A copy with no object of the world has neither `of`
+nor `<with>`, only `<e>`.
 
 Every term is 𝜑 on a single line, whatever `--output` and `--flat` say about
 the result of the run, so a program reading the protocol back never has to know
@@ -695,9 +766,9 @@ The root is the run itself, named after the judgment it ran — `<dataize>` for 
 𝔻, `<morph>` for a 𝕄 — with `at` naming the term it was aimed at, which is
 what the text format opens with as `𝔻(Φ)`. `<evaluate>` is one firing of 𝔼, `λ`
 naming the entry that answered it, `by` naming the judgment that asked for the
-firing — the same word the root is named after and a `<stuck>` carries — and
-`at` naming the site it was fired at. The text format writes those two as the
-comment of its line, `𝔻(Φ)`.
+firing — the same word the root is named after and an `<unanswered>` carries —
+and `at` naming the site it was fired at. The text format writes those two as
+the comment of its line, `𝔻(Φ)`.
 `<formation at="Φ" term="⟦ … ⟧">` is a formation 𝔻 got into through `box`,
 which the text format writes as `formation(⟦ … ⟧)  # 𝔻(Φ)`: `at` names the
 site it was entered at and `term` holds the formation. Whatever the `φ` body
@@ -757,9 +828,9 @@ and not where the value of the term is, while `𝔼(L_fork)` writes none at all,
 since the symbol it answers with comes from a `join` line and stands in a
 `<joined>` of its own.
 
-A λ name no entry answers is `<stuck λ="…">`, standing where its `<evaluate>`
-would have stood with the formation 𝔼 was fired against as its text and the
-judgment that asked in its `by` attribute, where the text format writes
+A λ name no entry answers is `<unanswered λ="…">`, standing where its
+`<evaluate>` would have stood with the formation 𝔼 was fired against as its text
+and the judgment that asked in its `by` attribute, where the text format writes
 the letter of it. A firing that happened while an operand of another was being
 reduced is an `<evaluate>` inside the one that asked, which is what the deeper
 indentation means in the text. Elements are written as the run goes and
@@ -791,7 +862,7 @@ $ cat atoms.xml
       <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
       <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧</answer>
     </evaluate>
-    <stuck λ="L_number_nope" by="dataize">L_number_nope:λ</stuck>
+    <unanswered λ="L_number_nope" by="dataize">L_number_nope:λ</unanswered>
   </formation>
 </dataize>
 ```
@@ -803,10 +874,12 @@ $ cat atoms.xml
 A formation carrying a whole object is written flat on one line, so a real
 run fills the protocol with lines tens of thousands of characters long. The
 `--abridged` option shortens every term the protocol writes, in the text and
-the XML alike: a formation longer than sixty characters keeps its `φ`, `Δ` and
-`λ` bindings and folds the rest into a count, and a byte string longer than
-eight bytes keeps its first four bytes and its length. The result the run
-prints stays whole, and the option is refused without `--protocol`:
+the XML alike: a formation longer than sixty-four characters keeps its `φ`,
+`Δ` and `λ` bindings and folds the rest into a count. The width is a value of
+the option, `--abridged=120`, for a run that can read longer lines. The result
+the run prints stays whole, and the option is refused without `--protocol`.
+Every byte string the protocol writes stays whole too, since a reader may need
+the data a firing came down to:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -824,7 +897,24 @@ $ phino dataize --locator=Q.t --protocol=wide.txt --abridged --quiet \
     --sweet --hide-rho wide.phi
 $ cat wide.txt
 𝔻(Φ.t)
-  formation(⟦ φ ↦ 48-65-6C-6C-...(12b):Δ, +3 attrs ⟧)  # 𝔻(Φ.t)
+  formation(⟦ φ ↦ 48-65-6C-6C-6F-2C-20-77-6F-72-6C-64:Δ, +3 ⟧)  # 𝔻(Φ.t)
+```
+
+<!-- markdownlint-enable MD013 -->
+
+The `--abridged-data` option cuts the data too: a byte string longer than eight
+bytes keeps its first two bytes and its last two, with the count of the bytes
+cut out between them. A formation folded into a count loses its data either
+way, and the option is refused without `--abridged`:
+
+<!-- markdownlint-disable MD013 -->
+
+```bash
+$ phino dataize --locator=Q.t --protocol=wide.txt --abridged \
+    --abridged-data --quiet --sweet --hide-rho wide.phi
+$ cat wide.txt
+𝔻(Φ.t)
+  formation(⟦ φ ↦ 48-65-..(8b)..-6C-64:Δ, +3 ⟧)  # 𝔻(Φ.t)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -883,7 +973,8 @@ Here `2.times( 3 ).plus( 4 )` was answered by the entries the file carries, so
 it was reduced — the symbol it came to sits in the hidden `ρ` of the residual
 program — while `as-bool` names a λ function no entry answers, so it stays in
 place as a normal-form subterm. A stuck site opens no block in the
-`--protocol` file, since nothing fired there, and stands in it as `?(…)`:
+`--protocol` file, since nothing fired there, and stands in it as
+`unanswered(…)`:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -910,7 +1001,7 @@ $ cat atoms.txt
       𝛿2.2 := 40-10-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
       𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.2.1)
-    ?(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
+    unanswered(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -922,8 +1013,8 @@ residual program, for the next iteration.
 An operand of a firing that reaches the terminator `⊥`, or a term no
 dataization rule matches, such as a formation whose `φ` is a void nothing
 filled, never comes down to data either, and `--partial` parks that firing
-the same way, writing the dead end into the protocol as `?(⊥)` with the term
-that could not be dataized beside it. Dataization aimed at `⊥` itself still
+the same way, writing the dead end into the protocol as `unanswered(⊥)` with the
+term that could not be dataized beside it. Dataization aimed at `⊥` itself still
 fails, with or without `--partial`, since there is no firing to park.
 
 The nested morphing and dataization recursion is bounded by the
@@ -955,6 +1046,25 @@ $ cat split.phi
 ⟦ s ↦ ⟦ λ ⤍ L_split ⟧, x ↦ Φ.s.foo ⟧
 $ phino morph --symbolic=split.yaml --locator=Q.x --max-firings=64 split.phi
 [ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=64
+```
+
+Both budgets count work, so a run inside both of them may still take longer
+than its caller can wait, and a caller that kills it gets a protocol nobody
+closed. The `--max-seconds` option stops the run by the clock instead: once
+that many seconds have passed since the command started, the next step the
+run is about to take, whether it fires a λ function or not, fails it with
+`Evaluation did not finish before reaching the limit of seconds`, and so does
+a check of `--acyclic` that is still comparing formations by then.
+`--partial` does not park it, since a run out of time has no site to park and
+nothing left to go on with. The protocol is closed as usual and its last line
+says where the time ran out. There is no limit unless the option is given:
+
+```bash
+$ phino morph --symbolic=split.yaml --locator=Q.x --partial --max-seconds=5 \
+    --protocol=split.txt --sweet --flat split.phi
+[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=5
+$ grep -o 'timeout.*' split.txt
+timeout(5)  # 𝕄(Φ.a🌵14250)
 ```
 
 ## Morph
@@ -992,6 +1102,15 @@ is the terminator `⊥`, printed rather than reported as a failed run:
 ```bash
 $ phino morph --locator=Q.x <<< '⟦ x ↦ ξ ⟧'
 ⊥
+```
+
+𝕄 maps normal forms to formations and `morph` does not normalize what it is
+given, so a term that is not a normal form, such as a dispatch off a formation
+with neither `φ` nor `λ`, is reported as a failed run rather than answered:
+
+```bash
+$ phino morph --locator=Q.t <<< '⟦ t ↦ ⟦ x ↦ ⟦⟧ ⟧.x ⟧'
+[ERROR]: Morphing expects a normal form, but no morphing rule matches: ⟦⟧:x.x
 ```
 
 The whole `dataize` option surface applies unchanged — `--symbolic`,
@@ -1060,6 +1179,32 @@ $ phino morph --deep --symbolic=atoms.yaml --sweet --hide-rho gap.phi
   bar(x) ↦ L_bar:λ,
   demo ↦ ⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ L_number_times:λ ⟧ ) ⟧:foo
 ⟧
+```
+
+One kind of formation the walk does not enter at all: a copy with a `φ`
+written as code and an argument that is a bare symbol, a `⟦ λ ⤍ 𝜎1 ⟧` with
+no carrier around it. The symbol stands for a value nobody knows, so the body
+can only ask it questions nobody can answer, and every firing spent inside
+that body is wasted. The walk defers such a copy instead: it answers the copy
+with a fresh symbol and writes a `deferred` line to the protocol, tying that
+symbol to the copy it stands for, which only a run of the program can work out.
+The walk reads every argument written as a dispatch before it decides, so
+`tup ↦ items.tail` counts when `items.tail` comes to a bare symbol, but it
+fires nothing while reading. A copy with no `φ`, such as a tuple, only holds
+its arguments, so reading one of them reaches the symbol and defers nothing.
+Here the walk defers the copy of `box`:
+
+```bash
+$ cat box.phi
+⟦
+  box(x) ↦ ⟦ φ ↦ x.next ⟧,
+  y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+⟧
+$ phino morph --deep --locator=Q.y --protocol=p.txt --sweet --hide-rho box.phi
+𝜎2:λ
+$ head -2 p.txt
+𝕄(Φ.y)
+  deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
 ```
 
 ### Acyclic morphing
@@ -1210,6 +1355,8 @@ $ cat fact.txt
         𝔻(𝜎6:λ) == 01-
         𝑛3.4 := 𝜎6:λ  # 𝑛1
         𝑛4.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+        stuck(L_if)
+    stuck(L_if)
   𝔼(L_if)  # 𝕄(Φ.x.φ)
     𝛿1.7 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
     𝑛1.7 := 01-:Δ  # 𝕄(ξ.left)
@@ -1232,10 +1379,16 @@ $ cat fact.txt
           𝔻(𝜎6:λ) == 01-
           𝑛3.9 := 𝑛3.4  # 𝑛1
           𝑛4.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+          stuck(L_if)
+      stuck(L_if)
     𝑛2.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
     𝔻(𝜎4:λ) == 01-
     𝑛3.7 := 𝑛.10.2  # 𝑛1
     𝑛4.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+    stuck(L_if)
+msec(31)
+firings(11)
+fps(355)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1251,10 +1404,32 @@ the frame belonged to, the site it was cut at and the mode that cut it. What it
 carries is the formation the frame above entered, as that frame had it, so the
 two are paired by their terms and no reader has to rename symbols by eye or
 find the cut in the residue. Nothing runs under a cut, so no block opens under
-the line. In the XML protocol it is a self-closing element,
-`<looped by="morph" match="proven" at="Φ.a🌵7" term="…"/>`, with the
-attributes a `<formation>` carries and the mode. Without the option the same
-run nests one round inside another until `--max-steps` runs out.
+the line. In the XML protocol it is
+`<looped by="morph" match="proven" at="Φ.a🌵7"><e>…</e></looped>`, with the
+site and the mode as attributes and the formation in `<e>`. Without the option
+the same run nests one round inside another until `--max-steps` runs out.
+
+A cut at the `φ` of a copy the walk of `--deep` has placed, such as
+`Φ.a🌵4.φ`, answers that copy with a fresh symbol, the way a deferred copy is
+answered. A fork above it then joins that symbol with its other branch,
+instead of getting stuck on a copy nobody can read. The line names the
+symbol, as in `looped(…) := 𝜎6  # 𝕄(Φ.a🌵4.φ), plausible`, and the markup
+writes the object the copy was made of and its arguments the way it writes
+them for a deferred copy, on one line, broken here for reading:
+
+<!-- markdownlint-disable MD013 -->
+
+```xml
+<looped symbol="𝜎6" by="morph" match="plausible" at="Φ.a🌵4.φ" of="Φ.fact">
+  <with><attr name="n">𝜎3</attr><attr name="acc">?</attr></with>
+  <e>⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ:φ, acc ↦ Φ.pair( head ↦ 𝜎1:λ:φ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧</e>
+</looped>
+```
+
+<!-- markdownlint-enable MD013 -->
+
+A cut anywhere else, or at the `φ` of a copy nested inside a term, answers
+nothing and leaves the copy as it stood.
 
 What a frame remembers is the branch from the run down to it, never everything
 the run has touched, so two siblings entering one formation enter it twice and
@@ -1341,10 +1516,26 @@ and what it answered there; the two under `b` carry the answer lines of the
 two under `a` and no operand line, since nothing was reduced for them, and
 they are not charged to `--max-firings`, which counts the firings the run
 made. The formation is compared with everything it carries, `ρ` included, so
-a firing on another object is another firing, and a firing that got stuck
-keeps nothing, since nothing was answered. A firing cut by the mode on its
-way to an answer keeps the cut, and the next firing of the same formation is
-cut at its own site without reducing anything first.
+a firing on another object is another firing, yet it may take the same answer
+all the same: the run keeps every answer by the λ name and what the operands
+came down to as well, and a firing whose operands come down to the data, the
+symbols and the normal forms of one already answered takes that answer once
+they are down, minting nothing. An attribute read from the `φ` of an object
+and then reached as a binding of it is read through two `ξ`, each the object
+minus the attribute being read, so it is two formations, but one firing, and
+so one symbol. A symbol counts as the symbol it is, not as the datum every
+symbol manufactures, so two firings over two symbols stay two. The protocol
+writes such a firing with its operand lines and the answer lines of the one
+it took the answer from, and `--max-firings` charges it like a firing made,
+since a firing is charged as it starts bringing its operands down, which is
+the only place a recursion widening inside its operands can be cut. A firing
+cut by the mode on its way to an answer keeps the cut, and the next firing of
+the same formation is cut at its own site without reducing anything first. A
+firing that got stuck keeps the λ function it got stuck on, and the next
+firing of the same formation gets stuck at its own site the same way, with
+nothing reduced under it, as long as nothing new was answered in between.
+Once something was, the formation is fired again, since an operand that could
+not be brought down the first time may come down now.
 
 The mode also walks a binding of the world once. Every dispatch on an object
 of the world copies it, and `--deep` walks every copy, so the tests of an
@@ -1393,16 +1584,68 @@ copy came to, since a method may read the `ρ` or the `φ` of the copy it
 stands in, and so a recursion over copies of one object stops after its first
 round, with the second one as written.
 
+The walk of `--deep` takes the bindings of the formation it starts at one
+after another. When they are independent entries, such as the objects of a
+whole runtime listed in one formation, the `--jobs` option walks them side by
+side on that many workers. Each binding gets its own memo, its own
+`--max-firings` tally and its own fresh names, so what it comes to does not
+depend on which worker got there first. The answers and the protocol come out
+in the order of the bindings, with the symbols numbered as one walk would
+number them:
+
+```bash
+$ cat plus.yaml
+- λ: L_plus
+  dataize:
+    𝛿1: $.ρ
+    𝛿2: $.x
+  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+$ cat sums.phi
+⟦
+  num ↦ ⟦ φ ↦ ∅, plus ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_plus ⟧ ⟧,
+  l🌵 ↦ ⟦
+    a ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 01- ⟧ ).plus( x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 02- ⟧ ) ),
+    b ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 03- ⟧ ).plus( x ↦ Φ.num( φ ↦ ⟦ Δ ⤍ 04- ⟧ ) )
+  ⟧
+⟧
+$ phino morph --symbolic=plus.yaml --deep --locator=Q.l🌵 --jobs=2 \
+    --protocol=sums.txt --sweet --hide-rho sums.phi
+⟦ a ↦ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ ⟧, b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ ⟧ ⟧
+$ cat sums.txt
+𝕄(Φ.l🌵)
+  𝔼(L_plus)  # 𝕄(Φ.l🌵.a)
+    formation(⟦ φ ↦ 01-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵1-0)
+    𝛿1.1 := 01-  # 𝔻(ξ.ρ)
+    formation(⟦ φ ↦ 02-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵1-1)
+    𝛿2.1 := 02-  # 𝔻(ξ.x)
+    𝑛.1.1 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ ⟧  # 𝕄(𝑛.1.1)
+  𝔼(L_plus)  # 𝕄(Φ.l🌵.b)
+    formation(⟦ φ ↦ 03-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵2-0)
+    𝛿1.2 := 03-  # 𝔻(ξ.ρ)
+    formation(⟦ φ ↦ 04-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵2-1)
+    𝛿2.2 := 04-  # 𝔻(ξ.x)
+    𝑛.2.1 := Φ.num( φ ↦ 𝜎2:λ )  # 𝑛
+    𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ ⟧  # 𝕄(𝑛.2.1)
+```
+
+A fresh name a binding mints carries its place in the formation, `a🌵2-0` for
+the second one, so no two bindings ever mint the same name. The workers split
+the time, not the work: the slowest binding still takes as long as it did,
+and the others no longer wait behind it. Without `--jobs`, or with
+`--jobs=1`, the walk is the one described above, sharing one memo and one
+tally across all bindings.
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
-defined in the `my-rule.yml` YAML file (here, the `!d` is a capturing group,
-similar to regular expressions):
+defined in the `my-rule.yml` YAML file (here, the `!d1` and `!B1` are capturing
+groups, similar to regular expressions):
 
 ```yaml
 name: My custom rule
-pattern: Δ ⤍ !d
-result: Δ ⤍ 62-79-65
+pattern: ⟦ Δ ⤍ !d1, !B1 ⟧
+result: ⟦ Δ ⤍ 62-79-65, !B1 ⟧
 ```
 
 Then, rewrite:
@@ -1532,6 +1775,54 @@ pattern. The result output contains matched substitutions:
 $ phino match --pattern='⟦ Δ ⤍ !d, !B ⟧' hello.phi
 B >> ⟦⟧
 d >> 68-65-6C-6C-6F
+```
+
+## Compile
+
+By default, `phino` reads its rules from YAML and interprets them at every
+step. The `compile` command turns the rules into Haskell instead. Then a
+second build of `phino` runs them as plain functions:
+
+```bash
+phino compile
+cabal build all
+```
+
+The command writes the module `compiled/generated/Compiled.hs`, which git
+ignores. It compiles the built-in rules of normalization, the
+contextualization function 𝒞, and every file you pass with `--rule`. The
+`--target` option writes the module somewhere else.
+
+A build links the module in only when the Cabal flag `compiled` is on. If
+there is no `cabal.project.local`, `compile` creates one that turns the flag
+on. If the file already exists, `compile` leaves it alone and prints the two
+lines to add to it:
+
+```text
+package phino
+  flags: +compiled
+```
+
+The compiled rules take exactly the same steps as the YAML ones, so the
+output and every `--sequence` stay the same. A few things are still read from
+YAML at runtime:
+
+* the rules of morphing (𝕄) and dataization (𝔻);
+* a `--rule` file that changed after `compile`;
+* the pattern of `match` and the `rewrite:` blocks of the `--symbolic` file.
+
+The `explain` command also reads the rules from YAML.
+
+`compile` refuses a rule it cannot turn into Haskell and names the reason.
+For example, it refuses a rule with `having`, a `where` function other than
+`contextualize` or `named`, or the conditions `matches` and `part-of`.
+
+A binary built this way refuses to run if the built-in rules changed after
+the last `compile`, since it would run rules nobody wrote. Run `compile`
+again and rebuild. To test the whole suite against the compiled rules, run:
+
+```bash
+make compiled
 ```
 
 ## Explain
@@ -1821,119 +2112,119 @@ make bench
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      1235604.619 μs
-  avg:        123560.462 μs
-  min:        112999.536 μs
-  max:        146848.289 μs
-  std dev:    13523.687 μs
+  total:      1094396.788 μs
+  avg:        109439.679 μs
+  min:        101010.304 μs
+  max:        128313.535 μs
+  std dev:    10811.808 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      6181027.602 μs
-  avg:        618102.760 μs
-  min:        562545.414 μs
-  max:        682531.677 μs
-  std dev:    33378.489 μs
+  total:      5710303.145 μs
+  avg:        571030.314 μs
+  min:        504770.068 μs
+  max:        662347.068 μs
+  std dev:    46900.536 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      14.492 μs
-  avg:        1.449 μs
-  min:        1.221 μs
-  max:        1.863 μs
-  std dev:    0.164 μs
+  total:      11.392 μs
+  avg:        1.139 μs
+  min:        0.970 μs
+  max:        1.628 μs
+  std dev:    0.177 μs
 === print/sweet/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      3687452.277 μs
-  avg:        368745.228 μs
-  min:        340283.380 μs
-  max:        395918.805 μs
-  std dev:    19962.268 μs
+  total:      2401437.519 μs
+  avg:        240143.752 μs
+  min:        213136.984 μs
+  max:        272722.750 μs
+  std dev:    16775.737 μs
 === print/sweet/flat ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      3607637.694 μs
-  avg:        360763.769 μs
-  min:        340150.409 μs
-  max:        401378.260 μs
-  std dev:    20648.726 μs
+  total:      2416626.820 μs
+  avg:        241662.682 μs
+  min:        233315.703 μs
+  max:        254494.103 μs
+  std dev:    5589.090 μs
 === print/salty/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      10349170.023 μs
-  avg:        1034917.002 μs
-  min:        1011977.349 μs
-  max:        1103222.564 μs
-  std dev:    28732.304 μs
+  total:      7328848.511 μs
+  avg:        732884.851 μs
+  min:        692672.535 μs
+  max:        772742.324 μs
+  std dev:    23401.078 μs
 === morph/symbolic/demo/e1 ===
   warmup:     3 iterations
   batches:    10 x 3
-  total:      129778.599 μs
-  avg:        4325.953 μs
-  min:        4287.416 μs
-  max:        4382.296 μs
-  std dev:    30.864 μs
+  total:      128456.280 μs
+  avg:        4281.876 μs
+  min:        4253.475 μs
+  max:        4312.886 μs
+  std dev:    20.874 μs
 === morph/symbolic/demo/e2 ===
   warmup:     3 iterations
   batches:    10 x 5
-  total:      201800.582 μs
-  avg:        4036.012 μs
-  min:        3982.252 μs
-  max:        4124.524 μs
-  std dev:    43.136 μs
+  total:      198825.013 μs
+  avg:        3976.500 μs
+  min:        3937.010 μs
+  max:        4123.529 μs
+  std dev:    54.483 μs
 === morph/symbolic/demo/e3 ===
   warmup:     3 iterations
   batches:    10 x 3
-  total:      174129.187 μs
-  avg:        5804.306 μs
-  min:        5765.516 μs
-  max:        5875.392 μs
-  std dev:    31.510 μs
+  total:      171306.263 μs
+  avg:        5710.209 μs
+  min:        5671.534 μs
+  max:        5828.818 μs
+  std dev:    45.464 μs
 === morph/symbolic/demo/e4 ===
   warmup:     3 iterations
-  batches:    10 x 5
-  total:      195942.319 μs
-  avg:        3918.846 μs
-  min:        3416.828 μs
-  max:        7676.874 μs
-  std dev:    1255.938 μs
+  batches:    10 x 6
+  total:      214186.131 μs
+  avg:        3569.769 μs
+  min:        3556.854 μs
+  max:        3596.001 μs
+  std dev:    11.389 μs
 === morph/symbolic/demo/e5 ===
   warmup:     3 iterations
   batches:    10 x 15
-  total:      184899.602 μs
-  avg:        1232.664 μs
-  min:        1224.459 μs
-  max:        1242.434 μs
-  std dev:    5.749 μs
+  total:      190902.360 μs
+  avg:        1272.682 μs
+  min:        1266.976 μs
+  max:        1276.589 μs
+  std dev:    3.073 μs
 === morph/symbolic/native/e5 ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      192336.003 μs
-  avg:        19233.600 μs
-  min:        18688.555 μs
-  max:        19909.284 μs
-  std dev:    427.461 μs
+  total:      130864.617 μs
+  avg:        13086.462 μs
+  min:        12534.939 μs
+  max:        13730.337 μs
+  std dev:    404.303 μs
 === morph/symbolic/accum/0 ===
   warmup:     3 iterations
-  batches:    10 x 2
-  total:      211409.497 μs
-  avg:        10570.475 μs
-  min:        10490.484 μs
-  max:        10743.310 μs
-  std dev:    66.154 μs
+  batches:    10 x 3
+  total:      217771.785 μs
+  avg:        7259.060 μs
+  min:        7183.014 μs
+  max:        7458.925 μs
+  std dev:    90.688 μs
 === morph/symbolic/accum/400 ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      361054.043 μs
-  avg:        36105.404 μs
-  min:        35194.312 μs
-  max:        41143.240 μs
-  std dev:    1694.561 μs
+  total:      210258.554 μs
+  avg:        21025.855 μs
+  min:        20666.196 μs
+  max:        23018.525 μs
+  std dev:    672.165 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-09-27 at 05:24,
+on 2026-09-29 at 12:02,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -1983,4 +2274,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
 [issue-1291]: https://github.com/objectionary/phino/issues/1291
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/36296915429
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/36565203496

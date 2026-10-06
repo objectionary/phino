@@ -3,16 +3,20 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Functions (buildTerm, buildFunctions, execFunctions, nameOf) where
+module Functions (buildTerm, buildFunctions, contextualizing, execFunctions, nameOf) where
 
 import AST
 import Builder
-import Bytes (btsSize, btsToNum, btsToUnescapedStr, numToBts, strToBts)
+import Bytes (btsConcat, btsSize, btsToNum, btsToUnescapedStr, numToBts, strToBts)
+import Contextualize (contextualize)
 import Control.Exception (throwIO)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor
 import qualified Data.Set as Set
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.Encoding.Error as T
 import Deps
 import Logger (logDebug)
 import Matcher
@@ -25,10 +29,6 @@ import Tau (freshTau)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
--- Names of build-term functions that need the full evaluation context
--- (expression plus atom evaluation) and are therefore provided only by
--- 'Dataize.execBuildTerm', not by 'buildTerm'. They are available while
--- executing dataization and morphing rules, but not rewriting rules.
 execFunctions :: [String]
 execFunctions = ["evaluate", "morph"]
 
@@ -73,28 +73,21 @@ argToNumber arg subst = do
     _ -> throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
 
 _contextualize :: BuildTermMethod
-_contextualize [Y.ArgExpression expr, Y.ArgExpression context] subst = do
+_contextualize = contextualizing contextualize
+
+contextualizing :: (Expression -> Expression -> IO Expression) -> BuildTermMethod
+contextualizing judgment [Y.ArgExpression expr, Y.ArgExpression context] subst = do
   expr' <- buildExpressionThrows expr subst
   context' <- buildExpressionThrows context subst
-  pure (TeExpression (contextualize expr' context'))
-_contextualize _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
+  TeExpression <$> judgment expr' context'
+contextualizing _ _ _ = throwIO (userError "Function contextualize() requires exactly 2 arguments as expression")
 
--- The name the formation of the only argument goes by in the given world, or
--- the formation itself where it has none (see 'pathOf'). The world is not an
--- argument a rule writes: 'Rule' hands over the one its context knows. Where
--- no world is known — the 'rewrite' command, and 'isNF' asking about a term on
--- its own — the formation is answered as it is, exactly as 'dot' answered
--- before any object of the world had a name.
 nameOf :: Maybe Expression -> BuildTermMethod
 nameOf universe [Y.ArgExpression expr] subst = do
   form <- buildExpressionThrows expr subst
-  pure (TeExpression (maybe form (`pathOf` form) universe))
+  pure (TeExpression (nameIn universe form))
 nameOf _ _ _ = throwIO (userError "Function named() requires exactly 1 argument as expression")
 
--- Uniqueness is the engine's job: 'freshTau' draws from the document-wide
--- avoid-set seeded at the start of the run, so no collision list is needed.
--- The function takes no arguments and rejects any extras so rule mistakes are
--- not silently accepted.
 _randomTau :: BuildTermMethod
 _randomTau [] _ = TeAttribute . AtLabel <$> freshTau
 _randomTau _ _ = throwIO (userError "Function random-tau() requires exactly 0 arguments")
@@ -107,14 +100,20 @@ _dataize [Y.ArgExpression expr] subst = do
   expr' <- buildExpressionThrows expr subst
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
-    ExFormation [BiDelta bytes, BiVoid AtRho] -> pure (TeBytes bytes)
+    ExApplication (BaseObject "bytes") (ArTau AtPhi (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
+    ExFormation bds | Just bytes <- delta bds -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
+  where
+    delta :: [Binding] -> Maybe Bytes
+    delta bds = case filter (/= BiVoid AtRho) bds of
+      [BiDelta bytes] -> Just bytes
+      _ -> Nothing
 _dataize _ _ = throwIO (userError "Function dataize() requires exactly 1 argument as expression or bytes")
 
 _concat :: BuildTermMethod
 _concat args subst = do
-  args' <- traverse (`argToString` subst) args
-  pure (TeExpression (DataString (strToBts (concat args'))))
+  args' <- traverse (`argToBytes` subst) args
+  pure (TeExpression (DataString (foldl btsConcat BtEmpty args')))
 
 _sed :: BuildTermMethod
 _sed args subst = do
@@ -123,11 +122,11 @@ _sed args subst = do
     traverse
       ( \arg -> do
           bts <- argToString arg subst
-          pure (B.pack bts)
+          pure (T.encodeUtf8 (T.pack bts))
       )
       args
   res <- sed first rest
-  pure (TeExpression (DataString (strToBts (B.unpack res))))
+  pure (TeExpression (DataString (strToBts (T.unpack (T.decodeUtf8With T.lenientDecode res)))))
   where
     sed :: B.ByteString -> [B.ByteString] -> IO B.ByteString
     sed tgt [] = pure tgt
@@ -150,7 +149,6 @@ _sed args subst = do
                 "" -> pure (pat, rep, False)
                 _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
-    -- Cut part from given string until regular slash.
     nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
     nextUntilSlash input acc escape = case B.uncons input of
       Nothing -> (acc, B.empty)
@@ -215,6 +213,7 @@ _number [Y.ArgExpression expr] subst = do
 _number _ _ = throwIO (userError "Function number() requires exactly 1 argument as 'Φ.string'")
 
 _sum :: BuildTermMethod
+_sum [] _ = throwIO (userError "Function sum() requires at least 1 argument")
 _sum args subst = do
   nums <- traverse (`argToNumber` subst) args
   pure (TeExpression (DataNumber (numToBts (sum nums))))

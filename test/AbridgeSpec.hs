@@ -3,9 +3,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Abridge module, which shortens how a long formation and a
-long byte string are spelled in a protocol written under '--abridged'.
--}
 module AbridgeSpec where
 
 import AST
@@ -17,19 +14,32 @@ import Margin (defaultMargin)
 import Printer (printExpressionWith)
 import Sugar (SugarType (..))
 import Test.Hspec (Spec, describe, it, shouldBe)
+import Text.Printf (printf)
 
 spec :: Spec
 spec =
   describe "abridged" $ do
-    it "leaves a formation no longer than sixty characters as it is" $
+    it "leaves a formation no longer than the width as it is" $
       printExpressionWith
-        (const abridged)
+        (const (abridged True 64))
         (ExFormation [BiTau (AtLabel "kübel") (ExDispatch ExXi (AtLabel "wand")), BiVoid (AtLabel "zaun")])
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
         `shouldBe` "⟦ kübel ↦ wand, zaun ↦ ∅ ⟧"
+    it "keeps a formation exactly as wide as the width" $
+      printExpressionWith
+        (const (abridged True 68))
+        (ExFormation (map (\idx -> BiTau (AtLabel (T.pack ("ort-" <> show idx))) ExRoot) [1 .. 6 :: Int]))
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "⟦ ort-1 ↦ Φ, ort-2 ↦ Φ, ort-3 ↦ Φ, ort-4 ↦ Φ, ort-5 ↦ Φ, ort-6 ↦ Φ ⟧"
+    it "folds a formation one character wider than the width" $
+      printExpressionWith
+        (const (abridged True 67))
+        (ExFormation (map (\idx -> BiTau (AtLabel (T.pack ("ort-" <> show idx))) ExRoot) [1 .. 6 :: Int]))
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "⟦ +6 ⟧"
     it "keeps the data and the λ of a long formation and folds the rest into a count" $
       printExpressionWith
-        (const abridged)
+        (const (abridged True 64))
         ( ExFormation
             ( BiDelta (BtMany ["00", "77", "66"])
                 : BiLambda (Function "L_xxx")
@@ -37,10 +47,10 @@ spec =
             )
         )
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
-        `shouldBe` "⟦ Δ ⤍ 00-77-66, λ ⤍ L_xxx, +34 attrs ⟧"
+        `shouldBe` "⟦ Δ ⤍ 00-77-66, λ ⤍ L_xxx, +34 ⟧"
     it "keeps the φ of a long formation and folds the formation it holds" $
       printExpressionWith
-        (const abridged)
+        (const (abridged True 64))
         ( ExFormation
             [ BiTau (AtLabel "hund") ExRoot
             , BiTau AtPhi (ExFormation (map (\idx -> BiTau (AtLabel (T.pack ("pfote-" <> show idx))) ExRoot) [1 .. 9 :: Int]))
@@ -48,28 +58,40 @@ spec =
             ]
         )
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
-        `shouldBe` "⟦ φ ↦ ⟦ +9 attrs ⟧, +2 attrs ⟧"
-    it "cuts a long byte string to its first bytes and its length" $
+        `shouldBe` "⟦ φ ↦ ⟦ +9 ⟧, +2 ⟧"
+    it "cuts a long byte string to its first bytes, its last bytes and the count of the bytes between them" $
       printExpressionWith
-        (const abridged)
-        (ExFormation [BiDelta (BtMany (replicate 45 "A7"))])
+        (const (abridged True 64))
+        (ExFormation [BiDelta (BtMany (map (printf "%02X") [7 .. 51 :: Int]))])
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
-        `shouldBe` "A7-A7-A7-A7-...(45b):Δ"
+        `shouldBe` "07-08-..(41b)..-32-33:Δ"
     it "cuts a long byte string inside a formation too short to fold" $
       printExpressionWith
-        (const abridged)
+        (const (abridged True 64))
         (ExFormation [BiTau (AtLabel "k") (ExFormation [BiDelta (BtMany ["01", "02", "03", "04", "05", "06", "07", "08", "09", "0A"])])])
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
-        `shouldBe` "01-02-03-04-...(10b):Δ:k"
+        `shouldBe` "01-02-..(6b)..-09-0A:Δ:k"
+    it "keeps a long byte string whole unless told to cut the data" $
+      printExpressionWith
+        (const (abridged False 64))
+        (ExFormation [BiDelta (BtMany (map (printf "%02X") [3 .. 19 :: Int]))])
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "03-04-05-06-07-08-09-0A-0B-0C-0D-0E-0F-10-11-12-13:Δ"
+    it "folds a long formation and keeps its long byte string whole unless told to cut the data" $
+      printExpressionWith
+        (const (abridged False 64))
+        (ExFormation (BiDelta (BtMany ["30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "41", "42"]) : map (\idx -> BiVoid (AtLabel (T.pack ("fenster-" <> show idx)))) [1 .. 7 :: Int]))
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "⟦ Δ ⤍ 30-31-32-33-34-35-36-37-38-39-41-42, +7 ⟧"
     it "keeps a byte string of eight bytes whole" $
       printExpressionWith
-        (const abridged)
+        (const (abridged True 64))
         (ExFormation (BiDelta (BtMany ["40", "60", "E0", "00", "00", "00", "00", "01"]) : map (\idx -> BiVoid (AtLabel (T.pack ("ränder-" <> show idx)))) [1 .. 5 :: Int]))
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
-        `shouldBe` "⟦ Δ ⤍ 40-60-E0-00-00-00-00-01, +5 attrs ⟧"
+        `shouldBe` "⟦ Δ ⤍ 40-60-E0-00-00-00-00-01, +5 ⟧"
     it "spells a folded formation the same way in ASCII" $
       printExpressionWith
-        (const abridged)
+        (const (abridged True 64))
         (ExFormation (BiLambda (Function "F") : map (\idx -> BiVoid (AtLabel (T.pack ("sehr-langes-" <> show idx)))) [1 .. 5 :: Int]))
         (SWEET, ASCII, SINGLELINE, defaultMargin)
-        `shouldBe` "[[ L> F, +5 attrs ]]"
+        `shouldBe` "[[ L> F, +5 ]]"

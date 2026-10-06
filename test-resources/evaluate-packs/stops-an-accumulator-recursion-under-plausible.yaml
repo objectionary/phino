@@ -11,7 +11,13 @@
 # is cut before it opens and its 'looped' line names the mode that cut it
 # (#1451). Every round is a copy of 'Φ.fact', but its φ reads the 'n' and the
 # 'acc' of the copy it stands in, so the walk enters it in every round rather
-# than once for the whole object (#1485).
+# than once for the whole object (#1485). The argument 'n' and every symbol
+# 'dec' answers stand in a carrier '⟦ φ ↦ 𝜎 ⟧', since the walk defers a copy
+# one of whose arguments is a bare symbol instead of entering it (#1729).
+# The cut 'if' is the φ of a copy of 'Φ.fact', so the cut answers that copy
+# with a fresh symbol, which the 'join' of the first 'if' pairs with the datum
+# of the other branch, and the run answers a symbol instead of getting stuck
+# (#1735).
 symbolic: |
   - λ: L_zero
     dataize:
@@ -20,7 +26,7 @@ symbolic: |
   - λ: L_dec
     dataize:
       𝛿1: $.x
-    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+    𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
   - λ: L_if
     dataize:
       𝛿1: $.c
@@ -44,40 +50,40 @@ input: >
     dec ↦ ⟦ x ↦ ∅, λ ⤍ L_dec ⟧,
     pair ↦ ⟦ head ↦ ∅, tail ↦ ∅ ⟧,
     fact ↦ ⟦ n ↦ ∅, acc ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ξ.acc, right ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ), acc ↦ Φ.pair( head ↦ ξ.n, tail ↦ ξ.acc ) ) ) ⟧,
-    x ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎1 ⟧, acc ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧
+    x ↦ Φ.fact( n ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, acc ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧
 result: |-
-  ⟦
-    n ↦ 𝜎1:λ,
-    acc ↦ 00-:Δ,
-    φ ↦ Φ.if(
-      c ↦ 𝜎2:λ,
-      left ↦ acc,
-      right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) )
-    )
-  ⟧
+  ⟦ n ↦ 𝜎1:λ:φ, acc ↦ 00-:Δ, φ ↦ 𝜎8:λ ⟧
 protocol: |
   𝕄(Φ.x)
     𝔼(L_zero)  # 𝕄(Φ.x.φ)
+      formation(𝜎1:λ:φ)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
       𝑛.1.1 := 𝜎2:λ  # 𝑛
       𝑛.1.2 := 𝜎2:λ  # 𝕄(𝑛.1.1)
     𝔼(L_dec)  # 𝕄(Φ.x.φ)
+      formation(𝜎1:λ:φ)  # 𝔻(Φ.a🌵1)
       𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-      𝑛.2.1 := 𝜎3:λ  # 𝑛
-      𝑛.2.2 := 𝜎3:λ  # 𝕄(𝑛.2.1)
+      𝑛.2.1 := 𝜎3:λ:φ  # 𝑛
+      𝑛.2.2 := 𝜎3:λ:φ  # 𝕄(𝑛.2.1)
     𝔼(L_if)  # 𝕄(Φ.x.φ)
       𝛿1.3 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
       𝑛1.3 := 00-:Δ  # 𝕄(ξ.left)
       𝔼(L_zero)  # 𝕄(Φ.a🌵4.φ)
+        formation(𝜎3:λ:φ)  # 𝔻(Φ.a🌵5)
         𝛿1.4 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
         𝑛.4.1 := 𝜎4:λ  # 𝑛
         𝑛.4.2 := 𝜎4:λ  # 𝕄(𝑛.4.1)
       𝔼(L_dec)  # 𝕄(Φ.a🌵4.φ)
+        formation(𝜎3:λ:φ)  # 𝔻(Φ.a🌵6)
         𝛿1.5 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-        𝑛.5.1 := 𝜎5:λ  # 𝑛
-        𝑛.5.2 := 𝜎5:λ  # 𝕄(𝑛.5.1)
-      looped(⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧)  # 𝕄(Φ.a🌵4.φ), plausible
-      𝑛2.3 := ⟦ n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ), φ ↦ Φ.if( c ↦ 𝜎4:λ, left ↦ acc, right ↦ Φ.fact( n ↦ 𝜎5:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) ) ) ⟧  # 𝕄(ξ.right)
-      𝔻(𝜎6:λ) == 00-
-      𝑛3.3 := 𝜎6:λ  # 𝑛1
-      𝑛4.3 := ⟦ n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ), φ ↦ Φ.if( c ↦ 𝜎4:λ, left ↦ acc, right ↦ Φ.fact( n ↦ 𝜎5:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) ) ) ⟧  # 𝑛2
+        𝑛.5.1 := 𝜎5:λ:φ  # 𝑛
+        𝑛.5.2 := 𝜎5:λ:φ  # 𝕄(𝑛.5.1)
+      looped(⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ:φ, acc ↦ Φ.pair( head ↦ 𝜎1:λ:φ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧) := 𝜎6  # 𝕄(Φ.a🌵4.φ), plausible
+      𝑛2.3 := 𝜎6:λ  # 𝕄(ξ.right)
+      𝔻(𝜎7:λ) == 00-
+      𝑛3.3 := 𝜎7:λ  # 𝑛1
+      𝑛4.3 := 𝑛2.3  # 𝑛2
+      𝔻(𝜎8:λ) ∈ { 𝔻(𝜎7:λ), 𝔻(𝜎6:λ) }
+      𝑛5.3 := 𝜎8:λ  # [𝑛3, 𝑛4]
+      𝑛.3.1 := 𝑛5.3  # 𝑛
+      𝑛.3.2 := 𝑛5.3  # 𝕄(𝑛.3.1)

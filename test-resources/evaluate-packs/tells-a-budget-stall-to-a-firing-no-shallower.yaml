@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The memo of '--acyclic=plausible' keeps a stall the step budget made beside
+# the steps its firing had spent, and tells it to a firing of the same
+# formation that has spent at least as many. The operand of 'x.arg' runs out
+# of steps two firings down, so the stall is kept. Before #1521 it was dropped,
+# and 'x' walked the nest again inside its own firing, while 'y.arg' and 'y'
+# fired it all over. Now the firing inside 'x' is told the stall, and so are
+# 'y.arg' and 'y', which stand as deep as 'x.arg' and 'x' did.
+symbolic: |
+  - λ: L_outer
+    dataize:
+      𝛿1: ξ.arg
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+deep: true
+partial: true
+acyclic: plausible
+steps: 4
+input: >
+  ⟦ x ↦ ⟦ λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ λ ⤍ L_none ⟧ ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧,
+    y ↦ ⟦ λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ v ↦ ∅, λ ⤍ L_outer, arg ↦ ⟦ λ ⤍ L_none ⟧ ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧( v ↦ 1 ) ⟧ ⟧
+protocol: |
+  𝕄(Φ)
+    starved(4)  # 𝕄(Φ.x.arg)
+    starved(4)  # 𝕄(Φ.x.arg)
+    starved(4)  # 𝕄(Φ.x.arg)
+    starved(4)  # 𝕄(Φ.x.arg)
+    𝔼(L_outer)  # 𝕄(Φ.x.arg)
+      𝔼(L_outer)  # 𝔻(Φ.a🌵0)
+        𝔼(L_outer)  # 𝔻(Φ.a🌵1)
+          starved(4)  # 𝔻(Φ.a🌵2)
+        stuck(L_outer)
+      stuck(L_outer)
+    𝔼(L_outer)  # 𝕄(Φ.x)
+      𝔼(L_outer)  # 𝔻(Φ.a🌵3)
+        stall(L_outer)
+      stuck(L_outer)
+    starved(4)  # 𝕄(Φ.y.arg)
+    starved(4)  # 𝕄(Φ.y.arg)
+    starved(4)  # 𝕄(Φ.y.arg)
+    starved(4)  # 𝕄(Φ.y.arg)
+    𝔼(L_outer)  # 𝕄(Φ.y.arg)
+      stall(L_outer)
+    𝔼(L_outer)  # 𝕄(Φ.y)
+      stall(L_outer)

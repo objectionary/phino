@@ -10,6 +10,11 @@ name: typos
   pull_request:
     branches:
       - master
+permissions: read-all
+concurrency:
+  group: typos-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   typos:
     timeout-minutes: 15

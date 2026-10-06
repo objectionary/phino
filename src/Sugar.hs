@@ -21,14 +21,6 @@ withSugarType SALTY node = toSalty node
 data SugarType = SWEET | SALTY
   deriving (Eq, Show)
 
--- Drop every ρ binding (ρ ↦ ∅, ρ ↦ e and ρ(…) ↦ e) from a rendered CST, the
--- effect of the '--hide-rho' switch. Both formation bindings and application arguments are stripped;
--- dispatches such as ξ.ρ are left untouched. A formation left empty by the
--- strip collapses to the compact '⟦⟧' layout, and an application left with no
--- argument collapses to its bare callee (no leftover 'e()'). In the SWEET
--- syntax a formation left with one binding takes the sugar of #1385, 'ξ.a:φ',
--- the way it would have taken it had the ρ never been there; the SALTY one
--- has no such sugar.
 withoutRho :: SugarType -> EXPRESSION -> EXPRESSION
 withoutRho sugar = goExpr
   where
@@ -36,7 +28,7 @@ withoutRho sugar = goExpr
     goExpr EX_FORMATION{..} = case goBinding binding of
       empty@BI_EMPTY{} -> EX_FORMATION lsb NO_EOL NO_TAB empty NO_EOL NO_TAB rsb
       binding'@BI_PAIR{pair = pair', bindings = BDS_EMPTY{}}
-        | sugar == SWEET && sugared pair' -> EX_SINGLE pair' (EX_FORMATION lsb eol tab binding' eol' tab' rsb)
+        | sugar == SWEET && sugared pair' -> EX_SINGLE pair' NO_SPACE (EX_FORMATION lsb eol tab binding' eol' tab' rsb)
       binding' -> EX_FORMATION lsb eol tab binding' eol' tab' rsb
     goExpr EX_DISPATCH{..} = EX_DISPATCH (goExpr expr) space attr
     goExpr EX_APPLICATION{..} = case goArgument argument of
@@ -46,9 +38,8 @@ withoutRho sugar = goExpr
     goExpr EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (goExpr expr)
     goExpr EX_SINGLE{..}
       | isRho pair = goExpr formation
-      | otherwise = EX_SINGLE (goPair pair) (goExpr formation)
+      | otherwise = EX_SINGLE (goPair pair) space (goExpr formation)
     goExpr expr = expr
-    -- Formation bindings: drop the ρ pairs, recurse into whatever remains.
     goBinding :: BINDING -> BINDING
     goBinding empty@BI_EMPTY{} = empty
     goBinding BI_META{..} = BI_META meta (goBindings bindings) tab
@@ -61,24 +52,29 @@ withoutRho sugar = goExpr
     goBindings BDS_PAIR{..}
       | isRho pair = goBindings bindings
       | otherwise = BDS_PAIR eol tab (goPair pair) (goBindings bindings)
-    -- Turn the tail chain back into a head binding once its leading pair was
-    -- dropped; the promoted pair is already stripped and recursed by 'goBindings'.
     promote :: TAB -> BINDINGS -> BINDING
     promote tab (BDS_EMPTY _) = BI_EMPTY tab
     promote tab (BDS_PAIR _ _ pair bindings) = BI_PAIR pair bindings tab
     promote tab (BDS_META _ _ meta bindings) = BI_META meta bindings tab
-    -- Application arguments: drop the ρ pairs too, the way 'goBinding' does for
-    -- formations. 'Nothing' means nothing survived the strip, so 'goExpr'
-    -- collapses the whole application to its bare callee instead of leaving an
-    -- empty 'e()'. Positional arguments ('AA_EXPRS') carry no ρ, so they stay.
     goArgument :: APP_ARGUMENT -> Maybe APP_ARGUMENT
     goArgument (AA_TAU (APP_BINDING pair))
       | isRho pair = Nothing
       | otherwise = Just (AA_TAU (APP_BINDING (goPair pair)))
     goArgument (AA_TAUS binding) = case goArgBinding binding of
       BI_EMPTY{} -> Nothing
-      binding' -> Just (AA_TAUS binding')
+      binding'
+        | sugar == SWEET, Just args <- positional binding' -> Just (AA_EXPRS args)
+        | otherwise -> Just (AA_TAUS binding')
     goArgument (AA_EXPRS args) = Just (AA_EXPRS (goAppArg args))
+    positional :: BINDING -> Maybe APP_ARG
+    positional (BI_PAIR (PA_ALPHA (AL_IDX _ 0) _ first) rest _) = APP_ARG first <$> following 1 rest
+      where
+        following :: Int -> BINDINGS -> Maybe APP_ARGS
+        following _ BDS_EMPTY{} = Just AAS_EMPTY
+        following next (BDS_PAIR eol' tab' (PA_ALPHA (AL_IDX _ index) _ arg) more)
+          | index == next = AAS_EXPR eol' tab' arg <$> following (next + 1) more
+        following _ _ = Nothing
+    positional _ = Nothing
     goArgBinding :: BINDING -> BINDING
     goArgBinding empty@BI_EMPTY{} = empty
     goArgBinding BI_META{..} = BI_META meta (goArgBindings bindings) tab
@@ -103,12 +99,10 @@ withoutRho sugar = goExpr
       [] -> PA_TAU attr arrow (goExpr expr)
       voids' -> PA_FORMATION attr voids' arrow (goExpr expr)
       where
-        -- A void ρ the formation declares is listed among its inline voids
         rho :: ATTRIBUTE -> Bool
         rho AT_RHO{} = True
         rho _ = False
     goPair pair = pair
-    -- Whether the only binding of a formation has the one-binding sugar
     sugared :: PAIR -> Bool
     sugared PA_TAU{attr = AT_DELTA{}} = False
     sugared PA_TAU{attr = AT_LAMBDA{}} = False
@@ -122,20 +116,6 @@ withoutRho sugar = goExpr
     isRho PA_FORMATION{attr = AT_RHO _} = True
     isRho _ = False
 
--- By default CST is generated with all possible syntax sugar
--- The main purpose of this class is to get rid of syntax sugar
---  |----------------------------|-----------------------------------------------------|
---  | sugar                      | verbose version                                     |
---  |----------------------------|-----------------------------------------------------|
---  | a1 -> a2                   | a1 ↦ $.a2                                           |
---  | a -> 42                    | Q.number(Q.bytes([[ D> 40-45-00-00-00-00-00-00 ]])) |
---  | a -> Q.nan                 | Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) |
---  | a -> "Hey"                 | Q.number(Q.bytes([[ D> 48-65-79 ]]))                |
---  | e:a                        | [[ a -> e ]], and so for D, L and ? (see #1385)     |
---  | a1(a2, a3, ...) -> [[ B ]] | a1 -> [[ a2 -> ?, a3 -> ?, ..., B ]]                |
---  | e(e0, e1, ...)             | e(~0 -> e0, ~1 -> e1, ...)                          |
---  | e(a1 -> e1, a2 -> e2, ...) | e(a1 -> e1)(a2 -> e2)...                            |
---  |----------------------------|-----------------------------------------------------|
 class ToSalty a where
   toSalty :: a -> a
 

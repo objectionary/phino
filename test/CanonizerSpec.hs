@@ -8,6 +8,7 @@ module CanonizerSpec where
 import AST
 import Canonizer (canonize, canonizeExpr)
 import Control.Monad (forM_)
+import Deps (Judgment (..))
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
@@ -52,6 +53,11 @@ spec = do
         , ExFormation [BiLambda (Function "Foo")]
         , ExFormation [BiLambda (Function "Fn1")]
         )
+      ,
+        ( "preserves the package marker without consuming a function number"
+        , ExFormation [BiLambda (Function "Package"), BiLambda (Function "Foo")]
+        , ExFormation [BiLambda (Function "Package"), BiLambda (Function "Fn1")]
+        )
       , ("leaves a meta lambda binding untouched", metaLambda, metaLambda)
       , ("numbers several lambdas at different nesting depths in document order", nestedInput, nestedExpected)
       ,
@@ -85,8 +91,8 @@ spec = do
       let first = ExFormation [BiLambda (Function "X")]
           second = ExFormation [BiLambda (Function "Y")]
           expected = ExFormation [BiLambda (Function "Fn1")]
-      canonize [(first, Just "rule-1"), (second, Just "rule-2")]
-        `shouldBe` [(expected, Just "rule-1"), (expected, Just "rule-2")]
+      canonize [(first, Just (Morphing, "rule-1")), (second, Just (Dataization, "rule-2"))]
+        `shouldBe` [(expected, Just (Morphing, "rule-1")), (expected, Just (Dataization, "rule-2"))]
 
     it "preserves the rule tag alongside the canonized expression" $
       canonize [(ExFormation [BiLambda (Function "Foo")], Nothing)]

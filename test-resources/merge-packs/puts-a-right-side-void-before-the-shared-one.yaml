@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+left: '[[ f -> [[ y -> ? ]] ]]'
+right: '[[ f -> [[ x -> ?, y -> ? ]] ]]'
+result: '⟦ f ↦ ⟦ x ↦ ∅, y ↦ ∅ ⟧ ⟧'

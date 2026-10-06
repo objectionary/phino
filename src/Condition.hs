@@ -6,6 +6,7 @@
 
 module Condition (parseCondition, parseConditionThrows) where
 
+import AST (Attribute (AtDelta, AtLambda))
 import Control.Exception (Exception)
 import Data.Void (Void)
 import Misc (orThrow)
@@ -24,15 +25,12 @@ instance Show ConditionException where
 
 type Parser = Parsec Void String
 
--- White space consumer
 whiteSpace :: Parser ()
 whiteSpace = L.space hspace1 empty empty
 
--- Lexeme that ignores white spaces after
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme whiteSpace
 
--- Strict symbol (or sequence of symbols) with ignored white spaces after
 symbol :: String -> Parser String
 symbol = L.symbol whiteSpace
 
@@ -44,6 +42,9 @@ rparen = symbol ")"
 
 comma :: Parser String
 comma = symbol ","
+
+several :: Parser a -> Parser [a]
+several item = choice [try (between (symbol "[") (symbol "]") (item `sepBy1` comma)), pure <$> item]
 
 number :: Parser Y.Number
 number =
@@ -62,13 +63,10 @@ number =
     , do
         sign <- optional (choice [char '-', char '+'])
         unsigned <- lexeme L.decimal
-        return
-          ( Y.Literal
-              ( case sign of
-                  Just '-' -> negate unsigned
-                  _ -> unsigned
-              )
-          )
+        let signed = if sign == Just '-' then negate unsigned else unsigned :: Integer
+        if signed < toInteger (minBound :: Int) || signed > toInteger (maxBound :: Int)
+          then fail (printf "the literal %d does not fit into Int" signed)
+          else return (Y.Literal (fromInteger signed))
     ]
 
 comparable :: Parser Y.Comparable
@@ -94,11 +92,11 @@ condition =
         return (Y.Or args)
     , do
         _ <- symbol "in" >> lparen
-        attr <- _attribute phiParser
+        attrs <- several (choice [AtLambda <$ symbol "λ", AtDelta <$ symbol "Δ", _attribute phiParser])
         _ <- comma
-        bd <- _binding phiParser
+        bds <- several (_binding phiParser)
         _ <- rparen
-        return (Y.In [attr] [bd])
+        return (Y.In attrs bds)
     , do
         _ <- symbol "not" >> lparen
         cond <- condition

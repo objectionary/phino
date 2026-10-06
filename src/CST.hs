@@ -7,7 +7,6 @@
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
--- This module represents concrete syntax tree for phi-calculus expression
 module CST where
 
 import AST
@@ -75,33 +74,33 @@ data BYTES
   | BT_ONE String
   | BT_MANY [String]
   | BT_META META
-  | BT_PIPED BYTES -- bytes wrapped in vertical pipes, as the eolang LaTeX package expects
-  | BT_CUT [String] Int -- the first bytes of a long string and its length in bytes, as '--abridged' spells it (#1465)
+  | BT_PIPED BYTES
+  | BT_CUT [String] Int [String]
   deriving (Eq, Show)
 
 data META_HEAD
-  = E -- 𝑒
-  | E' -- e
-  | N -- 𝑛
-  | N' -- n
-  | K -- 𝑘
-  | K' -- k
-  | A -- t (ASCII attribute meta)
-  | TAU -- 𝜏
-  | TAU' -- \tau
-  | I -- 𝑖
-  | I' -- i
-  | B -- 𝐵
-  | B' -- B
-  | D -- 𝛿
-  | D' -- \delta
-  | D'' -- d
-  | F -- 𝑓
-  | F' -- F
-  | F'' -- f
-  | S -- 𝜎
-  | S' -- S
-  | S'' -- \sigma
+  = E
+  | E'
+  | N
+  | N'
+  | K
+  | K'
+  | A
+  | TAU
+  | TAU'
+  | I
+  | I'
+  | B
+  | B'
+  | D
+  | D'
+  | D''
+  | F
+  | F'
+  | F''
+  | S
+  | S'
+  | S''
   deriving (Eq, Show)
 
 data EXCLAMATION = EXCL | NO_EXCL
@@ -130,14 +129,14 @@ data PAIR
   | PA_FORMATION {attr :: ATTRIBUTE, voids :: [ATTRIBUTE], arrow :: ARROW, expr :: EXPRESSION}
   | PA_VOID {attr :: ATTRIBUTE, arrow :: ARROW, void :: VOID}
   | PA_LAMBDA {func :: T.Text}
-  | PA_LAMBDA' {func :: T.Text} -- ASCII version of PA_LAMBDA
+  | PA_LAMBDA' {func :: T.Text}
   | PA_META_LAMBDA {meta :: META}
-  | PA_META_LAMBDA' {meta :: META} -- ASCII version of PA_META_LAMBDA'
+  | PA_META_LAMBDA' {meta :: META}
   | PA_DELTA {bytes :: BYTES}
-  | PA_DELTA' {bytes :: BYTES} -- ASCII version of PA_DELTA
+  | PA_DELTA' {bytes :: BYTES}
   | PA_META_DELTA {meta :: META}
-  | PA_META_DELTA' {meta :: META} -- ASCII version of PA_META_DELTA
-  | PA_FOLDED {count :: Int} -- the bindings '--abridged' folded away, as '+34 attrs' (#1465)
+  | PA_META_DELTA' {meta :: META}
+  | PA_FOLDED {count :: Int}
   deriving (Eq, Show)
 
 newtype APP_BINDING = APP_BINDING {pair :: PAIR}
@@ -155,8 +154,6 @@ data BINDINGS
   | BDS_META {eol :: EOL, tab :: TAB, meta :: META, bindings :: BINDINGS}
   deriving (Eq, Show)
 
--- Arguments for application with default α attributes
--- which are not necessary to be printed
 data APP_ARG = APP_ARG {expr :: EXPRESSION, args :: APP_ARGS}
   deriving (Eq, Show)
 
@@ -165,29 +162,28 @@ data APP_ARGS
   | AAS_EMPTY
   deriving (Eq, Show)
 
--- The argument carried by an application, in one of three sugar shapes
 data APP_ARGUMENT
-  = AA_TAU APP_BINDING -- e(a1 -> e1)
-  | AA_TAUS BINDING -- e(a1 -> e1)(a2 -> e2)(...)
-  | AA_EXPRS APP_ARG -- e(e1, e2, ...)
+  = AA_TAU APP_BINDING
+  | AA_TAUS BINDING
+  | AA_EXPRS APP_ARG
   deriving (Eq, Show)
 
 data EXPRESSION
   = EX_GLOBAL {global :: GLOBAL}
   | EX_XI {xi :: XI}
-  | EX_ATTR {attr :: ATTRIBUTE} -- sugar for $.x -> just x
+  | EX_ATTR {attr :: ATTRIBUTE}
   | EX_TERMINATION {termination :: TERMINATION}
   | EX_FORMATION {lsb :: LSB, eol :: EOL, tab :: TAB, binding :: BINDING, eol' :: EOL, tab' :: TAB, rsb :: RSB}
   | EX_DISPATCH {expr :: EXPRESSION, space :: SPACE, attr :: ATTRIBUTE}
-  | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, argument :: APP_ARGUMENT, eol' :: EOL, tab' :: TAB, indent :: Int} -- e(...)
+  | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, argument :: APP_ARGUMENT, eol' :: EOL, tab' :: TAB, indent :: Int}
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Argument]}
   | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Argument]}
-  | EX_NONFINITE {global :: GLOBAL, nonfinite :: NonFinite, tab :: TAB, rhos :: [Argument]} -- Φ.nan, Φ.pinf and Φ.ninf (see #1065)
+  | EX_NONFINITE {global :: GLOBAL, nonfinite :: NonFinite, tab :: TAB, rhos :: [Argument]}
   | EX_META {meta :: META}
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
   | EX_PHI_AGAIN {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
-  | EX_BYTES {bytes :: BYTES} -- bare data 𝛿, a rendering-only terminal chain node (see #980)
-  | EX_SINGLE {pair :: PAIR, formation :: EXPRESSION} -- one-binding formation as 'FF-:Δ' or 'ξ.a:φ', with its full form (see #1385)
+  | EX_BYTES {bytes :: BYTES}
+  | EX_SINGLE {pair :: PAIR, space :: SPACE, formation :: EXPRESSION}
   deriving (Eq, Show)
 
 data ATTRIBUTE
@@ -263,36 +259,23 @@ data EXTRA = EXTRA {meta :: EXTRA_ARG, func :: String, args :: [EXTRA_ARG]}
 expressionToCST :: Expression -> EXPRESSION
 expressionToCST = toCST'
 
--- Like 'expressionToCST', but lays the expression out from a given base tab
--- instead of column 0. Used when an expression sits on an already-indented
--- line (e.g. a '\leadsto' continuation step in the LaTeX --sequence output),
--- so its wrapped member lines nest one level below that line and its closing
--- bracket aligns with the opening one.
 expressionToCSTFrom :: Int -> Expression -> EXPRESSION
 expressionToCSTFrom tabs expr = toCST expr (tabs, EOL)
 
--- A number can be rendered in sweet form when it is either finite, and so has
--- a numeric literal, or one of the three canonical non-finite doubles, which
--- get the root dispatches `Φ.nan`, `Φ.pinf` and `Φ.ninf` instead (the bare
--- `show` tokens `NaN`, `Infinity` and `-Infinity` would collide with
--- object/function names, hence the dispatch — see #1065). Any other non-finite
--- pattern, such as a NaN carrying a payload, is kept in its byte form so that
--- no bit of it is lost.
 sweetNumber :: Bytes -> Bool
+sweetNumber (BtMeta _) = False
+sweetNumber (BtAny _) = False
 sweetNumber bts
   | btsSize bts /= 8 = False
 sweetNumber bts = case btsToNum bts of
   Right dbl | isNaN dbl || isInfinite dbl -> isJust (btsToNonFinite bts)
   _ -> True
 
--- A string can be rendered as a literal only when its bytes decode as UTF-8.
--- An arbitrary byte array is a legal datum and nothing promises it decodes, so
--- a malformed one is kept in its byte form, exactly as a payload NaN is kept
--- today (see #1138).
 sweetString :: Bytes -> Bool
-sweetString = btsIsUtf8
+sweetString (BtMeta _) = False
+sweetString (BtAny _) = False
+sweetString bts = btsIsUtf8 bts
 
--- Whether a data object may be collapsed into its sweet literal form.
 sweetCollapsible :: Expression -> Bool
 sweetCollapsible (DataNumber bts) = sweetNumber bts
 sweetCollapsible (DataString bts) = sweetString bts
@@ -322,24 +305,15 @@ toCST' = (`toCST` (0, EOL))
 metaTail :: T.Text -> T.Text
 metaTail = T.drop 1
 
--- An anonymous meta renders as the bare sigil it was written with: it carries
--- no suffix, and needs none, since nothing on the page refers back to it.
 anyMeta :: META_HEAD -> META
 anyMeta hd' = META NO_EXCL hd' T.empty
 
--- The first character of an expression meta name encodes its kind:
--- 'n'-prefixed names are normal-form-constrained '𝑛' metas, 'k'-prefixed
--- names are absolute-constrained '𝑘' metas, everything else is an ordinary
--- '𝑒' meta.
 exMetaHead :: T.Text -> META_HEAD
 exMetaHead mt
   | T.isPrefixOf "n" mt = N
   | T.isPrefixOf "k" mt = K
   | otherwise = E
 
--- This class is used to convert AST to CST
--- CST is created with sugar and unicode
--- All further transformations must consider that
 class ToCST a b where
   toCST :: a -> (Int, EOL) -> b
 
@@ -353,12 +327,8 @@ instance ToCST Expression EXPRESSION where
   toCST (ExPhiMeet prefix idx expr) ctx = EX_PHI_MEET prefix idx (toCST expr ctx)
   toCST (ExPhiAgain prefix idx expr) ctx = EX_PHI_AGAIN prefix idx (toCST expr ctx)
   toCST (ExFormation []) _ = EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY NO_TAB) NO_EOL NO_TAB RSB
-  -- A formation of a single binding is sugared into its asset, a colon and
-  -- the attribute, as `FF-:Δ`, `Plus:λ`, `∅:a` or `ξ.a:φ` (see #1385). The
-  -- full formation is kept next to it, for the notations that have no such
-  -- sugar: the salty one, LaTeX and the one '--hide-rho' strips.
   toCST (ExFormation bds) ctx@(tabs, eol) =
-    maybe full (`EX_SINGLE` full) (single bds)
+    maybe full (\sole -> EX_SINGLE sole NO_SPACE full) (single bds)
     where
       full :: EXPRESSION
       full =
@@ -372,11 +342,6 @@ instance ToCST Expression EXPRESSION where
               EOL
               (TAB tabs)
               RSB
-      -- The asset of the only binding, laid out where the formation stands,
-      -- unless it has no sugar: a meta binding, a τ binding whose attribute
-      -- the parser takes for a Δ or a λ, one that carries a formation with
-      -- inline voids, which reads better as 'x(a) ↦ ⟦ … ⟧', or the void ρ a
-      -- formation declares as its receiver, which reads better as '⟦ ρ ↦ ∅ ⟧'
       single :: [Binding] -> Maybe PAIR
       single [BiTau AtDelta _] = Nothing
       single [BiTau AtLambda _] = Nothing
@@ -391,24 +356,10 @@ instance ToCST Expression EXPRESSION where
       inlined PA_FORMATION{voids = _ : _} = True
       inlined _ = False
   toCST (DataString bts) (tabs, _) | sweetString bts = EX_STRING (btsToStr bts) (TAB tabs) []
-  -- The three canonical non-finite doubles have no sweet numeric literal, so
-  -- they become the root dispatches `Φ.nan`, `Φ.pinf` and `Φ.ninf`. Any other
-  -- non-finite pattern is left in its byte form `Φ.number(Φ.bytes(⟦ Δ ⤍ … ⟧))`
-  -- by falling through to the generic application clause below.
   toCST (DataNumber bts) (tabs, _) | Just nonfinite <- btsToNonFinite bts = EX_NONFINITE Φ nonfinite (TAB tabs) []
   toCST (DataNumber bts) (tabs, _) | sweetNumber bts = EX_NUMBER (btsToNum bts) (TAB tabs) []
   toCST (ExDispatch ExXi attr) ctx = EX_ATTR (toCST attr ctx)
   toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) NO_SPACE (toCST attr ctx)
-  -- Since we convert AST to CST in sweet notation, here we're trying to get rid of unnecessary rho bindings
-  -- in primitives (more details here: https://github.com/objectionary/phino/issues/451)
-  -- If we find something similar to:
-  -- `Q.number(~0 -> Q.bytes(...), ^ -> ..., ^ -> ...)`
-  -- We remove unnecessary rho bindings and save them to EX_STRING or EX_NUMBER so they can be successfully
-  -- converted to salty notation without losing information.
-  -- In the end we just get CST with data primitive which is printed correctly.
-  -- If given application is not such primitive - we just convert it to one of the applications:
-  -- 1. either with pure expression with arguments, which means there are incremented only alpha bindings
-  -- 2. or with just bindings
   toCST app@(ExApplication _ _) ctx@(tabs, eol) =
     let (ex, ts, exs) = complexApplication app
         ex' = toCST ex ctx :: EXPRESSION
@@ -418,27 +369,39 @@ instance ToCST Expression EXPRESSION where
      in if length ts' == 1 && dataPrimitive obj && sweetCollapsible obj
           then applicationToPrimitive obj tabs rs
           else
-            if null exs
+            if length ts' > 1 && null exs && dataPrimitive obj && sweetCollapsible obj
               then
                 EX_APPLICATION
-                  ex'
+                  (applicationToPrimitive obj tabs rs)
                   NO_SPACE
                   eol
                   (TAB next)
-                  (AA_TAUS (toCST ts (next, eol) :: BINDING))
+                  (AA_TAUS (toCST (drop 1 ts') (next, eol) :: BINDING))
                   eol
                   (TAB tabs)
                   next
               else
-                EX_APPLICATION
-                  ex'
-                  NO_SPACE
-                  eol
-                  (TAB next)
-                  (AA_EXPRS (toCST exs (next, eol)))
-                  eol
-                  (TAB tabs)
-                  next
+                if null exs
+                  then
+                    EX_APPLICATION
+                      ex'
+                      NO_SPACE
+                      eol
+                      (TAB next)
+                      (AA_TAUS (toCST ts (next, eol) :: BINDING))
+                      eol
+                      (TAB tabs)
+                      next
+                  else
+                    EX_APPLICATION
+                      ex'
+                      NO_SPACE
+                      eol
+                      (TAB next)
+                      (AA_EXPRS (toCST exs (next, eol)))
+                      eol
+                      (TAB tabs)
+                      next
     where
       primitives :: [T.Text]
       primitives = ["number", "string"]
@@ -465,12 +428,6 @@ instance ToCST Expression EXPRESSION where
         Nothing -> EX_NUMBER (btsToNum bts) (TAB tabs) rhos
       applicationToPrimitive (DataString bts) tabs rhos = EX_STRING (btsToStr bts) (TAB tabs) rhos
       applicationToPrimitive _ _ _ = error "applicationToPrimitive expects DataNumber or DataString"
-      -- Here we unroll nested application sequence into flat structure
-      -- The returned tuple consists of:
-      -- 1. deepest start expression
-      -- 2. list of tau bindings which are applied to start expression
-      -- 3. list of expressions which are applied to start expression with default
-      --    alpha attributes (~0 -> e1, ~1 -> e2, ...)
       complexApplication :: Expression -> (Expression, [Argument], [Expression])
       complexApplication expr =
         let (expr', taus', exprs') = complexApplication' expr
@@ -491,12 +448,6 @@ instance ToCST Expression EXPRESSION where
           complexApplication' (ExApplication expr (ArAlpha (Alpha 0) expr')) = (expr, [ArAlpha (Alpha 0) expr'], [expr'])
           complexApplication' (ExApplication expr tau) = (expr, [tau], [])
           complexApplication' expr = (expr, [], [])
-      -- This head' works the same as head from Prelude but doesn't throw an error
-      -- It's used to bypass the x-partial error in ghc 9.8.*
-      -- This approach is just simpler that switching to NonEmpty for complexApplication or withoutRhosInPrimitives functions
-      -- but not a brightest design
-      -- There never be an empty list because application always has binding, which means complex application
-      -- always has non empty list of bindings
       head' :: [a] -> a
       head' [] = error "Should never be called"
       head' (x : _) = x
@@ -536,8 +487,6 @@ instance ToCST Binding PAIR where
               ARROW
               (toCST (ExFormation (others ++ rest)) ctx)
     where
-      -- Neither λ nor Δ is an attribute, so neither holds a position among
-      -- the voids, and 'x ↦ ⟦ λ ⤍ F, a ↦ ∅ ⟧' is still printed as 'x(a) ↦ ⟦ λ ⤍ F ⟧'
       positionless :: Binding -> Bool
       positionless BiVoid{} = True
       positionless BiLambda{} = True

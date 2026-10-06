@@ -47,13 +47,9 @@ logPrintConfig = (SWEET, UNICODE, SINGLELINE, defaultMargin)
 printExpression' :: Expression -> PrintConfig -> String
 printExpression' = printExpressionWith (const id)
 
--- Like 'printExpression'', but drops every ρ binding from the rendered
--- expression (the '--hide-rho' switch). See 'withoutRho'.
 printExpressionHidingRho' :: Expression -> PrintConfig -> String
 printExpressionHidingRho' = printExpressionWith withoutRho
 
--- Shared rendering pipeline with a hook applied to the sugared CST, right
--- before encoding and margin wrapping.
 printExpressionWith :: (SugarType -> EXPRESSION -> EXPRESSION) -> Expression -> PrintConfig -> String
 printExpressionWith hide ex (sugar, encoding, line, margin) =
   T.unpack $ render (withLineFormat line $ withMargin margin $ withEncoding encoding $ hide sugar $ withSugarType sugar $ expressionToCST ex)
@@ -86,10 +82,6 @@ printBinding bd = printBinding' bd defaultPrintConfig
 printBytes :: Bytes -> String
 printBytes bts = T.unpack $ render (toCST bts (0, NO_EOL) :: BYTES)
 
--- The λ function alone, without the binding that carries it: the name of an
--- ordinary one, the 𝜎 of a symbol, the sigil of a rule's meta. It is read off
--- the binding's own CST, so the spelling stays where every other spelling of
--- the calculus lives.
 printFunction :: Function -> String
 printFunction fun = T.unpack (spelled (toCST (BiLambda fun) (0, NO_EOL) :: PAIR))
   where
@@ -115,10 +107,6 @@ printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
 printMetaValue (MvFunction fun) _ = printFunction fun
 
--- An anonymous slot is reported under the bare sigil it was written with,
--- just as a named meta is reported under its name. Two slots of one kind
--- therefore share a line label while keeping their own values, which is all
--- the report can say about a variable no rule may refer back to.
 printMeta :: Meta -> String
 printMeta (Named name) = T.unpack name
 printMeta (Anon (Slot kind _)) = T.unpack kind
@@ -127,7 +115,15 @@ printSubst :: Subst -> PrintConfig -> String
 printSubst (Subst mp) config =
   intercalate
     "\n"
-    (map (\(key, value) -> printMeta key <> " >> " <> printMetaValue value config) (Map.toList mp))
+    (map (\(key, value) -> numbered key <> " >> " <> printMetaValue value config) (Map.toList mp))
+  where
+    numbered :: Meta -> String
+    numbered anon@(Anon slot@(Slot kind _))
+      | length kin > 1 = printMeta anon <> "#" <> show (length (takeWhile (/= slot) kin) + 1)
+      where
+        kin :: [Slot]
+        kin = [other | Anon other@(Slot kind' _) <- Map.keys mp, kind' == kind]
+    numbered other = printMeta other
 
 printSubsts' :: [Subst] -> PrintConfig -> String
 printSubsts' [] _ = "------"

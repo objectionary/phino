@@ -469,9 +469,6 @@ spec = do
       ]
 
   describe "matches an anonymous meta independently at every occurrence" $
-    -- Two anonymous metas of one kind sit at different offsets, so they are
-    -- different keys and bind different terms. That is what lets a pattern say
-    -- "any two attributes" without inventing a name for either of them (#218).
     forM_
       [
         ( "[[ !t -> !e, !t -> !e ]] => [[ a -> Q, b -> $ ]] => both bindings bind their own slots"
@@ -628,13 +625,35 @@ spec = do
             , ("B2", MvBindings [BiVoid AtRho])
             ]
           ]
+  describe "sites" $ do
+    it "finds the places a rule matches at in the order the deep matcher finds them" $
+      map fst (sites False (\expr -> [() | ExDispatch _ _ <- [expr]]) (ExDispatch (ExFormation [BiTau (AtLabel "wq") (ExDispatch ExXi (AtLabel "h"))]) (AtLabel "r")))
+        `shouldBe` [ExDispatch (ExFormation [BiTau (AtLabel "wq") (ExDispatch ExXi (AtLabel "h"))]) (AtLabel "r"), ExDispatch ExXi (AtLabel "h")]
+    it "keeps what the rule makes of a place beside it, once for every way it matches" $
+      sites False (\expr -> [idx | ExXi <- [expr], idx <- [7, 3 :: Int]]) (ExApplication ExRoot (ArTau (AtLabel "u") ExXi))
+        `shouldBe` [(ExXi, 7), (ExXi, 3)]
+    it "never looks inside an inert term when the rule is a redex" $
+      sites True (\expr -> [() | ExXi <- [expr]]) (ExFormation [BiTau (AtLabel "zk") (ExFormation [BiDelta (BtOne "1F")])])
+        `shouldBe` []
+  describe "hits" $ do
+    it "finds every rule matching deep inside the term in the order one walk meets them" $
+      hits [(7, False, \_ expr -> [() | ExTermination <- [expr]]), (3, False, \_ expr -> [() | ExRoot <- [expr]]), (5, False, \_ expr -> [() | ExXi <- [expr]])] Nothing (ExDispatch (ExApplication ExXi (ArAlpha (Alpha 2) ExTermination)) (AtLabel "y"))
+        `shouldBe` [5, 7]
+    it "never asks a rule that is a redex inside an inert term" $
+      hits [(4, True, \_ expr -> [() | ExXi <- [expr]]), (9, False, \_ expr -> [() | ExXi <- [expr]])] Nothing (ExFormation [BiTau (AtLabel "zk") ExXi])
+        `shouldBe` [9]
+    it "hands the world to every rule it asks" $
+      hits [(2, False, \universe _ -> [() | Just ExRoot <- [universe]])] (Just ExRoot) (ExDispatch ExXi (AtLabel "qo"))
+        `shouldBe` [2]
+    it "stops the walk at the first rule it finds" $
+      take 1 (hits [(6, False, \_ expr -> [() | ExRoot <- [expr]]), (1, False, error "the walk went on past the first rule it found")] Nothing ExRoot)
+        `shouldBe` [6]
+  describe "splits" $
+    it "cuts the bindings in two, the shortest leading run first" $
+      splits [BiVoid (AtLabel "a"), BiVoid AtRho]
+        `shouldBe` [([], [BiVoid (AtLabel "a"), BiVoid AtRho]), ([BiVoid (AtLabel "a")], [BiVoid AtRho]), ([BiVoid (AtLabel "a"), BiVoid AtRho], [])]
   where
-    -- The pattern of the 'dot' normalization rule, the one every dispatch of a
-    -- program is matched against: a meta binding on either side of the binding
-    -- the dispatch names.
     dot :: Expression
     dot = ExDispatch (ExFormation [BiMeta "B1", BiTau (AtMeta "t1") (ExMeta "n1"), BiMeta "B2"]) (AtMeta "t1")
-    -- A formation of that many bindings, none of which the pattern above says
-    -- anything about beyond standing in one of its two runs.
     crowd :: Int -> Expression
     crowd size = ExFormation [BiTau (AtLabel (T.pack ("d" <> show idx))) (ExFormation [BiDelta (BtOne "00")]) | idx <- [1 .. size]]

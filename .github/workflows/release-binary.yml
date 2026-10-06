@@ -10,6 +10,11 @@ name: Release binary to S3
   push:
     tags:
       - '*'
+permissions: read-all
+concurrency:
+  group: release-binary-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-release:
     strategy:
@@ -51,6 +56,7 @@ jobs:
       - name: Build release binary
         shell: bash
         run: |
+          make compiled
           make binary
       - name: Upload phino binary to Amazon S3
         uses: aws-actions/configure-aws-credentials@v6.3.0

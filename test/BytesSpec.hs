@@ -253,8 +253,8 @@ spec = do
         , btsEqual (BtOne "bf") (BtOne "BF") `shouldBe` True
         )
       ,
-        ( "decodes a single hex character via the fallback numeric reader"
-        , btsEqual (BtOne "5") (BtOne "05") `shouldBe` True
+        ( "rejects a hex byte with more than two digits"
+        , evaluate (btsToUnescapedStr (BtOne "100")) `shouldThrow` anyErrorCall
         )
       ,
         ( "errors out on a hex digit that isn't 0-9, a-f or A-F"

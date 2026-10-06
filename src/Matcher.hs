@@ -1,8 +1,9 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The goal of the module is to traverse given AST and build substitutions
--- from meta variables to appropriate meta values
 module Matcher where
 
 import AST
@@ -11,48 +12,34 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
 
--- Meta value
--- The right part of substitution
 data MetaValue
-  = MvAttribute Attribute -- !t
-  | MvIndex Int -- α𝑖
-  | MvBytes Bytes -- !b
-  | MvBindings [Binding] -- !B
-  | MvFunction Function -- !F
-  | MvExpression Expression -- !e
+  = MvAttribute Attribute
+  | MvIndex Int
+  | MvBytes Bytes
+  | MvBindings [Binding]
+  | MvFunction Function
+  | MvExpression Expression
   deriving (Eq, Show)
 
--- The left-hand side of a substitution: a meta-variable the rule author named
--- and may reference from a result, or an anonymous slot that only the pattern
--- it was written in can address
 data Meta
   = Named Text
   | Anon Slot
   deriving (Eq, Ord, Show)
 
--- Substitution
--- Shows the match of meta variable to meta value
 newtype Subst = Subst (Map Meta MetaValue)
   deriving (Eq, Show)
 
--- A way to match a pattern expression against a target expression, yielding
--- the substitutions under which they agree.
 type MatchExpressionFunc = Expression -> Expression -> [Subst]
 
--- Empty substitution
 substEmpty :: Subst
 substEmpty = Subst Map.empty
 
--- Singleton substitution with one (key -> value) pair
 substSingle :: Text -> MetaValue -> Subst
 substSingle key value = Subst (Map.singleton (Named key) value)
 
--- Singleton substitution binding one anonymous slot
 substSlot :: Slot -> MetaValue -> Subst
 substSlot slot value = Subst (Map.singleton (Anon slot) value)
 
--- Combine two substitutions into a single one
--- Fails if values by the same keys are not equal
 combine :: Subst -> Subst -> Maybe Subst
 combine (Subst a) (Subst b) = go (Map.toList b) a
   where
@@ -81,9 +68,6 @@ matchAlpha ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
--- A λ meta stands for any λ name at all — an ordinary one and a symbol alike,
--- since a symbol is a name nothing answers and not a variable of the rule
--- language (see 'FnSymbol'). Every other pair matches only itself.
 matchFunction :: Function -> Function -> [Subst]
 matchFunction (FnMeta meta) tgt
   | named tgt = [substSingle meta (MvFunction tgt)]
@@ -93,8 +77,6 @@ matchFunction ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
--- Whether a λ function is a name a program wrote rather than a meta-variable
--- a rule wrote.
 named :: Function -> Bool
 named (Function _) = True
 named (FnSymbol _) = True
@@ -116,7 +98,6 @@ matchArgument (ArTau pattr pexp) (ArTau tattr texp) = combineMany (matchAttribut
 matchArgument (ArAlpha palpha pexp) (ArAlpha talpha texp) = combineMany (matchAlpha palpha talpha) (matchExpression' pexp texp)
 matchArgument _ _ = []
 
--- Match bindings with ordering
 matchBindings :: [Binding] -> [Binding] -> [Subst]
 matchBindings [] [] = [substEmpty]
 matchBindings [] _ = []
@@ -125,15 +106,6 @@ matchBindings ((BiAny slot) : pbs) tbs = matchBindingsMeta (substSlot slot) pbs 
 matchBindings (pb : pbs) (tb : tbs) = combineMany (matchBinding pb tb) (matchBindings pbs tbs)
 matchBindings _ _ = []
 
--- A meta binding stands for any leading run of the target bindings, so every
--- way of splitting the target into that run and the rest is tried. The rest is
--- carried down one binding at a time instead of being cut out of the target
--- anew at every index, which is what made a formation of N bindings cost N
--- walks of itself rather than one, and the run itself is put together only
--- where the pattern after it matched, so a split the pattern throws away costs
--- nothing to name. A meta binding with nothing after it takes the whole rest in
--- one step: the pattern is out of bindings, so the only split that matches is
--- the one leaving nothing behind (#1316).
 matchBindingsMeta :: (MetaValue -> Subst) -> [Binding] -> [Binding] -> [Subst]
 matchBindingsMeta bind [] tbs = [bind (MvBindings tbs)]
 matchBindingsMeta bind pbs tbs = go [] tbs
@@ -163,13 +135,6 @@ matchExpression' (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr')
   | otherwise = []
 matchExpression' _ _ = []
 
--- The pattern with the attribute meta written in its place wherever the
--- meta stands in it, once the target has told which attribute that is. A
--- dispatch or an application names its attribute beside the formation it is
--- made of, as '⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧.𝜏1' does, and the formation is matched
--- first, so without it every binding of the formation would be tried as 𝜏1
--- and a substitution made for it before the attribute threw all but one away.
--- The matches are the ones the pattern has anyway, in the same order (#1453).
 pinned :: Attribute -> Attribute -> Expression -> Expression
 pinned (AtMeta meta) tattr = goExpr
   where
@@ -189,14 +154,9 @@ pinned (AtMeta meta) tattr = goExpr
     goAttribute attr = attr
 pinned _ _ = id
 
--- Match expression with deep nested expression(s) matching
 matchExpressionDeep :: MatchExpressionFunc
 matchExpressionDeep = matchExpressionDeep' False
 
--- The same deep matching, told whether the pattern is a redex: one that
--- matches only at a place no 'inert' term holds. The matcher then never looks
--- inside an inert term, so a copy of an object an earlier normalization left
--- in normal form costs nothing to carry along, however big it is (#1453).
 matchExpressionDeep' :: Bool -> MatchExpressionFunc
 matchExpressionDeep' redex ptn tgt = go tgt []
   where
@@ -218,19 +178,9 @@ matchExpressionDeep' redex ptn tgt = go tgt []
 matchExpression :: MatchExpressionFunc
 matchExpression = matchExpressionDeep
 
--- Whether the pattern could match at some place of the target where the deep
--- matcher looks, judged by the shape of each place alone: the constructors
--- down the head of the pattern, the attribute a dispatch or an application
--- names, and the kinds of bindings a formation of the pattern asks for. It
--- never says no where 'matchExpressionDeep' would find a match, and it walks
--- the target once without building a single substitution, so a rule whose
--- pattern fits nowhere in a term is told so without the deep matcher trying
--- it at every place of that term (#1453).
 reachable :: Expression -> Expression -> Bool
 reachable = reachable' False
 
--- The same judgement, told whether the pattern is a redex, in which case no
--- place inside an 'inert' term is looked at (see 'matchExpressionDeep'').
 reachable' :: Bool -> Expression -> Expression -> Bool
 reachable' redex ptn = go
   where
@@ -248,11 +198,6 @@ reachable' redex ptn = go
     inside (BiTau _ expr) = go expr
     inside _ = False
 
--- Whether the pattern could match the target right at its root, judged by
--- shape alone: the constructors down the head of the pattern, the attribute a
--- dispatch or an application names, and the kinds of bindings a formation of
--- the pattern asks for. It never says no where 'matchExpression'' would find
--- a match (#1453).
 fitting :: Expression -> Expression -> Bool
 fitting = go
   where
@@ -283,3 +228,50 @@ fitting = go
     same (AtMeta _) _ = True
     same (AtAny _) _ = True
     same pattr tattr = pattr == tattr
+
+sites :: forall a. Bool -> (Expression -> [a]) -> Expression -> [(Expression, a)]
+sites redex rule tgt = go tgt []
+  where
+    go :: Expression -> [(Expression, a)] -> [(Expression, a)]
+    go expr rest
+      | redex && inert expr = rest
+      | otherwise = map (expr,) (rule expr) ++ below expr rest
+    below :: Expression -> [(Expression, a)] -> [(Expression, a)]
+    below (ExFormation bds) rest = foldr inside rest bds
+    below (ExDispatch expr _) rest = go expr rest
+    below (ExApplication expr (ArTau _ arg)) rest = go expr (go arg rest)
+    below (ExApplication expr (ArAlpha _ arg)) rest = go expr (go arg rest)
+    below _ rest = rest
+    inside :: Binding -> [(Expression, a)] -> [(Expression, a)]
+    inside (BiTau _ expr) rest = go expr rest
+    inside _ rest = rest
+
+hits :: forall a. [(Int, Bool, Maybe Expression -> Expression -> [a])] -> Maybe Expression -> Expression -> [Int]
+hits rules universe tgt = go [tgt] rules
+  where
+    go :: [Expression] -> [(Int, Bool, Maybe Expression -> Expression -> [a])] -> [Int]
+    go [] _ = []
+    go _ [] = []
+    go (expr : rest) pending
+      | inert expr && and [redex | (_, redex, _) <- pending] = go rest pending
+      | otherwise = case [idx | (idx, redex, rule) <- pending, not (redex && inert expr), not (null (rule universe expr))] of
+          [] -> go (below expr rest) pending
+          met -> met ++ go (below expr rest) [rule | rule@(idx, _, _) <- pending, idx `notElem` met]
+    below :: Expression -> [Expression] -> [Expression]
+    below (ExFormation bds) rest = foldr inside rest bds
+    below (ExDispatch expr _) rest = expr : rest
+    below (ExApplication expr (ArTau _ arg)) rest = expr : arg : rest
+    below (ExApplication expr (ArAlpha _ arg)) rest = expr : arg : rest
+    below _ rest = rest
+    inside :: Binding -> [Expression] -> [Expression]
+    inside (BiTau _ expr) rest = expr : rest
+    inside _ rest = rest
+
+splits :: [Binding] -> [([Binding], [Binding])]
+splits = go []
+  where
+    go :: [Binding] -> [Binding] -> [([Binding], [Binding])]
+    go before after =
+      (reverse before, after) : case after of
+        [] -> []
+        (bd : rest) -> go (bd : before) rest

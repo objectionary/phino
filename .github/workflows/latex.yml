@@ -10,25 +10,28 @@ name: latex
   pull_request:
     branches:
       - master
+permissions: read-all
+concurrency:
+  group: latex-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   cabal:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - id: setup
-        uses: haskell-actions/setup@v2.12.1
+        uses: ./.github/actions/ghc
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
       - uses: zauguin/install-texlive@v4.4.0
         with:
-          packages: scheme-basic eolang mathtools
+          packages: scheme-basic eolang mathtools was
           texlive_version: 2026
       - uses: actions/cache@v6
         with:
           path: |
-            ${{ steps.setup.outputs.ghc-path }}
-            ${{ steps.setup.outputs.cabal-path }}
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
           key: ${{ runner.os }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
@@ -50,6 +53,11 @@ jobs:
             printf '\\newcommand\\phinoEvaluate[1]{\\mathbb{E}( #1 )}\n'
             printf '\\newcommand\\phinoNamed[2]{\\mathrm{named}( #1, #2 )}\n'
             printf '\\newcommand\\phinoMorph[3]{\\mathbb{M}( #1, #2, #3 )}\n'
+            printf '\\providecommand\\phiNormalize[1][]{\\leadsto_{\\mathcal{N}}^{#1}}\n'
+            printf '\\providecommand\\phiMorph[1][]{\\leadsto_{\\mathbb{M}}^{#1}}\n'
+            printf '\\providecommand\\phiDataize[1][]{\\leadsto_{\\mathbb{D}}^{#1}}\n'
+            printf '\\providecommand\\phiEvaluate[1][]{\\leadsto_{\\mathbb{E}}^{#1}}\n'
+            printf '\\providecommand\\phiContextualize[1][]{\\leadsto_{\\mathcal{C}}^{#1}}\n'
             printf '\\newcommand\\indexof[1]{#1}\n'
             printf '\\newcommand\\isnormal[1]{#1}\n'
             printf '\\newcommand\\phinoIsFormation[1]{#1 \\text{ is a formation}}\n'

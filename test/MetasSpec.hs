@@ -3,9 +3,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Metas module that collects the meta-variables a term was
-written with and drops the index from the ones that stand alone in their kind.
--}
 module MetasSpec where
 
 import AST

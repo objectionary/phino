@@ -25,9 +25,6 @@ throwsWith :: IO a -> String -> IO ()
 throwsWith action needle =
   action `shouldThrow` (\exc -> needle `isInfixOf` show (exc :: SomeException))
 
--- 'Term' carries no 'Show'/'Eq' instance, so a term coming back from
--- 'buildTerm' is checked by pattern-matching out the constructor expected and
--- comparing the payload, which does have both.
 expectExpression :: Term -> Expression -> Expectation
 expectExpression (TeExpression got) want = got `shouldBe` want
 expectExpression _ _ = fail "expected a TeExpression term"
@@ -83,6 +80,12 @@ spec = describe "Functions" $ do
     it "extracts bytes from a data-object expression" $ do
       term <- buildTerm "dataize" [ArgExpression (DataNumber (numToBts 5))] substEmpty
       expectBytes term (numToBts 5)
+    it "extracts bytes from a bare formation of data" $ do
+      term <- buildTerm "dataize" [ArgExpression (ExFormation [BiDelta (numToBts 1)])] substEmpty
+      expectBytes term (numToBts 1)
+    it "extracts bytes from an application of Φ.bytes" $ do
+      term <- buildTerm "dataize" [ArgExpression (ExApplication (ExDispatch ExRoot (AtLabel "bytes")) (ArTau AtPhi (ExFormation [BiDelta (numToBts 1)])))] substEmpty
+      expectBytes term (numToBts 1)
 
   describe "size" $
     it "counts the bindings bound to a meta" $ do
@@ -109,10 +112,22 @@ spec = describe "Functions" $ do
         , \term -> expectExpression term (DataString (strToBts "foobar"))
         )
       ,
+        ( "concat joins the bytes of a number that is not UTF-8"
+        , "concat"
+        , [ArgExpression (DataString (strToBts "a")), ArgExpression (DataNumber (numToBts 0.5))]
+        , \term -> expectExpression term (DataString (BtMany ["61", "3F", "E0", "00", "00", "00", "00", "00", "00"]))
+        )
+      ,
         ( "sed replaces every occurrence with the 'g' flag"
         , "sed"
         , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/l/L/g"))]
         , \term -> expectExpression term (DataString (strToBts "heLLo"))
+        )
+      ,
+        ( "sed keeps every character above U+00FF"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "a ф 𝜑")), ArgExpression (DataString (strToBts "s/a/b/g"))]
+        , \term -> expectExpression term (DataString (strToBts "b ф 𝜑"))
         )
       ,
         ( "sed replaces only the first occurrence without the 'g' flag"
@@ -172,6 +187,18 @@ spec = describe "Functions" $ do
         , [ArgExpression (DataNumber (numToBts 2)), ArgExpression (DataNumber (numToBts 3))]
         , \term -> expectExpression term (DataNumber (numToBts 5))
         )
+      ,
+        ( "sum keeps a single numeric argument as is"
+        , "sum"
+        , [ArgExpression (DataNumber (numToBts 7))]
+        , \term -> expectExpression term (DataNumber (numToBts 7))
+        )
+      ,
+        ( "sum of operands that cancel out is still zero"
+        , "sum"
+        , [ArgExpression (DataNumber (numToBts 4)), ArgExpression (DataNumber (numToBts (-4)))]
+        , \term -> expectExpression term (DataNumber (numToBts 0))
+        )
       ]
 
     failureCases :: [(String, String, [ExtraArgument], String)]
@@ -211,6 +238,7 @@ spec = describe "Functions" $ do
         , [ArgExpression (DataNumber (BtMany ["68", "65", "6C", "6C", "6F"]))]
         , "Expected 8 bytes for a number, got 5"
         )
+      , ("sum fails on an empty argument list", "sum", [], "sum() requires at least 1 argument")
       ,
         ( "an unsupported function name fails with a descriptive message"
         , "no-such-function"

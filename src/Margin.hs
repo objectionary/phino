@@ -25,25 +25,23 @@ instance WithMargin EXPRESSION where
   withMargin' _ ex@EX_FORMATION{binding = BI_EMPTY{}} = ex
   withMargin' (extra, margin) ex@EX_FORMATION{tab = tab@(TAB indent), ..} =
     let single = toSingleLine ex
-        ex' = EX_FORMATION lsb EOL tab (withMargin' (indent, margin) binding) EOL tab' rsb
+        ex' = EX_FORMATION lsb EOL tab (withMargin' (2 * indent, margin) binding) EOL tab' rsb
      in if lengthOf single + extra <= margin then single else ex'
   withMargin' _ num@EX_NUMBER{} = num
   withMargin' _ str@EX_STRING{} = str
   withMargin' cfg EX_DISPATCH{..} = EX_DISPATCH (withMargin' cfg expr) space attr
   withMargin' cfg EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (withMargin' cfg expr)
   withMargin' _ EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSingleLine expr)
-  -- The asset of a one-binding sugar is followed by a colon and the attribute,
-  -- so it gets that much less of the margin to be laid out in
   withMargin' cfg@(extra, margin) ex@EX_SINGLE{pair = PA_TAU{..}, ..} =
     let single = toSingleLine ex
         asset = withMargin' (extra, margin - lengthOf attr - 1) expr
-     in if lengthOf single + extra <= margin then single else EX_SINGLE (PA_TAU attr arrow asset) (withMargin' cfg formation)
+     in if lengthOf single + extra <= margin then single else EX_SINGLE (PA_TAU attr arrow asset) space (withMargin' cfg formation)
   withMargin' cfg@(extra, margin) ex@EX_APPLICATION{tab = tab@(TAB indt), ..} =
     let single = toSingleLine ex
         main = withMargin' cfg expr
         singleMain = toSingleLine main
-        extra' = T.length (last (T.lines (render main))) + 4 -- 2 spaces + 2 braces around argument
-        arg' = withMargin' (indt, margin) argument
+        extra' = T.length (last (T.lines (render main))) + 4
+        arg' = withMargin' (2 * indt, margin) argument
         singleArg = toSingleLine arg'
      in if
           | lengthOf single + extra <= margin -> single
@@ -82,17 +80,17 @@ instance WithMargin BINDINGS where
 instance WithMargin PAIR where
   withMargin' (extra, margin) pa@PA_TAU{..} =
     let single = toSingleLine pa
-        extra' = extra + lengthOf attr + lengthOf arrow + 2 -- indent + attr + arrow + 2 spaces
+        extra' = extra + lengthOf attr + lengthOf arrow + 2
         pa' = PA_TAU attr arrow (withMargin' (extra', margin) expr)
      in if lengthOf single + extra <= margin then single else pa'
   withMargin' (extra, margin) pa@PA_ALPHA{..} =
     let single = toSingleLine pa
-        extra' = extra + lengthOf alpha + lengthOf arrow + 2 -- indent + alpha + arrow + 2 spaces
+        extra' = extra + lengthOf alpha + lengthOf arrow + 2
         pa' = PA_ALPHA alpha arrow (withMargin' (extra', margin) expr)
      in if lengthOf single + extra <= margin then single else pa'
   withMargin' (extra, margin) pa@PA_FORMATION{..} =
     let single = toSingleLine pa
-        extra' = extra + lengthOf attr + lengthOf voids + lengthOf arrow + 4 -- indent + 2 braces + 2 spaces + voids
+        extra' = extra + lengthOf attr + lengthOf voids + lengthOf arrow + 4
         pa' = PA_FORMATION attr voids arrow (withMargin' (extra', margin) expr)
      in if lengthOf single + extra <= margin then single else pa'
   withMargin' _ pa = pa

@@ -8,8 +8,15 @@ name: titles
     - cron: '0 * * * *'
   issues:
     types: [opened]
+permissions: read-all
+concurrency:
+  group: titles-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   titles:
+    permissions:
+      issues: write
     timeout-minutes: 15
     runs-on: ubuntu-24.04
     steps:
@@ -28,3 +35,14 @@ jobs:
           quiet: true
           strip-characters: '"'
           style: offense
+  telegram:
+    needs: titles
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    permissions:
+      actions: read
+    steps:
+      - uses: yegor256/terald-action@0.1.0
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat: ${{ secrets.TELEGRAM_CHAT }}

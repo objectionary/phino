@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The term at 'Φ.e' reads 'φ' of the object 'Φ.same' makes, and that 'φ'
+# reads its sibling 'm' twice. Before #1727 the head pass of 𝕄 copied 'm'
+# into both reads before anything fired, so the deep walk later fired
+# 'L_dataized' again for each copy, four firings in all. Now, under '--deep',
+# the head pass first fires the reads of siblings in the binding it
+# dispatches into, the way the deep walk fires them, and writes their answers
+# back, so 'm' fires once and both reads take its answer: two firings, as
+# many as the same object costs without the '.φ'.
+symbolic: |
+  - λ: L_bytes_eq
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.b
+    𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_dataized
+    dataize:
+      𝛿1: $.target
+    𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.e'
+deep: true
+partial: true
+acyclic: plausible
+input: >
+  ⟦ bytes(φ) ↦ ⟦ eq(ρ, b) ↦ L_bytes_eq:λ ⟧,
+    dataized(target) ↦ L_dataized:λ,
+    same(left) ↦ ⟦ φ ↦ m.eq( b ↦ m ), m ↦ Φ.dataized( target ↦ left ) ⟧,
+    e ↦ Φ.same( left ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ).φ ⟧
+result: '⟦ φ ↦ 𝜎3:λ, eq(b) ↦ L_bytes_eq:λ ⟧'
+protocol: |
+  𝕄(Φ.e)
+    𝔼(L_dataized)  # 𝕄(Φ.e)
+      formation(⟦ φ ↦ 𝜎1:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵0)
+      𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.target)
+      𝑛.1.1 := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_bytes_eq)  # 𝕄(Φ.e)
+      formation(⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵1)
+      𝛿1.2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)
+      formation(⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵2)
+      𝛿2.2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.b)
+      𝑛.2.1 := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝑛
+      𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, eq(b) ↦ L_bytes_eq:λ ⟧  # 𝕄(𝑛.2.1)

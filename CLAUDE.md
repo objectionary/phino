@@ -17,8 +17,10 @@ Never commit directly to `master`. Always branch from an up-to-date `master`.
 
 ```bash
 make test          # cabal test --ghc-options=-Werror
+make compiled      # phino compile + the whole suite on the compiled rules
 make hlint         # hlint src app test
 make fourmolu      # --mode check src app test (2-space indent, leading commas)
+make ruff          # ruff check + ruff format --check over the whole tree
 make coverage      # cabal test --enable-coverage + hpc-codecov (threshold 65%)
 make bench         # prepare resources + cabal bench --enable-benchmarks
 make binary        # build stripped release binary into dist-release/phino[.exe]
@@ -67,10 +69,10 @@ sibling, on both sides, under "Scaling".
 components: `library` (`src/`), executable `phino` (`app/`), test suite
 `spec` (`test/`), benchmark suite `bench` (`benchmark/`).
 
-### Six CLI commands
+### Seven CLI commands
 
-`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` — all wired in
-`src/CLI/Runners.hs`, parsed in `src/CLI/Parsers.hs`.
+`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` | `compile` —
+all wired in `src/CLI/Runners.hs`, parsed in `src/CLI/Parsers.hs`.
 
 ### Two-phase rendering pipeline
 
@@ -93,9 +95,60 @@ conditions, and `where` extensions. Every judgment keeps its rules in its own
 directory — `normalize/`, `morphing/`, `dataization/`, `contextualization/` —
 one rule per file, named after the rule, and the whole directory is compiled in
 via `embedDir` of `file-embed`.
+`Contextualize.hs` runs the rules of `contextualization/` as 𝒞, the way the
+engines run the other three sets, and fails on a term no rule or more than one
+rule matches (#1618).
 Matching (`Matcher.hs`) produces `[Subst]` — a list of
 `Map Text MetaValue` — and conditions filter that list. `Builder.hs` then
 applies a substitution to a result template.
+
+### Compiled rules
+
+`phino compile` (#1617) writes `compiled/generated/Compiled.hs`, which git
+ignores: `Emit.hs` turns every rule of normalization, the built-in ones and
+those of `--rule`, into a list comprehension over the term it may match as a
+whole, 𝒞 into one function with an equation per rule, built on `concluded` of
+`Contextualize.hs`, and every rule of 𝕄 and 𝔻 into a list comprehension over
+the term and the universe (#1628). What runs the rules is an `Engine`
+(`Engine.hs`): the steps of normalization, the test of which of them match a
+term, a step per compiled rule keyed by the `show` text of the rule, the
+normal-form test, 𝒞, and the rules of 𝕄 and 𝔻. `yaml` interprets the rules;
+the module `Compiled` holds the other one, and the Cabal flag `compiled` picks
+its source folder, `compiled/stub` (where `compiled = Nothing`) or
+`compiled/generated`. Only the CLI (`engine` in `CLI/Helpers.hs`) and the
+specs reach for `Compiled`; the library gets the engine through `_engine` of
+`ReduceContext`, `_normal` and `_matching` of `RewriteContext`, `_normal` of
+`RuleContext`, and `building`, which routes `contextualize` to the engine.
+
+A rewriting step is a `Step` of `Rule.hs`, a name and a function. `interpreted`
+of `Rewriter.hs` wraps the matcher and the replacer; `direct` wraps a compiled
+function, finds the places it matches at with `sites` of `Matcher.hs` in the
+order the deep matcher finds them, and hands them to the same
+`replaceExpression`, so the chain of steps is the same with either engine.
+`rewrite'` tries only the steps `_matching` names, asked again only once a step
+changed the term. The compiled engine finds them all in one walk over the term
+(`hits` of `Matcher.hs`) and builds its normal-form test on the same walk; the
+interpreted engine and the `rewrite` command name every step (`every` of
+`Rewriter.hs`), so each rule is tried as before (#1643). A rule the generated
+code could not run that way is refused with the reason: `having`, a `where`
+function other than `contextualize` and `named`, `matches`, `part-of`, a rule
+of the fast shape (`fast` of `Rewriter.hs`), and a pattern applying Φ to a ρ. A
+compiled engine carries the texts of the built-in rules it was made from and
+the CLI refuses it once they changed (`fresh`). `CompiledSpec.hs` runs both
+engines over random terms and compares the chains, the normal-form test and 𝒞,
+and the chains 𝕄 and 𝔻 make of an object of random programs; it also checks
+that the compiled test of which rules match never misses one.
+
+A rule of 𝕄 or 𝔻 is an `Inference` of `Inference.hs`: matched against a term
+and a universe it answers the `Premises` it runs beside its spine, in order —
+`Morphs`, `Evaluates` or `Contextualizes`, each a function of the answer it is
+handed — ending in a `Conclusion`: `Answered`, or `Onward` in a `Way`
+(`Taken`, `Normalized`, `Named`, `Staged`) the judgment is asked again in.
+`morphingSpine` and `dataizationSpine` read the spine off a rule for both
+engines; `morphingOf` and `dataizationOf` interpret a rule, `direct` wraps a
+compiled one, and `inferred` and `onward` of `Morph.hs` run either, so the
+chain is the same with either engine. A rule running anything else beside its
+spine, or concluding with no `morph` or `dataize` premise, is refused.
 
 ### λ functions live outside the binary
 
@@ -104,17 +157,24 @@ the `--symbolic` option names, one entry per function: a `λ` key, a regular
 expression over λ names; the operands brought down to data through 𝔻 under
 `dataize`, each binding a bytes meta `𝛿1`; the operands reduced to a normal
 form through 𝕄 under `morph`, each binding an expression meta `𝑛1`; and the
-answer under `𝑛`. Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
+answer under `𝑛`. No two keys may match one λ name, whether or not either
+spells it: `Language.hs` reads each key as an automaton and looks for a name
+both accept, refusing a key beyond a regular language, such as a back
+reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
-for a value nobody worked out, minted fresh per firing and counted in the state
-`State` of `Deps.hs`. Dataizing a symbol answers a fixed 42, so a `𝛿` always
+for a value nobody worked out, minted fresh per firing and counted by `_minted`
+of `ReduceContext`. The count is an `IORef`, as the tally of `--max-firings`
+is, since a parked frame hands back the state it started from, and a count kept
+there would hand out again the symbols its protocol records already spell
+(#1738). `started` of `CLI/Helpers.hs` sets it past the symbols the program
+carries. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
-parks on, and the protocol records it as `?(name)` either way. What fired is
-written as a tree by `--protocol`
+parks on, and the protocol records it as `unanswered(name)` either way. What
+fired is written as a tree by `--protocol`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
 the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a
 firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment of a
@@ -175,6 +235,10 @@ is also a line of the protocol, `formation(…)`, and what its φ body fires
 stands under it; a cut is one too, `looped(…)` (`EvLooped`), written by
 `enter` where the refused frame would have opened, carrying the formation its
 ancestor entered (#1434) and naming the mode that cut it.
+Three records say why a firing gave no answer (#1524): `stuck(…)` closes a
+firing that got stuck, `stall(…)` stands under one the memo answered with a
+kept stall, and `starved(…)` is written by `deeper` where the step budget runs
+out, with the site it stood at rather than its term (#1531).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the
@@ -182,6 +246,16 @@ firings of the whole run (`Tally` and `charged` in `Morph.hs`, charged by
 `symbol` in `Evaluate.hs`), off unless given. Its count is an `IORef` in the
 context rather than a field of `State`, since a parked frame hands back the
 state it started from and would refund the firings made inside it (#1472).
+`--max-seconds` bounds the time of the whole run the same way (`Deadline` and
+`clocked` in `Morph.hs`, off unless given), read by `deeper` at every step and
+by `charged` at every firing, since a run may spend its time rewriting terms
+that fire nothing (#1619), and by `enter` while it compares formations, since
+under `plausible` one comparison by `within` may outlast the whole run, so a
+timer cuts that comparison where it stands (#1622). The first step, firing or
+comparison after the deadline writes `timeout(…)` (`EvTimeout`) and throws
+`OutOfTime`, which no frame parks, so the run fails with or without
+`--partial` and a caller that cannot wait gets a closed protocol ending in the
+timeout instead of killing the process (#1607).
 
 Every use of a binding copies the term bound to it, so one formation is fired
 as many times as the program reads it, and every firing mints symbols of its
@@ -191,10 +265,32 @@ formation it fired (`Memo`, `recalled` and `retained` in `Morph.hs`, made by
 `Evaluate.hs`), and a later firing of the same formation, ρ and all, takes
 the answer with the symbols the first one minted: it is charged nothing and
 reduces nothing, and it is written to the protocol as a firing at its own
-site carrying that answer and no operand line (#1476). The store is an
+site carrying that answer and no operand line (#1476). The memo keeps the
+answer by the firing too, the λ name with the data, the symbols and the normal
+forms its operands came down to (`Firing`, `remembered` and `remember` in
+`Morph.hs`), since an entry answers from its operands alone: a firing of
+another formation, such as one whose operand reads another object holding the
+same datum, brings its operands down, finds the firing answered and takes
+that answer, minting nothing, so one value never gets two names (#1661). A
+symbol is kept as the symbol it is, not as the datum every symbol
+manufactures, so two firings over two symbols stay two. Such a firing is
+charged to `--max-firings` like one made, since the tally charges a firing as
+it starts bringing its operands down, the only place a recursion widening
+inside its operands can be cut, and a recalled answer counts as nothing new
+to a stall. The store is an
 `IORef` in the context for the reason the tally is. A firing a cut stopped on
 its way to an answer keeps the cut (`Looped` of `Kept`), and a later firing of
-the same formation is cut at its own site without reducing anything (#1480).
+the same formation is cut at its own site without reducing anything (#1480). A
+firing that got stuck keeps the λ function it got stuck on (`Stalled` of
+`Kept`), and a later firing of the same formation gets stuck at its own site
+the same way (#1493), but only while the memo has answered nothing since the
+stuck firing began, as the count of answers kept beside the stall tells: an
+operand that could not be brought down may come down once something new was
+answered, inside the stuck firing or after it (#1495, #1507). A firing inside
+which the step budget ran out keeps its stall beside the steps it had spent
+(`starved` in `Morph.hs`), and the memo tells it only to a firing that has
+spent at least as many, since the same formation fired at a shallower site may
+bring the operand down (#1514, #1521).
 
 Beside the answers, the memo keeps the bindings of the world the `--deep`
 walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of
@@ -204,7 +300,91 @@ walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of
 the first copy it meets and leaves it as written in every later one, except
 the voids a copy filled, which belong to that copy alone (#1480), and a body
 reading ξ outside the formations nested in it, which reads the copy it stands
-in and is walked in every copy (`closed` of `deepened`, #1485).
+in and is walked in every copy (`closed` in `Morph.hs`, #1485).
+
+The walk writes back what it made, so one λ fires once per object and not
+once per read (#1720). A `Frame` of `deepened` holds the world, the formation
+the walk stands in and the binding it walks: the formation is a place in the
+world when the walk reached it from the locator, and a store of its own when
+it is a copy or a formation nested in a term (`home`). What a binding comes to
+replaces the binding there (`bindings`), and the answer of a read the walk
+fired through Φ or ξ replaces the binding it read (`noted` and `address`),
+unless that binding holds the site the walk stands at, which it replaces
+anyway once it is done. Every step fires against the world as it stands, as
+the universe and as `_universe`, so a later read of the same attribute, by the
+walk or by a rule, finds the answer and fires nothing. The answer of a read
+through ξ is worked out against the object minus the attribute walked, the
+way #967 reads a dot, and lands in the whole object.
+
+Under `--deep` the head pass of 𝕄 writes back too (#1727). The normalize
+premise of a rule like `md` or `mphi` reads an attribute of a formation, and
+`dot` would copy every sibling that attribute reads into each read before
+anything fires, so each copy would fire on its own. Before the premise runs,
+`prewalked` fires the reads of siblings through ξ in that binding, the way the
+walk fires them (`sibling` of `deepened`), and writes their answers back into
+the formation, so every copy `dot` makes carries the answer. It skips a read
+of ρ, which the walk never writes back, and fires nothing else in the
+binding: the head pass reduces the rest itself, and the walk keeps only what
+a λ answered, so a part it settled to anything else would be reduced twice.
+The reads spend the step budget from the depth the head pass began at, the
+way the walk at the end of 𝕄 does, and not from the step the pass stands at:
+every step of the pass is one deeper, so a read fired after a few of them
+would start with the budget nearly gone (#1731).
+
+The walk does not enter a copy over a bare symbol (#1729). Before a step
+walks a formation (`deferrable` of `deepened`), it checks that the formation
+is `boxed`, has no void, has a φ written as code rather than as a formation,
+and is not the target of a dispatch to an attribute it has. If so, it reads
+every argument written as a dispatch, other than ρ and φ, with `settled`
+under a context that cannot fire and writes nothing (`resolved` and
+`reading`: an empty table, no memo, no tally, no cut). If an argument comes
+to a bare `⟦ λ ⤍ 𝜎k ⟧`, the step answers the formation with a fresh bare
+symbol and writes `deferred(…)` (`EvDeferred` of `Deps.hs`), carrying the
+copy with its arguments read. The `join` of `Lambdas.hs` pairs such a bare
+symbol with the symbol the φ chain of the other branch ends in, and answers
+a bare fresh symbol, dropping the methods.
+
+The record also carries the copy as a call of the object of the world it was
+made of (#1732): `called` of `deepened` applies the locator `origin` finds to
+the arguments filling the voids of that object. `origin` follows the ρ of the
+copy, which is Φ when absent, a name with its applications erased (`erased`,
+shared with `synonym`), or a formation, whose own origin it finds first. Of
+the formations declared there whose attributes cover those of the copy,
+`chosen` keeps the one whose voids the copy fills the most and then the one
+sharing the most bindings, so a declaration wins over a copy the walk wrote
+into the world. With no such object, or a tie, the record has no call. The
+text protocol writes the call in place of the copy; the markup writes it as
+`of` and `<with>`, an `<attr>` per argument, `?` for one that is no bare
+symbol, and the copy in `<e>`.
+
+`--jobs` has the walk take the bindings of the formation it starts at side
+by side (`spread` of `deepened`, over `pooled` of `Pool.hs`), each a root of
+its own: it starts from the state the spine left, with a world, a memo, a
+tally, a count of symbols starting where the spine stopped minting, and a
+source of fresh names of its own (`tausOf` in `Tau.hs`, names
+like `a🌵4-0` that carry the binding), and its protocol records are kept
+aside. One binding never sees what another wrote back. They are
+gathered in the order of the bindings, and gathering raises the symbols a
+binding minted by what the bindings before it minted (`lifted` in `AST.hs`,
+`renumbered` in `Deps.hs`), so the answer and the protocol do not depend on
+the order the workers finished in (#1534). The executable is built
+`-threaded` and the run sets as many capabilities as it has jobs.
+
+A cut at the φ of a copy the walk placed answers the copy, the way a deferred
+one is answered (#1735). The firing the walk asks for writes no cut of its
+own: `fired` asks `admitted`, which is `enter` without the record and the
+throw, and throws `Refused` with the mode, the formation the ancestor entered
+and the state. The step that fired catches it (`cut` of `deepened`). If the
+step walks the φ of a formation at a place of the walk (its `standing` is
+given) and the formation is `copied`, the shape `deferrable` asks for too, the
+step writes `looped(…)` with a fresh symbol and the call `called` makes of the
+copy. It then throws `Severed` with the bare symbol, which the step of the copy
+catches around its walk and answers with. Any other step writes the plain
+record and answers nothing, as `refused` does for the second firing of
+`fired`. Under `--jobs` a worker hands `Severed` to `gathered`, which raises
+its symbols as it raises an answer. The markup writes the formation of a cut
+in `<e>`, and for an answered one `of` and `<with>` as for `deferred`, where
+an argument whose φ chain ends in a symbol is spelled as that symbol.
 
 ### Test pattern: YAML packs
 

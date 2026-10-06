@@ -12,6 +12,11 @@ name: stack
       - master
 env:
   STACK_ROOT: ${{ github.workspace }}/.stack-root
+permissions: read-all
+concurrency:
+  group: stack-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   stack:
     strategy:
@@ -27,12 +32,14 @@ jobs:
         with:
           ghc-version: ${{ matrix.ghc }}
           enable-stack: true
+          stack-no-global: true
           stack-version: '3.5.1'
       - uses: actions/cache@v6
         with:
           path: |
             ${{ env.STACK_ROOT }}
             .stack-work
+            ~/AppData/Local/Programs/stack
           key: ${{ runner.os }}-ghc${{ matrix.ghc }}-stack-${{ hashFiles('**/stack.yaml.lock') }}
           restore-keys: |
             ${{ runner.os }}-ghc${{ matrix.ghc }}-stack-

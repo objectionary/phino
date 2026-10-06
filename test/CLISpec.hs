@@ -17,15 +17,17 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
 import Files (allPathsIn)
-import Fixtures (explainPack, lambdasFile, loopingLambdas, readUtf8, withLambdasOf)
+import Fixtures (explainPack, lambdasFile, loopingLambdas, readProtocol, readUtf8, withLambdasOf)
 import GHC.IO.Handle
 import Paths_phino (version)
-import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, makeAbsolute, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime, withCurrentDirectory)
 import System.Exit (ExitCode (ExitFailure))
 import System.FilePath ((</>))
 import System.IO
+import System.Timeout (timeout)
 import Test.Hspec
 import Text.Printf (printf)
+import Text.XML qualified as X
 
 withStdin :: String -> IO a -> IO a
 withStdin input action =
@@ -84,9 +86,6 @@ withTempFileContent pattern content action =
     hClose h
     action path
 
--- A fresh, uniquely-named directory under the system temp directory, removed
--- afterwards even when the action throws (an assertion failure included), so a
--- red run never leaves it behind for the next run to depend on.
 withTempDirectory :: String -> (FilePath -> IO a) -> IO a
 withTempDirectory prefix action = do
   tmp <- getTemporaryDirectory
@@ -114,9 +113,6 @@ testCLI' args outputs exit = do
 testCLISucceeded :: [String] -> [String] -> Expectation
 testCLISucceeded args outputs = testCLI' args outputs (Right ())
 
--- phino implements no λ function of its own, so a case that needs one to
--- answer hands the fixture file to the command as '--symbolic' (see
--- 'Fixtures').
 symbolic :: String
 symbolic = "--symbolic=" ++ lambdasFile
 
@@ -230,8 +226,30 @@ spec = do
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
         , ["⟦ x(y) ↦ 42:a ⟧"]
         )
+      ,
+        ( "prints a lone void as the term without the rho would be printed"
+        , "⟦ a ↦ ⟦ x ↦ ⟦ ρ ↦ ξ, y ↦ ∅ ⟧ ⟧ ⟧"
+        , ["rewrite", "--sweet", "--hide-rho"]
+        , ["⟦ x(y) ↦ ⟦⟧ ⟧:a"]
+        )
+      ,
+        ( "indents the body as the term without the rho would be indented"
+        , "⟦ a ↦ ⟦ x ↦ ⟦ ρ ↦ ∅, b ↦ ⟦ c ↦ ∅, ρ ↦ ∅ ⟧ ⟧ ⟧ ⟧"
+        , ["rewrite", "--sweet", "--hide-rho", "--margin=3"]
+        , ["⟦\n  b(c) ↦ ⟦⟧\n⟧:x:a"]
+        )
+      ,
+        ( "prints positional arguments as such once the rho is gone"
+        , "⟦ a ↦ ξ.b(ρ ↦ ξ, α0 ↦ ξ.c, α1 ↦ ξ.d) ⟧"
+        , ["rewrite", "--flat", "--sweet", "--hide-rho"]
+        , ["b( c, d ):a"]
+        )
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
+
+  it "keeps a data literal sugared when it is applied to more arguments" $
+    withStdin "⟦ i ↦ 42(z ↦ ξ.f), s ↦ \"Hello\"(z ↦ ξ.f) ⟧" $
+      testCLISucceeded ["rewrite", "--sweet", "--flat"] ["⟦ i ↦ 42( z ↦ f ), s ↦ \"Hello\"( z ↦ f ) ⟧"]
 
   it "prints the one-binding sugar after inline voids with --sweet" $
     withStdin "[[ x(y) -> [[ a -> 42 ]] ]]" $
@@ -248,6 +266,16 @@ spec = do
           it ("--log-level=" ++ flagValue) $
             withStdin "[[]]" $
               testCLISucceeded ["rewrite", "--log-level=" ++ flagValue] ["⟧"]
+      )
+
+  describe "--log-level prints nothing below its level" $
+    forM_
+      [("NONE", ["[DEBUG]", "[INFO]"]), ("ERROR", ["[DEBUG]", "[INFO]"]), ("INFO", ["[DEBUG]"])]
+      ( \(level, hidden) ->
+          it ("--log-level=" ++ level) $
+            withStdin "[[]]" $ do
+              (out, _) <- withStdout (try (runCLI ["rewrite", "--log-level=" ++ level]) :: IO (Either ExitCode ()))
+              forM_ hidden (out `shouldNotContain`)
       )
 
   it "fails on an unrecognized --log-level value" $
@@ -315,6 +343,24 @@ spec = do
           , ["--update requires an input file"]
           )
         ,
+          ( "when --sequence is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--sequence", "--in-place", "input.phi"]
+          , ["--in-place and --sequence cannot be used together"]
+          )
+        ,
+          ( "when --focus is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--focus=Q.y", "--in-place", "input.phi"]
+          , ["--in-place and --focus cannot be used together"]
+          )
+        ,
+          ( "when --show is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--show=Q.y", "--in-place", "input.phi"]
+          , ["--in-place and --show cannot be used together"]
+          )
+        ,
           ( "when --update is used with --in-place"
           , "[[ ]]"
           , ["rewrite", "--update", "--in-place", "input.phi"]
@@ -335,11 +381,6 @@ spec = do
         ]
         (\(desc, input, args, expected) -> it desc (withStdin input (testCLIFailed args expected)))
 
-      -- Only assert the stable parts of the parse error: phino's envelope and
-      -- that megaparsec reports an 'unexpected' token. The exact line:column and
-      -- offending token depend on megaparsec's internal try/longest-match error
-      -- merging, which shifts between megaparsec releases (deps are unpinned), so
-      -- pinning them here makes the test brittle without testing anything extra.
       it "with wrong attribute and valid error message" $
         testCLIFailed
           ["rewrite", resource "with-$this-attribute.phi"]
@@ -387,6 +428,7 @@ spec = do
           , ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
           )
         , ("with --show overlapping --hide", ["rewrite", "--show=Q.x", "--hide=Q.x"], ["[ERROR]:", "The --show locator 'Φ.x' is also listed in --hide"])
+        , ("with --hide of an ancestor of --show", ["rewrite", "--show=Q.y.z", "--hide=Q.y"], ["[ERROR]:", "The --show locator 'Φ.y.z' lies inside the --hide locator 'Φ.y'"])
         , ("with --meet-popularity < 0", ["rewrite", "--meet-popularity=-1"], ["[ERROR]:", "--meet-popularity must be positive"])
         , ("with --meet-popularity > 100", ["rewrite", "--meet-popularity=102"], ["[ERROR]:", "--meet-popularity must be <= 100"])
         ,
@@ -456,6 +498,18 @@ spec = do
           doesFileExist (dir ++ "/00001.phi") `shouldReturn` True
           doesFileExist (dir ++ "/00003.phi") `shouldReturn` True
 
+    it "gives the saved steps the --canonize and --hide of the printed ones" $
+      withTempDirectory "phino-steps-filtered" $ \dir ->
+        withStdin "[[ m -> [[ x -> [[ L> Plus ]], y -> $.x ]].y, k -> [[ L> Minus ]] ]]" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--hide=Q.k", "--canonize", "--steps-dir=" ++ dir, "--flat"]
+            ["Fn1"]
+          files <- listDirectory dir
+          null files `shouldBe` False
+          saved <- mapM (\file -> readFile (dir ++ "/" ++ file)) files
+          concat saved `shouldNotContain` "Minus"
+          concat saved `shouldNotContain` "Plus"
+
     it "saves dataize steps to dir with --steps-dir" $
       withTempDirectory "phino-steps-dataize" $ \dir ->
         withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
@@ -465,10 +519,6 @@ spec = do
           doesDirectoryExist dir `shouldReturn` True
           files <- listDirectory dir
           let steps = sort files
-          -- The fix is about numbering, not about a specific rule set: the file
-          -- names must be distinct and contiguous from 00001, and there must be
-          -- more of them than a single normalization pass produces (this input
-          -- runs several normalizations, so a global counter yields more steps).
           steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
           length steps `shouldSatisfy` (> 18)
 
@@ -580,7 +630,7 @@ spec = do
               , "  |w| -> \\phiTerminal{\\xi},"
               , "  \\phiTerminal{\\rho} -> Q,"
               , "  @ -> 1,"
-              , "  |y| -> \"H$@^M\","
+              , "  |y| -> \"H\\char36{}\\char64{}\\char94{}M\","
               , "  L> |Fu\\char95{}nc|"
               , "]]{.}"
               , "\\end{phiquation}"
@@ -593,7 +643,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
           [ unlines
               [ "\\begin{phiquation*}"
-              , "[[ |x| -> 5 ]]{.}"
+              , "5 : |x|{.}"
               , "\\end{phiquation*}"
               ]
           ]
@@ -615,7 +665,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\phiExpression{foo} [[ |x| -> 5 ]]{.}"
+              , "\\phiExpression{foo} 5 : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -626,7 +676,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
           [ unlines
               [ "\\begin{phiquation}\n\\label{foo}"
-              , "[[ |x| -> 5 ]]{.}"
+              , "5 : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -646,9 +696,9 @@ spec = do
             ]
         )
         ( testCLISucceeded
-            ["rewrite", "--input=xmir", "--output=xmir", "--sweet"]
+            ["rewrite", "--input=xmir", "--output=xmir", "--sweet", "--flat"]
             [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            , "<listing>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;object&gt;&lt;o name=&quot;app&quot;&gt;&lt;o name=&quot;x&quot; base=&quot;Φ.number&quot;/&gt;&lt;/o&gt;&lt;/object&gt;</listing>"
+            , "<listing>Φ.number:x:app</listing>"
             ]
         )
 
@@ -733,11 +783,11 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "% === Step #1"
-              , "[[ |x| -> \"foo\" ]] \\leadsto_{\\nameref{r:first}}"
+              , "\"foo\" : |x| \\phiNormalize[\\nameref{r:first}]"
               , "% === Step #2, Rule 'first', 23t -> 26t"
-              , "  \\leadsto Q . |x| ( |y| -> \"foo\" ) \\leadsto_{\\nameref{r:second}}"
+              , "  \\phiNormalize Q . |x| ( |y| -> \"foo\" ) \\phiNormalize[\\nameref{r:second}]"
               , "% === Step #3, Rule 'second', 26t -> 23t"
-              , "  \\leadsto [[ |x| -> \"foo\" ]]{.}"
+              , "  \\phiNormalize \"foo\" : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -757,9 +807,9 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> \"foo\" ]] \\leadsto_{\\nameref{r:first}}"
-              , "  \\leadsto Q . |x| ( |y| -> \"foo\" ) \\leadsto_{\\nameref{r:second}}"
-              , "  \\leadsto [[ |x| -> \"foo\" ]]{.}"
+              , "\"foo\" : |x| \\phiNormalize[\\nameref{r:first}]"
+              , "  \\phiNormalize Q . |x| ( |y| -> \"foo\" ) \\phiNormalize[\\nameref{r:second}]"
+              , "  \\phiNormalize \"foo\" : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -770,12 +820,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> [[ D> |42-| ]] ) . |y| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\phinoMeet{foo:1}{ [[ |x| -> [[ D> |42-| ]], |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ |x| -> [[ D> |42-| ]] ]] . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |42-| ]] ]], \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto [[ D> |42-| ]]{.}"
+              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize \\phinoMeet{foo:1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize |42-| : D{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -786,12 +836,12 @@ spec = do
           ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> [[ D> |42-| ]] ) . |y| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto \\phinoMeet{1}{ [[ |x| -> [[ D> |42-| ]], |y| -> |x| ]] } . |y| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ |x| -> [[ D> |42-| ]] ]] . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |42-| ]] ]], \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto [[ D> |42-| ]] ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto [[ D> |42-| ]]{.}"
+              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize \\phinoMeet{1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize |42-| : D{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -802,9 +852,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> \\phinoMeet{1}{ [[ |t| -> 42 ]] } ]] ( |y| -> \\phinoAgain{1} ) ]] . |i| ]] \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |ex| -> [[ |x| -> [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] ]] . |i| ]] \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto [[ |ex| -> T ]]{.}"
+              , "[[ |y| -> ?, |k| -> \\phinoMeet{1}{ 42 : |t| } ]] ( |y| -> \\phinoAgain{1} ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+              , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -815,9 +865,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-popularity=70"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| ]] \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| ]] \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto [[ |ex| -> T ]]{.}"
+              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+              , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -828,9 +878,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |ex| -> [[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| ]] \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |ex| -> [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| ]] \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto [[ |ex| -> T ]]{.}"
+              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+              , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -841,9 +891,9 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> [[ |y| -> ?, |k| -> [[ |t| -> 42 ]] ]] ( |y| -> [[ |t| -> 42 ]] ) ]] . |i| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |x| -> [[ |y| -> [[ |t| -> 42 ]], |k| -> [[ |t| -> 42 ]] ]] ]] . |i| \\leadsto_{\\nameref{r:stop}}"
-              , "  \\leadsto T{.}"
+              , "[[ |y| -> ?, |k| -> 42 : |t| ]] ( |y| -> 42 : |t| ) : |x| . |i| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> 42 : |t|, |k| -> 42 : |t| ]] : |x| . |i| \\phiNormalize[\\nameref{r:stop}]"
+              , "  \\phiNormalize T{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -865,9 +915,9 @@ spec = do
           ["rewrite", "--normalize", "--flat", "--sequence", "--output=latex", "--sweet", "--max-depth=1", "--max-cycles=1"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ |y| -> |x| ]] . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\leadsto"
-              , "  \\leadsto \\dots"
+              , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize |x| : |y| . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\phiNormalize"
+              , "  \\phiNormalize \\dots"
               , "\\end{phiquation}"
               ]
           ]
@@ -893,7 +943,7 @@ spec = do
       withStdin "[[ app -> [[]] ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat"]
-          ["  <listing>[[ app -> [[]] ]]</listing>"]
+          ["  <listing>[[ app -&gt; [[]] ]]</listing>"]
 
     it "print expression in listing in XMIRs with --sequence" $
       withStdin "[[ x -> \"foo\" ]]" $
@@ -1047,6 +1097,18 @@ spec = do
           ["rewrite", "--sweet", "--flat", "--show=Q.org", "--hide=Q.org.eolang"]
           ["Φ.y:yegor256:org"]
 
+    it "fails on a --show locator that matches nothing" $
+      withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]" $
+        testCLIFailed
+          ["rewrite", "--flat", "--show=Q.zzz"]
+          ["[ERROR]:", "Can't find object by locator: 'Φ.zzz'"]
+
+    it "shows the whole program with --show=Q" $
+      withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]" $
+        testCLISucceeded
+          ["rewrite", "--flat", "--show=Q"]
+          ["⟦ a ↦ ⟦ b ↦ Φ, c ↦ Φ ⟧, d ↦ Φ ⟧"]
+
     it "prints in line with --flat" $
       withStdin "[[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
         testCLISucceeded
@@ -1078,9 +1140,6 @@ spec = do
               ]
           ]
 
-    -- 'matches' inside 'when' raises while dataizing a formation: the
-    -- substitution is still dropped (the policy #1079 questions), but the
-    -- reason surfaces in the debug log instead of vanishing
     it "reports a condition that raised while being evaluated" $
       withStdin "[[ x -> [[ y -> ∅ ]] ]]" $
         testCLISucceeded
@@ -1093,7 +1152,7 @@ spec = do
       withStdin "[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]" $
         testCLISucceeded
           ["rewrite", "--canonize", "--sweet", "--flat"]
-          ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Fn4 ⟧"]
+          ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Package ⟧"]
 
     it "rewrites by locator" $
       withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]" $
@@ -1110,9 +1169,40 @@ spec = do
           , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"
           ]
 
+    it "finishes under --depth-sensitive when the only match left would not change the term" $
+      withTempFileContent "phino-fixpoint.yaml" "name: fix\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ x -> Q, !B1 ]]'\n" $ \fix ->
+        withStdin "[[ x -> $ ]]" $
+          testCLISucceeded ["rewrite", "--rule=" ++ fix, "--max-depth=1", "--depth-sensitive", "--flat"] ["⟦ x ↦ Φ ⟧"]
+
+    it "keeps the rewritten expression when the --breakpoint rule fired" $
+      withStdin "⟦ a ↦ ⟦ b ↦ Φ ⟧.b ⟧" $
+        testCLISucceeded
+          ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
+          ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
+
+  describe "morph --focus under --locator" $ do
+    it "finds the same object for the steps and for the answer" $
+      withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $ do
+        (out, _) <- withStdout (runCLI ["morph", "--locator=Q.t", "--focus=Q.a", "--flat", "--sequence"])
+        filter (not . null) (lines out) `shouldSatisfy` all (== "⟦ Δ ⤍ 02- ⟧")
+    it "prints the answer when --focus names the object at --locator" $
+      withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" $
+        testCLISucceeded ["morph", "--locator=Q.t", "--focus=Q.t", "--flat", "--sequence"] ["⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"]
+    it "fails on a --focus it cannot find before it prints any step" $
+      withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" $ do
+        (out, _) <- withStdout (try (runCLI ["morph", "--locator=Q.t", "--focus=Q.nope", "--flat", "--sequence"]) :: IO (Either ExitCode ()))
+        out `shouldNotContain` "⟦ t ↦"
+
+  it "fails on a --hide locator that matches nothing, as --show does" $
+    withStdin "[[ x -> Q.y ]]" $
+      testCLIFailed ["rewrite", "--hide=Q.nope"] ["Can't find object by locator: 'Φ.nope'"]
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
+
+    it "names every block of a --symbolic entry in its help" $
+      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"rewrite\"", "\"symbolize\"", "\"join\""]
 
     it "dataizes simple expression" $
       withStdin "[[ D> 01- ]]" $
@@ -1130,9 +1220,6 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLIFailed ["dataize", "--max-steps=-1"] ["--max-steps must be positive"]
 
-    -- The 𝕄/𝔻 recursion used to be unbounded, so a λ function answering with a
-    -- firing of itself kept morphing forever and no option could stop it
-    -- (#1052)
     it "fails on --max-steps instead of dataizing forever" $
       loopingLambdas $ \endless ->
         withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
@@ -1140,8 +1227,6 @@ spec = do
             ["dataize", "--symbolic=" ++ endless, "--max-steps=40"]
             ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
-    -- Under '--partial' the same term does not fail: the spent budget is a
-    -- stuck site too, and the run ends on the residual the spine reached (#1078)
     it "parks --max-steps on a residual with --partial" $
       loopingLambdas $ \endless ->
         withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
@@ -1149,8 +1234,6 @@ spec = do
             ["dataize", "--symbolic=" ++ endless, "--max-steps=40", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ L_loop ⟧"]
 
-    -- The firing budget counts every firing of the run, so a recursion that
-    -- stays well inside '--max-steps' is still stopped by it (#1472)
     it "fails on --max-firings before --max-steps is spent" $
       loopingLambdas $ \endless ->
         withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
@@ -1158,11 +1241,6 @@ spec = do
             ["dataize", "--symbolic=" ++ endless, "--max-steps=400", "--max-firings=5"]
             ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=5"]
 
-    -- '--acyclic' used to be the 'morph' command's alone, so a program coming
-    -- back to a term through 𝔻 rather than 𝕄 — a body dispatching the very
-    -- object it stands in, which 𝕄 stops at a formation of every round and
-    -- only 𝔻 walks round — spent the whole budget and failed on the limit
-    -- (#1290)
     describe "--acyclic=proven" $ do
       let circling = "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧"
       it "spends the whole budget and fails on the limit without the flag" $
@@ -1171,28 +1249,18 @@ spec = do
             ["dataize", "--locator=Q.t", "--max-steps=40"]
             ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
-      -- The budget here is far larger than the one the run above failed on, so
-      -- what ends this one is the cut and not the limit
       it "names the term it came back to with the flag" $
         withStdin circling $
           testCLIFailed
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-steps=4000"]
             ["[ERROR]: Reduction entered a formation it is already inside:"]
 
-      -- 𝔻 insists on bytes and a parked term carries none, so what a cut run
-      -- prints is the residual program, exactly as it prints one for a λ
-      -- function that cannot fire. The frame the repeat was reached from is
-      -- the one handed the call whose formation came back, so the call stands
-      -- in the residue as it was written (#1420)
       it "prints the residue and exits successfully with --partial" $
         withStdin circling $
           testCLISucceeded
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
-            ["⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( α0 ↦ ξ.x ) ⟧, t ↦ Φ.cyc( α0 ↦ ⟦⟧ ) ⟧"]
+            ["Φ.cyc( α0 ↦ ⟦⟧ )"]
 
-      -- A cut is written where the formation it refused would have opened,
-      -- carrying the term of the one that was entered, so the two lines read
-      -- as a pair and nobody has to infer the cut from the residue (#1434)
       it "writes the cut to the protocol where the formation would have opened" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1200,35 +1268,30 @@ spec = do
             testCLISucceeded
               ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ.t)"
                        , "  formation(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t)"
                        , "    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t), proven"
                        ]
 
-      -- The markup of a cut is one self-closing element, since nothing runs
-      -- under it, with the attributes a '<formation>' carries (#1434)
-      it "writes the cut to the XML protocol as a self-closing element" $
+      it "writes the cut to the XML protocol with the formation in an element of its own" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
           withStdin circling $
             testCLISucceeded
               ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                        , "<dataize at=\"Φ.t\">"
                        , "  <formation at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\">"
-                       , "    <looped by=\"dataize\" match=\"proven\" at=\"Φ.t\" term=\"⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧\"/>"
+                       , "    <looped by=\"dataize\" match=\"proven\" at=\"Φ.t\"><e>⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧</e></looped>"
                        , "  </formation>"
                        , "</dataize>"
                        ]
 
-      -- A formation entered again as it was is within itself, so the embedding
-      -- cuts every loop the renaming does, and the cut says which one made it
-      -- (#1451)
       it "writes a plausible cut to the protocol as plausible" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1236,11 +1299,9 @@ spec = do
             testCLISucceeded
               ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records `shouldContain` ["    looped(⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧)  # 𝔻(Φ.t), plausible"]
 
-      -- The mode is what the guard compares by, and the command has no
-      -- business guessing one for a user who asked for the guard (#1451)
       it "refuses the flag without a mode" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic"] ["The option `--acyclic` expects an argument"]
@@ -1249,8 +1310,6 @@ spec = do
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=sure"] ["The value 'sure' can't be used for '--acyclic' option"]
 
-      -- The guard reads nothing but the formations the frames above it have
-      -- entered, so a run that never enters one twice answers as it always did
       it "answers a terminating program the same way with the flag" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
           testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=proven"] ["01-02"]
@@ -1262,12 +1321,12 @@ spec = do
           [ intercalate
               "\n"
               [ "\\begin{phiquation}"
-              , "[[ @ -> [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| ]] \\leadsto_{\\nameref{r:contextualize}}"
-              , "  \\leadsto [[ |x| -> [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) ]] . |x| \\leadsto_{\\nameref{r:copy}}"
-              , "  \\leadsto [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] . |x| \\leadsto_{\\nameref{r:dot}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ |x| -> [[ D> |01-|, |y| -> [[]] ]] ]] ) \\leadsto_{\\nameref{r:skip}}"
-              , "  \\leadsto [[ D> |01-|, |y| -> [[]] ]] \\leadsto_{\\nameref{r:delta}}"
-              , "  \\leadsto |01-|{.}"
+              , "[[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| : @ \\phiContextualize[\\nameref{r:contextualize}]"
+              , "  \\phiContextualize [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] : |x| . |x| \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ D> |01-|, |y| -> [[]] ]] : |x| ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] \\phiDataize[\\nameref{r:delta}]"
+              , "  \\phiDataize |01-|{.}"
               , "\\end{phiquation}"
               , "01-"
               ]
@@ -1279,8 +1338,8 @@ spec = do
           ["dataize", "--sequence", "--quiet", "--output=latex", "--flat", "--sweet"]
           [ intercalate
               "\n"
-              [ "[[ D> |01-| ]] \\leadsto_{\\nameref{r:delta}}"
-              , "  \\leadsto |01-|{.}"
+              [ "|01-| : D \\phiDataize[\\nameref{r:delta}]"
+              , "  \\phiDataize |01-|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -1295,13 +1354,17 @@ spec = do
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\leadsto_{\\nameref{r:contextualize}}"]
+          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( 32 ), |c| -> 25 ]] } \\phiContextualize[\\nameref{r:contextualize}]"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
           ["\\phinoMeet{dataization:1}"]
+
+    it "canonizes the residue it prints with --partial" $
+      withStdin "[[ @ -> [[ L> Foo ]] ]]" $
+        testCLISucceeded ["dataize", "--partial", "--canonize", "--flat", "--sweet"] ["Fn1:λ"]
 
     it "dataizes with --locator" $
       withStdin "[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]" $
@@ -1311,9 +1374,6 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--quiet"] []
 
-    -- A formation spelled flat in the protocol can run for tens of thousands
-    -- of characters, so '--abridged' folds a long one down to what says what
-    -- it holds and fires, and cuts a long byte string to its head (#1465)
     describe "--abridged" $ do
       let wide = "⟦ t ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01-02 ⟧, anfang ↦ ξ.schluss, mitte ↦ ξ.anfang, schluss ↦ ξ.mitte, rand ↦ ξ.schluss ⟧ ⟧"
       it "folds a long formation in the text protocol" $
@@ -1321,15 +1381,60 @@ spec = do
           hClose stream
           withStdin wide $
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
-          records <- readUtf8 path
-          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 attrs ⟧)  # 𝔻(Φ.t)"]
+          records <- readProtocol path
+          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 ⟧)  # 𝔻(Φ.t)"]
       it "folds a long formation in the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
           withStdin wide $
             testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
-          records <- readUtf8 path
-          lines records `shouldContain` ["  <formation at=\"Φ.t\" term=\"⟦ φ ↦ 01-02:Δ, +4 attrs ⟧\">"]
+          records <- readProtocol path
+          lines records `shouldContain` ["  <formation at=\"Φ.t\" term=\"⟦ φ ↦ 01-02:Δ, +4 ⟧\">"]
+      forM_
+        [ ("textXXXXXX.txt", "    𝛿1.1 := 01-02-..(8b)..-0B-0C  # 𝔻(ξ.arg)")
+        , ("XMLXXXXXX.xml", "    <bind meta=\"𝛿1.1\">01-02-..(8b)..-0B-0C</bind>")
+        ]
+        ( \(template, line) ->
+            it ("cuts a long datum a firing came down to under --abridged-data, as " ++ line) $
+              withTempFile template $ \(path, stream) -> do
+                hClose stream
+                withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
+                  withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ Δ ⤍ 01-02-03-04-05-06-07-08-09-0A-0B-0C ⟧, λ ⤍ L_outer ⟧ ⟧" $
+                    testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--abridged", "--abridged-data", "--sweet", "--hide-rho", "--quiet"] []
+                records <- readProtocol path
+                lines records `shouldContain` [line]
+        )
+      forM_
+        [ ("textXXXXXX.txt", "    𝛿1.1 := 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46  # 𝔻(ξ.arg)")
+        , ("XMLXXXXXX.xml", "    <bind meta=\"𝛿1.1\">30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46</bind>")
+        ]
+        ( \(template, line) ->
+            it ("keeps a long datum a firing came down to whole without --abridged-data, as " ++ line) $
+              withTempFile template $ \(path, stream) -> do
+                hClose stream
+                withLambdasOf (T.pack "- λ: L_hex\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \hex ->
+                  withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ Δ ⤍ 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46 ⟧, λ ⤍ L_hex ⟧ ⟧" $
+                    testCLISucceeded ["dataize", "--symbolic=" ++ hex, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
+                records <- readProtocol path
+                lines records `shouldContain` [line]
+        )
+      it "folds a long formation under the width given as the value" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin wide $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged=64", "--sweet", "--hide-rho", "--quiet"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, +4 ⟧)  # 𝔻(Φ.t)"]
+      it "keeps a formation whole under a width it fits in" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin wide $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--abridged=200", "--sweet", "--hide-rho", "--quiet"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["  formation(⟦ φ ↦ 01-02:Δ, anfang ↦ schluss, mitte ↦ anfang, schluss ↦ mitte, rand ↦ schluss ⟧)  # 𝔻(Φ.t)"]
+      it "refuses a width that is not a number" $
+        withStdin wide $
+          testCLIFailed ["dataize", "--locator=Q.t", "--protocol=breit.txt", "--abridged=breit"] ["cannot parse value `breit'"]
       it "leaves the printed result whole" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1338,11 +1443,13 @@ spec = do
       it "refuses the flag without a protocol" $
         withStdin wide $
           testCLIFailed ["dataize", "--locator=Q.t", "--abridged"] ["The option --abridged requires --protocol"]
+      it "refuses to cut the data in dataize without --abridged" $
+        withStdin wide $
+          testCLIFailed ["dataize", "--locator=Q.t", "--protocol=daten.txt", "--abridged-data"] ["The option --abridged-data requires --abridged"]
+      it "refuses to cut the data in morph without --abridged" $
+        withStdin wide $
+          testCLIFailed ["morph", "--locator=Q.t", "--protocol=daten.xml", "--abridged-data"] ["The option --abridged-data requires --abridged"]
 
-    -- Every firing of the run reaches the protocol as a tree: the run itself,
-    -- one line per firing, one per operand it brought down or reduced and one
-    -- per answer it gave. Nothing but the symbols ties them together, so the
-    -- lines a firing writes are what a reader of the file walks back (#1226).
     describe "--protocol" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
           chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
@@ -1353,19 +1460,47 @@ spec = do
           hClose stream
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           records `shouldBe` "𝔻(Φ)\n"
 
-      -- An operand line says what the meta was bound to and, after two spaces
-      -- and '#', the term the entry wrote under it, so a reader never has to
-      -- open the '--symbolic' file beside the protocol to see what came down
-      -- to what (#1265)
+      it "closes the protocol with its msec on the third line from the end" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin sum' $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          (lines records !! (length (lines records) - 3)) `shouldSatisfy` isPrefixOf "msec("
+
+      it "closes the protocol with the firings it counted" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin sum' $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["firings(1)"]
+
+      it "closes the protocol with its fps on the last line" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin sum' $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          last (lines records) `shouldSatisfy` isPrefixOf "fps("
+
+      it "closes the protocol with zero firings when the run fires nothing" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["firings(0)"]
+
       it "writes one line per operand and one per answer of a firing" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)"
@@ -1381,15 +1516,12 @@ spec = do
                        , "    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)"
                        ]
 
-      -- The second firing of one entry numbers its own metas 𝛿1.2 and 𝛿2.2,
-      -- and the operand it brings down is the answer of the first, which the
-      -- protocol names rather than dataizes: every symbol answers the same 42
       it "numbers the firings of one entry apart and names the symbol between them" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin chained $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ).plus( 7 ) ⟧)  # 𝔻(Φ)"
@@ -1413,17 +1545,12 @@ spec = do
                        , "    formation(⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)"
                        ]
 
-      -- A meta is a variable bound exactly once, so its name has to be unique
-      -- in the whole file and the protocol refers back to it as a name. The
-      -- firings are therefore numbered across the run and not per λ function:
-      -- the first firing of 'L_number_times' calls its operand 𝛿1.2, never the
-      -- 𝛿1.1 the first firing of 'L_number_plus' has already taken (#1261)
       it "numbers the firings of different entries apart" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin mixed $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧, φ ↦ 5.plus( 6 ).times( 7 ) ⟧)  # 𝔻(Φ)"
@@ -1447,14 +1574,12 @@ spec = do
                        , "    formation(⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧)  # 𝔻(Φ)"
                        ]
 
-      -- An operand is brought down by a whole run of 𝔻, so a λ function it
-      -- fires on the way sits one level deeper than the firing waiting for it
       it "nests the firing an operand of another firing brought down" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin nested $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ) ⟧)  # 𝔻(Φ)"
@@ -1478,19 +1603,13 @@ spec = do
                        , "    formation(⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)"
                        ]
 
-      -- A 'symbolize' line stands the data of a term an earlier line bound
-      -- into unknowns, so the protocol says what is known about each fresh
-      -- symbol before it writes the term carrying them. The fact is no
-      -- assignment to the symbol: a 𝜎 is the name of a λ function and
-      -- nothing binds bytes to it, so what is known is that dataizing the
-      -- formation it names answers them (#1269)
       it "writes what is known about every symbol a 'symbolize' line minted" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withLambdasOf (T.pack "- λ: L_stand\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: ⟦ z ↦ 𝑛2 ⟧\n") $ \stands ->
             withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_stand ⟧.z ⟧" $
               testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝕄(Φ.y)"
                        , "  𝔼(L_stand)  # 𝕄(Φ.y)"
@@ -1501,6 +1620,71 @@ spec = do
                        , "    𝑛.1.2 := 𝜎1:λ:z  # 𝕄(𝑛.1.1)"
                        ]
 
+      it "writes a deferred copy as a call of the object of the world it was made of" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ box(x) ↦ ⟦ φ ↦ x.next ⟧, y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
+            testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["  deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)"]
+
+      it "writes a deferred copy as it stands when the world declares no object it was made of" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ wrap(v) ↦ ⟦⟧, y ↦ Φ.wrap( v ↦ ⟦ b(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.b( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
+            testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["  deferred(𝜎2) := ⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧  # 𝕄(Φ.y)"]
+
+      it "writes the symbol a cut answers a copy with" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_loop\n  morph:\n    𝑛1: $.x\n  𝑛: 𝑛1\n") $ \loops ->
+            withStdin "⟦ box(n) ↦ ⟦ φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ ⟦ Δ ⤍ 01- ⟧ ) ) ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=proven", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["    looped(⟦ x ↦ Φ.box( n ↦ 01-:Δ ), λ ⤍ L_loop ⟧) := 𝜎1  # 𝕄(Φ.a🌵0.φ), proven"]
+
+      it "writes a told stall to the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
+            withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧, y ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧ ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ outer, "--deep", "--partial", "--acyclic=plausible", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["    <stall λ=\"L_none\"/>"]
+
+      it "writes a stuck firing to the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
+            withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_absent ⟧, λ ⤍ L_outer ⟧ ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ outer, "--deep", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["    <unfinished λ=\"L_absent\"/>"]
+
+      it "writes a starved step budget to the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
+            withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ Δ ⤍ 07- ⟧ ⟧ ⟧, λ ⤍ L_outer ⟧ ⟧" $
+              testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--max-steps=3", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho", "--flat"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["        <starved limit=\"3\" by=\"dataize\" at=\"Φ.a🌵0\"/>"]
+
+      forM_
+        [("XMLXXXXXX.xml", "<spent limit=\"5\" by="), ("textXXXXXX.txt", "spent(5)  # ")]
+        ( \(template, record) ->
+            it ("writes a spent firing budget to the protocol as " ++ record) $
+              withTempFile template $ \(path, stream) -> do
+                hClose stream
+                loopingLambdas $ \endless ->
+                  withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
+                    testCLIFailed ["dataize", "--symbolic=" ++ endless, "--max-steps=400", "--max-firings=5", "--protocol=" ++ path] ["--max-firings=5"]
+                records <- readProtocol path
+                any (record `isInfixOf`) (lines records) `shouldBe` True
+        )
+
       it "keeps the lines of a run that fails" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1508,7 +1692,7 @@ spec = do
             testCLIFailed
               ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
               ["No entry of --symbolic answers the λ function 'L_number_nope'"]
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)"
@@ -1521,39 +1705,31 @@ spec = do
                        , "      𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)"
                        , "      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                        , "      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)"
-                       , "    ?(L_number_nope)  # 𝔻(L_number_nope:λ)"
+                       , "    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "truncates the lines left over from the previous run" $
         withTempFileContent "protocolXXXXXX.txt" "𝔼(L_number_gt)\n" $ \path -> do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           records `shouldBe` "𝔻(Φ)\n"
 
-      -- The protocol is a tree of one-line 𝜑 records whatever the run prints
-      -- its own answer as, so a program reading it back never has to know
       it "writes the lines in 𝜑 even with --output=xmir" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           records `shouldEndWith` "    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)\n"
 
-      -- The same facts as markup, so a program reading the protocol back never
-      -- has to parse 𝜑 to learn them: the name of an element says what its
-      -- record is, the value a meta took is the text of the element and each
-      -- symbol a firing minted stands in a record of its own (#1245, #1257,
-      -- #1280). Which of the two formats is written is decided by the name of
-      -- the file and by nothing else
       describe "as XML" $ do
         it "writes the document when the file is named .xml" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin sum' $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1579,45 +1755,72 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- A formation 𝔻 gets into through 'box' is an element of its own, and
-        -- whatever its φ body fires stands inside it, so a reader sees which
-        -- object a firing was made on the way into (#1420)
-        it "nests what a φ body fires inside the formation element it was boxed from" $
-          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-            hClose stream
-            withStdin sum' $
-              testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
-            lines records
-              `shouldContain` [ "  <formation at=\"Φ\" term=\"⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧\">"
-                              , "    <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
-                              ]
-
-        -- A run firing nothing still writes a document a parser can read,
-        -- since the root is closed on the way out and not by the last firing
-        it "closes the document even when nothing fires" $
+        it "nests the judgment one level inside a '<protocol>' root" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
+            take 4 (lines records)
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<protocol>"
+                         , "  <dataize at=\"Φ\">"
+                         , "  </dataize>"
+                         ]
+
+        it "closes the '<protocol>' root with its msec" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            (lines records !! 4) `shouldSatisfy` isPrefixOf "  <msec>"
+
+        it "closes the '<protocol>' root with its firings" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            lines records `shouldContain` ["  <firings>0</firings>"]
+
+        it "closes the '<protocol>' root with its fps, then '</protocol>' itself" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            drop 6 (lines records) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
+
+        it "nests what a φ body fires inside the formation element it was boxed from" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin sum' $
+              testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records
+              `shouldContain` [ "  <formation at=\"Φ\" term=\"⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧\">"
+                              , "    <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
+                              ]
+
+        it "closes the document even when nothing fires" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
                          , "</dataize>"
                          ]
 
-        -- An operand that came down to a manufactured datum is a 'dataize'
-        -- holding the formation its symbol names, never the 42 every symbol
-        -- answers and never the bare name a 𝔻 cannot be applied to (#1278),
-        -- while one that came down to data is a 'bind' holding that data: the
-        -- name of the element is what tells the two apart (#1257)
         it "tells a manufactured datum from data by the name of the element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin chained $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1656,18 +1859,13 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- The fact a 'symbolize' line knows about a symbol is an element of
-        -- its own, next to '<bind>' and '<dataize>': the symbol stands in the
-        -- attribute a reader joins lines on and the data it stands for is the
-        -- text, so a consumer reads a constant off the markup without parsing
-        -- 𝜑 (#1269)
         it "writes what is known about a symbol as an element of its own" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_stand\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: ⟦ z ↦ 𝑛2 ⟧\n") $ \stands ->
               withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_stand ⟧.z ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1681,21 +1879,13 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- What a 'join' line knows about the symbol it minted is an element of
-        -- its own too, the way the fact a 'symbolize' line writes is: the
-        -- fresh symbol stands in the attribute a reader joins lines on and the
-        -- two symbols it was minted for are the text, in the order the line
-        -- lists the metas it joins. The meta it binds is a '<bind>' like every
-        -- other meta of the firing (#1246). The branches differ under φ, that
-        -- being where the value of a branch is reached and so the only place a
-        -- join looks at all (#1293)
         it "writes what a 'join' line knows as an element of its own" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
               withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1710,17 +1900,13 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- A 'join' line one side of which is ⊥ joins nothing: the program
-        -- raises on that side of the condition, so the markup names the
-        -- symbol the condition was dataized to and the side that raises, and
-        -- the meta is bound to the other side as it stands (#1405)
         it "writes on which side of the condition a fork raises" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
               withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⊥, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1736,18 +1922,13 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- Which symbols a firing minted is a fact about the firing and not a
-        -- property of one term of it, so each of them stands in a record of
-        -- its own, the way what is known about a symbol does: an answer
-        -- minting two writes two, and nothing is left to guess which of the
-        -- two an attribute summarizing the term would have named (#1280)
         it "writes one 'minted' element per symbol the answer asked for" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  𝑛: ⟦ left ↦ ⟦ λ ⤍ 𝜎 ⟧, right ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧\n") $ \pairs ->
               withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_pair ⟧.left ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ pairs, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1761,16 +1942,76 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- An entry answering a meta it already bound asks for no symbol of its
-        -- own, so its block holds no 'minted' at all: the records say what the
-        -- firing did and never stand empty to say that it did nothing (#1280)
+        it "writes the copy a deferred symbol stands for as an element of its own" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ box(x) ↦ ⟦ φ ↦ x.next ⟧, y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr></with><e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e></deferred>"
+                         , "</morph>"
+                         ]
+
+        it "names the object a deferred copy was made of through the formation its ρ holds" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>⟦ tup ↦ 𝜎1:λ, φ ↦ tup.next ⟧</e></deferred>"]
+
+        it "names the object a deferred copy was made of after the walk wrote an answer into its ρ" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n") $ \dataized ->
+              withStdin "⟦ bytes(φ) ↦ ⟦⟧, dataized(target) ↦ L_dataized:λ, joined(items) ↦ ⟦ φ ↦ step( tup ↦ items, s ↦ sep ), sep ↦ Φ.dataized( target ↦ items ), step(ρ, tup, s) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
+                testCLISucceeded ["morph", "--deep", "--symbolic=" ++ dataized, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr><attr name=\"s\">𝜎2</attr></with><e>⟦ tup ↦ 𝜎1:λ, s ↦ 𝜎2:λ:φ, φ ↦ tup.next ⟧</e></deferred>"]
+
+        it "writes a question mark for an argument of a deferred copy that is no bare symbol" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧, w ↦ ⟦ z ↦ Φ ⟧ ) ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">?</attr></with><e>⟦ x ↦ 𝜎1:λ, w ↦ Φ:z, φ ↦ x.next ⟧</e></deferred>"]
+
+        it "writes the object a deferred copy was made of whatever --abridged says" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--abridged=20", "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>⟦ φ ↦ tup.next, +1 ⟧</e></deferred>"]
+
+        it "writes no object for a deferred copy of a formation the world does not declare" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ wrap(v) ↦ ⟦⟧, y ↦ Φ.wrap( v ↦ ⟦ b(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.b( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
+              testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\"><e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e></deferred>"]
+
+        it "writes the copy a cut answers as a call of the object it was made of" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_loop\n  morph:\n    𝑛1: $.x\n  𝑛: 𝑛1\n") $ \loops ->
+              withStdin "⟦ num(φ) ↦ ⟦⟧, box(n) ↦ ⟦ φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ) ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=plausible", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["    <looped symbol=\"𝜎2\" by=\"morph\" match=\"plausible\" at=\"Φ.a🌵0.φ\" of=\"Φ.box\"><with><attr name=\"n\">𝜎1</attr></with><e>⟦ x ↦ Φ.box( n ↦ Φ.num( φ ↦ 𝜎1:λ ) ), λ ⤍ L_loop ⟧</e></looped>"]
+
         it "writes no 'minted' element for a firing minting nothing" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_keep\n  morph:\n    𝑛1: $.x\n  𝑛: ⟦ z ↦ 𝑛1 ⟧\n") $ \keeps ->
               withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_keep ⟧.z ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ keeps, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
@@ -1782,15 +2023,12 @@ spec = do
                          , "</morph>"
                          ]
 
-        -- A firing taken while an operand of another was coming down stands
-        -- inside that firing's element, which is where the indented tree of
-        -- the text format stands it too
         it "nests a firing an operand took inside the firing that asked" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin nested $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1829,16 +2067,12 @@ spec = do
                          , "</dataize>"
                          ]
 
-        -- Nothing fired, so the element stands alone and nothing opens under
-        -- it, exactly as '?(…)' stands alone in the text format; the formation
-        -- 𝔼 was asked about stands as the text of it, the way the comment of
-        -- the text format carries it (#1300)
         it "records a λ function no entry answers as a childless element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
               testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1858,38 +2092,30 @@ spec = do
                          , "      <built meta=\"𝑛.1.1\">Φ.number( φ ↦ 𝜎1:λ )</built>"
                          , "      <answer meta=\"𝑛.1.2\">⟦ φ ↦ 𝜎1:λ, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧</answer>"
                          , "    </evaluate>"
-                         , "    <stuck λ=\"L_number_nope\" by=\"dataize\">L_number_nope:λ</stuck>"
+                         , "    <unanswered λ=\"L_number_nope\" by=\"dataize\">L_number_nope:λ</unanswered>"
                          , "  </formation>"
                          , "</dataize>"
                          ]
 
-        -- The root is named after the judgment the run ran, the way every
-        -- record under it is named after the judgment it carries, and the term
-        -- the run was aimed at stands in its one attribute: a morphing opens
-        -- 'morph' where the text format opens 𝕄(Φ.x) (#1279)
         it "names the root after the judgment a morphing ran" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ x -> [[ L> L_number_nope ]].foo ]]" $
               testCLISucceeded ["morph", "--locator=Q.x", "--partial", "--protocol=" ++ path, "--quiet"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.x\">"
-                         , "  <stuck λ=\"L_number_nope\" by=\"morph\">⟦ λ ⤍ L_number_nope ⟧</stuck>"
+                         , "  <unanswered λ=\"L_number_nope\" by=\"morph\">⟦ λ ⤍ L_number_nope ⟧</unanswered>"
                          , "</morph>"
                          ]
 
-        -- A document a parser chokes on is worth nothing, so what the run left
-        -- open is closed on the way out and not by the last record: a run that
-        -- dies half-way through a derivation still leaves the firings it paid
-        -- for, inside elements that end
         it "closes the document even when the run fails" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
               testCLIFailed ["dataize", symbolic, "--protocol=" ++ path] ["No entry of --symbolic answers"]
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
@@ -1909,24 +2135,18 @@ spec = do
                          , "      <built meta=\"𝑛.1.1\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
                          , "      <answer meta=\"𝑛.1.2\">⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧</answer>"
                          , "    </evaluate>"
-                         , "    <stuck λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ), λ ⤍ L_number_nope ⟧</stuck>"
+                         , "    <unanswered λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ), λ ⤍ L_number_nope ⟧</unanswered>"
                          , "  </formation>"
                          , "</dataize>"
                          ]
 
-        -- A 'morph' operand 𝕄 answered the terminator for says what it is by
-        -- being ⊥ and nothing else, the way every other bound meta says what
-        -- it is by its own term. The entry answers with a fresh symbol and the
-        -- dispatch '.foo' then stands on it, so the run ends on the symbol the
-        -- way it ends on a λ name nothing answers, and the markup carries that
-        -- site too (#1287)
         it "writes the terminator as the term a meta was bound to" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_pick\n  morph:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
               withStdin "[[ x -> [[ here -> [[ ]], L> L_pick ]].foo ]]" $
                 testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["No entry of --symbolic answers the λ function '𝜎1'"]
-            records <- readUtf8 path
+            records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.x\">"
@@ -1936,27 +2156,22 @@ spec = do
                          , "    <built meta=\"𝑛.1.1\">⟦ λ ⤍ 𝜎1 ⟧</built>"
                          , "    <answer meta=\"𝑛.1.2\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </evaluate>"
-                         , "  <stuck λ=\"𝜎1\" by=\"morph\">⟦ λ ⤍ 𝜎1 ⟧</stuck>"
+                         , "  <unanswered λ=\"𝜎1\" by=\"morph\">⟦ λ ⤍ 𝜎1 ⟧</unanswered>"
                          , "</morph>"
                          ]
 
-        -- The extension decides and nothing else, so a name ending in
-        -- anything but '.xml' keeps the indented text it has always written
         it "keeps writing text when the file is named anything else" $
           withTempFile "protocolXXXXXX.xmir" $ \(path, stream) -> do
             hClose stream
             withStdin sum' $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readUtf8 path
+            records <- readProtocol path
             take 1 (lines records) `shouldBe` ["𝔻(Φ)"]
 
-    -- A λ function no entry of the '--symbolic' file answers cannot fire — a
-    -- placeholder such as ⟦ λ ⤍ Sym_arg_0 ⟧ standing in for a data input, or
-    -- an operation the caller left out of its file on purpose. The run used
-    -- to die on it, discarding what it had already evaluated (#1060)
     describe "--partial" $ do
       let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
           dispatched = "[[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.foo.bar ]]"
+          wrapped = "[[ app -> [[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.app.foo.bar ]] ]]"
       it "fails on a λ function that cannot fire without the flag" $
         withStdin stuck $
           testCLIFailed
@@ -1969,8 +2184,6 @@ spec = do
             ["dataize", symbolic, "--partial", "--sweet", "--hide-rho"]
             ["L_number_nope:λ"]
 
-      -- What the firing before the stuck one answered is a symbol, and the
-      -- residue carries it where the value nobody worked out belongs
       it "keeps what was evaluated before the stuck site in the residue" $
         withStdin stuck $
           testCLISucceeded
@@ -1982,7 +2195,7 @@ spec = do
           hClose stream
           withStdin stuck $
             testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readUtf8 path
+          records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 2.times( 3 ).nope ⟧)  # 𝔻(Φ)"
@@ -1995,34 +2208,29 @@ spec = do
                        , "      𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)"
                        , "      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                        , "      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)"
-                       , "    ?(L_number_nope)  # 𝔻(L_number_nope:λ)"
+                       , "    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "still prints bytes when nothing gets stuck" $
         withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
           testCLISucceeded ["dataize", symbolic, "--partial"] ["40-45-00-00-00-00-00-00"]
 
-      -- The residual is an arbitrary formation, and a multi-binding <object>
-      -- is exactly what XMIR now carries: one <o> per binding (#1076)
-      it "prints the residual to XMIR, with its real listing by default" $
-        withStdin dispatched $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--output=xmir"]
-            ["<o name=\"λ\">L_number_nope</o>", "<o base=\"Φ.foo\" name=\"ρ\"/>", "<listing>⟦"]
+      it "prints the residual at --locator, which XMIR has no top level for" $
+        withStdin wrapped $
+          testCLIFailed
+            ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir", "--hide-rho"]
+            ["[ERROR]:", "its top level must be a single binding"]
 
-      it "honors --hide-rho and --omit-listing when printing the residual to XMIR" $
-        withStdin dispatched $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--output=xmir", "--hide-rho", "--omit-listing"]
-            ["<o name=\"λ\">L_number_nope</o>", "line(s)</listing>"]
+      it "prints the residual at --locator, not the whole program" $
+        withStdin wrapped $ do
+          (out, _) <- withStdout (runCLI ["dataize", symbolic, "--partial", "--locator=Q.app", "--hide-rho", "--flat"])
+          lines out `shouldBe` ["⟦ λ ⤍ L_number_nope ⟧"]
 
-      -- A symbol is a name of the calculus, and XMIR carries no notation for
-      -- one, so a residue standing for an unknown cannot be printed as XMIR
-      it "cannot print a residue carrying a symbol as XMIR" $
-        withStdin stuck $
+      it "cannot print a residual of several top bindings as XMIR" $
+        withStdin dispatched $
           testCLIFailed
             ["dataize", symbolic, "--partial", "--output=xmir"]
-            ["XMIR does not support such bindings"]
+            ["[ERROR]:", "its top level must be a single binding"]
 
       it "prints the chain of steps ending in the residue with --sequence" $
         withStdin stuck $
@@ -2034,12 +2242,8 @@ spec = do
         withStdin "[[ ]]" $
           testCLIFailed ["dataize", "--partial"] ["terminator ⊥"]
 
-    -- Which λ functions exist is not phino's business: the file given with
-    -- '--symbolic' decides, and phino carries none of its own
     describe "--symbolic" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
-      -- Nothing is worked out: the entry answers a number standing for the sum
-      -- and the run brings that symbol down to the datum every symbol answers
       it "fires the λ function an entry of the file answers" $
         withStdin sum' $
           testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
@@ -2056,27 +2260,17 @@ spec = do
         withStdin sum' $
           testCLIFailed ["dataize", "--symbolic=no-such-file.yaml"] ["no-such-file.yaml"]
 
-      -- A file that is no list of entries is refused where it is read, which
-      -- is before the input is even parsed, rather than when a λ function of
-      -- it fires
       it "fails on a file that carries no entries at all, before dataizing anything" $
         withTempFileContent "symbolicXXXXXX.yaml" "nope: true\n" $ \path ->
           withStdin sum' $
             testCLIFailed ["dataize", "--symbolic=" ++ path] ["cannot be read"]
 
-    -- An expression the program does not carry is reduced inside it all the
-    -- same: '--inside' binds it to a synthetic attribute of the universe and
-    -- aims the run at it, which is what the 'dataize' block of a λ function
-    -- does for every operand it names
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $
         withStdin universe $
           testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )"] ["40-45-00-00-00-00-00-00"]
 
-      -- The expression is normalized first, so a dispatch off a formation —
-      -- the very shape an operand reaches 𝔻 as, '⟦ x ↦ 6, ρ ↦ 5 ⟧.x' —
-      -- reduces too
       it "normalizes what it is handed before dataizing it" $
         withStdin universe $
           testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x"] ["2A-"]
@@ -2152,13 +2346,7 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
 
-  -- 𝕄 was reachable only from inside 𝔻, through the 'norm' rule of the
-  -- dataization relation, so there was no way to ask phino for 𝕄(n, Φ) on its
-  -- own (#1114)
   describe "morph" $ do
-    -- Two chained λ function calls: the inner fires under 'ml', because '.plus'
-    -- is dispatched on its result, while the outer application is saturated but
-    -- bare, so 'mf' hands it back and firing it is 𝔻's job
     let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
     it "prints help" $
       testCLISucceeded ["morph", "--help"] ["Morph the 𝜑-expression"]
@@ -2173,20 +2361,26 @@ spec = do
           ["morph", symbolic, "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
           ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
 
-    -- The same term under 𝔻, which insists on bytes and fires what 𝕄 left bare
     it "leaves to dataize the firing that takes the same term to bytes" $
       withStdin chained $
         testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
 
-    -- 'mf' hands a formation back as it is, so '--locator' is how one aims 𝕄 at
-    -- a subterm worth navigating: here it resolves Φ against the universe and
-    -- peels the dispatch through 𝒩
     it "morphs the subterm --locator aims at" $
       withStdin "[[ ex -> Q.x, x -> [[ D> 42- ]] ]]" $
         testCLISucceeded ["morph", "--locator=Q.ex", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 42- ⟧"]
 
-    -- 𝕄 is total and 𝔻 is not: where the derivation dies, 𝕄 answers ⊥ ('xi'
-    -- here) and the run succeeds, while 𝔻 has no bytes to give and fails
+    it "canonizes the answer it prints" $
+      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
+        testCLISucceeded ["morph", "--canonize", "--flat", "--sweet"] ["⟦ x ↦ Fn1:λ, y ↦ Fn2:λ ⟧"]
+
+    it "hides a binding of the answer it prints" $
+      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
+        testCLISucceeded ["morph", "--hide=Q.x", "--flat", "--sweet"] ["Bar:λ:y"]
+
+    it "shows only one binding of the answer it prints" $
+      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
+        testCLISucceeded ["morph", "--show=Q.x", "--flat", "--sweet"] ["Foo:λ:x"]
+
     it "prints ⊥ instead of failing the run" $
       withStdin "[[ x -> $ ]]" $
         testCLISucceeded ["morph", "--locator=Q.x"] ["⊥"]
@@ -2195,11 +2389,6 @@ spec = do
       withStdin "[[ x -> $ ]]" $
         testCLIFailed ["dataize", "--locator=Q.x"] ["terminator ⊥"]
 
-    -- The chain carries the spine: the morphing rules that reduced the term
-    -- ('maa', then the terminal 'mf') with the normalization steps they spliced
-    -- in ('alpha', 'copy'). The 'ml' firing of the inner call is not there by
-    -- design — it happens in a side premise, which reduces on a chain of its
-    -- own and discards it
     it "prints the chain of morphing steps with --sequence" $
       withStdin chained $
         testCLISucceeded
@@ -2211,6 +2400,22 @@ spec = do
           , "⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"
           ]
 
+    it "writes every step of a LaTeX --sequence with the arrow of its judgment" $
+      withStdin "[[ q -> [[ ]], k -> Q.q ]]" $
+        testCLISucceeded
+          ["morph", "--locator=Q.k", "--sequence", "--output=latex", "--flat", "--sweet", "--quiet"]
+          [ intercalate
+              "\n"
+              [ "\\begin{phiquation}"
+              , "[[ |q| -> [[]], |k| -> Q . |q| ]] \\phiMorph[\\nameref{r:md}]"
+              , "  \\phiMorph [[ |q| -> [[]], |k| -> [[ |q| -> [[]], |k| -> Q . |q| ]] . |q| ]] \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize [[ |q| -> [[]], |k| -> [[]] ( \\phiTerminal{\\rho} -> Q ) ]] \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize [[ |q| -> [[]], |k| -> [[]] ]] \\phiMorph[\\nameref{r:mf}]"
+              , "  \\phiMorph [[ |q| -> [[]], |k| -> [[]] ]]{.}"
+              , "\\end{phiquation}"
+              ]
+          ]
+
     it "does not print the result with --quiet" $
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["morph", "--quiet"] []
@@ -2220,7 +2425,7 @@ spec = do
         hClose stream
         withStdin chained $
           testCLISucceeded ["morph", symbolic, "--locator=Q.@", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-        records <- readUtf8 path
+        records <- readProtocol path
         lines records
           `shouldBe` [ "𝕄(Φ.φ)"
                      , "  𝔼(L_number_plus)  # 𝕄(Φ.φ)"
@@ -2248,26 +2453,18 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["morph", "--seed=7", "--shuffle", "--depth-sensitive", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
 
-    -- The division 𝔻 cannot finish, whatever '--max-steps' it is given (#1052),
-    -- is no work at all for 𝕄: the term is already a formation, so 'mf' hands
-    -- it back and the λ function is never fired
     it "returns the λ-formation dataize cannot finish on" $
       withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
         testCLISucceeded
           ["morph", "--locator=Q.@", "--max-steps=40", "--flat", "--hide-rho"]
           ["⟦ λ ⤍ L_number_div"]
 
-    -- '--max-steps' bounds the 𝕄 recursion just as it bounds the 𝕄/𝔻 one
     it "fails once the --max-steps budget is spent" $
       withStdin chained $
         testCLIFailed
           ["morph", "--locator=Q.@", "--max-steps=3"]
           ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
 
-    -- '--max-steps' bounds one branch and not the whole run, so an entry
-    -- morphing two operands that each fire it again doubles its work at every
-    -- level and never reaches the limit it is given; '--max-firings' counts
-    -- every firing of the run and so ends it (#1472)
     describe "--max-firings" $ do
       let splitting = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: Φ.s.foo\n    𝑛2: Φ.s.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
           split = "⟦ s ↦ ⟦ λ ⤍ L_split ⟧, x ↦ Φ.s.foo ⟧"
@@ -2282,8 +2479,6 @@ spec = do
               ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-firings=64"]
               ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=64"]
 
-      -- The answer holds no 'foo', so what the dispatch reaches once every
-      -- operand is parked is the terminator
       it "ends the widening recursion with --partial" $
         splitting $ \table ->
           withStdin split $
@@ -2298,9 +2493,6 @@ spec = do
               ["morph", "--symbolic=" ++ table, "--deep", "--max-firings=64", "--partial", "--flat", "--hide-rho", "--sweet"]
               ["x ↦ Φ.s.foo"]
 
-      -- A parked frame hands back the state it started from, so a count kept
-      -- in that state would refund every firing made inside it; the tally is
-      -- shared by the whole run and never goes back
       it "fires no more λ functions than --max-firings allows" $
         splitting $ \table ->
           withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -2309,19 +2501,140 @@ spec = do
               testCLISucceeded
                 ["morph", "--symbolic=" ++ table, "--deep", "--max-firings=64", "--partial", "--protocol=" ++ path, "--quiet"]
                 []
-            records <- readUtf8 path
+            records <- readProtocol path
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
 
-    -- '--partial' parks a spent 𝕄 budget the same way it parks a stuck λ:
-    -- the answer is the term the walk had reached, dispatch intact (#1078)
+    describe "--max-seconds" $ do
+      let ladder = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: ξ.n.foo\n    𝑛2: ξ.n.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
+          rungs = "⟦ " ++ intercalate ", " [printf "l%d ↦ ⟦ λ ⤍ L_split, n ↦ Φ.l%d ⟧" rung (rung + 1) | rung <- [0 .. 23 :: Int]] ++ ", l24 ↦ ⟦⟧, x ↦ Φ.l0.foo ⟧"
+          bounded :: Expectation -> Expectation
+          bounded check = timeout 60000000 check >>= (`shouldBe` Just ())
+      it "fails with non-positive --max-seconds" $
+        withStdin rungs $
+          testCLIFailed ["morph", "--max-seconds=0"] ["--max-seconds must be positive"]
+
+      it "fails once the --max-seconds budget is spent" $
+        ladder $ \table ->
+          bounded $
+            withStdin rungs $
+              testCLIFailed
+                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
+                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+
+      it "fails dataize once the --max-seconds budget is spent" $
+        ladder $ \table ->
+          bounded $
+            withStdin rungs $
+              testCLIFailed
+                ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
+                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+
+      forM_ [["--locator=Q.x", "--partial"], ["--deep", "--partial"]] $ \opts ->
+        it ("fails once the --max-seconds budget is spent with " ++ unwords opts) $
+          ladder $ \table ->
+            bounded $
+              withStdin rungs $
+                testCLIFailed
+                  (["morph", "--symbolic=" ++ table, "--max-seconds=1"] ++ opts)
+                  ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+
+      forM_ [["--locator=Q.x"], ["--locator=Q.x", "--partial"], ["--deep", "--partial"], ["--deep", "--partial", "--jobs=4"]] $ \opts ->
+        it ("writes the timeout as the last line of the protocol with " ++ unwords opts) $
+          ladder $ \table ->
+            withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+              hClose stream
+              bounded $
+                withStdin rungs $
+                  testCLIFailed
+                    (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--protocol=" ++ path, "--quiet"] ++ opts)
+                    ["--max-seconds=1"]
+              records <- readProtocol path
+              dropWhile (== ' ') (last (lines records)) `shouldStartWith` "timeout(1)  # 𝕄("
+
+      it "writes the timeout once to the XML protocol of a deep run" $
+        ladder $ \table ->
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            bounded $
+              withStdin rungs $
+                testCLIFailed
+                  ["morph", "--symbolic=" ++ table, "--deep", "--partial", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
+                  ["--max-seconds=1"]
+            records <- readProtocol path
+            length (filter (isInfixOf "<timeout limit=\"1\" by=\"morph\" at=\"") (lines records)) `shouldBe` 1
+
+      it "closes the XML protocol of a run out of time" $
+        ladder $ \table ->
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            bounded $
+              withStdin rungs $
+                testCLIFailed
+                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
+                  ["--max-seconds=1"]
+            document <- X.readFile X.def path
+            X.nameLocalName (X.elementName (X.documentRoot document)) `shouldBe` T.pack "protocol"
+
+    describe "--jobs" $ do
+      let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
+          recorded :: [String] -> IO [String]
+          recorded extra =
+            withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+              hClose stream
+              withStdin twins $
+                testCLISucceeded (["morph", symbolic, "--deep", "--protocol=" ++ path, "--quiet"] ++ extra) []
+              lines <$> readProtocol path
+          untaued :: String -> String
+          untaued [] = []
+          untaued text
+            | "a🌵" `isPrefixOf` text = "a🌵" ++ untaued (dropWhile (\ch -> isDigit ch || ch == '-') (drop 2 text))
+          untaued (ch : rest) = ch : untaued rest
+      it "prints the answer one walk over the bindings prints" $
+        withStdin twins $
+          testCLISucceeded
+            ["morph", symbolic, "--deep", "--acyclic=proven", "--jobs=3", "--flat", "--hide-rho", "--sweet"]
+            ["a ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧, b ↦ ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ L_number_plus:λ ⟧"]
+
+      it "writes the firings of a binding after those of the bindings before it" $
+        recorded ["--jobs=2"]
+          >>= (`shouldBe` ["# 𝕄(Φ.a)", "# 𝕄(Φ.a)", "# 𝕄(Φ.b)", "# 𝕄(Φ.b)"]) . map (dropWhile (/= '#')) . filter (isPrefixOf "  𝔼(")
+
+      it "numbers the symbols of the protocol the way the answer numbers them" $
+        recorded ["--jobs=2"] >>= (`shouldSatisfy` elem "    𝑛.4.1 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )  # 𝑛")
+
+      it "names what a binding mints after the binding" $
+        recorded ["--jobs=2"] >>= (`shouldSatisfy` any (isInfixOf "# 𝔻(Φ.a🌵4-0)"))
+
+      it "writes the protocol one walk writes, the names a binding mints apart" $ do
+        one <- recorded ["--jobs=1"]
+        many <- recorded ["--jobs=4"]
+        map untaued many `shouldBe` map untaued one
+
+      it "writes the same protocol however many workers it is given" $ do
+        few <- recorded ["--jobs=2"]
+        many <- recorded ["--jobs=5"]
+        many `shouldBe` few
+
+      it "keeps a memo of its own for every binding under plausible" $
+        withStdin twins $
+          testCLISucceeded
+            ["morph", symbolic, "--deep", "--acyclic=plausible", "--jobs=2", "--flat", "--hide-rho", "--sweet"]
+            ["b ↦ ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ L_number_plus:λ ⟧"]
+
+      it "fails with non-positive --jobs" $
+        withStdin twins $
+          testCLIFailed ["morph", "--deep", "--jobs=0"] ["--jobs must be positive"]
+
+      it "fails with --jobs above one and no --deep" $
+        withStdin twins $
+          testCLIFailed ["morph", "--jobs=2"] ["The option --jobs requires --deep, since only the deep walk runs on several workers"]
+
     it "parks the spent budget as a residual with --partial" $
       withStdin "⟦ φ ↦ 5.gt(Φ.nan) ⟧" $
         testCLISucceeded
           ["morph", "--locator=Q.@", "--max-steps=10", "--partial", "--flat", "--hide-rho", "--sweet"]
           ["5.gt( Φ.nan )"]
 
-    -- 𝕄 never fires a bare λ-formation, so only the λ functions sitting under
-    -- a dispatch ('ml') can get stuck; '--partial' parks them as under 𝔻
     describe "--partial" $ do
       let stuck = "[[ @ -> [[ L> Sym_arg_0 ]].foo ]]"
       it "fails on a λ function that cannot fire without the flag" $
@@ -2334,10 +2647,6 @@ spec = do
             ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
 
-    -- 𝕄 stops at the first formation and hands its bindings back as they were
-    -- written, so a program whose parts nothing demands is never reduced;
-    -- '--deep' enters every binding and finishes what 'mf' left, while what no
-    -- λ function touched keeps its name and the answer stays a program (#1124)
     describe "--deep" $ do
       let program =
             "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, \
@@ -2350,26 +2659,18 @@ spec = do
             ["morph", symbolic, "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
             ["⟦ n ↦ 3, φ ↦ Φ.bar( n.times( 5 ).times( 7 ) ) ⟧"]
 
-      -- No entry answers 'L_bar', so the call to it stays as written and keeps
-      -- its name, while the arithmetic in the argument nothing demands folds
-      -- into the symbol standing for the number nobody worked out
       it "reduces every binding it can and leaves the rest in place" $
         withStdin program $
           testCLISucceeded
             ["morph", symbolic, "--deep", "--inside=Q.demo.foo", "--sweet", "--hide-rho", "--flat"]
             ["⟦ n ↦ 3, φ ↦ Φ.bar( ⟦ φ ↦ 𝜎2:λ, times(x) ↦ L_number_times:λ ⟧ ) ⟧"]
 
-      -- The same term the run above stops at as a bare λ-formation: 'mf' leaves
-      -- it to 𝔻, and the walk fires it instead of demanding bytes
       it "fires the bare saturated λ-formation mf hands back" $
         withStdin chained $
           testCLISucceeded
             ["morph", symbolic, "--deep", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
             ["⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"]
 
-      -- The default locator walks the whole program: the method table of the
-      -- object model keeps every one of its λ-formations, since not one of them
-      -- is saturated, while the one place that can be computed is
       it "keeps the object model intact while it folds the program" $
         withStdin program $
           testCLISucceeded
@@ -2388,15 +2689,6 @@ spec = do
         withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
           testCLIFailed ["morph", "--deep"] ["No entry of --symbolic answers the λ function 'Sym_arg_0'"]
 
-    -- Two bindings spelling one term are two firings of one formation, inner
-    -- sum and outer sum alike, so the walk fires four λ functions for two
-    -- values and charges four to '--max-firings'. Under '--acyclic=plausible'
-    -- the first firing of a formation is kept and the second takes its answer,
-    -- reducing and minting nothing, so the walk over the second binding is
-    -- charged nothing and lands it on the symbol the first came to; the
-    -- protocol still writes that firing at its own site, with the answer of
-    -- the first named after the line that made it, and no operand line under
-    -- it (#1476)
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
           recorded :: String -> IO [String]
@@ -2407,7 +2699,7 @@ spec = do
                 testCLISucceeded
                   ["morph", symbolic, "--deep", "--acyclic=" ++ mode, "--protocol=" ++ path, "--quiet"]
                   []
-              lines <$> readUtf8 path
+              lines <$> readProtocol path
       it "charges a formation once per binding spelling it under proven" $
         withStdin twins $
           testCLIFailed
@@ -2438,11 +2730,6 @@ spec = do
             ["dataize", symbolic, "--acyclic=plausible", "--locator=Q.@"]
             ["40-45-00-00-00-00-00-00"]
 
-    -- The step budget used to be the only thing ending the 𝕄/𝔻 recursion, so an
-    -- entry answering with a firing of itself spent the whole of it and then
-    -- failed on the limit; '--acyclic' stops the moment morphing comes back to a
-    -- term a frame above it is already reducing and parks that site the way
-    -- '--partial' parks a λ function that cannot fire
     describe "--acyclic=proven" $ do
       let looping = "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧"
       it "spends the whole budget and fails on the limit without the flag" $
@@ -2452,8 +2739,6 @@ spec = do
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--max-steps=40"]
               ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
 
-      -- The budget here is far larger than the one the run above failed on, so
-      -- what ends this one is the cut and not the limit
       it "prints the residue and exits successfully with the flag" $
         loopingLambdas $ \endless ->
           withStdin looping $
@@ -2461,17 +2746,12 @@ spec = do
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
               ["⟦ λ ⤍ L_loop ⟧.foo"]
 
-      -- The guard reads nothing but the formations the frames above it have
-      -- entered, so a run that never enters one twice answers exactly as it did before
       it "answers a terminating program the same way with the flag" $
         withStdin chained $
           testCLISucceeded
             ["morph", symbolic, "--acyclic=proven", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
             ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
 
-      -- The deep walk parks the one binding that loops and walks on, the way it
-      -- walks on past a λ function '--partial' could not fire, so what the loop
-      -- costs is that binding and not the rest of the program
       it "parks the looping binding and keeps walking with --deep" $
         loopingLambdas $ \endless ->
           withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop, ρ ↦ ∅ ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧" $
@@ -2479,7 +2759,27 @@ spec = do
               ["morph", "--symbolic=" ++ endless, "--deep", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
               ["⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧"]
 
+      it "answers a copy with a fresh symbol once it cuts the φ of the copy" $
+        withLambdasOf (T.pack "- λ: L_loop\n  morph:\n    𝑛1: $.x\n  𝑛: 𝑛1\n") $ \loops ->
+          withStdin "⟦ box(n) ↦ ⟦ φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ ⟦ Δ ⤍ 01- ⟧ ) ) ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=proven", "--locator=Q.y", "--flat", "--hide-rho", "--sweet"]
+              ["𝜎1:λ"]
+
+      it "answers a cut copy with the symbol one walk gives it whatever --jobs says" $
+        withLambdasOf (T.pack "- λ: L_loop\n  morph:\n    𝑛1: $.x\n  𝑛: 𝑛1\n- λ: L_mint\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \loops ->
+          withStdin "⟦ mint ↦ L_mint:λ, box(n) ↦ ⟦ k ↦ Φ.mint, φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ ⟦ Δ ⤍ 01- ⟧ ) ) ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=proven", "--jobs=2", "--locator=Q.y", "--flat", "--hide-rho", "--sweet"]
+              ["𝜎2:λ"]
+
     describe "fails" $ do
+      it "with --output=xmir on a top formation of several bindings" $
+        withStdin "[[ x -> [[ D> 01- ]], y -> [[ D> 02- ]] ]]" $
+          testCLIFailed
+            ["morph", "--output=xmir"]
+            ["[ERROR]:", "its top level must be a single binding"]
+
       it "with --output != latex and --nonumber" $
         withStdin "" $
           testCLIFailed
@@ -2499,6 +2799,13 @@ spec = do
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
 
   describe "explain" $ do
+    forM_
+      ["--morph", "--dataize", "--contextualize"]
+      ( \judgment ->
+          it ("refuses --normalize together with " ++ judgment) $
+            testCLIFailed ["explain", judgment, "--normalize"] ["The --normalize option cannot be used together with"]
+      )
+
     it "prints help" $
       testCLISucceeded
         ["explain", "--help"]
@@ -2636,9 +2943,6 @@ spec = do
         ["merge", resource "desugar.phi", "--output=xmir"]
         ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<listing>⟦ foo ↦ ξ.x ⟧</listing>", "<o base=\"ξ.x\" name=\"foo\"/>"]
 
-    -- The @atom of an EO atom is its result type, not the name of its λ
-    -- function, so the merged 𝜑 names the function after its locator and
-    -- the XMIR printed back restores the type (#1389)
     it "names an atom of XMIR after its locator and keeps its type" $ do
       let xmir = "<object><o name=\"number\"><o name=\"plus\"><o base=\"∅\" name=\"b\"/><o atom=\"Φ.number\" name=\"λ\"/></o></o></object>"
       withTempFileContent "phino-atom.xmir" xmir $ \file -> do
@@ -2648,6 +2952,13 @@ spec = do
         testCLISucceeded
           ["merge", "--input=xmir", "--output=xmir", file]
           ["<o atom=\"Φ.number\" name=\"λ\">L_number_plus</o>"]
+
+    it "keeps the type of an atom of XMIR under --canonize" $ do
+      let xmir = "<object><o name=\"number\"><o name=\"plus\"><o base=\"∅\" name=\"b\"/><o atom=\"Φ.number\" name=\"λ\"/></o></o></object>"
+      withTempFileContent "phino-canonized-atom.xmir" xmir $ \file ->
+        testCLISucceeded
+          ["rewrite", "--input=xmir", "--output=xmir", "--canonize", file]
+          ["<o atom=\"Φ.number\" name=\"λ\">Fn1</o>"]
 
     it "reproduces the same output for the same --seed" $ do
       let args =
@@ -2660,6 +2971,40 @@ spec = do
       (firstRun, _) <- withStdout (runCLI args)
       (secondRun, _) <- withStdout (runCLI args)
       firstRun `shouldBe` secondRun
+
+  describe "compile" $ do
+    it "writes the module to the target" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        withCurrentDirectory dir (runCLI ["compile", "--target=gen/Compiled.hs"])
+        doesFileExist (dir </> "gen" </> "Compiled.hs") `shouldReturn` True
+    it "writes the rules of --rule into the module" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        simple <- makeAbsolute "test-resources/cli/rules/simple.yaml"
+        withCurrentDirectory dir (runCLI ["compile", "--rule=" ++ simple, "--target=Compiled.hs"])
+        readFile' (dir </> "Compiled.hs") >>= (`shouldSatisfy` ("R.direct \"foo\"" `isInfixOf`))
+    it "turns the flag on in a new cabal.project.local" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        withCurrentDirectory dir (runCLI ["compile", "--target=Compiled.hs"])
+        readFile (dir </> "cabal.project.local") `shouldReturn` "package phino\n  flags: +compiled\n"
+    it "prints the lines an existing cabal.project.local lacks" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        writeFile (dir </> "cabal.project.local") "tests: True\n"
+        withCurrentDirectory dir (testCLISucceeded ["compile", "--target=Compiled.hs"] ["package phino\n  flags: +compiled"])
+    it "leaves an existing cabal.project.local as it is" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        writeFile (dir </> "cabal.project.local") "tests: True\n"
+        withStdout (withCurrentDirectory dir (runCLI ["compile", "--target=Compiled.hs"]))
+        readFile (dir </> "cabal.project.local") `shouldReturn` "tests: True\n"
+    it "refuses a rule it cannot compile" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        writeFile (dir </> "having.yaml") "name: hv\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ !B1 ]]'\nhaving:\n  eq: ['!e1', 'Q']\n"
+        withCurrentDirectory dir (testCLIFailed ["compile", "--rule=having.yaml", "--target=Compiled.hs"] ["The rule 'hv' cannot be compiled, since it has a 'having' condition"])
 
   describe "match" $ do
     it "prints help" $
@@ -2678,6 +3023,10 @@ spec = do
       withStdin "[[]]" $
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]: The --pattern is not provided, no substitutions are built"]
 
+    it "refuses --when without --pattern" $
+      withStdin "[[]]" $
+        testCLIFailed ["match", "--when=bogus"] ["The option --when requires --pattern"]
+
     it "reproduces the same output for the same --seed" $ do
       dir <- getTemporaryDirectory
       let file = dir ++ "/phino-match-seed-test.phi"
@@ -2695,9 +3044,17 @@ spec = do
       firstRun `shouldBe` secondRun
       removeFile file
 
+    it "numbers two anonymous captures of one kind, so they stay apart" $
+      withStdin "[[ a -> [[ ]], b -> Q ]]" $
+        testCLISucceeded ["match", "--pattern=[[ !t -> !e, !t -> !e ]]"] ["e#1 >> ⟦⟧\ne#2 >> Φ\nt#1 >> a\nt#2 >> b"]
+
     it "prints many substitutions" $
       withStdin "[[ x -> Q.x, y -> Q.y ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
+
+    it "does not match a length against a literal that wraps around Int" $
+      withStdin "[[ a -> $, b -> Q ]]" $
+        testCLIFailed ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),18446744073709551618)"] ["no substitutions are built"]
 
     it "builds substitutions with conditions" $
       withStdin "[[ x -> Q.y ]].x" $
@@ -2743,6 +3100,12 @@ spec = do
         ( "VersionMismatch"
         , VersionMismatch "1.2.3" "4.5.6"
         , "Version mismatch: --pin requires '1.2.3', but this is phino 4.5.6"
+        )
+      , ("CouldNotCompile", CouldNotCompile "The rule 'q' cannot be compiled, since it is odd", "The rule 'q' cannot be compiled, since it is odd")
+      ,
+        ( "StaleEngine"
+        , StaleEngine
+        , "The compiled rules are stale, since the rules of phino changed after 'phino compile', so run it again and rebuild"
         )
       ]
       ( \(desc, exception, expected) ->
