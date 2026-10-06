@@ -227,7 +227,7 @@ rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iterati
                                 )
                               updated <- withLocatedExpression _locator expr current
                               _saveStep updated
-                              mapM_ (uncurry _saveMade) [(redex, object) | (redex@(ExApplication head' _), object@(ExFormation _)) <- rewritten, object /= head']
+                              mapM_ (uncurry _saveMade) [(redex, object) | (redex@(ExApplication head' (ArTau attr _)), object@(ExFormation _)) <- rewritten, attr /= AtRho, object /= head']
                               _rewrite (leadsTo updated, expr, seenInsert digest expr _unique, False, Nothing) (_count + 1)
       where
         leadsTo :: Expression -> NonEmpty Rewritten

@@ -738,12 +738,10 @@ normalized expr seq ctx@ReduceContext{..} = do
   where
     rewriteContext :: ReduceContext -> RewriteContext
     rewriteContext ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (\redex object -> _saveEval (EvApplied _nesting _judgment (called _universe redex object) object _site))
-    called :: Maybe Expression -> Expression -> Expression -> Expression
-    called universe (ExApplication head' arg) object = case nameIn universe object of
-      ExFormation _ -> ExApplication (nameIn universe head') arg
-      name -> name
-    called _ redex _ = redex
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (\redex object -> _saveEval (EvApplied _nesting _judgment (called _universe redex) object _site))
+    called :: Maybe Expression -> Expression -> Expression
+    called universe (ExApplication head' arg) = ExApplication (nameIn universe head') arg
+    called _ redex = redex
 
 universed :: Expression -> ReduceContext -> IO ReduceContext
 universed _ ctx@ReduceContext{_universe = Just _} = pure ctx

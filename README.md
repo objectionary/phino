@@ -386,8 +386,7 @@ $ cat atoms.txt
 𝔻(Φ)
   formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)
     applied(𝑛.0.1) := 5  # 𝕄(Φ)
-    applied(𝑛.0.2) := 5.plus  # 𝕄(Φ)
-    applied(𝑛.0.3) := 5.plus( x ↦ 6 )  # 𝕄(Φ)
+    applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ)
     𝔼(L_number_plus)  # 𝔻(Φ)
       applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)
       formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
@@ -451,15 +450,14 @@ done in.
 made. The `copy` rule of normalization fills a void of a formation with the
 argument it was given, and so makes a new object, whatever judgment is running
 and wherever in the term the application stands. The line binds that object to
-a fresh `𝑛` and spells the application: the object applied and the argument it
-got, or the name the object made has in the program when it has one, such as
-`5` for the number a literal stands for. A dispatch makes an object too, since
-the attribute it takes gets its `ρ`, so `5.plus` is the `plus` of `5`, even
-where `--hide-rho` hides the `ρ`. The comment names the judgment that
-normalized and the site it stood at. The name is counted with the metas of the
-firing the line stands in, `𝑛.1.5` before it and `𝑛.1.7` after it, and an
-object made outside every firing is counted under `𝑛.0`. From then on every
-line spells the object by that name rather than as the formation it is:
+a fresh `𝑛` and spells the application: the object applied on the left and the
+argument it got on the right, so `5` is `Φ.number( φ ↦ … )` in sugar. The `ρ` a
+dispatch gives the attribute it takes writes no line, so `5.plus( x ↦ 6 )` is
+the `plus` of `5` applied to `6`, one line for one call. The comment names the
+judgment that normalized and the site it stood at. The name is counted with the
+metas of the firing the line stands in, `𝑛.1.5` before it and `𝑛.1.7` after it,
+and an object made outside every firing is counted under `𝑛.0`. From then on
+every line spells the object by that name rather than as the formation it is:
 `formation(𝑛.1.1)` is the object `5` made, and `𝑛.1.7 := 𝑛.1.6` says the firing
 answered with the object 𝕄 made of what the entry wrote. A line is written for
 every application, even one making an object an earlier one already made, and a
@@ -544,8 +542,7 @@ $ cat atoms.txt
 𝔻(Φ)
   formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)
     applied(𝑛.0.1) := 5  # 𝕄(Φ)
-    applied(𝑛.0.2) := 5.plus  # 𝕄(Φ)
-    applied(𝑛.0.3) := 5.plus( x ↦ 6 )  # 𝕄(Φ)
+    applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ)
     𝔼(L_number_plus)  # 𝕄(Φ)
       applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)
       formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
@@ -560,8 +557,7 @@ $ cat atoms.txt
       𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
       applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
       𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
-    applied(𝑛.0.4) := Φ.number( φ ↦ 𝜎1:λ ).nope  # 𝕄(Φ)
-    unanswered(L_number_nope)  # 𝔻(𝑛.0.4)
+    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -783,8 +779,7 @@ $ cat atoms.xml
 <dataize at="Φ">
   <formation at="Φ" term="⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧">
     <applied meta="𝑛.0.1" by="morph" at="Φ">5</applied>
-    <applied meta="𝑛.0.2" by="morph" at="Φ">5.plus</applied>
-    <applied meta="𝑛.0.3" by="morph" at="Φ">5.plus( x ↦ 6 )</applied>
+    <applied meta="𝑛.0.2" by="morph" at="Φ">5.plus( x ↦ 6 )</applied>
     <evaluate λ="L_number_plus" by="dataize" at="Φ">
       <applied meta="𝑛.1.1" by="morph" at="Φ.a🌵0">5</applied>
       <formation at="Φ.a🌵0" term="𝑛.1.1">
@@ -908,8 +903,7 @@ $ cat atoms.xml
 <dataize at="Φ">
   <formation at="Φ" term="⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧">
     <applied meta="𝑛.0.1" by="morph" at="Φ">5</applied>
-    <applied meta="𝑛.0.2" by="morph" at="Φ">5.plus</applied>
-    <applied meta="𝑛.0.3" by="morph" at="Φ">5.plus( x ↦ 6 )</applied>
+    <applied meta="𝑛.0.2" by="morph" at="Φ">5.plus( x ↦ 6 )</applied>
     <evaluate λ="L_number_plus" by="morph" at="Φ">
       <applied meta="𝑛.1.1" by="morph" at="Φ.a🌵0">5</applied>
       <formation at="Φ.a🌵0" term="𝑛.1.1">
@@ -930,8 +924,7 @@ $ cat atoms.xml
       <applied meta="𝑛.1.6" by="morph" at="Φ">Φ.number( φ ↦ 𝜎1:λ )</applied>
       <answer meta="𝑛.1.7">𝑛.1.6</answer>
     </evaluate>
-    <applied meta="𝑛.0.4" by="morph" at="Φ">Φ.number( φ ↦ 𝜎1:λ ).nope</applied>
-    <unanswered λ="L_number_nope" by="dataize">𝑛.0.4</unanswered>
+    <unanswered λ="L_number_nope" by="dataize">L_number_nope:λ</unanswered>
   </formation>
 </dataize>
 ```

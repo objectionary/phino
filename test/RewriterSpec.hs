@@ -168,6 +168,10 @@ spec = do
       made <- newIORef []
       _ <- rewrite (ExApplication (ExFormation [BiTau (AtLabel "ъ") (ExFormation [])]) (ArTau AtRho (ExFormation []))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
       readIORef made `shouldReturn` []
+    it "tells nothing of the ρ a dispatch fills" $ do
+      made <- newIORef []
+      _ <- rewrite (ExApplication (ExFormation [BiVoid AtRho, BiVoid (AtLabel "щ")]) (ArTau AtRho (ExFormation [BiTau (AtLabel "ё") (ExFormation [])]))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
+      readIORef made `shouldReturn` []
 
   describe "rewrites by a locator" $ do
     it "rewrites the located part step after step" $ do

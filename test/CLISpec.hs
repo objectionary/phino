@@ -1509,8 +1509,7 @@ spec = do
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.2) := 5.plus  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.3) := 5.plus( x ↦ 6 )  # 𝕄(Φ)"
+                       , "    applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ)"
                        , "    𝔼(L_number_plus)  # 𝔻(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
@@ -1538,8 +1537,7 @@ spec = do
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ).plus( 7 ) ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.2) := 5.plus  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.3) := 5.plus( x ↦ 6 )  # 𝕄(Φ)"
+                       , "    applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ)"
                        , "    𝔼(L_number_plus)  # 𝕄(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
@@ -1554,8 +1552,7 @@ spec = do
                        , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                        , "      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)"
                        , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-                       , "    applied(𝑛.0.4) := Φ.number( φ ↦ 𝜎1:λ ).plus  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.5) := Φ.number( φ ↦ 𝜎1:λ ).plus( x ↦ 7 )  # 𝕄(Φ)"
+                       , "    applied(𝑛.0.3) := Φ.number( φ ↦ 𝜎1:λ ).plus( x ↦ 7 )  # 𝕄(Φ)"
                        , "    𝔼(L_number_plus)  # 𝔻(Φ)"
                        , "      applied(𝑛.2.1) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵2)"
                        , "      formation(𝑛.2.1)  # 𝔻(Φ.a🌵2)"
@@ -1581,8 +1578,7 @@ spec = do
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧, φ ↦ 5.plus( 6 ).times( 7 ) ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.2) := 5.plus  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.3) := 5.plus( x ↦ 6 )  # 𝕄(Φ)"
+                       , "    applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ)"
                        , "    𝔼(L_number_plus)  # 𝕄(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
@@ -1597,8 +1593,7 @@ spec = do
                        , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                        , "      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)"
                        , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-                       , "    applied(𝑛.0.4) := Φ.number( φ ↦ 𝜎1:λ ).times  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.5) := Φ.number( φ ↦ 𝜎1:λ ).times( x ↦ 7 )  # 𝕄(Φ)"
+                       , "    applied(𝑛.0.3) := Φ.number( φ ↦ 𝜎1:λ ).times( x ↦ 7 )  # 𝕄(Φ)"
                        , "    𝔼(L_number_times)  # 𝔻(Φ)"
                        , "      applied(𝑛.2.1) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵2)"
                        , "      formation(𝑛.2.1)  # 𝔻(Φ.a🌵2)"
@@ -1624,8 +1619,7 @@ spec = do
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ) ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.2) := 5.plus  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.3) := 5.plus( x ↦ 6.plus( 7 ) )  # 𝕄(Φ)"
+                       , "    applied(𝑛.0.2) := 5.plus( x ↦ 6.plus( 7 ) )  # 𝕄(Φ)"
                        , "    𝔼(L_number_plus)  # 𝔻(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
@@ -1633,8 +1627,7 @@ spec = do
                        , "        formation(𝑛.1.2)  # 𝔻(Φ.a🌵0)"
                        , "      𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                        , "      applied(𝑛.1.3) := 6  # 𝕄(Φ.a🌵1)"
-                       , "      applied(𝑛.1.4) := 6.plus  # 𝕄(Φ.a🌵1)"
-                       , "      applied(𝑛.1.5) := 6.plus( x ↦ 7 )  # 𝕄(Φ.a🌵1)"
+                       , "      applied(𝑛.1.4) := 6.plus( x ↦ 7 )  # 𝕄(Φ.a🌵1)"
                        , "      𝔼(L_number_plus)  # 𝔻(Φ.a🌵1)"
                        , "        applied(𝑛.2.1) := 6  # 𝕄(Φ.a🌵2)"
                        , "        formation(𝑛.2.1)  # 𝔻(Φ.a🌵2)"
@@ -1651,10 +1644,10 @@ spec = do
                        , "        𝑛.2.7 := 𝑛.2.6  # 𝕄(𝑛.2.5)"
                        , "      formation(𝑛.2.6)  # 𝔻(Φ.a🌵1)"
                        , "      𝛿2.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)"
-                       , "      𝑛.1.6 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
-                       , "      applied(𝑛.1.7) := Φ.number( φ ↦ 𝜎2:λ )  # 𝕄(Φ)"
-                       , "      𝑛.1.8 := 𝑛.1.7  # 𝕄(𝑛.1.6)"
-                       , "    formation(𝑛.1.7)  # 𝔻(Φ)"
+                       , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎2:λ )  # 𝕄(Φ)"
+                       , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
+                       , "    formation(𝑛.1.6)  # 𝔻(Φ)"
                        ]
 
       it "writes what is known about every symbol a 'symbolize' line minted" $
@@ -1751,8 +1744,7 @@ spec = do
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.2) := 5.plus  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.3) := 5.plus( x ↦ 6 )  # 𝕄(Φ)"
+                       , "    applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ)"
                        , "    𝔼(L_number_plus)  # 𝕄(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
@@ -1767,8 +1759,7 @@ spec = do
                        , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                        , "      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)"
                        , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-                       , "    applied(𝑛.0.4) := Φ.number( φ ↦ 𝜎1:λ ).nope  # 𝕄(Φ)"
-                       , "    unanswered(L_number_nope)  # 𝔻(𝑛.0.4)"
+                       , "    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "truncates the lines left over from the previous run" $
@@ -1798,8 +1789,7 @@ spec = do
                          , "<dataize at=\"Φ\">"
                          , "  <formation at=\"Φ\" term=\"⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧\">"
                          , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\">5</applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">5.plus</applied>"
-                         , "    <applied meta=\"𝑛.0.3\" by=\"morph\" at=\"Φ\">5.plus( x ↦ 6 )</applied>"
+                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">5.plus( x ↦ 6 )</applied>"
                          , "    <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "      <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\">5</applied>"
                          , "      <formation at=\"Φ.a🌵0\" term=\"𝑛.1.1\">"
@@ -1897,8 +1887,7 @@ spec = do
                          , "<dataize at=\"Φ\">"
                          , "  <formation at=\"Φ\" term=\"⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ).plus( 7 ) ⟧\">"
                          , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\">5</applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">5.plus</applied>"
-                         , "    <applied meta=\"𝑛.0.3\" by=\"morph\" at=\"Φ\">5.plus( x ↦ 6 )</applied>"
+                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">5.plus( x ↦ 6 )</applied>"
                          , "    <evaluate λ=\"L_number_plus\" by=\"morph\" at=\"Φ\">"
                          , "      <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\">5</applied>"
                          , "      <formation at=\"Φ.a🌵0\" term=\"𝑛.1.1\">"
@@ -1919,8 +1908,7 @@ spec = do
                          , "      <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ 𝜎1:λ )</applied>"
                          , "      <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
                          , "    </evaluate>"
-                         , "    <applied meta=\"𝑛.0.4\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ 𝜎1:λ ).plus</applied>"
-                         , "    <applied meta=\"𝑛.0.5\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ 𝜎1:λ ).plus( x ↦ 7 )</applied>"
+                         , "    <applied meta=\"𝑛.0.3\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ 𝜎1:λ ).plus( x ↦ 7 )</applied>"
                          , "    <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "      <applied meta=\"𝑛.2.1\" by=\"morph\" at=\"Φ.a🌵2\">Φ.number( φ ↦ 𝜎1:λ )</applied>"
                          , "      <formation at=\"Φ.a🌵2\" term=\"𝑛.2.1\">"
@@ -2047,7 +2035,7 @@ spec = do
             withStdin "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
               testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>𝑛.0.4</e></deferred>"]
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>𝑛.0.2</e></deferred>"]
 
         it "names the object a deferred copy was made of after the walk wrote an answer into its ρ" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2056,7 +2044,7 @@ spec = do
               withStdin "⟦ bytes(φ) ↦ ⟦⟧, dataized(target) ↦ L_dataized:λ, joined(items) ↦ ⟦ φ ↦ step( tup ↦ items, s ↦ sep ), sep ↦ Φ.dataized( target ↦ items ), step(ρ, tup, s) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
                 testCLISucceeded ["morph", "--deep", "--symbolic=" ++ dataized, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr><attr name=\"s\">𝜎2</attr></with><e>𝑛.0.6</e></deferred>"]
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr><attr name=\"s\">𝜎2</attr></with><e>𝑛.0.4</e></deferred>"]
 
         it "writes a question mark for an argument of a deferred copy that is no bare symbol" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2072,7 +2060,7 @@ spec = do
             withStdin "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
               testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--abridged=20", "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>𝑛.0.4</e></deferred>"]
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>𝑛.0.2</e></deferred>"]
 
         it "writes no object for a deferred copy of a formation the world does not declare" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2120,8 +2108,7 @@ spec = do
                          , "<dataize at=\"Φ\">"
                          , "  <formation at=\"Φ\" term=\"⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ) ⟧\">"
                          , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\">5</applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">5.plus</applied>"
-                         , "    <applied meta=\"𝑛.0.3\" by=\"morph\" at=\"Φ\">5.plus( x ↦ 6.plus( 7 ) )</applied>"
+                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">5.plus( x ↦ 6.plus( 7 ) )</applied>"
                          , "    <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "      <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\">5</applied>"
                          , "      <formation at=\"Φ.a🌵0\" term=\"𝑛.1.1\">"
@@ -2131,8 +2118,7 @@ spec = do
                          , "      </formation>"
                          , "      <bind meta=\"𝛿1.1\">40-14-00-00-00-00-00-00</bind>"
                          , "      <applied meta=\"𝑛.1.3\" by=\"morph\" at=\"Φ.a🌵1\">6</applied>"
-                         , "      <applied meta=\"𝑛.1.4\" by=\"morph\" at=\"Φ.a🌵1\">6.plus</applied>"
-                         , "      <applied meta=\"𝑛.1.5\" by=\"morph\" at=\"Φ.a🌵1\">6.plus( x ↦ 7 )</applied>"
+                         , "      <applied meta=\"𝑛.1.4\" by=\"morph\" at=\"Φ.a🌵1\">6.plus( x ↦ 7 )</applied>"
                          , "      <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ.a🌵1\">"
                          , "        <applied meta=\"𝑛.2.1\" by=\"morph\" at=\"Φ.a🌵2\">6</applied>"
                          , "        <formation at=\"Φ.a🌵2\" term=\"𝑛.2.1\">"
@@ -2157,11 +2143,11 @@ spec = do
                          , "      </formation>"
                          , "      <dataize meta=\"𝛿2.1\">𝜎1:λ</dataize>"
                          , "      <minted symbol=\"𝜎2\">40-14-00-00-00-00-00-00 𝜎1</minted>"
-                         , "      <built meta=\"𝑛.1.6\">Φ.number( φ ↦ 𝜎2:λ )</built>"
-                         , "      <applied meta=\"𝑛.1.7\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ 𝜎2:λ )</applied>"
-                         , "      <answer meta=\"𝑛.1.8\">𝑛.1.7</answer>"
+                         , "      <built meta=\"𝑛.1.5\">Φ.number( φ ↦ 𝜎2:λ )</built>"
+                         , "      <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ 𝜎2:λ )</applied>"
+                         , "      <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
                          , "    </evaluate>"
-                         , "    <formation at=\"Φ\" term=\"𝑛.1.7\">"
+                         , "    <formation at=\"Φ\" term=\"𝑛.1.6\">"
                          , "    </formation>"
                          , "  </formation>"
                          , "</dataize>"
@@ -2178,8 +2164,7 @@ spec = do
                          , "<dataize at=\"Φ\">"
                          , "  <formation at=\"Φ\" term=\"⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 2.times( 3 ).nope ⟧\">"
                          , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\">2</applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">2.times</applied>"
-                         , "    <applied meta=\"𝑛.0.3\" by=\"morph\" at=\"Φ\">2.times( x ↦ 3 )</applied>"
+                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">2.times( x ↦ 3 )</applied>"
                          , "    <evaluate λ=\"L_number_times\" by=\"morph\" at=\"Φ\">"
                          , "      <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\">2</applied>"
                          , "      <formation at=\"Φ.a🌵0\" term=\"𝑛.1.1\">"
@@ -2200,8 +2185,7 @@ spec = do
                          , "      <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ 𝜎1:λ )</applied>"
                          , "      <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
                          , "    </evaluate>"
-                         , "    <applied meta=\"𝑛.0.4\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ 𝜎1:λ ).nope</applied>"
-                         , "    <unanswered λ=\"L_number_nope\" by=\"dataize\">𝑛.0.4</unanswered>"
+                         , "    <unanswered λ=\"L_number_nope\" by=\"dataize\">L_number_nope:λ</unanswered>"
                          , "  </formation>"
                          , "</dataize>"
                          ]
@@ -2230,8 +2214,7 @@ spec = do
                          , "<dataize at=\"Φ\">"
                          , "  <formation at=\"Φ\" term=\"⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧, number ↦ ⟦ φ ↦ ∅, times ↦ ⟦ ρ ↦ ∅, x ↦ ∅, λ ⤍ L_number_times ⟧, nope ↦ ⟦ ρ ↦ ∅, λ ⤍ L_number_nope ⟧ ⟧, φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ) ).times( α0 ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧ ) ) ).nope ⟧\">"
                          , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ) )</applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ) ).times</applied>"
-                         , "    <applied meta=\"𝑛.0.3\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ) ).times( x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧ ) ) )</applied>"
+                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ) ).times( x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧ ) ) )</applied>"
                          , "    <evaluate λ=\"L_number_times\" by=\"morph\" at=\"Φ\">"
                          , "      <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\">Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ) )</applied>"
                          , "      <formation at=\"Φ.a🌵0\" term=\"𝑛.1.1\">"
@@ -2252,8 +2235,7 @@ spec = do
                          , "      <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</applied>"
                          , "      <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
                          , "    </evaluate>"
-                         , "    <applied meta=\"𝑛.0.4\" by=\"morph\" at=\"Φ\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).nope</applied>"
-                         , "    <unanswered λ=\"L_number_nope\" by=\"dataize\">𝑛.0.4</unanswered>"
+                         , "    <unanswered λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ), λ ⤍ L_number_nope ⟧</unanswered>"
                          , "  </formation>"
                          , "</dataize>"
                          ]
@@ -2318,8 +2300,7 @@ spec = do
             `shouldBe` [ "𝔻(Φ)"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 2.times( 3 ).nope ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 2  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.2) := 2.times  # 𝕄(Φ)"
-                       , "    applied(𝑛.0.3) := 2.times( x ↦ 3 )  # 𝕄(Φ)"
+                       , "    applied(𝑛.0.2) := 2.times( x ↦ 3 )  # 𝕄(Φ)"
                        , "    𝔼(L_number_times)  # 𝕄(Φ)"
                        , "      applied(𝑛.1.1) := 2  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
@@ -2334,8 +2315,7 @@ spec = do
                        , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                        , "      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)"
                        , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-                       , "    applied(𝑛.0.4) := Φ.number( φ ↦ 𝜎1:λ ).nope  # 𝕄(Φ)"
-                       , "    unanswered(L_number_nope)  # 𝔻(𝑛.0.4)"
+                       , "    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "still prints bytes when nothing gets stuck" $
@@ -2572,8 +2552,7 @@ spec = do
         lines records
           `shouldBe` [ "𝕄(Φ.φ)"
                      , "  applied(𝑛.0.1) := 5  # 𝕄(Φ.φ)"
-                     , "  applied(𝑛.0.2) := 5.plus  # 𝕄(Φ.φ)"
-                     , "  applied(𝑛.0.3) := 5.plus( x ↦ 6 )  # 𝕄(Φ.φ)"
+                     , "  applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ.φ)"
                      , "  𝔼(L_number_plus)  # 𝕄(Φ.φ)"
                      , "    applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                      , "    formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
@@ -2588,8 +2567,7 @@ spec = do
                      , "    𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
                      , "    applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.φ)"
                      , "    𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-                     , "  applied(𝑛.0.4) := Φ.number( φ ↦ 𝜎1:λ ).plus  # 𝕄(Φ.φ)"
-                     , "  applied(𝑛.0.5) := Φ.number( φ ↦ 𝜎1:λ ).plus( x ↦ 7 )  # 𝕄(Φ.φ)"
+                     , "  applied(𝑛.0.3) := Φ.number( φ ↦ 𝜎1:λ ).plus( x ↦ 7 )  # 𝕄(Φ.φ)"
                      ]
 
     it "saves morphing steps to dir with --steps-dir" $

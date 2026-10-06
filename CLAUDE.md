@@ -194,8 +194,9 @@ An application writes a line too, `applied(…)` (`EvApplied`, #1745). A `Step`
 answers the term it made and the pairs of redex and result it replaced, and
 `rewrite'` hands every pair where an application became a formation other than
 its head, which of the built-in rules only `copy` does, to `_saveMade` of
-`RewriteContext`. `normalized` of `Morph.hs` writes it with the judgment and
-the site, spelling the call with `nameIn` of `Builder.hs`; the `rewrite`
+`RewriteContext`, except one filling ρ, which a dispatch makes. `normalized` of
+`Morph.hs` writes it with the judgment and the site, spelling the call as the
+head, named by `nameIn` of `Builder.hs`, applied to its argument; the `rewrite`
 command saves nothing (`dontSaveMade`). The name of the object is counted with
 `built` and `answer` of the innermost open firing, which both writers keep as
 a stack every record prunes by its depth (`tier`), and from then on
