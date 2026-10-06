@@ -156,7 +156,8 @@ body comments printed toLatex =
             let item' = toLatex (baseTab idx) item
                 opening = if idx == 0 then item' else printf "  %s %s" (relation reached) item'
              in comment
-                  ++ maybe opening
+                  ++ maybe
+                    opening
                     ( \(judgment, name) ->
                         if judgment == Contextualization
                           then printf "%s %s" opening (relation judgment)
