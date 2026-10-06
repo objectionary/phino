@@ -290,11 +290,19 @@ optAbridged =
         ( long "abridged"
             <> help
               "Shorten every 𝜑-expression written to the --protocol file: a formation longer than the width \
-              \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', and a byte string \
-              \longer than eight bytes keeps its first two bytes and its last two with the count of the bytes \
-              \between them, as '00-00-..(45b)..-FF-EE'; the width is 64 characters unless given as --abridged=WIDTH"
+              \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', while every byte string \
+              \it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
         )
         <|> option auto (long "abridged" <> metavar "WIDTH" <> internal)
+    )
+
+optAbridgedData :: Parser Bool
+optAbridgedData =
+  switch
+    ( long "abridged-data"
+        <> help
+          "Cut every byte string longer than eight bytes that the --abridged protocol writes to its first \
+          \two bytes and its last two with the count of the bytes between them, as '00-00-..(45b)..-FF-EE'"
     )
 
 optShuffle :: Parser Bool
@@ -408,6 +416,7 @@ dataizeParser =
             <*> optStepsDir
             <*> optProtocol
             <*> optAbridged
+            <*> optAbridgedData
             <*> optSymbolic
             <*> argInputFile
         )
@@ -457,6 +466,7 @@ morphParser =
             <*> optStepsDir
             <*> optProtocol
             <*> optAbridged
+            <*> optAbridgedData
             <*> optSymbolic
             <*> argInputFile
         )

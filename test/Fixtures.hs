@@ -120,6 +120,7 @@ recorded' hidden action =
         SWEET
         hidden
         Nothing
+        False
         MULTILINE
         2
         defaultXmirContext

@@ -130,7 +130,7 @@ flattened ctx@PrintCtx{..} expr =
   pure (P.printExpressionWith shaped expr (_sugar, UNICODE, SINGLELINE, _margin))
   where
     shaped :: SugarType -> EXPRESSION -> EXPRESSION
-    shaped sugar = maybe id abridged _abridged . hidden ctx sugar
+    shaped sugar = maybe id (abridged _abridgedData) _abridged . hidden ctx sugar
 
 salted :: PrintContext -> Expression -> IO String
 salted ctx = flattened ctx{_sugar = SALTY}
