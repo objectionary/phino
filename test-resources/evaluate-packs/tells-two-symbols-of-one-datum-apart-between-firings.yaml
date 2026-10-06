@@ -29,7 +29,7 @@ result: >
 protocol: |
   𝕄(Φ)
     applied(𝑛.0.1) := Φ.bytes( φ ↦ 𝜎1:λ )  # 𝕄(Φ.x)
-    applied(𝑛.0.2) := Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )  # 𝕄(Φ.x)
+    applied(𝑛.0.2) := Φ.dataized( target ↦ 𝑛.0.1 )  # 𝕄(Φ.x)
     𝔼(L_dataized)  # 𝕄(Φ.x)
       applied(𝑛.1.1) := Φ.bytes( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵0)
       formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
@@ -38,7 +38,7 @@ protocol: |
       applied(𝑛.1.3) := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝕄(Φ.x)
       𝑛.1.4 := 𝑛.1.3  # 𝕄(𝑛.1.2)
     applied(𝑛.0.3) := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝕄(Φ.y)
-    applied(𝑛.0.4) := Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎2:λ ) )  # 𝕄(Φ.y)
+    applied(𝑛.0.4) := Φ.dataized( target ↦ 𝑛.0.3 )  # 𝕄(Φ.y)
     𝔼(L_dataized)  # 𝕄(Φ.y)
       applied(𝑛.2.1) := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝕄(Φ.a🌵1)
       formation(𝑛.2.1)  # 𝔻(Φ.a🌵1)

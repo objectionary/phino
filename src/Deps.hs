@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -189,23 +190,20 @@ namedInsert term naming = Map.alter renamed (hashExpression term)
     renamed entries = Just ((term, naming) : filter ((/= term) . fst) (fromMaybe [] entries))
 
 abbreviated :: Named Expression -> Expression -> Expression
-abbreviated names
-  | Map.null names = id
-  | otherwise = goExpr
+abbreviated names term
+  | Map.null names = term
+  | otherwise = fromMaybe (abbreviatedInside names term) (namedLookup term names)
+
+abbreviatedInside :: Named Expression -> Expression -> Expression
+abbreviatedInside names (ExFormation bds) = ExFormation (map binding bds)
   where
-    goExpr :: Expression -> Expression
-    goExpr term = fromMaybe (goInside term) (namedLookup term names)
-    goInside :: Expression -> Expression
-    goInside (ExFormation bds) = ExFormation (map goBinding bds)
-    goInside (ExApplication expr arg) = ExApplication (goExpr expr) (goArgument arg)
-    goInside (ExDispatch expr attr) = ExDispatch (goExpr expr) attr
-    goInside term = term
-    goBinding :: Binding -> Binding
-    goBinding (BiTau attr expr) = BiTau attr (goExpr expr)
-    goBinding bd = bd
-    goArgument :: Argument -> Argument
-    goArgument (ArTau attr expr) = ArTau attr (goExpr expr)
-    goArgument (ArAlpha alpha expr) = ArAlpha alpha (goExpr expr)
+    binding :: Binding -> Binding
+    binding (BiTau attr expr) = BiTau attr (abbreviated names expr)
+    binding bd = bd
+abbreviatedInside names (ExApplication expr (ArTau attr arg)) = ExApplication (abbreviated names expr) (ArTau attr (abbreviated names arg))
+abbreviatedInside names (ExApplication expr (ArAlpha alpha arg)) = ExApplication (abbreviated names expr) (ArAlpha alpha (abbreviated names arg))
+abbreviatedInside names (ExDispatch expr attr) = ExDispatch (abbreviated names expr) attr
+abbreviatedInside _ term = term
 
 data Protocol = Protocol
   { _fired :: Int
@@ -330,14 +328,16 @@ saveEval handle cursor printed printed' report = do
         spelled (Right bytes) = render (ExBytes bytes)
     written EvMinted{} protocol = pure (protocol, Nothing)
     written (EvDeferred depth symbol judgment copy call site) protocol = do
-      form <- render (fromMaybe copy call)
+      form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call
       locator <- render site
       pure (protocol, Just (indented depth (printf "deferred(%s) := %s  # %s(%s)" (printFunction (FnSymbol symbol)) form (letter judgment) locator)))
     written (EvApplied depth judgment call object site) protocol = do
       let (index, counted) = numbered protocol
-      form <- render call
+          aliased :: Expression
+          aliased = alias (opener protocol) index
+      form <- printed (abbreviatedInside protocol._made call)
       locator <- render site
-      pure (counted{_made = namedInsert object (alias (opener protocol) index) counted._made}, Just (indented depth (printf "applied(%s.%d) := %s  # %s(%s)" (labelled protocol answer) index form (letter judgment) locator)))
+      pure (counted{_made = namedInsert call aliased (namedInsert object aliased counted._made)}, Just (indented depth (printf "applied(%s.%d) := %s  # %s(%s)" (labelled protocol answer) index form (letter judgment) locator)))
     written (EvBuilt depth term) protocol = do
       let (index, counted) = numbered protocol
       value <- borrowed protocol term
@@ -522,13 +522,15 @@ saveEvalXml handle cursor printed report = do
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"%s>%s<e>%s</e></deferred>" (sigma symbol) (opened judgment) (escapeXML locator) origin given (escapeXMLText form))])
     elements (EvApplied depth judgment call object site) nesting = do
-      form <- render call
+      (origin, given) <- parted (abbreviatedInside nesting._objects call)
       locator <- render site
       let (index, counted) = numbered nesting
           (kept, closers) = closed depth nesting._closing
           naming :: String
           naming = printf "%s.%d" (labelled nesting answer) index
-      pure (counted{_closing = kept, _objects = namedInsert object (alias (opener nesting) index) counted._objects}, closers ++ [indentedXml depth (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXMLText form))])
+          aliased :: Expression
+          aliased = alias (opener nesting) index
+      pure (counted{_closing = kept, _objects = namedInsert call aliased (namedInsert object aliased counted._objects)}, closers ++ [indentedXml depth (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\" of=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXML origin) given)])
     elements (EvBuilt depth term) nesting = do
       body <- render term
       let (index, counted) = numbered nesting
@@ -569,6 +571,15 @@ saveEvalXml handle cursor printed report = do
     valued (ExFormation bds) = maybe "?" valued (listToMaybe [body | BiTau AtPhi body <- bds])
     valued (ExApplication _ (ArTau AtPhi body)) = valued body
     valued _ = "?"
+    parted :: Expression -> IO (String, String)
+    parted (ExApplication term (ArTau attr value)) = do
+      origin <- printed term
+      given <- argued value
+      pure (origin, printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) (escapeXMLText given))
+    parted term = (,"") <$> printed term
+    argued :: Expression -> IO String
+    argued (ExFormation [BiLambda (FnSymbol idx)]) = pure (sigma idx)
+    argued term = printed term
     sigma :: Int -> String
     sigma = printFunction . FnSymbol
     quoted :: T.Text -> String
