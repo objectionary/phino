@@ -11,8 +11,8 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvDeferred, EvFiring, EvFormation, EvJoined, EvLooped, EvMinted, EvRun, EvTerm), Judgment (Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, saveStep)
-import Fixtures (readUtf8)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvDeferred, EvFiring, EvFormation, EvJoined, EvLooped, EvMinted, EvRun, EvTerm), Judgment (Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, saveStep)
+import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
 import System.Directory
@@ -25,7 +25,7 @@ import System.Directory
 import System.FilePath ((</>))
 import System.IO (IOMode (WriteMode), stderr, withFile)
 import System.IO.Silently (hCapture_, hSilence)
-import Test.Hspec (Spec, after_, describe, expectationFailure, it, shouldBe, shouldSatisfy)
+import Test.Hspec (Spec, after_, describe, expectationFailure, it, shouldBe, shouldContain, shouldSatisfy)
 
 withScratchDir :: (FilePath -> IO a) -> IO a
 withScratchDir =
@@ -128,6 +128,29 @@ spec = do
       case renumbered 2 5 (EvLooped 3 Morphing Proven (ExFormation []) ExXi (Just (4, Just (ExApplication (ExDispatch ExRoot (AtLabel "box")) (ArTau (AtLabel "n") (ExFormation [BiLambda (FnSymbol 7)])))))) of
         EvLooped _ _ _ _ _ answer -> fmap (fmap (fmap symbols)) answer `shouldBe` Just (9, Just [12])
         _ -> expectationFailure "The record did not stay the record it was"
+    it "raises the symbols an application and the object it made carry above the floor" $
+      case renumbered 2 5 (EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "box")) (ArTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 4)]))) (ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 1)])]) ExXi) of
+        EvApplied _ _ call object _ -> (symbols call, symbols object) `shouldBe` ([9], [1])
+        _ -> expectationFailure "The record did not stay the record it was"
+
+  describe "saveEval" $ do
+    it "writes an application as a line binding what it made to a fresh 𝑛" $ do
+      (_, written) <- recorded (\record -> record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))))
+      written `shouldBe` "  applied(𝑛.0.1) := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ.w)\n"
+    it "spells an object an application made by its name on a later line" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_щ" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvTerm 2 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "z") (ExFormation [BiTau (AtLabel "q") (ExFormation [])]), BiTau (AtLabel "у") (ExFormation [])])])
+      last (lines written) `shouldBe` "    𝑛1.1 := ⟦ z ↦ 𝑛.1.1, у ↦ ⟦⟧ ⟧  # 𝕄(ξ.z)"
+    it "numbers the answer of a firing past the objects applications made inside it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ю" Morphing ExRoot, EvBuilt 2 (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvAnswer 2 (ExFormation [BiTau (AtLabel "q") (ExFormation [])])])
+      last (lines written) `shouldBe` "    𝑛.1.3 := 𝑛.1.2  # 𝕄(𝑛.1.1)"
+
+  describe "saveEvalXml" $ do
+    it "writes an application as an element binding what it made to a fresh 𝑛" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ.w", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
+      lines written `shouldContain` ["  <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ.w\">Φ.ёж( q ↦ ⟦⟧ )</applied>"]
+    it "spells an object an application made by its name in a later element" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ы" Morphing ExRoot, EvBuilt 2 (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvAnswer 2 (ExFormation [BiTau (AtLabel "q") (ExFormation [])])])
+      lines written `shouldContain` ["    <answer meta=\"𝑛.1.3\">𝑛.1.2</answer>"]
 
   describe "perSecond" $ do
     it "divides the firings by the seconds the run took" $

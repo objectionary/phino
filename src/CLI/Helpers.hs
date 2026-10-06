@@ -135,13 +135,19 @@ flattened ctx@PrintCtx{..} expr =
 salted :: PrintContext -> Expression -> IO String
 salted ctx = flattened ctx{_sugar = SALTY}
 
-aimed :: Maybe String -> Expression -> ReduceContext -> IO (Expression, ReduceContext)
-aimed Nothing expr ctx = pure (expr, ctx)
-aimed (Just src) expr@(ExFormation _) ctx = do
+aimed :: PrintContext -> Judgment -> Maybe String -> Expression -> ReduceContext -> IO (Expression, ReduceContext)
+aimed printCtx judgment Nothing expr ctx = do
+  heading ctx._saveEval printCtx judgment ctx._locator
+  pure (expr, ctx)
+aimed printCtx judgment (Just src) expr@(ExFormation _) ctx = do
   target <- parseExpressionThrows src
   logDebug (printf "The option '--inside' is specified, reducing '%s' inside the given universe" (P.printExpression target))
-  insideUniverse target expr ctx
-aimed (Just _) expr _ =
+  held <- newIORef []
+  (universe, aiming) <- insideUniverse target expr ctx{_saveEval = \record -> modifyIORef' held (record :)}
+  heading ctx._saveEval printCtx judgment aiming._locator
+  mapM_ ctx._saveEval . reverse =<< readIORef held
+  pure (universe, aiming{_saveEval = ctx._saveEval})
+aimed _ _ (Just _) expr _ =
   invalidCLIArguments
     (printf "The option --inside requires the input expression to be a formation, but given: %s" (P.printExpression expr))
 

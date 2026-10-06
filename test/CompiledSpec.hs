@@ -16,7 +16,7 @@ import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
 import Dataize (dataize')
-import Deps (dontSaveStep)
+import Deps (dontSaveMade, dontSaveStep)
 import Engine (Engine (..), building, fresh, yaml)
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, linked, withLambdasOf)
@@ -82,7 +82,7 @@ spec =
             <$> rewrite
               expr
               (_normalization engine)
-              (RewriteContext ExRoot 25 25 False universe (building engine) (_normal engine) (_matching engine) MtDisabled Nothing dontSaveStep)
+              (RewriteContext ExRoot 25 25 False universe (building engine) (_normal engine) (_matching engine) MtDisabled Nothing dontSaveStep dontSaveMade)
         )
     matched :: Expression -> IO (Set.Set Int)
     matched expr = Set.fromList . map fst <$> filterM (\(_, rule) -> not . null <$> matchExpressionWithRule expr rule (RuleContext (building yaml) Nothing (_normal yaml))) (zip [0 ..] Y.normalizationRules)

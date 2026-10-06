@@ -16,6 +16,7 @@ module Fixtures
   , readUtf8
   , recorded
   , recorded'
+  , recordedXml
   , withLambdas
   , withLambdasOf
   , withTemp
@@ -110,32 +111,39 @@ recorded = recorded' False
 recorded' :: Bool -> (SaveEvalFunc -> IO a) -> IO (a, String)
 recorded' hidden action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
-    answer <- withEvalFunc (Just path) printing action
+    answer <- withEvalFunc (Just path) (printing hidden) action
     written <- withoutTotals <$> readUtf8 path
     pure (answer, written)
-  where
-    printing :: PrintContext
-    printing =
-      PrintCtx
-        SWEET
-        hidden
-        Nothing
-        False
-        MULTILINE
-        2
-        defaultXmirContext
-        False
-        False
-        False
-        False
-        False
-        1
-        1
-        ExRoot
-        Nothing
-        Nothing
-        Nothing
-        PHI
+
+recordedXml :: (SaveEvalFunc -> IO a) -> IO (a, String)
+recordedXml action =
+  withTemp "phino-protocol-.xml" BS.empty $ \path -> do
+    answer <- withEvalFunc (Just path) (printing False) action
+    written <- readProtocol path
+    pure (answer, written)
+
+printing :: Bool -> PrintContext
+printing hidden =
+  PrintCtx
+    SWEET
+    hidden
+    Nothing
+    False
+    MULTILINE
+    2
+    defaultXmirContext
+    False
+    False
+    False
+    False
+    False
+    1
+    1
+    ExRoot
+    Nothing
+    Nothing
+    Nothing
+    PHI
 
 newtype ExplainPack = ExplainPack String
 

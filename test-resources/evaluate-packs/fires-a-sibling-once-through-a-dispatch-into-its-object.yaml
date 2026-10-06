@@ -32,15 +32,22 @@ input: >
 result: '⟦ φ ↦ 𝜎3:λ, eq(b) ↦ L_bytes_eq:λ ⟧'
 protocol: |
   𝕄(Φ.e)
+    applied(𝑛.0.1) := Φ.same( left ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )  # 𝕄(Φ.e)
+    applied(𝑛.0.2) := Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )  # 𝕄(Φ.e)
     𝔼(L_dataized)  # 𝕄(Φ.e)
-      formation(⟦ φ ↦ 𝜎1:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵0)
+      applied(𝑛.1.1) := Φ.bytes( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵0)
+      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.target)
-      𝑛.1.1 := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝑛
-      𝑛.1.2 := ⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧  # 𝕄(𝑛.1.1)
+      𝑛.1.2 := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝑛
+      applied(𝑛.1.3) := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝕄(Φ.e)
+      𝑛.1.4 := 𝑛.1.3  # 𝕄(𝑛.1.2)
+    applied(𝑛.0.3) := Φ.bytes( φ ↦ 𝜎2:λ ).eq( b ↦ 𝑛.1.3 )  # 𝕄(Φ.e)
     𝔼(L_bytes_eq)  # 𝕄(Φ.e)
-      formation(⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵1)
+      applied(𝑛.2.1) := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝕄(Φ.a🌵1)
+      formation(𝑛.2.1)  # 𝔻(Φ.a🌵1)
       𝛿1.2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)
-      formation(⟦ φ ↦ 𝜎2:λ, eq(b) ↦ L_bytes_eq:λ ⟧)  # 𝔻(Φ.a🌵2)
+      formation(𝑛.2.1)  # 𝔻(Φ.a🌵2)
       𝛿2.2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.b)
-      𝑛.2.1 := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝑛
-      𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, eq(b) ↦ L_bytes_eq:λ ⟧  # 𝕄(𝑛.2.1)
+      𝑛.2.2 := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝑛
+      applied(𝑛.2.3) := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝕄(Φ.e)
+      𝑛.2.4 := 𝑛.2.3  # 𝕄(𝑛.2.2)
