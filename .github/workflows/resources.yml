@@ -10,9 +10,11 @@ name: resources
   pull_request:
     branches:
       - master
+permissions: read-all
 concurrency:
   group: resources-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   check-resources:
     runs-on: ubuntu-24.04

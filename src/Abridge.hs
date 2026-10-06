@@ -10,8 +10,8 @@ import qualified Data.Text as T
 import Lining (toSingleLine)
 import Render (render)
 
-abridged :: Int -> EXPRESSION -> EXPRESSION
-abridged width = goExpr
+abridged :: Bool -> Int -> EXPRESSION -> EXPRESSION
+abridged cut width = goExpr
   where
     goExpr :: EXPRESSION -> EXPRESSION
     goExpr expr@EX_FORMATION{..}
@@ -68,7 +68,7 @@ abridged width = goExpr
     goAppArgs AAS_EMPTY = AAS_EMPTY
     goBytes :: BYTES -> BYTES
     goBytes (BT_MANY bts)
-      | length bts > 8 = BT_CUT (take 2 bts) (length bts - 4) (drop (length bts - 2) bts)
+      | cut && length bts > 8 = BT_CUT (take 2 bts) (length bts - 4) (drop (length bts - 2) bts)
     goBytes bts = bts
     short :: EXPRESSION -> Bool
     short expr = T.length (render (toSingleLine expr)) <= width

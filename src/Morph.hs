@@ -19,7 +19,7 @@ import Control.Applicative ((<|>))
 import Control.Exception (Exception, SomeException, catch, evaluate, throwIO, try)
 import Control.Monad (unless, when)
 import Data.Bifunctor (first)
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
@@ -54,7 +54,7 @@ type EvaluationFunc = ReduceContext -> State -> Expression -> Expression -> IO (
 type FiringFunc = Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
 
 emptyState :: State
-emptyState = State 0 Nothing Nothing
+emptyState = State Nothing Nothing
 
 data Steps = Steps
   { _limit :: Int
@@ -95,6 +95,7 @@ data ReduceContext = ReduceContext
   , _maxCycles :: Int
   , _steps :: Steps
   , _tally :: Maybe Tally
+  , _minted :: IORef Int
   , _deadline :: Maybe Deadline
   , _memo :: Maybe Memo
   , _nesting :: Int
@@ -440,12 +441,10 @@ deepened focus expr univ state ctx = do
       form <- held path store
       if copied form
         then do
+          fresh <- coined caller
           looped caller mode before (Just (fresh, called form))
-          throwIO (Severed (ExFormation [BiLambda (FnSymbol fresh)]) reached{_minted = fresh})
+          throwIO (Severed (ExFormation [BiLambda (FnSymbol fresh)]) reached)
         else refused caller refusal
-      where
-        fresh :: Int
-        fresh = reached._minted + 1
     cut _ _ caller refusal = refused caller refusal
     copied :: Expression -> Bool
     copied (ExFormation bds) = boxed bds && not (any abstract bds) && any code bds
@@ -488,11 +487,11 @@ deepened focus expr univ state ctx = do
         }
     deferred :: Expression -> State -> ReduceContext -> IO (Expression, State)
     deferred copy state' caller = do
+      fresh <- coined caller
       caller._saveEval (EvDeferred caller._nesting fresh caller._judgment copy (called copy) caller._site)
-      pure (ExFormation [BiLambda (FnSymbol fresh)], state'{_minted = fresh})
-      where
-        fresh :: Int
-        fresh = state'._minted + 1
+      pure (ExFormation [BiLambda (FnSymbol fresh)], state')
+    coined :: ReduceContext -> IO Int
+    coined caller = atomicModifyIORef' caller._minted (\count -> (count + 1, count + 1))
     called :: Expression -> Maybe Expression
     called copy@(ExFormation bds) = do
       (path, declared) <- origin copy
@@ -552,45 +551,44 @@ deepened focus expr univ state ctx = do
     spread :: Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
     spread standing (Frame world _ _ _) form@(ExFormation bds) state' caller
       | not (any abstract bds) = do
-          jobs <- mapM (planned (synonym caller._universe form)) (zip [1 ..] bds)
-          (entered, _, state'') <- pooled caller._jobs jobs gathered ([], 0, state')
+          floor' <- readIORef caller._minted
+          jobs <- mapM (planned floor' (synonym caller._universe form)) (zip [1 ..] bds)
+          (entered, state'') <- pooled caller._jobs jobs (gathered floor') ([], state')
           pure (ExFormation (reverse entered), state'')
       where
-        floor' :: Int
-        floor' = state'._minted
-        planned :: Maybe (Expression, [Attribute]) -> (Int, Binding) -> IO (IO ([Evaluation], Either SomeException (Int -> IO (Binding, Maybe State))))
-        planned alias (idx, BiTau attr body)
+        planned :: Int -> Maybe (Expression, [Attribute]) -> (Int, Binding) -> IO (IO ([Evaluation], Int, Either SomeException (Int -> IO (Binding, Maybe State))))
+        planned floor' alias (idx, BiTau attr body)
           | attr /= AtRho = do
               new <- if closed body then fresh alias attr caller else pure True
-              pure (if new then worker idx attr body else kept (BiTau attr body))
-        planned _ (_, bd) = pure (kept bd)
-        kept :: Binding -> IO ([Evaluation], Either SomeException (Int -> IO (Binding, Maybe State)))
-        kept bd = pure ([], Right (const (pure (bd, Nothing))))
-        worker :: Int -> Attribute -> Expression -> IO ([Evaluation], Either SomeException (Int -> IO (Binding, Maybe State)))
-        worker idx attr body = do
+              pure (if new then worker floor' idx attr body else kept (BiTau attr body))
+        planned _ _ (_, bd) = pure (kept bd)
+        kept :: Binding -> IO ([Evaluation], Int, Either SomeException (Int -> IO (Binding, Maybe State)))
+        kept bd = pure ([], 0, Right (const (pure (bd, Nothing))))
+        worker :: Int -> Int -> Attribute -> Expression -> IO ([Evaluation], Int, Either SomeException (Int -> IO (Binding, Maybe State)))
+        worker floor' idx attr body = do
           buffer <- newIORef []
           tau <- tausOf idx
           tally <- tallied (fmap (\(Tally cap _) -> cap) caller._tally)
+          minted <- newIORef floor'
           memo <- memoized caller._acyclic
           copy <- newIORef =<< readIORef world
           (store, path) <- home standing copy form
-          let own = caller{_jobs = 1, _tally = tally, _memo = memo, _saveEval = modifyIORef' buffer . (:), _buildTerm = minting tau caller._buildTerm}
+          let own = caller{_jobs = 1, _tally = tally, _minted = minted, _memo = memo, _saveEval = modifyIORef' buffer . (:), _buildTerm = minting tau caller._buildTerm}
           outcome <- try (try (go (fmap (`ExDispatch` attr) standing) Nothing (Frame copy store path (Just attr)) body state' own))
           records <- reverse <$> readIORef buffer
-          pure (records, fmap (either severed (\(term, walked) offset -> pure (BiTau attr (lifted floor' offset term), Just (moved offset walked)))) outcome)
-        severed :: Severed -> Int -> IO (Binding, Maybe State)
-        severed (Severed answer reached) offset = throwIO (Severed (lifted floor' offset answer) (moved offset reached))
-        moved :: Int -> State -> State
-        moved offset walked =
-          walked
-            { _minted = walked._minted + offset
-            , _manufactured = fmap (\sym -> if sym > floor' then sym + offset else sym) walked._manufactured
-            }
-        gathered :: ([Binding], Int, State) -> ([Evaluation], Either SomeException (Int -> IO (Binding, Maybe State))) -> IO ([Binding], Int, State)
-        gathered (done, offset, current) (records, outcome) = do
+          spent <- subtract floor' <$> readIORef minted
+          pure (records, spent, fmap (either (severed floor') (\(term, walked) offset -> pure (BiTau attr (lifted floor' offset term), Just (moved floor' offset walked)))) outcome)
+        severed :: Int -> Severed -> Int -> IO (Binding, Maybe State)
+        severed floor' (Severed answer reached) offset = throwIO (Severed (lifted floor' offset answer) (moved floor' offset reached))
+        moved :: Int -> Int -> State -> State
+        moved floor' offset walked = walked{_manufactured = fmap (\sym -> if sym > floor' then sym + offset else sym) walked._manufactured}
+        gathered :: Int -> ([Binding], State) -> ([Evaluation], Int, Either SomeException (Int -> IO (Binding, Maybe State))) -> IO ([Binding], State)
+        gathered floor' (done, current) (records, spent, outcome) = do
+          offset <- subtract floor' <$> readIORef caller._minted
           mapM_ (caller._saveEval . renumbered floor' offset) records
+          modifyIORef' caller._minted (+ spent)
           (bd, walked) <- either throwIO ($ offset) outcome
-          pure (bd : done, maybe offset (\after -> after._minted - floor') walked, fromMaybe current walked)
+          pure (bd : done, fromMaybe current walked)
     spread standing frame term state' caller = parts standing frame term state' caller
     minting :: IO T.Text -> BuildTermFunc -> BuildTermFunc
     minting tau build func

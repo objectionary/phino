@@ -200,7 +200,7 @@ rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iterati
               _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
                 Nothing -> do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
-                  if _breakpoint == Just ruleName
+                  if _breakpoint == Just ruleName && ruleName `notElem` [fired | (_, Just (_, fired)) <- NE.toList _rewrittens]
                     then do
                       logDebug (printf "Rule '%s' is a breakpoint, dropping down all the previous rewritings..." ruleName)
                       pure (_rewrittens, expression, _unique, True, _found)

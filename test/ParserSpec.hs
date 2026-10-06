@@ -413,6 +413,16 @@ spec = do
     fromLeft "" (parseExpression "⟦\n  a ↦ ξ,\n  b ↦ ξ,\n  b ↦ Φ\n⟧\n\n\n")
       `shouldSatisfy` isInfixOf "expression:4:3:"
 
+  describe "an arrow ends an attribute name" $
+    forM_
+      [ ("⟦ a ↦ ξ.b(c↦ξ) ⟧", "⟦ a ↦ ξ.b(c ↦ ξ) ⟧")
+      , ("[[ a -> $.b(c->$) ]]", "[[ a -> $.b(c -> $) ]]")
+      , ("⟦ a ↦ ξ.as-bytes(x-y↦ξ) ⟧", "⟦ a ↦ ξ.as-bytes(x-y ↦ ξ) ⟧")
+      ]
+      ( \(tight, spaced) ->
+          it tight (parseExpression tight `shouldBe` parseExpression spaced)
+      )
+
   describe "parse number" $
     test
       parseNumber
@@ -433,6 +443,10 @@ spec = do
       , ("1.5e2", Just (DataNumber (BtMany ["40", "62", "C0", "00", "00", "00", "00", "00"])))
       , ("2e-3", Just (DataNumber (BtMany ["3F", "60", "62", "4D", "D2", "F1", "A9", "FC"])))
       , ("-1e10", Just (DataNumber (BtMany ["C2", "02", "A0", "5F", "20", "00", "00", "00"])))
+      , ("1e18446744073709551617", Just (DataNumber (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])))
+      , ("-1e18446744073709551617", Just (DataNumber (BtMany ["FF", "F0", "00", "00", "00", "00", "00", "00"])))
+      , ("1e9223372036854775808", Just (DataNumber (BtMany ["7F", "F0", "00", "00", "00", "00", "00", "00"])))
+      , ("5e-18446744073709551615", Just (DataNumber (BtMany ["00", "00", "00", "00", "00", "00", "00", "00"])))
       , ("abc", Nothing)
       , ("", Nothing)
       ]

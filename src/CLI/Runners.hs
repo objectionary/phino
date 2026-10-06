@@ -16,6 +16,7 @@ import Control.Concurrent (rtsSupportsBoundThreads, setNumCapabilities)
 import Control.Exception
 import Control.Monad (unless, when)
 import Data.Foldable (traverse_)
+import Data.IORef (newIORef)
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
@@ -76,7 +77,7 @@ runRewrite OptsRewrite{..} = do
   save <- saveStepFunc _stepsDir printCtx included excluded
   let steps = map (stepOf linked) rules
   (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save)
-  rewrittens' <- exclude <$> include (if _sequence then NE.toList rewrittens else [NE.last rewrittens])
+  rewrittens' <- include (if _sequence then NE.toList rewrittens else [NE.last rewrittens]) >>= exclude
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
   output _targetFile exprs
@@ -138,6 +139,7 @@ runRewrite OptsRewrite{..} = do
         _sugarType
         _hideRho
         Nothing
+        False
         _flat
         _margin
         xmirCtx
@@ -173,6 +175,7 @@ runDataize OptsDataize{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
+  minted <- newIORef 0
   memo <- memoized _acyclic
   linked <- engine
   (outcome, chain, _) <-
@@ -180,13 +183,14 @@ runDataize OptsDataize{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally deadline memo 1 _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Dataization aiming._locator
-          dataize universe (started universe) aiming
+          started universe aiming
+          dataize universe emptyState aiming
       )
-  when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (\residue -> (`F.exclude'` excluded) <$> F.include' residue included) outcome >>= putStrLn)
+  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
+  unless _quiet (printOutcome printCtx (\residue -> F.include' residue included >>= (`F.exclude'` excluded)) outcome >>= putStrLn)
   where
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
@@ -205,6 +209,7 @@ runDataize OptsDataize{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
@@ -214,6 +219,7 @@ runDataize OptsDataize{..} = do
         _sugarType
         _hideRho
         _abridged
+        _abridgedData
         _flat
         _margin
         (XmirContext _omitListing _omitComments _hideRho listing atoms)
@@ -252,6 +258,7 @@ runMorph OptsMorph{..} = do
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
+  minted <- newIORef 0
   memo <- memoized _acyclic
   linked <- engine
   (morphed, chain, _) <-
@@ -259,19 +266,20 @@ runMorph OptsMorph{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally deadline memo 1 _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
           (universe, aiming) <- aimed _inside expr ctx
           heading record printCtx Morphing aiming._locator
-          morph universe (started universe) aiming
+          started universe aiming
+          morph universe emptyState aiming
       )
   printed <-
     if _quiet
       then pure Nothing
       else do
-        answer <- (`F.exclude'` excluded) <$> F.include' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) included
+        answer <- F.include' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) included >>= (`F.exclude'` excluded)
         validateXmirTopLevel _outputFormat answer
         Just <$> printAnswer printCtx answer
-  when _sequence (include chain >>= \shown -> printRewrittens printCtx (exclude shown, False) >>= putStrLn)
+  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
   mapM_ putStrLn printed
   where
     lastMaybe :: [a] -> Maybe a
@@ -287,6 +295,7 @@ runMorph OptsMorph{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_jobs > 1 && not _deep) (invalidCLIArguments "The option --jobs requires --deep, since only the deep walk runs on several workers")
       when
         (isJust _inside && _locator /= "Q")
@@ -297,6 +306,7 @@ runMorph OptsMorph{..} = do
         _sugarType
         _hideRho
         _abridged
+        _abridgedData
         _flat
         _margin
         (XmirContext _omitListing _omitComments _hideRho listing atoms)
@@ -363,6 +373,7 @@ runMerge OptsMerge{..} = do
         _sugarType
         False
         Nothing
+        False
         _flat
         _margin
         xmirCtx

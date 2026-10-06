@@ -618,7 +618,9 @@ xmirToApplication derived = xmirToApplication' 0
             | not (hasAttr "base" arg) && hasText arg = do
                 key <- asToKey arg idx
                 bytes <- getText arg
-                pure (ExApplication expr (mkArg key (ExFormation [BiDelta (bytesToBts bytes)])))
+                bds <- mapM (\node -> xmirToFormationBinding derived node fqn) (arg C.$/ C.element (toName "o"))
+                let delta = BiDelta (bytesToBts (T.unpack (T.strip (T.pack bytes))))
+                pure (ExApplication expr (mkArg key (ExFormation (delta : bds))))
             | otherwise = do
                 key <- asToKey arg idx
                 arg' <- xmirToExpression derived arg fqn
@@ -662,7 +664,7 @@ getAttr key cur =
         at : _ ->
           let attr = T.unpack at
            in if null attr
-                then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" attr) cur)
+                then throwIO (InvalidXMIRFormat (printf "The attribute '%s' is not expected to be empty" key) cur)
                 else pure attr
 
 hasText :: C.Cursor -> Bool

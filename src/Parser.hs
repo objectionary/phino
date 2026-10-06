@@ -25,7 +25,7 @@ import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
 import Control.Monad (guard, when)
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
-import Data.Scientific (toRealFloat)
+import Data.Scientific (scientific, toRealFloat)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import Data.Void
@@ -74,7 +74,7 @@ symbol = L.symbol whiteSpace
 label' :: Parser T.Text
 label' = lexeme $ do
   first <- oneOf ['a' .. 'z']
-  rest <- many (satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦") <?> "allowed character")
+  rest <- many (choice [try (char '-' <* notFollowedBy (char '>')), satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦-↦⤍>\"ξΦ⊥")] <?> "allowed character")
   return (T.pack (first : rest))
 
 function :: Parser String
@@ -186,16 +186,29 @@ bytes =
 number :: Parser Expression
 number = do
   sign <- optional (choice [char '-', char '+'])
-  unsigned <- lexeme L.scientific
+  unsigned <- lexeme magnitude
   return
     ( DataNumber
         ( numToBts
             ( case sign of
-                Just '-' -> negate (toRealFloat unsigned)
-                _ -> toRealFloat unsigned
+                Just '-' -> negate unsigned
+                _ -> unsigned
             )
         )
     )
+  where
+    magnitude :: Parser Double
+    magnitude = do
+      whole <- some digitChar
+      fraction <- option "" (try (char '.' >> some digitChar))
+      power <- option 0 (try (oneOf ['e', 'E'] >> L.signed (pure ()) L.decimal))
+      pure (scaled (read (whole ++ fraction)) (power - toInteger (length fraction)) (toInteger (length (whole ++ fraction))))
+    scaled :: Integer -> Integer -> Integer -> Double
+    scaled coefficient power digits
+      | coefficient == 0 = 0
+      | power > 400 = 1 / 0
+      | power < negate (400 + digits) = 0
+      | otherwise = toRealFloat (scientific coefficient (fromInteger power))
 
 root :: Parser Expression
 root = do

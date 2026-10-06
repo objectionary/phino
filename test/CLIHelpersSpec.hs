@@ -22,7 +22,7 @@ isLeft (Right _) = False
 {-# ANN testPrintContext ("HLint: ignore Eta reduce" :: String) #-}
 testPrintContext :: IOFormat -> PrintContext
 testPrintContext format =
-  PrintCtx SWEET False Nothing MULTILINE 2 defaultXmirContext False False False False False 1 1 ExRoot Nothing Nothing Nothing format
+  PrintCtx SWEET False Nothing False MULTILINE 2 defaultXmirContext False False False False False 1 1 ExRoot Nothing Nothing Nothing format
 
 spec :: Spec
 spec = do

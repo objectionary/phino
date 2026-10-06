@@ -304,6 +304,7 @@ spec = do
       , ("keeps Δ data between sibling bindings", "[[ top -> [[ a -> [[]], D> 01-02, b -> [[]] ]] ]]")
       , ("keeps a bare 'Q' bound to a named attribute", "[[ x -> Q ]]")
       , ("keeps a formation bound to φ", "[[ k -> [[ @ -> [[ L> S8 ]] ]] ]]")
+      , ("keeps byte data and sibling bindings in an application argument", "[[ x -> Q.y(a -> [[ D> 01-02, b -> Q.z ]]) ]]")
       ]
       ( \(desc, source) -> it desc $ do
           expr <- parseExpressionThrows source
@@ -341,6 +342,11 @@ spec = do
             expr <- parseExpressionThrows "[[ x -> [[ a -> ? ]](a -> Q.y) ]]"
             try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
         , ["XMIR does not support such expression", "a ↦ Φ.y"]
+        )
+      ,
+        ( "names the attribute that is empty"
+        , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"\"/></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["The attribute 'base' is not expected to be empty"]
         )
       ,
         ( "explains an unsupported binding"

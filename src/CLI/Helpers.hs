@@ -23,7 +23,7 @@ import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
-import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, State (..), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
@@ -35,7 +35,7 @@ import Lambdas (Lambdas, emptyLambdas, readLambdas, taken)
 import Lining (LineFormat (SINGLELINE))
 import Locator (locatedExpression)
 import Logger
-import Morph (ReduceContext, emptyState, insideUniverse)
+import Morph (ReduceContext (..), insideUniverse)
 import Parser (parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
@@ -63,8 +63,8 @@ saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
         | _outputFormat == LATEX = "tex"
         | otherwise = show _outputFormat
       render expr = do
-        shown <- F.include' expr included
-        printInFormat ctx ((if _canonize then canonizeExpr else id) (F.exclude' shown excluded))
+        shown <- F.include' expr included >>= (`F.exclude'` excluded)
+        printInFormat ctx ((if _canonize then canonizeExpr else id) shown)
       save :: SaveStepFunc
       save expr = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))
@@ -118,8 +118,8 @@ lambdasOf (Just file) = do
   logDebug (printf "The option '--symbolic' is specified, reading the λ functions from '%s'" file)
   ensuredFile file >>= readLambdas
 
-started :: Expression -> State
-started expr = emptyState{_minted = taken expr}
+started :: Expression -> ReduceContext -> IO ()
+started expr ctx = writeIORef ctx._minted (taken expr)
 
 heading :: SaveEvalFunc -> PrintContext -> Judgment -> Expression -> IO ()
 heading record ctx judgment locator =
@@ -130,7 +130,7 @@ flattened ctx@PrintCtx{..} expr =
   pure (P.printExpressionWith shaped expr (_sugar, UNICODE, SINGLELINE, _margin))
   where
     shaped :: SugarType -> EXPRESSION -> EXPRESSION
-    shaped sugar = maybe id abridged _abridged . hidden ctx sugar
+    shaped sugar = maybe id (abridged _abridgedData) _abridged . hidden ctx sugar
 
 salted :: PrintContext -> Expression -> IO String
 salted ctx = flattened ctx{_sugar = SALTY}

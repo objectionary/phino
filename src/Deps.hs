@@ -35,8 +35,7 @@ data Term
 type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 
 data State = State
-  { _minted :: Int
-  , _manufactured :: Maybe Int
+  { _manufactured :: Maybe Int
   , _stuck :: Maybe T.Text
   }
 

@@ -238,6 +238,12 @@ spec = do
         , ["rewrite", "--sweet", "--hide-rho", "--margin=3"]
         , ["⟦\n  b(c) ↦ ⟦⟧\n⟧:x:a"]
         )
+      ,
+        ( "prints positional arguments as such once the rho is gone"
+        , "⟦ a ↦ ξ.b(ρ ↦ ξ, α0 ↦ ξ.c, α1 ↦ ξ.d) ⟧"
+        , ["rewrite", "--flat", "--sweet", "--hide-rho"]
+        , ["b( c, d ):a"]
+        )
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 
@@ -1168,6 +1174,12 @@ spec = do
         withStdin "[[ x -> $ ]]" $
           testCLISucceeded ["rewrite", "--rule=" ++ fix, "--max-depth=1", "--depth-sensitive", "--flat"] ["⟦ x ↦ Φ ⟧"]
 
+    it "keeps the rewritten expression when the --breakpoint rule fired" $
+      withStdin "⟦ a ↦ ⟦ b ↦ Φ ⟧.b ⟧" $
+        testCLISucceeded
+          ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
+          ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
+
   describe "morph --focus under --locator" $ do
     it "finds the same object for the steps and for the answer" $
       withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $ do
@@ -1180,6 +1192,10 @@ spec = do
       withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" $ do
         (out, _) <- withStdout (try (runCLI ["morph", "--locator=Q.t", "--focus=Q.nope", "--flat", "--sequence"]) :: IO (Either ExitCode ()))
         out `shouldNotContain` "⟦ t ↦"
+
+  it "fails on a --hide locator that matches nothing, as --show does" $
+    withStdin "[[ x -> Q.y ]]" $
+      testCLIFailed ["rewrite", "--hide=Q.nope"] ["Can't find object by locator: 'Φ.nope'"]
 
   describe "dataize" $ do
     it "prints help" $
@@ -1379,12 +1395,26 @@ spec = do
         , ("XMLXXXXXX.xml", "    <bind meta=\"𝛿1.1\">01-02-..(8b)..-0B-0C</bind>")
         ]
         ( \(template, line) ->
-            it ("cuts a long datum a firing came down to, as " ++ line) $
+            it ("cuts a long datum a firing came down to under --abridged-data, as " ++ line) $
               withTempFile template $ \(path, stream) -> do
                 hClose stream
                 withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
                   withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ Δ ⤍ 01-02-03-04-05-06-07-08-09-0A-0B-0C ⟧, λ ⤍ L_outer ⟧ ⟧" $
-                    testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
+                    testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--abridged", "--abridged-data", "--sweet", "--hide-rho", "--quiet"] []
+                records <- readProtocol path
+                lines records `shouldContain` [line]
+        )
+      forM_
+        [ ("textXXXXXX.txt", "    𝛿1.1 := 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46  # 𝔻(ξ.arg)")
+        , ("XMLXXXXXX.xml", "    <bind meta=\"𝛿1.1\">30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46</bind>")
+        ]
+        ( \(template, line) ->
+            it ("keeps a long datum a firing came down to whole without --abridged-data, as " ++ line) $
+              withTempFile template $ \(path, stream) -> do
+                hClose stream
+                withLambdasOf (T.pack "- λ: L_hex\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \hex ->
+                  withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ Δ ⤍ 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46 ⟧, λ ⤍ L_hex ⟧ ⟧" $
+                    testCLISucceeded ["dataize", "--symbolic=" ++ hex, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
                 records <- readProtocol path
                 lines records `shouldContain` [line]
         )
@@ -1413,6 +1443,12 @@ spec = do
       it "refuses the flag without a protocol" $
         withStdin wide $
           testCLIFailed ["dataize", "--locator=Q.t", "--abridged"] ["The option --abridged requires --protocol"]
+      it "refuses to cut the data in dataize without --abridged" $
+        withStdin wide $
+          testCLIFailed ["dataize", "--locator=Q.t", "--protocol=daten.txt", "--abridged-data"] ["The option --abridged-data requires --abridged"]
+      it "refuses to cut the data in morph without --abridged" $
+        withStdin wide $
+          testCLIFailed ["morph", "--locator=Q.t", "--protocol=daten.xml", "--abridged-data"] ["The option --abridged-data requires --abridged"]
 
     describe "--protocol" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"

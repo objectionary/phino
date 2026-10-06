@@ -8,6 +8,7 @@ import CLI.Helpers (started)
 import Compiled (compiled)
 import Control.Exception (evaluate)
 import Control.Monad (replicateM, replicateM_)
+import Data.IORef (IORef, newIORef)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe)
@@ -22,7 +23,7 @@ import Lambdas (Lambdas, readLambdas)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Margin (defaultMargin)
 import Merge (merge)
-import Morph (Memo, ReduceContext (ReduceContext), Steps (Steps), memoized, morph)
+import Morph (Memo, ReduceContext (ReduceContext), Steps (Steps), emptyState, memoized, morph)
 import Must (Must (MtDisabled))
 import Parser (parseExpressionThrows)
 import Printer (printExpression')
@@ -60,8 +61,8 @@ rewriteCtx =
     Nothing
     dontSaveStep
 
-symbolicCtx :: Acyclic -> Maybe Memo -> Lambdas -> Expression -> ReduceContext
-symbolicCtx acyclic memo lambdas locator =
+symbolicCtx :: Acyclic -> Maybe Memo -> IORef Int -> Lambdas -> Expression -> ReduceContext
+symbolicCtx acyclic memo minted lambdas locator =
   ReduceContext
     locator
     locator
@@ -70,6 +71,7 @@ symbolicCtx acyclic memo lambdas locator =
     25
     (Steps 1000 0)
     Nothing
+    minted
     Nothing
     memo
     1
@@ -192,5 +194,8 @@ main = do
     symbolic acyclic universe lambdas locator = do
       seedTaus universe
       memo <- memoized (Just acyclic)
-      (answer, _, _) <- morph universe (started universe) (symbolicCtx acyclic memo lambdas locator)
+      minted <- newIORef 0
+      let ctx = symbolicCtx acyclic memo minted lambdas locator
+      started universe ctx
+      (answer, _, _) <- morph universe emptyState ctx
       pure (hashExpression answer)

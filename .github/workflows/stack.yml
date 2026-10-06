@@ -12,9 +12,11 @@ name: stack
       - master
 env:
   STACK_ROOT: ${{ github.workspace }}/.stack-root
+permissions: read-all
 concurrency:
   group: stack-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   stack:
     strategy:

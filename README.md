@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.145
+cabal install --overwrite-policy=always phino-0.0.148
 phino --version
 ```
 
@@ -875,11 +875,11 @@ A formation carrying a whole object is written flat on one line, so a real
 run fills the protocol with lines tens of thousands of characters long. The
 `--abridged` option shortens every term the protocol writes, in the text and
 the XML alike: a formation longer than sixty-four characters keeps its `φ`,
-`Δ` and `λ` bindings and folds the rest into a count, and a byte string longer
-than eight bytes keeps its first two bytes and its last two, with the count of
-the bytes cut out between them. The width is a value of the option,
-`--abridged=120`, for a run that can read longer lines. The result the run
-prints stays whole, and the option is refused without `--protocol`:
+`Δ` and `λ` bindings and folds the rest into a count. The width is a value of
+the option, `--abridged=120`, for a run that can read longer lines. The result
+the run prints stays whole, and the option is refused without `--protocol`.
+Every byte string the protocol writes stays whole too, since a reader may need
+the data a firing came down to:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -895,6 +895,23 @@ $ cat wide.phi
 ⟧
 $ phino dataize --locator=Q.t --protocol=wide.txt --abridged --quiet \
     --sweet --hide-rho wide.phi
+$ cat wide.txt
+𝔻(Φ.t)
+  formation(⟦ φ ↦ 48-65-6C-6C-6F-2C-20-77-6F-72-6C-64:Δ, +3 ⟧)  # 𝔻(Φ.t)
+```
+
+<!-- markdownlint-enable MD013 -->
+
+The `--abridged-data` option cuts the data too: a byte string longer than eight
+bytes keeps its first two bytes and its last two, with the count of the bytes
+cut out between them. A formation folded into a count loses its data either
+way, and the option is refused without `--abridged`:
+
+<!-- markdownlint-disable MD013 -->
+
+```bash
+$ phino dataize --locator=Q.t --protocol=wide.txt --abridged \
+    --abridged-data --quiet --sweet --hide-rho wide.phi
 $ cat wide.txt
 𝔻(Φ.t)
   formation(⟦ φ ↦ 48-65-..(8b)..-6C-64:Δ, +3 ⟧)  # 𝔻(Φ.t)

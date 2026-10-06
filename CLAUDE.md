@@ -165,8 +165,12 @@ which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
-for a value nobody worked out, minted fresh per firing and counted in the state
-`State` of `Deps.hs`. Dataizing a symbol answers a fixed 42, so a `𝛿` always
+for a value nobody worked out, minted fresh per firing and counted by `_minted`
+of `ReduceContext`. The count is an `IORef`, as the tally of `--max-firings`
+is, since a parked frame hands back the state it started from, and a count kept
+there would hand out again the symbols its protocol records already spell
+(#1738). `started` of `CLI/Helpers.hs` sets it past the symbols the program
+carries. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
 parks on, and the protocol records it as `unanswered(name)` either way. What
@@ -356,7 +360,8 @@ symbol, and the copy in `<e>`.
 `--jobs` has the walk take the bindings of the formation it starts at side
 by side (`spread` of `deepened`, over `pooled` of `Pool.hs`), each a root of
 its own: it starts from the state the spine left, with a world, a memo, a
-tally and a source of fresh names of its own (`tausOf` in `Tau.hs`, names
+tally, a count of symbols starting where the spine stopped minting, and a
+source of fresh names of its own (`tausOf` in `Tau.hs`, names
 like `a🌵4-0` that carry the binding), and its protocol records are kept
 aside. One binding never sees what another wrote back. They are
 gathered in the order of the bindings, and gathering raises the symbols a

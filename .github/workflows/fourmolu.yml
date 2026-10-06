@@ -17,9 +17,11 @@ name: fourmolu
       - '**.hs'
       - 'fourmolu.yaml'
       - '.github/workflows/fourmolu.yml'
+permissions: read-all
 concurrency:
   group: fourmolu-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   fourmolu:
     runs-on: ubuntu-24.04

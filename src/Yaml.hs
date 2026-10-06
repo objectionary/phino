@@ -21,6 +21,7 @@ import Data.FileEmbed (embedDir)
 import Data.Maybe (fromMaybe)
 import Data.Scientific (isInteger)
 import Data.Text (Text, unpack)
+import qualified Data.Text as T
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
 import GHC.Generics (Generic)
@@ -205,6 +206,7 @@ instance FromJSON Rule where
     referenceless rule.name "where" rule.where_
     referenceless rule.name "having" rule.having
     targets rule (metas rule.pattern) (fromMaybe [] rule.where_)
+    steps rule (named (metas rule.pattern)) (fromMaybe [] rule.where_)
     pure rule
     where
       targets :: Rule -> [Text] -> [Extra] -> Parser ()
@@ -219,6 +221,27 @@ instance FromJSON Rule where
       fresh rule known bound
         | bound `elem` known = fail (printf "The rule '%s' has a 'where' step that binds the meta '%s' again, while it is already bound" rule.name (unpack bound))
         | otherwise = pure ()
+      named :: [Text] -> [Text]
+      named = filter ((> 1) . T.length)
+      steps :: Rule -> [Text] -> [Extra] -> Parser ()
+      steps rule known [] = do
+        unread rule known "result" (metas rule.result)
+        unread rule known "when" (metas rule.when)
+        unread rule known "having" (metas rule.having)
+      steps rule known (extra : rest) = do
+        unread rule known "where" (metas extra.args)
+        steps rule (known ++ named (metas extra.meta)) rest
+      unread :: Rule -> [Text] -> String -> [Text] -> Parser ()
+      unread rule known field used = case filter (`notElem` known) (named used) of
+        [] -> pure ()
+        missing : _ ->
+          fail
+            ( printf
+                "The rule '%s' reads the meta '%s' it never binds, in '%s', since neither its pattern nor an earlier 'where' step binds it"
+                rule.name
+                (unpack missing)
+                field
+            )
   parseJSON value = genericParseJSON defaultOptions value
 
 data Number

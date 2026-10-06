@@ -16,8 +16,12 @@ concurrency:
 env:
   GHC_VERSION: '9.8.4'
   CABAL_VERSION: '3.12.1.0'
+permissions: read-all
 jobs:
   benchmark:
+    permissions:
+      contents: write
+      pull-requests: write
     timeout-minutes: 60
     runs-on: ubuntu-24.04
     steps:
