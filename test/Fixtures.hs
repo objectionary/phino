@@ -30,6 +30,7 @@ import Control.Exception (bracket, evaluate)
 import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Data.ByteString qualified as BS
 import Data.Char (toLower)
+import Data.IORef (newIORef)
 import Data.List (isPrefixOf, stripPrefix)
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
@@ -50,8 +51,10 @@ import System.FilePath (takeExtension)
 import System.IO (Handle, IOMode (ReadMode), hClose, hGetContents, hSetEncoding, openBinaryTempFile, utf8, withFile)
 import XMIR (defaultXmirContext)
 
-defaultReduceContext :: Expression -> ReduceContext
-defaultReduceContext loc = ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked
+defaultReduceContext :: Expression -> IO ReduceContext
+defaultReduceContext loc = do
+  minted <- newIORef 0
+  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 False True False False 1 Nothing Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
 
 linked :: Engine
 linked = fromMaybe yaml compiled

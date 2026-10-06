@@ -11,6 +11,7 @@ import AST
 import Builder (buildExpressionThrows)
 import Control.Exception (catch, throwIO, try)
 import Control.Monad (foldM, unless)
+import Data.IORef (readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
@@ -85,9 +86,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
     worked ctx entry firing@(Firing _ operands _) bound state' = do
       rewrote <- foldM (reshaped ctx) bound entry._rewritten
-      (bound', stood) <- foldM (masked ctx) (rewrote, state') entry._symbolized
-      (bound'', forked) <- foldM (paired ctx (listToMaybe operands)) (bound', stood) entry._paired
-      (answer, state'') <- answered ctx entry operands bound'' forked
+      stood <- foldM (masked ctx) rewrote entry._symbolized
+      forked <- foldM (paired ctx (listToMaybe operands)) stood entry._paired
+      (answer, state'') <- answered ctx entry operands forked state'
       remember caller._memo firing answer
       pure (answer, state'')
     shown :: Int -> Answer -> IO ()
@@ -144,19 +145,19 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       shaped <- rewritten rules (RuleContext ctx._buildTerm Nothing ctx._engine._normal) term
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) shaped)
       bind meta (MvExpression shaped) bound
-    masked :: ReduceContext -> (Subst, State) -> (Meta, Expression) -> IO (Subst, State)
-    masked ctx (bound, state') (meta, term) = do
+    masked :: ReduceContext -> Subst -> (Meta, Expression) -> IO Subst
+    masked ctx bound (meta, term) = do
       reduced <- buildExpressionThrows term bound
-      let (stood, known, spent) = symbolized reduced state'._minted
+      (stood, known, spent) <- symbolized reduced <$> readIORef ctx._minted
+      writeIORef ctx._minted spent
       mapM_ (ctx._saveEval . fact) known
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling term stood)
-      bound' <- bind meta (MvExpression stood) bound
-      pure (bound', state'{_minted = spent})
+      bind meta (MvExpression stood) bound
       where
         fact :: (Int, Bytes) -> Evaluation
         fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
-    paired :: ReduceContext -> Maybe (Either Int Bytes) -> (Subst, State) -> (Meta, (Meta, Meta)) -> IO (Subst, State)
-    paired ctx condition (bound, state') (meta, (left, right)) = do
+    paired :: ReduceContext -> Maybe (Either Int Bytes) -> Subst -> (Meta, (Meta, Meta)) -> IO Subst
+    paired ctx condition bound (meta, (left, right)) = do
       one <- branch left
       two <- branch right
       case (one, two) of
@@ -165,32 +166,34 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         (_, ExTermination) -> terminating "right" right one
         _ -> both one two
       where
-        both :: Expression -> Expression -> IO (Subst, State)
-        both one two = case joined one two state'._minted of
-          Nothing -> throwIO (Stuck func)
-          Just (term, made, spent) -> do
-            mapM_ (ctx._saveEval . fact) made
-            ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
-            bound' <- bind meta (MvExpression term) bound
-            pure (bound', state'{_minted = spent})
-        terminating :: T.Text -> Meta -> Expression -> IO (Subst, State)
+        both :: Expression -> Expression -> IO Subst
+        both one two = do
+          outcome <- joined one two <$> readIORef ctx._minted
+          case outcome of
+            Nothing -> throwIO (Stuck func)
+            Just (term, made, spent) -> do
+              writeIORef ctx._minted spent
+              mapM_ (ctx._saveEval . fact) made
+              ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
+              bind meta (MvExpression term) bound
+        terminating :: T.Text -> Meta -> Expression -> IO Subst
         terminating side raised term = do
           ctx._saveEval (EvTerminate ctx._nesting condition side raised._spelling)
           ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
-          bound' <- bind meta (MvExpression term) bound
-          pure (bound', state')
+          bind meta (MvExpression term) bound
         branch :: Meta -> IO Expression
         branch named = buildExpressionThrows (ExMeta named._name) bound
         fact :: (Int, (Int, Int)) -> Evaluation
         fact (fresh, pair) = EvJoined ctx._nesting fresh pair
     answered :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     answered ctx entry operands bound state' = do
-      let (fresh, spent) = minted entry._answer state'._minted
+      (fresh, spent) <- minted entry._answer <$> readIORef ctx._minted
+      writeIORef ctx._minted spent
       mapM_ (\idx -> ctx._saveEval (EvMinted ctx._nesting idx operands)) [idx | (_, FnSymbol idx) <- fresh]
       symbolic <- foldM mint bound fresh
       built <- buildExpressionThrows entry._answer symbolic
       ctx._saveEval (EvBuilt ctx._nesting built)
-      (normal, state'') <- settled built univ state'{_minted = spent} ctx
+      (normal, state'') <- settled built univ state' ctx
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure ((built, normal), state'')
     mint :: Subst -> (Slot, Function) -> IO Subst

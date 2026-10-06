@@ -13,7 +13,8 @@
 # (#1434). The budget is generous here, so what ends the run is the cut and not
 # the limit. The argument 'n' and every symbol 'dec' answers stand in a
 # carrier '⟦ φ ↦ 𝜎 ⟧', since the walk defers a copy one of whose arguments is
-# a bare symbol instead of entering it (#1729).
+# a bare symbol instead of entering it (#1729). The first 'L_if' gets stuck,
+# yet the symbols it minted stay taken, so the second one mints from 𝜎7 (#1738).
 symbolic: |
   - λ: L_zero
     dataize:
@@ -108,24 +109,24 @@ protocol: |
             𝔼(L_zero)  # 𝔻(Φ.a🌵14)
               formation(𝜎3:λ:φ)  # 𝔻(Φ.a🌵15)
               𝛿1.10 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-              𝑛.10.1 := 𝑛.5.2  # 𝑛
-              𝑛.10.2 := 𝑛.5.2  # 𝕄(𝑛.10.1)
-            𝛿1.9 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
+              𝑛.10.1 := 𝜎7:λ  # 𝑛
+              𝑛.10.2 := 𝜎7:λ  # 𝕄(𝑛.10.1)
+            𝛿1.9 := 𝔻(𝜎7:λ)  # 𝔻(ξ.c)
             𝑛1.9 := 01-:Δ  # 𝕄(ξ.left)
             𝔼(L_dec)  # 𝕄(Φ.a🌵17.b)
               formation(𝜎3:λ:φ)  # 𝔻(Φ.a🌵18)
               𝛿1.11 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-              𝑛.11.1 := 𝑛.6.2  # 𝑛
-              𝑛.11.2 := 𝑛.6.2  # 𝕄(𝑛.11.1)
+              𝑛.11.1 := 𝜎8:λ:φ  # 𝑛
+              𝑛.11.2 := 𝜎8:λ:φ  # 𝕄(𝑛.11.1)
             looped(⟦ a ↦ 𝜎1:λ:φ, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵17), proven
-            𝑛2.9 := ⟦ a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ 𝜎5:λ:φ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
-            𝔻(𝜎6:λ) == 01-
-            𝑛3.9 := 𝑛3.4  # 𝑛1
-            𝑛4.9 := ⟦ a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ 𝜎5:λ:φ ), λ ⤍ L_mul ⟧  # 𝑛2
+            𝑛2.9 := ⟦ a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ 𝜎8:λ:φ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
+            𝔻(𝜎9:λ) == 01-
+            𝑛3.9 := 𝜎9:λ  # 𝑛1
+            𝑛4.9 := ⟦ a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ 𝜎8:λ:φ ), λ ⤍ L_mul ⟧  # 𝑛2
             stuck(L_if)
         stuck(L_if)
       𝑛2.7 := ⟦ a ↦ 𝜎1:λ:φ, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
-      𝔻(𝜎4:λ) == 01-
-      𝑛3.7 := 𝑛.10.2  # 𝑛1
+      𝔻(𝜎10:λ) == 01-
+      𝑛3.7 := 𝜎10:λ  # 𝑛1
       𝑛4.7 := ⟦ a ↦ 𝜎1:λ:φ, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ), λ ⤍ L_mul ⟧  # 𝑛2
       stuck(L_if)

@@ -13,6 +13,7 @@ import AST
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON)
+import Data.IORef (newIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
@@ -39,7 +40,7 @@ test :: (Eq a, Show a) => ((Expression, NonEmpty Rewritten) -> Expression -> Sta
 test func useCases =
   forM_ useCases $ \(desc, input, expr, output) ->
     it desc $ do
-      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState (defaultReduceContext ExRoot)
+      ((res, _), _) <- func (input, (expr, Nothing) :| []) expr emptyState =<< defaultReduceContext ExRoot
       res `shouldBe` output
 
 data DataizePack = DataizePack
@@ -57,7 +58,8 @@ testDataize known pth = do
   DataizePack{..} <- Decode.decodeFileThrow pth
   expr <- parseExpressionThrows (if model == Just True then primitives input else input)
   loc <- parseExpressionThrows (fromMaybe "Q" location)
-  let ctx = (defaultReduceContext loc){_symbolic = if symbolic == Just True then known else emptyLambdas}
+  base <- defaultReduceContext loc
+  let ctx = base{_symbolic = if symbolic == Just True then known else emptyLambdas}
   case (result, fails) of
     (Just res, Nothing) -> do
       bts <- either (fail . ("cannot read the expected bytes: " ++)) pure (parseBytes res)
@@ -71,7 +73,8 @@ partially :: Lambdas -> String -> IO ((Outcome, [Rewritten]), String)
 partially known src = do
   expr <- parseExpressionThrows (primitives src)
   recorded $ \record -> do
-    let ctx = (withLambdas known (defaultReduceContext ExRoot)){_partial = True, _saveEval = record}
+    base <- defaultReduceContext ExRoot
+    let ctx = (withLambdas known base){_partial = True, _saveEval = record}
     (outcome, chain, _) <- dataize expr emptyState ctx
     pure (outcome, chain)
 
@@ -84,11 +87,12 @@ spec = do
 
   describe "dataize' fails when no dataization rule matches the term" $
     it "throws instead of treating the unmatched meta as ⊥" $
-      dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
+      (dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "no dataization rule matched" `isInfixOf` show (e :: SomeException))
 
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
-    let rctx = RuleContext (execBuildTerm ExRoot (defaultReduceContext ExRoot)) Nothing (_normal linked)
+    ctx <- runIO (defaultReduceContext ExRoot)
+    let rctx = RuleContext (execBuildTerm ExRoot ctx) Nothing (_normal linked)
         dataizeRule :: String -> Yaml.DataizeRule
         dataizeRule nm = fromMaybe (error ("no dataization rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.dataizationRules)
         asRule :: Yaml.DataizeRule -> Yaml.Rule
@@ -156,7 +160,7 @@ spec = do
   describe "fails to dataize the terminator" $ do
     let failsOn desc input =
           it desc $
-            dataize' (input, (ExRoot, Nothing) :| []) ExRoot emptyState (defaultReduceContext ExRoot)
+            (dataize' (input, (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
               `shouldThrow` (\e -> "terminator" `isInfixOf` show (e :: SomeException))
     failsOn "throws on ⊥ instead of mapping it to empty bytes" ExTermination
     failsOn "throws on a data-less formation, which dataizes ⊥" (ExFormation [])
@@ -168,13 +172,15 @@ spec = do
     it "fails on the step limit instead of morphing forever" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
-        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty endless (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
+        minted <- newIORef 0
+        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing minted Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty endless (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
     it "parks the step limit as a residual with --partial" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
-        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing Nothing Nothing 1 False True True False 1 Nothing Dataization [] Map.empty endless (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
+        minted <- newIORef 0
+        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing minted Nothing Nothing 1 False True True False 1 Nothing Dataization [] Map.empty endless (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
@@ -183,14 +189,15 @@ spec = do
     it "fails a partial dataization once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ @ -> [[ D> 7E- ]] ]]"
       deadline <- overdue 29
-      dataize expr emptyState (defaultReduceContext ExRoot){_deadline = Just deadline, _partial = True}
+      ctx <- defaultReduceContext ExRoot
+      dataize expr emptyState ctx{_deadline = Just deadline, _partial = True}
         `shouldThrow` (\e -> "--max-seconds=29" `isInfixOf` show (e :: SomeException))
 
   describe "partially evaluates around a λ function that cannot fire (--partial)" $ do
     let placeholder = ExFormation [BiLambda (Function "Sym_arg_0")]
     it "fails on it without the flag, naming the λ function" $ do
       expr <- parseExpressionThrows (primitives "2.times(3).nope")
-      dataize expr emptyState (withLambdas known (defaultReduceContext ExRoot))
+      (dataize expr emptyState . withLambdas known =<< defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "No entry of --symbolic answers the λ function 'L_number_nope'" `isInfixOf` show (e :: SomeException))
     it "leaves the application of the unanswered λ function in place" $ do
       ((outcome, _), _) <- partially known "2.times(3).nope"
@@ -241,27 +248,30 @@ spec = do
     forM_
       [
         ( "--max-cycles"
-        , ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing Nothing 1 True True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked
+        , \minted -> ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing minted Nothing Nothing 1 True True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing Nothing 1 True True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked
+        , \minted -> ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing minted Nothing Nothing 1 True True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked
         , "--max-depth=0"
         )
       ]
-      ( \(flag, ctx, message) ->
+      ( \(flag, reducing, message) ->
           it ("throws once " ++ flag ++ " is exhausted with --depth-sensitive") $ do
             expr <- parseExpressionThrows "[[ @ -> [[ x -> [[ D> 00- ]] ]].x ]]"
+            ctx <- reducing <$> newIORef 0
             dataize expr emptyState ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
       expr <- parseExpressionThrows boxed
-      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
+      minted <- newIORef 0
+      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing minted Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
       value `shouldBe` Dataized (BtOne "00")
     it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
       expr <- parseExpressionThrows boxed
-      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
+      minted <- newIORef 0
+      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing minted Nothing Nothing 1 False True False False 1 Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
         `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
 
   describe "labels every step with a defined rule or operation" $ do
@@ -280,7 +290,7 @@ spec = do
     it "uses no step label without a defining rule or operation" $ do
       expr <- parseExpressionThrows (primitives "5.plus(6)")
       loc <- parseExpressionThrows "Q"
-      (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc))
+      (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext loc
       let orphans = nub [label | (_, Just (_, label)) <- chain, label `notElem` allowed, label /= "symbol"]
       unless
         (null orphans)
@@ -288,15 +298,15 @@ spec = do
     it "takes the step of a firing by evaluation" $ do
       expr <- parseExpressionThrows (primitives "5.plus(6)")
       loc <- parseExpressionThrows "Q"
-      (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc))
+      (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext loc
       map snd chain `shouldContain` [Just (Evaluation, "evaluate")]
     it "takes the step of a box by contextualization" $ do
       expr <- parseExpressionThrows "[[ @ -> [[ D> 0A- ]] ]]"
-      (_, chain, _) <- dataize expr emptyState (defaultReduceContext ExRoot)
+      (_, chain, _) <- dataize expr emptyState =<< defaultReduceContext ExRoot
       map snd chain `shouldContain` [Just (Contextualization, "contextualize")]
     it "takes the step of a delta by dataization" $ do
       expr <- parseExpressionThrows "[[ D> 3C- ]]"
-      (_, chain, _) <- dataize expr emptyState (defaultReduceContext ExRoot)
+      (_, chain, _) <- dataize expr emptyState =<< defaultReduceContext ExRoot
       map snd chain `shouldBe` [Just (Dataization, "delta"), Nothing]
 
   describe "names every rule uniquely across rule sets" $
@@ -313,7 +323,7 @@ spec = do
     let labelsOf loc src = do
           expr <- parseExpressionThrows src
           loc' <- parseExpressionThrows loc
-          (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext loc'))
+          (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext loc'
           pure [label | (_, Just (_, label)) <- chain]
     it "dataizes 5.plus(6) through the expected rules" $ do
       labels <-
@@ -335,7 +345,7 @@ spec = do
       labels `shouldBe` ["contextualize", "md", "dot", "skip", "mf", "delta"]
     it "takes every step of 5.plus(6) by the judgment of its rule" $ do
       expr <- parseExpressionThrows "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
-      (_, chain, _) <- dataize expr emptyState (withLambdas known (defaultReduceContext ExRoot))
+      (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext ExRoot
       [judgment | (_, Just (judgment, _)) <- chain]
         `shouldBe` [ Contextualization
                    , Morphing
