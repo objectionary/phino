@@ -407,6 +407,11 @@ spec = do
           , ["--label option can stay together with --output=latex only"]
           )
         ,
+          ( "with an unsafe --label and --output=latex"
+          , ["rewrite", "--label=eq:bad%tag", "--output=latex"]
+          , ["The --label option must contain only letters, numbers, colons, periods, underscores, and hyphens"]
+          )
+        ,
           ( "with --compress and --output != latex"
           , ["rewrite", "--compress", "--output=phi"]
           , ["--compress option can stay together with --output=latex only"]
@@ -666,6 +671,17 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "\\phiExpression{foo} 5 : |x|{.}"
+              , "\\end{phiquation}"
+              ]
+          ]
+
+    it "escapes special characters in the LaTeX expression name" $
+      withStdin "[[ x -> 5 ]]" $
+        testCLISucceeded
+          ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=bad%tag"]
+          [ unlines
+              [ "\\begin{phiquation}"
+              , "\\phiExpression{bad\\char37{}tag} 5 : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]

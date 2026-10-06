@@ -144,7 +144,7 @@ preamble ctx@LatexContext{..} =
   concat
     [ printf "\\begin{%s}\n" (phiquation ctx)
     , maybe "" (printf "\\label{%s}\n") _label
-    , maybe "" (printf "\\phiExpression{%s} ") _expression
+    , maybe "" (printf "\\phiExpression{%s} " . escaped) _expression
     ]
 
 body :: [String] -> [(a, Maybe (Judgment, String))] -> (Int -> a -> String) -> String
