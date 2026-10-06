@@ -385,16 +385,23 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ)
   formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)
+    applied(𝑛.0.1) := 5  # 𝕄(Φ)
+    applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ)
     𝔼(L_number_plus)  # 𝔻(Φ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ.a🌵0)
-        formation(40-14-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
+      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)
+      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
+        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
+        formation(𝑛.1.2)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ.a🌵1)
-        formation(40-18-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵1)
+      applied(𝑛.1.3) := 6  # 𝕄(Φ.a🌵1)
+      formation(𝑛.1.3)  # 𝔻(Φ.a🌵1)
+        applied(𝑛.1.4) := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
+        formation(𝑛.1.4)  # 𝔻(Φ.a🌵1)
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
-      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧  # 𝕄(𝑛.1.1)
-    formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧)  # 𝔻(Φ)
+      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
+      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
+    formation(𝑛.1.6)  # 𝔻(Φ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -429,15 +436,34 @@ that one.
 
 An answer stands on two lines and not one. A firing answers the term its entry
 wrote and `phino` morphs that term before standing it back into the program, so
-`𝑛.1.1` is what the entry wrote, with the symbols this firing minted already in
-it, commented with `𝑛` to name the key it was read from, and `𝑛.1.2` is the
-normal form 𝕄 made of it, commented with `𝕄(𝑛.1.1)` to say where it came from.
+`𝑛.1.5` is what the entry wrote, with the symbols this firing minted already in
+it, commented with `𝑛` to name the key it was read from, and `𝑛.1.7` is the
+normal form 𝕄 made of it, commented with `𝕄(𝑛.1.5)` to say where it came from.
 It is the same morphing every other term goes through, and writing only its
 outcome would have the formation of `number` appear in place of the three
 tokens the entry wrote with nothing saying why. Whatever that morphing fires
-opens its own block between the two lines, exactly where a firing an operand
-took opens one, so the order the lines come in is the order the work was done
-in.
+or applies writes its lines between the two, exactly where a firing an operand
+took opens its block, so the order the lines come in is the order the work was
+done in.
+
+`applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)` is an object an application
+made. The `copy` rule of normalization fills a void of a formation with the
+argument it was given, and so makes a new object, whatever judgment is running
+and wherever in the term the application stands. The line binds that object to
+a fresh `𝑛` and spells the application: the object applied on the left and the
+argument it got on the right, so `5` is `Φ.number( φ ↦ … )` in sugar. The `ρ` a
+dispatch gives the attribute it takes writes no line, so `5.plus( x ↦ 6 )` is
+the `plus` of `5` applied to `6`, one line for one call. The comment names the
+judgment that normalized and the site it stood at. The name is counted with the
+metas of the firing the line stands in, `𝑛.1.5` before it and `𝑛.1.7` after it,
+and an object made outside every firing is counted under `𝑛.0`. From then on
+every line spells the object by that name rather than as the formation it is:
+`formation(𝑛.1.1)` is the object `5` made, and `𝑛.1.7 := 𝑛.1.6` says the firing
+answered with the object 𝕄 made of what the entry wrote. A line is written for
+every application, even one making an object an earlier one already made, and a
+later line names the latest of them. Only an object still standing as it was
+made is named: once a rule rewrote a part of it, it is another object and it is
+spelled out again.
 
 Where an operand came down to the datum a symbol stands for, the protocol writes
 `𝔻(𝜎1:λ)` in place of that 42 (`𝜎1:λ` is the formation `⟦ λ ⤍ 𝜎1 ⟧`, in the
@@ -515,15 +541,22 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ)
   formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)
+    applied(𝑛.0.1) := 5  # 𝕄(Φ)
+    applied(𝑛.0.2) := 5.plus( x ↦ 6 )  # 𝕄(Φ)
     𝔼(L_number_plus)  # 𝕄(Φ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧)  # 𝔻(Φ.a🌵0)
-        formation(40-14-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
+      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)
+      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
+        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
+        formation(𝑛.1.2)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧)  # 𝔻(Φ.a🌵1)
-        formation(40-18-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵1)
+      applied(𝑛.1.3) := 6  # 𝕄(Φ.a🌵1)
+      formation(𝑛.1.3)  # 𝔻(Φ.a🌵1)
+        applied(𝑛.1.4) := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
+        formation(𝑛.1.4)  # 𝔻(Φ.a🌵1)
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
-      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # 𝕄(𝑛.1.1)
+      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
+      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
     unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)
 ```
 
@@ -577,17 +610,23 @@ formation means the object that formation was made of. Among the formations
 declared there, the copy was made of the one whose attributes cover its own,
 whose voids it fills the most, and which shares the most bindings with it.
 When the world declares no such object, or two of them tie, the copy is
-written as it stood, such as `⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧`.
+written as it stood, such as `⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧`, or by the name the
+`applied` line of the application that made it gave it, such as `𝑛.0.1`.
 The markup spells it on one line, broken here for reading. The object stands
 in `of` and the arguments in `<with>`, both written whatever `--abridged`
-says, and the copy as it stood stands in `<e>`, abridged as usual:
+says, and the copy as it stood stands in `<e>`, abridged and named as usual:
 
 ```xml
+<applied meta="𝑛.0.1" by="morph" at="Φ.y">Φ.box( x ↦ 𝜎1:λ )</applied>
 <deferred symbol="𝜎2" by="morph" at="Φ.y" of="Φ.box">
   <with><attr name="x">𝜎1</attr></with>
-  <e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e>
+  <e>𝑛.0.1</e>
 </deferred>
 ```
+
+A deferred copy is one the walk did not make: the application that made it
+writes its own `applied` line, and the `deferred` line says what the walk did
+not do with that object.
 
 Every argument of the call is an `<attr>` of `<with>`. An argument that is a
 bare symbol, or a carrier of one whose `φ` leads to it, such as
@@ -739,22 +778,29 @@ $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <dataize at="Φ">
   <formation at="Φ" term="⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧">
+    <applied meta="𝑛.0.1" by="morph" at="Φ">5</applied>
+    <applied meta="𝑛.0.2" by="morph" at="Φ">5.plus( x ↦ 6 )</applied>
     <evaluate λ="L_number_plus" by="dataize" at="Φ">
-      <formation at="Φ.a🌵0" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧">
-        <formation at="Φ.a🌵0" term="40-14-00-00-00-00-00-00:Δ:φ">
+      <applied meta="𝑛.1.1" by="morph" at="Φ.a🌵0">5</applied>
+      <formation at="Φ.a🌵0" term="𝑛.1.1">
+        <applied meta="𝑛.1.2" by="morph" at="Φ.a🌵0">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</applied>
+        <formation at="Φ.a🌵0" term="𝑛.1.2">
         </formation>
       </formation>
       <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
-      <formation at="Φ.a🌵1" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧">
-        <formation at="Φ.a🌵1" term="40-18-00-00-00-00-00-00:Δ:φ">
+      <applied meta="𝑛.1.3" by="morph" at="Φ.a🌵1">6</applied>
+      <formation at="Φ.a🌵1" term="𝑛.1.3">
+        <applied meta="𝑛.1.4" by="morph" at="Φ.a🌵1">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</applied>
+        <formation at="Φ.a🌵1" term="𝑛.1.4">
         </formation>
       </formation>
       <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
       <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-      <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
-      <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧</answer>
+      <built meta="𝑛.1.5">Φ.number( φ ↦ 𝜎1:λ )</built>
+      <applied meta="𝑛.1.6" by="morph" at="Φ">Φ.number( φ ↦ 𝜎1:λ )</applied>
+      <answer meta="𝑛.1.7">𝑛.1.6</answer>
     </evaluate>
-    <formation at="Φ" term="⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧">
+    <formation at="Φ" term="𝑛.1.6">
     </formation>
   </formation>
 </dataize>
@@ -791,6 +837,15 @@ term the firing answered with, named the same way by its own `meta`, and
 `<built>` before it holds the term the entry wrote, the one 𝕄 made that answer
 of: two elements rather than two attributes of one, for the same reason
 `<dataize>` is no `<bind>`.
+
+`<applied meta="𝑛.1.6" by="morph" at="Φ">` is an object an application made,
+which the text format writes as `applied(𝑛.1.6) := …  # 𝕄(Φ)`: `meta` names
+the object the way the text format does, counted with the `<built>` and the
+`<answer>` of the firing it stands in, `by` and `at` name the judgment that
+normalized and the site it stood at, and the text spells the application. A
+later element holding that object holds its name instead, in its text or in its
+`term`, so `<answer meta="𝑛.1.7">𝑛.1.6</answer>` says the firing answered with
+it and `<formation at="Φ" term="𝑛.1.6">` that 𝔻 got into it.
 
 `<known symbol="𝜎44">3F-F0-00-00-00-00-00-00</known>` is the fact a `symbolize`
 line writes about a symbol it minted, which the text format writes as
@@ -847,20 +902,27 @@ $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <dataize at="Φ">
   <formation at="Φ" term="⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧">
+    <applied meta="𝑛.0.1" by="morph" at="Φ">5</applied>
+    <applied meta="𝑛.0.2" by="morph" at="Φ">5.plus( x ↦ 6 )</applied>
     <evaluate λ="L_number_plus" by="morph" at="Φ">
-      <formation at="Φ.a🌵0" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧">
-        <formation at="Φ.a🌵0" term="40-14-00-00-00-00-00-00:Δ:φ">
+      <applied meta="𝑛.1.1" by="morph" at="Φ.a🌵0">5</applied>
+      <formation at="Φ.a🌵0" term="𝑛.1.1">
+        <applied meta="𝑛.1.2" by="morph" at="Φ.a🌵0">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</applied>
+        <formation at="Φ.a🌵0" term="𝑛.1.2">
         </formation>
       </formation>
       <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
-      <formation at="Φ.a🌵1" term="⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧">
-        <formation at="Φ.a🌵1" term="40-18-00-00-00-00-00-00:Δ:φ">
+      <applied meta="𝑛.1.3" by="morph" at="Φ.a🌵1">6</applied>
+      <formation at="Φ.a🌵1" term="𝑛.1.3">
+        <applied meta="𝑛.1.4" by="morph" at="Φ.a🌵1">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</applied>
+        <formation at="Φ.a🌵1" term="𝑛.1.4">
         </formation>
       </formation>
       <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
       <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-      <built meta="𝑛.1.1">Φ.number( φ ↦ 𝜎1:λ )</built>
-      <answer meta="𝑛.1.2">⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧</answer>
+      <built meta="𝑛.1.5">Φ.number( φ ↦ 𝜎1:λ )</built>
+      <applied meta="𝑛.1.6" by="morph" at="Φ">Φ.number( φ ↦ 𝜎1:λ )</applied>
+      <answer meta="𝑛.1.7">𝑛.1.6</answer>
     </evaluate>
     <unanswered λ="L_number_nope" by="dataize">L_number_nope:λ</unanswered>
   </formation>
@@ -1202,8 +1264,9 @@ $ cat box.phi
 ⟧
 $ phino morph --deep --locator=Q.y --protocol=p.txt --sweet --hide-rho box.phi
 𝜎2:λ
-$ head -2 p.txt
+$ head -3 p.txt
 𝕄(Φ.y)
+  applied(𝑛.0.1) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
   deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
 ```
 
