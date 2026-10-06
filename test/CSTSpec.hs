@@ -46,6 +46,7 @@ spec = do
         ( "[[ x -> Q.y ]]"
         , EX_SINGLE
             (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_GLOBAL Φ) NO_SPACE (AT_LABEL "y")))
+            NO_SPACE
             ( EX_FORMATION
                 LSB
                 EOL
@@ -406,16 +407,6 @@ spec = do
             ]
       )
 
-  -- This codebase always destructures CST nodes via RecordWildCards/pattern
-  -- matching, never by calling a field's named accessor directly, and never
-  -- calls '==' or 'show' on a bare CST node either. HPC instruments every
-  -- derived accessor, and every derived Eq/Show instance, as its own
-  -- top-level declaration, so those stay uncovered by the line-based
-  -- coverage metric no matter how many tests render or pattern-match CST
-  -- trees. The tests below call every accessor by name (via record-dot
-  -- syntax, since these types share many field names and a bare call like
-  -- 'tab node' stays ambiguous even with DuplicateRecordFields) and invoke
-  -- 'show'/'==' on one value of every node type to close that gap.
   describe "CST token derived instances" $
     forM_
       [ ("LCB", shouldShowAndEqSelf "LCB" LCB)

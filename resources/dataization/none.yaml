@@ -11,4 +11,6 @@ when:
     - [𝐵1]
 premises:
   - d-result: 𝛿1
-    dataize: ⊥
+    dataize:
+      - ⊥
+      - 𝑒1

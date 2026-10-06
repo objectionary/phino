@@ -9,7 +9,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (Seen, rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', seenInsert, seenMember, stepHeaders) where
+module Rewriter (Seen, direct, every, fast, interpreted, rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', seenInsert, seenMember, stepHeaders) where
 
 import AST
 import Builder
@@ -17,51 +17,37 @@ import Control.Exception (Exception, throwIO)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
-import Matcher (Subst)
+import Matcher (Subst, sites)
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
-import Replacer (ReplaceContext (ReplaceCtx), ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
-import Rule (RuleContext (RuleContext))
+import Replacer (ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
+import Rule (RuleContext (RuleContext), Step (..))
 import qualified Rule as R
 import Text.Printf (printf)
 import qualified Yaml as Y
 
-type RewriteState = (NonEmpty Rewritten, Seen, Bool)
+type RewriteState = (NonEmpty Rewritten, Expression, Seen, Bool, Maybe (Set Int))
 
--- Loop-detection store. It maps a cheap fixed-size digest of an expression (see
--- 'hashExpression') to the full expressions that produced that digest. A
--- digest collision is resolved by a slow, exact structural (==) comparison,
--- so loops are still detected soundly while the common (no collision) case
--- stays O(1) on the digest instead of O(expressionSize) per lookup/insert.
 type Seen = Map.Map Int [Expression]
 
--- Has this exact expression been seen before? The digest lookup is fast; the
--- (==) check runs only on a digest match, guarding against hash collisions.
 seenMember :: Int -> Expression -> Seen -> Bool
 seenMember digest expr seen = maybe False (elem expr) (Map.lookup digest seen)
 
--- Remember an expression under its digest, keeping any earlier collisions.
 seenInsert :: Int -> Expression -> Seen -> Seen
 seenInsert digest expr = Map.insertWith (++) digest [expr]
 
-type Rewritten = (Expression, Maybe String)
+type Rewritten = (Expression, Maybe (Judgment, String))
 
 type Rewrittens = (NonEmpty Rewritten, Bool)
 
 type Rewrittens' = ([Rewritten], Bool)
 
--- Build a header line for every step of a rewriting chain. The chain is
--- '[(e0, Just r0), ..., (en, Nothing)]', where 'ri' is the rule applied to 'ei'
--- to produce 'e(i+1)' (see 'leadsTo'). A step's header names the rule that
--- produced its expression, together with the AST node counts before and after
--- that rule, e.g. "=== Step #4, Rule 'STOP', 32t -> 43t". The very first step is
--- the input, which no rule produced, so it carries only its number:
--- "=== Step #1". The 'N nodes -> M nodes' pair matches the debug log emitted
--- while rewriting.
 stepHeaders :: [Rewritten] -> [String]
 stepHeaders chain = zipWith3 header [1 ..] chain (Nothing : map Just chain)
   where
@@ -71,7 +57,7 @@ stepHeaders chain = zipWith3 header [1 ..] chain (Nothing : map Just chain)
       printf
         "=== Step #%d, Rule '%s', %dt -> %dt"
         step
-        (fromMaybe "?" rule)
+        (maybe "?" snd rule)
         (countNodes before)
         (countNodes current)
 
@@ -82,15 +68,10 @@ data RewriteContext = RewriteContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _depthSensitive :: Bool
-  , -- The world the rewritten term stands in, where one is known. The rules
-    -- never see it: it reaches the 'named' function through 'RuleContext',
-    -- which is how 'dot' tells the formation it dispatched from the whole
-    -- program and writes 'ρ ↦ Φ' rather than the program itself (#1318,
-    -- #1460). Normalization inside 𝕄 and 𝔻 knows the universe and names it
-    -- here; the 'rewrite' command rewrites a term with no world around it and
-    -- names nothing.
-    _universe :: Maybe Expression
+  , _universe :: Maybe Expression
   , _buildTerm :: BuildTermFunc
+  , _normal :: Expression -> Bool
+  , _matching :: Maybe Expression -> Expression -> Set Int
   , _must :: Must
   , _breakpoint :: Maybe String
   , _saveStep :: SaveStepFunc
@@ -128,37 +109,30 @@ instance Show RewriteException where
       rul
       expr
 
--- Build pattern and result expression and replace patterns to results in given expression
 buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO Expression
 buildAndReplace' (expr, ptn, res, substs) func = do
   ptns <- buildExpressionsThrows ptn substs
   repls <- buildExpressionsThrows res substs
   pure (func (expr, ptns, map const repls))
 
--- If pattern and replacement are appropriate for fast replacing - does it.
--- Pattern and replacement expressions can be used in fast replacing only if
--- 1. they are both formations
--- 2. they start and end with the same meta bindings, e.g. [!B1, ..., !B2]
--- 3. the does not have meta bindings between first and last meta bindings
--- In such case we can just replace bindings one by one without building whole expression.
--- You can find more details in this ticket: https://github.com/objectionary/phino/issues/321
--- If we don't meet the conditions above - just do a regular replacing
-tryBuildAndReplaceFast :: ToReplace -> ReplaceContext -> IO Expression
-tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation _rbds@(rbd : rbds), substs) ctx =
-  let pbds' = init pbds
-      rbds' = init rbds
-   in if startsAndEndsWithMeta _pbds
-        && startsAndEndsWithMeta _rbds
-        && pbd == rbd
-        && last pbds == last rbds
-        && not (hasMetaBindings pbds')
-        && not (hasMetaBindings rbds')
-        then do
-          logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
-          buildAndReplace' (expr, ExFormation pbds', ExFormation rbds', substs) (replaceExpressionFast ctx)
-        else do
-          logDebug "Applying regular replacing..."
-          buildAndReplace' state replaceExpression
+tryBuildAndReplaceFast :: ToReplace -> IO Expression
+tryBuildAndReplaceFast state@(expr, ptn@(ExFormation (_ : pbds)), res@(ExFormation (_ : rbds)), substs)
+  | fast ptn res = do
+      logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
+      buildAndReplace' (expr, ExFormation (init pbds), ExFormation (init rbds), substs) replaceExpressionFast
+  | otherwise = do
+      logDebug "Applying regular replacing..."
+      buildAndReplace' state replaceExpression
+tryBuildAndReplaceFast state = buildAndReplace' state replaceExpression
+
+fast :: Expression -> Expression -> Bool
+fast (ExFormation _pbds@(pbd : pbds)) (ExFormation _rbds@(rbd : rbds)) =
+  startsAndEndsWithMeta _pbds
+    && startsAndEndsWithMeta _rbds
+    && pbd == rbd
+    && last pbds == last rbds
+    && not (hasMetaBindings (init pbds))
+    && not (hasMetaBindings (init rbds))
   where
     startsAndEndsWithMeta :: [Binding] -> Bool
     startsAndEndsWithMeta [] = False
@@ -167,57 +141,76 @@ tryBuildAndReplaceFast state@(expr, ExFormation _pbds@(pbd : pbds), ExFormation 
         && isMetaBinding bd
         && isMetaBinding (last bds)
     hasMetaBindings :: [Binding] -> Bool
+    hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
     isMetaBinding :: Binding -> Bool
     isMetaBinding = \case
       BiMeta _ -> True
       BiAny _ -> True
       _ -> False
-    hasMetaBindings = foldl (\acc bd -> acc || isMetaBinding bd) False
-tryBuildAndReplaceFast state _ = buildAndReplace' state replaceExpression
+fast _ _ = False
 
--- The function returns tuple (X, Y, Z) where
--- - X is sequence of expressions;
--- - Y is Set of unique expressions after each rule application. It allows to stop the rewriting if we're getting
---   into loop and get back to an expression which we've already got before
--- - Z is boolean flag which tells us if we reach breakpoint. If unmatched rule is equal to breakpoint rule - entire
---   rewriting must be stopped and original expression must be returned
-rewrite' :: RewriteState -> [Y.Rule] -> Int -> RewriteContext -> IO RewriteState
-rewrite' state [] _ _ = pure state
-rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
-  state' <- _rewrite state 1
-  case state' of
-    (_, _, True) -> pure state'
-    _ -> rewrite' state' rest iteration ctx
+interpreted :: Y.Rule -> Step
+interpreted rule = Step rule.name applied
   where
+    applied :: RuleContext -> Expression -> IO (Maybe Expression)
+    applied ctx expr =
+      R.matchExpressionWithRule expr rule ctx >>= \case
+        [] -> pure Nothing
+        matched
+          | isNothing rule.when -> Just <$> tryBuildAndReplaceFast (expr, rule.pattern, rule.result, matched)
+          | otherwise -> Just <$> buildAndReplace' (expr, rule.pattern, rule.result, matched) replaceExpression
+
+direct :: String -> Bool -> (Maybe Expression -> Expression -> [Expression]) -> Step
+direct name redex rewritten = Step name applied
+  where
+    applied :: RuleContext -> Expression -> IO (Maybe Expression)
+    applied (RuleContext _ universe _) expr = pure $ case sites redex (rewritten universe) expr of
+      [] -> Nothing
+      found -> Just (replaceExpression (expr, map fst found, map (const . snd) found))
+
+every :: [Step] -> Maybe Expression -> Expression -> Set Int
+every steps _ _ = Set.fromList (zipWith const [0 ..] steps)
+
+rewrite' :: RewriteState -> [(Int, Step)] -> Int -> RewriteContext -> IO RewriteState
+rewrite' state [] _ _ = pure state
+rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iteration ctx@RewriteContext{..}
+  | Set.member idx matched || _breakpoint == Just (_name rule) =
+      _rewrite (rewrittens, located, unique, stop, Just matched) 1 >>= \case
+        state'@(_, _, _, True, _) -> pure state'
+        state' -> rewrite' state' rest iteration ctx
+  | otherwise = rewrite' (rewrittens, located, unique, stop, Just matched) rest iteration ctx
+  where
+    matched :: Set Int
+    matched = fromMaybe (_matching _universe located) found
     _rewrite :: RewriteState -> Int -> IO RewriteState
-    _rewrite (_rewrittens@((current, _) :| _), _unique, _) _count =
-      let ruleName = rule.name
-          ptn = rule.pattern
-          res = rule.result
+    _rewrite (_rewrittens@((current, _) :| _), expression, _unique, _, _found) _count =
+      let ruleName = _name rule
        in if _count - 1 == _maxDepth
             then do
               logDebug (printf "Max amount of rewriting cycles (%d) for rule '%s' has been reached, rewriting is stopped" _maxDepth ruleName)
               if _depthSensitive
-                then throwIO (StoppedOnLimit "max-depth" _maxDepth)
-                else pure (_rewrittens, _unique, False)
+                then do
+                  exhausted <- applicable expression [rule] ctx
+                  if exhausted
+                    then throwIO (StoppedOnLimit "max-depth" _maxDepth)
+                    else pure (_rewrittens, expression, _unique, False, _found)
+                else pure (_rewrittens, expression, _unique, False, _found)
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
-              expression <- locatedExpression _locator current
-              R.matchExpressionWithRule expression rule (RuleContext _buildTerm _universe) >>= \case
-                [] -> do
+              _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
+                Nothing -> do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
-                  if _breakpoint == Just ruleName
+                  if _breakpoint == Just ruleName && ruleName `notElem` [fired | (_, Just (_, fired)) <- NE.toList _rewrittens]
                     then do
                       logDebug (printf "Rule '%s' is a breakpoint, dropping down all the previous rewritings..." ruleName)
-                      pure (_rewrittens, _unique, True)
-                    else pure (_rewrittens, _unique, False)
-                matched -> do
-                  logDebug (printf "Rule '%s' has been matched, applying..." ruleName)
-                  expr <- tryBuildAndReplaceFast (expression, ptn, res, matched) (ReplaceCtx _maxDepth)
+                      pure (_rewrittens, expression, _unique, True, _found)
+                    else pure (_rewrittens, expression, _unique, False, _found)
+                Just expr -> do
+                  logDebug (printf "Rule '%s' has been matched and applied" ruleName)
                   if expression == expr
                     then do
                       logDebug (printf "Applied '%s', no changes made" ruleName)
-                      pure (_rewrittens, _unique, False)
+                      pure (_rewrittens, expression, _unique, False, _found)
                     else
                       let digest = hashExpression expr
                        in if seenMember digest expr _unique
@@ -233,32 +226,44 @@ rewrite' state (rule : rest) iteration ctx@RewriteContext{..} = do
                                 )
                               updated <- withLocatedExpression _locator expr current
                               _saveStep updated
-                              _rewrite (leadsTo updated, seenInsert digest expr _unique, False) (_count + 1)
+                              _rewrite (leadsTo updated, expr, seenInsert digest expr _unique, False, Nothing) (_count + 1)
       where
         leadsTo :: Expression -> NonEmpty Rewritten
         leadsTo next =
           let (head', _) :| rest = _rewrittens
-           in (next, Nothing) :| (head', Just rule.name) : rest
+           in (next, Nothing) :| (head', Just (Normalization, _name rule)) : rest
 
--- Rewrite the expression by provided locator from RewriteContext
-rewrite :: Expression -> [Y.Rule] -> RewriteContext -> IO Rewrittens
+applicable :: Expression -> [Step] -> RewriteContext -> IO Bool
+applicable _ [] _ = pure False
+applicable expression (rule : rest) ctx@RewriteContext{..} =
+  _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
+    Just changed | changed /= expression -> pure True
+    _ -> applicable expression rest ctx
+
+rewrite :: Expression -> [Step] -> RewriteContext -> IO Rewrittens
 rewrite expr rules ctx@RewriteContext{..} = do
-  (rewrittens, exceeded) <- _rewrite ((expr, Nothing) :| [], Map.empty, False) 0
+  located <- locatedExpression _locator expr
+  (rewrittens, exceeded) <- _rewrite ((expr, Nothing) :| [], located, Map.empty, False, Nothing) 0
   pure (NE.reverse rewrittens, exceeded)
   where
     _rewrite :: RewriteState -> Int -> IO Rewrittens
-    _rewrite state@(rewrittens@((current, _) :| _), _, _) count
+    _rewrite state@(rewrittens@((current, _) :| _), expression, _, _, _) count
       | not (inRange _must count) && count > 0 && exceedsUpperBound _must count = throwIO (MustStopBefore _must count)
+      | count == _maxCycles && not (inRange _must count) = throwIO (MustBeGoing _must count)
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
           if _depthSensitive
-            then throwIO (StoppedOnLimit "max-cycles" _maxCycles)
+            then do
+              exhausted <- applicable expression rules ctx
+              if exhausted
+                then throwIO (StoppedOnLimit "max-cycles" _maxCycles)
+                else pure (rewrittens, False)
             else pure (rewrittens, True)
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)
-          rewrite' state rules count ctx >>= \case
-            (_, _, True) -> pure ((expr, Nothing) :| [], False) -- breakpoint, return original expression
-            state'@(rewrittens'@((current', _) :| _), _, False) ->
+          rewrite' state (zip [0 ..] rules) count ctx >>= \case
+            (_, _, _, True, _) -> pure ((expr, Nothing) :| [], False)
+            state'@(rewrittens'@((current', _) :| _), _, _, False, _) ->
               if length rewrittens' == length rewrittens || current' == current
                 then do
                   logDebug "Rewriting is stopped since it has no effect"

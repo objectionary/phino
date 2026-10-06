@@ -97,6 +97,14 @@ optMaxFirings =
         (long "max-firings" <> metavar "FIRINGS" <> help "Maximum number of λ functions the whole run may fire, unlimited unless given")
     )
 
+optMaxSeconds :: Parser (Maybe Int)
+optMaxSeconds =
+  optional
+    ( option
+        (auto >>= validateIntOption (> 0) "--max-seconds must be positive")
+        (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, unlimited unless given")
+    )
+
 optMargin :: Parser Int
 optMargin =
   option
@@ -215,17 +223,15 @@ optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "D
 optPartial :: Parser Bool
 optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on a λ function that cannot fire (no entry of the --symbolic file answers it), leave it in place and print the residual 𝜑-program")
 
--- 𝕄 stops at the first formation it reaches and hands its bindings back as
--- they were written, so what a program holds but nothing demands is never
--- reduced. This walks into them (see 'deepened').
 optDeep :: Parser Bool
 optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter its bindings too, recursively, firing every λ function the --symbolic file answers and standing its answer in the place of what it computed, while everything else stays as it was written")
 
--- The step budget is otherwise the only thing that ends the 𝕄 and 𝔻 recursion,
--- so a λ function answering with a firing of itself, or an object dataized
--- through a body that comes back to itself, runs to the limit before it fails.
--- This stops it the moment it enters a formation it is already inside, by the
--- mode the option names, since no mode is right for every run (see 'entering').
+optJobs :: Parser Int
+optJobs =
+  option
+    (auto >>= validateIntOption (> 0) "--jobs must be positive")
+    (long "jobs" <> metavar "JOBS" <> help "Number of workers the --deep walk morphs the bindings of the formation it starts at on, side by side, each with a memo, a tally and fresh names of its own" <> value 1 <> showDefault)
+
 optAcyclic :: Parser (Maybe Acyclic)
 optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again) instead of going round until --max-steps runs out, and leave the term in place the way --partial leaves a λ function that cannot fire; 'proven' takes it for the same one up to a renaming of symbols, 'plausible' also when it holds the earlier one under wrappers it gained, such as a growing accumulator"))
   where
@@ -234,9 +240,6 @@ optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> 
       found : _ -> Right found
       [] -> Left (printf "The value '%s' can't be used for '--acyclic' option, use --help to check possible values" mode)
 
--- Which λ functions this run may fire. phino implements none of them itself
--- (see 'Lambdas'), so without this option every λ function a program names gets
--- stuck.
 optSymbolic :: Parser (Maybe FilePath)
 optSymbolic =
   optional
@@ -246,17 +249,12 @@ optSymbolic =
             <> help
               "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
-              \it reduces to a normal form under \"morph\" and the terms of those it stands the data of into \
-              \unknowns under \"symbolize\", and answering with the term under \"𝑛\""
+              \it reduces to a normal form under \"morph\", the terms it rewrites by rules of its own under \
+              \\"rewrite\", the terms of those it stands the data of into unknowns under \"symbolize\" and the \
+              \pairs of branches it joins into one term under \"join\", and answering with the term under \"𝑛\""
         )
     )
 
--- The external face of the trick phino plays internally to reduce a
--- sub-expression against a universe: prepend a synthetic binding holding it to
--- that universe and aim the locator at the binding. It is the same trick a λ
--- function's operands are reduced with (see 'insideUniverse' in 'Morph'), made
--- available to whoever asks phino to reduce a term that is not part of the
--- program.
 optInside :: Parser (Maybe String)
 optInside =
   optional
@@ -284,14 +282,27 @@ optProtocol =
         )
     )
 
-optAbridged :: Parser Bool
+optAbridged :: Parser (Maybe Int)
 optAbridged =
+  optional
+    ( flag'
+        64
+        ( long "abridged"
+            <> help
+              "Shorten every 𝜑-expression written to the --protocol file: a formation longer than the width \
+              \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', while every byte string \
+              \it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
+        )
+        <|> option auto (long "abridged" <> metavar "WIDTH" <> internal)
+    )
+
+optAbridgedData :: Parser Bool
+optAbridgedData =
   switch
-    ( long "abridged"
+    ( long "abridged-data"
         <> help
-          "Shorten every 𝜑-expression written to the --protocol file: a formation longer than sixty characters \
-          \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34 attrs', and a byte string \
-          \longer than eight bytes keeps its first four bytes and its length, as '00-00-00-00-...(45b)'"
+          "Cut every byte string longer than eight bytes that the --abridged protocol writes to its first \
+          \two bytes and its last two with the count of the bytes between them, as '00-00-..(45b)..-FF-EE'"
     )
 
 optShuffle :: Parser Bool
@@ -390,6 +401,7 @@ dataizeParser =
             <*> optMaxCycles
             <*> optMaxSteps
             <*> optMaxFirings
+            <*> optMaxSeconds
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -404,6 +416,7 @@ dataizeParser =
             <*> optStepsDir
             <*> optProtocol
             <*> optAbridged
+            <*> optAbridgedData
             <*> optSymbolic
             <*> argInputFile
         )
@@ -431,12 +444,14 @@ morphParser =
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
             <*> optPartial
             <*> optDeep
+            <*> optJobs
             <*> optAcyclic
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
             <*> optMaxSteps
             <*> optMaxFirings
+            <*> optMaxSeconds
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -451,6 +466,7 @@ morphParser =
             <*> optStepsDir
             <*> optProtocol
             <*> optAbridged
+            <*> optAbridgedData
             <*> optSymbolic
             <*> argInputFile
         )
@@ -531,6 +547,16 @@ matchParser =
             <*> optSeed
         )
 
+compileParser :: Parser Command
+compileParser =
+  CmdCompile
+    <$> ( OptsCompile
+            <$> optLogLevel
+            <*> optLogLines
+            <*> optRule
+            <*> strOption (long "target" <> short 't' <> metavar "FILE" <> value "compiled/generated/Compiled.hs" <> showDefault <> help "File to write the Haskell module to")
+        )
+
 commandParser :: Parser Command
 commandParser =
   hsubparser
@@ -540,6 +566,7 @@ commandParser =
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
         <> command "merge" (info mergeParser (progDesc "Merge 𝜑-expressions into single one by merging their top level formations"))
         <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))
+        <> command "compile" (info compileParser (progDesc "Compile the rules into a Haskell module a build with the flag 'compiled' links in"))
     )
 
 optPin :: Parser (Maybe Pin)

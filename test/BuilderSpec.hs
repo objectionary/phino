@@ -114,41 +114,6 @@ spec = do
         [substSingle "e1" (MvExpression (ExDispatch ExRoot (AtLabel "x")))]
         `shouldThrow` anyException
 
-  describe "contextualize" $
-    let commonContext :: Expression
-        commonContext = ExFormation [BiVoid AtRho]
-     in forM_
-          [ ("replaces a xi expression with the context", ExXi, commonContext, commonContext)
-          , ("keeps a root expression untouched", ExRoot, commonContext, ExRoot)
-          ,
-            ( "keeps an empty formation untouched"
-            , ExFormation [BiVoid AtRho]
-            , ExFormation [BiVoid AtRho, BiVoid AtRho]
-            , ExFormation [BiVoid AtRho]
-            )
-          ,
-            ( "recurses into a dispatch application"
-            , ExDispatch ExXi (AtLabel "z")
-            , commonContext
-            , ExDispatch commonContext (AtLabel "z")
-            )
-          , ("keeps a termination untouched", ExTermination, commonContext, ExTermination)
-          ,
-            ( "recurses into both sides of an application with a tau argument"
-            , ExApplication ExXi (ArTau (AtLabel "x") ExXi)
-            , commonContext
-            , ExApplication commonContext (ArTau (AtLabel "x") commonContext)
-            )
-          ,
-            ( "recurses into both sides of an application with an alpha argument"
-            , ExApplication ExXi (ArAlpha (Alpha 0) ExXi)
-            , commonContext
-            , ExApplication commonContext (ArAlpha (Alpha 0) commonContext)
-            )
-          , ("leaves any other expression untouched", ExMeta "e", commonContext, ExMeta "e")
-          ]
-          (\(desc, expr, context, expected) -> it desc (contextualize expr context `shouldBe` expected))
-
   describe "buildBinding: lambda and delta bindings from metas" $
     forM_
       [
@@ -210,10 +175,6 @@ spec = do
       (\(desc, action, message) -> it desc (action `shouldThrow` (\exc -> message `isInfixOf` show (exc :: SomeException))))
 
   describe "builds an anonymous meta only from the pattern that bound it" $ do
-    -- An anonymous slot is a key of the very substitution its own pattern
-    -- produced, which is how a fired pattern is rebuilt for replacement. Asked
-    -- for it under any other substitution, the builder says plainly that the
-    -- meta has no name to be referenced by, rather than inventing a term.
     forM_
       [
         ( "buildExpression rebuilds an anonymous expression from its own slot"
@@ -260,3 +221,14 @@ spec = do
         (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
         (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
         `shouldBe` ExRoot
+  describe "formed" $ do
+    it "builds the formation of the bindings" $
+      formed [BiVoid (AtLabel "qp"), BiDelta (BtOne "0C")] `shouldBe` ExFormation [BiVoid (AtLabel "qp"), BiDelta (BtOne "0C")]
+    it "refuses bindings carrying one attribute twice" $
+      print (formed [BiVoid (AtLabel "ee"), BiTau (AtLabel "ee") ExXi]) `shouldThrow` anyException
+  describe "nameIn" $ do
+    it "leaves a formation as it is where no world is known" $
+      nameIn Nothing (ExFormation [BiVoid (AtLabel "vy")]) `shouldBe` ExFormation [BiVoid (AtLabel "vy")]
+    it "names a formation by its path in the world" $
+      nameIn (Just (ExFormation [BiTau (AtLabel "sd") (ExFormation [BiVoid (AtLabel "vy")])])) (ExFormation [BiVoid (AtLabel "vy")])
+        `shouldBe` ExDispatch ExRoot (AtLabel "sd")

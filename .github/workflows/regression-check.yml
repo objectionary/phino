@@ -15,6 +15,7 @@ env:
   CABAL_VERSION: '3.12.1.0'
   BENCH_ROUNDS: '5'
   BENCH_THRESHOLD: '0.20'
+permissions: read-all
 jobs:
   regression-check:
     timeout-minutes: 90
@@ -26,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
       - id: setup
-        uses: haskell-actions/setup@v2.12.1
+        uses: ./.github/actions/ghc
         with:
           ghc-version: ${{ env.GHC_VERSION }}
           cabal-version: ${{ env.CABAL_VERSION }}

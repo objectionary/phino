@@ -14,4 +14,6 @@ premises:
   - n-result: 𝑛2
     normalize: '𝑛1.𝜏1'
   - n-result: 𝑛3
-    morph: 𝑛2
+    morph:
+      - 𝑛2
+      - 𝑒1

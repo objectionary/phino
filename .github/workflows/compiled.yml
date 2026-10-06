@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: compiled
+'on':
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+permissions: read-all
+concurrency:
+  group: compiled-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  compiled:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - id: setup
+        uses: ./.github/actions/ghc
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ${{ steps.setup.outputs.cabal-store }}
+            dist-newstyle
+            dist-compiled
+          key: ${{ runner.os }}-compiled-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-compiled-cabal-
+      - run: cabal update
+      - run: make compiled

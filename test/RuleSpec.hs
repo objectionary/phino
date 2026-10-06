@@ -8,18 +8,20 @@
 
 module RuleSpec where
 
-import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), inert)
+import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Slot (..), inert)
 import Builder (buildExpressionThrows)
 import Control.Monad
 import Data.Aeson
 import Data.Yaml qualified as Y
+import Engine (Engine (_normal))
 import Files (allPathsIn)
+import Fixtures (linked)
 import Functions (buildTerm)
 import GHC.Generics
 import Matcher
 import Parser (parseExpressionThrows)
 import Printer (printSubsts)
-import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, redex)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normalHeld, redex)
 import System.FilePath
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy)
 import Yaml qualified
@@ -44,7 +46,7 @@ spec = do
           let expr = expression pack
           let matched = matchExpression (pattern pack) expr
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-          met <- meetCondition (condition pack) matched (RuleContext buildTerm Nothing)
+          met <- meetCondition (condition pack) matched (RuleContext buildTerm Nothing (_normal linked))
           case failure pack of
             Just True ->
               unless
@@ -62,7 +64,7 @@ spec = do
                 )
       )
   describe "isNF determines normal form" $ do
-    let ctx = RuleContext buildTerm Nothing
+    let ctx = RuleContext buildTerm Nothing (_normal linked)
     forM_
       [ ("returns true for ExXi", ExXi, True)
       , ("returns true for ExRoot", ExRoot, True)
@@ -75,15 +77,17 @@ spec = do
       , ("returns true for formation with only delta binding", ExFormation [BiDelta (BtMany ["00", "01"])], True)
       , ("returns true for formation with only void binding", ExFormation [BiVoid (AtLabel "x")], True)
       , ("returns true for formation with only lambda binding", ExFormation [BiLambda (Function "Func")], True)
-      , ("returns true for formation with delta void and lambda", ExFormation [BiDelta (BtOne "FF"), BiVoid (AtLabel "y"), BiLambda (Function "G")], True)
+      , ("returns false for formation with delta void and lambda", ExFormation [BiDelta (BtOne "FF"), BiVoid (AtLabel "y"), BiLambda (Function "G")], False)
+      , ("returns false for formation with delta and lambda, which dl reduces", ExFormation [BiDelta (BtMany ["01"]), BiLambda (Function "Fn")], False)
       , ("returns true for a formation with a tau binding whose expression is already normal", ExFormation [BiTau (AtLabel "x") ExRoot], True)
       , ("returns false for a formation with a tau binding matching a normalization rule", ExFormation [BiTau (AtLabel "x") (ExDispatch ExTermination (AtLabel "y"))], False)
+      , ("returns false for a dispatch whose body no rule of contextualization takes", ExDispatch (ExFormation [BiTau (AtLabel "kq") (ExDispatch (ExMeta "e5") (AtLabel "wb"))]) (AtLabel "kq"), False)
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)
 
   describe "matchExpressionWithRule via a 'where' extension or a φ-marker meta" $ do
     let ctx :: RuleContext
-        ctx = RuleContext buildTerm Nothing
+        ctx = RuleContext buildTerm Nothing (_normal linked)
 
         joinRule :: Yaml.Rule
         joinRule =
@@ -180,12 +184,19 @@ spec = do
         world :: Expression
         world = ExFormation [BiTau (AtLabel "qwj") (ExFormation [BiDelta (BtOne "7C")]), BiVoid AtRho]
     it "writes Φ for the whole program the context stands in" $ do
-      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm (Just world)))
+      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm (Just world) (_normal linked)))
         `shouldReturn` [ExRoot]
     it "writes the formation itself where the context knows no universe" $ do
-      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing))
+      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing (_normal linked)))
         `shouldReturn` [world]
 
+  describe "normalHeld" $ do
+    it "tells no meta a term holds a normal form" $
+      normalHeld (const True) (ExMeta "qd") `shouldBe` False
+    it "tells no slot a term holds a normal form" $
+      normalHeld (const True) (ExAny (Slot "n" 7)) `shouldBe` False
+    it "asks the test about a term that is no meta" $
+      normalHeld (== ExDispatch ExXi (AtLabel "wv")) (ExDispatch ExXi (AtLabel "wv")) `shouldBe` True
   describe "redex" $ do
     it "takes every normalization rule for a redex" $
       all redex Yaml.normalizationRules `shouldBe` True
@@ -205,7 +216,7 @@ spec = do
           , "⟦ x ↦ ∅, dd ↦ ⟦ λ ⤍ L_dd, ρ ↦ ∅ ⟧, m1 ↦ ⟦ b ↦ ∅, φ ↦ ξ.ρ.dd( b ↦ ξ.b ), ρ ↦ ∅ ⟧ ⟧"
           ]
         context :: RuleContext
-        context = RuleContext buildTerm Nothing
+        context = RuleContext buildTerm Nothing (_normal linked)
         matches :: Expression -> Yaml.Rule -> IO [Subst]
         matches term rule = maybe pure (\cond substs -> meetCondition cond substs context) rule.when (matchExpressionDeep rule.pattern term)
     it "takes every sample for inert" $ do

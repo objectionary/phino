@@ -1,10 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- Canonization is the process of replacing function names attached to
--- lambda bindings with numbered identifiers prefixed with 'Fn'
--- like 'Fn1', 'Fn2', etc.
-module Canonizer (canonize, canonizeExpr) where
+module Canonizer (canonize, canonizeExpr, lambdaNames) where
 
 import AST
 import qualified Data.Text as T
@@ -12,6 +9,10 @@ import Rewriter (Rewritten)
 
 canonizeBindings :: [Binding] -> Int -> ([Binding], Int)
 canonizeBindings [] idx = ([], idx)
+canonizeBindings ((BiLambda (Function name)) : rest) idx
+  | name == T.pack "Package" =
+      let (bds', idx') = canonizeBindings rest idx
+       in (BiLambda (Function name) : bds', idx')
 canonizeBindings ((BiLambda (Function _)) : rest) idx =
   let (bds', idx') = canonizeBindings rest (idx + 1)
    in (BiLambda (Function (T.pack ("Fn" <> show idx))) : bds', idx')
@@ -50,8 +51,20 @@ canonizeArgument (ArAlpha alpha expr) idx =
   let (expr', idx') = canonizeExpression expr idx
    in (ArAlpha alpha expr', idx')
 
--- Canonize a single expression, restarting the 'Fn' counter from 1 so the
--- numbering is local to that expression.
+lambdaNames :: Expression -> [T.Text]
+lambdaNames (ExFormation bds) = concatMap named bds
+  where
+    named :: Binding -> [T.Text]
+    named (BiLambda (Function name)) = [name]
+    named (BiTau _ expr) = lambdaNames expr
+    named _ = []
+lambdaNames (ExDispatch expr _) = lambdaNames expr
+lambdaNames (ExApplication expr (ArTau _ arg)) = lambdaNames expr ++ lambdaNames arg
+lambdaNames (ExApplication expr (ArAlpha _ arg)) = lambdaNames expr ++ lambdaNames arg
+lambdaNames (ExPhiMeet _ _ expr) = lambdaNames expr
+lambdaNames (ExPhiAgain _ _ expr) = lambdaNames expr
+lambdaNames _ = []
+
 canonizeExpr :: Expression -> Expression
 canonizeExpr expr = fst (canonizeExpression expr 1)
 

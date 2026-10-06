@@ -7,4 +7,6 @@ universe: 𝑒1
 conclusion: 𝑛1
 premises:
   - n-result: 𝑛1
-    morph: ⊥
+    morph:
+      - ⊥
+      - 𝑒1

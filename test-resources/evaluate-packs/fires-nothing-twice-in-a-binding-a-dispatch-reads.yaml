@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# Under '--deep' the head pass of 𝕄 fires the reads of siblings in the
+# binding it dispatches into before it reads that binding (#1727), and only
+# them. Here every sibling 'φ' reads is 'a', which is no λ, so nothing fires
+# before the head pass reads 'φ', and each of the two 'L_plus' fires once.
+# Walking the whole binding instead would settle 'a.twice.plus' on the way,
+# which fires the inner 'L_plus', and keep nothing of it, since what it
+# settles to is a 'plus' still waiting for 'x' and no answer of a λ. The head
+# pass would then fire the inner 'L_plus' again, three firings in all.
+symbolic: |
+  - λ: L_plus
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.x
+    𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.e'
+deep: true
+partial: true
+input: >
+  ⟦ bytes(φ) ↦ ⟦ plus(ρ, x) ↦ L_plus:λ, twice(ρ) ↦ ⟦ φ ↦ ξ.ρ.plus( x ↦ ξ.ρ ) ⟧ ⟧,
+    pair(a) ↦ ⟦ φ ↦ a.twice.plus( x ↦ a ) ⟧,
+    e ↦ Φ.pair( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ ⟧
+result: '⟦ φ ↦ 𝜎3:λ, plus(x) ↦ L_plus:λ, twice ↦ ρ.plus( x ↦ ρ ):φ ⟧'
+protocol: |
+  𝕄(Φ.e)
+    𝔼(L_plus)  # 𝕄(Φ.e)
+      formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, twice ↦ ρ.plus( x ↦ ρ ):φ ⟧)  # 𝔻(Φ.a🌵0)
+      𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+      formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, twice ↦ ρ.plus( x ↦ ρ ):φ ⟧)  # 𝔻(Φ.a🌵1)
+      𝛿2.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+      𝑛.1.1 := Φ.bytes( φ ↦ 𝜎2:λ )  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ, twice ↦ ρ.plus( x ↦ ρ ):φ ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_plus)  # 𝕄(Φ.e)
+      formation(⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ, twice ↦ ρ.plus( x ↦ ρ ):φ ⟧)  # 𝔻(Φ.a🌵2)
+      𝛿1.2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)
+      formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, twice ↦ ρ.plus( x ↦ ρ ):φ ⟧)  # 𝔻(Φ.a🌵3)
+      𝛿2.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+      𝑛.2.1 := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝑛
+      𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, plus(x) ↦ L_plus:λ, twice ↦ ρ.plus( x ↦ ρ ):φ ⟧  # 𝕄(𝑛.2.1)

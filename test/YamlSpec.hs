@@ -6,10 +6,10 @@
 
 module YamlSpec where
 
-import AST (Alpha, Attribute, Binding, Bytes, Expression (ExRoot))
+import AST (Alpha, Attribute, Binding, Bytes, Expression (ExMeta, ExRoot))
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
-import Data.Either (isLeft)
+import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf, nub, sort, (\\))
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
@@ -74,14 +74,36 @@ spec = do
           it ("rejects " ++ desc) (unless valid (expectationFailure ("expected rejection for: " ++ yaml)))
       )
 
+  it "rejects a condition literal that does not fit into Int" $
+    (decodeYaml' "name: big\npattern: '⟦ 𝐵1 ⟧'\nresult: '⟦ 𝐵1 ⟧'\nwhen:\n  eq: [{length: '𝐵1'}, 18446744073709551617]" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` failsWith "does not fit into Int"
+
+  it "rejects a 'where' step that binds a meta the pattern already binds" $
+    (decodeYaml' "name: again\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒1 ⟧'\nwhere:\n  - meta: '𝑒1'\n    function: concat\n    args: ['\"a\"']" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` failsWith "binds the meta 'e1' again"
+
+  it "rejects a 'where' step whose meta is not a meta" $
+    (decodeYaml' "name: nometa\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒1 ⟧'\nwhere:\n  - meta: 'z'\n    function: concat\n    args: ['\"a\"']" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` failsWith "whose 'meta' is not a meta"
+
+  describe "rejects a meta that nothing binds" $
+    forM_
+      [ ("in 'when'", "name: w\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ y ↦ 𝑒1 ⟧'\nwhen:\n  not:\n    eq: ['𝑒9', '𝑒1']", "'e9'")
+      , ("in 'result'", "name: r\npattern: '⟦ x ↦ 𝑒1, 𝐵1 ⟧'\nresult: '⟦ y ↦ 𝑒9, 𝐵1 ⟧'", "'e9'")
+      , ("in a 'where' argument", "name: a\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒2 ⟧'\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    args: ['𝑒7']", "'e7'")
+      ]
+      ( \(desc, yaml, meta) ->
+          it desc ((decodeYaml' yaml :: Either Yaml.ParseException Rule) `shouldSatisfy` failsWith ("reads the meta " ++ meta))
+      )
+
+  it "accepts a meta that an earlier 'where' step binds" $
+    (decodeYaml' "name: ok\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒3 ⟧'\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    args: ['𝑒1']\n  - meta: '𝑒3'\n    function: concat\n    args: ['𝑒2']" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` isRight
+
   it "rejects an 'e-match' in a rewriting rule" $
     (decodeYaml' "name: kvz\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\ne-match: '𝑒2'\nresult: '𝑒2'" :: Either Yaml.ParseException Rule)
       `shouldSatisfy` failsWith "The rule 'kvz' carries an 'e-match'"
   describe "rejects an anonymous meta outside a pattern" $ do
-    -- An anonymous meta is bound by the pattern it stands in and forgotten as
-    -- soon as that pattern matches, so no other part of a rule has a name to
-    -- read it back by. Writing one there is a mistake in the rule, caught as
-    -- the rule loads rather than left to surface as a silent non-match.
     let rewriting :: String -> String
         rewriting field = "name: foo\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\n" ++ field
         inferring :: String -> String
@@ -157,7 +179,7 @@ spec = do
         ( "in a premise of a dataization rule"
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'premises' of rule 'foo'"
-            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: 𝛿1\npremises:\n  - d-result: 𝛿1\n    dataize: '𝑒'") :: Either Yaml.ParseException DataizeRule)
+            (decodeYaml' (inferring "universe: 𝑒2\nconclusion: 𝛿1\npremises:\n  - d-result: 𝛿1\n    dataize: ['𝑒', 𝑒2]") :: Either Yaml.ParseException DataizeRule)
         )
       ,
         ( "in a premise of a contextualization rule"
@@ -175,10 +197,6 @@ spec = do
       (\(desc, rejected) -> it ("rejects an anonymous meta " ++ desc) (rejected `shouldBe` True))
 
   describe "keeps effective labels unique across rule sets" $
-    -- The effective label of a rule is its 'label' when present, else its
-    -- 'name'. 'explain' typesets that label as the rule's token, so two rules
-    -- sharing an effective label become indistinguishable. Collect every
-    -- effective label from the three embedded rule sets and assert no repeats.
     it "across morphing, dataization and contextualization rules" $ do
       let labels :: [String]
           labels =
@@ -188,11 +206,6 @@ spec = do
       (labels \\ nub labels) `shouldBe` []
 
   describe "keeps one rule per file in every rule directory" $ do
-    -- Each judgment lives in its own directory, one YAML per rule, embedded
-    -- wholesale by 'embedDir', which sorts by path. The clauses of a judgment
-    -- are disjoint, so nothing orders them and a file is named after the rule
-    -- it carries and nothing else. Compare the directory listing against the
-    -- embedded rule set, position by position.
     let named :: FilePath -> IO [String]
         named dir = map takeBaseName . sort . filter ((== ".yaml") . takeExtension) <$> allPathsIn dir
     morphed <- runIO (named "resources/morphing")
@@ -206,16 +219,6 @@ spec = do
       contextualized `shouldBe` map (\ContextualizeRule{name} -> name) contextualizationRules
 
   describe "reserves 𝑛-family metas for normal forms" $
-    -- 𝒞 ('contextualize') returns an expression that is not necessarily a normal
-    -- form — that is why a 'normalize' premise follows it — so binding its result
-    -- to an 𝑛-reserved meta (internal prefix "n") in a morphing or dataization
-    -- rule conflates the calculus's 'e' (expression) with 'n' (normal form). Such
-    -- a slip is notational, not functional (the meta name is only a
-    -- substitution-map key), so it is easy to miss by eye; flag it automatically
-    -- instead. 𝔼 ('evaluate') is excluded on purpose (partially reverting #971):
-    -- it normalizes its atom's result internally, so its codomain is 𝓝 and an
-    -- 𝑛-family result is exactly right (see #990). Contextualization keeps being
-    -- flagged: its 𝒞-valued results are non-normal (see #971).
     it "no contextualize premise in a morphing or dataization rule binds an 𝑛-reserved meta" $ do
       let expressionValued :: Operation -> Bool
           expressionValued OpContextualize{} = True
@@ -262,13 +265,22 @@ spec = do
 
   describe "rejects a malformed premise" $
     forM_
-      [ ("fails when neither 'n-result' nor 'd-result' is present", "morph: 𝑛")
-      , ("fails when 'n-result' is not an expression meta", "n-result: Q\nmorph: 𝑛")
-      , ("fails when 'd-result' is not a bytes meta", "d-result: '--'\ndataize: 𝑛")
-      , ("fails when 'evaluate' does not take exactly two arguments", "n-result: 𝑛\nevaluate: [𝑛]")
-      , ("fails when 'contextualize' does not take exactly two arguments", "n-result: 𝑛\ncontextualize: [𝑛]")
+      [ ("fails when neither 'n-result' nor 'd-result' is present", "morph: [𝑛, 𝑒]")
+      , ("fails when 'n-result' is not an expression meta", "n-result: Q\nmorph: [𝑛, 𝑒]")
+      , ("fails when 'd-result' is not a bytes meta", "d-result: '--'\ndataize: [𝑛, 𝑒]")
+      , ("fails when 'morph' does not take exactly two arguments", "n-result: 𝑛1\nmorph: [𝑛2]")
+      , ("fails when 'evaluate' does not take exactly two arguments", "n-result: 𝑛1\nevaluate: [𝑛2]")
+      , ("fails when 'contextualize' does not take exactly two arguments", "n-result: 𝑛1\ncontextualize: [𝑛2]")
+      , ("fails when 'dataize' does not take exactly two arguments", "d-result: 𝛿1\ndataize: [𝑛1]")
       ]
       (\(desc, yaml) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Premise) `shouldSatisfy` isLeft))
+
+  describe "reads the universe a premise names" $
+    forM_
+      [ ("beside the term of 'morph'", "n-result: 𝑛1\nmorph: [𝑛2, 𝑒1]", Premise{result = T.pack "n1", operation = OpMorph (ExMeta (T.pack "n2")) (ExMeta (T.pack "e1"))})
+      , ("beside the term of 'dataize'", "d-result: 𝛿1\ndataize: [𝑛1, 𝑒1]", Premise{result = T.pack "d1", operation = OpDataize (ExMeta (T.pack "n1")) (ExMeta (T.pack "e1"))})
+      ]
+      (\(desc, yaml, premise) -> it desc (either (const Nothing) Just (decodeYaml' yaml) `shouldBe` Just premise))
 
   describe "rejects a numerable expression that is neither an object, a number nor an index meta" $
     it "fails on a bare boolean" $

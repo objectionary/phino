@@ -33,21 +33,21 @@ instance Read Must where
           let loPart = if null loStr then Nothing else readMaybe loStr
               hiPart = if null hiStr then Nothing else readMaybe hiStr
            in case (loPart, hiPart, null loStr, null hiStr) of
-                (Nothing, Nothing, False, False) -> [] -- Invalid range: non-numeric values
-                (Nothing, Nothing, True, True) -> [(MtRange Nothing Nothing, "")] -- Empty range '..' round-trips
+                (Nothing, Nothing, False, False) -> []
+                (Nothing, Nothing, True, True) -> [(MtRange Nothing Nothing, "")]
                 (Nothing, Just hi, True, False) ->
                   [(MtRange Nothing (Just hi), "") | hi >= 0]
                 (Just lo, Nothing, False, True) ->
                   [(MtRange (Just lo) Nothing, "") | lo >= 0]
                 (Just lo, Just hi, False, False) ->
                   [(MtRange (Just lo) (Just hi), "") | lo >= 0 && hi >= 0 && lo <= hi]
-                _ -> [] -- Invalid range format
-        _ -> [] -- Invalid range: expected format like '3..5', '3..', or '..5'
+                _ -> []
+        _ -> []
       parseExact :: String -> [(Must, String)]
       parseExact str = case readMaybe str of
         Just n | n >= 0 -> [(if n == 0 then MtDisabled else MtExact n, "")]
-        Just _ -> [] -- Invalid value: must be non-negative
-        Nothing -> [] -- Invalid value: expected integer
+        Just _ -> []
+        Nothing -> []
 
 inRange :: Must -> Int -> Bool
 inRange MtDisabled _ = True
@@ -58,7 +58,6 @@ inRange (MtRange minVal maxVal) actual =
     checkMin = maybe True (<= actual) minVal
     checkMax = maybe True (>= actual) maxVal
 
--- | Check if a value exceeds the upper bound of the range
 exceedsUpperBound :: Must -> Int -> Bool
 exceedsUpperBound MtDisabled _ = False
 exceedsUpperBound (MtExact n) current = current > n

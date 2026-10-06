@@ -10,4 +10,6 @@ when:
     absolute: 𝑛1
 premises:
   - n-result: 𝑛2
-    morph: ⊥
+    morph:
+      - ⊥
+      - 𝑒1

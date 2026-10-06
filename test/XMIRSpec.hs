@@ -16,6 +16,7 @@ import Data.Char (isDigit)
 import Data.List (intercalate)
 import Data.Map qualified as M
 import Data.Text qualified as T
+import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import GHC.Generics (Generic)
@@ -25,7 +26,7 @@ import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
-import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirToPhi)
+import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirTime, xmirToPhi)
 
 data ParsePack = ParsePack
   { failure :: Maybe Bool
@@ -46,7 +47,6 @@ parsePack = Yaml.decodeFileThrow
 printPack :: FilePath -> IO PrintPack
 printPack = Yaml.decodeFileThrow
 
--- | An XPath predicate that filters cursors.
 data Predicate
   = AttrEquals String String
   | ChildText String String
@@ -55,13 +55,9 @@ data Predicate
   | AndPred Predicate Predicate
   deriving (Show)
 
--- | An XPath step with element name and predicates.
 data Step = Step String [Predicate]
   deriving (Show)
 
-{- | Parse a simple XPath expression into steps.
-Supports: /element/element[@attr="val" and child="val" and child[N][@attr="val"]]
--}
 xpath :: String -> [Step]
 xpath ('/' : rest) = steps rest
 xpath _ = []
@@ -137,9 +133,6 @@ extractQuoted (q : rest)
   | q == '"' || q == '\'' = takeWhile (/= q) rest
 extractQuoted s = s
 
-{- | Evaluate an XPath expression on a document, returning matched cursors.
-Note: fromDocument returns cursor at root element, so first step must match root.
--}
 evaluate :: Document -> [Step] -> [C.Cursor]
 evaluate doc [] = [C.fromDocument doc]
 evaluate doc (Step name preds : rest) =
@@ -184,7 +177,6 @@ hasChild name nested cur =
   let children = cur C.$/ C.element (toName name)
    in not (null (applyPredicates children nested))
 
--- | Check if an XPath expression matches anything in the document.
 matches :: Document -> String -> Bool
 matches doc path = not (null (evaluate doc (xpath path)))
 
@@ -209,13 +201,13 @@ spec = do
               xmir'' `shouldBe` phi''
       )
 
-  -- A '--partial' residual tops in an arbitrary formation: several bindings,
-  -- voids, a bound ρ. Such a top now prints to XMIR and reads back whole (#1076)
   describe "round-trips non-program tops as XMIR (#1076)" $
     forM_
       [ "[[ x -> ? ]]"
       , "[[ ^ -> 5 ]]"
       , "[[ x -> 4, L> L_number_plus, ^ -> [[ y -> 5 ]] ]]"
+      , "[[ a -> T ]]"
+      , "[[ a -> $ ]]"
       ]
       ( \phi' -> it phi' $ do
           expr <- parseExpressionThrows phi'
@@ -225,13 +217,14 @@ spec = do
           back `shouldBe` expr
       )
 
-  -- A λ marker with no text is named after the enclosing bindings, whose
-  -- labels admit characters the 'function' parser refuses (#1188)
-  describe "derived λ function name" $
+  describe "derived λ function name" $ do
     it "spells itself in the alphabet the parser accepts" $ do
       doc <- parseXMIRThrows "<object><o name=\"foo\"><o name=\"l🌵ab12\"><o base=\"∅\" name=\"v0\"/><o name=\"λ\"/></o></o></object>"
       expr <- xmirToPhi doc
       parseExpressionThrows (printExpression expr) `shouldReturn` expr
+    it "stays unique when two paths spell alike, and keeps the type of each atom" $ do
+      doc <- parseXMIRThrows "<object><o name=\"top\"><o name=\"as-int\"><o atom=\"Φ.number\" name=\"λ\"/></o><o name=\"as_int\"><o atom=\"Φ.string\" name=\"λ\"/></o></o></object>"
+      xmirAtoms doc `shouldReturn` M.fromList [("L_top_as_int", "Φ.number"), ("L_top_as_int_2", "Φ.string")]
 
   describe "atom result types in XMIR" $ do
     let atom :: String
@@ -244,8 +237,6 @@ spec = do
       let printed = printXMIR result
       printed `shouldContain` "atom=\"Φ.number\""
       printed `shouldNotContain` "<o name=\"λ\">"
-    -- The @atom attribute is the result type of the atom, not its name, so
-    -- the λ function is still named after its locator (#1389)
     it "names the λ function after its locator, not after the type" $ do
       expr <- parseXMIRThrows atom >>= xmirToPhi
       printExpression expr `shouldContain` "L_number_plus"
@@ -259,13 +250,17 @@ spec = do
       )
         `shouldReturn` M.fromList [("Foo", "?")]
 
-  describe "--hide-rho in XMIR" $
+  describe "--hide-rho in XMIR" $ do
     it "drops every bound ρ from the printed document" $ do
       expr <- parseExpressionThrows "[[ x -> 4, ^ -> [[ y -> 5 ]] ]]"
       doc <- expressionToXMIR expr (XmirContext True False True (const "") M.empty)
       let printed = printXMIR doc
       printed `shouldContain` "name=\"x\""
       printed `shouldNotContain` "name=\"ρ\""
+    it "drops an application argument bound to ρ instead of refusing it" $ do
+      expr <- parseExpressionThrows "[[ m -> Q.a(^ -> [[]]) ]]"
+      doc <- expressionToXMIR expr (XmirContext True False True (const "") M.empty)
+      printXMIR doc `shouldContain` "base=\"Φ.a\""
 
   describe "prohibit to convert to XMIR" $
     forM_
@@ -275,7 +270,6 @@ spec = do
       , "\"Hello\""
       , "Q"
       , "$"
-      , "[[ x -> T ]]"
       , "[[ x -> [[ !t1 -> 5 ]] ]]"
       , "[[ org -> [[ z -> ?, L> Package ]] ]]"
       ]
@@ -306,8 +300,11 @@ spec = do
       [ ("keeps λ function name and bound ρ", "[[ k -> [[ x -> ?, L> Lorg_eolang_number_plus, ^ -> [[ y -> ? ]] ]] ]]")
       , ("keeps Δ data bound to a named attribute", "[[ k -> [[ a -> [[ D> 01-02 ]], ^ -> [[ D> 03-04 ]] ]] ]]")
       , ("keeps Δ data in a dispatched formation", "[[ k -> [[ D> 01-02 ]].plus ]]")
+      , ("keeps Δ data behind a sibling binding", "[[ top -> [[ a -> [[]], D> FF- ]] ]]")
+      , ("keeps Δ data between sibling bindings", "[[ top -> [[ a -> [[]], D> 01-02, b -> [[]] ]] ]]")
       , ("keeps a bare 'Q' bound to a named attribute", "[[ x -> Q ]]")
       , ("keeps a formation bound to φ", "[[ k -> [[ @ -> [[ L> S8 ]] ]] ]]")
+      , ("keeps byte data and sibling bindings in an application argument", "[[ x -> Q.y(a -> [[ D> 01-02, b -> Q.z ]]) ]]")
       ]
       ( \(desc, source) -> it desc $ do
           expr <- parseExpressionThrows source
@@ -321,7 +318,7 @@ spec = do
       [
         ( "explains an unsupported top-level expression"
         , do
-            expr <- parseExpressionThrows "[[ x -> $ ]]"
+            expr <- parseExpressionThrows "[[ x -> !e1 ]]"
             try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
         , ["XMIR does not support such top-level expression"]
         )
@@ -331,6 +328,25 @@ spec = do
             expr <- parseExpressionThrows "[[ x -> [[ y -> !e1 ]] ]]"
             try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
         , ["XMIR does not support such expression"]
+        )
+      ,
+        ( "refuses an application argument bound to ρ"
+        , do
+            expr <- parseExpressionThrows "[[ top -> Q.a(^ -> [[]]) ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such expression", "ρ ↦"]
+        )
+      ,
+        ( "refuses an application of a formation, which XMIR has no shape for"
+        , do
+            expr <- parseExpressionThrows "[[ x -> [[ a -> ? ]](a -> Q.y) ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such expression", "a ↦ Φ.y"]
+        )
+      ,
+        ( "names the attribute that is empty"
+        , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"\"/></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["The attribute 'base' is not expected to be empty"]
         )
       ,
         ( "explains an unsupported binding"
@@ -357,6 +373,12 @@ spec = do
             Left err -> mapM_ (displayException err `shouldContain`) messages
             Right () -> expectationFailure "expected an exception"
       )
+
+  describe "xmirTime" $ do
+    it "keeps every nanosecond of the time" $
+      xmirTime (posixSecondsToUTCTime 1790000000.123456789) `shouldBe` "2026-09-21T14:13:20.123456789Z"
+    it "never carries the fraction past nine digits" $
+      xmirTime (posixSecondsToUTCTime 1790000000.99999995) `shouldBe` "2026-09-21T14:13:20.999999950Z"
 
   describe "escapeXML" $
     it "escapes an apostrophe alongside the other reserved characters" $

@@ -7,9 +7,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the LaTeX module that provides conversion of phi-calculus
-expressions and rules to LaTeX format for academic documents.
--}
 module LaTeXSpec where
 
 import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot), Function (FnMeta, FnSymbol))
@@ -18,6 +15,7 @@ import Data.Aeson (FromJSON)
 import Data.List (intercalate)
 import Data.Text qualified as T
 import Data.Yaml qualified as Yaml
+import Deps (Judgment (..))
 import Files (allPathsIn)
 import Fixtures (explainPack)
 import GHC.Generics (Generic)
@@ -91,11 +89,6 @@ spec = do
       )
 
   describe "meets several sub-expressions in a single step" $
-    -- A step routinely carries several independent recurring sub-expressions.
-    -- The first step here holds two distinct recurring formations
-    -- ([[ p -> Q.a ]] and [[ q -> Q.b ]]); both must be factored, so the first
-    -- rendered step ends up with two \phinoMeet{}s, not just the single most
-    -- frequent one (see #976).
     it "factors every recurring sub-expression, not only one" $ do
       let step :: String -> String
           step lastAttr = "[[ r -> [[ p -> Q.a ]], s -> [[ q -> Q.b ]], tag -> Q." <> lastAttr <> " ]]"
@@ -106,18 +99,18 @@ spec = do
         [] -> expectationFailure "meetInExpressions returned no expressions"
 
   describe "indents wrapped continuation steps in a --sequence (#981)" $
-    it "nests a wrapped step's members below its two-space \\leadsto line and aligns the closing bracket with it, rather than laying the step out from column 0" $ do
+    it "nests a wrapped step's members below its two-space arrow line and aligns the closing bracket with it, rather than laying the step out from column 0" $ do
       start <- parseExpressionThrows "[[ x -> Q.y ]]"
       wrapped <- parseExpressionThrows "[[ a -> Q.b, c -> Q.d ]]"
       let ctx = defaultLatexContext{_line = MULTILINE, _margin = 20}
-      latex <- rewrittensToLatex ([(start, Just "first"), (wrapped, Just "second")], False) ctx
+      latex <- rewrittensToLatex ([(start, Just (Normalization, "first")), (wrapped, Just (Normalization, "second"))], False) ctx
       latex
         `shouldContain` intercalate
           "\n"
-          [ "  \\leadsto [["
+          [ "  \\phiNormalize [["
           , "    |a| -> Q . |b|,"
           , "    |c| -> Q . |d|"
-          , "  ]] \\leadsto_{\\nameref{r:second}}"
+          , "  ]] \\phiNormalize[\\nameref{r:second}]"
           ]
 
   describe "renders the 'formation' condition" $
@@ -128,6 +121,7 @@ spec = do
       , ("empty (Or [])", Y.Or [], "{ }")
       , ("normal form", Y.NF (ExMeta "n"), "{ \\isnormal{ n } }")
       , ("matches", Y.Matches "abc" (ExMeta "n"), "{ matches\\lparen abc, n \\rparen }")
+      , ("matches with a regex LaTeX would read", Y.Matches "^a_b$" (ExMeta "n"), "{ matches\\lparen \\char94{}a\\char95{}b\\char36{}, n \\rparen }")
       , ("part-of", Y.PartOf (ExMeta "n") (BiVoid AtRho), "{ part-of\\lparen n, \\phiTerminal{\\rho} -> ? \\rparen }")
       , ("compare equal", Y.Eq (Y.CmpAttr AtRho) (Y.CmpAttr AtPhi), "{ \\phiTerminal{\\rho} = @ }")
       , ("compare greater", Y.Gt (Y.CmpNum (Y.Literal 3)) (Y.CmpNum (Y.Literal 4)), "{ 3 > 4 }")
@@ -142,17 +136,17 @@ spec = do
       [
         ( "renders '\\phiquation*' (unnumbered) when '_nonumber' is set"
         , \ctx -> ctx{_nonumber = True}
-        , "\\begin{phiquation*}\n[[ |x| -> Q . |y| ]]{.}\n\\end{phiquation*}"
+        , "\\begin{phiquation*}\nQ . |y| : |x|{.}\n\\end{phiquation*}"
         )
       ,
         ( "renders a '\\label{}' when '_label' is set"
         , \ctx -> ctx{_label = Just "eq:one"}
-        , "\\begin{phiquation}\n\\label{eq:one}\n[[ |x| -> Q . |y| ]]{.}\n\\end{phiquation}"
+        , "\\begin{phiquation}\n\\label{eq:one}\nQ . |y| : |x|{.}\n\\end{phiquation}"
         )
       ,
         ( "renders a '\\phiExpression{}' prefix when '_expression' is set"
         , \ctx -> ctx{_expression = Just "e"}
-        , "\\begin{phiquation}\n\\phiExpression{e} [[ |x| -> Q . |y| ]]{.}\n\\end{phiquation}"
+        , "\\begin{phiquation}\n\\phiExpression{e} Q . |y| : |x|{.}\n\\end{phiquation}"
         )
       ]
       ( \(desc, adjustContext, expected) -> it desc $ do
@@ -163,17 +157,17 @@ spec = do
     it "renders a non-finite double as a piped dispatch off the root" $ do
       nan <- parseExpressionThrows "[[ x -> Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) ]]"
       expressionToLaTeX nan defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\n[[ |x| -> Q . |nan| ]]{.}\n\\end{phiquation}"
+        `shouldBe` "\\begin{phiquation}\nQ . |nan| : |x|{.}\n\\end{phiquation}"
 
     it "renders a bytes meta with the '\\delta' head" $ do
       bts <- parseExpressionThrows "[[ D> !d7 ]]"
       expressionToLaTeX bts defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\n[[ D> \\delta_7 ]]{.}\n\\end{phiquation}"
+        `shouldBe` "\\begin{phiquation}\n\\delta_7 : D{.}\n\\end{phiquation}"
 
     it "escapes '@' and '^' in an attribute label, same as '$' and '_'" $ do
       let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot]
       expressionToLaTeX weird defaultLatexContext
-        `shouldBe` "\\begin{phiquation}\n[[ |a\\char64{}b\\char94{}c| -> Q ]]{.}\n\\end{phiquation}"
+        `shouldBe` "\\begin{phiquation}\nQ : |a\\char64{}b\\char94{}c|{.}\n\\end{phiquation}"
 
     forM_
       [
@@ -193,23 +187,90 @@ spec = do
       )
 
   describe "rewrittensToLatex" $ do
-    it "renders the ellipsis ending when the chain exceeded its bound" $ do
+    it "trails a chain that ran out before its first step off with the arrow of normalization" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
       latex <- rewrittensToLatex ([(step1, Nothing)], True) defaultLatexContext
-      latex `shouldBe` "\\begin{phiquation}\n[[ |x| -> Q . |y| ]] \\leadsto\n  \\leadsto \\dots\n\\end{phiquation}"
+      latex `shouldBe` "\\begin{phiquation}\nQ . |y| : |x| \\phiNormalize\n  \\phiNormalize \\dots\n\\end{phiquation}"
+
+    it "trails a chain that ran out of steps off with the arrow of its last step" $ do
+      first <- parseExpressionThrows "[[ k -> Q.m ]]"
+      second <- parseExpressionThrows "[[ k -> Q.w ]]"
+      latex <- rewrittensToLatex ([(first, Just (Morphing, "mphi")), (second, Nothing)], True) defaultLatexContext
+      latex
+        `shouldBe` intercalate
+          "\n"
+          [ "\\begin{phiquation}"
+          , "Q . |m| : |k| \\phiMorph[\\nameref{r:mphi}]"
+          , "  \\phiMorph Q . |w| : |k| \\phiMorph"
+          , "  \\phiMorph \\dots"
+          , "\\end{phiquation}"
+          ]
+
+    forM_
+      [ (Normalization, "\\phiNormalize")
+      , (Morphing, "\\phiMorph")
+      , (Dataization, "\\phiDataize")
+      , (Evaluation, "\\phiEvaluate")
+      , (Contextualization, "\\phiContextualize")
+      ]
+      ( \(judgment, arrow) ->
+          it ("ends a step taken by " ++ show judgment ++ " with " ++ arrow ++ " and opens the next one with it") $ do
+            first <- parseExpressionThrows "[[ q -> Q.f ]]"
+            second <- parseExpressionThrows "[[ q -> Q.j ]]"
+            latex <- rewrittensToLatex ([(first, Just (judgment, "tv")), (second, Nothing)], False) defaultLatexContext
+            latex
+              `shouldBe` intercalate
+                "\n"
+                [ "\\begin{phiquation}"
+                , "Q . |f| : |q| " ++ arrow ++ "[\\nameref{r:tv}]"
+                , "  " ++ arrow ++ " Q . |j| : |q|{.}"
+                , "\\end{phiquation}"
+                ]
+      )
+
+    it "opens every step with the arrow of the judgment that took the step before it" $ do
+      first <- parseExpressionThrows "[[ u -> Q.g ]]"
+      second <- parseExpressionThrows "[[ u -> Q.h ]]"
+      third <- parseExpressionThrows "[[ D> 07- ]]"
+      latex <- rewrittensToLatex ([(first, Just (Normalization, "copy")), (second, Just (Dataization, "box")), (third, Nothing)], False) defaultLatexContext
+      latex
+        `shouldBe` intercalate
+          "\n"
+          [ "\\begin{phiquation}"
+          , "Q . |g| : |u| \\phiNormalize[\\nameref{r:copy}]"
+          , "  \\phiNormalize Q . |h| : |u| \\phiDataize[\\nameref{r:box}]"
+          , "  \\phiDataize |07-| : D{.}"
+          , "\\end{phiquation}"
+          ]
+
+    it "renders a 'where' function with a hyphen as a valid macro" $ do
+      ptn <- parseExpressionThrows "Q.x"
+      explainRules [Y.Rule "rt" Nothing Nothing ptn ptn Nothing (Just [Y.Extra (Y.ArgAttribute (AtMeta "t1")) "random-tau" []]) Nothing]
+        `shouldContain` "\\randomTau{"
+
+    it "escapes the name of the rule it refers to" $ do
+      step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
+      step2 <- parseExpressionThrows "[[ x -> Q.z ]]"
+      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just (Normalization, "my_rule%1"))], False) defaultLatexContext
+      latex `shouldContain` "\\nameref{r:my\\char95{}rule\\char37{}1}"
+
+    it "escapes the name of the rule it explains" $ do
+      ptn <- parseExpressionThrows "Q.x"
+      explainRules [Y.Rule "my_rule%1" Nothing Nothing ptn ptn Nothing Nothing Nothing]
+        `shouldContain` "\\phinoNormalizationRule{my\\char95{}rule\\char37{}1}"
 
     it "prefixes each step with a '% === Step' header when '_headers' is set" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
       step2 <- parseExpressionThrows "[[ x -> Q.z ]]"
-      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just "myrule")], False) defaultLatexContext{_headers = True}
+      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just (Normalization, "myrule"))], False) defaultLatexContext{_headers = True}
       latex
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
           , "% === Step #1"
-          , "[[ |x| -> Q . |y| ]]"
+          , "Q . |y| : |x|"
           , "% === Step #2, Rule '?', 7t -> 7t"
-          , "  \\leadsto [[ |x| -> Q . |z| ]] \\leadsto_{\\nameref{r:myrule}}{.}"
+          , "  \\phiNormalize Q . |z| : |x| \\phiNormalize[\\nameref{r:myrule}]{.}"
           , "\\end{phiquation}"
           ]
 
@@ -217,13 +278,13 @@ spec = do
       step1 <- parseExpressionThrows "[[ x -> Q.aaa.bbb.ccc.ddd ]]"
       step2 <- parseExpressionThrows "[[ x -> Q.aaa.bbb.ccc.ddd.eee ]]"
       focus <- parseExpressionThrows "Q.x"
-      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just "r")], False) defaultLatexContext{_focus = focus}
+      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just (Normalization, "r"))], False) defaultLatexContext{_focus = focus}
       latex
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
           , "Q . |aaa| . |bbb| . |ccc| . |ddd|"
-          , "  \\leadsto Q . |aaa| . |bbb| . |ccc| . |ddd| . |eee| \\leadsto_{\\nameref{r:r}}{.}"
+          , "  \\phiNormalize Q . |aaa| . |bbb| . |ccc| . |ddd| . |eee| \\phiNormalize[\\nameref{r:r}]{.}"
           , "\\end{phiquation}"
           ]
 
@@ -233,15 +294,15 @@ spec = do
       step3 <- parseExpressionThrows "[[ z -> Q.a.b.c.d ]]"
       latex <-
         rewrittensToLatex
-          ([(step1, Nothing), (step2, Just "r1"), (step3, Just "r2")], False)
+          ([(step1, Nothing), (step2, Just (Normalization, "r1")), (step3, Just (Normalization, "r2"))], False)
           defaultLatexContext{_compress = True, _canonize = True}
       latex
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
-          , "[[ |x| -> \\phinoMeet{1}{ Q . |a| . |b| . |c| . |d| } ]]"
-          , "  \\leadsto [[ |y| -> \\phinoAgain{1} ]] \\leadsto_{\\nameref{r:r1}}"
-          , "  \\leadsto [[ |z| -> \\phinoAgain{1} ]] \\leadsto_{\\nameref{r:r2}}{.}"
+          , "\\phinoMeet{1}{ Q . |a| . |b| . |c| . |d| } : |x|"
+          , "  \\phiNormalize \\phinoAgain{1} : |y| \\phiNormalize[\\nameref{r:r1}]"
+          , "  \\phiNormalize \\phinoAgain{1} : |z| \\phiNormalize[\\nameref{r:r2}]{.}"
           , "\\end{phiquation}"
           ]
 
@@ -252,15 +313,15 @@ spec = do
       step3 <- parseExpressionThrows "[[ x -> [[ w -> Q.a.b.c.d ]] ]]"
       latex <-
         rewrittensToLatex
-          ([(step1, Nothing), (step2, Just "r1"), (step3, Just "r2")], False)
+          ([(step1, Nothing), (step2, Just (Normalization, "r1")), (step3, Just (Normalization, "r2"))], False)
           defaultLatexContext{_focus = focus, _compress = True, _canonize = True}
       latex
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phiquation}"
-          , "\\phinoMeet{1}{ [[ |w| -> Q . |a| . |b| . |c| . |d| ]] }"
-          , "  \\leadsto \\phinoAgain{1} \\leadsto_{\\nameref{r:r1}}"
-          , "  \\leadsto \\phinoAgain{1} \\leadsto_{\\nameref{r:r2}}{.}"
+          , "\\phinoMeet{1}{ Q . |a| . |b| . |c| . |d| : |w| }"
+          , "  \\phiNormalize \\phinoAgain{1} \\phiNormalize[\\nameref{r:r1}]"
+          , "  \\phiNormalize \\phinoAgain{1} \\phiNormalize[\\nameref{r:r2}]{.}"
           , "\\end{phiquation}"
           ]
 
@@ -327,7 +388,7 @@ spec = do
         ,
           [ "\\phinoNormalizationRule{lambdas}"
           , "{ [[ B_1, L> f, B_2 ]] }"
-          , "{ [[ L> \\sigma_1 ]] }"
+          , "{ \\sigma_1 : L }"
           , "{ }"
           , "{ }"
           ]
@@ -386,11 +447,11 @@ spec = do
               , nresult = ExMeta "n1"
               , when = Just (Y.NF (ExMeta "n"))
               , premises =
-                  [ Y.Premise{result = "n1", operation = Y.OpMorph (ExMeta "n")}
+                  [ Y.Premise{result = "n1", operation = Y.OpMorph (ExMeta "n") (ExMeta "e")}
                   , Y.Premise{result = "n2", operation = Y.OpNormalize (ExMeta "n1")}
                   , Y.Premise{result = "n3", operation = Y.OpEvaluate (ExMeta "n2") (ExMeta "e")}
                   , Y.Premise{result = "n4", operation = Y.OpContextualize (ExMeta "n3") (ExMeta "e")}
-                  , Y.Premise{result = "n5", operation = Y.OpDataize (ExMeta "n4")}
+                  , Y.Premise{result = "n5", operation = Y.OpDataize (ExMeta "n4") (ExMeta "e")}
                   ]
               }
       explainMorphRules [rule]
@@ -431,7 +492,7 @@ spec = do
           ]
 
   describe "explainContextualizeRules" $
-    it "threads a morph premise through the rule's own 'e' universe" $ do
+    it "renders a morph premise in the universe it names, not in a free 'e'" $ do
       let rule =
             Y.ContextualizeRule
               { name = "ctx1"
@@ -439,14 +500,14 @@ spec = do
               , match = ExMeta "n"
               , cmatch = ExMeta "c"
               , cresult = ExMeta "n1"
-              , premises = [Y.Premise{result = "n1", operation = Y.OpMorph (ExMeta "n")}]
+              , premises = [Y.Premise{result = "n1", operation = Y.OpMorph (ExMeta "n") ExRoot}]
               }
       explainContextualizeRules [rule]
         `shouldBe` intercalate
           "\n"
           [ "\\begin{phinoContextualizationInference}"
           , "  \\phinoName{ctx1}"
-          , "  \\phinoPremise{ \\phinoMorph{ n }{ e }{ s_1 }{ n_1 }{ s_2 } }"
+          , "  \\phinoPremise{ \\phinoMorph{ n }{ Q }{ s_1 }{ n_1 }{ s_2 } }"
           , "  \\phinoConclusion{ \\phinoContextualize{ n }{ e }{ n_1 } }"
           , "\\end{phinoContextualizationInference}"
           ]
@@ -504,7 +565,7 @@ spec = do
               , ematch = ExMeta "e1"
               , nresult = ExMeta "n1"
               , when = Nothing
-              , premises = [Y.Premise{result = "d1", operation = Y.OpDataize (ExMeta "n1")}]
+              , premises = [Y.Premise{result = "d1", operation = Y.OpDataize (ExMeta "n1") (ExMeta "e1")}]
               }
       explainMorphRules [rule]
         `shouldBe` intercalate

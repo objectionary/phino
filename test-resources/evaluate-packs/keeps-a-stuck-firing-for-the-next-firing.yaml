@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The memo of '--acyclic=plausible' keeps a stuck firing the way it keeps a
+# cut. The firing under 'x' brings its operand down through 𝔻, which gets
+# stuck on 'L_none', so the firing never answers; 'y' spells the very same
+# formation, and before #1493 its firing reduced its operand and got stuck on
+# 'L_none' again, since a stuck firing kept nothing. Now the second firing
+# takes the failure the first one met: it is written at its own site and
+# nothing under it is reduced.
+symbolic: |
+  - λ: L_outer
+    dataize:
+      𝛿1: ξ.arg
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+deep: true
+partial: true
+acyclic: plausible
+steps: 64
+input: >
+  ⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧,
+    y ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧ ⟧
+protocol: |
+  𝕄(Φ)
+    𝔼(L_outer)  # 𝕄(Φ.x)
+      unanswered(L_none)  # 𝔻(L_none:λ)
+      stuck(L_none)
+    𝔼(L_outer)  # 𝕄(Φ.y)
+      stall(L_none)

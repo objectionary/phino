@@ -7,8 +7,16 @@ name: jeo-update
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
+permissions: read-all
+concurrency:
+  group: jeo-update-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   update:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -32,3 +40,14 @@ jobs:
           delete-branch: true
           title: 'Update jeo-maven-plugin to ${{ steps.jeo.outputs.latest }}'
           base: master
+  telegram:
+    needs: update
+    runs-on: ubuntu-24.04
+    if: ${{ always() }}
+    permissions:
+      actions: read
+    steps:
+      - uses: yegor256/terald-action@0.1.0
+        with:
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          chat: ${{ secrets.TELEGRAM_CHAT }}

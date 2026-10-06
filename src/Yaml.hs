@@ -18,7 +18,10 @@ import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir)
+import Data.Maybe (fromMaybe)
+import Data.Scientific (isInteger)
 import Data.Text (Text, unpack)
+import qualified Data.Text as T
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
 import GHC.Generics (Generic)
@@ -27,7 +30,6 @@ import Parser
 import Slots
 import Text.Printf (printf)
 
--- Fail unless the object names exactly one of the expected keys
 validateYamlObject :: (MonadFail a) => Object -> [String] -> a ()
 validateYamlObject v keys
   | length current > 1 = fail ("Exactly one condition type is expected, when multiple condition types specified: " ++ show current)
@@ -81,8 +83,9 @@ instance FromJSON Number where
         , Domain <$> o .: "domain"
         ]
     Number num
-      | toRational (round num :: Integer) == toRational num -> pure (Literal (round num))
-      | otherwise -> fail (printf "Expected an integer, got a fractional number %s" (show num))
+      | toRational (round num :: Integer) /= toRational num -> fail (printf "Expected an integer, got a fractional number %s" (show num))
+      | (round num :: Integer) < toInteger (minBound :: Int) || (round num :: Integer) > toInteger (maxBound :: Int) -> fail (printf "The literal %s does not fit into Int" (show num))
+      | otherwise -> pure (Literal (round num))
     String txt -> case parseIndex (unpack txt) of
       Right (Right mt) -> pure (MetaIndex mt)
       Right (Left slot) -> pure (AnyIndex slot)
@@ -91,6 +94,9 @@ instance FromJSON Number where
       fail "Expected a numerable expression (object, number or index meta)"
 
 instance FromJSON Comparable where
+  parseJSON (Number num)
+    | isInteger num && ((round num :: Integer) < toInteger (minBound :: Int) || (round num :: Integer) > toInteger (maxBound :: Int)) =
+        fail (printf "The literal %s does not fit into Int" (show num))
   parseJSON v =
     asum
       [ CmpAttr <$> parseJSON v
@@ -191,7 +197,43 @@ instance FromJSON Rule where
     referenceless rule.name "when" rule.when
     referenceless rule.name "where" rule.where_
     referenceless rule.name "having" rule.having
+    targets rule (metas rule.pattern) (fromMaybe [] rule.where_)
+    steps rule (named (metas rule.pattern)) (fromMaybe [] rule.where_)
     pure rule
+    where
+      targets :: Rule -> [Text] -> [Extra] -> Parser ()
+      targets _ _ [] = pure ()
+      targets rule known (extra : rest) = case extra.meta of
+        ArgExpression (ExMeta bound) -> fresh rule known bound >> targets rule (bound : known) rest
+        ArgAttribute (AtMeta bound) -> fresh rule known bound >> targets rule (bound : known) rest
+        ArgBinding (BiMeta bound) -> fresh rule known bound >> targets rule (bound : known) rest
+        ArgBytes (BtMeta bound) -> fresh rule known bound >> targets rule (bound : known) rest
+        _ -> fail (printf "The rule '%s' has a 'where' step whose 'meta' is not a meta, while only a meta can take its result" rule.name)
+      fresh :: Rule -> [Text] -> Text -> Parser ()
+      fresh rule known bound
+        | bound `elem` known = fail (printf "The rule '%s' has a 'where' step that binds the meta '%s' again, while it is already bound" rule.name (unpack bound))
+        | otherwise = pure ()
+      named :: [Text] -> [Text]
+      named = filter ((> 1) . T.length)
+      steps :: Rule -> [Text] -> [Extra] -> Parser ()
+      steps rule known [] = do
+        unread rule known "result" (metas rule.result)
+        unread rule known "when" (metas rule.when)
+        unread rule known "having" (metas rule.having)
+      steps rule known (extra : rest) = do
+        unread rule known "where" (metas extra.args)
+        steps rule (known ++ named (metas extra.meta)) rest
+      unread :: Rule -> [Text] -> String -> [Text] -> Parser ()
+      unread rule known field used = case filter (`notElem` known) (named used) of
+        [] -> pure ()
+        missing : _ ->
+          fail
+            ( printf
+                "The rule '%s' reads the meta '%s' it never binds, in '%s', since neither its pattern nor an earlier 'where' step binds it"
+                rule.name
+                (unpack missing)
+                field
+            )
 
 data Number
   = MetaIndex Text
@@ -287,11 +329,11 @@ instance Slots Premise where
   slots premise = slots premise.operation
 
 instance Slots Operation where
-  slots (OpMorph expr) = slots expr
+  slots (OpMorph expr universe) = slots expr ++ slots universe
   slots (OpNormalize expr) = slots expr
   slots (OpEvaluate expr universe) = slots expr ++ slots universe
   slots (OpContextualize expr context) = slots expr ++ slots context
-  slots (OpDataize expr) = slots expr
+  slots (OpDataize expr universe) = slots expr ++ slots universe
 
 instance Metas Condition where
   metas (And conds) = metas conds
@@ -357,20 +399,17 @@ instance Metas Premise where
   bare names premise = premise{result = bare names premise.result, operation = bare names premise.operation}
 
 instance Metas Operation where
-  metas (OpMorph expr) = metas expr
+  metas (OpMorph expr universe) = metas expr ++ metas universe
   metas (OpNormalize expr) = metas expr
   metas (OpEvaluate expr universe) = metas expr ++ metas universe
   metas (OpContextualize expr context) = metas expr ++ metas context
-  metas (OpDataize expr) = metas expr
-  bare names (OpMorph expr) = OpMorph (bare names expr)
+  metas (OpDataize expr universe) = metas expr ++ metas universe
+  bare names (OpMorph expr universe) = OpMorph (bare names expr) (bare names universe)
   bare names (OpNormalize expr) = OpNormalize (bare names expr)
   bare names (OpEvaluate expr universe) = OpEvaluate (bare names expr) (bare names universe)
   bare names (OpContextualize expr context) = OpContextualize (bare names expr) (bare names context)
-  bare names (OpDataize expr) = OpDataize (bare names expr)
+  bare names (OpDataize expr universe) = OpDataize (bare names expr) (bare names universe)
 
--- A rule is the scope an index counts in: the reader meets the metas of one
--- inference within it and nowhere else, so a kind the rule names just once
--- carries no index anywhere in the rule.
 instance Metas Rule where
   metas rule = metas rule.pattern ++ metas rule.result ++ metas rule.when ++ metas rule.having ++ metas rule.where_
   bare names rule =
@@ -414,15 +453,6 @@ instance Metas ContextualizeRule where
       , premises = bare names rule.premises
       }
 
--- An anonymous meta-variable is bound by the pattern it stands in and is
--- forgotten as soon as that pattern matches, so it has no name for any other
--- part of a rule to read it back by. Writing one outside the pattern is
--- therefore a mistake in the rule, not a term to be resolved later, and the
--- rule is rejected as it loads.
--- A rewriting rule is about a term and knows nothing of the world around it,
--- so it has no 'e-match' to match that world with: only a morphing and a
--- dataization rule carry one. A rule written with it anyway is refused where
--- it is read, since ignoring the key would rewrite with a meta nobody binds.
 universeless :: String -> Value -> Parser ()
 universeless rule (Object fields)
   | KeyMap.member "e-match" fields = fail (printf "The rule '%s' carries an 'e-match', which only a morphing or a dataization rule may" rule)
@@ -440,9 +470,6 @@ referenceless rule field term = case anonymous term of
           rule
       )
 
--- Decode one rule out of the file that carries it, naming that file when its
--- YAML is broken. A rule set is a directory 'embedDir' embeds wholesale, one
--- rule per file, the file named after the rule it carries.
 decodeRule :: (FromJSON a) => (FilePath, BS.ByteString) -> a
 decodeRule (path, bs) = case Yaml.decodeEither' bs of
   Right rule -> rule
@@ -455,31 +482,20 @@ normalizationRules = map decodeRule $(embedDir "resources/normalize")
 yamlRule :: FilePath -> IO Rule
 yamlRule = Yaml.decodeFileThrow
 
--- One premise above the inference line of a morphing or dataization rule: bind
--- the meta named 'result' to the value of applying 'operation' to its argument.
--- The universe e is the fixed second argument of 𝕄 and 𝔻, not a per-premise
--- value, so it is not recorded here.
 data Premise = Premise
   { result :: Text
   , operation :: Operation
   }
   deriving (Eq, Generic, Show)
 
--- The reduction a premise performs, mirroring the build-term functions and the
--- 𝒩 and 𝔻 reducers the engine already provides.
 data Operation
-  = OpMorph Expression
+  = OpMorph Expression Expression
   | OpNormalize Expression
   | OpEvaluate Expression Expression
   | OpContextualize Expression Expression
-  | OpDataize Expression
+  | OpDataize Expression Expression
   deriving (Eq, Generic, Show)
 
--- One morphing rule in inference-rule form: when 'match' matches the term and
--- 'ematch' matches the universe (binding 'e'), the rule yields 'nresult' (a
--- premise meta or a literal) provided 'when' holds and the ordered 'premises'
--- reduce as stated. 'ematch' is the universe-argument matcher of 𝕄(n, e, s), in
--- practice always the '𝑒' meta.
 data MorphRule = MorphRule
   { name :: String
   , label :: Maybe String
@@ -491,8 +507,6 @@ data MorphRule = MorphRule
   }
   deriving (Generic, Show)
 
--- One dataization rule in inference-rule form, structured like 'MorphRule' but
--- terminating with bytes ('dresult').
 data DataizeRule = DataizeRule
   { name :: String
   , label :: Maybe String
@@ -504,10 +518,6 @@ data DataizeRule = DataizeRule
   }
   deriving (Generic, Show)
 
--- One contextualization rule in inference-rule form, structured like 'MorphRule'
--- but binary in 𝒞(n, c): the second argument is the context 'c' ('cmatch',
--- always the 'c' meta) rather than the universe 'e', and the conclusion is the
--- contextualized term 'cresult'.
 data ContextualizeRule = ContextualizeRule
   { name :: String
   , label :: Maybe String
@@ -524,8 +534,6 @@ instance FromJSON Premise where
       "Premise"
       (\o -> Premise <$> premiseResult o <*> premiseOperation o)
 
--- The meta a premise binds, taken from its 'n-result' (an expression meta) or
--- 'd-result' (a bytes meta).
 premiseResult :: Object -> Parser Text
 premiseResult o = do
   expr <- o .:? "n-result"
@@ -541,29 +549,23 @@ premiseResult o = do
         Just _ -> fail "'d-result' must be a bytes meta"
         Nothing -> fail "a premise needs an 'n-result' or 'd-result' meta"
 
--- The single verb of a premise.
 premiseOperation :: Object -> Parser Operation
 premiseOperation o =
   asum
-    [ OpMorph <$> o .: "morph"
+    [ binary "morph" OpMorph
     , OpNormalize <$> o .: "normalize"
-    , do
-        vals <- o .: "evaluate"
-        case vals of
-          [expr, universe] -> OpEvaluate <$> parseJSON expr <*> parseJSON universe
-          _ -> fail "'evaluate' expects exactly two arguments"
-    , do
-        vals <- o .: "contextualize"
-        case vals of
-          [expr, context] -> OpContextualize <$> parseJSON expr <*> parseJSON context
-          _ -> fail "'contextualize' expects exactly two arguments"
-    , OpDataize <$> o .: "dataize"
+    , binary "evaluate" OpEvaluate
+    , binary "contextualize" OpContextualize
+    , binary "dataize" OpDataize
     ]
+  where
+    binary :: Key -> (Expression -> Expression -> Operation) -> Parser Operation
+    binary key verb = do
+      vals <- o .: key
+      case vals of
+        [expr, second] -> verb <$> parseJSON expr <*> parseJSON second
+        _ -> fail (printf "'%s' expects exactly two arguments" (Key.toString key))
 
--- Parse the optional 'label', rejecting one that merely repeats the rule's
--- 'name'. A label equal to the name typesets the same token across two macros
--- and adds nothing, so it is forbidden: 'label' is meant to carry a symbol that
--- differs from the plain name (for example '\lambda' or 'disp').
 parseLabel :: String -> Object -> Parser (Maybe String)
 parseLabel ruleName o = do
   label' <- o .:? "label"

@@ -6,8 +6,8 @@
 module TauSpec where
 
 import AST
-import Control.Monad (forM_, replicateM)
-import Tau (freshTau, seedTaus)
+import Control.Monad (forM_, join, replicateM)
+import Tau (freshTau, seedTaus, tausOf)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
@@ -40,3 +40,17 @@ spec = describe "Tau" $ do
         name <- freshTau
         name `shouldBe` "a🌵1"
     )
+  it "mints names carrying the entry they were minted for" $ do
+    seedTaus (ExFormation [])
+    mint <- tausOf 7
+    names <- replicateM 3 mint
+    names `shouldBe` ["a🌵7-0", "a🌵7-1", "a🌵7-2"]
+  it "skips the names of an entry the document already took" $ do
+    seedTaus (ExFormation [BiTau (AtLabel "a🌵4-0") ExRoot, BiTau (AtLabel "a🌵4-1") ExXi])
+    name <- join (tausOf 4)
+    name `shouldBe` "a🌵4-2"
+  it "does not move the cursor the run mints its own names with" $ do
+    seedTaus (ExFormation [])
+    _ <- tausOf 2 >>= \mint -> replicateM 5 mint
+    name <- freshTau
+    name `shouldBe` "a🌵0"

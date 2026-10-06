@@ -18,4 +18,6 @@ premises:
   - n-result: 𝑛1
     normalize: ⟦𝐵1⟧.φ.𝜏1
   - n-result: 𝑛2
-    morph: 𝑛1
+    morph:
+      - 𝑛1
+      - 𝑒1

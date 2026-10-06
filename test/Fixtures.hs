@@ -3,17 +3,16 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
--- The λ functions the specs fire. phino implements none of them, so a spec that
--- needs one to answer brings its own: the fixture file
--- 'test-resources/atoms.yaml', which spells them in the very rule language
--- '--symbolic' reads, or a file of its own written for the occasion.
 module Fixtures
   ( defaultReduceContext
   , explainPack
   , fixtureLambdas
   , lambdasFile
+  , linked
   , loopingLambdas
+  , overdue
   , primitives
+  , readProtocol
   , readUtf8
   , recorded
   , recorded'
@@ -26,69 +25,58 @@ where
 import AST (Expression (ExRoot))
 import CLI.Helpers (withEvalFunc)
 import CLI.Types (IOFormat (PHI), PrintContext (PrintCtx))
+import Compiled (compiled)
 import Control.Exception (bracket, evaluate)
 import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Data.ByteString qualified as BS
+import Data.Char (toLower)
+import Data.IORef (newIORef)
+import Data.List (isPrefixOf, stripPrefix)
 import Data.Map.Strict qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Dataize (reduction)
 import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
+import Engine (Engine, building, yaml)
 import Evaluate (evaluation, fired)
-import Functions (buildTerm)
+import GHC.Clock (getMonotonicTime)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Lining (LineFormat (MULTILINE))
-import Morph (ReduceContext (..), Steps (..))
+import Morph (Deadline (..), ReduceContext (..), Steps (..))
 import Sugar (SugarType (SWEET))
 import System.Directory (getTemporaryDirectory, removePathForcibly)
+import System.FilePath (takeExtension)
 import System.IO (Handle, IOMode (ReadMode), hClose, hGetContents, hSetEncoding, openBinaryTempFile, utf8, withFile)
 import XMIR (defaultXmirContext)
 
--- The context every reduction of a spec starts from. Shuffle is enabled so the
--- suite exercises the order-independence of the morphing and dataization rules
--- (#909): a hidden overlap surfaces as a nondeterministic failure instead of
--- staying silently green. No λ function is registered, since phino implements
--- none of them: a case that needs one to answer brings the fixture file in
--- through 'withLambdas'.
-defaultReduceContext :: Expression -> ReduceContext
-defaultReduceContext loc = ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing Nothing 1 False True False False Nothing Morphing [] Map.empty emptyLambdas buildTerm reduction evaluation fired dontSaveStep dontSaveEval
+defaultReduceContext :: Expression -> IO ReduceContext
+defaultReduceContext loc = do
+  minted <- newIORef 0
+  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 False True False False 1 Nothing Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
 
--- The same context with the given λ functions registered
+linked :: Engine
+linked = fromMaybe yaml compiled
+
 withLambdas :: Lambdas -> ReduceContext -> ReduceContext
 withLambdas lambdas ctx = ctx{_symbolic = lambdas}
 
--- The file '--symbolic' reads in every case that fires one of the fixture λ
--- functions, for the specs that go through the command line.
 lambdasFile :: FilePath
 lambdasFile = "test-resources/atoms.yaml"
 
--- The same λ functions, read once, for the specs that drive 𝕄 and 𝔻 directly.
 fixtureLambdas :: IO Lambdas
 fixtureLambdas = readLambdas lambdasFile
 
--- The one λ function that answers with a firing of itself, so that a run fires
--- it until the step budget is gone. Recursion is nothing phino prevents on its
--- own — that is the object model's business — so a program built on this one is
--- how the specs reach the '--max-steps' limit, and how they ask '--acyclic' to
--- end the same run before the limit does.
 loopingLambdas :: (FilePath -> IO a) -> IO a
 loopingLambdas = withLambdasOf "- λ: L_loop\n  𝑛: ⟦ λ ⤍ L_loop ⟧\n"
 
--- The given λ functions, as the YAML file '--symbolic' reads, in a temporary
--- file removed afterwards.
+overdue :: Int -> IO Deadline
+overdue cap = Deadline cap . subtract 1 <$> getMonotonicTime
+
 withLambdasOf :: T.Text -> (FilePath -> IO a) -> IO a
 withLambdasOf lambdas = withTemp "phino-symbolic-.yaml" (encodeUtf8 lambdas)
 
--- The EO objects the fixture λ functions answer for, declared the way
--- 'number.eo', 'bytes.eo' and 'bool.eo' declare them, so a case only has to
--- spell the expression under φ. 'number.eq' is the one operation with no λ
--- function of its own: EO spells it out of 'L_bytes_eq' (eq.eo), so the fixture
--- composes it the same way, and 'bool.if' is where a branch meets the symbol
--- its condition came down to. 'number.nope' is declared and left out of the
--- file on purpose: it is the λ function that cannot fire, the one '--partial'
--- parks on. Every operation reads the object it is dispatched on, so each one
--- declares ρ among its voids, the way EO declares '^' (#1407).
 primitives :: String -> String
 primitives src =
   unlines
@@ -116,34 +104,22 @@ primitives src =
     , "]]"
     ]
 
--- Run the action with the function '--protocol' writes the run through, handing
--- back what it wrote alongside the answer, verbatim. The protocol goes through
--- the very plumbing the option runs, and it is handed back as the text of the
--- file and not as the lines of it, so a case asserting it asserts the very
--- bytes a user of the option reads back — the indentation of every record, the
--- order they stand in and the line the file ends on included.
 recorded :: (SaveEvalFunc -> IO a) -> IO (a, String)
 recorded = recorded' False
 
--- The same, with the ρ bindings of every term dropped when asked, the way
--- '--hide-rho' drops them: a caller reading a protocol back for the terms an
--- entry answered with has no business reading the universe those terms were
--- fired inside, and the flag is what says so.
 recorded' :: Bool -> (SaveEvalFunc -> IO a) -> IO (a, String)
 recorded' hidden action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
     answer <- withEvalFunc (Just path) printing action
-    written <- readUtf8 path
+    written <- withoutTotals <$> readUtf8 path
     pure (answer, written)
   where
-    -- The protocol flattens every term itself, so the only things this context
-    -- decides are that the terms are 𝜑 and not XMIR and whether they carry
-    -- their ρ bindings.
     printing :: PrintContext
     printing =
       PrintCtx
         SWEET
         hidden
+        Nothing
         False
         MULTILINE
         2
@@ -161,8 +137,6 @@ recorded' hidden action =
         Nothing
         PHI
 
--- The LaTeX that 'explain' prints for one built-in rule, as the 'latex' key of
--- its pack in 'test-resources/explain-packs' spells it.
 newtype ExplainPack = ExplainPack String
 
 instance FromJSON ExplainPack where
@@ -173,12 +147,6 @@ explainPack path = do
   ExplainPack latex <- Yaml.decodeFileThrow path
   pure latex
 
--- Read a text file phino wrote, in the encoding it wrote it with. The whole
--- content is forced before the handle closes, since a lazy read of a closed
--- handle answers nothing. The file is read as text and not as bytes, so the
--- line terminator the platform writes is the one it reads back: on Windows
--- every line of a text file ends CRLF, and a case asserting the content of one
--- has no business seeing that.
 readUtf8 :: FilePath -> IO String
 readUtf8 path =
   withFile path ReadMode $ \stream -> do
@@ -187,8 +155,43 @@ readUtf8 path =
     _ <- evaluate (length content)
     pure content
 
--- Write the content to a fresh temporary file, hand its path to the action and
--- delete the file afterwards.
+readProtocol :: FilePath -> IO String
+readProtocol path = sansTotals <$> readUtf8 path
+  where
+    sansTotals :: String -> String
+    sansTotals
+      | map toLower (takeExtension path) == ".xml" = withoutWrapper
+      | otherwise = withoutTotals
+
+withoutTotals :: String -> String
+withoutTotals text
+  | [msec, firings, fps] <- drop (length ls - 3) ls
+  , "msec(" `isPrefixOf` msec
+  , "firings(" `isPrefixOf` firings
+  , "fps(" `isPrefixOf` fps =
+      unlines (take (length ls - 3) ls)
+  | otherwise = text
+  where
+    ls = lines text
+
+withoutWrapper :: String -> String
+withoutWrapper text = case lines text of
+  (decl : "<protocol>" : rest)
+    | Just kept <- withoutRunTotals rest -> unlines (decl : map dedented kept)
+  _ -> text
+  where
+    withoutRunTotals :: [String] -> Maybe [String]
+    withoutRunTotals rest = case reverse rest of
+      (closing : fps : firings : msec : kept)
+        | closing == "</protocol>"
+        , "<fps>" `isPrefixOf` dropWhile (== ' ') fps
+        , "<firings>" `isPrefixOf` dropWhile (== ' ') firings
+        , "<msec>" `isPrefixOf` dropWhile (== ' ') msec ->
+            Just (reverse kept)
+      _ -> Nothing
+    dedented :: String -> String
+    dedented line = fromMaybe line (stripPrefix "  " line)
+
 withTemp :: String -> BS.ByteString -> (FilePath -> IO a) -> IO a
 withTemp template content action = do
   dir <- getTemporaryDirectory

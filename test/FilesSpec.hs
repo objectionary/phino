@@ -14,10 +14,12 @@ import Files (FsException (..), allPathsIn, ensuredFile, overwrite)
 import System.Directory
   ( createDirectoryIfMissing
   , createDirectoryLink
+  , createFileLink
   , executable
   , getPermissions
   , getTemporaryDirectory
   , listDirectory
+  , pathIsSymbolicLink
   , removeDirectoryRecursive
   , setOwnerExecutable
   , setPermissions
@@ -66,6 +68,17 @@ spec = do
       BS.writeFile (dir </> "lonely.phi") BS.empty
       void (try (overwrite (dir </> "lonely.phi") (replicate 100000 'ω' ++ error "broken tail")) :: IO (Either ErrorCall ()))
       listDirectory dir `shouldReturn` ["lonely.phi"]
+    it "writes through a symbolic link and keeps the link" $ withScratchDir $ \dir -> do
+      let real = dir </> "real.phi"
+          link = dir </> "link.phi"
+      BS.writeFile real (TE.encodeUtf8 (T.pack "{⟦ old ↦ ∅ ⟧}"))
+      if os == "mingw32"
+        then pendingWith "Windows does not create file symbolic links without elevated privileges"
+        else do
+          createFileLink real link
+          overwrite link "{⟦ new ↦ ∅ ⟧}"
+          TE.decodeUtf8 <$> BS.readFile real `shouldReturn` T.pack "{⟦ new ↦ ∅ ⟧}"
+          pathIsSymbolicLink link `shouldReturn` True
     it "keeps the executable permission of the replaced file" $ withScratchDir $ \dir -> do
       let path = dir </> "script.sh"
       BS.writeFile path BS.empty

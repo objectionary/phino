@@ -2,14 +2,24 @@
 # SPDX-License-Identifier: MIT
 ---
 # Dispatch 𝜏1 on a formation: contextualize the dispatched body 𝑛1 and decorate
-# it with the whole formation as ρ. The contextualization context is the
-# formation WITHOUT the dispatched binding — ⟦𝐵1, 𝐵2⟧, not ⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧ —
-# so a self-referential ξ inside 𝑛1 (as in ⟦ a ↦ ξ ⟧.a or ⟦ a ↦ ξ.a ⟧.a) no
-# longer sees 𝜏1. Such a self-reference then dispatches on a formation that
-# lacks 𝜏1 and collapses to ⊥ via stop/null/dd instead of rebuilding the same
-# ⟦…, 𝜏1 ↦ 𝑛1, …⟧.𝜏1 term and looping forever. ρ on line 'result' still binds
-# the full formation, so sibling and φ-decoration references stay intact — only
-# the self-ξ path narrows, keeping normalization (near-)total.
+# it with the whole formation as ρ. The context of the contextualization is
+# the formation WITHOUT the dispatched binding, ⟦𝐵1, 𝐵2⟧, on purpose: a body
+# must not reach itself, so normalization admits no recursion through ξ and
+# stays total (#967). A ξ in 𝑛1 therefore stands for a formation one attribute
+# short of the one it is written in, and that holds for every path through ξ,
+# not only for a path back to 𝜏1:
+#   - a body reading 𝜏1 finds no 𝜏1 and answers ⊥ by 'stop', directly as in
+#     ⟦ a ↦ ξ.a ⟧.a, or through a sibling as in ⟦ a ↦ ξ.b, b ↦ ξ.a ⟧.a;
+#   - a body that is ξ answers the short formation, an ordinary object rather
+#     than ⊥: ⟦ a ↦ ξ ⟧.a steps to ⟦⟧(ρ ↦ ⟦ a ↦ ξ ⟧), and
+#     ⟦ a ↦ ⟦⟧, b ↦ ξ ⟧.b normalizes to ⟦ a ↦ ⟦⟧ ⟧;
+#   - a sibling reached through ξ is the sibling of the short formation, so a
+#     sibling that itself holds ξ sees the short formation too:
+#     ⟦ a ↦ ξ, b ↦ ξ.a ⟧.b normalizes to ⟦⟧, not to the whole formation
+#     (#1438).
+# A sibling holding no ξ reads as written: ⟦ a ↦ ⟦ z ↦ Φ ⟧, b ↦ ξ.a ⟧.b
+# normalizes to ⟦ z ↦ Φ ⟧. Only the ρ of the answer holds the whole
+# formation; the context the body is read in never does.
 # The rule does not dispatch on a formation holding both λ and Δ: 'dl' says
 # such a formation is ⊥, and carrying it out into ρ would leave a ρ ↦ ⊥ in a
 # normal form that 'dl' firing first reduces to ⊥ outright, so the answer would

@@ -6,5 +6,5 @@ expression: |
   [[ @ -> Q.x, y -> [[ D> 01-02 ]] ]]
 result: |-
   \begin{phiquation}
-  [[ @ -> Q . |x|, |y| -> [[ D> |01-02| ]] ]]{.}
+  [[ @ -> Q . |x|, |y| -> |01-02| : D ]]{.}
   \end{phiquation}

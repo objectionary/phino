@@ -7,9 +7,22 @@ name: hlint
   pull_request:
     branches:
       - master
+    paths:
+      - '**.hs'
+      - '.hlint.yaml'
+      - '.github/workflows/hlint.yml'
   push:
     branches:
       - master
+    paths:
+      - '**.hs'
+      - '.hlint.yaml'
+      - '.github/workflows/hlint.yml'
+permissions: read-all
+concurrency:
+  group: hlint-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   hlint:
     runs-on: ubuntu-24.04

@@ -23,16 +23,12 @@ xiExpr = EX_XI XI
 rootExpr :: EXPRESSION
 rootExpr = EX_GLOBAL Φ
 
--- `x` dispatched off the root, used as a representative attribute-valued
--- callee for the application collapse cases.
 rootDotX :: EXPRESSION
 rootDotX = EX_DISPATCH rootExpr NO_SPACE (AT_LABEL "x")
 
--- `$.y`, the salty desugaring of the bare attribute `y`.
 dottedY :: EXPRESSION
 dottedY = EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "y")
 
--- The bare attribute `y`, sugar for `$.y`.
 exYAttr :: EXPRESSION
 exYAttr = EX_ATTR (AT_LABEL "y")
 
@@ -167,9 +163,6 @@ spec = do
       ]
       (\(desc, sweet, salty) -> it desc (toSalty sweet `shouldBe` salty))
 
-    -- These sugar out to deeply nested application chains, so the expected
-    -- shape is checked as rendered text rather than as an equally-nested
-    -- 'EXPRESSION' literal.
     forM_
       [
         ( "EX_APPLICATION with several tau bindings (AA_TAUS) unrolls into a chain of applications"
@@ -323,6 +316,7 @@ spec = do
             ARROW
             ( EX_SINGLE
                 (PA_TAU (AT_LABEL "a") ARROW xiExpr)
+                NO_SPACE
                 (EX_FORMATION LSB EOL (TAB 2) (BI_PAIR (PA_TAU (AT_LABEL "a") ARROW xiExpr) (BDS_EMPTY (TAB 2)) (TAB 2)) EOL (TAB 1) RSB)
             )
         , PA_TAU
@@ -628,7 +622,7 @@ spec = do
       [
         ( "a formation left with one binding takes the one-binding sugar"
         , EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_PAIR EOL (TAB 1) (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 1))) (TAB 1)) EOL (TAB 0) RSB
-        , EX_SINGLE (PA_LAMBDA "Fn") (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
+        , EX_SINGLE (PA_LAMBDA "Fn") NO_SPACE (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_LAMBDA "Fn") (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
         )
       ,
         ( "a formation left with two bindings stays a formation"
@@ -637,7 +631,7 @@ spec = do
         )
       ,
         ( "a one-binding sugar standing for a rho collapses to the empty formation"
-        , EX_SINGLE (PA_TAU (AT_RHO RHO) ARROW xiExpr) (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
+        , EX_SINGLE (PA_TAU (AT_RHO RHO) ARROW xiExpr) NO_SPACE (EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_TAU (AT_RHO RHO) ARROW xiExpr) (BDS_EMPTY (TAB 1)) (TAB 1)) EOL (TAB 0) RSB)
         , EX_FORMATION LSB NO_EOL NO_TAB (BI_EMPTY (TAB 1)) NO_EOL NO_TAB RSB
         )
       ]

@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, redex) where
+module Rule (RuleContext (..), Step (..), domainOf, isFormation, isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, normal, normalHeld, normalWith, presentIn, redex, xiFree) where
 
 import AST
 import Builder
@@ -20,14 +20,14 @@ import Bytes (btsToUnescapedStr)
 import Control.Exception (Exception (displayException))
 import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
-import qualified Data.ByteString.Char8 as B
 import Data.Foldable (foldlM)
 import Data.List (foldl', intersect, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import Deps (BuildTermFunc, BuildTermMethod, Term (..))
-import Functions (nameOf)
+import Functions (buildTerm, nameOf)
 import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
@@ -37,51 +37,62 @@ import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
--- What a rule is matched and extended with: the builder of its 'where'
--- functions and the world the matched term stands in, where one is known.
--- A normalization rule is about a term alone, so the world stays out of its
--- YAML and reaches only the functions that need it, which is 'named' writing
--- 'Φ' or 'Φ.number' into a ρ instead of the object (#1318, #1460).
 data RuleContext = RuleContext
   { _buildTerm :: BuildTermFunc
   , _universe :: Maybe Expression
+  , _normal :: Expression -> Bool
   }
 
--- Returns True if given expression matches with any of given normalization rules
--- Here we use unsafePerformIO because we're sure that conditions which are used
--- in normalization rules doesn't throw an exception.
+data Step = Step
+  { _name :: String
+  , _applied :: RuleContext -> Expression -> IO (Maybe Expression)
+  }
+
 matchesAnyNormalizationRule :: Expression -> RuleContext -> Bool
 matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normalizationRules ctx
   where
     matchesAnyNormalizationRule' :: Expression -> [Y.Rule] -> RuleContext -> Bool
     matchesAnyNormalizationRule' _ [] _ = False
     matchesAnyNormalizationRule' expr (rule : rules) ctx =
-      let matched = unsafePerformIO (matchExpressionWithRule expr rule ctx)
+      let matched = unsafePerformIO (admitted (deep rule) [substEmpty] expr rule ctx)
        in not (null matched) || matchesAnyNormalizationRule' expr rules ctx
 
--- Returns True if given expression is in the normal form
 isNF :: Expression -> RuleContext -> Bool
-isNF ExXi _ = True
-isNF ExRoot _ = True
-isNF ExTermination _ = True
-isNF (ExDispatch ExXi _) _ = True
-isNF (ExDispatch ExRoot _) _ = True
-isNF (ExDispatch ExTermination _) _ = False -- dd rule
-isNF (ExApplication ExTermination _) _ = False -- dc rule
-isNF (ExFormation []) _ = True
-isNF (ExFormation bds) ctx = normalBindings bds || not (matchesAnyNormalizationRule (ExFormation bds) ctx)
+isNF expr ctx = normalWith (`matchesAnyNormalizationRule` ctx) expr
+
+normal :: Expression -> Bool
+normal expr = isNF expr (RuleContext buildTerm Nothing normal)
+
+normalWith :: (Expression -> Bool) -> Expression -> Bool
+normalWith _ ExXi = True
+normalWith _ ExRoot = True
+normalWith _ ExTermination = True
+normalWith _ (ExDispatch ExXi _) = True
+normalWith _ (ExDispatch ExRoot _) = True
+normalWith _ (ExDispatch ExTermination _) = False
+normalWith _ (ExApplication ExTermination _) = False
+normalWith _ (ExFormation []) = True
+normalWith matching (ExFormation bds) = normalBindings bds || not (matching (ExFormation bds))
   where
-    -- Returns True if all given bindings are 100% in normal form
     normalBindings :: [Binding] -> Bool
-    normalBindings [] = True
-    normalBindings (bd : bds) =
-      let next = normalBindings bds
-       in case bd of
-            BiDelta _ -> next
-            BiVoid _ -> next
-            BiLambda _ -> next
-            _ -> False
-isNF expr ctx = not (matchesAnyNormalizationRule expr ctx)
+    normalBindings bds = all inert bds && not (any delta bds && any lambda bds)
+    inert :: Binding -> Bool
+    inert (BiDelta _) = True
+    inert (BiVoid _) = True
+    inert (BiLambda _) = True
+    inert _ = False
+    delta :: Binding -> Bool
+    delta (BiDelta _) = True
+    delta _ = False
+    lambda :: Binding -> Bool
+    lambda (BiLambda _) = True
+    lambda _ = False
+normalWith matching expr = not (matching expr)
+
+normalHeld :: (Expression -> Bool) -> Expression -> Bool
+normalHeld _ (ExMeta _) = False
+normalHeld _ (ExAny _) = False
+normalHeld test expr = test expr
 
 _or :: [Y.Condition] -> Subst -> RuleContext -> IO [Subst]
 _or [] _ _ = pure []
@@ -104,16 +115,12 @@ _not cond subst ctx = do
   met <- meetCondition' cond subst ctx
   pure [subst | null met]
 
--- Hold if every given attribute is present in the union of the bindings
--- captured by the given binding metas.
 _in :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
 _in attrs bindings subst _ =
   case (traverse (`buildAttribute` subst) attrs, traverse (`buildBindingUnchecked` subst) bindings) of
     (Right attrs', Right bdss) -> pure [subst | all (`presentIn` concat bdss) attrs']
     (_, _) -> pure []
 
--- Convert a 'Number' to an 'Int' under the given substitution, resolving
--- index metas, binding lengths and formation domains.
 numToInt :: Y.Number -> Subst -> Maybe Int
 numToInt (Y.MetaIndex meta) (Subst mp) = case M.lookup (Named meta) mp of
   Just (MvIndex idx) -> Just idx
@@ -122,16 +129,20 @@ numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
   Just (MvBindings bds) -> Just (length bds)
   _ -> Nothing
 numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
-  Just (MvBindings bds) -> Just (length (filter notAsset bds))
+  Just (MvBindings bds) -> Just (domainOf bds)
   _ -> Nothing
+numToInt (Y.Literal num) _ = Just num
+numToInt _ _ = Nothing
+
+domainOf :: [Binding] -> Int
+domainOf = length . filter notAsset
   where
+    notAsset :: Binding -> Bool
     notAsset (BiDelta _) = False
     notAsset (BiLambda _) = False
     notAsset (BiVoid AtRho) = False
     notAsset (BiTau AtRho _) = False
     notAsset _ = True
-numToInt (Y.Literal num) _ = Just num
-numToInt _ _ = Nothing
 
 _eq :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
 _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of
@@ -150,19 +161,12 @@ _eq (Y.CmpAttr left) (Y.CmpAttr right) subst _ = pure [subst | compareAttrs left
       Just (MvAttribute found) -> attr == found
       _ -> False
     compareAttrs left right _ = right == left
--- Both sides are built under the substitution before they are compared, so a
--- side written as a whole term — '⟦𝐵1, 𝜏1 ↦ 𝑛1, 𝐵2⟧' and not merely a meta
--- standing for one — is compared as the term it stands for rather than as the
--- pattern it was written as. A side holding a meta nothing bound cannot be
--- built, and an equality nobody can work out does not hold.
 _eq (Y.CmpExpr left) (Y.CmpExpr right) subst _ =
   case (buildExpression left subst, buildExpression right subst) of
     (Right left', Right right') -> pure [subst | left' == right']
     (_, _) -> pure []
 _eq _ _ _ _ = pure []
 
--- Hold if the left number is strictly greater than the right one. Only
--- numeric comparables are ordered; anything else fails to hold.
 _gt :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
 _gt (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of
   (Just left_, Just right_) -> pure [subst | left_ > right_]
@@ -171,50 +175,53 @@ _gt _ _ _ _ = pure []
 
 _nf :: Expression -> Subst -> RuleContext -> IO [Subst]
 _nf (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
+  Just (MvExpression expr) | bound expr -> pure [Subst mp | _normal ctx expr]
   Just (MvExpression expr) -> _nf expr (Subst mp) ctx
   _ -> pure []
 _nf (ExAny slot) (Subst mp) ctx = case M.lookup (Anon slot) mp of
+  Just (MvExpression expr) | bound expr -> pure [Subst mp | _normal ctx expr]
   Just (MvExpression expr) -> _nf expr (Subst mp) ctx
   _ -> pure []
-_nf expr subst ctx = pure [subst | isNF expr ctx]
+_nf expr subst ctx = do
+  built <- buildExpressionThrows expr subst
+  pure [subst | _normal ctx built]
 
--- An expression is xi-free when it contains no ξ outside of a formation: it is
--- Φ, ⊥, a formation, a dispatch with a xi-free subject, or an application with
--- a xi-free subject and argument. ⊥ holds no ξ to capture, so it is xi-free
--- (and 'isNF ⊥ = True' already), which lets the copy rule accept a ⊥ argument.
--- Together with a normal-form check this is what makes an expression absolute
--- (𝒦 ⊆ 𝒩); the '𝑘' meta-variable applies this xi-free check first (cheap,
--- structural, rules out the ξ-recursion the normal-form check could loop on)
--- and the normal-form check second.
 _absolute :: Expression -> Subst -> RuleContext -> IO [Subst]
 _absolute (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
+  Just (MvExpression expr) | bound expr -> pure [Subst mp | xiFree expr]
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
 _absolute (ExAny slot) (Subst mp) ctx = case M.lookup (Anon slot) mp of
+  Just (MvExpression expr) | bound expr -> pure [Subst mp | xiFree expr]
   Just (MvExpression expr) -> _absolute expr (Subst mp) ctx
   _ -> pure []
-_absolute expr subst _ = pure [subst | xiFree expr]
-  where
-    xiFree :: Expression -> Bool
-    xiFree (ExFormation _) = True
-    xiFree ExRoot = True
-    xiFree ExTermination = True
-    xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
-    xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
-    xiFree (ExDispatch e _) = xiFree e
-    xiFree _ = False
+_absolute expr subst _ = do
+  built <- buildExpressionThrows expr subst
+  pure [subst | xiFree built]
 
--- Hold when the given expression is a formation (an abstraction ⟦…⟧). A meta
--- is resolved first, so 'binding 𝑛' inspects whatever 𝑛 is bound to.
+bound :: Expression -> Bool
+bound (ExMeta _) = False
+bound (ExAny _) = False
+bound _ = True
+
+xiFree :: Expression -> Bool
+xiFree (ExFormation _) = True
+xiFree ExRoot = True
+xiFree ExTermination = True
+xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
+xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
+xiFree (ExDispatch e _) = xiFree e
+xiFree _ = False
+
 _isFormation :: Expression -> Subst -> RuleContext -> IO [Subst]
 _isFormation (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   Just (MvExpression expr) -> _isFormation expr (Subst mp) ctx
   _ -> pure []
 _isFormation expr subst _ = pure [subst | isFormation expr]
-  where
-    isFormation :: Expression -> Bool
-    isFormation (ExFormation _) = True
-    isFormation _ = False
+
+isFormation :: Expression -> Bool
+isFormation (ExFormation _) = True
+isFormation _ = False
 
 _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
@@ -222,7 +229,7 @@ _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   _ -> pure []
 _matches pat expr subst ctx = do
   (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression expr] subst
-  matched <- match (B.pack pat) (B.pack (btsToUnescapedStr tgt))
+  matched <- match (T.encodeUtf8 (T.pack pat)) (T.encodeUtf8 (T.pack (btsToUnescapedStr tgt)))
   pure [subst | matched]
 
 _partOf :: Expression -> Binding -> Subst -> RuleContext -> IO [Subst]
@@ -237,15 +244,12 @@ _partOf exp bd subst _ = do
     partOf expr (BiTau _ expr' : rest) = expr == expr' || partOf expr rest
     partOf expr (_ : rest) = partOf expr rest
 
--- Hold if none of the given attributes is present in the union of the
--- bindings captured by the given binding metas.
 _disjoint :: [Attribute] -> [Binding] -> Subst -> RuleContext -> IO [Subst]
 _disjoint attrs bindings subst _ =
   case (traverse (`buildAttribute` subst) attrs, traverse (`buildBindingUnchecked` subst) bindings) of
     (Right attrs', Right bdss) -> pure [subst | not (any (`presentIn` concat bdss) attrs')]
     (_, _) -> pure []
 
--- Tell whether the attribute is present among the bindings.
 presentIn :: Attribute -> [Binding] -> Bool
 presentIn attr = any present
   where
@@ -270,9 +274,6 @@ meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 meetCondition' (Y.Disjoint attrs bds) = _disjoint attrs bds
 meetCondition' (Y.IsFormation expr) = _isFormation expr
 
--- For each substitution check if it meetCondition to given condition
--- If substitution does not meet the condition - it's thrown out
--- and is not used in replacement
 meetCondition :: Y.Condition -> [Subst] -> RuleContext -> IO [Subst]
 meetCondition _ [] _ = pure []
 meetCondition cond (subst : rest) ctx = do
@@ -283,10 +284,6 @@ meetCondition cond (subst : rest) ctx = do
       case first of
         [] -> pure next
         sbt : _ -> pure (sbt : next)
-    -- A condition that raises is treated as not met: that is the policy
-    -- #1079 questions, and it stays until the maintainers answer. The
-    -- silence on top of it is nobody's friend — say what raised, at debug
-    -- level, so a broken 'when'/'having' can be found with --log-level=debug
     Left err -> do
       logDebug (printf "Condition %s raised and was treated as not met: %s" (show cond) (displayException err))
       meetCondition cond rest ctx
@@ -295,7 +292,6 @@ meetMaybeCondition :: Maybe Y.Condition -> [Subst] -> RuleContext -> IO [Subst]
 meetMaybeCondition Nothing substs _ = pure substs
 meetMaybeCondition (Just cond) substs ctx = meetCondition cond substs ctx
 
--- Extend list of given substitutions with extra substitutions from 'where' yaml rule section
 extraSubstitutions :: [Subst] -> Maybe [Y.Extra] -> RuleContext -> IO [Subst]
 extraSubstitutions substs extras RuleContext{..} = case extras of
   Nothing -> pure substs
@@ -344,12 +340,6 @@ extraSubstitutions substs extras RuleContext{..} = case extras of
     built "named" = nameOf _universe
     built func = _buildTerm func
 
--- Collect the constrained expression meta-variables with the given
--- one-character prefix used in a pattern. Each kind ('𝑛'/'!n' normal-form,
--- '𝑘'/'!k' absolute) lives in its own 'n'-/'k'-prefixed key-space, so a
--- pattern may freely mix them with plain '𝑒' captures. An anonymous meta
--- carries the same prefix as the sigil it was written with, so a bare '𝑛' is
--- held to the normal form just as '𝑛1' is.
 metasWithPrefix :: T.Text -> Expression -> [Expression]
 metasWithPrefix prefix = nub . go
   where
@@ -373,26 +363,14 @@ metasWithPrefix prefix = nub . go
     goArgument (ArTau _ expr) = go expr
     goArgument (ArAlpha _ expr) = go expr
 
--- Match a rewriting rule against an expression and every place inside it.
--- The deep matcher is asked only where the pattern fits somewhere in the term
--- at all (see 'reachable'), since trying it at every place of a term holding
--- copies of big objects is what a rule that fits nowhere used to cost (#1453).
--- A rule that matches only a redex never looks inside an inert term (see
--- 'redex').
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionWithRule expr rule = matchExpressionBy deep [substEmpty] expr rule
-  where
-    deep :: MatchExpressionFunc
-    deep ptn tgt
-      | reachable' (redex rule) ptn tgt = matchExpressionDeep' (redex rule) ptn tgt
-      | otherwise = []
+matchExpressionWithRule expr rule = matchExpressionBy (deep rule) [substEmpty] expr rule
 
--- Whether every match of the rule its 'when' lets through stands at a place
--- no 'inert' term holds, judged by the pattern and the 'when' alone, so it
--- holds for a rule of phino and for a rule of the user alike. A pattern
--- dispatching on or applying a formation or ⊥ matches only such a place, and
--- so does a formation pattern holding both λ and Δ, counting those its 'when'
--- demands of its binding metas through 'in', which is how 'dl' is one (#1453).
+deep :: Y.Rule -> MatchExpressionFunc
+deep rule ptn tgt
+  | reachable' (redex rule) ptn tgt = matchExpressionDeep' (redex rule) ptn tgt
+  | otherwise = []
+
 redex :: Y.Rule -> Bool
 redex rule = case rule.pattern of
   ExDispatch head' _ -> stuck head'
@@ -418,32 +396,35 @@ redex rule = case rule.pattern of
     isMeta (BiMeta _) = True
     isMeta _ = False
 
--- Like 'matchExpressionWithRule' but matches the pattern against the whole
--- expression only (no deep, sub-expression matching). Used by the dataization
--- and morphing driver, where a rule applies to the entire configuration rather
--- than to nested redexes. The leading '[Subst]' seeds matching with pre-bound
--- meta-variables: the morphing driver passes the global universe bound to 'e',
--- the second argument of 𝕄(n, e), so the 'universe' rule reads it directly instead
--- of through a 'global()' build-term function. Pass '[substEmpty]' for no seed.
 matchExpressionWithRule' :: [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule' = matchExpressionBy matchExpression'
 
--- The seed substitutions are combined into every match, so a pre-bound meta in
--- the seed is dropped only when the pattern binds the same name to a different
--- value; rules that do not mention the name simply carry it along unused.
 matchExpressionBy :: MatchExpressionFunc -> [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
-matchExpressionBy matcher seed expr rule ctx =
-  let ptn = rule.pattern
-      matched = combineMany seed (matcher ptn expr)
-      name = rule.name
-   in if null matched
+matchExpressionBy matcher seed expr rule ctx = do
+  when' <- admitted matcher seed expr rule ctx
+  if null when'
+    then pure []
+    else do
+      logDebug (printf "Rule %s" rule.name)
+      extended <- extraSubstitutions when' rule.where_ ctx
+      if null extended
         then do
-          logDebug (printf "Pattern from rule '%s' was not matched:\n%s" name (printExpression' ptn logPrintConfig))
+          logDebug "Substitution is empty after extending, maybe some metas are duplicated"
           pure []
         else do
-          -- A '𝑘' meta-variable is absolute (𝒦 ⊆ 𝒩): check it is xi-free first
-          -- (cheap, structural), then fold its name into the same normal-form
-          -- check used for '𝑛' metas, so 'isNF' is applied in a single place.
+          met <- meetMaybeCondition rule.having extended ctx
+          when (null met) (logDebug "The 'having' condition wasn't met")
+          pure met
+
+admitted :: MatchExpressionFunc -> [Subst] -> Expression -> Y.Rule -> RuleContext -> IO [Subst]
+admitted matcher seed expr rule ctx =
+  let ptn = rule.pattern
+      matched = combineMany seed (matcher ptn expr)
+   in if null matched
+        then do
+          logDebug (printf "Pattern from rule '%s' was not matched:\n%s" rule.name (printExpression' ptn logPrintConfig))
+          pure []
+        else do
           inXiFree <- foldlM (\substs mt -> meetCondition (Y.Absolute mt) substs ctx) matched (kMetas ptn)
           inNf <- foldlM (\substs mt -> meetCondition (Y.NF mt) substs ctx) inXiFree (nfMetas ptn ++ kMetas ptn)
           if null inNf
@@ -452,21 +433,8 @@ matchExpressionBy matcher seed expr rule ctx =
               pure []
             else do
               when' <- meetMaybeCondition rule.when inNf ctx
-              if null when'
-                then do
-                  logDebug "The 'when' condition wasn't met"
-                  pure []
-                else do
-                  logDebug (printf "Rule %s" name)
-                  extended <- extraSubstitutions when' rule.where_ ctx
-                  if null extended
-                    then do
-                      logDebug "Substitution is empty after extending, maybe some metas are duplicated"
-                      pure []
-                    else do
-                      met <- meetMaybeCondition rule.having extended ctx
-                      when (null met) (logDebug "The 'having' condition wasn't met")
-                      pure met
+              when (null when') (logDebug "The 'when' condition wasn't met")
+              pure when'
   where
     nfMetas :: Expression -> [Expression]
     nfMetas = metasWithPrefix "n"

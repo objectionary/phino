@@ -3,10 +3,6 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-{- | Tests for the Printer module that converts AST to string representation.
-The module provides functions to print phi-calculus expressions with
-various configurations for sugar, encoding, and line format.
--}
 module PrinterSpec where
 
 import AST
@@ -19,7 +15,7 @@ import Matcher (Meta (Named), MetaValue (..), Subst (Subst))
 import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))
-import Test.Hspec (Spec, describe, it, shouldBe, shouldContain, shouldNotContain)
+import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldContain, shouldNotContain, shouldSatisfy)
 import Yaml (ExtraArgument (..))
 
 spec :: Spec
@@ -71,6 +67,17 @@ spec = do
             parseExpression (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)) `shouldBe` Right expr
       )
 
+  describe "printExpression writes data with meta bytes in full instead of crashing" $
+    forM_
+      [ ("a number, sweet", DataNumber (BtMeta "d1"), SWEET)
+      , ("a number, salty", DataNumber (BtMeta "d1"), SALTY)
+      , ("a string, sweet", DataString (BtMeta "d1"), SWEET)
+      , ("a string, salty", DataString (BtMeta "d1"), SALTY)
+      ]
+      ( \(desc, expr, sugar) ->
+          it desc (printExpression' expr (sugar, UNICODE, SINGLELINE, defaultMargin) `shouldContain` "𝛿1")
+      )
+
   describe "printExpression with SWEET UNICODE renders the pretty function meta" $
     it "meta lambda becomes 𝑓" $
       printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "𝑓:λ"
@@ -87,9 +94,7 @@ spec = do
                 printed = printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)
             printed `shouldBe` ascii
             printExpression' expr (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` unicode
-            -- the name is read back into the very same number
             parseExpression printed `shouldBe` Right expr
-            -- and --salty expands it back into the byte form
             let salty = printExpression' expr (SALTY, ASCII, SINGLELINE, defaultMargin)
             salty `shouldContain` "Q.number("
             salty `shouldContain` "Q.bytes("
@@ -105,7 +110,6 @@ spec = do
           it desc $ do
             let expr = DataNumber bts
                 printed = printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin)
-            -- rendered as Q.number( Q.bytes( [[ D> .. ]] ) ), not a bare literal
             printed `shouldContain` "number"
             printed `shouldContain` "bytes"
             parseExpression printed `shouldBe` Right expr
@@ -168,11 +172,12 @@ spec = do
       number `shouldNotContain` "as-bytes"
       str `shouldNotContain` "as-bytes"
 
+  it "keeps every line of a deep formation within --margin, counting indentation in columns" $
+    case parseExpression "⟦ a ↦ ⟦ b ↦ ⟦ c ↦ ⟦ d ↦ ⟦ e ↦ ⟦ x ↦ ξ.yyyyyyyy, z ↦ ξ.w ⟧ ⟧ ⟧ ⟧ ⟧ ⟧" of
+      Right deep -> maximum (map length (lines (printExpression' deep (SALTY, UNICODE, MULTILINE, 36)))) `shouldSatisfy` (<= 36)
+      Left err -> expectationFailure err
+
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
-    -- A \phinoMeet is a single \overbracket visual unit, so its body must stay
-    -- on one line even when the surrounding margin forces the outer formation to
-    -- wrap. A newline inside the braced argument would raise "! Missing }
-    -- inserted" in an aligned/gathered LaTeX context (see #978).
     it "renders the meet body on a single line even when the margin wraps its parent" $ do
       let body = ExFormation [BiTau (AtLabel "alpha") ExRoot, BiTau (AtLabel "beta") ExRoot, BiTau (AtLabel "gamma") ExRoot]
           expr = ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 5 body)]

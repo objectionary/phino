@@ -19,7 +19,8 @@ import XMIR (XmirContext)
 data PrintContext = PrintCtx
   { _sugar :: SugarType
   , _hideRho :: Bool
-  , _abridged :: Bool
+  , _abridged :: Maybe Int
+  , _abridgedData :: Bool
   , _line :: LineFormat
   , _margin :: Int
   , _xmirCtx :: XmirContext
@@ -45,6 +46,8 @@ data CmdException
   | EmptySubstsOnMatch
   | AnonymousMetaInCondition String
   | VersionMismatch String String
+  | CouldNotCompile String
+  | StaleEngine
   deriving (Exception)
 
 instance Show CmdException where
@@ -57,6 +60,8 @@ instance Show CmdException where
     printf "Anonymous meta '!%s' cannot be referenced in --when, only a named one can" kind
   show (VersionMismatch expected actual) =
     printf "Version mismatch: --pin requires '%s', but this is phino %s" expected actual
+  show (CouldNotCompile reason) = reason
+  show StaleEngine = "The compiled rules are stale, since the rules of phino changed after 'phino compile', so run it again and rebuild"
 
 data Command
   = CmdRewrite OptsRewrite
@@ -65,6 +70,7 @@ data Command
   | CmdExplain OptsExplain
   | CmdMerge OptsMerge
   | CmdMatch OptsMatch
+  | CmdCompile OptsCompile
 
 data Pin = PinVersion String | PinFile FilePath
 
@@ -106,6 +112,7 @@ data OptsDataize = OptsDataize
   , _maxCycles :: Int
   , _maxSteps :: Int
   , _maxFirings :: Maybe Int
+  , _maxSeconds :: Maybe Int
   , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int
@@ -119,15 +126,12 @@ data OptsDataize = OptsDataize
   , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
-  , _abridged :: Bool
+  , _abridged :: Maybe Int
+  , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }
 
--- The option surface of 'morph' is that of 'dataize': the two commands read the
--- same input, aim the same '_locator' at the same subterm and print through the
--- same formatting flags, differing only in the judgment they run — 𝕄, which
--- stops at the first formation it reaches, against 𝔻, which insists on bytes.
 data OptsMorph = OptsMorph
   { _logLevel :: LogLevel
   , _logLines :: Int
@@ -148,12 +152,14 @@ data OptsMorph = OptsMorph
   , _quiet :: Bool
   , _partial :: Bool
   , _deep :: Bool
+  , _jobs :: Int
   , _acyclic :: Maybe Acyclic
   , _compress :: Bool
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _maxSteps :: Int
   , _maxFirings :: Maybe Int
+  , _maxSeconds :: Maybe Int
   , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int
@@ -167,7 +173,8 @@ data OptsMorph = OptsMorph
   , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
-  , _abridged :: Bool
+  , _abridged :: Maybe Int
+  , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath
   , _inputFile :: Maybe FilePath
   }
@@ -250,4 +257,11 @@ data OptsMatch = OptsMatch
   , _when :: Maybe String
   , _inputFile :: Maybe FilePath
   , _seed :: Int
+  }
+
+data OptsCompile = OptsCompile
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _rules :: [FilePath]
+  , _targetFile :: FilePath
   }

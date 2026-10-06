@@ -19,6 +19,13 @@ source-repository head
   type: git
   location: https://github.com/objectionary/phino
 
+-- Link in the engine 'phino compile' wrote to 'compiled/generated' rather
+-- than the stub in 'compiled/stub', which interprets the rules of YAML.
+flag compiled
+  description: Run the built-in rules as the Haskell 'phino compile' wrote
+  default: False
+  manual: True
+
 common warnings
   ghc-options:
     -Wall
@@ -45,16 +52,22 @@ library
     CLI.Runners
     CLI.Types
     CLI.Validators
+    Compiled
     Condition
+    Contextualize
     CST
     Dataize
     Deps
+    Emit
     Encoding
+    Engine
     Evaluate
     Files
     Filter
     Functions
+    Inference
     Lambdas
+    Language
     LaTeX
     Lining
     Locator
@@ -67,6 +80,7 @@ library
     Morph
     Must
     Parser
+    Pool
     Printer
     Random
     Regexp
@@ -81,6 +95,10 @@ library
     Yaml
 
   hs-source-dirs: src
+  if flag(compiled)
+    hs-source-dirs: compiled/generated
+  else
+    hs-source-dirs: compiled/stub
   other-modules:
     Paths_phino
 
@@ -116,6 +134,7 @@ library
 executable phino
   import: warnings
   main-is: Main.hs
+  ghc-options: -threaded
   hs-source-dirs: app
   build-depends:
     base,
@@ -129,6 +148,7 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
+  ghc-options: -threaded
   other-modules:
     AbridgeSpec
     ASTSpec
@@ -138,17 +158,23 @@ test-suite spec
     CLIHelpersSpec
     CLISpec
     CLITypesSpec
+    CompiledSpec
     ConditionSpec
+    ContextualizeSpec
     CSTSpec
     DataizeSpec
     DepsSpec
+    EmitSpec
     EncodingSpec
+    EngineSpec
     EvaluateSpec
     FilesSpec
     FilterSpec
     Fixtures
     FunctionsSpec
+    InferenceSpec
     LambdasSpec
+    LanguageSpec
     LaTeXSpec
     LiningSpec
     LocatorSpec
@@ -162,6 +188,7 @@ test-suite spec
     MustSpec
     ParserSpec
     Paths_phino
+    PoolSpec
     PrinterSpec
     RandomSpec
     RegexpSpec
@@ -193,6 +220,7 @@ test-suite spec
     megaparsec >=9.5 && <9.9,
     optparse-applicative >=0.18 && <0.20,
     phino,
+    random >=1.2 && <1.4,
     silently >=1.2.5 && <1.3,
     text >=2.0.2 && <2.2,
     time >=1.12 && <1.17,

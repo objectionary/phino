@@ -3,7 +3,7 @@
 
 .ONESHELL:
 .SHELLFLAGS := -e -o pipefail -c
-.PHONY: all test hlint fourmolu coverage bench binary phino clean
+.PHONY: all test compiled hlint fourmolu ruff coverage bench binary phino clean
 
 SHELL := bash
 
@@ -26,11 +26,16 @@ else
   endif
 endif
 
-all: test hlint fourmolu
+all: test hlint fourmolu ruff
 
 .SILENT:
 test:
 	cabal test all --enable-tests --ghc-options=-Werror
+
+.SILENT:
+compiled:
+	cabal run exe:phino -f -compiled -- compile
+	cabal test all --enable-tests -f compiled --builddir=dist-compiled --ghc-options=-Werror
 
 .SILENT:
 hlint:
@@ -39,6 +44,11 @@ hlint:
 .SILENT:
 fourmolu:
 	fourmolu --mode check src app test
+
+.SILENT:
+ruff:
+	ruff check .
+	ruff format --check .
 
 .SILENT:
 coverage:
@@ -82,4 +92,4 @@ phino:
 .SILENT:
 clean:
 	cabal clean
-	rm -rf .stack-work benchmark/tmp
+	rm -rf .stack-work benchmark/tmp compiled/generated dist-compiled

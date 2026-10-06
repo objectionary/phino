@@ -5,8 +5,8 @@
 # that parked it and never on its own: an entry answers 'L_entry', so blaming
 # it would name a λ function the file carries where the one nothing answers,
 # 'L_none', stands one reduction deeper. The spine parks that name, so the
-# deep walk over the residue writes no second '?(L_none)' for the one site
-# (#1288, #1300).
+# deep walk over the residue writes no second 'unanswered(L_none)' for the one
+# site (#1288, #1300).
 symbolic: |
   - λ: L_entry
     dataize:
@@ -19,5 +19,7 @@ input: '⟦ x ↦ ⟦ v ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_entry, ρ ↦ �
 protocol: |
   𝕄(Φ.x)
     𝔼(L_entry)  # 𝕄(Φ.x)
-      ?(L_none)  # 𝕄(L_none:λ)
+      unanswered(L_none)  # 𝕄(L_none:λ)
+      stuck(L_none)
     𝔼(L_entry)  # 𝕄(Φ.x)
+      stuck(L_none)

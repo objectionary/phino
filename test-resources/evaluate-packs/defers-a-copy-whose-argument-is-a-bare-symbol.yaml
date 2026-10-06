@@ -1,0 +1,101 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The loop of #1729: 'joined' folds a tuple whose tail is the bare symbol '𝜎3',
+# an object nobody knows. The right branch of the first fork is the copy
+# 'step( acc ↦ …, tup ↦ 𝜎3 )', and nothing inside its body can succeed, since
+# every round asks '𝜎3' for its 'length'. Before #1729 the walk entered that
+# body, got stuck six times, and left it as written, so the join had a symbol
+# on the left and a body on the right, and 'e' came to nothing. Now the walk
+# does not enter a copy one of whose arguments reads to a bare symbol: it
+# answers the copy with a fresh symbol and writes a 'deferred' line naming the
+# copy it stands for, the join pairs that symbol with the one the left branch
+# ends in, and 'e' comes to a symbol. Since #1732 that line spells the copy as
+# a call of 'Φ.joined.step', the object of the world it was made of, rather
+# than of 'Φ.e.step', the copy of 'joined' the walk wrote into 'e', since only
+# the first one has voids the copy fills. Reading 'items.length' through the
+# tuple, itself a copy over bare symbols, still reaches '𝜎1', since a copy with
+# no φ has no body to defer.
+symbolic: |
+  - λ: L_bytes_eq
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.b
+    𝑛: Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧ )
+  - λ: L_bytes_concat
+    dataize:
+      𝛿1: $.ρ
+      𝛿2: $.b
+    𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_dataized
+    dataize:
+      𝛿1: $.target
+    𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_fork
+    dataize:
+      𝛿1: $.φ
+    morph:
+      𝑛1: $.left
+      𝑛2: $.right
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      𝑛5: [𝑛3, 𝑛4]
+    𝑛: 𝑛5
+location: 'Q.e'
+deep: true
+partial: true
+acyclic: plausible
+result: '⟦ items ↦ Φ.tuple( length ↦ Φ.bytes( φ ↦ 𝜎1:λ ), head ↦ 𝜎2:λ, tail ↦ 𝜎3:λ ), φ ↦ 𝜎9:λ, step(acc, tup) ↦ Φ.dataized( target ↦ tup.length ).eq( b ↦ Φ.bytes( φ ↦ 00-:Δ ) ).if( acc, ρ.step( acc ↦ acc.concat( b ↦ Φ.dataized( target ↦ tup.head ) ), tup ↦ tup.tail ) ):φ ⟧'
+input: |
+  ⟦
+    bool(if) ↦ ⟦ φ ↦ if( Φ.bytes( φ ↦ FF-:Δ ), Φ.bytes( φ ↦ 00-:Δ ) ) ⟧,
+    bytes(φ) ↦ ⟦ eq(ρ, b) ↦ L_bytes_eq:λ, concat(ρ, b) ↦ L_bytes_concat:λ ⟧,
+    dataized(target) ↦ L_dataized:λ,
+    tuple(length, head, tail) ↦ ⟦⟧,
+    joined(items) ↦ ⟦
+      φ ↦ Φ.dataized( target ↦ items.length ).eq( b ↦ Φ.bytes( φ ↦ 00-:Δ ) ).if(
+        Φ.bytes( φ ↦ --:Δ ),
+        step( acc ↦ Φ.dataized( target ↦ items.head ), tup ↦ items.tail )
+      ),
+      step(ρ, acc, tup) ↦ Φ.dataized( target ↦ tup.length ).eq( b ↦ Φ.bytes( φ ↦ 00-:Δ ) ).if(
+        acc,
+        ρ.step( acc ↦ acc.concat( b ↦ Φ.dataized( target ↦ tup.head ) ), tup ↦ tup.tail )
+      ):φ
+    ⟧,
+    e ↦ Φ.joined(
+      items ↦ Φ.tuple( length ↦ Φ.bytes( φ ↦ 𝜎1:λ ), head ↦ 𝜎2:λ, tail ↦ 𝜎3:λ )
+    )
+  ⟧
+protocol: |
+  𝕄(Φ.e)
+    𝔼(L_dataized)  # 𝕄(Φ.e.φ)
+      formation(⟦ φ ↦ 𝜎1:λ, eq(b) ↦ L_bytes_eq:λ, concat(b) ↦ L_bytes_concat:λ ⟧)  # 𝔻(Φ.a🌵0)
+      𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.target)
+      𝑛.1.1 := Φ.bytes( φ ↦ 𝜎4:λ )  # 𝑛
+      𝑛.1.2 := ⟦ φ ↦ 𝜎4:λ, eq(b) ↦ L_bytes_eq:λ, concat(b) ↦ L_bytes_concat:λ ⟧  # 𝕄(𝑛.1.1)
+    𝔼(L_bytes_eq)  # 𝕄(Φ.e.φ)
+      formation(⟦ φ ↦ 𝜎4:λ, eq(b) ↦ L_bytes_eq:λ, concat(b) ↦ L_bytes_concat:λ ⟧)  # 𝔻(Φ.a🌵1)
+      𝛿1.2 := 𝔻(𝜎4:λ)  # 𝔻(ξ.ρ)
+      formation(⟦ φ ↦ 00-:Δ, eq(b) ↦ L_bytes_eq:λ, concat(b) ↦ L_bytes_concat:λ ⟧)  # 𝔻(Φ.a🌵2)
+      𝛿2.2 := 00-  # 𝔻(ξ.b)
+      𝑛.2.1 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧ )  # 𝑛
+      𝑛.2.2 := ⟦ if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎5:λ ⟧, φ ↦ if( Φ.bytes( φ ↦ FF-:Δ ), Φ.bytes( φ ↦ 00-:Δ ) ) ⟧  # 𝕄(𝑛.2.1)
+    𝔼(L_dataized)  # 𝕄(Φ.e.φ)
+      𝛿1.3 := 𝔻(𝜎2:λ)  # 𝔻(ξ.target)
+      𝑛.3.1 := Φ.bytes( φ ↦ 𝜎6:λ )  # 𝑛
+      𝑛.3.2 := ⟦ φ ↦ 𝜎6:λ, eq(b) ↦ L_bytes_eq:λ, concat(b) ↦ L_bytes_concat:λ ⟧  # 𝕄(𝑛.3.1)
+    𝔼(L_fork)  # 𝕄(Φ.e.φ)
+      𝛿1.4 := 𝔻(𝜎5:λ)  # 𝔻(ξ.φ)
+      𝑛1.4 := ⟦ φ ↦ --:Δ, eq(b) ↦ L_bytes_eq:λ, concat(b) ↦ L_bytes_concat:λ ⟧  # 𝕄(ξ.left)
+      deferred(𝜎7) := Φ.joined.step( acc ↦ ⟦ φ ↦ 𝜎6:λ, eq(b) ↦ L_bytes_eq:λ, concat(b) ↦ L_bytes_concat:λ ⟧, tup ↦ 𝜎3:λ )  # 𝕄(Φ.a🌵6)
+      𝑛2.4 := 𝜎7:λ  # 𝕄(ξ.right)
+      𝔻(𝜎8:λ) == --
+      𝑛3.4 := ⟦ φ ↦ 𝜎8:λ, eq(b) ↦ L_bytes_eq:λ, concat(b) ↦ L_bytes_concat:λ ⟧  # 𝑛1
+      𝑛4.4 := 𝑛2.4  # 𝑛2
+      𝔻(𝜎9:λ) ∈ { 𝔻(𝜎8:λ), 𝔻(𝜎7:λ) }
+      𝑛5.4 := 𝜎9:λ  # [𝑛3, 𝑛4]
+      𝑛.4.1 := 𝑛5.4  # 𝑛
+      𝑛.4.2 := 𝑛5.4  # 𝕄(𝑛.4.1)

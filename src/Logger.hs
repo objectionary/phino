@@ -31,9 +31,6 @@ logger = unsafePerformIO (newIORef (Logger ERROR 25))
 setLogConfig :: LogLevel -> Int -> IO ()
 setLogConfig lvl cnt = writeIORef logger (Logger lvl cnt)
 
--- Whether a message of this level reaches the console at all, so a caller
--- whose message costs something to put together skips the work when it would
--- be thrown away.
 logging :: LogLevel -> IO Bool
 logging lvl = do
   Logger{..} <- readIORef logger

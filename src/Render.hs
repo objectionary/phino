@@ -109,7 +109,7 @@ instance Render BYTES where
   render (BT_MANY bts) = T.intercalate "-" (map render bts)
   render (BT_META mt) = render mt
   render (BT_PIPED bts) = "|" <> render bts <> "|"
-  render (BT_CUT bts size) = T.intercalate "-" (map render bts) <> "-...(" <> render size <> "b)"
+  render (BT_CUT opening omitted closing) = T.intercalate "-" (map render opening) <> "-..(" <> render omitted <> "b)..-" <> T.intercalate "-" (map render closing)
 
 instance Render EXCLAMATION where
   render EXCL = "!"
@@ -169,7 +169,7 @@ instance Render PAIR where
   render PA_META_LAMBDA'{..} = "L> " <> render meta
   render PA_META_DELTA{..} = render DELTA <> render SPACE <> render DASHED_ARROW <> render SPACE <> render meta
   render PA_META_DELTA'{..} = "D> " <> render meta
-  render PA_FOLDED{..} = "+" <> render count <> " attrs"
+  render PA_FOLDED{..} = "+" <> render count
 
 instance Render BINDINGS where
   render = TL.toStrict . TLB.toLazyText . binds
@@ -218,18 +218,21 @@ instance Render EXPRESSION where
   render EX_PHI_AGAIN{..} = "\\phinoAgain{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}"
   render EX_BYTES{..} = render bytes
   render EX_SINGLE{..} = case pair of
-    PA_TAU{..} -> render expr <> ":" <> render attr
-    PA_FORMATION{voids = [], ..} -> render expr <> ":" <> render attr
-    PA_VOID{..} -> render void <> ":" <> render attr
-    PA_DELTA{..} -> render bytes <> ":" <> render DELTA
-    PA_DELTA'{..} -> render bytes <> ":" <> render DELTA'
-    PA_META_DELTA{..} -> render meta <> ":" <> render DELTA
-    PA_META_DELTA'{..} -> render meta <> ":" <> render DELTA'
-    PA_LAMBDA{..} -> render func <> ":" <> render LAMBDA
-    PA_LAMBDA'{..} -> render func <> ":" <> render LAMBDA'
-    PA_META_LAMBDA{..} -> render meta <> ":" <> render LAMBDA
-    PA_META_LAMBDA'{..} -> render meta <> ":" <> render LAMBDA'
+    PA_TAU{..} -> render expr <> colon <> render attr
+    PA_FORMATION{voids = [], ..} -> render expr <> colon <> render attr
+    PA_VOID{..} -> render void <> colon <> render attr
+    PA_DELTA{..} -> render bytes <> colon <> render DELTA
+    PA_DELTA'{..} -> render bytes <> colon <> render DELTA'
+    PA_META_DELTA{..} -> render meta <> colon <> render DELTA
+    PA_META_DELTA'{..} -> render meta <> colon <> render DELTA'
+    PA_LAMBDA{..} -> render func <> colon <> render LAMBDA
+    PA_LAMBDA'{..} -> render func <> colon <> render LAMBDA'
+    PA_META_LAMBDA{..} -> render meta <> colon <> render LAMBDA
+    PA_META_LAMBDA'{..} -> render meta <> colon <> render LAMBDA'
     _ -> render formation
+    where
+      colon :: T.Text
+      colon = render space <> ":" <> render space
 
 instance Render [ATTRIBUTE] where
   render attrs = T.intercalate ", " (map render attrs)
@@ -299,7 +302,6 @@ instance Render CONDITION where
   render CO_SUBSET{..} = render (ST_ATTRIBUTES attrs) <> " \\subseteq " <> union groups
   render CO_EMPTY = ""
 
--- The union of binding groups, parenthesized when there is more than one.
 union :: [BINDING] -> Text
 union [group] = render group
 union groups = "\\lparen " <> T.intercalate " \\cup " (map render groups) <> " \\rparen"
@@ -312,17 +314,13 @@ instance Render EXTRA_ARG where
 
 instance Render EXTRA where
   render EXTRA{func = "contextualize", args = arg : rest, ..} = "\\phinoContextualize{ " <> render arg <> " }{ " <> T.intercalate ", " (map render rest) <> " }{ " <> render meta <> " }"
-  -- 𝕄 carries the universe and threads a state, 𝕄(n, e, s_1), so a 'morph' extra
-  -- renders with the universe metavariable 'e' and the incoming state 's_1' as its
-  -- trailing arguments. This is a one-off application binding only 'meta', so the
-  -- returned state is dropped (the engine discards it too, see 'execBuildTerm').
   render EXTRA{func = "morph", ..} = render meta <> " \\coloneqq \\phinoMorph{ " <> T.intercalate ", " (map render args) <> " }{ e }{ s_1 }"
-  -- The name a formation goes by in the universe. The rule never writes the
-  -- universe, since phino knows it where the rule applies (#1460), so the name
-  -- and the formation it stands for are the two sides of one relation.
   render EXTRA{func = "named", args = [form], ..} = "\\phinoNamed{ " <> render meta <> " }{ " <> render form <> " }"
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text
       macro "evaluate" = "\\phinoEvaluate"
-      macro name = "\\" <> T.pack name
+      macro name = "\\" <> T.concat (zipWith camel [0 :: Int ..] (T.splitOn "-" (T.pack name)))
+      camel :: Int -> Text -> Text
+      camel 0 part = part
+      camel _ part = T.toTitle part

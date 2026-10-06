@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# 𝕄 maps normal forms to formations, and 'morph' does not normalize what it is
+# handed. A dispatch off a formation with neither φ nor λ is not a normal form,
+# since 'dot' of normalization eats it, and no morphing rule takes it, so the
+# run tells the user so instead of failing with a bare "user error" (#1442).
+location: 'Q.t'
+input: '⟦ t ↦ ⟦ x ↦ ⟦⟧ ⟧.x ⟧'
+fails: >-
+  Morphing expects a normal form, but no morphing rule matches:
+  ⟦⟧:x.x

@@ -10,6 +10,11 @@ name: cabal
   pull_request:
     branches:
       - master
+permissions: read-all
+concurrency:
+  group: cabal-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   cabal:
     strategy:
@@ -20,15 +25,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - id: setup
-        uses: haskell-actions/setup@v2.12.1
+        uses: ./.github/actions/ghc
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: '3.12.1.0'
       - uses: actions/cache@v6
         with:
           path: |
-            ${{ steps.setup.outputs.ghc-path }}
-            ${{ steps.setup.outputs.cabal-path }}
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
           key: ${{ runner.os }}-ghc${{ matrix.ghc }}-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
@@ -43,7 +46,7 @@ jobs:
     permissions:
       actions: read
     steps:
-      - uses: yegor256/terald-action@a0ef862a24f962a4258fd9390d0a67b5529f0eef  # master
+      - uses: yegor256/terald-action@0.1.0
         with:
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          chat: -1004371404002
+          chat: ${{ secrets.TELEGRAM_CHAT }}

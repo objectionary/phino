@@ -8,6 +8,11 @@ name: post-comment
     workflows: [regression-check]
     types:
       - completed
+permissions: read-all
+concurrency:
+  group: post-comment-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   post-comment:
     timeout-minutes: 15

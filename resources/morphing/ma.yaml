@@ -7,8 +7,12 @@ universe: 𝑒1
 conclusion: 𝑛4
 premises:
   - n-result: 𝑛2
-    morph: 𝑛1
+    morph:
+      - 𝑛1
+      - 𝑒1
   - n-result: 𝑛3
     normalize: '𝑛2(𝜏1 ↦ 𝑘1)'
   - n-result: 𝑛4
-    morph: 𝑛3
+    morph:
+      - 𝑛3
+      - 𝑒1
