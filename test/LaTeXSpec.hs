@@ -248,6 +248,17 @@ spec = do
       explainRules [Y.Rule "rt" Nothing Nothing ptn ptn Nothing (Just [Y.Extra (Y.ArgAttribute (AtMeta "t1")) "random-tau" []]) Nothing]
         `shouldContain` "\\randomTau{"
 
+    it "escapes the name of the rule it refers to" $ do
+      step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
+      step2 <- parseExpressionThrows "[[ x -> Q.z ]]"
+      latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just (Normalization, "my_rule%1"))], False) defaultLatexContext
+      latex `shouldContain` "\\nameref{r:my\\char95{}rule\\char37{}1}"
+
+    it "escapes the name of the rule it explains" $ do
+      ptn <- parseExpressionThrows "Q.x"
+      explainRules [Y.Rule "my_rule%1" Nothing Nothing ptn ptn Nothing Nothing Nothing]
+        `shouldContain` "\\phinoNormalizationRule{my\\char95{}rule\\char37{}1}"
+
     it "prefixes each step with a '% === Step' header when '_headers' is set" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
       step2 <- parseExpressionThrows "[[ x -> Q.z ]]"
