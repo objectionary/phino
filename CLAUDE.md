@@ -200,9 +200,15 @@ head, named by `nameIn` of `Builder.hs`, applied to its argument; the `rewrite`
 command saves nothing (`dontSaveMade`). The name of the object is counted with
 `built` and `answer` of the innermost open firing, which both writers keep as
 a stack every record prunes by its depth (`tier`), and from then on
-`abbreviated` writes the object by that name wherever a later line holds it
-whole. Under `--inside` the universe is normalized before the heading, so
-`aimed` of `CLI/Helpers.hs` holds those records back and writes them after it.
+`abbreviated` writes the object, and the call too, since `copy` makes the same
+object of the same call, by that name wherever a later line holds it whole.
+The line itself, and the call of a `deferred` one, go through
+`abbreviatedInside`, which names the head and each argument and never the call
+as a whole, so an application made again is spelled out again (#1756). The
+markup writes the head in `of` and the argument in an `<attr>`: its name, the
+symbol where it is a bare one, or the term. Under `--inside` the universe is
+normalized before the heading, so `aimed` of `CLI/Helpers.hs` holds those
+records back and writes them after it.
 
 ### Dependency inversion for circular imports
 

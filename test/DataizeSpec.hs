@@ -218,7 +218,7 @@ spec = do
         `shouldBe` unlines
           [ "  formation(⟦ bytes(φ) ↦ ⟦ not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧, bool(φ) ↦ ⟦ if(ρ, then, else) ↦ L_fork:λ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧, φ ↦ 2.times( 3 ).nope ⟧)  # 𝔻(Φ)"
           , "    applied(𝑛.0.1) := 2  # 𝕄(Φ)"
-          , "    applied(𝑛.0.2) := 2.times( x ↦ 3 )  # 𝕄(Φ)"
+          , "    applied(𝑛.0.2) := 𝑛.0.1.times( x ↦ 3 )  # 𝕄(Φ)"
           , "    𝔼(L_number_times)  # 𝕄(Φ)"
           , "      applied(𝑛.1.1) := 2  # 𝕄(Φ.a🌵17)"
           , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵17)"
@@ -233,7 +233,7 @@ spec = do
           , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
           , "      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)"
           , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-          , "    unanswered(L_number_nope)  # 𝔻(⟦ ρ ↦ Φ.number( φ ↦ 𝜎1:λ ), λ ⤍ L_number_nope ⟧)"
+          , "    unanswered(L_number_nope)  # 𝔻(⟦ ρ ↦ 𝑛.1.6, λ ⤍ L_number_nope ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
