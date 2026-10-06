@@ -155,7 +155,14 @@ body comments printed toLatex =
         ( \idx comment (item, rule) reached ->
             let item' = toLatex (baseTab idx) item
                 opening = if idx == 0 then item' else printf "  %s %s" (relation reached) item'
-             in comment ++ maybe opening (\(judgment, name) -> printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) (escaped name)) rule
+             in comment
+                  ++ maybe opening
+                    ( \(judgment, name) ->
+                        if judgment == Contextualization
+                          then printf "%s %s" opening (relation judgment)
+                          else printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) (escaped name)
+                    )
+                    rule
         )
         [0 ..]
         comments
