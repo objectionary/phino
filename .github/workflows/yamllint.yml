@@ -16,9 +16,11 @@ name: yamllint
     paths:
       - '**.yml'
       - '**.yaml'
+permissions: read-all
 concurrency:
   group: yamllint-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   yamllint:
     timeout-minutes: 15

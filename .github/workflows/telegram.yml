@@ -10,6 +10,7 @@ name: telegram
 concurrency:
   group: telegram-${{ github.ref }}
   cancel-in-progress: true
+permissions: read-all
 jobs:
   telegram:
     timeout-minutes: 15

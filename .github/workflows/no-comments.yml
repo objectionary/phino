@@ -18,6 +18,7 @@ name: no-comments
       - '**.hs'
       - '.github/scripts/no-comments.py'
       - '.github/workflows/no-comments.yml'
+permissions: read-all
 concurrency:
   group: no-comments-${{ github.ref }}
   cancel-in-progress: true

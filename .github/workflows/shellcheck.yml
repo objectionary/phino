@@ -21,6 +21,7 @@ name: shellcheck
 concurrency:
   group: shellcheck-${{ github.ref }}
   cancel-in-progress: true
+permissions: read-all
 jobs:
   shellcheck:
     timeout-minutes: 15
