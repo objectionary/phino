@@ -49,9 +49,9 @@ protocol: |
     applied(𝑛.0.8) := 𝑛.0.7( v ↦ 𝑛.0.6.read )  # 𝕄(Φ.l🌵.e1)
     𝔼(L_entry):  # 𝕄(Φ.l🌵.e1)
       applied(𝑛.1.1) := Φ.number( φ ↦ 𝑛.0.1 )  # 𝕄(Φ.a🌵0)
-      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
+      𝔻(Φ.a🌵0):
         applied(𝑛.1.2) := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
-        formation(𝑛.1.2)  # 𝔻(Φ.a🌵0)
+        𝔻(Φ.a🌵0):
       𝛿1.1 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.n)
       applied(𝑛.1.3) := Φ.block( buffer ↦ 𝑛.0.4 )  # 𝕄(Φ.a🌵1)
       applied(𝑛.1.4) := Φ.dataized( target ↦ ⊥ )  # 𝕄(Φ.a🌵1)

@@ -98,7 +98,7 @@ certainty Plausible = "plausible"
 data Evaluation
   = EvRun Judgment T.Text
   | EvFiring Int T.Text Judgment Expression
-  | EvFormation Int Expression Expression
+  | EvFormation Int Expression
   | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Maybe Expression))
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
@@ -127,7 +127,7 @@ renumbered floor' offset = record
   where
     record :: Evaluation -> Evaluation
     record (EvFiring depth key judgment site) = EvFiring depth key judgment (term site)
-    record (EvFormation depth self site) = EvFormation depth (term self) (term site)
+    record (EvFormation depth site) = EvFormation depth (term site)
     record (EvLooped depth judgment mode self site answered) = EvLooped depth judgment mode (term self) (term site) (fmap (bimap symbol (fmap term)) answered)
     record (EvStuck depth key judgment self) = EvStuck depth key judgment (term self)
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (term site)
@@ -159,7 +159,7 @@ renumbered floor' offset = record
 tier :: Evaluation -> Int
 tier EvRun{} = 0
 tier (EvFiring depth _ _ _) = depth
-tier (EvFormation depth _ _) = depth
+tier (EvFormation depth _) = depth
 tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
@@ -267,10 +267,9 @@ saveEval handle cursor printed printed' report = do
       where
         firings :: Int
         firings = protocol._fired + 1
-    written (EvFormation depth self site) protocol = do
-      form <- render self
+    written (EvFormation depth site) protocol = do
       locator <- render site
-      pure (protocol, Just (indented depth (printf "formation(%s)  # %s(%s)" form (letter Dataization) locator)))
+      pure (protocol, Just (indented depth (printf "%s(%s):" (letter Dataization) locator)))
     written (EvLooped depth judgment mode self site answered) protocol = do
       form <- render self
       locator <- render site
@@ -433,11 +432,10 @@ saveEvalXml handle cursor printed report = do
         (kept, closers) = closed depth nesting._closing
         fires :: Int
         fires = nesting._fires + 1
-    elements (EvFormation depth self site) nesting = do
-      form <- render self
+    elements (EvFormation depth site) nesting = do
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = (depth, "formation") : kept}, closers ++ [indentedXml depth (printf "<formation at=\"%s\" term=\"%s\">" (escapeXML locator) (escapeXML form))])
+      pure (nesting{_closing = (depth, opened Dataization) : kept}, closers ++ [indentedXml depth (printf "<%s at=\"%s\">" (opened Dataization) (escapeXML locator))])
     elements (EvLooped depth judgment mode self site answered) nesting = do
       form <- render self
       locator <- render site
@@ -649,7 +647,7 @@ progressed cursor interval render record evaluation = do
   where
     sited :: Evaluation -> Maybe (Progress -> Progress, Expression)
     sited (EvFiring _ _ _ site) = Just (\progress -> progress{_firings = progress._firings + 1}, site)
-    sited (EvFormation _ _ site) = Just (\progress -> progress{_formations = progress._formations + 1}, site)
+    sited (EvFormation _ site) = Just (\progress -> progress{_formations = progress._formations + 1}, site)
     sited _ = Nothing
     reported :: (Progress -> Progress, Expression) -> IO ()
     reported (counted, site) = do

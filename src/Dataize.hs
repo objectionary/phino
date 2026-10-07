@@ -68,7 +68,7 @@ dataize' (expr, seq) univ state caller = do
     inside :: ReduceContext -> Expression -> IO ReduceContext
     inside ctx (ExFormation bds)
       | boxed bds = do
-          ctx._saveEval (EvFormation ctx._nesting expr ctx._site)
+          ctx._saveEval (EvFormation ctx._nesting ctx._site)
           pure ctx{_nesting = ctx._nesting + 1}
     inside ctx _ = pure ctx
     unknown :: Expression -> Maybe Int

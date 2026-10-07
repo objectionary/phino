@@ -69,7 +69,7 @@ spec = do
     it "passes every record on to the recording function it wraps" $ do
       cursor <- newIORef (emptyProgress 0)
       seen <- newIORef (0 :: Int)
-      hSilence [stderr] (mapM_ (progressed cursor 3600 (const (pure "Φ.q")) (const (modifyIORef' seen (+ 1)))) [EvRun Morphing "Φ", EvFiring 1 "L_x" Morphing ExXi, EvFormation 2 ExRoot ExXi])
+      hSilence [stderr] (mapM_ (progressed cursor 3600 (const (pure "Φ.q")) (const (modifyIORef' seen (+ 1)))) [EvRun Morphing "Φ", EvFiring 1 "L_x" Morphing ExXi, EvFormation 2 ExXi])
       count <- readIORef seen
       count `shouldBe` 3
 
@@ -82,7 +82,7 @@ spec = do
     it "counts the formations entered when the interval has passed" $ do
       setLogConfig INFO 25
       cursor <- newIORef (emptyProgress 0)
-      captured <- hCapture_ [stderr] (replicateM_ 4 (progressed cursor 0 (const (pure "Φ.q")) dontSaveEval (EvFormation 3 ExRoot ExXi)))
+      captured <- hCapture_ [stderr] (replicateM_ 4 (progressed cursor 0 (const (pure "Φ.q")) dontSaveEval (EvFormation 3 ExXi)))
       last (lines captured) `shouldSatisfy` isInfixOf "Entered 4 formations"
 
     it "names the site of the latest record" $ do
@@ -180,8 +180,8 @@ spec = do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ы" Morphing ExRoot, EvBuilt 2 (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvAnswer 2 (ExFormation [BiTau (AtLabel "q") (ExFormation [])])])
       lines written `shouldContain` ["    <answer meta=\"𝑛.1.3\">𝑛.1.2</answer>"]
     it "spells an object the walk computed inside by its name in a later element" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) ExRoot, EvComputed 1 (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])]), EvFormation 1 (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])]) ExRoot])
-      lines written `shouldContain` ["  <formation at=\"Φ\" term=\"𝑛.0.1\">"]
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) ExRoot, EvComputed 1 (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])]), EvTerm 1 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])])])
+      lines written `shouldContain` ["  <bind meta=\"𝑛1.0\">𝑛.0.1</bind>"]
 
   describe "perSecond" $ do
     it "divides the firings by the seconds the run took" $
