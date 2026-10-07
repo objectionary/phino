@@ -75,6 +75,7 @@ testSymbols pth = do
               , _steps = Steps (fromMaybe 250 steps) 0
               , _symbolic = known
               , _saveEval = record
+              , _opened = Just (1, Morphing, loc)
               }
       record (EvRun Morphing (T.pack (printExpression loc)))
       started expr ctx

@@ -17,6 +17,8 @@ input: >
 result: '⟦ x ↦ L_none:λ.foo, λ ⤍ L_pair ⟧.z'
 protocol: |
   𝕄(Φ.y):
-    𝔼(L_pair):  # 𝕄(Φ.y)
-      unanswered(L_none)  # 𝕄(L_none:λ)
+    𝔼(L_pair):
+      𝔻(Φ.a🌵0):
+        𝕄(Φ.a🌵0):
+          unanswered(L_none)  # 𝕄(L_none:λ)
       stuck(L_none)

@@ -254,10 +254,15 @@ symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
 every round and never repeats a term (#1420). Under `plausible` the earlier one
 is embedded in the later one (`within` in `AST.hs`), so a recursion whose
 accumulator gains a wrapper every round is cut too, at the price of cutting
-now and then one that would have stopped (#1451). A formation `box` gets into
-is also a line of the protocol, `𝔻(…):` with the site, and what its φ body
-fires stands under it, unless the block it stands in already has that site
-(`_opened` of `ReduceContext`); the datum `delta` finds closes the block as
+now and then one that would have stopped (#1451). A judgment started at a site
+opens a block of the protocol, `𝔻(…):` or `𝕄(…):` with the site (`EvStarted`,
+written by `opening` of `Morph.hs`), and what it does stands under it, unless
+the block it stands in is the same judgment at the same site (`_opened` of
+`ReduceContext`). Both writers print a block only once a line stands in it,
+merge two sibling blocks of one heading, and drop the comment of a line that
+repeats the innermost block; a firing is a block with no heading, so a line in
+it keeps its comment. The morphing of an answer is named after the answer
+(`resited`), as `𝕄(𝑛.1.5):`. The datum `delta` finds closes a `𝔻` block as
 `𝛿.1.1 := …` (`EvDelta`), and the operand line right after names it. A cut is
 a line too, `looped(…)` (`EvLooped`), written by `enter` where the refused
 frame would have opened, carrying the formation its ancestor entered (#1434)

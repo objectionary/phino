@@ -20,7 +20,7 @@ import Deps (Evaluation (..), Judgment (..), State (..))
 import Engine (Engine (..))
 import qualified Inference as In
 import Locator (locatedExpression)
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, boxed, deeper, entering, inferred, insideUniverse, leadsTo, onward, parking, universed)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, entering, inferred, insideUniverse, leadsTo, onward, opening, parking, universed)
 import Rewriter (Rewritten)
 
 type Dataized = (Bytes, [Rewritten])
@@ -50,8 +50,7 @@ dataize universe state ctx@ReduceContext{..} = do
 
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
-  guarded <- deeper =<< entering expr =<< universed univ caller{_judgment = Dataization}
-  ctx <- inside guarded expr
+  ctx <- opening Dataization =<< deeper =<< entering expr =<< universed univ caller{_judgment = Dataization}
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
     Nothing -> do
@@ -66,12 +65,6 @@ dataize' (expr, seq) univ state caller = do
           dataize' dataizable world state'' ctx
         Nothing -> throwIO (Undataizable expr state)
   where
-    inside :: ReduceContext -> Expression -> IO ReduceContext
-    inside ctx (ExFormation bds)
-      | boxed bds && ctx._opened /= Just (ctx._nesting, ctx._site) = do
-          ctx._saveEval (EvFormation ctx._nesting ctx._site)
-          pure ctx{_nesting = ctx._nesting + 1, _opened = Just (ctx._nesting + 1, ctx._site)}
-    inside ctx _ = pure ctx
     unknown :: Expression -> Maybe Int
     unknown (ExFormation bds) = listToMaybe [idx | BiLambda (FnSymbol idx) <- bds]
     unknown _ = Nothing

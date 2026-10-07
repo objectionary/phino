@@ -18,8 +18,10 @@ partial: true
 input: '⟦ x ↦ ⟦ v ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_entry, ρ ↦ ∅ ⟧.z ⟧'
 protocol: |
   𝕄(Φ.x):
-    𝔼(L_entry):  # 𝕄(Φ.x)
-      unanswered(L_none)  # 𝕄(L_none:λ)
+    𝔼(L_entry):
+      𝔻(Φ.a🌵0):
+        𝕄(Φ.a🌵0):
+          unanswered(L_none)  # 𝕄(L_none:λ)
       stuck(L_none)
-    𝔼(L_entry):  # 𝕄(Φ.x)
+    𝔼(L_entry):
       stuck(L_none)

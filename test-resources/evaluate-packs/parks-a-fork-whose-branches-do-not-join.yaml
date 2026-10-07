@@ -21,7 +21,7 @@ input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ 
 result: '⟦ a ↦ 𝜎1:λ:l, b ↦ ⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l'
 protocol: |
   𝕄(Φ.y):
-    𝔼(L_fork):  # 𝕄(Φ.y)
+    𝔼(L_fork):
       𝑛1.1 := 𝜎1:λ:l  # 𝕄(ξ.a)
       𝑛2.1 := ⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧  # 𝕄(ξ.b)
       stuck(L_fork)

@@ -16,11 +16,11 @@ import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import qualified Data.Text as T
-import Deps (Evaluation (..), State (..))
+import Deps (Evaluation (..), Judgment (Morphing), State (..), resited)
 import Engine (Engine (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Refused (..), Steps (..), admitted, charged, counted, deeper, isLambda, lambda, morphing, normalized, recalled, refused, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Refused (..), Steps (..), admitted, charged, counted, deeper, isLambda, lambda, morphing, normalized, opening, recalled, refused, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -193,7 +193,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       symbolic <- foldM mint bound fresh
       built <- buildExpressionThrows entry._answer symbolic
       ctx._saveEval (EvBuilt ctx._nesting built)
-      (normal, state'') <- settled built univ state' ctx
+      (normal, state'') <- settled built univ state' =<< opening Morphing ctx{_saveEval = ctx._saveEval . resited ctx._site built}
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure ((built, normal), state'')
     mint :: Subst -> (Slot, Function) -> IO Subst

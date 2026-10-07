@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvComputed, EvData, EvDeferred, EvDelta, EvFiring, EvFormation, EvJoined, EvLooped, EvMinted, EvRun, EvTerm), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvComputed, EvData, EvDeferred, EvDelta, EvFiring, EvJoined, EvLooped, EvMinted, EvRun, EvStarted, EvTerm), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -69,7 +69,7 @@ spec = do
     it "passes every record on to the recording function it wraps" $ do
       cursor <- newIORef (emptyProgress 0)
       seen <- newIORef (0 :: Int)
-      hSilence [stderr] (mapM_ (progressed cursor 3600 (const (pure "Φ.q")) (const (modifyIORef' seen (+ 1)))) [EvRun Morphing "Φ", EvFiring 1 "L_x" Morphing ExXi, EvFormation 2 ExXi])
+      hSilence [stderr] (mapM_ (progressed cursor 3600 (const (pure "Φ.q")) (const (modifyIORef' seen (+ 1)))) [EvRun Morphing "Φ", EvFiring 1 "L_x" Morphing ExXi, EvStarted 2 Dataization ExXi])
       count <- readIORef seen
       count `shouldBe` 3
 
@@ -79,11 +79,16 @@ spec = do
       captured <- hCapture_ [stderr] (replicateM_ 7 (progressed cursor 0 (const (pure "Φ.q")) dontSaveEval (EvFiring 1 "L_y" Morphing ExXi)))
       last (lines captured) `shouldSatisfy` isInfixOf "fired 7 λ functions"
 
-    it "counts the formations entered when the interval has passed" $ do
+    it "counts the dataizations started when the interval has passed" $ do
       setLogConfig INFO 25
       cursor <- newIORef (emptyProgress 0)
-      captured <- hCapture_ [stderr] (replicateM_ 4 (progressed cursor 0 (const (pure "Φ.q")) dontSaveEval (EvFormation 3 ExXi)))
-      last (lines captured) `shouldSatisfy` isInfixOf "Entered 4 formations"
+      captured <- hCapture_ [stderr] (replicateM_ 4 (progressed cursor 0 (const (pure "Φ.q")) dontSaveEval (EvStarted 3 Dataization ExXi)))
+      last (lines captured) `shouldSatisfy` isInfixOf "Started 4 dataizations"
+    it "does not count a morphing as a dataization started" $ do
+      setLogConfig INFO 25
+      cursor <- newIORef (emptyProgress 0)
+      captured <- hCapture_ [stderr] (mapM_ (progressed cursor 0 (const (pure "Φ.q")) dontSaveEval) [EvStarted 3 Morphing ExXi, EvStarted 2 Dataization ExXi])
+      last (lines captured) `shouldSatisfy` isInfixOf "Started 1 dataizations"
 
     it "names the site of the latest record" $ do
       setLogConfig INFO 25
@@ -136,6 +141,28 @@ spec = do
       case renumbered 3 4 (EvComputed 2 (ExFormation [BiTau (AtLabel "ш") (ExFormation [BiLambda (FnSymbol 2)])]) (ExFormation [BiTau (AtLabel "ш") (ExFormation [BiLambda (FnSymbol 6)])])) of
         EvComputed _ before after -> (symbols before, symbols after) `shouldBe` ([2], [10])
         _ -> expectationFailure "The record did not stay the record it was"
+    it "raises the symbols the site of a started judgment carries above the floor" $
+      case renumbered 1 3 (EvStarted 2 Morphing (ExFormation [BiLambda (FnSymbol 5)])) of
+        EvStarted _ _ site -> symbols site `shouldBe` [8]
+        _ -> expectationFailure "The record did not stay the record it was"
+
+  describe "resited" $ do
+    it "moves an application made at one site to another" $
+      case resited (ExDispatch ExRoot (AtLabel "ёж")) ExXi (EvApplied 2 Morphing (ExFormation []) (ExFormation []) (ExDispatch ExRoot (AtLabel "ёж"))) of
+        EvApplied _ _ _ _ site -> site `shouldBe` ExXi
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "moves a firing asked for at one site to another" $
+      case resited ExRoot ExXi (EvFiring 2 "L_ц" Morphing ExRoot) of
+        EvFiring _ _ _ site -> site `shouldBe` ExXi
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "moves a judgment started at one site to another" $
+      case resited ExRoot ExXi (EvStarted 2 Morphing ExRoot) of
+        EvStarted _ _ site -> site `shouldBe` ExXi
+        _ -> expectationFailure "The record did not stay the record it was"
+    it "leaves a record made at another site where it was" $
+      case resited ExRoot ExXi (EvApplied 2 Morphing (ExFormation []) (ExFormation []) (ExDispatch ExRoot (AtLabel "щ"))) of
+        EvApplied _ _ _ _ site -> site `shouldBe` ExDispatch ExRoot (AtLabel "щ")
+        _ -> expectationFailure "The record did not stay the record it was"
 
   describe "saveEval" $ do
     it "writes an application as a line binding what it made to a fresh 𝑛" $ do
@@ -171,6 +198,36 @@ spec = do
     it "spells the datum of an operand in full when the line before it found no datum" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvFiring 2 "L_з" Dataization ExRoot, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       last (lines written) `shouldBe` "    𝛿1.1 := 7F-  # 𝔻(ξ.щ)"
+    it "writes no heading for a judgment nothing stood under" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvDelta 1 (BtOne "0A")])
+      lines written `shouldBe` ["𝔻(Φ):", "  𝛿.0.1 := 0A-"]
+    it "writes the heading of a judgment above the first line under it and drops the comment naming it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
+      lines written `shouldBe` ["𝔻(Φ):", "  𝕄(Φ.w):", "    𝑛.0.1 := Φ.ёж( q ↦ ⟦⟧ )"]
+    it "keeps the comment of a line made at a site other than the one of its block" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ.w", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "е"))])
+      last (lines written) `shouldBe` "  𝑛.0.1 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ.е)"
+    it "keeps the comment of a line made by a judgment other than the one of its block" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ.w", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
+      last (lines written) `shouldBe` "  𝑛.0.1 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ.w)"
+    it "drops the comment of a firing the judgment of its block asked for at its site" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ш" Dataization ExRoot])
+      last (lines written) `shouldBe` "  𝔼(L_ш):"
+    it "keeps the comment of a line standing in a firing" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ш" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot])
+      last (lines written) `shouldBe` "    𝑛.1.1 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ)"
+    it "writes one heading for two blocks of one judgment at one site in a row" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
+      length (filter (== "  𝕄(Φ.w):") (lines written)) `shouldBe` 1
+    it "writes the heading again for a block that follows a line beside it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvDelta 1 (BtOne "0B"), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
+      length (filter (== "  𝕄(Φ.w):") (lines written)) `shouldBe` 2
+    it "keeps the mode of a cut made at the site of its block" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvLooped 1 Morphing Proven (ExFormation []) ExRoot Nothing])
+      last (lines written) `shouldBe` "  looped(⟦⟧)  # proven"
+    it "names the block over an answer by the line that built it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
+      lines written `shouldContain` ["    𝕄(𝑛.1.1):"]
     it "writes no line for an object the walk computed inside" $ do
       (_, written) <- recorded (\record -> record (EvComputed 1 (ExFormation [BiTau (AtLabel "ю") ExRoot]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 3)])])))
       written `shouldBe` ""
@@ -197,6 +254,21 @@ spec = do
     it "spells an object the walk computed inside by its name in a later element" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) ExRoot, EvComputed 1 (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])]), EvTerm 1 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])])])
       lines written `shouldContain` ["  <bind meta=\"𝑛1.0\">𝑛.0.1</bind>"]
+    it "writes a block as an element once an element stands in it" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
+      lines written `shouldContain` ["  <morph at=\"Φ.w\">"]
+    it "writes no element for a block nothing stands in" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvDelta 1 (BtOne "0C")])
+      filter (isInfixOf "morph") (lines written) `shouldBe` []
+    it "writes one element for two blocks of one judgment at one site in a row" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
+      length (filter (isInfixOf "<morph") (lines written)) `shouldBe` 1
+    it "closes a block element before the element that follows beside it" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvDelta 1 (BtOne "0D")])
+      lines written `shouldContain` ["  </morph>", "  <delta meta=\"𝛿.0.1\">0D-</delta>"]
+    it "names the element over an answer by the element that built it" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
+      lines written `shouldContain` ["    <morph at=\"𝑛.1.1\">"]
 
   describe "perSecond" $ do
     it "divides the firings by the seconds the run took" $

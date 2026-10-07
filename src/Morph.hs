@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Refused (..), Steps (..), Tally (..), admitted, boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Refused (..), Steps (..), Tally (..), admitted, boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn, pathOf)
@@ -99,7 +99,7 @@ data ReduceContext = ReduceContext
   , _deadline :: Maybe Deadline
   , _memo :: Maybe Memo
   , _nesting :: Int
-  , _opened :: Maybe (Int, Expression)
+  , _opened :: Maybe (Int, Judgment, Expression)
   , _depthSensitive :: Bool
   , _shuffle :: Bool
   , _partial :: Bool
@@ -347,7 +347,7 @@ morph' start univ state entry = go start univ state entry
   where
     go :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
     go (expr, seq) univ state caller = do
-      ctx <- deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
+      ctx <- opening Morphing =<< deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
       parking seq state $ do
         reached <- inferred expr univ state ctx ctx._engine._morphing
         case reached of
@@ -378,7 +378,7 @@ prewalked _ expr _ state _ = pure (expr, state)
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do
-  ctx <- universed universe caller
+  ctx <- opening Morphing =<< universed universe caller
   expr <- locatedExpression _locator universe
   result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
@@ -422,7 +422,7 @@ deepened focus expr univ state ctx = do
     go = step parts
     step :: (Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)) -> Maybe Expression -> Maybe Attribute -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
     step walk standing dispatched frame@(Frame world _ _ _) term state' caller = do
-      let here = sited standing caller
+      here <- maybe (pure caller) (\loc -> opening Morphing caller{_site = loc}) standing
       ctx' <- deeper here
       copy <- deferrable dispatched world term state' here
       case copy of
@@ -520,9 +520,6 @@ deepened focus expr univ state ctx = do
       where
         agreed :: (Expression, [Binding]) -> (Int, Int)
         agreed (_, declared) = (length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
-    sited :: Maybe Expression -> ReduceContext -> ReduceContext
-    sited Nothing caller = caller
-    sited (Just loc) caller = caller{_site = loc}
     parts :: Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
     parts _ _ term@(ExFormation bds) state' _
       | any abstract bds = pure (term, state')
@@ -765,6 +762,13 @@ insideUniverse expr univ ctx@ReduceContext{_buildTerm = buildTerm} = case univ o
     extended attr normal = case ctx._universe of
       Just (ExFormation bds) -> Just (ExFormation (BiTau attr normal : bds))
       _ -> Nothing
+
+opening :: Judgment -> ReduceContext -> IO ReduceContext
+opening judgment ctx
+  | ctx._opened == Just (ctx._nesting, judgment, ctx._site) = pure ctx{_judgment = judgment}
+  | otherwise = do
+      ctx._saveEval (EvStarted ctx._nesting judgment ctx._site)
+      pure ctx{_judgment = judgment, _nesting = ctx._nesting + 1, _opened = Just (ctx._nesting + 1, judgment, ctx._site)}
 
 settled :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 settled term univ state ctx = do
