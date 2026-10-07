@@ -23,11 +23,11 @@ input: >
     y ↦ ⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧ ⟧
 protocol: |
   𝕄(Φ):
-    applied(𝑛.0.1) := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.x.arg)
+    𝑛.0.1 := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.x.arg)
     𝔼(L_outer):  # 𝕄(Φ.x)
-      applied(𝑛.1.1) := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.a🌵0)
+      𝑛.1.1 := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.a🌵0)
       𝔻(Φ.a🌵0):
-        applied(𝑛.1.2) := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.a🌵0)
+        𝑛.1.2 := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.a🌵0)
         looped(𝑛.1.2)  # 𝔻(Φ.a🌵0), plausible
     𝔼(L_outer):  # 𝕄(Φ.y)
       looped(𝑛.1.2)  # 𝕄(Φ.y), plausible

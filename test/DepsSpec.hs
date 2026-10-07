@@ -140,7 +140,7 @@ spec = do
   describe "saveEval" $ do
     it "writes an application as a line binding what it made to a fresh 𝑛" $ do
       (_, written) <- recorded (\record -> record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))))
-      written `shouldBe` "  applied(𝑛.0.1) := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ.w)\n"
+      written `shouldBe` "  𝑛.0.1 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ.w)\n"
     it "spells an object an application made by its name on a later line" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_щ" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvTerm 2 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "z") (ExFormation [BiTau (AtLabel "q") (ExFormation [])]), BiTau (AtLabel "у") (ExFormation [])])])
       last (lines written) `shouldBe` "    𝑛1.1 := ⟦ z ↦ 𝑛.1.1, у ↦ ⟦⟧ ⟧  # 𝕄(ξ.z)"
@@ -149,10 +149,10 @@ spec = do
       last (lines written) `shouldBe` "    𝑛.1.3 := 𝑛.1.2  # 𝕄(𝑛.1.1)"
     it "spells an application an earlier line wrote by its name in the argument of a later one" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))))) (ExFormation [BiTau (AtLabel "w") (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation [])))]) ExRoot])
-      last (lines written) `shouldBe` "  applied(𝑛.0.2) := Φ.жук( w ↦ 𝑛.0.1 )  # 𝕄(Φ)"
+      last (lines written) `shouldBe` "  𝑛.0.2 := Φ.жук( w ↦ 𝑛.0.1 )  # 𝕄(Φ)"
     it "spells an application made again by its head and argument rather than by the name of the first one" $ do
       (_, written) <- recorded (\record -> replicateM_ 2 (record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot)))
-      last (lines written) `shouldBe` "  applied(𝑛.0.2) := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ)"
+      last (lines written) `shouldBe` "  𝑛.0.2 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ)"
     it "writes a deferred copy as the call it was made of even when an earlier application spelled that call" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)]))) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)])]) ExRoot, EvDeferred 1 4 Morphing (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)])]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)])))) ExRoot])
       last (lines written) `shouldBe` "  deferred(𝜎4) := Φ.ёж( q ↦ 𝜎3:λ )  # 𝕄(Φ)"

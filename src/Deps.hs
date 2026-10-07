@@ -342,7 +342,7 @@ saveEval handle cursor printed printed' report = do
           aliased = alias (opener protocol) index
       form <- printed (abbreviatedInside protocol._made call)
       locator <- render site
-      pure (counted{_made = namedInsert call aliased (namedInsert object aliased counted._made)}, Just (indented depth (printf "applied(%s.%d) := %s  # %s(%s)" (labelled protocol answer) index form (letter judgment) locator)))
+      pure (counted{_made = namedInsert call aliased (namedInsert object aliased counted._made)}, Just (indented depth (printf "%s.%d := %s  # %s(%s)" (labelled protocol answer) index form (letter judgment) locator)))
     written (EvComputed _ before after) protocol = pure (protocol{_made = namedCarry before after protocol._made}, Nothing)
     written (EvBuilt depth term) protocol = do
       let (index, counted) = numbered protocol

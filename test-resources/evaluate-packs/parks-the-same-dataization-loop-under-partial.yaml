@@ -25,8 +25,8 @@ result: '⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧.bar'
 protocol: |
   𝕄(Φ.x):
     𝔼(L_outer):  # 𝕄(Φ.x)
-      applied(𝑛.1.1) := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.a🌵0)
+      𝑛.1.1 := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.a🌵0)
       𝔻(Φ.a🌵0):
-        applied(𝑛.1.2) := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.a🌵0)
+        𝑛.1.2 := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.a🌵0)
         looped(𝑛.1.2)  # 𝔻(Φ.a🌵0), proven
       stuck(L_outer)

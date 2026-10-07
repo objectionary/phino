@@ -190,7 +190,7 @@ a run that fails still leaves a complete file; the markup references a value by
 the symbol it denotes and spells it `𝜎1` as everywhere else, where the text
 names a line by counting.
 
-An application writes a line too, `applied(…)` (`EvApplied`, #1745). A `Step`
+An application writes a line too, `𝑛.1.1 := …` (`EvApplied`, #1745). A `Step`
 answers the term it made and the pairs of redex and result it replaced, and
 `rewrite'` hands every pair where an application became a formation other than
 its head, which of the built-in rules only `copy` does, to `_saveMade` of

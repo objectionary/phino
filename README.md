@@ -385,21 +385,21 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ):
   𝔻(Φ):
-    applied(𝑛.0.1) := 5  # 𝕄(Φ)
-    applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
+    𝑛.0.1 := 5  # 𝕄(Φ)
+    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
     𝔼(L_number_plus):  # 𝔻(Φ)
-      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)
+      𝑛.1.1 := 5  # 𝕄(Φ.a🌵0)
       𝔻(Φ.a🌵0):
-        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
+        𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
         𝔻(Φ.a🌵0):
       𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      applied(𝑛.1.3) := 6  # 𝕄(Φ.a🌵1)
+      𝑛.1.3 := 6  # 𝕄(Φ.a🌵1)
       𝔻(Φ.a🌵1):
-        applied(𝑛.1.4) := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
+        𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
         𝔻(Φ.a🌵1):
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
+      𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
       𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
     𝔻(Φ):
 ```
@@ -446,7 +446,7 @@ or applies writes its lines between the two, exactly where a firing an operand
 took opens its block, so the order the lines come in is the order the work was
 done in.
 
-`applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)` is an object an application
+`𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)` is an object an application
 made. The `copy` rule of normalization fills a void of a formation with the
 argument it was given, and so makes a new object, whatever judgment is running
 and wherever in the term the application stands. The line binds that object to
@@ -458,13 +458,13 @@ metas of the firing the line stands in, `𝑛.1.5` before it and `𝑛.1.7` afte
 and an object made outside every firing is counted under `𝑛.0`. From then on
 every line spells the object by that name rather than as the formation it is,
 and the application by the same name, since `copy` makes the same object of the
-same application wherever it stands: `applied(𝑛.1.1)` is the object `5` made,
+same application wherever it stands: `𝑛.1.1` is the object `5` made,
 `𝑛.0.1.plus( x ↦ 6 )` is the `plus` of the first `5` applied to `6`, one line
 for one call, and `𝑛.1.7 := 𝑛.1.6` says the firing answered with the object 𝕄
-made of what the entry wrote. An `applied` line names its head and its argument
+made of what the entry wrote. Such a line names its head and its argument
 that way, each on its own, and never the application as a whole, so a line
 spells out every application, even one making an object an earlier one already
-made, the way `applied(𝑛.1.1) := 5` does, and a later line names the latest of
+made, the way `𝑛.1.1 := 5` does, and a later line names the latest of
 them. Only an object still standing as it was made is named: once a rule
 rewrote a part of it, it is another object and it is spelled out again. The
 walk of `--deep` is no such rule. It stands its answers in the place of what it
@@ -547,21 +547,21 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ):
   𝔻(Φ):
-    applied(𝑛.0.1) := 5  # 𝕄(Φ)
-    applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
+    𝑛.0.1 := 5  # 𝕄(Φ)
+    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
     𝔼(L_number_plus):  # 𝕄(Φ)
-      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)
+      𝑛.1.1 := 5  # 𝕄(Φ.a🌵0)
       𝔻(Φ.a🌵0):
-        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
+        𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
         𝔻(Φ.a🌵0):
       𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      applied(𝑛.1.3) := 6  # 𝕄(Φ.a🌵1)
+      𝑛.1.3 := 6  # 𝕄(Φ.a🌵1)
       𝔻(Φ.a🌵1):
-        applied(𝑛.1.4) := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
+        𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
         𝔻(Φ.a🌵1):
       𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
+      𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
       𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
     unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)
 ```
@@ -617,7 +617,7 @@ declared there, the copy was made of the one whose attributes cover its own,
 whose voids it fills the most, and which shares the most bindings with it.
 When the world declares no such object, or two of them tie, the copy is
 written as it stood, such as `⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧`, or by the name the
-`applied` line of the application that made it gave it, such as `𝑛.0.1`.
+line of the application that made it gave it, such as `𝑛.0.1`.
 The markup spells it on one line, broken here for reading. The object stands
 in `of` and the arguments in `<with>`, both written whatever `--abridged`
 says, and the copy as it stood stands in `<e>`, abridged and named as usual:
@@ -631,7 +631,7 @@ says, and the copy as it stood stands in `<e>`, abridged and named as usual:
 ```
 
 A deferred copy is one the walk did not make: the application that made it
-writes its own `applied` line, and the `deferred` line says what the walk did
+writes its own line, and the `deferred` line says what the walk did
 not do with that object.
 
 Every argument of the call is an `<attr>` of `<with>`. An argument that is a
@@ -846,7 +846,7 @@ of: two elements rather than two attributes of one, for the same reason
 
 `<applied meta="𝑛.1.6" by="morph" at="Φ" of="Φ.number">` is an object an
 application made, which the text format writes as
-`applied(𝑛.1.6) := …  # 𝕄(Φ)`: `meta` names the object the way the text format
+`𝑛.1.6 := …  # 𝕄(Φ)`: `meta` names the object the way the text format
 does, counted with the `<built>` and the `<answer>` of the firing it stands in,
 `by` and `at` name the judgment that normalized and the site it stood at, and
 `of` names the object applied, the way `<deferred>` and `<looped>` name it.
@@ -1276,7 +1276,7 @@ $ phino morph --deep --locator=Q.y --protocol=p.txt --sweet --hide-rho box.phi
 𝜎2:λ
 $ head -3 p.txt
 𝕄(Φ.y):
-  applied(𝑛.0.1) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
+  𝑛.0.1 := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
   deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
 ```
 
