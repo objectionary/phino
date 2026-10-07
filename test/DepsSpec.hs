@@ -192,6 +192,12 @@ spec = do
     it "writes the datum the delta rule found under a name of its own" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 2 (BtMany ["1F", "E0"]), EvDelta 2 (BtOne "33")])
       last (lines written) `shouldBe` "    𝛿.1.2 := 33-"
+    it "comments a datum of eight bytes with the whole number it holds as a double" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 2 (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])])
+      last (lines written) `shouldBe` "    𝛿.1.1 := 40-45-00-00-00-00-00-00  # 42.0"
+    it "comments a datum of eight bytes with the fraction it holds" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 2 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
+      last (lines written) `shouldBe` "    𝛿.1.1 := C0-09-1E-B8-51-EB-85-1F  # -3.14"
     it "spells the datum of an operand by the name the delta rule just gave it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       last (lines written) `shouldBe` "    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.щ)"

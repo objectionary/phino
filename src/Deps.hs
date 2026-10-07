@@ -9,6 +9,7 @@
 module Deps where
 
 import AST
+import Bytes (btsSize, btsToNum)
 import Control.Monad (unless, when)
 import Data.Bifunctor (bimap, first)
 import Data.IORef (IORef, readIORef, writeIORef)
@@ -342,7 +343,7 @@ saveEval handle cursor printed printed' report = do
       let index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
           naming :: String
           naming = printf "%s.%d" (labelled protocol sigil) index
-      pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (printf "%s := %s" naming datum)))
+      pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (remarked (printf "%s := %s" naming datum) [show (either fromIntegral id (btsToNum bytes) :: Double) | btsSize bytes == 8])))
     written (EvLooped depth judgment mode self site answered) protocol = do
       form <- render self
       remarks <- context protocol judgment site
