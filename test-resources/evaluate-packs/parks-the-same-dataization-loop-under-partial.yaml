@@ -27,7 +27,7 @@ protocol: |
     𝔼(L_outer):
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
-          𝑛-1-1 := Φ.cyc( x ↦ ⟦⟧ )
-          𝑛-1-2 := Φ.cyc( x ↦ ⟦⟧ )
-        looped(𝑛-1-2)  # proven
+          𝑛·1·1 := Φ.cyc( x ↦ ⟦⟧ )
+          𝑛·1·2 := Φ.cyc( x ↦ ⟦⟧ )
+        looped(𝑛·1·2)  # proven
       stuck(L_outer)
