@@ -75,6 +75,7 @@ symbolicCtx acyclic memo minted lambdas locator =
     Nothing
     memo
     1
+    Nothing
     False
     False
     True

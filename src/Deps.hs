@@ -10,7 +10,7 @@ module Deps where
 
 import AST
 import Control.Monad (unless, when)
-import Data.Bifunctor (bimap)
+import Data.Bifunctor (bimap, first)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
@@ -99,6 +99,7 @@ data Evaluation
   = EvRun Judgment T.Text
   | EvFiring Int T.Text Judgment Expression
   | EvFormation Int Expression
+  | EvDelta Int Bytes
   | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Maybe Expression))
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
@@ -160,6 +161,7 @@ tier :: Evaluation -> Int
 tier EvRun{} = 0
 tier (EvFiring depth _ _ _) = depth
 tier (EvFormation depth _) = depth
+tier (EvDelta depth _) = depth
 tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
@@ -219,10 +221,12 @@ data Protocol = Protocol
   , _made :: Named Expression
   , _counted :: Map.Map Int Int
   , _built :: Map.Map Int Int
+  , _deltas :: Map.Map Int Int
+  , _found :: Maybe (Bytes, String)
   }
 
 emptyProtocol :: Protocol
-emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty
+emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty Map.empty Nothing
 
 data Nesting = Nesting
   { _fires :: Int
@@ -230,16 +234,21 @@ data Nesting = Nesting
   , _closing :: [(Int, String)]
   , _objects :: Named Expression
   , _numbered :: Map.Map Int Int
+  , _datums :: Map.Map Int Int
+  , _held :: Maybe (Bytes, String)
   }
 
 emptyNesting :: Nesting
-emptyNesting = Nesting 0 [] [] Map.empty Map.empty
+emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Nothing
 
 saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
 saveEval handle cursor printed printed' report = do
-  line <- atomicModify cursor (written report . outer (tier report))
+  line <- atomicModify cursor (fmap (first (forgotten report)) . written report . outer (tier report))
   mapM_ saved line
   where
+    forgotten :: Evaluation -> Protocol -> Protocol
+    forgotten EvDelta{} protocol = protocol
+    forgotten _ protocol = protocol{_found = Nothing}
     render :: Expression -> IO String
     render term = do
       protocol <- readIORef cursor
@@ -270,6 +279,12 @@ saveEval handle cursor printed printed' report = do
     written (EvFormation depth site) protocol = do
       locator <- render site
       pure (protocol, Just (indented depth (printf "%s(%s):" (letter Dataization) locator)))
+    written (EvDelta depth bytes) protocol = do
+      datum <- render (ExBytes bytes)
+      let index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
+          naming :: String
+          naming = printf "%s.%d" (labelled protocol delta) index
+      pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (printf "%s := %s" naming datum)))
     written (EvLooped depth judgment mode self site answered) protocol = do
       form <- render self
       locator <- render site
@@ -294,7 +309,7 @@ saveEval handle cursor printed printed' report = do
       locator <- render site
       pure (protocol, Just (indented depth (printf "spent(%d)  # %s(%s)" limit (letter judgment) locator)))
     written (EvData depth spelling operand value) protocol = do
-      datum <- spelled value
+      datum <- maybe (spelled value) pure (found value protocol._found)
       line <- commented (printf "%s := %s" (labelled protocol spelling) datum) Dataization operand
       pure (protocol, Just (indented depth line))
       where
@@ -400,7 +415,7 @@ perSecond firings taken = round (fromIntegral firings * 1000 / fromIntegral (max
 
 saveEvalXml :: Handle -> IORef Nesting -> (Expression -> IO String) -> SaveEvalFunc
 saveEvalXml handle cursor printed report = do
-  written <- atomicModify cursor (elements report . outer (tier report))
+  written <- atomicModify cursor (fmap (first (forgotten report)) . elements report . outer (tier report))
   mapM_ (hPutStrLn handle) written
   logDebug (printf "Saved %d line(s) of the XML protocol" (length written))
   where
@@ -408,6 +423,9 @@ saveEvalXml handle cursor printed report = do
     render term = do
       nesting <- readIORef cursor
       printed (abbreviated nesting._objects term)
+    forgotten :: Evaluation -> Nesting -> Nesting
+    forgotten EvDelta{} nesting = nesting
+    forgotten _ nesting = nesting{_held = Nothing}
     elements :: Evaluation -> Nesting -> IO (Nesting, [String])
     elements (EvRun judgment locator) nesting =
       pure
@@ -467,8 +485,15 @@ saveEvalXml handle cursor printed report = do
       locator <- render site
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<spent limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
+    elements (EvDelta depth bytes) nesting = do
+      datum <- render (ExBytes bytes)
+      let index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._datums)
+          naming :: String
+          naming = printf "%s.%d" (labelled nesting delta) index
+          (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept, _datums = Map.insert (opener nesting) index nesting._datums, _held = Just (bytes, naming)}, closers ++ [indentedXml depth (printf "<delta meta=\"%s\">%s</delta>" (escapeXML naming) (escapeXMLText datum))])
     elements (EvData depth spelling _ value) nesting = do
-      record <- stood value
+      record <- maybe (stood value) (pure . printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) . escapeXMLText) (found value nesting._held)
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth record])
       where
         (kept, closers) = closed depth nesting._closing
@@ -623,6 +648,14 @@ standing symbol = ExFormation [BiLambda (FnSymbol symbol)]
 
 answer :: T.Text
 answer = "𝑛"
+
+delta :: T.Text
+delta = "𝛿"
+
+found :: Either Int Bytes -> Maybe (Bytes, String) -> Maybe String
+found (Right bytes) (Just (held, naming))
+  | bytes == held = Just naming
+found _ _ = Nothing
 
 alias :: Int -> Int -> Expression
 alias firing index = ExMeta (T.pack (printf "n.%d.%d" firing index))

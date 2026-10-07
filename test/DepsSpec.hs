@@ -5,13 +5,13 @@
 
 module DepsSpec where
 
-import AST (Argument (ArTau), Attribute (AtLabel, AtPhi), Binding (BiLambda, BiTau), Bytes (BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol), symbols)
+import AST (Argument (ArTau), Attribute (AtLabel, AtPhi), Binding (BiLambda, BiTau), Bytes (BtMany, BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol), symbols)
 import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvComputed, EvDeferred, EvFiring, EvFormation, EvJoined, EvLooped, EvMinted, EvRun, EvTerm), Judgment (Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvComputed, EvData, EvDeferred, EvDelta, EvFiring, EvFormation, EvJoined, EvLooped, EvMinted, EvRun, EvTerm), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, saveStep)
 import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -162,6 +162,15 @@ spec = do
     it "spells out an object the walk computed inside when no application named it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvComputed 1 (ExFormation [BiTau (AtLabel "ю") ExRoot]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 3)])]), EvTerm 1 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 3)])])])
       last (lines written) `shouldBe` "  𝑛1.0 := 𝜎3:λ:ю  # 𝕄(ξ.z)"
+    it "writes the datum the delta rule found under a name of its own" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 2 (BtMany ["1F", "E0"]), EvDelta 2 (BtOne "33")])
+      last (lines written) `shouldBe` "    𝛿.1.2 := 33-"
+    it "spells the datum of an operand by the name the delta rule just gave it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
+      last (lines written) `shouldBe` "    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.щ)"
+    it "spells the datum of an operand in full when the line before it found no datum" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvFiring 2 "L_з" Dataization ExRoot, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
+      last (lines written) `shouldBe` "    𝛿1.1 := 7F-  # 𝔻(ξ.щ)"
     it "writes no line for an object the walk computed inside" $ do
       (_, written) <- recorded (\record -> record (EvComputed 1 (ExFormation [BiTau (AtLabel "ю") ExRoot]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 3)])])))
       written `shouldBe` ""
@@ -179,6 +188,12 @@ spec = do
     it "spells an object an application made by its name in a later element" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ы" Morphing ExRoot, EvBuilt 2 (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvAnswer 2 (ExFormation [BiTau (AtLabel "q") (ExFormation [])])])
       lines written `shouldContain` ["    <answer meta=\"𝑛.1.3\">𝑛.1.2</answer>"]
+    it "writes the datum the delta rule found as an element with its name" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvDelta 1 (BtMany ["0C", "D4"])])
+      lines written `shouldContain` ["  <delta meta=\"𝛿.0.1\">0C-D4</delta>"]
+    it "spells the datum of an operand by the name the delta rule just gave it in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
+      lines written `shouldContain` ["    <bind meta=\"𝛿1.1\">𝛿.1.1</bind>"]
     it "spells an object the walk computed inside by its name in a later element" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) ExRoot, EvComputed 1 (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])]), EvTerm 1 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])])])
       lines written `shouldContain` ["  <bind meta=\"𝑛1.0\">𝑛.0.1</bind>"]

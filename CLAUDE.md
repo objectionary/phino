@@ -256,9 +256,12 @@ is embedded in the later one (`within` in `AST.hs`), so a recursion whose
 accumulator gains a wrapper every round is cut too, at the price of cutting
 now and then one that would have stopped (#1451). A formation `box` gets into
 is also a line of the protocol, `𝔻(…):` with the site, and what its φ body
-fires stands under it; a cut is one too, `looped(…)` (`EvLooped`), written by
-`enter` where the refused frame would have opened, carrying the formation its
-ancestor entered (#1434) and naming the mode that cut it.
+fires stands under it, unless the block it stands in already has that site
+(`_opened` of `ReduceContext`); the datum `delta` finds closes the block as
+`𝛿.1.1 := …` (`EvDelta`), and the operand line right after names it. A cut is
+a line too, `looped(…)` (`EvLooped`), written by `enter` where the refused
+frame would have opened, carrying the formation its ancestor entered (#1434)
+and naming the mode that cut it.
 Three records say why a firing gave no answer (#1524): `stuck(…)` closes a
 firing that got stuck, `stall(…)` stands under one the memo answered with a
 kept stall, and `starved(…)` is written by `deeper` where the step budget runs

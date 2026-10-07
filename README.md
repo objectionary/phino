@@ -384,24 +384,22 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.txt
 𝔻(Φ):
-  𝔻(Φ):
-    𝑛.0.1 := 5  # 𝕄(Φ)
-    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
-    𝔼(L_number_plus):  # 𝔻(Φ)
-      𝑛.1.1 := 5  # 𝕄(Φ.a🌵0)
-      𝔻(Φ.a🌵0):
-        𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
-        𝔻(Φ.a🌵0):
-      𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      𝑛.1.3 := 6  # 𝕄(Φ.a🌵1)
-      𝔻(Φ.a🌵1):
-        𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
-        𝔻(Φ.a🌵1):
-      𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
-      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
-      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
-    𝔻(Φ):
+  𝑛.0.1 := 5  # 𝕄(Φ)
+  𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
+  𝔼(L_number_plus):  # 𝔻(Φ)
+    𝑛.1.1 := 5  # 𝕄(Φ.a🌵0)
+    𝔻(Φ.a🌵0):
+      𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
+      𝛿.1.1 := 40-14-00-00-00-00-00-00
+    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)
+    𝑛.1.3 := 6  # 𝕄(Φ.a🌵1)
+    𝔻(Φ.a🌵1):
+      𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
+      𝛿.1.2 := 40-18-00-00-00-00-00-00
+    𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)
+    𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
+    𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -419,20 +417,23 @@ answered". One firing binds a meta once and no two firings
 share a number, so every one of these names stands on exactly one line of the
 file and a line naming another one points at it and no other.
 
-A nested `𝔻(…):` line is a formation 𝔻 got into through its `box` rule, which
-dataizes the `φ` of a formation carrying neither `Δ` nor `λ`. It names the
-site it was entered at, and what the `φ` body does stands one level deeper
+A nested `𝔻(…):` line is a dataization 𝔻 started through its `box` rule,
+which dataizes the `φ` of a formation carrying neither `Δ` nor `λ`. It names
+the site it was entered at, and what the `φ` body does stands one level deeper
 under it: the firings its dataization demands, and the formations it gets into
-in turn. A reader therefore sees which
-object a firing was made on the way into, rather than a flat list of firings.
-Only `box` writes one, since 𝕄 stops at a formation without getting into it
-and a formation whose λ is fired is already an `𝔼(…)` block. The line is no
+in turn. A reader therefore sees which object a firing was made on the way
+into, rather than a flat list of firings. Only `box` writes one, since 𝕄 stops
+at a formation without getting into it and a formation whose λ is fired is
+already an `𝔼(…)` block. A `box` step at the site of the block it stands in
+writes no line of its own, and what it does joins that block. The line is no
 firing: it binds no meta and takes no number, so the metas of the firings under
-it are numbered as if it were not there. In the run above 𝔻 gets into the
-program itself, since `Φ` binds `φ`; then into each number the entry brings
-down, and through its `φ` into the bytes that number holds; and last into the
-number the entry answered, whose `φ` is the symbol `𝜎1`, so nothing fires under
-that one.
+it are numbered as if it were not there. A block ends with the datum the
+`delta` rule found, such as `𝛿.1.1 := 40-14-00-00-00-00-00-00`, named by the
+firing it stands in and a counter of its own, and the operand line right after
+the block names it. In the run above 𝔻 gets into each number the entry brings
+down, and through its `φ` into the bytes that number holds, in the same block,
+since the site is the same. The program itself and the number the entry
+answered stand at `Φ`, the site of the run, so they open no block either.
 
 An answer stands on two lines and not one. A firing answers the term its entry
 wrote and `phino` morphs that term before standing it back into the program, so
@@ -515,9 +516,9 @@ not under the site of the firing that asked for it.
 An operand line ends in the judgment that reduced it and the term it was
 reduced from, written as a comment after two spaces and `#`. The value alone
 says what the meta was bound to and neither what it was bound from nor what
-was done to it, so `𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)` reads "the
-`𝛿1` of this firing is the `ρ` of the formation brought down through 𝔻, and
-it came down to 20", where a `morph` operand reads `𝑛1.5 := 𝑛.3.2  # 𝕄(ξ.then)`
+was done to it, so `𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)` reads "the `𝛿1` of this firing
+is the `ρ` of the formation brought down through 𝔻, and it came down to the
+datum `𝛿.1.1` above", where a `morph` operand reads `𝑛1.5 := 𝑛.3.4  # 𝕄(ξ.then)`
 and says that the `then` of the formation reached its normal form through 𝕄.
 Which of the two judgments ran is the whole difference between a line ending
 in data and one ending in a term. It is the very term the entry wrote under
@@ -546,24 +547,23 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.txt
 𝔻(Φ):
-  𝔻(Φ):
-    𝑛.0.1 := 5  # 𝕄(Φ)
-    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
-    𝔼(L_number_plus):  # 𝕄(Φ)
-      𝑛.1.1 := 5  # 𝕄(Φ.a🌵0)
-      𝔻(Φ.a🌵0):
-        𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
-        𝔻(Φ.a🌵0):
-      𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      𝑛.1.3 := 6  # 𝕄(Φ.a🌵1)
-      𝔻(Φ.a🌵1):
-        𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
-        𝔻(Φ.a🌵1):
-      𝛿2.1 := 40-18-00-00-00-00-00-00  # 𝔻(ξ.x)
-      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
-      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
-    unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)
+  𝑛.0.1 := 5  # 𝕄(Φ)
+  𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
+  𝔼(L_number_plus):  # 𝕄(Φ)
+    𝑛.1.1 := 5  # 𝕄(Φ.a🌵0)
+    𝔻(Φ.a🌵0):
+      𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
+      𝛿.1.1 := 40-14-00-00-00-00-00-00
+    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)
+    𝑛.1.3 := 6  # 𝕄(Φ.a🌵1)
+    𝔻(Φ.a🌵1):
+      𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
+      𝛿.1.2 := 40-18-00-00-00-00-00-00
+    𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)
+    𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
+    𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
+  unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -689,52 +689,98 @@ $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
     --protocol=fork.txt --quiet --sweet --hide-rho fork.phi
 $ cat fork.txt
 𝕄(Φ.demo.a):
+  𝑛.0.1 := Φ.foo( x ↦ Φ.number( φ ↦ 𝜎1:λ ) )  # 𝕄(Φ.demo.a)
+  𝑛.0.2 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.x)
+  𝑛.0.3 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.4 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.5 := Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.6 := Φ.number( φ ↦ 𝑛.0.5 )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.7 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.8 := 𝑛.0.7.gt( x ↦ 𝑛.0.6 )  # 𝕄(Φ.demo.a.φ)
   𝔼(L_gt):  # 𝕄(Φ.demo.a.φ)
+    𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵0)
     𝔻(Φ.a🌵0):
     𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+    𝑛.1.2 := Φ.number( φ ↦ 𝑛.0.5 )  # 𝕄(Φ.a🌵1)
     𝔻(Φ.a🌵1):
-      𝔻(Φ.a🌵1):
-    𝛿2.1 := 00-00-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.1.1 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
-    𝑛.1.2 := ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ⟧  # 𝕄(𝑛.1.1)
+      𝑛.1.3 := Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
+      𝛿.1.1 := 00-00-00-00-00-00-00-00
+    𝛿2.1 := 𝛿.1.1  # 𝔻(ξ.x)
+    𝑛.1.4 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
+    𝑛.1.5 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝕄(Φ.demo.a.φ)
+    𝑛.1.6 := 𝑛.1.5  # 𝕄(𝑛.1.4)
+  𝑛.0.9 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.10 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.11 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.12 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.13 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.14 := Φ.number( φ ↦ 𝑛.0.13 )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.15 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.16 := 𝑛.0.15.plus( x ↦ 𝑛.0.14 )  # 𝕄(Φ.demo.a.φ)
   𝔼(L_plus):  # 𝕄(Φ.demo.a.φ)
+    𝑛.2.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵2)
     𝔻(Φ.a🌵2):
     𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+    𝑛.2.2 := Φ.number( φ ↦ 𝑛.0.13 )  # 𝕄(Φ.a🌵3)
     𝔻(Φ.a🌵3):
-      𝔻(Φ.a🌵3):
-    𝛿2.2 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.2.1 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
-    𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.2.1)
+      𝑛.2.3 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵3)
+      𝛿.2.1 := 3F-F0-00-00-00-00-00-00
+    𝛿2.2 := 𝛿.2.1  # 𝔻(ξ.x)
+    𝑛.2.4 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
+    𝑛.2.5 := Φ.number( φ ↦ 𝜎3:λ )  # 𝕄(Φ.demo.a.φ)
+    𝑛.2.6 := 𝑛.2.5  # 𝕄(𝑛.2.4)
+  𝑛.0.17 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.18 := 𝑛.0.17.plus( x ↦ 𝑛.2.5 )  # 𝕄(Φ.demo.a.φ)
   𝔼(L_plus):  # 𝕄(Φ.demo.a.φ)
+    𝑛.3.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵4)
     𝔻(Φ.a🌵4):
     𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
     𝔻(Φ.a🌵5):
     𝛿2.3 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-    𝑛.3.1 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
-    𝑛.3.2 := ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.3.1)
+    𝑛.3.2 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
+    𝑛.3.3 := Φ.number( φ ↦ 𝜎4:λ )  # 𝕄(Φ.demo.a.φ)
+    𝑛.3.4 := 𝑛.3.3  # 𝕄(𝑛.3.2)
+  𝑛.0.19 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛.3.3 )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.20 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.21 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.23 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.24 := 𝑛.0.23.plus( x ↦ 𝑛.0.23 )  # 𝕄(Φ.demo.a.φ)
   𝔼(L_plus):  # 𝕄(Φ.demo.a.φ)
+    𝑛.4.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵6)
     𝔻(Φ.a🌵6):
     𝛿1.4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+    𝑛.4.2 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵7)
     𝔻(Φ.a🌵7):
     𝛿2.4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-    𝑛.4.1 := Φ.number( φ ↦ 𝜎5:λ )  # 𝑛
-    𝑛.4.2 := ⟦ φ ↦ 𝜎5:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.4.1)
+    𝑛.4.3 := Φ.number( φ ↦ 𝜎5:λ )  # 𝑛
+    𝑛.4.4 := Φ.number( φ ↦ 𝜎5:λ )  # 𝕄(Φ.demo.a.φ)
+    𝑛.4.5 := 𝑛.4.4  # 𝕄(𝑛.4.3)
+  𝑛.0.25 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛.3.3 )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.26 := 𝑛.0.25( else ↦ 𝑛.4.4 )  # 𝕄(Φ.demo.a.φ)
   𝔼(L_fork):  # 𝕄(Φ.demo.a.φ)
     𝛿1.5 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
-    𝑛1.5 := 𝑛.3.2  # 𝕄(ξ.then)
-    𝑛2.5 := 𝑛.4.2  # 𝕄(ξ.else)
+    𝑛1.5 := 𝑛.3.4  # 𝕄(ξ.then)
+    𝑛2.5 := 𝑛.4.5  # 𝕄(ξ.else)
     𝔻(𝜎6:λ) ∈ { 𝔻(𝜎4:λ), 𝔻(𝜎5:λ) }
     𝑛3.5 := ⟦ φ ↦ 𝜎6:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # [𝑛1, 𝑛2]
     𝑛.5.1 := 𝑛3.5  # 𝑛
     𝑛.5.2 := 𝑛3.5  # 𝕄(𝑛.5.1)
+  𝑛.0.27 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.28 := Φ.number( φ ↦ 𝑛.0.27 )  # 𝕄(Φ.demo.a.φ)
+  𝑛.0.29 := Φ.number( φ ↦ 𝜎6:λ ).plus( x ↦ 𝑛.0.28 )  # 𝕄(Φ.demo.a.φ)
   𝔼(L_plus):  # 𝕄(Φ.demo.a.φ)
+    𝑛.6.1 := Φ.number( φ ↦ 𝜎6:λ )  # 𝕄(Φ.a🌵11)
     𝔻(Φ.a🌵11):
     𝛿1.6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
+    𝑛.6.2 := Φ.number( φ ↦ 𝑛.0.27 )  # 𝕄(Φ.a🌵12)
     𝔻(Φ.a🌵12):
-      𝔻(Φ.a🌵12):
-    𝛿2.6 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.x)
-    𝑛.6.1 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
-    𝑛.6.2 := ⟦ φ ↦ 𝜎7:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.6.1)
+      𝑛.6.3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵12)
+      𝛿.6.1 := 40-14-00-00-00-00-00-00
+    𝛿2.6 := 𝛿.6.1  # 𝔻(ξ.x)
+    𝑛.6.4 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
+    𝑛.6.5 := Φ.number( φ ↦ 𝜎7:λ )  # 𝕄(Φ.demo.a.φ)
+    𝑛.6.6 := 𝑛.6.5  # 𝕄(𝑛.6.4)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -782,7 +828,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<dataize at="Φ">
+<protocol>
   <dataize at="Φ">
     <applied meta="𝑛.0.1" by="morph" at="Φ" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>
     <applied meta="𝑛.0.2" by="morph" at="Φ" of="𝑛.0.1.plus"><attr name="x">6</attr></applied>
@@ -790,26 +836,22 @@ $ cat atoms.xml
       <applied meta="𝑛.1.1" by="morph" at="Φ.a🌵0" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>
       <dataize at="Φ.a🌵0">
         <applied meta="𝑛.1.2" by="morph" at="Φ.a🌵0" of="Φ.bytes"><attr name="φ">40-14-00-00-00-00-00-00:Δ</attr></applied>
-        <dataize at="Φ.a🌵0">
-        </dataize>
+        <delta meta="𝛿.1.1">40-14-00-00-00-00-00-00</delta>
       </dataize>
-      <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
+      <bind meta="𝛿1.1">𝛿.1.1</bind>
       <applied meta="𝑛.1.3" by="morph" at="Φ.a🌵1" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>
       <dataize at="Φ.a🌵1">
         <applied meta="𝑛.1.4" by="morph" at="Φ.a🌵1" of="Φ.bytes"><attr name="φ">40-18-00-00-00-00-00-00:Δ</attr></applied>
-        <dataize at="Φ.a🌵1">
-        </dataize>
+        <delta meta="𝛿.1.2">40-18-00-00-00-00-00-00</delta>
       </dataize>
-      <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
+      <bind meta="𝛿2.1">𝛿.1.2</bind>
       <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
       <built meta="𝑛.1.5">Φ.number( φ ↦ 𝜎1:λ )</built>
       <applied meta="𝑛.1.6" by="morph" at="Φ" of="Φ.number"><attr name="φ">𝜎1</attr></applied>
       <answer meta="𝑛.1.7">𝑛.1.6</answer>
     </evaluate>
-    <dataize at="Φ">
-    </dataize>
   </dataize>
-</dataize>
+</protocol>
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -821,12 +863,13 @@ naming the entry that answered it, `by` naming the judgment that asked for the
 firing — the same word the root is named after and an `<unanswered>` carries —
 and `at` naming the site it was fired at. The text format writes those two as
 the comment of its line, `𝔻(Φ)`.
-`<dataize at="Φ">` is a formation 𝔻 got into through `box`,
-which the text format writes as `𝔻(Φ):`: `at` names the
-site it was entered at and `term` holds the formation. Whatever the `φ` body
-does is written inside the element, so it closes where the text format drops
-back to the indentation it opened at, and like the text line it counts nothing
-and names no meta.
+A nested `<dataize at="Φ.a🌵0">` is a dataization 𝔻 started through `box`,
+which the text format writes as `𝔻(Φ.a🌵0):`, and `at` names the site it was
+entered at. Whatever the `φ` body does is written inside the element, so it
+closes where the text format drops back to the indentation it opened at, and
+like the text line it counts nothing and names no meta. `<delta>` is the datum
+the `delta` rule found, `meta` naming it the way the text format does, and the
+`<bind>` after the element holds that name in place of the data.
 `<bind>` is one meta the firing bound, `meta` naming it the same way the text
 format names it, counter and all, and the element holding the value it took: a
 term where the operand was reduced with 𝕄, the datum itself where a `dataize`
@@ -910,7 +953,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<dataize at="Φ">
+<protocol>
   <dataize at="Φ">
     <applied meta="𝑛.0.1" by="morph" at="Φ" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>
     <applied meta="𝑛.0.2" by="morph" at="Φ" of="𝑛.0.1.plus"><attr name="x">6</attr></applied>
@@ -918,17 +961,15 @@ $ cat atoms.xml
       <applied meta="𝑛.1.1" by="morph" at="Φ.a🌵0" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>
       <dataize at="Φ.a🌵0">
         <applied meta="𝑛.1.2" by="morph" at="Φ.a🌵0" of="Φ.bytes"><attr name="φ">40-14-00-00-00-00-00-00:Δ</attr></applied>
-        <dataize at="Φ.a🌵0">
-        </dataize>
+        <delta meta="𝛿.1.1">40-14-00-00-00-00-00-00</delta>
       </dataize>
-      <bind meta="𝛿1.1">40-14-00-00-00-00-00-00</bind>
+      <bind meta="𝛿1.1">𝛿.1.1</bind>
       <applied meta="𝑛.1.3" by="morph" at="Φ.a🌵1" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>
       <dataize at="Φ.a🌵1">
         <applied meta="𝑛.1.4" by="morph" at="Φ.a🌵1" of="Φ.bytes"><attr name="φ">40-18-00-00-00-00-00-00:Δ</attr></applied>
-        <dataize at="Φ.a🌵1">
-        </dataize>
+        <delta meta="𝛿.1.2">40-18-00-00-00-00-00-00</delta>
       </dataize>
-      <bind meta="𝛿2.1">40-18-00-00-00-00-00-00</bind>
+      <bind meta="𝛿2.1">𝛿.1.2</bind>
       <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
       <built meta="𝑛.1.5">Φ.number( φ ↦ 𝜎1:λ )</built>
       <applied meta="𝑛.1.6" by="morph" at="Φ" of="Φ.number"><attr name="φ">𝜎1</attr></applied>
@@ -936,7 +977,7 @@ $ cat atoms.xml
     </evaluate>
     <unanswered λ="L_number_nope" by="dataize">L_number_nope:λ</unanswered>
   </dataize>
-</dataize>
+</protocol>
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -969,7 +1010,7 @@ $ phino dataize --locator=Q.t --protocol=wide.txt --abridged --quiet \
     --sweet --hide-rho wide.phi
 $ cat wide.txt
 𝔻(Φ.t):
-  𝔻(Φ.t):
+  𝛿.0.1 := 48-65-6C-6C-6F-2C-20-77-6F-72-6C-64
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -986,7 +1027,7 @@ $ phino dataize --locator=Q.t --protocol=wide.txt --abridged \
     --abridged-data --quiet --sweet --hide-rho wide.phi
 $ cat wide.txt
 𝔻(Φ.t):
-  𝔻(Φ.t):
+  𝛿.0.1 := 48-65-..(8b)..-6C-64
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1055,25 +1096,36 @@ $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
     --sweet --hide-rho partial.phi
 $ cat atoms.txt
 𝔻(Φ):
-  𝔻(Φ):
-    𝔼(L_number_times):  # 𝕄(Φ)
-      𝔻(Φ.a🌵0):
-        𝔻(Φ.a🌵0):
-      𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵1):
-        𝔻(Φ.a🌵1):
-      𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)
-      𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.1.1)
-    𝔼(L_number_plus):  # 𝕄(Φ)
-      𝔻(Φ.a🌵2):
-      𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵3):
-        𝔻(Φ.a🌵3):
-      𝛿2.2 := 40-10-00-00-00-00-00-00  # 𝔻(ξ.x)
-      𝑛.2.1 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
-      𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.2.1)
-    unanswered(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
+  𝑛.0.1 := 2  # 𝕄(Φ)
+  𝑛.0.2 := 𝑛.0.1.times( x ↦ 3 )  # 𝕄(Φ)
+  𝔼(L_number_times):  # 𝕄(Φ)
+    𝑛.1.1 := 2  # 𝕄(Φ.a🌵0)
+    𝔻(Φ.a🌵0):
+      𝑛.1.2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
+      𝛿.1.1 := 40-00-00-00-00-00-00-00
+    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)
+    𝑛.1.3 := 3  # 𝕄(Φ.a🌵1)
+    𝔻(Φ.a🌵1):
+      𝑛.1.4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵1)
+      𝛿.1.2 := 40-08-00-00-00-00-00-00
+    𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)
+    𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)
+    𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
+  𝑛.0.3 := 𝑛.1.6.plus( x ↦ 4 )  # 𝕄(Φ)
+  𝔼(L_number_plus):  # 𝕄(Φ)
+    𝑛.2.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵2)
+    𝔻(Φ.a🌵2):
+    𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+    𝑛.2.2 := 4  # 𝕄(Φ.a🌵3)
+    𝔻(Φ.a🌵3):
+      𝑛.2.3 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵3)
+      𝛿.2.1 := 40-10-00-00-00-00-00-00
+    𝛿2.2 := 𝛿.2.1  # 𝔻(ξ.x)
+    𝑛.2.4 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
+    𝑛.2.5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝕄(Φ)
+    𝑛.2.6 := 𝑛.2.5  # 𝕄(𝑛.2.4)
+  unanswered(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1686,20 +1738,40 @@ $ phino morph --symbolic=plus.yaml --deep --locator=Q.l🌵 --jobs=2 \
 ⟦ a ↦ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ ⟧, b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ ⟧ ⟧
 $ cat sums.txt
 𝕄(Φ.l🌵):
+  𝑛.0.1 := Φ.num( φ ↦ 01-:Δ )  # 𝕄(Φ.l🌵.a)
+  𝑛.0.2 := Φ.num( φ ↦ 01-:Δ )  # 𝕄(Φ.l🌵.a)
+  𝑛.0.3 := Φ.num( φ ↦ 02-:Δ )  # 𝕄(Φ.l🌵.a)
+  𝑛.0.4 := Φ.num( φ ↦ 01-:Δ )  # 𝕄(Φ.l🌵.a)
+  𝑛.0.5 := 𝑛.0.4.plus( x ↦ 𝑛.0.3 )  # 𝕄(Φ.l🌵.a)
   𝔼(L_plus):  # 𝕄(Φ.l🌵.a)
+    𝑛.1.1 := Φ.num( φ ↦ 01-:Δ )  # 𝕄(Φ.a🌵1-0)
     𝔻(Φ.a🌵1-0):
-    𝛿1.1 := 01-  # 𝔻(ξ.ρ)
+      𝛿.1.1 := 01-
+    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)
+    𝑛.1.2 := Φ.num( φ ↦ 02-:Δ )  # 𝕄(Φ.a🌵1-1)
     𝔻(Φ.a🌵1-1):
-    𝛿2.1 := 02-  # 𝔻(ξ.x)
-    𝑛.1.1 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
-    𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ ⟧  # 𝕄(𝑛.1.1)
+      𝛿.1.2 := 02-
+    𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)
+    𝑛.1.3 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
+    𝑛.1.4 := Φ.num( φ ↦ 𝜎1:λ )  # 𝕄(Φ.l🌵.a)
+    𝑛.1.5 := 𝑛.1.4  # 𝕄(𝑛.1.3)
+  𝑛.0.6 := Φ.num( φ ↦ 03-:Δ )  # 𝕄(Φ.l🌵.b)
+  𝑛.0.7 := Φ.num( φ ↦ 03-:Δ )  # 𝕄(Φ.l🌵.b)
+  𝑛.0.8 := Φ.num( φ ↦ 04-:Δ )  # 𝕄(Φ.l🌵.b)
+  𝑛.0.9 := Φ.num( φ ↦ 03-:Δ )  # 𝕄(Φ.l🌵.b)
+  𝑛.0.10 := 𝑛.0.9.plus( x ↦ 𝑛.0.8 )  # 𝕄(Φ.l🌵.b)
   𝔼(L_plus):  # 𝕄(Φ.l🌵.b)
+    𝑛.2.1 := Φ.num( φ ↦ 03-:Δ )  # 𝕄(Φ.a🌵2-0)
     𝔻(Φ.a🌵2-0):
-    𝛿1.2 := 03-  # 𝔻(ξ.ρ)
+      𝛿.2.1 := 03-
+    𝛿1.2 := 𝛿.2.1  # 𝔻(ξ.ρ)
+    𝑛.2.2 := Φ.num( φ ↦ 04-:Δ )  # 𝕄(Φ.a🌵2-1)
     𝔻(Φ.a🌵2-1):
-    𝛿2.2 := 04-  # 𝔻(ξ.x)
-    𝑛.2.1 := Φ.num( φ ↦ 𝜎2:λ )  # 𝑛
-    𝑛.2.2 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ ⟧  # 𝕄(𝑛.2.1)
+      𝛿.2.2 := 04-
+    𝛿2.2 := 𝛿.2.2  # 𝔻(ξ.x)
+    𝑛.2.3 := Φ.num( φ ↦ 𝜎2:λ )  # 𝑛
+    𝑛.2.4 := Φ.num( φ ↦ 𝜎2:λ )  # 𝕄(Φ.l🌵.b)
+    𝑛.2.5 := 𝑛.2.4  # 𝕄(𝑛.2.3)
 ```
 
 A fresh name a binding mints carries its place in the formation, `a🌵2-0` for

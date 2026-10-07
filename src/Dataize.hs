@@ -11,7 +11,7 @@ module Dataize (dataize, dataize', reduction, Outcome (..)) where
 
 import AST
 import Control.Exception (throwIO, try)
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (listToMaybe)
@@ -58,6 +58,7 @@ dataize' (expr, seq) univ state caller = do
       reached <- inferred expr univ state ctx ctx._engine._dataization
       case reached of
         Just (In.Answered step bts, state') -> do
+          when (step == (Dataization, "delta")) (ctx._saveEval (EvDelta ctx._nesting bts))
           seq' <- leadsTo seq step (ExBytes bts) ctx
           pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
         Just (In.Onward way built world, state') -> do
@@ -67,9 +68,9 @@ dataize' (expr, seq) univ state caller = do
   where
     inside :: ReduceContext -> Expression -> IO ReduceContext
     inside ctx (ExFormation bds)
-      | boxed bds = do
+      | boxed bds && ctx._opened /= Just (ctx._nesting, ctx._site) = do
           ctx._saveEval (EvFormation ctx._nesting ctx._site)
-          pure ctx{_nesting = ctx._nesting + 1}
+          pure ctx{_nesting = ctx._nesting + 1, _opened = Just (ctx._nesting + 1, ctx._site)}
     inside ctx _ = pure ctx
     unknown :: Expression -> Maybe Int
     unknown (ExFormation bds) = listToMaybe [idx | BiLambda (FnSymbol idx) <- bds]

@@ -183,7 +183,7 @@ runDataize OptsDataize{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, loc)) _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
           (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
           started universe aiming
           dataize universe emptyState aiming
@@ -265,7 +265,7 @@ runMorph OptsMorph{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 Nothing _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
           (universe, aiming) <- aimed printCtx Morphing _inside expr ctx
           started universe aiming
           morph universe emptyState aiming

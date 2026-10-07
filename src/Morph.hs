@@ -99,6 +99,7 @@ data ReduceContext = ReduceContext
   , _deadline :: Maybe Deadline
   , _memo :: Maybe Memo
   , _nesting :: Int
+  , _opened :: Maybe (Int, Expression)
   , _depthSensitive :: Bool
   , _shuffle :: Bool
   , _partial :: Bool
