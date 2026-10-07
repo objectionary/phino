@@ -15,7 +15,7 @@ import Data.Maybe (fromMaybe)
 import Data.String (fromString)
 import Data.Time.Clock
 import Dataize (reduction)
-import Deps (Acyclic (Plausible, Proven), Judgment (Morphing), dontSaveEval, dontSaveStep)
+import Deps (Acyclic (Plausible, Proven), Judgment (Morphing), dontSaveEval, dontSaveMade, dontSaveStep)
 import Encoding (Encoding (UNICODE))
 import Engine (Engine (_matching, _normal), building, stepOf, yaml)
 import Evaluate (evaluation, fired)
@@ -60,6 +60,7 @@ rewriteCtx =
     MtDisabled
     Nothing
     dontSaveStep
+    dontSaveMade
 
 symbolicCtx :: Acyclic -> Maybe Memo -> IORef Int -> Lambdas -> Expression -> ReduceContext
 symbolicCtx acyclic memo minted lambdas locator =
