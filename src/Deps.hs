@@ -283,7 +283,7 @@ saveEval handle cursor printed printed' report = do
       datum <- render (ExBytes bytes)
       let index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
           naming :: String
-          naming = printf "%s.%d" (labelled protocol delta) index
+          naming = printf "%s.%d" (labelled protocol sigil) index
       pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (printf "%s := %s" naming datum)))
     written (EvLooped depth judgment mode self site answered) protocol = do
       form <- render self
@@ -489,7 +489,7 @@ saveEvalXml handle cursor printed report = do
       datum <- render (ExBytes bytes)
       let index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._datums)
           naming :: String
-          naming = printf "%s.%d" (labelled nesting delta) index
+          naming = printf "%s.%d" (labelled nesting sigil) index
           (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept, _datums = Map.insert (opener nesting) index nesting._datums, _held = Just (bytes, naming)}, closers ++ [indentedXml depth (printf "<delta meta=\"%s\">%s</delta>" (escapeXML naming) (escapeXMLText datum))])
     elements (EvData depth spelling _ value) nesting = do
@@ -649,8 +649,8 @@ standing symbol = ExFormation [BiLambda (FnSymbol symbol)]
 answer :: T.Text
 answer = "𝑛"
 
-delta :: T.Text
-delta = "𝛿"
+sigil :: T.Text
+sigil = "𝛿"
 
 found :: Either Int Bytes -> Maybe (Bytes, String) -> Maybe String
 found (Right bytes) (Just (held, naming))
