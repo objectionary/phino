@@ -884,7 +884,7 @@ $ cat atoms.xml
           <applied meta="𝑛.1.1" by="morph" at="Φ.a🌵0" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>
           <applied meta="𝑛.1.2" by="morph" at="Φ.a🌵0" of="Φ.bytes"><attr name="φ">40-14-00-00-00-00-00-00:Δ</attr></applied>
         </morph>
-        <delta meta="𝛿.1.1">40-14-00-00-00-00-00-00</delta>
+        <delta meta="𝛿.1.1" number="5.0">40-14-00-00-00-00-00-00</delta>
       </dataize>
       <bind meta="𝛿1.1">𝛿.1.1</bind>
       <dataize at="Φ.a🌵1">
@@ -892,7 +892,7 @@ $ cat atoms.xml
           <applied meta="𝑛.1.3" by="morph" at="Φ.a🌵1" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>
           <applied meta="𝑛.1.4" by="morph" at="Φ.a🌵1" of="Φ.bytes"><attr name="φ">40-18-00-00-00-00-00-00:Δ</attr></applied>
         </morph>
-        <delta meta="𝛿.1.2">40-18-00-00-00-00-00-00</delta>
+        <delta meta="𝛿.1.2" number="6.0">40-18-00-00-00-00-00-00</delta>
       </dataize>
       <bind meta="𝛿2.1">𝛿.1.2</bind>
       <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
@@ -928,7 +928,8 @@ element, so it closes where the text format drops back to the indentation it
 opened at, and like the text line it counts nothing and names no meta.
 `<delta>` is the datum the `delta` rule found, `meta` naming it the way the
 text format does, and the `<bind>` after the element holds that name in place
-of the data.
+of the data. A datum of eight bytes also carries `number`, the double the text
+format writes as the comment of its line.
 `<bind>` is one meta the firing bound, `meta` naming it the same way the text
 format names it, counter and all, and the element holding the value it took: a
 term where the operand was reduced with 𝕄, the datum itself where a `dataize`
@@ -1023,7 +1024,7 @@ $ cat atoms.xml
             <applied meta="𝑛.1.1" by="morph" at="Φ.a🌵0" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>
             <applied meta="𝑛.1.2" by="morph" at="Φ.a🌵0" of="Φ.bytes"><attr name="φ">40-14-00-00-00-00-00-00:Δ</attr></applied>
           </morph>
-          <delta meta="𝛿.1.1">40-14-00-00-00-00-00-00</delta>
+          <delta meta="𝛿.1.1" number="5.0">40-14-00-00-00-00-00-00</delta>
         </dataize>
         <bind meta="𝛿1.1">𝛿.1.1</bind>
         <dataize at="Φ.a🌵1">
@@ -1031,7 +1032,7 @@ $ cat atoms.xml
             <applied meta="𝑛.1.3" by="morph" at="Φ.a🌵1" of="Φ.number"><attr name="φ">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>
             <applied meta="𝑛.1.4" by="morph" at="Φ.a🌵1" of="Φ.bytes"><attr name="φ">40-18-00-00-00-00-00-00:Δ</attr></applied>
           </morph>
-          <delta meta="𝛿.1.2">40-18-00-00-00-00-00-00</delta>
+          <delta meta="𝛿.1.2" number="6.0">40-18-00-00-00-00-00-00</delta>
         </dataize>
         <bind meta="𝛿2.1">𝛿.1.2</bind>
         <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>

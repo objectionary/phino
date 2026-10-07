@@ -176,6 +176,11 @@ resited from to = record
       | site == from = to
       | otherwise = site
 
+ieee :: Bytes -> Maybe String
+ieee bytes
+  | btsSize bytes == 8 = Just (show (either fromIntegral id (btsToNum bytes) :: Double))
+  | otherwise = Nothing
+
 tier :: Evaluation -> Int
 tier EvRun{} = 0
 tier (EvFiring depth _ _ _) = depth
@@ -343,7 +348,7 @@ saveEval handle cursor printed printed' report = do
       let index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
           naming :: String
           naming = printf "%s.%d" (labelled protocol sigil) index
-      pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (remarked (printf "%s := %s" naming datum) [show (either fromIntegral id (btsToNum bytes) :: Double) | btsSize bytes == 8])))
+      pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
     written (EvLooped depth judgment mode self site answered) protocol = do
       form <- render self
       remarks <- context protocol judgment site
@@ -574,7 +579,7 @@ saveEvalXml handle cursor printed report = do
           naming :: String
           naming = printf "%s.%d" (labelled nesting sigil) index
           (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept, _datums = Map.insert (opener nesting) index nesting._datums, _held = Just (bytes, naming)}, closers ++ [indentedXml depth (printf "<delta meta=\"%s\">%s</delta>" (escapeXML naming) (escapeXMLText datum))])
+      pure (nesting{_closing = kept, _datums = Map.insert (opener nesting) index nesting._datums, _held = Just (bytes, naming)}, closers ++ [indentedXml depth (printf "<delta meta=\"%s\"%s>%s</delta>" (escapeXML naming) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum))])
     elements (EvData depth spelling _ value) nesting = do
       record <- maybe (stood value) (pure . printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) . escapeXMLText) (found value nesting._held)
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth record])

@@ -263,8 +263,9 @@ merge two sibling blocks of one heading, and drop the comment of a line that
 repeats the innermost block; a firing is a block with no heading, so a line in
 it keeps its comment. The morphing of an answer is named after the answer
 (`resited`), as `𝕄(𝑛.1.5):`. The datum `delta` finds closes a `𝔻` block as
-`𝛿.1.1 := …` (`EvDelta`), commented with the double eight bytes hold, and the
-operand line right after names it. A cut is a line too, `looped(…)`
+`𝛿.1.1 := …` (`EvDelta`), commented with the double eight bytes hold (`ieee`,
+the `number` of `<delta>` in the markup), and the operand line right after
+names it. A cut is a line too, `looped(…)`
 (`EvLooped`), written by `enter` where the refused frame would have opened,
 carrying the formation its ancestor entered (#1434) and naming the mode that
 cut it.

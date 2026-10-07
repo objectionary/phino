@@ -254,6 +254,9 @@ spec = do
     it "writes the datum the delta rule found as an element with its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvDelta 1 (BtMany ["0C", "D4"])])
       lines written `shouldContain` ["  <delta meta=\"𝛿.0.1\">0C-D4</delta>"]
+    it "writes the double a datum of eight bytes holds as the number of its delta element" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvDelta 1 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
+      lines written `shouldContain` ["  <delta meta=\"𝛿.0.1\" number=\"-3.14\">C0-09-1E-B8-51-EB-85-1F</delta>"]
     it "spells the datum of an operand by the name the delta rule just gave it in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       lines written `shouldContain` ["    <bind meta=\"𝛿1.1\">𝛿.1.1</bind>"]
