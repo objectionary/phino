@@ -347,7 +347,7 @@ saveEval handle cursor printed printed' report = do
       datum <- render (ExBytes bytes)
       let index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
           naming :: String
-          naming = printf "%s.%d" (labelled protocol sigil) index
+          naming = printf "%s-%d" (labelled protocol sigil) index
       pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
     written (EvLooped depth judgment mode self site answered) protocol = do
       form <- render self
@@ -421,21 +421,21 @@ saveEval handle cursor printed printed' report = do
           aliased = alias (opener protocol) index
       form <- printed (abbreviatedInside protocol._made call)
       remarks <- context protocol judgment site
-      pure (counted{_made = namedInsert call aliased (namedInsert object aliased counted._made)}, Just (indented depth (remarked (printf "%s.%d := %s" (labelled protocol answer) index form) remarks)))
+      pure (counted{_made = namedInsert call aliased (namedInsert object aliased counted._made)}, Just (indented depth (remarked (printf "%s-%d := %s" (labelled protocol answer) index form) remarks)))
     written (EvComputed _ before after) protocol = pure (protocol{_made = namedCarry before after protocol._made}, Nothing)
     written (EvBuilt depth term) protocol = do
       let (index, counted) = numbered protocol
       value <- borrowed protocol term
-      let naming = printf "%s.%d" (labelled protocol answer) index
+      let naming = printf "%s-%d" (labelled protocol answer) index
       pure (counted{_built = Map.insert (opener protocol) index counted._built, _answered = (depth, term, naming) : counted._answered}, Just (indented depth (printf "%s := %s  # %s" naming value (T.unpack answer))))
     written (EvAnswer depth term) protocol = do
       let (index, counted) = numbered protocol
           stem :: String
           stem = labelled protocol answer
           naming :: String
-          naming = printf "%s.%d" stem index
+          naming = printf "%s-%d" stem index
       (protocol', value) <- valued counted naming term
-      pure (protocol', Just (indented depth (printf "%s := %s  # 𝕄(%s.%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
+      pure (protocol', Just (indented depth (printf "%s := %s  # 𝕄(%s-%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
     valued :: Protocol -> String -> Expression -> IO (Protocol, String)
     valued protocol naming term = case denoted term of
       Nothing -> (,) protocol <$> render term
@@ -453,7 +453,7 @@ saveEval handle cursor printed printed' report = do
     outer :: Int -> Protocol -> Protocol
     outer depth protocol = protocol{_open = dropWhile ((>= depth) . fst) protocol._open, _answered = dropWhile (\(level, _, _) -> level > depth) protocol._answered}
     labelled :: Protocol -> T.Text -> String
-    labelled protocol spelling = printf "%s.%d" (T.unpack spelling) (opener protocol)
+    labelled protocol spelling = printf "%s-%d" (T.unpack spelling) (opener protocol)
     opener :: Protocol -> Int
     opener protocol = maybe 0 snd (listToMaybe protocol._open)
     numbered :: Protocol -> (Int, Protocol)
@@ -577,7 +577,7 @@ saveEvalXml handle cursor printed report = do
       datum <- render (ExBytes bytes)
       let index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._datums)
           naming :: String
-          naming = printf "%s.%d" (labelled nesting sigil) index
+          naming = printf "%s-%d" (labelled nesting sigil) index
           (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept, _datums = Map.insert (opener nesting) index nesting._datums, _held = Just (bytes, naming)}, closers ++ [indentedXml depth (printf "<delta meta=\"%s\"%s>%s</delta>" (escapeXML naming) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum))])
     elements (EvData depth spelling _ value) nesting = do
@@ -645,7 +645,7 @@ saveEvalXml handle cursor printed report = do
       let (index, counted) = numbered nesting
           (kept, closers) = closed depth nesting._closing
           naming :: String
-          naming = printf "%s.%d" (labelled nesting answer) index
+          naming = printf "%s-%d" (labelled nesting answer) index
           aliased :: Expression
           aliased = alias (opener nesting) index
       pure (counted{_closing = kept, _objects = namedInsert call aliased (namedInsert object aliased counted._objects)}, closers ++ [indentedXml depth (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\" of=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXML origin) given)])
@@ -655,19 +655,19 @@ saveEvalXml handle cursor printed report = do
       let (index, counted) = numbered nesting
           (kept, closers) = closed depth nesting._closing
           naming :: String
-          naming = printf "%s.%d" (labelled nesting answer) index
+          naming = printf "%s-%d" (labelled nesting answer) index
       pure (counted{_closing = kept, _sources = (depth, term, naming) : counted._sources}, closers ++ [indentedXml depth (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))])
     elements (EvAnswer depth term) nesting = do
       body <- render term
       let (index, counted) = numbered nesting
           (kept, closers) = closed depth nesting._closing
           naming :: String
-          naming = printf "%s.%d" (labelled nesting answer) index
+          naming = printf "%s-%d" (labelled nesting answer) index
       pure (counted{_closing = kept}, closers ++ [indentedXml depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
     outer :: Int -> Nesting -> Nesting
     outer depth nesting = nesting{_openedAt = dropWhile ((>= depth) . fst) nesting._openedAt, _sources = dropWhile (\(level, _, _) -> level > depth) nesting._sources}
     labelled :: Nesting -> T.Text -> String
-    labelled nesting spelling = printf "%s.%d" (T.unpack spelling) (opener nesting)
+    labelled nesting spelling = printf "%s-%d" (T.unpack spelling) (opener nesting)
     opener :: Nesting -> Int
     opener nesting = maybe 0 snd (listToMaybe nesting._openedAt)
     numbered :: Nesting -> (Int, Nesting)
@@ -746,7 +746,7 @@ found (Right bytes) (Just (held, naming))
 found _ _ = Nothing
 
 alias :: Int -> Int -> Expression
-alias firing index = ExMeta (T.pack (printf "n.%d.%d" firing index))
+alias firing index = ExMeta (T.pack (printf "n-%d-%d" firing index))
 
 dontSaveEval :: SaveEvalFunc
 dontSaveEval _ = pure ()

@@ -1272,9 +1272,9 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ.t):"
                        , "  𝕄(Φ.t):"
-                       , "    𝑛.0.1 := Φ.cyc( x ↦ ⟦⟧ )"
-                       , "    𝑛.0.2 := Φ.cyc( x ↦ ⟦⟧ )"
-                       , "  looped(𝑛.0.2)  # proven"
+                       , "    𝑛-0-1 := Φ.cyc( x ↦ ⟦⟧ )"
+                       , "    𝑛-0-2 := Φ.cyc( x ↦ ⟦⟧ )"
+                       , "  looped(𝑛-0-2)  # proven"
                        ]
 
       it "writes the cut to the XML protocol with the formation in an element of its own" $
@@ -1289,10 +1289,10 @@ spec = do
             `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                        , "<dataize at=\"Φ.t\">"
                        , "  <morph at=\"Φ.t\">"
-                       , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ.t\" of=\"Φ.cyc\"><attr name=\"x\">⟦⟧</attr></applied>"
-                       , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ.t\" of=\"Φ.cyc\"><attr name=\"x\">⟦⟧</attr></applied>"
+                       , "    <applied meta=\"𝑛-0-1\" by=\"morph\" at=\"Φ.t\" of=\"Φ.cyc\"><attr name=\"x\">⟦⟧</attr></applied>"
+                       , "    <applied meta=\"𝑛-0-2\" by=\"morph\" at=\"Φ.t\" of=\"Φ.cyc\"><attr name=\"x\">⟦⟧</attr></applied>"
                        , "  </morph>"
-                       , "  <looped by=\"dataize\" match=\"proven\" at=\"Φ.t\"><e>𝑛.0.2</e></looped>"
+                       , "  <looped by=\"dataize\" match=\"proven\" at=\"Φ.t\"><e>𝑛-0-2</e></looped>"
                        , "</dataize>"
                        ]
 
@@ -1304,7 +1304,7 @@ spec = do
               ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readProtocol path
-          lines records `shouldContain` ["  looped(𝑛.0.2)  # plausible"]
+          lines records `shouldContain` ["  looped(𝑛-0-2)  # plausible"]
 
       it "refuses the flag without a mode" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
@@ -1396,8 +1396,8 @@ spec = do
           records <- readProtocol path
           lines records `shouldContain` ["  <unanswered λ=\"L_weit\" by=\"dataize\">⟦ λ ⤍ L_weit, +4 ⟧</unanswered>"]
       forM_
-        [ ("textXXXXXX.txt", "      𝛿.1.1 := 01-02-..(8b)..-0B-0C")
-        , ("XMLXXXXXX.xml", "      <delta meta=\"𝛿.1.1\">01-02-..(8b)..-0B-0C</delta>")
+        [ ("textXXXXXX.txt", "      𝛿-1-1 := 01-02-..(8b)..-0B-0C")
+        , ("XMLXXXXXX.xml", "      <delta meta=\"𝛿-1-1\">01-02-..(8b)..-0B-0C</delta>")
         ]
         ( \(template, line) ->
             it ("cuts a long datum a firing came down to under --abridged-data, as " ++ line) $
@@ -1410,8 +1410,8 @@ spec = do
                 lines records `shouldContain` [line]
         )
       forM_
-        [ ("textXXXXXX.txt", "      𝛿.1.1 := 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46")
-        , ("XMLXXXXXX.xml", "      <delta meta=\"𝛿.1.1\">30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46</delta>")
+        [ ("textXXXXXX.txt", "      𝛿-1-1 := 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46")
+        , ("XMLXXXXXX.xml", "      <delta meta=\"𝛿-1-1\">30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46</delta>")
         ]
         ( \(template, line) ->
             it ("keeps a long datum a firing came down to whole without --abridged-data, as " ++ line) $
@@ -1466,7 +1466,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
           records <- readProtocol path
-          records `shouldBe` "𝔻(Φ):\n  𝛿.0.1 := 01-\n"
+          records `shouldBe` "𝔻(Φ):\n  𝛿-0-1 := 01-\n"
 
       it "closes the protocol with its msec on the third line from the end" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1509,25 +1509,25 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛.0.1 := 5"
-                       , "    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )"
+                       , "    𝑛-0-1 := 5"
+                       , "    𝑛-0-2 := 𝑛-0-1.plus( x ↦ 6 )"
                        , "  𝔼(L_number_plus):"
                        , "    𝔻(Φ.a🌵0):"
                        , "      𝕄(Φ.a🌵0):"
-                       , "        𝑛.1.1 := 5"
-                       , "        𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "      𝛿.1.1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)"
+                       , "        𝑛-1-1 := 5"
+                       , "        𝑛-1-2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "      𝛿-1-1 := 40-14-00-00-00-00-00-00  # 5.0"
+                       , "    𝛿1-1 := 𝛿-1-1  # 𝔻(ξ.ρ)"
                        , "    𝔻(Φ.a🌵1):"
                        , "      𝕄(Φ.a🌵1):"
-                       , "        𝑛.1.3 := 6"
-                       , "        𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "      𝛿.1.2 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "    𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)"
-                       , "    𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-                       , "    𝕄(𝑛.1.5):"
-                       , "      𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "    𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
+                       , "        𝑛-1-3 := 6"
+                       , "        𝑛-1-4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "      𝛿-1-2 := 40-18-00-00-00-00-00-00  # 6.0"
+                       , "    𝛿2-1 := 𝛿-1-2  # 𝔻(ξ.x)"
+                       , "    𝑛-1-5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "    𝕄(𝑛-1-5):"
+                       , "      𝑛-1-6 := Φ.number( φ ↦ 𝜎1:λ )"
+                       , "    𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)"
                        ]
 
       it "numbers the firings of one entry apart and names the symbol between them" $
@@ -1539,41 +1539,41 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛.0.1 := 5"
-                       , "    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )"
+                       , "    𝑛-0-1 := 5"
+                       , "    𝑛-0-2 := 𝑛-0-1.plus( x ↦ 6 )"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(Φ.a🌵0):"
                        , "        𝕄(Φ.a🌵0):"
-                       , "          𝑛.1.1 := 5"
-                       , "          𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "        𝛿.1.1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "      𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)"
+                       , "          𝑛-1-1 := 5"
+                       , "          𝑛-1-2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "        𝛿-1-1 := 40-14-00-00-00-00-00-00  # 5.0"
+                       , "      𝛿1-1 := 𝛿-1-1  # 𝔻(ξ.ρ)"
                        , "      𝔻(Φ.a🌵1):"
                        , "        𝕄(Φ.a🌵1):"
-                       , "          𝑛.1.3 := 6"
-                       , "          𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "        𝛿.1.2 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "      𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)"
-                       , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-                       , "      𝕄(𝑛.1.5):"
-                       , "        𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-                       , "    𝑛.0.3 := 𝑛.1.6.plus( x ↦ 7 )"
+                       , "          𝑛-1-3 := 6"
+                       , "          𝑛-1-4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "        𝛿-1-2 := 40-18-00-00-00-00-00-00  # 6.0"
+                       , "      𝛿2-1 := 𝛿-1-2  # 𝔻(ξ.x)"
+                       , "      𝑛-1-5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝕄(𝑛-1-5):"
+                       , "        𝑛-1-6 := Φ.number( φ ↦ 𝜎1:λ )"
+                       , "      𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)"
+                       , "    𝑛-0-3 := 𝑛-1-6.plus( x ↦ 7 )"
                        , "  𝔼(L_number_plus):"
                        , "    𝔻(Φ.a🌵2):"
                        , "      𝕄(Φ.a🌵2):"
-                       , "        𝑛.2.1 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "    𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
+                       , "        𝑛-2-1 := Φ.number( φ ↦ 𝜎1:λ )"
+                       , "    𝛿1-2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
                        , "    𝔻(Φ.a🌵3):"
                        , "      𝕄(Φ.a🌵3):"
-                       , "        𝑛.2.2 := 7"
-                       , "        𝑛.2.3 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
-                       , "      𝛿.2.1 := 40-1C-00-00-00-00-00-00  # 7.0"
-                       , "    𝛿2.2 := 𝛿.2.1  # 𝔻(ξ.x)"
-                       , "    𝑛.2.4 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
-                       , "    𝕄(𝑛.2.4):"
-                       , "      𝑛.2.5 := Φ.number( φ ↦ 𝜎2:λ )"
-                       , "    𝑛.2.6 := 𝑛.2.5  # 𝕄(𝑛.2.4)"
+                       , "        𝑛-2-2 := 7"
+                       , "        𝑛-2-3 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
+                       , "      𝛿-2-1 := 40-1C-00-00-00-00-00-00  # 7.0"
+                       , "    𝛿2-2 := 𝛿-2-1  # 𝔻(ξ.x)"
+                       , "    𝑛-2-4 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝕄(𝑛-2-4):"
+                       , "      𝑛-2-5 := Φ.number( φ ↦ 𝜎2:λ )"
+                       , "    𝑛-2-6 := 𝑛-2-5  # 𝕄(𝑛-2-4)"
                        ]
 
       it "numbers the firings of different entries apart" $
@@ -1585,41 +1585,41 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛.0.1 := 5"
-                       , "    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )"
+                       , "    𝑛-0-1 := 5"
+                       , "    𝑛-0-2 := 𝑛-0-1.plus( x ↦ 6 )"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(Φ.a🌵0):"
                        , "        𝕄(Φ.a🌵0):"
-                       , "          𝑛.1.1 := 5"
-                       , "          𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "        𝛿.1.1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "      𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)"
+                       , "          𝑛-1-1 := 5"
+                       , "          𝑛-1-2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "        𝛿-1-1 := 40-14-00-00-00-00-00-00  # 5.0"
+                       , "      𝛿1-1 := 𝛿-1-1  # 𝔻(ξ.ρ)"
                        , "      𝔻(Φ.a🌵1):"
                        , "        𝕄(Φ.a🌵1):"
-                       , "          𝑛.1.3 := 6"
-                       , "          𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "        𝛿.1.2 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "      𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)"
-                       , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-                       , "      𝕄(𝑛.1.5):"
-                       , "        𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-                       , "    𝑛.0.3 := 𝑛.1.6.times( x ↦ 7 )"
+                       , "          𝑛-1-3 := 6"
+                       , "          𝑛-1-4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "        𝛿-1-2 := 40-18-00-00-00-00-00-00  # 6.0"
+                       , "      𝛿2-1 := 𝛿-1-2  # 𝔻(ξ.x)"
+                       , "      𝑛-1-5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝕄(𝑛-1-5):"
+                       , "        𝑛-1-6 := Φ.number( φ ↦ 𝜎1:λ )"
+                       , "      𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)"
+                       , "    𝑛-0-3 := 𝑛-1-6.times( x ↦ 7 )"
                        , "  𝔼(L_number_times):"
                        , "    𝔻(Φ.a🌵2):"
                        , "      𝕄(Φ.a🌵2):"
-                       , "        𝑛.2.1 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "    𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
+                       , "        𝑛-2-1 := Φ.number( φ ↦ 𝜎1:λ )"
+                       , "    𝛿1-2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
                        , "    𝔻(Φ.a🌵3):"
                        , "      𝕄(Φ.a🌵3):"
-                       , "        𝑛.2.2 := 7"
-                       , "        𝑛.2.3 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
-                       , "      𝛿.2.1 := 40-1C-00-00-00-00-00-00  # 7.0"
-                       , "    𝛿2.2 := 𝛿.2.1  # 𝔻(ξ.x)"
-                       , "    𝑛.2.4 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
-                       , "    𝕄(𝑛.2.4):"
-                       , "      𝑛.2.5 := Φ.number( φ ↦ 𝜎2:λ )"
-                       , "    𝑛.2.6 := 𝑛.2.5  # 𝕄(𝑛.2.4)"
+                       , "        𝑛-2-2 := 7"
+                       , "        𝑛-2-3 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
+                       , "      𝛿-2-1 := 40-1C-00-00-00-00-00-00  # 7.0"
+                       , "    𝛿2-2 := 𝛿-2-1  # 𝔻(ξ.x)"
+                       , "    𝑛-2-4 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝕄(𝑛-2-4):"
+                       , "      𝑛-2-5 := Φ.number( φ ↦ 𝜎2:λ )"
+                       , "    𝑛-2-6 := 𝑛-2-5  # 𝕄(𝑛-2-4)"
                        ]
 
       it "nests the firing an operand of another firing brought down" $
@@ -1631,41 +1631,41 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛.0.1 := 5"
-                       , "    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6.plus( 7 ) )"
+                       , "    𝑛-0-1 := 5"
+                       , "    𝑛-0-2 := 𝑛-0-1.plus( x ↦ 6.plus( 7 ) )"
                        , "  𝔼(L_number_plus):"
                        , "    𝔻(Φ.a🌵0):"
                        , "      𝕄(Φ.a🌵0):"
-                       , "        𝑛.1.1 := 5"
-                       , "        𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "      𝛿.1.1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)"
+                       , "        𝑛-1-1 := 5"
+                       , "        𝑛-1-2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "      𝛿-1-1 := 40-14-00-00-00-00-00-00  # 5.0"
+                       , "    𝛿1-1 := 𝛿-1-1  # 𝔻(ξ.ρ)"
                        , "    𝔻(Φ.a🌵1):"
                        , "      𝕄(Φ.a🌵1):"
-                       , "        𝑛.1.3 := 6"
-                       , "        𝑛.1.4 := 𝑛.1.3.plus( x ↦ 7 )"
+                       , "        𝑛-1-3 := 6"
+                       , "        𝑛-1-4 := 𝑛-1-3.plus( x ↦ 7 )"
                        , "      𝔼(L_number_plus):"
                        , "        𝔻(Φ.a🌵2):"
                        , "          𝕄(Φ.a🌵2):"
-                       , "            𝑛.2.1 := 6"
-                       , "            𝑛.2.2 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "          𝛿.2.1 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "        𝛿1.2 := 𝛿.2.1  # 𝔻(ξ.ρ)"
+                       , "            𝑛-2-1 := 6"
+                       , "            𝑛-2-2 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "          𝛿-2-1 := 40-18-00-00-00-00-00-00  # 6.0"
+                       , "        𝛿1-2 := 𝛿-2-1  # 𝔻(ξ.ρ)"
                        , "        𝔻(Φ.a🌵3):"
                        , "          𝕄(Φ.a🌵3):"
-                       , "            𝑛.2.3 := 7"
-                       , "            𝑛.2.4 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
-                       , "          𝛿.2.2 := 40-1C-00-00-00-00-00-00  # 7.0"
-                       , "        𝛿2.2 := 𝛿.2.2  # 𝔻(ξ.x)"
-                       , "        𝑛.2.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-                       , "        𝕄(𝑛.2.5):"
-                       , "          𝑛.2.6 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "        𝑛.2.7 := 𝑛.2.6  # 𝕄(𝑛.2.5)"
-                       , "    𝛿2.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)"
-                       , "    𝑛.1.5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
-                       , "    𝕄(𝑛.1.5):"
-                       , "      𝑛.1.6 := Φ.number( φ ↦ 𝜎2:λ )"
-                       , "    𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
+                       , "            𝑛-2-3 := 7"
+                       , "            𝑛-2-4 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
+                       , "          𝛿-2-2 := 40-1C-00-00-00-00-00-00  # 7.0"
+                       , "        𝛿2-2 := 𝛿-2-2  # 𝔻(ξ.x)"
+                       , "        𝑛-2-5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "        𝕄(𝑛-2-5):"
+                       , "          𝑛-2-6 := Φ.number( φ ↦ 𝜎1:λ )"
+                       , "        𝑛-2-7 := 𝑛-2-6  # 𝕄(𝑛-2-5)"
+                       , "    𝛿2-1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)"
+                       , "    𝑛-1-5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝕄(𝑛-1-5):"
+                       , "      𝑛-1-6 := Φ.number( φ ↦ 𝜎2:λ )"
+                       , "    𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)"
                        ]
 
       it "writes what is known about every symbol a 'symbolize' line minted" $
@@ -1678,11 +1678,11 @@ spec = do
           lines records
             `shouldBe` [ "𝕄(Φ.y):"
                        , "  𝔼(L_stand):"
-                       , "    𝑛1.1 := 01-:Δ  # 𝕄(ξ.x)"
+                       , "    𝑛1-1 := 01-:Δ  # 𝕄(ξ.x)"
                        , "    𝔻(𝜎1:λ) == 01-"
-                       , "    𝑛2.1 := 𝜎1:λ  # 𝑛1"
-                       , "    𝑛.1.1 := 𝜎1:λ:z  # 𝑛"
-                       , "    𝑛.1.2 := 𝜎1:λ:z  # 𝕄(𝑛.1.1)"
+                       , "    𝑛2-1 := 𝜎1:λ  # 𝑛1"
+                       , "    𝑛-1-1 := 𝜎1:λ:z  # 𝑛"
+                       , "    𝑛-1-2 := 𝜎1:λ:z  # 𝕄(𝑛-1-1)"
                        ]
 
       it "writes a deferred copy as a call of the object of the world it was made of" $
@@ -1699,7 +1699,7 @@ spec = do
           withStdin "⟦ wrap(v) ↦ ⟦⟧, y ↦ Φ.wrap( v ↦ ⟦ b(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.b( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
             testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          lines records `shouldContain` ["  𝑛.0.2 := ⟦ x ↦ ∅, φ ↦ x.next ⟧( x ↦ 𝜎1:λ )", "  deferred(𝜎2) := 𝑛.0.2"]
+          lines records `shouldContain` ["  𝑛-0-2 := ⟦ x ↦ ∅, φ ↦ x.next ⟧( x ↦ 𝜎1:λ )", "  deferred(𝜎2) := 𝑛-0-2"]
 
       it "writes the symbol a cut answers a copy with" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1708,7 +1708,7 @@ spec = do
             withStdin "⟦ box(n) ↦ ⟦ φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ ⟦ Δ ⤍ 01- ⟧ ) ) ⟧" $
               testCLISucceeded ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=proven", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          lines records `shouldContain` ["        𝑛.1.3 := Φ.loop( x ↦ 𝑛.1.2 )", "        looped(𝑛.1.3) := 𝜎1  # proven"]
+          lines records `shouldContain` ["        𝑛-1-3 := Φ.loop( x ↦ 𝑛-1-2 )", "        looped(𝑛-1-3) := 𝜎1  # proven"]
 
       it "writes a told stall to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -1761,25 +1761,25 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛.0.1 := 5"
-                       , "    𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )"
+                       , "    𝑛-0-1 := 5"
+                       , "    𝑛-0-2 := 𝑛-0-1.plus( x ↦ 6 )"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(Φ.a🌵0):"
                        , "        𝕄(Φ.a🌵0):"
-                       , "          𝑛.1.1 := 5"
-                       , "          𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "        𝛿.1.1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "      𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)"
+                       , "          𝑛-1-1 := 5"
+                       , "          𝑛-1-2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "        𝛿-1-1 := 40-14-00-00-00-00-00-00  # 5.0"
+                       , "      𝛿1-1 := 𝛿-1-1  # 𝔻(ξ.ρ)"
                        , "      𝔻(Φ.a🌵1):"
                        , "        𝕄(Φ.a🌵1):"
-                       , "          𝑛.1.3 := 6"
-                       , "          𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "        𝛿.1.2 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "      𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)"
-                       , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-                       , "      𝕄(𝑛.1.5):"
-                       , "        𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
+                       , "          𝑛-1-3 := 6"
+                       , "          𝑛-1-4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "        𝛿-1-2 := 40-18-00-00-00-00-00-00  # 6.0"
+                       , "      𝛿2-1 := 𝛿-1-2  # 𝔻(ξ.x)"
+                       , "      𝑛-1-5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝕄(𝑛-1-5):"
+                       , "        𝑛-1-6 := Φ.number( φ ↦ 𝜎1:λ )"
+                       , "      𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)"
                        , "  unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
@@ -1788,7 +1788,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
           records <- readProtocol path
-          records `shouldBe` "𝔻(Φ):\n  𝛿.0.1 := 01-\n"
+          records `shouldBe` "𝔻(Φ):\n  𝛿-0-1 := 01-\n"
 
       it "writes the lines in 𝜑 even with --output=xmir" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1796,7 +1796,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          records `shouldEndWith` "    𝕄(𝑛.1.5):\n      𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )\n    𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)\n"
+          records `shouldEndWith` "    𝕄(𝑛-1-5):\n      𝑛-1-6 := Φ.number( φ ↦ 𝜎1:λ )\n    𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)\n"
 
       describe "as XML" $ do
         it "writes the document when the file is named .xml" $
@@ -1809,32 +1809,32 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
                          , "  <morph at=\"Φ\">"
-                         , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\" of=\"𝑛.0.1.plus\"><attr name=\"x\">6</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-2\" by=\"morph\" at=\"Φ\" of=\"𝑛-0-1.plus\"><attr name=\"x\">6</attr></applied>"
                          , "  </morph>"
                          , "  <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "    <dataize at=\"Φ.a🌵0\">"
                          , "      <morph at=\"Φ.a🌵0\">"
-                         , "        <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "        <applied meta=\"𝑛.1.2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">40-14-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "        <applied meta=\"𝑛-1-1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "        <applied meta=\"𝑛-1-2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">40-14-00-00-00-00-00-00:Δ</attr></applied>"
                          , "      </morph>"
-                         , "      <delta meta=\"𝛿.1.1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
+                         , "      <delta meta=\"𝛿-1-1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
                          , "    </dataize>"
-                         , "    <bind meta=\"𝛿1.1\">𝛿.1.1</bind>"
+                         , "    <bind meta=\"𝛿1-1\">𝛿-1-1</bind>"
                          , "    <dataize at=\"Φ.a🌵1\">"
                          , "      <morph at=\"Φ.a🌵1\">"
-                         , "        <applied meta=\"𝑛.1.3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "        <applied meta=\"𝑛.1.4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><attr name=\"φ\">40-18-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "        <applied meta=\"𝑛-1-3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "        <applied meta=\"𝑛-1-4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><attr name=\"φ\">40-18-00-00-00-00-00-00:Δ</attr></applied>"
                          , "      </morph>"
-                         , "      <delta meta=\"𝛿.1.2\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
+                         , "      <delta meta=\"𝛿-1-2\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
                          , "    </dataize>"
-                         , "    <bind meta=\"𝛿2.1\">𝛿.1.2</bind>"
+                         , "    <bind meta=\"𝛿2-1\">𝛿-1-2</bind>"
                          , "    <minted symbol=\"𝜎1\">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>"
-                         , "    <built meta=\"𝑛.1.5\">Φ.number( φ ↦ 𝜎1:λ )</built>"
-                         , "    <morph at=\"𝑛.1.5\">"
-                         , "      <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"𝑛.1.5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
+                         , "    <built meta=\"𝑛-1-5\">Φ.number( φ ↦ 𝜎1:λ )</built>"
+                         , "    <morph at=\"𝑛-1-5\">"
+                         , "      <applied meta=\"𝑛-1-6\" by=\"morph\" at=\"𝑛-1-5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
                          , "    </morph>"
-                         , "    <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
+                         , "    <answer meta=\"𝑛-1-7\">𝑛-1-6</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -1849,7 +1849,7 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol>"
                          , "  <dataize at=\"Φ\">"
-                         , "    <delta meta=\"𝛿.0.1\">01-</delta>"
+                         , "    <delta meta=\"𝛿-0-1\">01-</delta>"
                          ]
 
         it "closes the '<protocol>' root with its msec" $
@@ -1884,7 +1884,7 @@ spec = do
             records <- readProtocol path
             filter (\line -> not (any (`isInfixOf` line) ["<applied ", "<morph ", "</morph>"])) (lines records)
               `shouldContain` [ "    <dataize at=\"Φ.a🌵0\">"
-                              , "      <delta meta=\"𝛿.1.1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
+                              , "      <delta meta=\"𝛿-1-1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
                               , "    </dataize>"
                               ]
 
@@ -1897,7 +1897,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
-                         , "  <delta meta=\"𝛿.0.1\">01-</delta>"
+                         , "  <delta meta=\"𝛿-0-1\">01-</delta>"
                          , "</dataize>"
                          ]
 
@@ -1911,55 +1911,55 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
                          , "  <morph at=\"Φ\">"
-                         , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\" of=\"𝑛.0.1.plus\"><attr name=\"x\">6</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-2\" by=\"morph\" at=\"Φ\" of=\"𝑛-0-1.plus\"><attr name=\"x\">6</attr></applied>"
                          , "    <evaluate λ=\"L_number_plus\" by=\"morph\" at=\"Φ\">"
                          , "      <dataize at=\"Φ.a🌵0\">"
                          , "        <morph at=\"Φ.a🌵0\">"
-                         , "          <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "          <applied meta=\"𝑛.1.2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">40-14-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">40-14-00-00-00-00-00-00:Δ</attr></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿.1.1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
+                         , "        <delta meta=\"𝛿-1-1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
                          , "      </dataize>"
-                         , "      <bind meta=\"𝛿1.1\">𝛿.1.1</bind>"
+                         , "      <bind meta=\"𝛿1-1\">𝛿-1-1</bind>"
                          , "      <dataize at=\"Φ.a🌵1\">"
                          , "        <morph at=\"Φ.a🌵1\">"
-                         , "          <applied meta=\"𝑛.1.3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "          <applied meta=\"𝑛.1.4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><attr name=\"φ\">40-18-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><attr name=\"φ\">40-18-00-00-00-00-00-00:Δ</attr></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿.1.2\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
+                         , "        <delta meta=\"𝛿-1-2\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
                          , "      </dataize>"
-                         , "      <bind meta=\"𝛿2.1\">𝛿.1.2</bind>"
+                         , "      <bind meta=\"𝛿2-1\">𝛿-1-2</bind>"
                          , "      <minted symbol=\"𝜎1\">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>"
-                         , "      <built meta=\"𝑛.1.5\">Φ.number( φ ↦ 𝜎1:λ )</built>"
-                         , "      <morph at=\"𝑛.1.5\">"
-                         , "        <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"𝑛.1.5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
+                         , "      <built meta=\"𝑛-1-5\">Φ.number( φ ↦ 𝜎1:λ )</built>"
+                         , "      <morph at=\"𝑛-1-5\">"
+                         , "        <applied meta=\"𝑛-1-6\" by=\"morph\" at=\"𝑛-1-5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
                          , "      </morph>"
-                         , "      <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
+                         , "      <answer meta=\"𝑛-1-7\">𝑛-1-6</answer>"
                          , "    </evaluate>"
-                         , "    <applied meta=\"𝑛.0.3\" by=\"morph\" at=\"Φ\" of=\"𝑛.1.6.plus\"><attr name=\"x\">7</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-3\" by=\"morph\" at=\"Φ\" of=\"𝑛-1-6.plus\"><attr name=\"x\">7</attr></applied>"
                          , "  </morph>"
                          , "  <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "    <dataize at=\"Φ.a🌵2\">"
                          , "      <morph at=\"Φ.a🌵2\">"
-                         , "        <applied meta=\"𝑛.2.1\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
+                         , "        <applied meta=\"𝑛-2-1\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
                          , "      </morph>"
                          , "    </dataize>"
-                         , "    <dataize meta=\"𝛿1.2\">𝜎1:λ</dataize>"
+                         , "    <dataize meta=\"𝛿1-2\">𝜎1:λ</dataize>"
                          , "    <dataize at=\"Φ.a🌵3\">"
                          , "      <morph at=\"Φ.a🌵3\">"
-                         , "        <applied meta=\"𝑛.2.2\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "        <applied meta=\"𝑛.2.3\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.bytes\"><attr name=\"φ\">40-1C-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "        <applied meta=\"𝑛-2-2\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "        <applied meta=\"𝑛-2-3\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.bytes\"><attr name=\"φ\">40-1C-00-00-00-00-00-00:Δ</attr></applied>"
                          , "      </morph>"
-                         , "      <delta meta=\"𝛿.2.1\" number=\"7.0\">40-1C-00-00-00-00-00-00</delta>"
+                         , "      <delta meta=\"𝛿-2-1\" number=\"7.0\">40-1C-00-00-00-00-00-00</delta>"
                          , "    </dataize>"
-                         , "    <bind meta=\"𝛿2.2\">𝛿.2.1</bind>"
+                         , "    <bind meta=\"𝛿2-2\">𝛿-2-1</bind>"
                          , "    <minted symbol=\"𝜎2\">𝜎1 40-1C-00-00-00-00-00-00</minted>"
-                         , "    <built meta=\"𝑛.2.4\">Φ.number( φ ↦ 𝜎2:λ )</built>"
-                         , "    <morph at=\"𝑛.2.4\">"
-                         , "      <applied meta=\"𝑛.2.5\" by=\"morph\" at=\"𝑛.2.4\" of=\"Φ.number\"><attr name=\"φ\">𝜎2</attr></applied>"
+                         , "    <built meta=\"𝑛-2-4\">Φ.number( φ ↦ 𝜎2:λ )</built>"
+                         , "    <morph at=\"𝑛-2-4\">"
+                         , "      <applied meta=\"𝑛-2-5\" by=\"morph\" at=\"𝑛-2-4\" of=\"Φ.number\"><attr name=\"φ\">𝜎2</attr></applied>"
                          , "    </morph>"
-                         , "    <answer meta=\"𝑛.2.6\">𝑛.2.5</answer>"
+                         , "    <answer meta=\"𝑛-2-6\">𝑛-2-5</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -1975,11 +1975,11 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
                          , "  <evaluate λ=\"L_stand\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
+                         , "    <bind meta=\"𝑛1-1\">01-:Δ</bind>"
                          , "    <known symbol=\"𝜎1\">01-</known>"
-                         , "    <bind meta=\"𝑛2.1\">𝜎1:λ</bind>"
-                         , "    <built meta=\"𝑛.1.1\">𝜎1:λ:z</built>"
-                         , "    <answer meta=\"𝑛.1.2\">𝜎1:λ:z</answer>"
+                         , "    <bind meta=\"𝑛2-1\">𝜎1:λ</bind>"
+                         , "    <built meta=\"𝑛-1-1\">𝜎1:λ:z</built>"
+                         , "    <answer meta=\"𝑛-1-2\">𝜎1:λ:z</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -1995,12 +1995,12 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
                          , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">𝜎1:λ:φ</bind>"
-                         , "    <bind meta=\"𝑛2.1\">𝜎2:λ:φ</bind>"
+                         , "    <bind meta=\"𝑛1-1\">𝜎1:λ:φ</bind>"
+                         , "    <bind meta=\"𝑛2-1\">𝜎2:λ:φ</bind>"
                          , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
-                         , "    <bind meta=\"𝑛3.1\">𝜎3:λ:φ</bind>"
-                         , "    <built meta=\"𝑛.1.1\">𝜎3:λ:φ</built>"
-                         , "    <answer meta=\"𝑛.1.2\">𝜎3:λ:φ</answer>"
+                         , "    <bind meta=\"𝑛3-1\">𝜎3:λ:φ</bind>"
+                         , "    <built meta=\"𝑛-1-1\">𝜎3:λ:φ</built>"
+                         , "    <answer meta=\"𝑛-1-2\">𝜎3:λ:φ</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2016,13 +2016,13 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
                          , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <dataize meta=\"𝛿1.1\">𝜎1:λ</dataize>"
-                         , "    <bind meta=\"𝑛1.1\">𝜎2:λ:φ</bind>"
-                         , "    <bind meta=\"𝑛2.1\">⊥</bind>"
+                         , "    <dataize meta=\"𝛿1-1\">𝜎1:λ</dataize>"
+                         , "    <bind meta=\"𝑛1-1\">𝜎2:λ:φ</bind>"
+                         , "    <bind meta=\"𝑛2-1\">⊥</bind>"
                          , "    <terminate symbol=\"𝜎1\" branch=\"right\"/>"
-                         , "    <bind meta=\"𝑛3.1\">𝜎2:λ:φ</bind>"
-                         , "    <built meta=\"𝑛.1.1\">𝜎2:λ:φ</built>"
-                         , "    <answer meta=\"𝑛.1.2\">𝜎2:λ:φ</answer>"
+                         , "    <bind meta=\"𝑛3-1\">𝜎2:λ:φ</bind>"
+                         , "    <built meta=\"𝑛-1-1\">𝜎2:λ:φ</built>"
+                         , "    <answer meta=\"𝑛-1-2\">𝜎2:λ:φ</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2038,11 +2038,11 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
                          , "  <evaluate λ=\"L_pair\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
+                         , "    <bind meta=\"𝑛1-1\">01-:Δ</bind>"
                          , "    <minted symbol=\"𝜎1\"/>"
                          , "    <minted symbol=\"𝜎2\"/>"
-                         , "    <built meta=\"𝑛.1.1\">⟦ left ↦ 𝜎1:λ, right ↦ 𝜎2:λ ⟧</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ left ↦ 𝜎1:λ, right ↦ 𝜎2:λ ⟧</answer>"
+                         , "    <built meta=\"𝑛-1-1\">⟦ left ↦ 𝜎1:λ, right ↦ 𝜎2:λ ⟧</built>"
+                         , "    <answer meta=\"𝑛-1-2\">⟦ left ↦ 𝜎1:λ, right ↦ 𝜎2:λ ⟧</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2056,8 +2056,8 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
-                         , "  <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><attr name=\"x\">𝜎1</attr></applied>"
-                         , "  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr></with><e>𝑛.0.1</e></deferred>"
+                         , "  <applied meta=\"𝑛-0-1\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><attr name=\"x\">𝜎1</attr></applied>"
+                         , "  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr></with><e>𝑛-0-1</e></deferred>"
                          , "</morph>"
                          ]
 
@@ -2067,7 +2067,7 @@ spec = do
             withStdin "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
               testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>𝑛.0.2</e></deferred>"]
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>𝑛-0-2</e></deferred>"]
 
         it "names the object a deferred copy was made of after the walk wrote an answer into its ρ" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2076,7 +2076,7 @@ spec = do
               withStdin "⟦ bytes(φ) ↦ ⟦⟧, dataized(target) ↦ L_dataized:λ, joined(items) ↦ ⟦ φ ↦ step( tup ↦ items, s ↦ sep ), sep ↦ Φ.dataized( target ↦ items ), step(ρ, tup, s) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
                 testCLISucceeded ["morph", "--deep", "--symbolic=" ++ dataized, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr><attr name=\"s\">𝜎2</attr></with><e>𝑛.0.4</e></deferred>"]
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr><attr name=\"s\">𝜎2</attr></with><e>𝑛-0-4</e></deferred>"]
 
         it "writes a question mark for an argument of a deferred copy that is no bare symbol" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2084,7 +2084,7 @@ spec = do
             withStdin "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, y ↦ Φ.box( x ↦ ⟦ λ ⤍ 𝜎1 ⟧, w ↦ ⟦ z ↦ Φ ⟧ ) ⟧" $
               testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">?</attr></with><e>𝑛.0.2</e></deferred>"]
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">?</attr></with><e>𝑛-0-2</e></deferred>"]
 
         it "writes the object a deferred copy was made of whatever --abridged says" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2092,7 +2092,7 @@ spec = do
             withStdin "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, y ↦ Φ.joined( items ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧" $
               testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--abridged=20", "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>𝑛.0.2</e></deferred>"]
+            lines records `shouldContain` ["  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>𝑛-0-2</e></deferred>"]
 
         it "writes no object for a deferred copy of a formation the world does not declare" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2100,7 +2100,7 @@ spec = do
             withStdin "⟦ wrap(v) ↦ ⟦⟧, y ↦ Φ.wrap( v ↦ ⟦ b(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.b( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" $
               testCLISucceeded ["morph", "--deep", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["  <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ.y\" of=\"⟦ x ↦ ∅, φ ↦ x.next ⟧\"><attr name=\"x\">𝜎1</attr></applied>", "  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\"><e>𝑛.0.2</e></deferred>"]
+            lines records `shouldContain` ["  <applied meta=\"𝑛-0-2\" by=\"morph\" at=\"Φ.y\" of=\"⟦ x ↦ ∅, φ ↦ x.next ⟧\"><attr name=\"x\">𝜎1</attr></applied>", "  <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.y\"><e>𝑛-0-2</e></deferred>"]
 
         it "writes the copy a cut answers as a call of the object it was made of" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2109,7 +2109,7 @@ spec = do
               withStdin "⟦ num(φ) ↦ ⟦⟧, box(n) ↦ ⟦ φ ↦ Φ.loop( x ↦ Φ.box( n ↦ ξ.n ) ) ⟧, loop(x) ↦ L_loop:λ, y ↦ Φ.loop( x ↦ Φ.box( n ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ) ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=plausible", "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["        <looped symbol=\"𝜎2\" by=\"morph\" match=\"plausible\" at=\"Φ.a🌵0.φ\" of=\"Φ.box\"><with><attr name=\"n\">𝜎1</attr></with><e>𝑛.0.1</e></looped>"]
+            lines records `shouldContain` ["        <looped symbol=\"𝜎2\" by=\"morph\" match=\"plausible\" at=\"Φ.a🌵0.φ\" of=\"Φ.box\"><with><attr name=\"n\">𝜎1</attr></with><e>𝑛-0-1</e></looped>"]
 
         it "writes no 'minted' element for a firing minting nothing" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2122,9 +2122,9 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.y\">"
                          , "  <evaluate λ=\"L_keep\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1.1\">01-:Δ</bind>"
-                         , "    <built meta=\"𝑛.1.1\">01-:Δ:z</built>"
-                         , "    <answer meta=\"𝑛.1.2\">01-:Δ:z</answer>"
+                         , "    <bind meta=\"𝑛1-1\">01-:Δ</bind>"
+                         , "    <built meta=\"𝑛-1-1\">01-:Δ:z</built>"
+                         , "    <answer meta=\"𝑛-1-2\">01-:Δ:z</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2139,55 +2139,55 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
                          , "  <morph at=\"Φ\">"
-                         , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\" of=\"𝑛.0.1.plus\"><attr name=\"x\">6.plus( 7 )</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-2\" by=\"morph\" at=\"Φ\" of=\"𝑛-0-1.plus\"><attr name=\"x\">6.plus( 7 )</attr></applied>"
                          , "  </morph>"
                          , "  <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ\">"
                          , "    <dataize at=\"Φ.a🌵0\">"
                          , "      <morph at=\"Φ.a🌵0\">"
-                         , "        <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "        <applied meta=\"𝑛.1.2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">40-14-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "        <applied meta=\"𝑛-1-1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "        <applied meta=\"𝑛-1-2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">40-14-00-00-00-00-00-00:Δ</attr></applied>"
                          , "      </morph>"
-                         , "      <delta meta=\"𝛿.1.1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
+                         , "      <delta meta=\"𝛿-1-1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
                          , "    </dataize>"
-                         , "    <bind meta=\"𝛿1.1\">𝛿.1.1</bind>"
+                         , "    <bind meta=\"𝛿1-1\">𝛿-1-1</bind>"
                          , "    <dataize at=\"Φ.a🌵1\">"
                          , "      <morph at=\"Φ.a🌵1\">"
-                         , "        <applied meta=\"𝑛.1.3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "        <applied meta=\"𝑛.1.4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"𝑛.1.3.plus\"><attr name=\"x\">7</attr></applied>"
+                         , "        <applied meta=\"𝑛-1-3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "        <applied meta=\"𝑛-1-4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"𝑛-1-3.plus\"><attr name=\"x\">7</attr></applied>"
                          , "      </morph>"
                          , "      <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"Φ.a🌵1\">"
                          , "        <dataize at=\"Φ.a🌵2\">"
                          , "          <morph at=\"Φ.a🌵2\">"
-                         , "            <applied meta=\"𝑛.2.1\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "            <applied meta=\"𝑛.2.2\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.bytes\"><attr name=\"φ\">40-18-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "            <applied meta=\"𝑛-2-1\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "            <applied meta=\"𝑛-2-2\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.bytes\"><attr name=\"φ\">40-18-00-00-00-00-00-00:Δ</attr></applied>"
                          , "          </morph>"
-                         , "          <delta meta=\"𝛿.2.1\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
+                         , "          <delta meta=\"𝛿-2-1\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
                          , "        </dataize>"
-                         , "        <bind meta=\"𝛿1.2\">𝛿.2.1</bind>"
+                         , "        <bind meta=\"𝛿1-2\">𝛿-2-1</bind>"
                          , "        <dataize at=\"Φ.a🌵3\">"
                          , "          <morph at=\"Φ.a🌵3\">"
-                         , "            <applied meta=\"𝑛.2.3\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "            <applied meta=\"𝑛.2.4\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.bytes\"><attr name=\"φ\">40-1C-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "            <applied meta=\"𝑛-2-3\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "            <applied meta=\"𝑛-2-4\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.bytes\"><attr name=\"φ\">40-1C-00-00-00-00-00-00:Δ</attr></applied>"
                          , "          </morph>"
-                         , "          <delta meta=\"𝛿.2.2\" number=\"7.0\">40-1C-00-00-00-00-00-00</delta>"
+                         , "          <delta meta=\"𝛿-2-2\" number=\"7.0\">40-1C-00-00-00-00-00-00</delta>"
                          , "        </dataize>"
-                         , "        <bind meta=\"𝛿2.2\">𝛿.2.2</bind>"
+                         , "        <bind meta=\"𝛿2-2\">𝛿-2-2</bind>"
                          , "        <minted symbol=\"𝜎1\">40-18-00-00-00-00-00-00 40-1C-00-00-00-00-00-00</minted>"
-                         , "        <built meta=\"𝑛.2.5\">Φ.number( φ ↦ 𝜎1:λ )</built>"
-                         , "        <morph at=\"𝑛.2.5\">"
-                         , "          <applied meta=\"𝑛.2.6\" by=\"morph\" at=\"𝑛.2.5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
+                         , "        <built meta=\"𝑛-2-5\">Φ.number( φ ↦ 𝜎1:λ )</built>"
+                         , "        <morph at=\"𝑛-2-5\">"
+                         , "          <applied meta=\"𝑛-2-6\" by=\"morph\" at=\"𝑛-2-5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
                          , "        </morph>"
-                         , "        <answer meta=\"𝑛.2.7\">𝑛.2.6</answer>"
+                         , "        <answer meta=\"𝑛-2-7\">𝑛-2-6</answer>"
                          , "      </evaluate>"
                          , "    </dataize>"
-                         , "    <dataize meta=\"𝛿2.1\">𝜎1:λ</dataize>"
+                         , "    <dataize meta=\"𝛿2-1\">𝜎1:λ</dataize>"
                          , "    <minted symbol=\"𝜎2\">40-14-00-00-00-00-00-00 𝜎1</minted>"
-                         , "    <built meta=\"𝑛.1.5\">Φ.number( φ ↦ 𝜎2:λ )</built>"
-                         , "    <morph at=\"𝑛.1.5\">"
-                         , "      <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"𝑛.1.5\" of=\"Φ.number\"><attr name=\"φ\">𝜎2</attr></applied>"
+                         , "    <built meta=\"𝑛-1-5\">Φ.number( φ ↦ 𝜎2:λ )</built>"
+                         , "    <morph at=\"𝑛-1-5\">"
+                         , "      <applied meta=\"𝑛-1-6\" by=\"morph\" at=\"𝑛-1-5\" of=\"Φ.number\"><attr name=\"φ\">𝜎2</attr></applied>"
                          , "    </morph>"
-                         , "    <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
+                         , "    <answer meta=\"𝑛-1-7\">𝑛-1-6</answer>"
                          , "  </evaluate>"
                          , "</dataize>"
                          ]
@@ -2202,31 +2202,31 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
                          , "  <morph at=\"Φ\">"
-                         , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\" of=\"𝑛.0.1.times\"><attr name=\"x\">3</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-2\" by=\"morph\" at=\"Φ\" of=\"𝑛-0-1.times\"><attr name=\"x\">3</attr></applied>"
                          , "    <evaluate λ=\"L_number_times\" by=\"morph\" at=\"Φ\">"
                          , "      <dataize at=\"Φ.a🌵0\">"
                          , "        <morph at=\"Φ.a🌵0\">"
-                         , "          <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "          <applied meta=\"𝑛.1.2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">40-00-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">40-00-00-00-00-00-00-00:Δ</attr></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿.1.1\" number=\"2.0\">40-00-00-00-00-00-00-00</delta>"
+                         , "        <delta meta=\"𝛿-1-1\" number=\"2.0\">40-00-00-00-00-00-00-00</delta>"
                          , "      </dataize>"
-                         , "      <bind meta=\"𝛿1.1\">𝛿.1.1</bind>"
+                         , "      <bind meta=\"𝛿1-1\">𝛿-1-1</bind>"
                          , "      <dataize at=\"Φ.a🌵1\">"
                          , "        <morph at=\"Φ.a🌵1\">"
-                         , "          <applied meta=\"𝑛.1.3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )</attr></applied>"
-                         , "          <applied meta=\"𝑛.1.4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><attr name=\"φ\">40-08-00-00-00-00-00-00:Δ</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><attr name=\"φ\">40-08-00-00-00-00-00-00:Δ</attr></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿.1.2\" number=\"3.0\">40-08-00-00-00-00-00-00</delta>"
+                         , "        <delta meta=\"𝛿-1-2\" number=\"3.0\">40-08-00-00-00-00-00-00</delta>"
                          , "      </dataize>"
-                         , "      <bind meta=\"𝛿2.1\">𝛿.1.2</bind>"
+                         , "      <bind meta=\"𝛿2-1\">𝛿-1-2</bind>"
                          , "      <minted symbol=\"𝜎1\">40-00-00-00-00-00-00-00 40-08-00-00-00-00-00-00</minted>"
-                         , "      <built meta=\"𝑛.1.5\">Φ.number( φ ↦ 𝜎1:λ )</built>"
-                         , "      <morph at=\"𝑛.1.5\">"
-                         , "        <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"𝑛.1.5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
+                         , "      <built meta=\"𝑛-1-5\">Φ.number( φ ↦ 𝜎1:λ )</built>"
+                         , "      <morph at=\"𝑛-1-5\">"
+                         , "        <applied meta=\"𝑛-1-6\" by=\"morph\" at=\"𝑛-1-5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
                          , "      </morph>"
-                         , "      <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
+                         , "      <answer meta=\"𝑛-1-7\">𝑛-1-6</answer>"
                          , "    </evaluate>"
                          , "  </morph>"
                          , "  <unanswered λ=\"L_number_nope\" by=\"dataize\">L_number_nope:λ</unanswered>"
@@ -2256,34 +2256,34 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
                          , "  <morph at=\"Φ\">"
-                         , "    <applied meta=\"𝑛.0.1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ )</attr></applied>"
-                         , "    <applied meta=\"𝑛.0.2\" by=\"morph\" at=\"Φ\" of=\"𝑛.0.1.times\"><attr name=\"x\">Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧ ) )</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-1\" by=\"morph\" at=\"Φ\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ )</attr></applied>"
+                         , "    <applied meta=\"𝑛-0-2\" by=\"morph\" at=\"Φ\" of=\"𝑛-0-1.times\"><attr name=\"x\">Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧ ) )</attr></applied>"
                          , "    <evaluate λ=\"L_number_times\" by=\"morph\" at=\"Φ\">"
                          , "      <dataize at=\"Φ.a🌵0\">"
                          , "        <morph at=\"Φ.a🌵0\">"
-                         , "          <applied meta=\"𝑛.1.1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ )</attr></applied>"
-                         , "          <applied meta=\"𝑛.1.2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ )</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><attr name=\"φ\">⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧</attr></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿.1.1\" number=\"2.0\">40-00-00-00-00-00-00-00</delta>"
+                         , "        <delta meta=\"𝛿-1-1\" number=\"2.0\">40-00-00-00-00-00-00-00</delta>"
                          , "      </dataize>"
-                         , "      <bind meta=\"𝛿1.1\">𝛿.1.1</bind>"
+                         , "      <bind meta=\"𝛿1-1\">𝛿-1-1</bind>"
                          , "      <dataize at=\"Φ.a🌵1\">"
                          , "        <morph at=\"Φ.a🌵1\">"
-                         , "          <applied meta=\"𝑛.1.3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧ )</attr></applied>"
-                         , "          <applied meta=\"𝑛.1.4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><attr name=\"φ\">⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><attr name=\"φ\">Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧ )</attr></applied>"
+                         , "          <applied meta=\"𝑛-1-4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><attr name=\"φ\">⟦ Δ ⤍ 40-08-00-00-00-00-00-00 ⟧</attr></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿.1.2\" number=\"3.0\">40-08-00-00-00-00-00-00</delta>"
+                         , "        <delta meta=\"𝛿-1-2\" number=\"3.0\">40-08-00-00-00-00-00-00</delta>"
                          , "      </dataize>"
-                         , "      <bind meta=\"𝛿2.1\">𝛿.1.2</bind>"
+                         , "      <bind meta=\"𝛿2-1\">𝛿-1-2</bind>"
                          , "      <minted symbol=\"𝜎1\">40-00-00-00-00-00-00-00 40-08-00-00-00-00-00-00</minted>"
-                         , "      <built meta=\"𝑛.1.5\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
-                         , "      <morph at=\"𝑛.1.5\">"
-                         , "        <applied meta=\"𝑛.1.6\" by=\"morph\" at=\"𝑛.1.5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
+                         , "      <built meta=\"𝑛-1-5\">Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )</built>"
+                         , "      <morph at=\"𝑛-1-5\">"
+                         , "        <applied meta=\"𝑛-1-6\" by=\"morph\" at=\"𝑛-1-5\" of=\"Φ.number\"><attr name=\"φ\">𝜎1</attr></applied>"
                          , "      </morph>"
-                         , "      <answer meta=\"𝑛.1.7\">𝑛.1.6</answer>"
+                         , "      <answer meta=\"𝑛-1-7\">𝑛-1-6</answer>"
                          , "    </evaluate>"
                          , "  </morph>"
-                         , "  <unanswered λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ 𝑛.1.6, λ ⤍ L_number_nope ⟧</unanswered>"
+                         , "  <unanswered λ=\"L_number_nope\" by=\"dataize\">⟦ ρ ↦ 𝑛-1-6, λ ⤍ L_number_nope ⟧</unanswered>"
                          , "</dataize>"
                          ]
 
@@ -2298,10 +2298,10 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.x\">"
                          , "  <evaluate λ=\"L_pick\" by=\"morph\" at=\"Φ.x\">"
-                         , "    <bind meta=\"𝑛1.1\">⊥</bind>"
+                         , "    <bind meta=\"𝑛1-1\">⊥</bind>"
                          , "    <minted symbol=\"𝜎1\"/>"
-                         , "    <built meta=\"𝑛.1.1\">⟦ λ ⤍ 𝜎1 ⟧</built>"
-                         , "    <answer meta=\"𝑛.1.2\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
+                         , "    <built meta=\"𝑛-1-1\">⟦ λ ⤍ 𝜎1 ⟧</built>"
+                         , "    <answer meta=\"𝑛-1-2\">⟦ λ ⤍ 𝜎1 ⟧</answer>"
                          , "  </evaluate>"
                          , "  <unanswered λ=\"𝜎1\" by=\"morph\">⟦ λ ⤍ 𝜎1 ⟧</unanswered>"
                          , "</morph>"
@@ -2346,25 +2346,25 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛.0.1 := 2"
-                       , "    𝑛.0.2 := 𝑛.0.1.times( x ↦ 3 )"
+                       , "    𝑛-0-1 := 2"
+                       , "    𝑛-0-2 := 𝑛-0-1.times( x ↦ 3 )"
                        , "    𝔼(L_number_times):"
                        , "      𝔻(Φ.a🌵0):"
                        , "        𝕄(Φ.a🌵0):"
-                       , "          𝑛.1.1 := 2"
-                       , "          𝑛.1.2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
-                       , "        𝛿.1.1 := 40-00-00-00-00-00-00-00  # 2.0"
-                       , "      𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)"
+                       , "          𝑛-1-1 := 2"
+                       , "          𝑛-1-2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
+                       , "        𝛿-1-1 := 40-00-00-00-00-00-00-00  # 2.0"
+                       , "      𝛿1-1 := 𝛿-1-1  # 𝔻(ξ.ρ)"
                        , "      𝔻(Φ.a🌵1):"
                        , "        𝕄(Φ.a🌵1):"
-                       , "          𝑛.1.3 := 3"
-                       , "          𝑛.1.4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
-                       , "        𝛿.1.2 := 40-08-00-00-00-00-00-00  # 3.0"
-                       , "      𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)"
-                       , "      𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-                       , "      𝕄(𝑛.1.5):"
-                       , "        𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
+                       , "          𝑛-1-3 := 3"
+                       , "          𝑛-1-4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
+                       , "        𝛿-1-2 := 40-08-00-00-00-00-00-00  # 3.0"
+                       , "      𝛿2-1 := 𝛿-1-2  # 𝔻(ξ.x)"
+                       , "      𝑛-1-5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝕄(𝑛-1-5):"
+                       , "        𝑛-1-6 := Φ.number( φ ↦ 𝜎1:λ )"
+                       , "      𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)"
                        , "  unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
                        ]
 
@@ -2601,26 +2601,26 @@ spec = do
         records <- readProtocol path
         lines records
           `shouldBe` [ "𝕄(Φ.φ):"
-                     , "  𝑛.0.1 := 5"
-                     , "  𝑛.0.2 := 𝑛.0.1.plus( x ↦ 6 )"
+                     , "  𝑛-0-1 := 5"
+                     , "  𝑛-0-2 := 𝑛-0-1.plus( x ↦ 6 )"
                      , "  𝔼(L_number_plus):"
                      , "    𝔻(Φ.a🌵0):"
                      , "      𝕄(Φ.a🌵0):"
-                     , "        𝑛.1.1 := 5"
-                     , "        𝑛.1.2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                     , "      𝛿.1.1 := 40-14-00-00-00-00-00-00  # 5.0"
-                     , "    𝛿1.1 := 𝛿.1.1  # 𝔻(ξ.ρ)"
+                     , "        𝑛-1-1 := 5"
+                     , "        𝑛-1-2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                     , "      𝛿-1-1 := 40-14-00-00-00-00-00-00  # 5.0"
+                     , "    𝛿1-1 := 𝛿-1-1  # 𝔻(ξ.ρ)"
                      , "    𝔻(Φ.a🌵1):"
                      , "      𝕄(Φ.a🌵1):"
-                     , "        𝑛.1.3 := 6"
-                     , "        𝑛.1.4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                     , "      𝛿.1.2 := 40-18-00-00-00-00-00-00  # 6.0"
-                     , "    𝛿2.1 := 𝛿.1.2  # 𝔻(ξ.x)"
-                     , "    𝑛.1.5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-                     , "    𝕄(𝑛.1.5):"
-                     , "      𝑛.1.6 := Φ.number( φ ↦ 𝜎1:λ )"
-                     , "    𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
-                     , "  𝑛.0.3 := 𝑛.1.6.plus( x ↦ 7 )"
+                     , "        𝑛-1-3 := 6"
+                     , "        𝑛-1-4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                     , "      𝛿-1-2 := 40-18-00-00-00-00-00-00  # 6.0"
+                     , "    𝛿2-1 := 𝛿-1-2  # 𝔻(ξ.x)"
+                     , "    𝑛-1-5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                     , "    𝕄(𝑛-1-5):"
+                     , "      𝑛-1-6 := Φ.number( φ ↦ 𝜎1:λ )"
+                     , "    𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)"
+                     , "  𝑛-0-3 := 𝑛-1-6.plus( x ↦ 7 )"
                      ]
 
     it "saves morphing steps to dir with --steps-dir" $
@@ -2784,7 +2784,7 @@ spec = do
           >>= (`shouldBe` ["  𝕄(Φ.a):", "    𝔼(L_number_plus):", "    𝔼(L_number_plus):", "  𝕄(Φ.b):", "    𝔼(L_number_plus):", "    𝔼(L_number_plus):"]) . filter (\line -> any (`isPrefixOf` line) ["  𝕄(", "    𝔼("])
 
       it "numbers the symbols of the protocol the way the answer numbers them" $
-        recorded ["--jobs=2"] >>= (`shouldSatisfy` elem "      𝑛.4.3 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )  # 𝑛")
+        recorded ["--jobs=2"] >>= (`shouldSatisfy` elem "      𝑛-4-3 := Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ )  # 𝑛")
 
       it "names what a binding mints after the binding" $
         recorded ["--jobs=2"] >>= (`shouldSatisfy` any (isInfixOf "𝔻(Φ.a🌵4-0)"))
@@ -2897,16 +2897,16 @@ spec = do
             ["b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"]
 
       it "reduces the operands of a formation once per binding spelling it under proven" $
-        recorded "proven" >>= (`shouldSatisfy` ((== 4) . length . filter (isInfixOf "𝛿1.")))
+        recorded "proven" >>= (`shouldSatisfy` ((== 4) . length . filter (isInfixOf "𝛿1-")))
 
       it "reduces the operands of a formation once for the run under plausible" $
-        recorded "plausible" >>= (`shouldSatisfy` ((== 2) . length . filter (isInfixOf "𝛿1.")))
+        recorded "plausible" >>= (`shouldSatisfy` ((== 2) . length . filter (isInfixOf "𝛿1-")))
 
       it "writes a recalled firing at its own site under plausible" $
         recorded "plausible" >>= (`shouldSatisfy` ((== 4) . length . filter (isInfixOf "𝔼(L_number_plus)")))
 
       it "answers a recalled firing with the line of the first under plausible" $
-        recorded "plausible" >>= (`shouldContain` ["      𝑛.4.2 := 𝑛.2.5  # 𝕄(𝑛.4.1)"])
+        recorded "plausible" >>= (`shouldContain` ["      𝑛-4-2 := 𝑛-2-5  # 𝕄(𝑛-4-1)"])
 
       it "dataizes to the same datum under plausible" $
         withStdin chained $

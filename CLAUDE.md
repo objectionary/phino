@@ -190,7 +190,7 @@ a run that fails still leaves a complete file; the markup references a value by
 the symbol it denotes and spells it `𝜎1` as everywhere else, where the text
 names a line by counting.
 
-An application writes a line too, `𝑛.1.1 := …` (`EvApplied`, #1745). A `Step`
+An application writes a line too, `𝑛-1-1 := …` (`EvApplied`, #1745). A `Step`
 answers the term it made and the pairs of redex and result it replaced, and
 `rewrite'` hands every pair where an application became a formation other than
 its head, which of the built-in rules only `copy` does, to `_saveMade` of
@@ -262,8 +262,8 @@ the block it stands in is the same judgment at the same site (`_opened` of
 merge two sibling blocks of one heading, and drop the comment of a line that
 repeats the innermost block; a firing is a block with no heading, so a line in
 it keeps its comment. The morphing of an answer is named after the answer
-(`resited`), as `𝕄(𝑛.1.5):`. The datum `delta` finds closes a `𝔻` block as
-`𝛿.1.1 := …` (`EvDelta`), commented with the double eight bytes hold (`ieee`,
+(`resited`), as `𝕄(𝑛-1-5):`. The datum `delta` finds closes a `𝔻` block as
+`𝛿-1-1 := …` (`EvDelta`), commented with the double eight bytes hold (`ieee`,
 the `number` of `<delta>` in the markup), and the operand line right after
 names it. A cut is a line too, `looped(…)`
 (`EvLooped`), written by `enter` where the refused frame would have opened,

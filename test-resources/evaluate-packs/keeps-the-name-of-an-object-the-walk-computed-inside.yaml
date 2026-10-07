@@ -4,9 +4,9 @@
 # yamllint disable rule:line-length
 # The '--deep' walk stands its answers in the place of what it computed, inside
 # the bindings of the object it walks, and makes no new object by doing so
-# (#1757). The operand of 'L_entry' is the object 'Φ.dbl' made, named 𝑛.1.1 by
+# (#1757). The operand of 'L_entry' is the object 'Φ.dbl' made, named 𝑛-1-1 by
 # its 'applied' line, and the walk computes its 'φ' and its 'v' before 𝕄 hands
-# it back. It is still 𝑛.1.1 then: in the line binding the operand, in the term
+# it back. It is still 𝑛-1-1 then: in the line binding the operand, in the term
 # the entry wrote, in the argument 'root' was applied to, and in the formation
 # 𝔻 gets into when 'L_root' brings that argument down.
 symbolic: |
@@ -33,32 +33,32 @@ result: '𝜎2:λ'
 protocol: |
   𝕄(Φ.y):
     𝕄(Φ.y.x):
-      𝑛.0.1 := Φ.num( φ ↦ 2A-:Δ )
-      𝑛.0.2 := Φ.dbl( v ↦ 𝑛.0.1 )
+      𝑛-0-1 := Φ.num( φ ↦ 2A-:Δ )
+      𝑛-0-2 := Φ.dbl( v ↦ 𝑛-0-1 )
     𝔼(L_entry):
       𝕄(Φ.a🌵0):
-        𝑛.1.1 := Φ.dbl( v ↦ 𝑛.0.1 )
+        𝑛-1-1 := Φ.dbl( v ↦ 𝑛-0-1 )
         𝕄(Φ.a🌵0.v):
-          𝑛.1.2 := Φ.num( φ ↦ 2A-:Δ )
+          𝑛-1-2 := Φ.num( φ ↦ 2A-:Δ )
         𝕄(Φ.a🌵0.φ):
-          𝑛.1.3 := Φ.num( φ ↦ 2A-:Δ )
-          𝑛.1.4 := Φ.num( φ ↦ 2A-:Δ )
+          𝑛-1-3 := Φ.num( φ ↦ 2A-:Δ )
+          𝑛-1-4 := Φ.num( φ ↦ 2A-:Δ )
           𝔼(L_twice):
             𝔻(Φ.a🌵1):
               𝕄(Φ.a🌵1):
-                𝑛.2.1 := Φ.num( φ ↦ 2A-:Δ )
-              𝛿.2.1 := 2A-
-            𝛿1.2 := 𝛿.2.1  # 𝔻(ξ.ρ)
-            𝑛.2.2 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
-            𝕄(𝑛.2.2):
-              𝑛.2.3 := Φ.num( φ ↦ 𝜎1:λ )
-            𝑛.2.4 := 𝑛.2.3  # 𝕄(𝑛.2.2)
-      𝑛1.1 := 𝑛.1.1  # 𝕄(ξ.x)
-      𝑛.1.5 := Φ.root( v ↦ 𝑛.1.1 )  # 𝑛
-      𝕄(𝑛.1.5):
-        𝑛.1.6 := Φ.root( v ↦ 𝑛.1.1 )
-      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)
+                𝑛-2-1 := Φ.num( φ ↦ 2A-:Δ )
+              𝛿-2-1 := 2A-
+            𝛿1-2 := 𝛿-2-1  # 𝔻(ξ.ρ)
+            𝑛-2-2 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
+            𝕄(𝑛-2-2):
+              𝑛-2-3 := Φ.num( φ ↦ 𝜎1:λ )
+            𝑛-2-4 := 𝑛-2-3  # 𝕄(𝑛-2-2)
+      𝑛1-1 := 𝑛-1-1  # 𝕄(ξ.x)
+      𝑛-1-5 := Φ.root( v ↦ 𝑛-1-1 )  # 𝑛
+      𝕄(𝑛-1-5):
+        𝑛-1-6 := Φ.root( v ↦ 𝑛-1-1 )
+      𝑛-1-7 := 𝑛-1-6  # 𝕄(𝑛-1-5)
     𝔼(L_root):
-      𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.v)
-      𝑛.3.1 := 𝜎2:λ  # 𝑛
-      𝑛.3.2 := 𝜎2:λ  # 𝕄(𝑛.3.1)
+      𝛿1-3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.v)
+      𝑛-3-1 := 𝜎2:λ  # 𝑛
+      𝑛-3-2 := 𝜎2:λ  # 𝕄(𝑛-3-1)
