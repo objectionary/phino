@@ -856,11 +856,16 @@ $ cat atoms.xml
 
 <!-- markdownlint-enable MD013 -->
 
-The root is the run itself, named after the judgment it ran — `<dataize>` for a
-𝔻, `<morph>` for a 𝕄 — with `at` naming the term it was aimed at, which is
-what the text format opens with as `𝔻(Φ)`. `<evaluate>` is one firing of 𝔼, `λ`
-naming the entry that answered it, `by` naming the judgment that asked for the
-firing — the same word the root is named after and an `<unanswered>` carries —
+The root is `<protocol>`, and the run stands inside it, named after the
+judgment it ran — `<dataize>` for a 𝔻, `<morph>` for a 𝕄 — with `at` naming
+the term it was aimed at, which is what the text format opens with as `𝔻(Φ)`.
+After the run the root holds `<msec>`, `<firings>` and `<fps>`: how long the
+run took, how many λ functions it fired, and how many it fired per second. The
+text format ends with the same three as `msec(…)`, `firings(…)` and `fps(…)`.
+The examples here leave them out, since the time differs from run to run.
+`<evaluate>` is one firing of 𝔼, `λ` naming the entry that answered it, `by`
+naming the judgment that asked for the firing — the same word the run is named
+after and an `<unanswered>` carries —
 and `at` naming the site it was fired at. The text format writes those two as
 the comment of its line, `𝔻(Φ)`.
 A nested `<dataize at="Φ.a🌵0">` is a dataization 𝔻 started through `box`,
@@ -877,7 +882,7 @@ operand came down to data. `<dataize>` inside a firing is the other thing a
 `dataize` operand may come to, the datum manufactured for an unknown, and holds
 the formation that unknown names rather than the 42 standing for it: a `𝜎` is
 the name of a λ function and no term of its own, so what 𝔻 was applied to is
-`𝜎2:λ` and never `𝜎2` alone. It carries `meta` where the root carries
+`𝜎2:λ` and never `𝜎2` alone. It carries `meta` where the run carries
 `at`, the same difference the text format draws between `𝔻(Φ)` at the top
 and `𝛿1.2 := 𝔻(…)` in a block. The name of the element is what tells a
 manufactured datum from data, the way `𝔻(…)` does in the text format, so
