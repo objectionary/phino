@@ -1270,7 +1270,7 @@ spec = do
               []
           records <- readProtocol path
           lines records
-            `shouldBe` [ "𝔻(Φ.t)"
+            `shouldBe` [ "𝔻(Φ.t):"
                        , "  applied(𝑛.0.1) := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.t)"
                        , "  formation(𝑛.0.1)  # 𝔻(Φ.t)"
                        , "    applied(𝑛.0.2) := Φ.cyc( x ↦ ⟦⟧ )  # 𝕄(Φ.t)"
@@ -1465,7 +1465,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
           records <- readProtocol path
-          records `shouldBe` "𝔻(Φ)\n"
+          records `shouldBe` "𝔻(Φ):\n"
 
       it "closes the protocol with its msec on the third line from the end" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1506,11 +1506,11 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
-            `shouldBe` [ "𝔻(Φ)"
+            `shouldBe` [ "𝔻(Φ):"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
                        , "    applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)"
-                       , "    𝔼(L_number_plus)  # 𝔻(Φ)"
+                       , "    𝔼(L_number_plus):  # 𝔻(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
                        , "        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)"
@@ -1534,11 +1534,11 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
-            `shouldBe` [ "𝔻(Φ)"
+            `shouldBe` [ "𝔻(Φ):"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ).plus( 7 ) ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
                        , "    applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)"
-                       , "    𝔼(L_number_plus)  # 𝕄(Φ)"
+                       , "    𝔼(L_number_plus):  # 𝕄(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
                        , "        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)"
@@ -1553,7 +1553,7 @@ spec = do
                        , "      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)"
                        , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
                        , "    applied(𝑛.0.3) := 𝑛.1.6.plus( x ↦ 7 )  # 𝕄(Φ)"
-                       , "    𝔼(L_number_plus)  # 𝔻(Φ)"
+                       , "    𝔼(L_number_plus):  # 𝔻(Φ)"
                        , "      applied(𝑛.2.1) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵2)"
                        , "      formation(𝑛.2.1)  # 𝔻(Φ.a🌵2)"
                        , "      𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
@@ -1575,11 +1575,11 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
-            `shouldBe` [ "𝔻(Φ)"
+            `shouldBe` [ "𝔻(Φ):"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧, φ ↦ 5.plus( 6 ).times( 7 ) ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
                        , "    applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)"
-                       , "    𝔼(L_number_plus)  # 𝕄(Φ)"
+                       , "    𝔼(L_number_plus):  # 𝕄(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
                        , "        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)"
@@ -1594,7 +1594,7 @@ spec = do
                        , "      applied(𝑛.1.6) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ)"
                        , "      𝑛.1.7 := 𝑛.1.6  # 𝕄(𝑛.1.5)"
                        , "    applied(𝑛.0.3) := 𝑛.1.6.times( x ↦ 7 )  # 𝕄(Φ)"
-                       , "    𝔼(L_number_times)  # 𝔻(Φ)"
+                       , "    𝔼(L_number_times):  # 𝔻(Φ)"
                        , "      applied(𝑛.2.1) := Φ.number( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵2)"
                        , "      formation(𝑛.2.1)  # 𝔻(Φ.a🌵2)"
                        , "      𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
@@ -1616,11 +1616,11 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
-            `shouldBe` [ "𝔻(Φ)"
+            `shouldBe` [ "𝔻(Φ):"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6.plus( 7 ) ) ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
                        , "    applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6.plus( 7 ) )  # 𝕄(Φ)"
-                       , "    𝔼(L_number_plus)  # 𝔻(Φ)"
+                       , "    𝔼(L_number_plus):  # 𝔻(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
                        , "        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)"
@@ -1628,7 +1628,7 @@ spec = do
                        , "      𝛿1.1 := 40-14-00-00-00-00-00-00  # 𝔻(ξ.ρ)"
                        , "      applied(𝑛.1.3) := 6  # 𝕄(Φ.a🌵1)"
                        , "      applied(𝑛.1.4) := 𝑛.1.3.plus( x ↦ 7 )  # 𝕄(Φ.a🌵1)"
-                       , "      𝔼(L_number_plus)  # 𝔻(Φ.a🌵1)"
+                       , "      𝔼(L_number_plus):  # 𝔻(Φ.a🌵1)"
                        , "        applied(𝑛.2.1) := 6  # 𝕄(Φ.a🌵2)"
                        , "        formation(𝑛.2.1)  # 𝔻(Φ.a🌵2)"
                        , "          applied(𝑛.2.2) := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵2)"
@@ -1658,8 +1658,8 @@ spec = do
               testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
-            `shouldBe` [ "𝕄(Φ.y)"
-                       , "  𝔼(L_stand)  # 𝕄(Φ.y)"
+            `shouldBe` [ "𝕄(Φ.y):"
+                       , "  𝔼(L_stand):  # 𝕄(Φ.y)"
                        , "    𝑛1.1 := 01-:Δ  # 𝕄(ξ.x)"
                        , "    𝔻(𝜎1:λ) == 01-"
                        , "    𝑛2.1 := 𝜎1:λ  # 𝑛1"
@@ -1741,11 +1741,11 @@ spec = do
               ["No entry of --symbolic answers the λ function 'L_number_nope'"]
           records <- readProtocol path
           lines records
-            `shouldBe` [ "𝔻(Φ)"
+            `shouldBe` [ "𝔻(Φ):"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 5  # 𝕄(Φ)"
                        , "    applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)"
-                       , "    𝔼(L_number_plus)  # 𝕄(Φ)"
+                       , "    𝔼(L_number_plus):  # 𝕄(Φ)"
                        , "      applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
                        , "        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)"
@@ -1767,7 +1767,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
           records <- readProtocol path
-          records `shouldBe` "𝔻(Φ)\n"
+          records `shouldBe` "𝔻(Φ):\n"
 
       it "writes the lines in 𝜑 even with --output=xmir" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -2266,7 +2266,7 @@ spec = do
             withStdin sum' $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            take 1 (lines records) `shouldBe` ["𝔻(Φ)"]
+            take 1 (lines records) `shouldBe` ["𝔻(Φ):"]
 
     describe "--partial" $ do
       let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
@@ -2297,11 +2297,11 @@ spec = do
             testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
-            `shouldBe` [ "𝔻(Φ)"
+            `shouldBe` [ "𝔻(Φ):"
                        , "  formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 2.times( 3 ).nope ⟧)  # 𝔻(Φ)"
                        , "    applied(𝑛.0.1) := 2  # 𝕄(Φ)"
                        , "    applied(𝑛.0.2) := 𝑛.0.1.times( x ↦ 3 )  # 𝕄(Φ)"
-                       , "    𝔼(L_number_times)  # 𝕄(Φ)"
+                       , "    𝔼(L_number_times):  # 𝕄(Φ)"
                        , "      applied(𝑛.1.1) := 2  # 𝕄(Φ.a🌵0)"
                        , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
                        , "        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)"
@@ -2550,10 +2550,10 @@ spec = do
           testCLISucceeded ["morph", symbolic, "--locator=Q.@", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
         records <- readProtocol path
         lines records
-          `shouldBe` [ "𝕄(Φ.φ)"
+          `shouldBe` [ "𝕄(Φ.φ):"
                      , "  applied(𝑛.0.1) := 5  # 𝕄(Φ.φ)"
                      , "  applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ.φ)"
-                     , "  𝔼(L_number_plus)  # 𝕄(Φ.φ)"
+                     , "  𝔼(L_number_plus):  # 𝕄(Φ.φ)"
                      , "    applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)"
                      , "    formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)"
                      , "      applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)"

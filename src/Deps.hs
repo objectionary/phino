@@ -254,7 +254,7 @@ saveEval handle cursor printed printed' report = do
       logDebug (printf "Saved one line of the protocol: %s" (dropWhile (== ' ') line))
     written :: Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written (EvRun judgment locator) protocol =
-      pure (protocol{_begun = True}, Just (printf "%s(%s)" (letter judgment) (T.unpack locator)))
+      pure (protocol{_begun = True}, Just (printf "%s(%s):" (letter judgment) (T.unpack locator)))
     written (EvFiring depth key judgment site) protocol = do
       locator <- render site
       pure
@@ -262,7 +262,7 @@ saveEval handle cursor printed printed' report = do
             { _fired = firings
             , _open = (depth, firings) : protocol._open
             }
-        , Just (indented depth (printf "𝔼(%s)  # %s(%s)" (T.unpack key) (letter judgment) locator))
+        , Just (indented depth (printf "𝔼(%s):  # %s(%s)" (T.unpack key) (letter judgment) locator))
         )
       where
         firings :: Int

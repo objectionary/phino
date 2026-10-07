@@ -383,11 +383,11 @@ it.
 $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.txt
-𝔻(Φ)
+𝔻(Φ):
   formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ ⟧, φ ↦ 5.plus( 6 ) ⟧)  # 𝔻(Φ)
     applied(𝑛.0.1) := 5  # 𝕄(Φ)
     applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
-    𝔼(L_number_plus)  # 𝔻(Φ)
+    𝔼(L_number_plus):  # 𝔻(Φ)
       applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)
       formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
         applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
@@ -545,11 +545,11 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho stuck.phi
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.txt
-𝔻(Φ)
+𝔻(Φ):
   formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧, φ ↦ 5.plus( 6 ).nope ⟧)  # 𝔻(Φ)
     applied(𝑛.0.1) := 5  # 𝕄(Φ)
     applied(𝑛.0.2) := 𝑛.0.1.plus( x ↦ 6 )  # 𝕄(Φ)
-    𝔼(L_number_plus)  # 𝕄(Φ)
+    𝔼(L_number_plus):  # 𝕄(Φ)
       applied(𝑛.1.1) := 5  # 𝕄(Φ.a🌵0)
       formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
         applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
@@ -585,9 +585,9 @@ judgment and the site the reduction stood at, whether or not `--partial` goes
 on to park it:
 
 ```text
-𝕄(Φ.x)
-  𝔼(L_outer)  # 𝕄(Φ.x)
-    𝔼(L_outer)  # 𝔻(Φ.a🌵0)
+𝕄(Φ.x):
+  𝔼(L_outer):  # 𝕄(Φ.x)
+    𝔼(L_outer):  # 𝔻(Φ.a🌵0)
       starved(4)  # 𝔻(Φ.a🌵1)
     stuck(L_outer)
 ```
@@ -688,8 +688,8 @@ $ cat fork.phi
 $ phino morph --deep --symbolic=atoms.yaml --locator=Q.demo.a \
     --protocol=fork.txt --quiet --sweet --hide-rho fork.phi
 $ cat fork.txt
-𝕄(Φ.demo.a)
-  𝔼(L_gt)  # 𝕄(Φ.demo.a.φ)
+𝕄(Φ.demo.a):
+  𝔼(L_gt):  # 𝕄(Φ.demo.a.φ)
     formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵0)
     𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
     formation(⟦ φ ↦ Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ ), plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵1)
@@ -697,7 +697,7 @@ $ cat fork.txt
     𝛿2.1 := 00-00-00-00-00-00-00-00  # 𝔻(ξ.x)
     𝑛.1.1 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
     𝑛.1.2 := ⟦ if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ ⟧  # 𝕄(𝑛.1.1)
-  𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
+  𝔼(L_plus):  # 𝕄(Φ.demo.a.φ)
     formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵2)
     𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
     formation(⟦ φ ↦ Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ), plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵3)
@@ -705,21 +705,21 @@ $ cat fork.txt
     𝛿2.2 := 3F-F0-00-00-00-00-00-00  # 𝔻(ξ.x)
     𝑛.2.1 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
     𝑛.2.2 := ⟦ φ ↦ 𝜎3:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.2.1)
-  𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
+  𝔼(L_plus):  # 𝕄(Φ.demo.a.φ)
     formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵4)
     𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
     formation(⟦ φ ↦ 𝜎3:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵5)
     𝛿2.3 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
     𝑛.3.1 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
     𝑛.3.2 := ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.3.1)
-  𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
+  𝔼(L_plus):  # 𝕄(Φ.demo.a.φ)
     formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵6)
     𝛿1.4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
     formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵7)
     𝛿2.4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
     𝑛.4.1 := Φ.number( φ ↦ 𝜎5:λ )  # 𝑛
     𝑛.4.2 := ⟦ φ ↦ 𝜎5:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # 𝕄(𝑛.4.1)
-  𝔼(L_fork)  # 𝕄(Φ.demo.a.φ)
+  𝔼(L_fork):  # 𝕄(Φ.demo.a.φ)
     𝛿1.5 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
     𝑛1.5 := 𝑛.3.2  # 𝕄(ξ.then)
     𝑛2.5 := 𝑛.4.2  # 𝕄(ξ.else)
@@ -727,7 +727,7 @@ $ cat fork.txt
     𝑛3.5 := ⟦ φ ↦ 𝜎6:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧  # [𝑛1, 𝑛2]
     𝑛.5.1 := 𝑛3.5  # 𝑛
     𝑛.5.2 := 𝑛3.5  # 𝕄(𝑛.5.1)
-  𝔼(L_plus)  # 𝕄(Φ.demo.a.φ)
+  𝔼(L_plus):  # 𝕄(Φ.demo.a.φ)
     formation(⟦ φ ↦ 𝜎6:λ, plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵11)
     𝛿1.6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
     formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_plus:λ, gt(x) ↦ L_gt:λ ⟧)  # 𝔻(Φ.a🌵12)
@@ -968,7 +968,7 @@ $ cat wide.phi
 $ phino dataize --locator=Q.t --protocol=wide.txt --abridged --quiet \
     --sweet --hide-rho wide.phi
 $ cat wide.txt
-𝔻(Φ.t)
+𝔻(Φ.t):
   formation(⟦ φ ↦ 48-65-6C-6C-6F-2C-20-77-6F-72-6C-64:Δ, +3 ⟧)  # 𝔻(Φ.t)
 ```
 
@@ -985,7 +985,7 @@ way, and the option is refused without `--abridged`:
 $ phino dataize --locator=Q.t --protocol=wide.txt --abridged \
     --abridged-data --quiet --sweet --hide-rho wide.phi
 $ cat wide.txt
-𝔻(Φ.t)
+𝔻(Φ.t):
   formation(⟦ φ ↦ 48-65-..(8b)..-6C-64:Δ, +3 ⟧)  # 𝔻(Φ.t)
 ```
 
@@ -1054,9 +1054,9 @@ place as a normal-form subterm. A stuck site opens no block in the
 $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
     --sweet --hide-rho partial.phi
 $ cat atoms.txt
-𝔻(Φ)
+𝔻(Φ):
   formation(⟦ bytes(φ) ↦ ⟦⟧, number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧, φ ↦ 2.times( 3 ).plus( 4 ).as-bool ⟧)  # 𝔻(Φ)
-    𝔼(L_number_times)  # 𝕄(Φ)
+    𝔼(L_number_times):  # 𝕄(Φ)
       formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵0)
         formation(40-00-00-00-00-00-00-00:Δ:φ)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 40-00-00-00-00-00-00-00  # 𝔻(ξ.ρ)
@@ -1065,7 +1065,7 @@ $ cat atoms.txt
       𝛿2.1 := 40-08-00-00-00-00-00-00  # 𝔻(ξ.x)
       𝑛.1.1 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
       𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧  # 𝕄(𝑛.1.1)
-    𝔼(L_number_plus)  # 𝕄(Φ)
+    𝔼(L_number_plus):  # 𝕄(Φ)
       formation(⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵2)
       𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
       formation(⟦ φ ↦ Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ, as-bool ↦ L_number_as_bool:λ ⟧)  # 𝔻(Φ.a🌵3)
@@ -1275,7 +1275,7 @@ $ cat box.phi
 $ phino morph --deep --locator=Q.y --protocol=p.txt --sweet --hide-rho box.phi
 𝜎2:λ
 $ head -3 p.txt
-𝕄(Φ.y)
+𝕄(Φ.y):
   applied(𝑛.0.1) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
   deferred(𝜎2) := Φ.box( x ↦ 𝜎1:λ )  # 𝕄(Φ.y)
 ```
@@ -1400,26 +1400,26 @@ $ phino morph --deep --acyclic=proven --partial --sweet --hide-rho --flat \
     --symbolic=fact.yaml --locator='Q.x' --protocol=fact.txt fact.phi
 ⟦ n ↦ 𝜎1:λ, φ ↦ Φ.if( c ↦ 𝜎2:λ, left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ 𝜎3:λ ) ) ) ⟧
 $ cat fact.txt
-𝕄(Φ.x)
-  𝔼(L_zero)  # 𝕄(Φ.x.φ)
+𝕄(Φ.x):
+  𝔼(L_zero):  # 𝕄(Φ.x.φ)
     𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
     𝑛.1.1 := 𝜎2:λ  # 𝑛
     𝑛.1.2 := 𝜎2:λ  # 𝕄(𝑛.1.1)
-  𝔼(L_dec)  # 𝕄(Φ.x.φ)
+  𝔼(L_dec):  # 𝕄(Φ.x.φ)
     𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
     𝑛.2.1 := 𝜎3:λ  # 𝑛
     𝑛.2.2 := 𝜎3:λ  # 𝕄(𝑛.2.1)
-  𝔼(L_mul)  # 𝕄(Φ.x.φ)
+  𝔼(L_mul):  # 𝕄(Φ.x.φ)
     𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
     formation(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵3)
-      𝔼(L_if)  # 𝔻(Φ.a🌵3)
-        𝔼(L_zero)  # 𝔻(Φ.a🌵4)
+      𝔼(L_if):  # 𝔻(Φ.a🌵3)
+        𝔼(L_zero):  # 𝔻(Φ.a🌵4)
           𝛿1.5 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
           𝑛.5.1 := 𝜎4:λ  # 𝑛
           𝑛.5.2 := 𝜎4:λ  # 𝕄(𝑛.5.1)
         𝛿1.4 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
         𝑛1.4 := 01-:Δ  # 𝕄(ξ.left)
-        𝔼(L_dec)  # 𝕄(Φ.a🌵7.b)
+        𝔼(L_dec):  # 𝕄(Φ.a🌵7.b)
           𝛿1.6 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
           𝑛.6.1 := 𝜎5:λ  # 𝑛
           𝑛.6.2 := 𝜎5:λ  # 𝕄(𝑛.6.1)
@@ -1430,20 +1430,20 @@ $ cat fact.txt
         𝑛4.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
         stuck(L_if)
     stuck(L_if)
-  𝔼(L_if)  # 𝕄(Φ.x.φ)
+  𝔼(L_if):  # 𝕄(Φ.x.φ)
     𝛿1.7 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
     𝑛1.7 := 01-:Δ  # 𝕄(ξ.left)
-    𝔼(L_mul)  # 𝕄(Φ.a🌵11)
+    𝔼(L_mul):  # 𝕄(Φ.a🌵11)
       𝛿1.8 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
       formation(⟦ n ↦ 𝜎3:λ, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ n ), left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ n ) ) ) ) ⟧)  # 𝔻(Φ.a🌵13)
-        𝔼(L_if)  # 𝔻(Φ.a🌵13)
-          𝔼(L_zero)  # 𝔻(Φ.a🌵14)
+        𝔼(L_if):  # 𝔻(Φ.a🌵13)
+          𝔼(L_zero):  # 𝔻(Φ.a🌵14)
             𝛿1.10 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
             𝑛.10.1 := 𝑛.5.2  # 𝑛
             𝑛.10.2 := 𝑛.5.2  # 𝕄(𝑛.10.1)
           𝛿1.9 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
           𝑛1.9 := 01-:Δ  # 𝕄(ξ.left)
-          𝔼(L_dec)  # 𝕄(Φ.a🌵17.b)
+          𝔼(L_dec):  # 𝕄(Φ.a🌵17.b)
             𝛿1.11 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
             𝑛.11.1 := 𝑛.6.2  # 𝑛
             𝑛.11.2 := 𝑛.6.2  # 𝕄(𝑛.11.1)
@@ -1685,15 +1685,15 @@ $ phino morph --symbolic=plus.yaml --deep --locator=Q.l🌵 --jobs=2 \
     --protocol=sums.txt --sweet --hide-rho sums.phi
 ⟦ a ↦ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ ⟧, b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_plus:λ ⟧ ⟧
 $ cat sums.txt
-𝕄(Φ.l🌵)
-  𝔼(L_plus)  # 𝕄(Φ.l🌵.a)
+𝕄(Φ.l🌵):
+  𝔼(L_plus):  # 𝕄(Φ.l🌵.a)
     formation(⟦ φ ↦ 01-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵1-0)
     𝛿1.1 := 01-  # 𝔻(ξ.ρ)
     formation(⟦ φ ↦ 02-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵1-1)
     𝛿2.1 := 02-  # 𝔻(ξ.x)
     𝑛.1.1 := Φ.num( φ ↦ 𝜎1:λ )  # 𝑛
     𝑛.1.2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_plus:λ ⟧  # 𝕄(𝑛.1.1)
-  𝔼(L_plus)  # 𝕄(Φ.l🌵.b)
+  𝔼(L_plus):  # 𝕄(Φ.l🌵.b)
     formation(⟦ φ ↦ 03-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵2-0)
     𝛿1.2 := 03-  # 𝔻(ξ.ρ)
     formation(⟦ φ ↦ 04-:Δ, plus(x) ↦ L_plus:λ ⟧)  # 𝔻(Φ.a🌵2-1)

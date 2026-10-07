@@ -25,9 +25,9 @@ input: >
     e ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ φ ↦ m, m ↦ Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ) ⟧ ⟧ ⟧ ⟧.eq ⟧
 result: '⟦ b ↦ ∅, λ ⤍ L_bytes_eq ⟧'
 protocol: |
-  𝕄(Φ.e)
+  𝕄(Φ.e):
     applied(𝑛.0.1) := Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )  # 𝕄(Φ.e)
-    𝔼(L_dataized)  # 𝕄(Φ.e)
+    𝔼(L_dataized):  # 𝕄(Φ.e)
       applied(𝑛.1.1) := Φ.bytes( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵0)
       formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
       𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.target)

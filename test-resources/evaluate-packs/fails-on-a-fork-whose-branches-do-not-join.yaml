@@ -19,8 +19,8 @@ location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧'
 fails: "No entry of --symbolic answers the λ function 'L_fork'"
 protocol: |
-  𝕄(Φ.y)
-    𝔼(L_fork)  # 𝕄(Φ.y)
+  𝕄(Φ.y):
+    𝔼(L_fork):  # 𝕄(Φ.y)
       𝑛1.1 := 𝜎1:λ:l  # 𝕄(ξ.a)
       𝑛2.1 := ⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧  # 𝕄(ξ.b)
       stuck(L_fork)

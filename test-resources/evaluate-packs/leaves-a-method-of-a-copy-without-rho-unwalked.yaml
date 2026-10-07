@@ -41,7 +41,7 @@ input: |
     ⟧
   ⟧
 protocol: |
-  𝕄(Φ.l🌵)
+  𝕄(Φ.l🌵):
     applied(𝑛.0.1) := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )  # 𝕄(Φ.l🌵.e1)
     applied(𝑛.0.2) := Φ.number( φ ↦ 𝑛.0.1 )  # 𝕄(Φ.l🌵.e1)
     applied(𝑛.0.3) := ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧( n ↦ 𝑛.0.2 )  # 𝕄(Φ.l🌵.e1)
@@ -50,7 +50,7 @@ protocol: |
     applied(𝑛.0.6) := Φ.holder( buf ↦ 𝑛.0.5 )  # 𝕄(Φ.l🌵.e1)
     applied(𝑛.0.7) := ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧( n ↦ 𝑛.0.2 )  # 𝕄(Φ.l🌵.e1)
     applied(𝑛.0.8) := 𝑛.0.7( v ↦ 𝑛.0.6 )  # 𝕄(Φ.l🌵.e1)
-    𝔼(L_entry)  # 𝕄(Φ.l🌵.e1)
+    𝔼(L_entry):  # 𝕄(Φ.l🌵.e1)
       applied(𝑛.1.1) := Φ.number( φ ↦ 𝑛.0.1 )  # 𝕄(Φ.a🌵0)
       formation(𝑛.1.1)  # 𝔻(Φ.a🌵0)
         applied(𝑛.1.2) := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵0)
@@ -64,7 +64,7 @@ protocol: |
       𝑛.1.7 := Φ.l🌵.root( 𝑛.1.5 )  # 𝑛
       applied(𝑛.1.8) := ⟦ v ↦ ∅, λ ⤍ L_root ⟧( v ↦ 𝑛.1.5 )  # 𝕄(Φ.l🌵.e1)
       𝑛.1.9 := 𝑛.1.8  # 𝕄(𝑛.1.7)
-    𝔼(L_root)  # 𝕄(Φ.l🌵.e1)
+    𝔼(L_root):  # 𝕄(Φ.l🌵.e1)
       formation(𝑛.1.5)  # 𝔻(Φ.a🌵2)
         applied(𝑛.2.1) := Φ.bytes( φ ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵2)
         formation(𝑛.2.1)  # 𝔻(Φ.a🌵2)

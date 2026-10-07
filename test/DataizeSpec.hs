@@ -219,7 +219,7 @@ spec = do
           [ "  formation(⟦ bytes(φ) ↦ ⟦ not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧, bool(φ) ↦ ⟦ if(ρ, then, else) ↦ L_fork:λ ⟧, number(φ) ↦ ⟦ as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧, φ ↦ 2.times( 3 ).nope ⟧)  # 𝔻(Φ)"
           , "    applied(𝑛.0.1) := 2  # 𝕄(Φ)"
           , "    applied(𝑛.0.2) := 𝑛.0.1.times( x ↦ 3 )  # 𝕄(Φ)"
-          , "    𝔼(L_number_times)  # 𝕄(Φ)"
+          , "    𝔼(L_number_times):  # 𝕄(Φ)"
           , "      applied(𝑛.1.1) := 2  # 𝕄(Φ.a🌵17)"
           , "      formation(𝑛.1.1)  # 𝔻(Φ.a🌵17)"
           , "        applied(𝑛.1.2) := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )  # 𝕄(Φ.a🌵17)"

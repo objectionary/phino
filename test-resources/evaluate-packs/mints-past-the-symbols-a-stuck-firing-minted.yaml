@@ -20,9 +20,9 @@ partial: true
 input: '⟦ y ↦ ⟦ a ↦ ⟦ λ ⤍ L_inner ⟧.v, λ ⤍ L_outer ⟧.z ⟧'
 result: '𝜎2:λ.z'
 protocol: |
-  𝕄(Φ.y)
-    𝔼(L_outer)  # 𝕄(Φ.y)
-      𝔼(L_inner)  # 𝕄(Φ.a🌵0)
+  𝕄(Φ.y):
+    𝔼(L_outer):  # 𝕄(Φ.y)
+      𝔼(L_inner):  # 𝕄(Φ.a🌵0)
         𝑛.2.1 := 𝜎1:λ.foo  # 𝑛
         unanswered(𝜎1)  # 𝕄(𝜎1:λ)
         stuck(𝜎1)

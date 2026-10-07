@@ -19,14 +19,14 @@ input: >
     e1 ↦ Φ.root( ⟦ λ ⤍ L_none ⟧.foo ),
     e2 ↦ Φ.root( ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧
 protocol: |
-  𝕄(Φ)
+  𝕄(Φ):
     unanswered(L_none)  # 𝕄(L_none:λ)
     applied(𝑛.0.1) := Φ.root( v ↦ L_none:λ.foo )  # 𝕄(Φ.e1)
-    𝔼(L_root)  # 𝕄(Φ.e1)
+    𝔼(L_root):  # 𝕄(Φ.e1)
       unanswered(L_none)  # 𝕄(L_none:λ)
       stuck(L_none)
     applied(𝑛.0.2) := Φ.root( v ↦ 𝜎1:λ )  # 𝕄(Φ.e2)
-    𝔼(L_root)  # 𝕄(Φ.e2)
+    𝔼(L_root):  # 𝕄(Φ.e2)
       𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.v)
       𝑛.2.1 := ⟦⟧  # 𝑛
       𝑛.2.2 := ⟦⟧  # 𝕄(𝑛.2.1)

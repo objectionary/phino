@@ -32,15 +32,15 @@ input: >
     d ↦ ⟦ φ ↦ Φ.e ⟧,
     e ↦ ⟦ Δ ⤍ 01- ⟧ ⟧
 protocol: |
-  𝕄(Φ)
-    𝔼(L_wrap)  # 𝕄(Φ.x)
+  𝕄(Φ):
+    𝔼(L_wrap):  # 𝕄(Φ.x)
       formation(Φ.q:φ)  # 𝔻(Φ.a🌵0)
         formation(Φ.f:φ)  # 𝔻(Φ.a🌵0)
-          𝔼(L_outer)  # 𝔻(Φ.a🌵0)
+          𝔼(L_outer):  # 𝔻(Φ.a🌵0)
             starved(10)  # 𝕄(Φ.a🌵1)
             stuck(L_outer)
       stuck(L_outer)
-    𝔼(L_outer)  # 𝕄(Φ.q.φ)
+    𝔼(L_outer):  # 𝕄(Φ.q.φ)
       formation(Φ.d:φ)  # 𝔻(Φ.a🌵2)
         formation(Φ.e:φ)  # 𝔻(Φ.a🌵2)
       𝛿1.3 := 01-  # 𝔻(ξ.arg)

@@ -15,7 +15,7 @@ partial: true
 input: '⟦ y ↦ ⟦ x ↦ ⟦ φ ↦ ∅ ⟧, λ ⤍ L_pair ⟧.z ⟧'
 result: '⟦ x(φ) ↦ ⟦⟧, λ ⤍ L_pair ⟧.z'
 protocol: |
-  𝕄(Φ.y)
-    𝔼(L_pair)  # 𝕄(Φ.y)
+  𝕄(Φ.y):
+    𝔼(L_pair):  # 𝕄(Φ.y)
       unanswered(⊥)  # 𝔻(∅:φ)
       stuck(⊥)
