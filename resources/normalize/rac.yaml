@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-rules:
-  basic: ['dca']
-input: |
-  ⊥(α0 ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧)
-output: |-
-  ⊥
+name: rac
+pattern: ⊥(α𝑖1 ↦ 𝑒1)(𝜏 ↦ 𝑒2)
+result: ⊥(α𝑖1 ↦ 𝑒1)

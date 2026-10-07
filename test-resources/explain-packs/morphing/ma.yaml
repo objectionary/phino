@@ -5,6 +5,7 @@
 latex: |-
   \begin{phinoMorphingInference}
     \phinoName{ma}
+    \phinoCondition{ n_1 \not= T }
     \phinoPremise{ \phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }
     \phinoPremise{ \phinoNormalize{ n_2 ( \tau -> k ) }{ n_3 } }
     \phinoPremise{ \phinoMorph{ n_3 }{ e }{ s_2 }{ n_4 }{ s_3 } }

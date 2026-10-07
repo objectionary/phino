@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+latex: |-
+  \phinoNormalizationRule{raca}
+    { T ( \phiTerminal{\alpha_{i1}} -> e_1, \phiTerminal{\alpha_{i2}} -> e_2 ) }
+    { T ( \phiTerminal{\alpha_{i1}} -> e_1 ) }
+    { }
+    { }

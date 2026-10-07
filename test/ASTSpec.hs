@@ -490,6 +490,20 @@ spec = do
     it "does not take a formation holding a binding meta for inert" $
       inert (ExFormation [BiVoid (AtLabel "ro"), BiMeta "B4"]) `shouldBe` False
 
+  describe "fatal" $ do
+    it "takes ⊥ for fatal" $
+      fatal ExTermination `shouldBe` True
+    it "takes ⊥ applied to a message for fatal" $
+      fatal (ExApplication ExTermination (ArAlpha (Alpha 0) (ExDispatch ExRoot (AtLabel "wz")))) `shouldBe` True
+    it "takes ⊥ applied to a named argument for fatal" $
+      fatal (ExApplication ExTermination (ArTau (AtLabel "gk") ExRoot)) `shouldBe` True
+    it "takes ⊥ applied twice for fatal" $
+      fatal (ExApplication (ExApplication ExTermination (ArTau AtRho ExXi)) (ArAlpha (Alpha 3) ExRoot)) `shouldBe` True
+    it "does not take an application of Φ for fatal" $
+      fatal (ExApplication ExRoot (ArAlpha (Alpha 0) ExTermination)) `shouldBe` False
+    it "does not take a formation for fatal" $
+      fatal (ExFormation [BiTau (AtLabel "ub") ExTermination]) `shouldBe` False
+
   describe "distinct" $ do
     it "takes a formation of different attributes for distinct" $
       distinct (ExFormation [BiVoid (AtLabel "ka"), BiTau (AtLabel "ak") ExXi, BiLambda (Function "L_ok")]) `shouldBe` True

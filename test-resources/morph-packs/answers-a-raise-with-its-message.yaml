@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A ⊥ applied to a message is a normal form, and 𝕄 answers it as it is, the
+# way 'dead' answers ⊥, so the message reaches the answer (#1765).
+location: 'Q.x'
+input: '⟦ x ↦ ⊥( "oops" ) ⟧'
+result: '⊥( "oops" )'

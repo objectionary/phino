@@ -3,8 +3,8 @@
 # yamllint disable rule:line-length
 ---
 latex: |-
-  \phinoNormalizationRule{dca}
-    { T ( \phiTerminal{\alpha_{i}} -> e ) }
+  \phinoNormalizationRule{dr}
+    { T ( \phiTerminal{\rho} -> e ) }
     { T }
     { }
     { }

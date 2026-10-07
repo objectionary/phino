@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+rules:
+  basic: ['raca']
+input: |
+  ⟦ hq ↦ ⊥( α0 ↦ Φ.vo )( α1 ↦ ξ.ze ) ⟧
+output: |-
+  ⟦ hq ↦ ⊥( Φ.vo ) ⟧

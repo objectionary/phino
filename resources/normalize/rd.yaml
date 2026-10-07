@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: rd
+pattern: ⊥(𝜏1 ↦ 𝑒1).𝜏2
+result: ⊥(𝜏1 ↦ 𝑒1)
+when:
+  not:
+    eq:
+      - 𝜏1
+      - ρ

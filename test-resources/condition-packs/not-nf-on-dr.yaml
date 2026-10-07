@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-name: dca
-pattern: ⊥(α𝑖 ↦ 𝑒)
-result: ⊥
+expression: '[[ x -> T(^ -> Q.z) ]]'
+pattern: '[[ x -> !e1 ]]'
+condition:
+  not:
+    nf: '!e1'

@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A ⊥ applied to a message raises the way ⊥ does, so dataizing it fails with
+# the same complaint about the terminator, and not with one about a term no
+# rule of dataization matches (#1765).
+input: '⊥( "oops" )'
+fails: 'terminator'

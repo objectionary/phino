@@ -296,7 +296,8 @@ The methods of the formation are dropped, since the other branch may have
 none of them. A formation whose `φ` chain ends in a datum, or which has no `φ`
 at all, does not join with a bare symbol.
 
-One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
+One term being the terminator, `⊥` or `⊥` with a message such as
+`⊥( "oops" )`, is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
 has a perfectly good value on the other. The join then mints nothing, binds
 its meta to the other term as it stands and writes on which side the program
@@ -1303,6 +1304,19 @@ $ phino morph --locator=Q.x <<< '⟦ x ↦ ξ ⟧'
 ⊥
 ```
 
+The terminator applied to an argument is still the terminator, and keeps the
+argument, such as the message of `⊥( "oops" )`, which EO writes as
+`T "oops"`. Normalization drops whatever is applied to it or dispatched off it
+later, and drops a `ρ`, which carries no message, so `⟦ x ↦ ⊥ ⟧.x` is `⊥`.
+𝕄 answers such a terminator as it is, and 𝔻 fails on it as it fails on `⊥`:
+
+```bash
+$ phino rewrite --normalize --sweet <<< '⊥( "oops" ).size( 3 )'
+⊥( "oops" )
+$ phino morph --sweet --locator=Q.x <<< '⟦ x ↦ ⊥( "oops" ) ⟧'
+⊥( "oops" )
+```
+
 𝕄 maps normal forms to formations and `morph` does not normalize what it is
 given, so a term that is not a normal form, such as a dispatch off a formation
 with neither `φ` nor `λ`, is reported as a failed run rather than answered:
@@ -2116,8 +2130,8 @@ $ phino explain --normalize
   { [[ B_1, \tau -> ?, B_2 ]] ( \tau -> e ) }
   { $ i = \vert \overline{ B_1 } \vert $ }
   { }
-\phinoNormalizationRule{dc}
-  { T ( \tau -> e ) }
+\phinoNormalizationRule{dd}
+  { T . \tau }
   { T }
   { }
   { }

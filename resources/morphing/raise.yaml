@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: raise
+match: '⊥(𝜏1 ↦ 𝑘1)'
+universe: 𝑒1
+conclusion: '⊥(𝜏1 ↦ 𝑘1)'

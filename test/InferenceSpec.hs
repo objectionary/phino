@@ -67,6 +67,18 @@ spec = do
       Just (Morphs _ _ next) <- morphingOf (morphingRule "ma") context (ExApplication (ExDispatch ExRoot (AtLabel "hm")) (ArTau (AtLabel "xw") (ExDispatch ExRoot (AtLabel "qv")))) (ExFormation [BiVoid (AtLabel "oj")])
       Concludes conclusion <- next (ExFormation [BiVoid (AtLabel "uf")])
       conclusion `shouldBe` Onward (Normalized (Morphing, "ma")) (ExApplication (ExFormation [BiVoid (AtLabel "uf")]) (ArTau (AtLabel "xw") (ExDispatch ExRoot (AtLabel "qv")))) (ExFormation [BiVoid (AtLabel "oj")])
+    it "answers ⊥ applied to a message with itself by the rule 'raisea'" $ do
+      Just (Concludes conclusion) <- morphingOf (morphingRule "raisea") context (ExApplication ExTermination (ArAlpha (Alpha 0) (ExDispatch ExRoot (AtLabel "qw")))) (ExFormation [])
+      conclusion `shouldBe` Answered (Morphing, "raisea") (ExApplication ExTermination (ArAlpha (Alpha 0) (ExDispatch ExRoot (AtLabel "qw"))))
+    it "answers ⊥ applied to a named argument with itself by the rule 'raise'" $ do
+      Just (Concludes conclusion) <- morphingOf (morphingRule "raise") context (ExApplication ExTermination (ArTau AtRho (ExDispatch ExRoot (AtLabel "vn")))) (ExFormation [])
+      conclusion `shouldBe` Answered (Morphing, "raise") (ExApplication ExTermination (ArTau AtRho (ExDispatch ExRoot (AtLabel "vn"))))
+    it "finds nothing where the rule 'maa' meets ⊥ applied to a message" $ do
+      found <- morphingOf (morphingRule "maa") context (ExApplication ExTermination (ArAlpha (Alpha 0) (ExDispatch ExRoot (AtLabel "jx")))) (ExFormation [])
+      isNothing found `shouldBe` True
+    it "finds nothing where the rule 'ma' meets ⊥ applied to a named argument" $ do
+      found <- morphingOf (morphingRule "ma") context (ExApplication ExTermination (ArTau (AtLabel "uh") (ExDispatch ExRoot (AtLabel "co")))) (ExFormation [])
+      isNothing found `shouldBe` True
     it "refuses a rule running a 'normalize' beside its spine" $
       morphingOf (Y.MorphRule "gd" Nothing ExXi (ExMeta "e1") (ExMeta "n3") Nothing [Y.Premise "n2" (Y.OpNormalize ExXi), Y.Premise "n3" (Y.OpMorph ExTermination (ExMeta "e1"))]) context ExXi (ExFormation [])
         `shouldThrow` (\failure -> ioeGetErrorString failure == "The rule 'gd' cannot be run, since its premise 'n2' runs beside the spine, which only a 'morph', an 'evaluate' or a 'contextualize' can")

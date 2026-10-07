@@ -160,10 +160,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     paired ctx condition bound (meta, (left, right)) = do
       one <- branch left
       two <- branch right
-      case (one, two) of
-        (ExTermination, ExTermination) -> both one two
-        (ExTermination, _) -> terminating "left" left two
-        (_, ExTermination) -> terminating "right" right one
+      case (fatal one, fatal two) of
+        (True, False) -> terminating "left" left two
+        (False, True) -> terminating "right" right one
         _ -> both one two
       where
         both :: Expression -> Expression -> IO Subst
@@ -288,16 +287,16 @@ saturated term bds = case lambda bds of
     given :: [Binding] -> Bool
     given rest = valued && length (filter unwritten rest) <= positional
     raising :: Binding -> Bool
-    raising (BiTau _ ExTermination) = True
+    raising (BiTau _ arg) = fatal arg
     raising _ = False
     unwritten :: Binding -> Bool
-    unwritten (BiTau attr ExTermination) = attr `notElem` named
+    unwritten (BiTau attr arg) = fatal arg && attr `notElem` named
     unwritten _ = False
     written :: Expression -> ([Attribute], Int, Bool)
-    written (ExApplication expr (ArTau attr ExTermination)) =
-      let (attrs, count, other) = written expr in (attr : attrs, count, other)
-    written (ExApplication expr (ArAlpha _ ExTermination)) =
-      let (attrs, count, other) = written expr in (attrs, count + 1, other)
+    written (ExApplication expr (ArTau attr arg))
+      | fatal arg = let (attrs, count, other) = written expr in (attr : attrs, count, other)
+    written (ExApplication expr (ArAlpha _ arg))
+      | fatal arg = let (attrs, count, other) = written expr in (attrs, count + 1, other)
     written (ExApplication expr _) =
       let (attrs, count, _) = written expr in (attrs, count, True)
     written _ = ([], 0, False)

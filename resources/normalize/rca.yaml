@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: rca
+pattern: ⊥(𝜏1 ↦ 𝑒1)(α𝑖 ↦ 𝑒2)
+result: ⊥(𝜏1 ↦ 𝑒1)
+when:
+  not:
+    eq:
+      - 𝜏1
+      - ρ

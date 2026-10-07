@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 ---
 rules:
-  basic: ['dc']
+  basic: ['rd']
 input: |
-  ⊥(ρ ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧)
+  ⊥( hu ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧ ).zd
 output: |-
-  ⊥
+  ⊥( hu ↦ ⟦ x ↦ ξ.t, t ↦ ∅ ⟧ )

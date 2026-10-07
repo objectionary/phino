@@ -548,8 +548,8 @@ spec = do
         testCLISucceeded ["rewrite", "--flat"] ["Δ ⤍ 65-0A-65"]
 
     it "rewrites with single rule" $
-      withStdin "T(x -> Q.y)" $
-        testCLISucceeded ["rewrite", "--rule=resources/normalize/dc.yaml"] ["⊥"]
+      withStdin "T.x" $
+        testCLISucceeded ["rewrite", "--rule=resources/normalize/dd.yaml"] ["⊥"]
 
     it "fails when a rewriting rule uses a dataization-only function" $
       withStdin "⟦⟧" $

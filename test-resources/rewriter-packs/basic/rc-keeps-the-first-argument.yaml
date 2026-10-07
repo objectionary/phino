@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+repeat: 2
+rules:
+  basic: ['rc']
+input: |
+  ⟦ a ↦ ⟦ b ↦ ⊥(t ↦ ⟦⟧, u ↦ ⟦⟧) ⟧ ⟧
+output: |-
+  ⟦ a ↦ ⟦ b ↦ ⊥( t ↦ ⟦⟧ ) ⟧ ⟧

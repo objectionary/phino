@@ -21,6 +21,7 @@ module AST
   , hashShape
   , hashSkeleton
   , inert
+  , fatal
   , distinct
   , repeated
   , attributeFromBinding
@@ -489,6 +490,11 @@ tally _ = 1
 inert :: Expression -> Bool
 inert term = case known term of
   Facts _ _ still _ -> still
+
+fatal :: Expression -> Bool
+fatal ExTermination = True
+fatal (ExApplication expr _) = fatal expr
+fatal _ = False
 
 distinct :: Expression -> Bool
 distinct term = case known term of

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+rules:
+  basic: ['rac']
+input: |
+  ⊥( α0 ↦ ⟦ ky ↦ ∅ ⟧ )( ρ ↦ ⟦ wd ↦ ξ.ky ⟧ )
+output: |-
+  ⊥( ⟦ ky ↦ ∅ ⟧ )

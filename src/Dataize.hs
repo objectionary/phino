@@ -53,6 +53,7 @@ dataize' (expr, seq) univ state caller = do
   ctx <- opening Dataization =<< deeper =<< entering expr =<< universed univ caller{_judgment = Dataization}
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
+    Nothing | fatal expr -> throwIO (Undataizable expr state)
     Nothing -> do
       reached <- inferred expr univ state ctx ctx._engine._dataization
       case reached of

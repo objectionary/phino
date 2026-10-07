@@ -5,6 +5,11 @@ name: ma
 match: '𝑛1(𝜏1 ↦ 𝑘1)'
 universe: 𝑒1
 conclusion: 𝑛4
+when:
+  not:
+    eq:
+      - 𝑛1
+      - ⊥
 premises:
   - n-result: 𝑛2
     morph:

@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: '[[ x -> T(y -> Q.z) ]]'
-pattern: '[[ x -> !e1 ]]'
-condition:
-  not:
-    nf: '!e1'
+name: raca
+pattern: ⊥(α𝑖1 ↦ 𝑒1)(α𝑖2 ↦ 𝑒2)
+result: ⊥(α𝑖1 ↦ 𝑒1)

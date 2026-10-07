@@ -8,7 +8,7 @@
 
 module RuleSpec where
 
-import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Slot (..), inert)
+import AST (Alpha (..), Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Slot (..), inert)
 import Builder (buildExpressionThrows)
 import Control.Monad
 import Data.Aeson
@@ -72,7 +72,10 @@ spec = do
       , ("returns true for dispatch on ExXi", ExDispatch ExXi (AtLabel "foo"), True)
       , ("returns true for dispatch on ExRoot", ExDispatch ExRoot (AtLabel "bar"), True)
       , ("returns false for dispatch on ExTermination", ExDispatch ExTermination (AtLabel "x"), False)
-      , ("returns false for application on ExTermination", ExApplication ExTermination (ArTau (AtLabel "y") ExRoot), False)
+      , ("returns true for a named application on ExTermination, which stays a terminator", ExApplication ExTermination (ArTau (AtLabel "y") ExRoot), True)
+      , ("returns false for an application on ExTermination applied again", ExApplication (ExApplication ExTermination (ArTau (AtLabel "kf") ExRoot)) (ArAlpha (Alpha 0) ExXi), False)
+      , ("returns true for a positional application on ExTermination, which carries a message", ExApplication ExTermination (ArAlpha (Alpha 0) ExRoot), True)
+      , ("returns false for a positional application on ExTermination whose message is not normal", ExApplication ExTermination (ArAlpha (Alpha 0) (ExDispatch ExTermination (AtLabel "qz"))), False)
       , ("returns true for empty formation", ExFormation [], True)
       , ("returns true for formation with only delta binding", ExFormation [BiDelta (BtMany ["00", "01"])], True)
       , ("returns true for formation with only void binding", ExFormation [BiVoid (AtLabel "x")], True)

@@ -70,7 +70,6 @@ normalWith _ ExTermination = True
 normalWith _ (ExDispatch ExXi _) = True
 normalWith _ (ExDispatch ExRoot _) = True
 normalWith _ (ExDispatch ExTermination _) = False
-normalWith _ (ExApplication ExTermination _) = False
 normalWith _ (ExFormation []) = True
 normalWith matching (ExFormation bds) = normalBindings bds || not (matching (ExFormation bds))
   where
@@ -381,6 +380,7 @@ redex rule = case rule.pattern of
     stuck :: Expression -> Bool
     stuck (ExFormation _) = True
     stuck ExTermination = True
+    stuck (ExApplication ExTermination _) = True
     stuck _ = False
     attribute :: Binding -> [Attribute]
     attribute (BiLambda _) = [AtLambda]
