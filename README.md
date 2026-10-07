@@ -1413,7 +1413,9 @@ it is inside forever. Data still tells rounds apart: a formation entered with
 `n ↦ 3` and then with `n ↦ 2` is two formations, so a recursion over data is
 not cut while it goes on computing. Take a factorial over a symbolic argument,
 with `fact.yaml` answering `L_zero`, `L_dec` and `L_mul` with a fresh symbol
-each and `L_if` a fork joining its two branches:
+each and `L_if` a fork joining its two branches. The argument, and what `L_dec`
+answers, is an object whose `φ` is a symbol rather than a bare symbol, since
+the walk of `--deep` defers a copy over a bare symbol instead of entering it:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -1425,7 +1427,7 @@ $ cat fact.phi
   dec ↦ ⟦ x ↦ ∅, λ ⤍ L_dec ⟧,
   mul ↦ ⟦ a ↦ ∅, b ↦ ∅, λ ⤍ L_mul ⟧,
   fact ↦ ⟦ n ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ⟦ Δ ⤍ 01- ⟧, right ↦ Φ.mul( a ↦ ξ.n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ) ) ) ) ⟧,
-  x ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎1 ⟧ )
+  x ↦ Φ.fact( n ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ )
 ⟧
 $ cat fact.yaml
 - λ: L_zero
@@ -1435,7 +1437,7 @@ $ cat fact.yaml
 - λ: L_dec
   dataize:
     𝛿1: $.x
-  𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
 - λ: L_mul
   dataize:
     𝛿1: $.a
@@ -1455,70 +1457,112 @@ $ cat fact.yaml
   𝑛: 𝑛5
 $ phino morph --deep --acyclic=proven --partial --sweet --hide-rho --flat \
     --symbolic=fact.yaml --locator='Q.x' --protocol=fact.txt fact.phi
-⟦ n ↦ 𝜎1:λ, φ ↦ Φ.if( c ↦ 𝜎2:λ, left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ 𝜎3:λ ) ) ) ⟧
+⟦ n ↦ 𝜎1:λ:φ, φ ↦ Φ.if( c ↦ 𝜎2:λ, left ↦ 01-:Δ, right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ) ) ) ⟧
 $ cat fact.txt
 𝕄(Φ.x):
+  𝑛.0.1 := Φ.fact( n ↦ 𝜎1:λ:φ )  # 𝕄(Φ.x)
+  𝑛.0.2 := Φ.zero( x ↦ 𝜎1:λ:φ )  # 𝕄(Φ.x.φ)
   𝔼(L_zero):  # 𝕄(Φ.x.φ)
+    𝔻(Φ.a🌵0):
     𝛿1.1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
     𝑛.1.1 := 𝜎2:λ  # 𝑛
     𝑛.1.2 := 𝜎2:λ  # 𝕄(𝑛.1.1)
+  𝑛.0.3 := Φ.if( c ↦ 𝜎2:λ )  # 𝕄(Φ.x.φ)
+  𝑛.0.4 := Φ.if( c ↦ 𝜎2:λ )  # 𝕄(Φ.x.φ)
+  𝑛.0.5 := 𝑛.0.4( left ↦ 01-:Δ )  # 𝕄(Φ.x.φ)
+  𝑛.0.6 := Φ.mul( a ↦ 𝜎1:λ:φ )  # 𝕄(Φ.x.φ)
+  𝑛.0.7 := Φ.dec( x ↦ 𝜎1:λ:φ )  # 𝕄(Φ.x.φ)
   𝔼(L_dec):  # 𝕄(Φ.x.φ)
+    𝔻(Φ.a🌵1):
     𝛿1.2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-    𝑛.2.1 := 𝜎3:λ  # 𝑛
-    𝑛.2.2 := 𝜎3:λ  # 𝕄(𝑛.2.1)
+    𝑛.2.1 := 𝜎3:λ:φ  # 𝑛
+    𝑛.2.2 := 𝜎3:λ:φ  # 𝕄(𝑛.2.1)
+  𝑛.0.8 := Φ.fact( n ↦ 𝜎3:λ:φ )  # 𝕄(Φ.x.φ)
+  𝑛.0.9 := Φ.mul( a ↦ 𝜎1:λ:φ )  # 𝕄(Φ.x.φ)
+  𝑛.0.10 := 𝑛.0.9( b ↦ 𝑛.0.8 )  # 𝕄(Φ.x.φ)
   𝔼(L_mul):  # 𝕄(Φ.x.φ)
+    𝔻(Φ.a🌵2):
     𝛿1.3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
+    𝑛.3.1 := Φ.fact( n ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵3)
     𝔻(Φ.a🌵3):
+      𝑛.3.2 := Φ.if( c ↦ Φ.zero( x ↦ 𝜎3:λ:φ ) )  # 𝕄(Φ.a🌵3)
+      𝑛.3.3 := 𝑛.3.2( left ↦ 01-:Δ )  # 𝕄(Φ.a🌵3)
+      𝑛.3.4 := 𝑛.3.3( right ↦ Φ.mul( a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎3:λ:φ ) ) ) )  # 𝕄(Φ.a🌵3)
       𝔼(L_if):  # 𝔻(Φ.a🌵3)
+        𝑛.4.1 := Φ.zero( x ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵4)
         𝔼(L_zero):  # 𝔻(Φ.a🌵4)
+          𝔻(Φ.a🌵5):
           𝛿1.5 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
           𝑛.5.1 := 𝜎4:λ  # 𝑛
           𝑛.5.2 := 𝜎4:λ  # 𝕄(𝑛.5.1)
         𝛿1.4 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
         𝑛1.4 := 01-:Δ  # 𝕄(ξ.left)
+        𝑛.4.2 := Φ.mul( a ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵7)
+        𝑛.4.3 := 𝑛.4.2( b ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎3:λ:φ ) ) )  # 𝕄(Φ.a🌵7)
+        𝑛.4.4 := Φ.dec( x ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵7.b)
         𝔼(L_dec):  # 𝕄(Φ.a🌵7.b)
+          𝔻(Φ.a🌵8):
           𝛿1.6 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-          𝑛.6.1 := 𝜎5:λ  # 𝑛
-          𝑛.6.2 := 𝜎5:λ  # 𝕄(𝑛.6.1)
-        looped(⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵7), proven
-        𝑛2.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
+          𝑛.6.1 := 𝜎5:λ:φ  # 𝑛
+          𝑛.6.2 := 𝜎5:λ:φ  # 𝕄(𝑛.6.1)
+        𝑛.4.5 := Φ.fact( n ↦ 𝜎5:λ:φ )  # 𝕄(Φ.a🌵7.b)
+        looped(𝑛.0.10)  # 𝕄(Φ.a🌵7), proven
+        𝑛2.4 := 𝑛.4.3  # 𝕄(ξ.right)
         𝔻(𝜎6:λ) == 01-
         𝑛3.4 := 𝜎6:λ  # 𝑛1
-        𝑛4.4 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+        𝑛4.4 := 𝑛.4.3  # 𝑛2
         stuck(L_if)
     stuck(L_if)
+  𝑛.0.11 := Φ.if( c ↦ 𝜎2:λ )  # 𝕄(Φ.x.φ)
+  𝑛.0.12 := 𝑛.0.11( left ↦ 01-:Δ )  # 𝕄(Φ.x.φ)
+  𝑛.0.13 := 𝑛.0.12( right ↦ 𝑛.0.10 )  # 𝕄(Φ.x.φ)
   𝔼(L_if):  # 𝕄(Φ.x.φ)
     𝛿1.7 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
     𝑛1.7 := 01-:Δ  # 𝕄(ξ.left)
+    𝑛.7.1 := Φ.mul( a ↦ 𝜎1:λ:φ )  # 𝕄(Φ.a🌵11)
+    𝑛.7.2 := 𝑛.7.1( b ↦ 𝑛.3.1 )  # 𝕄(Φ.a🌵11)
+    𝑛.7.3 := Φ.fact( n ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵11.b)
     𝔼(L_mul):  # 𝕄(Φ.a🌵11)
+      𝔻(Φ.a🌵12):
       𝛿1.8 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
+      𝑛.8.1 := Φ.fact( n ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵13)
       𝔻(Φ.a🌵13):
+        𝑛.8.2 := Φ.if( c ↦ 𝑛.4.1 )  # 𝕄(Φ.a🌵13)
+        𝑛.8.3 := 𝑛.8.2( left ↦ 01-:Δ )  # 𝕄(Φ.a🌵13)
+        𝑛.8.4 := 𝑛.8.3( right ↦ 𝑛.4.3 )  # 𝕄(Φ.a🌵13)
         𝔼(L_if):  # 𝔻(Φ.a🌵13)
+          𝑛.9.1 := Φ.zero( x ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵14)
           𝔼(L_zero):  # 𝔻(Φ.a🌵14)
+            𝔻(Φ.a🌵15):
             𝛿1.10 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-            𝑛.10.1 := 𝑛.5.2  # 𝑛
-            𝑛.10.2 := 𝑛.5.2  # 𝕄(𝑛.10.1)
-          𝛿1.9 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
+            𝑛.10.1 := 𝜎7:λ  # 𝑛
+            𝑛.10.2 := 𝜎7:λ  # 𝕄(𝑛.10.1)
+          𝛿1.9 := 𝔻(𝜎7:λ)  # 𝔻(ξ.c)
           𝑛1.9 := 01-:Δ  # 𝕄(ξ.left)
+          𝑛.9.2 := Φ.mul( a ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵17)
+          𝑛.9.3 := 𝑛.9.2( b ↦ Φ.fact( n ↦ 𝑛.4.4 ) )  # 𝕄(Φ.a🌵17)
+          𝑛.9.4 := Φ.dec( x ↦ 𝜎3:λ:φ )  # 𝕄(Φ.a🌵17.b)
           𝔼(L_dec):  # 𝕄(Φ.a🌵17.b)
+            𝔻(Φ.a🌵18):
             𝛿1.11 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-            𝑛.11.1 := 𝑛.6.2  # 𝑛
-            𝑛.11.2 := 𝑛.6.2  # 𝕄(𝑛.11.1)
-          looped(⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧)  # 𝕄(Φ.a🌵17), proven
-          𝑛2.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
-          𝔻(𝜎6:λ) == 01-
-          𝑛3.9 := 𝑛3.4  # 𝑛1
-          𝑛4.9 := ⟦ a ↦ 𝜎3:λ, b ↦ Φ.fact( n ↦ 𝜎5:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+            𝑛.11.1 := 𝜎8:λ:φ  # 𝑛
+            𝑛.11.2 := 𝜎8:λ:φ  # 𝕄(𝑛.11.1)
+          𝑛.9.5 := Φ.fact( n ↦ 𝜎8:λ:φ )  # 𝕄(Φ.a🌵17.b)
+          looped(𝑛.7.2)  # 𝕄(Φ.a🌵17), proven
+          𝑛2.9 := 𝑛.9.3  # 𝕄(ξ.right)
+          𝔻(𝜎9:λ) == 01-
+          𝑛3.9 := 𝜎9:λ  # 𝑛1
+          𝑛4.9 := 𝑛.9.3  # 𝑛2
           stuck(L_if)
       stuck(L_if)
-    𝑛2.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝕄(ξ.right)
-    𝔻(𝜎4:λ) == 01-
-    𝑛3.7 := 𝑛.10.2  # 𝑛1
-    𝑛4.7 := ⟦ a ↦ 𝜎1:λ, b ↦ Φ.fact( n ↦ 𝜎3:λ ), λ ⤍ L_mul ⟧  # 𝑛2
+    𝑛2.7 := 𝑛.7.2  # 𝕄(ξ.right)
+    𝔻(𝜎10:λ) == 01-
+    𝑛3.7 := 𝜎10:λ  # 𝑛1
+    𝑛4.7 := 𝑛.7.2  # 𝑛2
     stuck(L_if)
-msec(31)
+msec(5)
 firings(11)
-fps(355)
+fps(2200)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1528,15 +1572,15 @@ The first `L_mul` brings its `b` down, and that gets 𝔻 into `fact` with
 branch, and the walk of `--deep` over it would fire `L_mul` with `a ↦ 𝜎3` and
 `b ↦ Φ.fact( n ↦ 𝜎5 )`: the formation the first `L_mul` was fired with, `𝜎3`
 standing where `𝜎1` stood and `𝜎5` where `𝜎3` stood, so the firing is cut
-before it opens. The cut is the `looped(…)` line under `𝑛.6.2`, standing where
+before it opens. The cut is the `looped(…)` line under `𝑛.4.5`, standing where
 the block of the cut firing would have stood and commented with the judgment
 the frame belonged to, the site it was cut at and the mode that cut it. What it
-carries is the formation the frame above entered, as that frame had it, so the
-two are paired by their terms and no reader has to rename symbols by eye or
-find the cut in the residue. Nothing runs under a cut, so no block opens under
-the line. In the XML protocol it is
-`<looped by="morph" match="proven" at="Φ.a🌵7"><e>…</e></looped>`, with the
-site and the mode as attributes and the formation in `<e>`. Without the option
+carries is the formation the frame above entered, named by the line that made
+it, `𝑛.0.10`, so the two are paired by their terms and no reader has to rename
+symbols by eye or find the cut in the residue. Nothing runs under a cut, so no
+block opens under the line. In the XML protocol it is
+`<looped by="morph" match="proven" at="Φ.a🌵7"><e>𝑛.0.10</e></looped>`, with
+the site and the mode as attributes and the formation in `<e>`. Without the option
 the same run nests one round inside another until `--max-steps` runs out.
 
 A cut at the `φ` of a copy the walk of `--deep` has placed, such as
@@ -1552,7 +1596,7 @@ them for a deferred copy, on one line, broken here for reading:
 ```xml
 <looped symbol="𝜎6" by="morph" match="plausible" at="Φ.a🌵4.φ" of="Φ.fact">
   <with><attr name="n">𝜎3</attr><attr name="acc">?</attr></with>
-  <e>⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ:φ, acc ↦ Φ.pair( head ↦ 𝜎1:λ:φ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧</e>
+  <e>𝑛.0.16</e>
 </looped>
 ```
 
@@ -1585,13 +1629,13 @@ $ cat facta.phi
   dec ↦ ⟦ x ↦ ∅, λ ⤍ L_dec ⟧,
   pair ↦ ⟦ head ↦ ∅, tail ↦ ∅ ⟧,
   fact ↦ ⟦ n ↦ ∅, acc ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ξ.acc, right ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ), acc ↦ Φ.pair( head ↦ ξ.n, tail ↦ ξ.acc ) ) ) ⟧,
-  x ↦ Φ.fact( n ↦ ⟦ λ ⤍ 𝜎1 ⟧, acc ↦ ⟦ Δ ⤍ 00- ⟧ )
+  x ↦ Φ.fact( n ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, acc ↦ ⟦ Δ ⤍ 00- ⟧ )
 ⟧
 $ phino morph --deep --acyclic=plausible --partial --sweet --hide-rho --flat \
     --symbolic=facta.yaml --locator='Q.x' --protocol=facta.txt facta.phi
-⟦ n ↦ 𝜎1:λ, acc ↦ 00-:Δ, φ ↦ Φ.if( c ↦ 𝜎2:λ, left ↦ acc, right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ n, tail ↦ acc ) ) ) ⟧
+⟦ n ↦ 𝜎1:λ:φ, acc ↦ 00-:Δ, φ ↦ 𝜎8:λ ⟧
 $ grep looped facta.txt
-looped(⟦ c ↦ 𝜎2:λ, left ↦ 00-:Δ, right ↦ Φ.fact( n ↦ 𝜎3:λ, acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 00-:Δ ) ), λ ⤍ L_if ⟧)  # 𝕄(Φ.a🌵4.φ), plausible
+    looped(𝑛.0.16) := 𝜎6  # 𝕄(Φ.a🌵4.φ), plausible
 ```
 
 <!-- markdownlint-enable MD013 -->
