@@ -2451,6 +2451,30 @@ spec = do
           withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧" $
             testCLISucceeded ["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ["40-45-00-00-00-00-00-00"]
 
+      it "gets stuck on a fork whose second branch reaches a symbol through an object of the world when the entry is strict" $
+        withLambdasOf strict $ \forks ->
+          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧ ⟧" $
+            testCLIFailed ["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ["No entry of --symbolic answers the λ function 'L_fork'"]
+
+      it "dataizes a fork whose second branch reaches a symbol through an object of the world" $
+        withLambdasOf lenient $ \forks ->
+          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧ ⟧" $
+            testCLISucceeded ["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ["40-45-00-00-00-00-00-00"]
+
+      it "writes the symbols it joined through an object of the world into the protocol" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf lenient $ \forks ->
+            withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧ ⟧" $
+              testCLISucceeded ["dataize", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["    𝑛3·1 := 𝜎3:λ  # [𝑛1, 𝑛2]"]
+
+      it "gets stuck on a fork whose second branch reads the world forever" $
+        withLambdasOf lenient $ \forks ->
+          withStdin "⟦ x ↦ ⟦ φ ↦ Φ.x ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.x ⟧, λ ⤍ L_fork ⟧ ⟧" $
+            testCLIFailed ["dataize", "--symbolic=" ++ forks, "--locator=Q.y", "--max-steps=50"] ["No entry of --symbolic answers the λ function 'L_fork'"]
+
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $
@@ -2932,6 +2956,13 @@ spec = do
               testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records `shouldContain` ["    𝑛3·1 := ⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧:φ  # [𝑛1, 𝑛2]"]
+
+      it "joins a bare symbol with a branch reaching a symbol through an object of the world under --deep" $
+        withLambdasOf lenient $ \forks ->
+          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ r ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧ ⟧ ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--deep", "--sweet", "--hide-rho", "--flat"]
+              ["𝜎3:λ:r"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"

@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Refused (..), Steps (..), Tally (..), admitted, boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Refused (..), Steps (..), Tally (..), admitted, boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, unfired, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn, pathOf)
@@ -469,24 +469,11 @@ deepened focus expr univ state ctx = do
     resolved current form state' caller bd@(BiTau attr body@(ExDispatch _ _))
       | attr /= AtPhi && attr /= AtRho = do
           placed <- ctx._engine._contextualize body (scope attr form)
-          outcome <- try (settled placed current state' (reading current caller))
-          case outcome of
-            Right (made@(ExFormation [BiLambda (FnSymbol _)]), _) -> pure (BiTau attr made)
-            Left (OutOfTime cap) -> expired caller cap
+          made <- unfired placed current state' caller
+          case made of
+            Just found@(ExFormation [BiLambda (FnSymbol _)]) -> pure (BiTau attr found)
             _ -> pure bd
     resolved _ _ _ _ bd = pure bd
-    reading :: Expression -> ReduceContext -> ReduceContext
-    reading current caller =
-      caller
-        { _universe = Just current
-        , _symbolic = emptyLambdas
-        , _memo = Nothing
-        , _tally = Nothing
-        , _acyclic = Nothing
-        , _deep = False
-        , _saveStep = dontSaveStep
-        , _saveEval = dontSaveEval
-        }
     deferred :: Expression -> State -> ReduceContext -> IO (Expression, State)
     deferred copy state' caller = do
       fresh <- coined caller
@@ -775,6 +762,27 @@ settled term univ state ctx = do
   (normal, _) <- normalized term ((univ, Nothing) :| []) ctx
   ((morphed, _), state') <- morph' (normal, (univ, Nothing) :| []) univ state ctx
   pure (morphed, state')
+
+unfired :: Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression)
+unfired term univ state ctx = do
+  outcome <- try (settled term univ state quiet)
+  case outcome of
+    Right (made, _) -> pure (Just made)
+    Left (OutOfTime cap) -> expired ctx cap
+    Left _ -> pure Nothing
+  where
+    quiet :: ReduceContext
+    quiet =
+      ctx
+        { _universe = Just univ
+        , _symbolic = emptyLambdas
+        , _memo = Nothing
+        , _tally = Nothing
+        , _acyclic = Nothing
+        , _deep = False
+        , _saveStep = dontSaveStep
+        , _saveEval = dontSaveEval
+        }
 
 morphing :: Expression -> ReduceContext -> Expression -> State -> IO (Expression, State)
 morphing univ ctx expr state = do

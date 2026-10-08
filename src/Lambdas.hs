@@ -22,9 +22,10 @@ module Lambdas
 where
 
 import AST
-import Control.Applicative ((<|>))
+import Control.Applicative (empty, (<|>))
 import Control.Exception (Exception, throwIO)
 import Control.Monad (void)
+import Control.Monad.Trans.Maybe (MaybeT (..), hoistMaybe)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object), withObject, (.!=), (.:), (.:?))
 import Data.Char (isDigit)
 import Data.List (find, sortOn)
@@ -389,14 +390,14 @@ symbolized term spent = case goExpr term (spent, []) of
 
 type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 
-joined :: Bool -> Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
-joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty, [])
+joined :: (Expression -> IO (Maybe Expression)) -> Bool -> Expression -> Expression -> Int -> IO (Maybe (Expression, [(Int, (Int, Int))], Int))
+joined world lenient left right spent = fmap taking <$> runMaybeT (goExpr left right (spent, Map.empty, []))
   where
     taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
     taking (term, (spent', _, made)) = (term, reverse made, spent')
-    goExpr :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goExpr :: Expression -> Expression -> Joining -> MaybeT IO (Expression, Joining)
     goExpr one two joining = goAlike one two joining <|> goDecorated one two joining
-    goAlike :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goAlike :: Expression -> Expression -> Joining -> MaybeT IO (Expression, Joining)
     goAlike one@(ExFormation _) two@(ExFormation _) joining
       | bare one /= bare two = do
           mine <- ending one
@@ -423,50 +424,55 @@ joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty
           (expr, joining') <- goExpr one two joining
           pure (ExPhiAgain prefix idx expr, joining')
     goAlike one two joining
-      | one == two = Just (one, joining)
-      | otherwise = Nothing
-    goDecorated :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+      | one == two = pure (one, joining)
+      | otherwise = empty
+    goDecorated :: Expression -> Expression -> Joining -> MaybeT IO (Expression, Joining)
     goDecorated one two joining
       | lenient && depth one < depth two = peeled (goExpr one) two
       | lenient && depth two < depth one = peeled (`goExpr` two) one
-      | otherwise = Nothing
+      | otherwise = empty
       where
-        peeled :: (Expression -> Joining -> Maybe (Expression, Joining)) -> Expression -> Maybe (Expression, Joining)
+        peeled :: (Expression -> Joining -> MaybeT IO (Expression, Joining)) -> Expression -> MaybeT IO (Expression, Joining)
         peeled pairing decorator = do
-          inner <- decorated decorator
+          inner <- hoistMaybe (decorated decorator)
           (expr, joining') <- pairing inner joining
           pure (ExFormation [BiTau AtPhi expr], joining')
-    goBindings :: [Binding] -> [Binding] -> Joining -> Maybe ([Binding], Joining)
-    goBindings [] [] joining = Just ([], joining)
+    goBindings :: [Binding] -> [Binding] -> Joining -> MaybeT IO ([Binding], Joining)
+    goBindings [] [] joining = pure ([], joining)
     goBindings (one : rest) (two : rest') joining = do
       (bd, joining') <- goBinding one two joining
       (bds, joining'') <- goBindings rest rest' joining'
       pure (bd : bds, joining'')
-    goBindings _ _ _ = Nothing
-    goBinding :: Binding -> Binding -> Joining -> Maybe (Binding, Joining)
+    goBindings _ _ _ = empty
+    goBinding :: Binding -> Binding -> Joining -> MaybeT IO (Binding, Joining)
     goBinding (BiLambda (FnSymbol one)) (BiLambda (FnSymbol two)) joining
       | one /= two = case picked (one, two) joining of
-          (fresh, joining') -> Just (BiLambda (FnSymbol fresh), joining')
+          (fresh, joining') -> pure (BiLambda (FnSymbol fresh), joining')
     goBinding (BiTau AtPhi one) (BiTau AtPhi two) joining = do
       (expr, joining') <- goExpr one two joining
       pure (BiTau AtPhi expr, joining')
     goBinding bd@(BiTau attr _) (BiTau attr' _) joining
-      | attr == attr' = Just (bd, joining)
+      | attr == attr' = pure (bd, joining)
     goBinding one two joining
-      | one == two = Just (one, joining)
-      | otherwise = Nothing
+      | one == two = pure (one, joining)
+      | otherwise = empty
     bare :: Expression -> Bool
     bare (ExFormation [BiLambda (FnSymbol _)]) = True
     bare _ = False
-    ending :: Expression -> Maybe Binding
-    ending (ExFormation [bd@(BiLambda (FnSymbol _))]) = Just bd
-    ending term = decorated term >>= ending
+    ending :: Expression -> MaybeT IO Binding
+    ending (ExFormation [bd@(BiLambda (FnSymbol _))]) = pure bd
+    ending term = unfolded term >>= ending
+    unfolded :: Expression -> MaybeT IO Expression
+    unfolded term = case decorated term of
+      Just inner@(ExFormation _) -> pure inner
+      Just _ | lenient -> MaybeT (world term)
+      _ -> empty
     decorated :: Expression -> Maybe Expression
     decorated (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds]
     decorated _ = Nothing
     depth :: Expression -> Int
     depth term = maybe 0 (succ . depth) (decorated term)
-    goArgument :: Argument -> Argument -> Joining -> Maybe (Argument, Joining)
+    goArgument :: Argument -> Argument -> Joining -> MaybeT IO (Argument, Joining)
     goArgument (ArTau attr one) (ArTau attr' two) joining
       | attr == attr' = do
           (expr, joining') <- goExpr one two joining
@@ -476,8 +482,8 @@ joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty
           (expr, joining') <- goExpr one two joining
           pure (ArAlpha alpha expr, joining')
     goArgument one two joining
-      | one == two = Just (one, joining)
-      | otherwise = Nothing
+      | one == two = pure (one, joining)
+      | otherwise = empty
     picked :: (Int, Int) -> Joining -> (Int, Joining)
     picked pair joining@(spent', names, made)
       | Just name <- Map.lookup pair names = (name, joining)

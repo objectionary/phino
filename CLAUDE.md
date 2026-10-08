@@ -369,14 +369,20 @@ The walk does not enter a copy over a bare symbol (#1729). Before a step
 walks a formation (`deferrable` of `deepened`), it checks that the formation
 is `boxed`, has no void, has a φ written as code rather than as a formation,
 and is not the target of a dispatch to an attribute it has. If so, it reads
-every argument written as a dispatch, other than ρ and φ, with `settled`
-under a context that cannot fire and writes nothing (`resolved` and
-`reading`: an empty table, no memo, no tally, no cut). If an argument comes
+every argument written as a dispatch, other than ρ and φ, with `unfired` of
+`Morph.hs` (called by `resolved`): `settled` under a context that cannot fire
+and writes nothing, with an empty table, no memo, no tally and no cut, and no
+answer where it gets stuck or runs out of steps. If an argument comes
 to a bare `⟦ λ ⤍ 𝜎k ⟧`, the step answers the formation with a fresh bare
 symbol and writes `deferred(…)` (`EvDeferred` of `Deps.hs`), carrying the
 copy with its arguments read. The `join` of `Lambdas.hs` pairs such a bare
 symbol with the symbol the φ chain of the other branch ends in, and answers
-a bare fresh symbol, dropping the methods.
+a bare fresh symbol, dropping the methods. Under `lenient: true` the chain
+goes on through a φ written as code, such as a call of an object of the world
+(#1817): `joined` asks the world it is handed for the formation that φ comes
+to. `paired` of `Evaluate.hs` hands it `unwrapped`, which runs `unfired` over
+the dispatch of φ and spends a step of the budget per read, so a chain that
+never ends gets stuck once the budget runs out.
 
 The record also carries the copy as a call of the object of the world it was
 made of (#1732): `called` of `deepened` applies the locator `origin` finds to
