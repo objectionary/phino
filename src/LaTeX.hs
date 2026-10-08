@@ -262,6 +262,7 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_BYTES{..} = EX_BYTES (toLaTeX bytes)
   toLaTeX EX_SINGLE{..} = EX_SINGLE (toLaTeX pair) SPACE (toLaTeX formation)
   toLaTeX EX_STRING{..} = EX_STRING (T.unpack (toLaTeX (T.pack str))) tab rhos
+  toLaTeX num@EX_NUMBER{} = EX_ATTR (toLaTeX (AT_LABEL (render num)))
   toLaTeX expr = expr
 
 instance ToLaTeX ATTRIBUTE where

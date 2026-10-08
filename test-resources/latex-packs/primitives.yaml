@@ -6,5 +6,5 @@ expression: |
   [[ n -> 42, s -> "hello" ]]
 result: |-
   \begin{phiquation}
-  [[ |n| -> 42, |s| -> "hello" ]]{.}
+  [[ |n| -> |42|, |s| -> "hello" ]]{.}
   \end{phiquation}
