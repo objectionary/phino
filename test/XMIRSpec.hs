@@ -500,3 +500,12 @@ spec = do
       case result of
         Left exc -> displayException exc `shouldContain` "Couldn't traverse though given XMIR"
         Right _ -> expectationFailure "expected an exception"
+
+  describe "XMIR name of a test" $ do
+    it "accepts a formation named with a plus, the way EO names a test" $
+      void (parseXMIRThrows "<object><o name=\"app\"><o name=\"+works\"/></o></object>" >>= xmirToPhi)
+    it "accepts a formation named with a minus, the way EO names a test that must fail" $
+      void (parseXMIRThrows "<object><o name=\"app\"><o name=\"-stops\"/></o></object>" >>= xmirToPhi)
+    it "still refuses the rest of the name when it is not a label" $
+      (parseXMIRThrows "<object><o name=\"app\"><o name=\"+Works\"/></o></object>" >>= xmirToPhi)
+        `shouldThrow` anyException
