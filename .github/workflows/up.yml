@@ -26,7 +26,7 @@ jobs:
           git fetch --tags --force && \
           latest=$(git tag --sort=creatordate | tail -1) && \
           escaped=$(printf '%s' "$latest" | sed 's/[\\&|]/\\\\&/g') && \
-          sed -E -i "s|phino-[0-9.]+|phino-${escaped}|g" README.md
+          sed -E -i "s|phino([-@])[0-9.]+|phino\1${escaped}|g" README.md
       - uses: peter-evans/create-pull-request@v8
         with:
           sign-commits: true

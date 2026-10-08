@@ -55,6 +55,23 @@ Download paths are:
 * MacOS (Intel): <http://phino.objectionary.com/releases/macos-14-large/phino-latest>
 * Windows: <http://phino.objectionary.com/releases/windows-2022/phino-latest.exe>
 
+In a [GitHub Actions][gha] workflow, one step downloads the binary
+for the runner and puts it on the `PATH`:
+
+```yaml
+- uses: objectionary/phino@0.0.150
+  with:
+    version-file: phino-version.txt
+- run: phino --version
+```
+
+The file holds the version to install, such as `0.0.150`, and the
+whitespace around it is ignored.
+Give `version: 0.0.150` instead of `version-file` to write the version
+in the workflow itself.
+The step fails if no binary is released for the runner, such as
+Linux on ARM, or if `phino --version` prints another version.
+
 ## Build
 
 To build `phino` from source, clone this repository:
@@ -2546,6 +2563,7 @@ or [Stack ≥ 3.0][stack] installed.
 [latex]: https://en.wikipedia.org/wiki/LaTeX
 [java]: https://www.java.com/en/download/
 [curl]: https://curl.se/
+[gha]: https://docs.github.com/en/actions
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin

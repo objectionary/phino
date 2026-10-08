@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: phino
+description: Install a released binary of phino, the command-line manipulator of 𝜑-calculus expressions, and put it on the PATH
+inputs:
+  version:
+    description: The version of phino to install, such as 0.0.150, given instead of version-file
+    required: false
+  version-file:
+    description: The file holding the version of phino to install, the whitespace in it ignored, given instead of version
+    required: false
+runs:
+  using: composite
+  steps:
+    - id: download
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        VERSION_FILE: ${{ inputs.version-file }}
+      run: |
+        if [ -n "$VERSION" ] && [ -n "$VERSION_FILE" ]; then
+          echo "::error::Give the phino action either version or version-file, not both"
+          exit 1
+        fi
+        if [ -n "$VERSION_FILE" ]; then
+          if [ ! -f "$VERSION_FILE" ]; then
+            echo "::error::The version file '$VERSION_FILE' given to the phino action does not exist"
+            exit 1
+          fi
+          VERSION=$(tr -d '[:space:]' < "$VERSION_FILE")
+        fi
+        if [ -z "$VERSION" ]; then
+          echo "::error::Give the phino action either version or version-file"
+          exit 1
+        fi
+        if ! [[ "$VERSION" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
+          echo "::error::The version '$VERSION' given to the phino action is not a release number, such as 0.0.150"
+          exit 1
+        fi
+        case "$RUNNER_OS/$RUNNER_ARCH" in
+          Linux/X64) folder=ubuntu-22.04 ;;
+          macOS/ARM64) folder=macos-15 ;;
+          macOS/X64) folder=macos-14-large ;;
+          Windows/X64) folder=windows-2022 ;;
+          *)
+            echo "::error::No binary of phino is released for $RUNNER_OS on $RUNNER_ARCH"
+            exit 1
+            ;;
+        esac
+        ext=''
+        if [ "$RUNNER_OS" = Windows ]; then
+          ext=.exe
+        fi
+        url="https://s3.amazonaws.com/phino.objectionary.com/releases/$folder/phino-$VERSION$ext"
+        dir="$RUNNER_TEMP/phino-$VERSION"
+        mkdir -p "$dir"
+        if ! curl --fail --silent --show-error --location --retry 3 --output "$dir/phino$ext" "$url"; then
+          echo "::error::Cannot download phino $VERSION for $folder from $url"
+          exit 1
+        fi
+        chmod +x "$dir/phino$ext"
+        echo "$dir" >> "$GITHUB_PATH"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+    - shell: bash
+      env:
+        VERSION: ${{ steps.download.outputs.version }}
+      run: |
+        actual=$(phino --version | tr -d '[:space:]')
+        if [ "$actual" != "$VERSION" ]; then
+          echo "::error::The phino on the PATH reports version '$actual' instead of '$VERSION'"
+          exit 1
+        fi
