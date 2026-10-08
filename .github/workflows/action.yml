@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+name: action
+'on':
+  push:
+    branches:
+      - master
+    paths:
+      - 'action.yml'
+      - '.github/workflows/action.yml'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'action.yml'
+      - '.github/workflows/action.yml'
+permissions: read-all
+concurrency:
+  group: action-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  installs:
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04, macos-15, macos-15-intel, windows-2022]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./
+        with:
+          version: 0.0.150
+      - shell: bash
+        run: test "$(phino --version | tr -d '[:space:]')" = 0.0.150
+  reads:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: printf '\n  0.0.149 \n' > phino-version.txt
+      - uses: ./
+        with:
+          version-file: phino-version.txt
+      - run: test "$(phino --version)" = 0.0.149
+  refuses:
+    name: refuses ${{ matrix.case }}
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        include:
+          - case: no version
+            os: ubuntu-24.04
+          - case: two versions
+            os: ubuntu-24.04
+            version: 0.0.150
+            file: phino-version.txt
+          - case: a missing file
+            os: ubuntu-24.04
+            file: absent.txt
+          - case: a malformed version
+            os: ubuntu-24.04
+            version: latest
+          - case: an unreleased version
+            os: ubuntu-24.04
+            version: 0.0.9999
+          - case: an ARM Linux runner
+            os: ubuntu-24.04-arm
+            version: 0.0.150
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: printf 0.0.150 > phino-version.txt
+      - id: install
+        uses: ./
+        continue-on-error: true
+        with:
+          version: ${{ matrix.version }}
+          version-file: ${{ matrix.file }}
+      - if: steps.install.outcome != 'failure'
+        env:
+          CASE: ${{ matrix.case }}
+        run: |
+          echo "::error::The action did not refuse to install phino given ${CASE}"
+          exit 1
