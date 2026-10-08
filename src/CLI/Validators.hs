@@ -6,7 +6,8 @@ module CLI.Validators where
 import AST
 import CLI.Types
 import Control.Exception
-import Control.Monad (forM_, when, (>=>))
+import Control.Monad (forM_, unless, when, (>=>))
+import Data.Char (isAlphaNum)
 import Data.Foldable (for_)
 import Data.List (isPrefixOf)
 import Data.Maybe (isJust)
@@ -63,7 +64,14 @@ validateNoOverlap showOpt shown hideOpt hidden =
     inside _ _ = False
 
 validateLatexOptions :: IOFormat -> [(Bool, String)] -> [(Maybe String, String)] -> [(Maybe Int, String)] -> IO ()
-validateLatexOptions LATEX _ _ _ = pure ()
+validateLatexOptions LATEX _ strings _ = forM_ strings validateLatexString
+  where
+    validateLatexString (Just label, "label") =
+      unless (all safeLabelCharacter label) $
+        invalidCLIArguments
+          "The --label option must contain only letters, numbers, colons, periods, underscores, and hyphens"
+    validateLatexString _ = pure ()
+    safeLabelCharacter character = isAlphaNum character || character `elem` ":._-"
 validateLatexOptions _ bools strings ints = do
   let (bools', opts) = unzip bools
       msg = "The --%s option can stay together with --output=latex only"
