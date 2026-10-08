@@ -313,6 +313,33 @@ The methods of the formation are dropped, since the other branch may have
 none of them. A formation whose `φ` chain ends in a datum, or which has no `φ`
 at all, does not join with a bare symbol.
 
+A fork whose one branch calls a method often meets a decorator. In
+`if. (value.gte 0) (0.plus value) value.neg` the first branch comes to a
+number `X`, while `value.neg` is a method, `times -1 > @`, and comes to
+`⟦ φ ↦ X ⟧`, with the number one level down. The two differ in shape, so the
+join is refused. An entry that says `lenient: true` beside its `join` block
+lets it through:
+
+```yaml
+- λ: L_fork
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  join:
+    𝑛3: [𝑛1, 𝑛2]
+  lenient: true
+  𝑛: 𝑛3
+```
+
+Every `join` line of such an entry joins a term with a formation whose `φ` is
+that term, in either order, and answers `⟦ φ ↦ X ⟧`, with symbols minted inside
+`X` the usual way. Where both terms are formations, the one with the longer `φ`
+chain is taken for the decorator. The answer drops the `ρ` and the other
+attributes of the decorator, so it is not exactly the object either branch
+made, which is why an entry is strict unless it says otherwise. Dataization
+still reaches the same data through it. An entry that says `lenient: true` and
+has no `join` line is refused when the file is read.
+
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
 has a perfectly good value on the other. The join then mints nothing, binds

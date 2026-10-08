@@ -22,6 +22,7 @@ module Lambdas
 where
 
 import AST
+import Control.Applicative ((<|>))
 import Control.Exception (Exception, throwIO)
 import Control.Monad (void)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object), withObject, (.!=), (.:), (.:?))
@@ -57,6 +58,7 @@ data Lambda = Lambda
   , _rewritten :: [(Meta, (Meta, [Y.Rule]))]
   , _symbolized :: [(Meta, Expression)]
   , _paired :: [(Meta, (Meta, Meta))]
+  , _lenient :: Bool
   , _answer :: Expression
   }
 
@@ -81,6 +83,7 @@ instance FromJSON Lambda where
         <*> rewrites (T.unpack key) entry
         <*> operands key expressionMeta entry "symbolize"
         <*> pairs (T.unpack key) entry
+        <*> entry .:? "lenient" .!= False
         <*> pure answer
     sigmas (T.unpack key) lambda._answer
     dataless (T.unpack key) lambda._answer
@@ -89,6 +92,7 @@ instance FromJSON Lambda where
     mapM_ (metaless (T.unpack key) "dataize") lambda._dataized
     mapM_ (metaless (T.unpack key) "morph") lambda._morphed
     answered (T.unpack key) lambda
+    lonely (T.unpack key) lambda
     pure lambda
     where
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
@@ -236,6 +240,10 @@ instance FromJSON Lambda where
               ++ map (_name . fst) lambda._rewritten
               ++ map (_name . fst) lambda._symbolized
               ++ map (_name . fst) lambda._paired
+      lonely :: String -> Lambda -> Yaml.Parser ()
+      lonely key lambda
+        | lambda._lenient && null lambda._paired = fail (printf "The λ function '%s' is lenient but has no 'join' line to be lenient in" key)
+        | otherwise = pure ()
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
@@ -381,40 +389,53 @@ symbolized term spent = case goExpr term (spent, []) of
 
 type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 
-joined :: Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
-joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
+joined :: Bool -> Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
+joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty, [])
   where
     taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
     taking (term, (spent', _, made)) = (term, reverse made, spent')
     goExpr :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
-    goExpr one@(ExFormation _) two@(ExFormation _) joining
+    goExpr one two joining = goAlike one two joining <|> goDecorated one two joining
+    goAlike :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goAlike one@(ExFormation _) two@(ExFormation _) joining
       | bare one /= bare two = do
           mine <- ending one
           theirs <- ending two
           (bd, joining') <- goBinding mine theirs joining
           pure (ExFormation [bd], joining')
-    goExpr (ExFormation one) (ExFormation two) joining = do
+    goAlike (ExFormation one) (ExFormation two) joining = do
       (bds, joining') <- goBindings one two joining
       pure (ExFormation bds, joining')
-    goExpr (ExApplication one arg) (ExApplication two arg') joining = do
+    goAlike (ExApplication one arg) (ExApplication two arg') joining = do
       (expr, joining') <- goExpr one two joining
       (applied, joining'') <- goArgument arg arg' joining'
       pure (ExApplication expr applied, joining'')
-    goExpr (ExDispatch one attr) (ExDispatch two attr') joining
+    goAlike (ExDispatch one attr) (ExDispatch two attr') joining
       | attr == attr' = do
           (expr, joining') <- goExpr one two joining
           pure (ExDispatch expr attr, joining')
-    goExpr (ExPhiMeet prefix idx one) (ExPhiMeet prefix' idx' two) joining
+    goAlike (ExPhiMeet prefix idx one) (ExPhiMeet prefix' idx' two) joining
       | prefix == prefix' && idx == idx' = do
           (expr, joining') <- goExpr one two joining
           pure (ExPhiMeet prefix idx expr, joining')
-    goExpr (ExPhiAgain prefix idx one) (ExPhiAgain prefix' idx' two) joining
+    goAlike (ExPhiAgain prefix idx one) (ExPhiAgain prefix' idx' two) joining
       | prefix == prefix' && idx == idx' = do
           (expr, joining') <- goExpr one two joining
           pure (ExPhiAgain prefix idx expr, joining')
-    goExpr one two joining
+    goAlike one two joining
       | one == two = Just (one, joining)
       | otherwise = Nothing
+    goDecorated :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goDecorated one two joining
+      | lenient && depth one < depth two = peeled (goExpr one) two
+      | lenient && depth two < depth one = peeled (`goExpr` two) one
+      | otherwise = Nothing
+      where
+        peeled :: (Expression -> Joining -> Maybe (Expression, Joining)) -> Expression -> Maybe (Expression, Joining)
+        peeled pairing decorator = do
+          inner <- decorated decorator
+          (expr, joining') <- pairing inner joining
+          pure (ExFormation [BiTau AtPhi expr], joining')
     goBindings :: [Binding] -> [Binding] -> Joining -> Maybe ([Binding], Joining)
     goBindings [] [] joining = Just ([], joining)
     goBindings (one : rest) (two : rest') joining = do
@@ -439,8 +460,12 @@ joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
     bare _ = False
     ending :: Expression -> Maybe Binding
     ending (ExFormation [bd@(BiLambda (FnSymbol _))]) = Just bd
-    ending (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds] >>= ending
-    ending _ = Nothing
+    ending term = decorated term >>= ending
+    decorated :: Expression -> Maybe Expression
+    decorated (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds]
+    decorated _ = Nothing
+    depth :: Expression -> Int
+    depth term = maybe 0 (succ . depth) (decorated term)
     goArgument :: Argument -> Argument -> Joining -> Maybe (Argument, Joining)
     goArgument (ArTau attr one) (ArTau attr' two) joining
       | attr == attr' = do
