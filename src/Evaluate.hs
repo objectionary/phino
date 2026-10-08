@@ -87,7 +87,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     worked ctx entry firing@(Firing _ operands _) bound state' = do
       rewrote <- foldM (reshaped ctx) bound entry._rewritten
       stood <- foldM (masked ctx) rewrote entry._symbolized
-      forked <- foldM (paired ctx (listToMaybe operands)) stood entry._paired
+      forked <- foldM (paired ctx entry._lenient (listToMaybe operands)) stood entry._paired
       (answer, state'') <- answered ctx entry operands forked state'
       remember caller._memo firing answer
       pure (answer, state'')
@@ -156,8 +156,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       where
         fact :: (Int, Bytes) -> Evaluation
         fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
-    paired :: ReduceContext -> Maybe (Either Int Bytes) -> Subst -> (Meta, (Meta, Meta)) -> IO Subst
-    paired ctx condition bound (meta, (left, right)) = do
+    paired :: ReduceContext -> Bool -> Maybe (Either Int Bytes) -> Subst -> (Meta, (Meta, Meta)) -> IO Subst
+    paired ctx lenient condition bound (meta, (left, right)) = do
       one <- branch left
       two <- branch right
       case (one, two) of
@@ -168,7 +168,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       where
         both :: Expression -> Expression -> IO Subst
         both one two = do
-          outcome <- joined one two <$> readIORef ctx._minted
+          outcome <- joined lenient one two <$> readIORef ctx._minted
           case outcome of
             Nothing -> throwIO (Stuck func)
             Just (term, made, spent) -> do

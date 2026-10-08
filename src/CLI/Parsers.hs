@@ -251,7 +251,8 @@ optSymbolic =
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
               \it reduces to a normal form under \"morph\", the terms it rewrites by rules of its own under \
               \\"rewrite\", the terms of those it stands the data of into unknowns under \"symbolize\" and the \
-              \pairs of branches it joins into one term under \"join\", and answering with the term under \"𝑛\""
+              \pairs of branches it joins into one term under \"join\", whether a join takes a term and a \
+              \formation whose φ is that term for one under \"lenient\", and answering with the term under \"𝑛\""
         )
     )
 

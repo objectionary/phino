@@ -1218,7 +1218,7 @@ spec = do
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
 
     it "names every block of a --symbolic entry in its help" $
-      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"rewrite\"", "\"symbolize\"", "\"join\""]
+      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"rewrite\"", "\"symbolize\"", "\"join\"", "\"lenient\""]
 
     it "dataizes simple expression" $
       withStdin "[[ D> 01- ]]" $
@@ -2438,6 +2438,19 @@ spec = do
           withStdin sum' $
             testCLIFailed ["dataize", "--symbolic=" ++ path] ["cannot be read"]
 
+    describe "a lenient join" $ do
+      let strict = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
+          lenient = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  𝑛: 𝑛3\n"
+      it "gets stuck on a fork whose second branch decorates the first when the entry is strict" $
+        withLambdasOf strict $ \forks ->
+          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧" $
+            testCLIFailed ["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ["No entry of --symbolic answers the λ function 'L_fork'"]
+
+      it "dataizes a fork whose second branch decorates the first" $
+        withLambdasOf lenient $ \forks ->
+          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧" $
+            testCLISucceeded ["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ["40-45-00-00-00-00-00-00"]
+
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $
@@ -2888,6 +2901,37 @@ spec = do
       it "fails on that same spine without --partial" $
         withStdin "[[ x -> [[ L> Sym_arg_0 ]].foo ]]" $
           testCLIFailed ["morph", "--deep"] ["No entry of --symbolic answers the λ function 'Sym_arg_0'"]
+
+    describe "a lenient join" $ do
+      let strict = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
+          lenient = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  𝑛: 𝑛3\n"
+      it "gets stuck on a fork whose second branch decorates the first when the entry is strict" $
+        withLambdasOf strict $ \forks ->
+          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
+            testCLIFailed ["morph", "--symbolic=" ++ forks, "--locator=Q.y"] ["No entry of --symbolic answers the λ function 'L_fork'"]
+
+      it "joins a fork whose second branch decorates the first" $
+        withLambdasOf lenient $ \forks ->
+          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
+              ["⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧"]
+
+      it "joins a fork whose first branch decorates the second" $
+        withLambdasOf lenient $ \forks ->
+          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
+              ["⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧"]
+
+      it "writes the decorator it joined into the protocol" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf lenient $ \forks ->
+            withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["    𝑛3·1 := ⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧:φ  # [𝑛1, 𝑛2]"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
