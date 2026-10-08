@@ -159,7 +159,7 @@ body comments printed toLatex =
                   ++ maybe
                     opening
                     ( \(judgment, name) ->
-                        if judgment == Contextualization
+                        if judgment `elem` [Contextualization, Evaluation]
                           then printf "%s %s" opening (relation judgment)
                           else printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) (escaped name)
                     )
