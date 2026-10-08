@@ -207,15 +207,14 @@ spec = do
           ]
 
     forM_
-      [ (Normalization, "\\phiNormalize")
-      , (Morphing, "\\phiMorph")
-      , (Dataization, "\\phiDataize")
-      , (Evaluation, "\\phiEvaluate")
-      , (Contextualization, "\\phiContextualize")
+      [ (Normalization, "\\phiNormalize", "[\\nameref{r:tv}]")
+      , (Morphing, "\\phiMorph", "[\\nameref{r:tv}]")
+      , (Dataization, "\\phiDataize", "[\\nameref{r:tv}]")
+      , (Evaluation, "\\phiEvaluate", "")
+      , (Contextualization, "\\phiContextualize", "")
       ]
-      ( \(judgment, arrow) ->
-          it ("ends a step taken by " ++ show judgment ++ " with " ++ arrow ++ " and opens the next one with it") $ do
-            let reference = if judgment == Contextualization then "" else "[\\nameref{r:tv}]"
+      ( \(judgment, arrow, reference) ->
+          it ("ends a step taken by " ++ show judgment ++ " with " ++ arrow ++ reference ++ " and opens the next one with " ++ arrow) $ do
             first <- parseExpressionThrows "[[ q -> Q.f ]]"
             second <- parseExpressionThrows "[[ q -> Q.j ]]"
             latex <- rewrittensToLatex ([(first, Just (judgment, "tv")), (second, Nothing)], False) defaultLatexContext
