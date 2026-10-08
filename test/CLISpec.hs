@@ -681,7 +681,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=bad%tag"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\phiExpression{bad\\char37{}tag} 5 : |x|{.}"
+              , "\\phiExpression{bad\\char37{}tag} |5| : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
