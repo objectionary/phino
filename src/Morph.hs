@@ -120,7 +120,7 @@ data ReduceContext = ReduceContext
   }
 
 data Budget
-  = Depth Int
+  = Depth Judgment Int
   | Firings Int
   | Cycles Int
 
@@ -137,8 +137,8 @@ data ReduceException
   deriving anyclass (Exception)
 
 instance Show ReduceException where
-  show (OutOfSteps (Depth limit)) =
-    printf "Dataization did not finish before reaching the limit of steps: --max-steps=%d" limit
+  show (OutOfSteps (Depth judgment limit)) =
+    printf "%s did not finish before reaching the limit of steps: --max-steps=%d" (show judgment) limit
   show (OutOfSteps (Firings limit)) =
     printf "Evaluation did not finish before reaching the limit of firings: --max-firings=%d" limit
   show (OutOfSteps (Cycles limit)) =
@@ -172,7 +172,7 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   when (spent >= limit) $ do
     starve ctx._memo
     ctx._saveEval (EvStarved ctx._nesting limit ctx._judgment ctx._site)
-    throwIO (OutOfSteps (Depth limit))
+    throwIO (OutOfSteps (Depth ctx._judgment limit))
   pure ctx{_steps = Steps limit (spent + 1)}
   where
     starve :: Maybe Memo -> IO ()
