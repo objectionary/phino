@@ -340,6 +340,18 @@ made, which is why an entry is strict unless it says otherwise. Dataization
 still reaches the same data through it. An entry that says `lenient: true` and
 has no `join` line is refused when the file is read.
 
+A lenient entry also reads the world when it pairs a bare symbol with the end
+of a `φ` chain. In `bool.and` one branch comes to a bare `⟦ λ ⤍ 𝜎1 ⟧` and the
+other to `⟦ φ ↦ Φ.bool( if ↦ 𝑘 ) ⟧`, where `𝑘` is
+`⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧`. The `φ` of the second is a call, not a
+formation, so a strict join stops there. A lenient one reads that `φ` the way
+𝕄 would: it finds `bool` in the program, puts `𝑘` in place of its void, reads
+the `φ` of that copy, `ξ.if(…)`, and goes on until the chain ends. Here it
+ends in `𝜎2`, so the two branches join into a bare fresh symbol. The reads
+fire nothing, so a chain that reaches a λ function, a datum or no `φ` is
+still refused. Each read spends a step of `--max-steps`, so a chain that never
+ends gets stuck once the steps run out.
+
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
 has a perfectly good value on the other. The join then mints nothing, binds

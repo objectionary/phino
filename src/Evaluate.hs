@@ -11,7 +11,7 @@ import AST
 import Builder (buildExpressionThrows)
 import Control.Exception (catch, throwIO, try)
 import Control.Monad (foldM, unless)
-import Data.IORef (readIORef, writeIORef)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, isNothing, listToMaybe)
@@ -20,7 +20,7 @@ import Deps (Evaluation (..), Judgment (Morphing), State (..), resited)
 import Engine (Engine (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Refused (..), Steps (..), admitted, charged, counted, deeper, isLambda, lambda, morphing, normalized, opening, recalled, refused, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Refused (..), Steps (..), admitted, charged, counted, deeper, isLambda, lambda, morphing, normalized, opening, recalled, refused, remember, remembered, retained, settled, starved, unfired, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -168,7 +168,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       where
         both :: Expression -> Expression -> IO Subst
         both one two = do
-          outcome <- joined lenient one two <$> readIORef ctx._minted
+          hops <- newIORef ctx
+          outcome <- joined (unwrapped hops) lenient one two =<< readIORef ctx._minted
           case outcome of
             Nothing -> throwIO (Stuck func)
             Just (term, made, spent) -> do
@@ -176,6 +177,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
               mapM_ (ctx._saveEval . fact) made
               ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
               bind meta (MvExpression term) bound
+        unwrapped :: IORef ReduceContext -> Expression -> IO (Maybe Expression)
+        unwrapped hops term = do
+          hop <- deeper =<< readIORef hops
+          writeIORef hops hop
+          unfired (ExDispatch term AtPhi) univ state hop
         terminating :: T.Text -> Meta -> Expression -> IO Subst
         terminating side raised term = do
           ctx._saveEval (EvTerminate ctx._nesting condition side raised._spelling)
