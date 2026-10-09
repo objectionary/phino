@@ -6,10 +6,10 @@
 module LocatorSpec where
 
 import AST (Attribute (AtLabel), Binding (BiTau, BiVoid), Expression (ExFormation, ExRoot, ExXi))
-import Control.Exception (SomeException, displayException, try)
+import Control.Exception (SomeException, displayException, fromException, try)
 import Control.Monad (forM_)
 import Data.List (intercalate)
-import Locator (locatedExpression, withLocatedExpression)
+import Locator (LocatorException, locatedExpression, withLocatedExpression)
 import Parser (parseExpressionThrows)
 import Printer (printExpression)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, shouldBe, shouldThrow)
@@ -23,6 +23,11 @@ invalidLocatorMessage locator =
 
 canNotFindObjectMessage :: Expression -> String
 canNotFindObjectMessage locator = printf "Can't find object by locator: '%s'" (printExpression locator)
+
+locatorExceptionMessage :: SomeException -> IO String
+locatorExceptionMessage err = case fromException err :: Maybe LocatorException of
+  Just locErr -> pure (displayException locErr)
+  Nothing -> expectationFailure "expected a LocatorException" >> pure ""
 
 spec :: Spec
 spec = do
@@ -62,7 +67,8 @@ spec = do
           case result of
             Left err -> do
               show err `shouldBe` messageOf locator'
-              displayException err `shouldBe` messageOf locator'
+              msg <- locatorExceptionMessage err
+              msg `shouldBe` messageOf locator'
             Right _ -> expectationFailure "expected locatedExpression to throw"
       )
 
@@ -116,6 +122,7 @@ spec = do
           case result of
             Left err -> do
               show err `shouldBe` messageOf locator'
-              displayException err `shouldBe` messageOf locator'
+              msg <- locatorExceptionMessage err
+              msg `shouldBe` messageOf locator'
             Right _ -> expectationFailure "expected withLocatedExpression to throw"
       )
