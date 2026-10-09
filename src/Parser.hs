@@ -430,9 +430,7 @@ formationBindings = formationBindingsOffsets >>= reportDuplicates
 exHead :: Parser Expression
 exHead =
   choice
-    [ do
-        bs <- formationBindings
-        return (ExFormation bs)
+    [ ExFormation <$> formationBindings
     , do
         _ <- choice [symbol "$", symbol "ξ"]
         return ExXi
