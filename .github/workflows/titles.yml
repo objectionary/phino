@@ -18,7 +18,7 @@ jobs:
     permissions:
       issues: write
     timeout-minutes: 15
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: horw/issue-title-ai@v0.1.3b
         with:
@@ -37,7 +37,7 @@ jobs:
           style: offense
   telegram:
     needs: titles
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     if: ${{ always() }}
     permissions:
       actions: read
