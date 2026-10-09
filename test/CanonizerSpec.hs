@@ -61,6 +61,19 @@ spec = do
       , ("leaves a meta lambda binding untouched", metaLambda, metaLambda)
       , ("numbers several lambdas at different nesting depths in document order", nestedInput, nestedExpected)
       ,
+        ( "gives the same Fn label to two bindings sharing one lambda name"
+        , ExFormation
+            [ BiTau (AtLabel "a") (ExFormation [BiLambda (Function "L_plus")])
+            , BiTau (AtLabel "b") (ExFormation [BiLambda (Function "L_plus")])
+            , BiTau (AtLabel "c") (ExFormation [BiLambda (Function "L_minus")])
+            ]
+        , ExFormation
+            [ BiTau (AtLabel "a") (ExFormation [BiLambda (Function "Fn1")])
+            , BiTau (AtLabel "b") (ExFormation [BiLambda (Function "Fn1")])
+            , BiTau (AtLabel "c") (ExFormation [BiLambda (Function "Fn2")])
+            ]
+        )
+      ,
         ( "recurses through ExDispatch"
         , ExDispatch (ExFormation [BiLambda (Function "Wrapped")]) (AtLabel "attr")
         , ExDispatch (ExFormation [BiLambda (Function "Fn1")]) (AtLabel "attr")
