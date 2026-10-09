@@ -9,6 +9,7 @@
 module FilterSpec where
 
 import AST (Expression (ExRoot))
+import Control.Exception (SomeException, try)
 import Control.Monad (forM_)
 import Data.Aeson
 import Data.Yaml qualified as Yaml
@@ -17,6 +18,7 @@ import Files (allPathsIn)
 import Filter qualified as F
 import GHC.Generics (Generic)
 import Parser (parseExpressionThrows)
+import Rewriter (Rewritten)
 import System.FilePath
 import Test.Hspec
 
@@ -73,6 +75,13 @@ spec = do
         excluded <- F.exclude [(first', Just (Normalization, "rule-a")), (second', Just (Evaluation, "rule-b"))] [fqn]
         map fst excluded `shouldBe` [expected, expected]
         map snd excluded `shouldBe` [Just (Normalization, "rule-a"), Just (Evaluation, "rule-b")]
+
+      it "reports a message naming the --hide option when the fqn is the whole program" $ do
+        expr <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
+        result <- try (F.exclude [(expr, Nothing)] [ExRoot]) :: IO (Either SomeException [Rewritten])
+        case result of
+          Left err -> show err `shouldBe` "The --hide locator must name an attribute, 'Φ' would hide the whole program"
+          Right _ -> expectationFailure "expected exclude to throw"
 
     describe "include" $ do
       forM_
