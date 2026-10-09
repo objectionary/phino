@@ -28,6 +28,7 @@ import AST
 import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
+import Data.Char (isAscii, ord)
 import Data.List (intercalate, nub, zipWith4)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
@@ -357,7 +358,12 @@ instance ToLaTeX T.Text where
       escape '{' = "\\char123{}"
       escape '}' = "\\char125{}"
       escape '~' = "\\char126{}"
-      escape ch = T.singleton ch
+      escape 'ρ' = render RHO'
+      escape 'ξ' = render XI'
+      escape 'φ' = "\\phiTerminal{\\varphi}"
+      escape ch
+        | isAscii ch = T.singleton ch
+        | otherwise = T.pack (printf "[U+%04X]" (ord ch))
 
 instance ToLaTeX SET where
   toLaTeX ST_BINDING{..} = ST_BINDING (toLaTeX binding)
