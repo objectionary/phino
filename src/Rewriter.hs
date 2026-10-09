@@ -158,7 +158,7 @@ interpreted rule = Step rule.name applied
       R.matchExpressionWithRule expr rule ctx >>= \case
         [] -> pure Nothing
         matched
-          | isNothing rule.when -> Just <$> tryBuildAndReplaceFast (expr, rule.pattern, rule.result, matched)
+          | isNothing rule.when && isNothing rule.having -> Just <$> tryBuildAndReplaceFast (expr, rule.pattern, rule.result, matched)
           | otherwise -> Just <$> buildAndReplace' (expr, rule.pattern, rule.result, matched) replaceExpression
 
 direct :: String -> Bool -> (Maybe Expression -> Expression -> [Expression]) -> Step
