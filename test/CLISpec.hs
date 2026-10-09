@@ -290,6 +290,7 @@ spec = do
         , ("with negative --max-depth", "", ["rewrite", "--max-depth=-1"], ["--max-depth must be positive"])
         , ("with zero --max-cycles", "", ["rewrite", "--max-cycles=0"], ["--max-cycles must be positive"])
         , ("with zero --meet-length", "", ["rewrite", "--output=latex", "--meet-length=0"], ["--meet-length must be positive"])
+        , ("with a --max-cycles value above maxBound Int", "", ["rewrite", "--max-cycles=18446744073709551617"], ["value must be between", "9223372036854775807"])
         ,
           ( "with --normalize and --must=1"
           , "[[ x -> [[ y -> 5 ]].y ]].x"
@@ -2725,6 +2726,12 @@ spec = do
       it "fails with non-positive --max-seconds" $
         withStdin rungs $
           testCLIFailed ["morph", "--max-seconds=0"] ["--max-seconds must be positive"]
+
+      it "fails with a --max-seconds value above maxBound Int, naming the limit" $
+        withStdin rungs $
+          testCLIFailed
+            ["morph", "--max-seconds=9223372036854775808"]
+            ["value must be between", "9223372036854775807"]
 
       it "fails once the --max-seconds budget is spent" $
         ladder $ \table ->
