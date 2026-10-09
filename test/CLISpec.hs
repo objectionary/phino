@@ -604,6 +604,12 @@ spec = do
           ["rewrite", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
+    it "accepts --focus=Φ together with --output=xmir, since Φ and Q are the same locator" $
+      withStdin "[[ x -> Q.y ]]" $
+        testCLISucceeded
+          ["rewrite", "--focus=Φ", "--output=xmir"]
+          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
+
     it "emits a real revision and ms in XMIR" $ do
       (output, _) <- withStdin "[[ x -> Q.y ]]" $ withStdout (runCLI ["rewrite", "--output=xmir"])
       let attrValue :: String -> String -> String
@@ -1036,6 +1042,14 @@ spec = do
         hPutStr h "[[ x -> \"foo\" ]]"
         hClose h
         testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
+        content <- readFile path
+        content `shouldBe` "\"bar\":x"
+
+    it "modifies file in-place with --focus=Φ, since Φ and Q are the same locator" $
+      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+        hPutStr h "[[ x -> \"foo\" ]]"
+        hClose h
+        testCLISucceeded ["rewrite", rule "simple.yaml", "--focus=Φ", "--in-place", "--sweet", path] []
         content <- readFile path
         content `shouldBe` "\"bar\":x"
 
