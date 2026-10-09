@@ -19,7 +19,6 @@ module Printer
   , printSubsts'
   , PrintConfig
   , logPrintConfig
-  , saltyLogPrintConfig
   )
 where
 
@@ -44,9 +43,6 @@ defaultPrintConfig = (SWEET, UNICODE, MULTILINE, defaultMargin)
 
 logPrintConfig :: (SugarType, Encoding, LineFormat, Int)
 logPrintConfig = (SWEET, UNICODE, SINGLELINE, defaultMargin)
-
-saltyLogPrintConfig :: (SugarType, Encoding, LineFormat, Int)
-saltyLogPrintConfig = (SALTY, UNICODE, SINGLELINE, defaultMargin)
 
 printExpression' :: Expression -> PrintConfig -> String
 printExpression' = printExpressionWith (const id)
