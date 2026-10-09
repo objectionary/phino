@@ -50,7 +50,7 @@ dataize universe state ctx@ReduceContext{..} = do
 
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
 dataize' (expr, seq) univ state caller = do
-  ctx <- opening Dataization =<< deeper =<< entering expr =<< universed univ caller{_judgment = Dataization}
+  ctx <- opening Dataization =<< deeper =<< entering expr =<< parking seq state (universed univ caller{_judgment = Dataization})
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
     Nothing -> do
