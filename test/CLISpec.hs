@@ -283,6 +283,15 @@ spec = do
       testCLIFailed ["rewrite", "--log-level=verbose"] ["unknown log-level: verbose"]
 
   describe "rewriting" $ do
+    let xmir =
+          unlines
+            [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            , "<object>"
+            , "  <o name=\"bar\">"
+            , "    <o base=\"∅\" name=\"x\"/>"
+            , "  </o>"
+            , "</object>"
+            ]
     describe "fails" $ do
       forM_
         [ ("with --input=latex", "", ["rewrite", "--input=latex"], ["The value 'latex' can't be used for '--input' option"])
@@ -320,7 +329,13 @@ spec = do
           hClose h
           testCLIFailed
             ["rewrite", "--in-place", "--output=latex", path]
-            ["--in-place can only be used together with --output=phi"]
+            ["The option --in-place requires the output format to match the input format"]
+
+      it "requires an XMIR input to be written back as XMIR" $
+        withTempFileContent "inplaceXXXXXX.xmir" xmir $ \path ->
+          testCLIFailed
+            ["rewrite", "--input=xmir", "--in-place", path]
+            ["The option --in-place requires the output format to match the input format"]
 
       it "does not leak a HasCallStack backtrace into errors" $ do
         (out, _) <- withStdout (try (runCLI ["rewrite", "--in-place"]) :: IO (Either ExitCode ()))
@@ -1038,6 +1053,13 @@ spec = do
         testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
         content <- readFile path
         content `shouldBe` "\"bar\":x"
+
+    it "keeps the XMIR format when rewriting an XMIR file in-place" $
+      withTempFileContent "inplaceXXXXXX.xmir" xmir $ \path -> do
+        testCLISucceeded ["rewrite", "--input=xmir", "--output=xmir", "--in-place", path] []
+        content <- readFile path
+        _ <- evaluate (length content)
+        content `shouldContain` "<object"
 
     it "skips rewriting with --update when target is newer than source" $
       withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
