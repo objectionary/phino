@@ -297,12 +297,6 @@ spec = do
           , ["it's expected rewriting cycles to be in range [1], but rewriting has already reached 2"]
           )
         , ("when --in-place is used without input file", "[[ ]]", ["rewrite", "--in-place"], ["--in-place requires an input file"])
-        ,
-          ( "with --output=xmir on a non-top-level expression"
-          , "⟦ x ↦ 1, ρ ↦ 2 ⟧"
-          , ["rewrite", "--output=xmir"]
-          , ["[ERROR]:", "its top level must be a single binding"]
-          )
         ]
         (\(desc, input, args, expected) -> it desc (withStdin input (testCLIFailed args expected)))
 
@@ -603,6 +597,12 @@ spec = do
         testCLISucceeded
           ["rewrite", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
+
+    it "rewrites a formation of several bindings at the root as XMIR" $
+      withStdin "⟦ x ↦ 1, ρ ↦ 2 ⟧" $
+        testCLISucceeded
+          ["rewrite", "--output=xmir"]
+          ["<o base=\"Φ.number\" name=\"x\">", "<o base=\"Φ.number\" name=\"ρ\">"]
 
     it "emits a real revision and ms in XMIR" $ do
       (output, _) <- withStdin "[[ x -> Q.y ]]" $ withStdout (runCLI ["rewrite", "--output=xmir"])
@@ -2388,22 +2388,22 @@ spec = do
         withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
           testCLISucceeded ["dataize", symbolic, "--partial"] ["40-45-00-00-00-00-00-00"]
 
-      it "prints the residual at --locator, which XMIR has no top level for" $
+      it "prints the residual at --locator as XMIR, with ρ hidden" $
         withStdin wrapped $
-          testCLIFailed
+          testCLISucceeded
             ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir", "--hide-rho"]
-            ["[ERROR]:", "its top level must be a single binding"]
+            ["<o name=\"λ\">L_number_nope</o>"]
 
       it "prints the residual at --locator, not the whole program" $
         withStdin wrapped $ do
           (out, _) <- withStdout (runCLI ["dataize", symbolic, "--partial", "--locator=Q.app", "--hide-rho", "--flat"])
           lines out `shouldBe` ["⟦ λ ⤍ L_number_nope ⟧"]
 
-      it "cannot print a residual of several top bindings as XMIR" $
+      it "prints a residual of several top bindings as XMIR" $
         withStdin dispatched $
-          testCLIFailed
+          testCLISucceeded
             ["dataize", symbolic, "--partial", "--output=xmir"]
-            ["[ERROR]:", "its top level must be a single binding"]
+            ["<o base=\"Φ.foo\" name=\"ρ\"/>", "<o name=\"λ\">L_number_nope</o>"]
 
       it "prints the chain of steps ending in the residue with --sequence" $
         withStdin stuck $
@@ -3017,13 +3017,13 @@ spec = do
               ["morph", "--symbolic=" ++ loops, "--deep", "--acyclic=proven", "--jobs=2", "--locator=Q.y", "--flat", "--hide-rho", "--sweet"]
               ["𝜎2:λ"]
 
-    describe "fails" $ do
-      it "with --output=xmir on a top formation of several bindings" $
-        withStdin "[[ x -> [[ D> 01- ]], y -> [[ D> 02- ]] ]]" $
-          testCLIFailed
-            ["morph", "--output=xmir"]
-            ["[ERROR]:", "its top level must be a single binding"]
+    it "prints a top formation of several bindings as XMIR" $
+      withStdin "[[ x -> [[ D> 01- ]], y -> [[ D> 02- ]] ]]" $
+        testCLISucceeded
+          ["morph", "--output=xmir"]
+          ["<o name=\"x\">01-</o>", "<o name=\"y\">02-</o>"]
 
+    describe "fails" $ do
       it "with --output != latex and --nonumber" $
         withStdin "" $
           testCLIFailed
