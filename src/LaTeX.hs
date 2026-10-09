@@ -358,6 +358,9 @@ instance ToLaTeX T.Text where
       escape '{' = "\\char123{}"
       escape '}' = "\\char125{}"
       escape '~' = "\\char126{}"
+      escape 'ρ' = render RHO'
+      escape 'ξ' = render XI'
+      escape 'φ' = "\\phiTerminal{\\varphi}"
       escape ch
         | isAscii ch = T.singleton ch
         | otherwise = T.pack (printf "[U+%04X]" (ord ch))
