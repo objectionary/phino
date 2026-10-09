@@ -91,13 +91,11 @@ validateXmirOptions _ bools _ =
    in validateBoolOpts (zip bools' (map (printf "The --%s can be used only with --output=xmir") opts))
 
 validateXmirTopLevel :: IOFormat -> Expression -> IO ()
-validateXmirTopLevel XMIR (ExFormation [_]) = pure ()
-validateXmirTopLevel XMIR (ExFormation [_, BiVoid AtRho]) = pure ()
-validateXmirTopLevel XMIR (ExFormation [BiVoid AtRho, _]) = pure ()
+validateXmirTopLevel XMIR (ExFormation (_ : _)) = pure ()
 validateXmirTopLevel XMIR expr =
   invalidCLIArguments
     ( printf
-        "Expression cannot be printed with --output=xmir: its top level must be a single binding, but got: %s"
+        "Expression cannot be printed with --output=xmir: its top level must be a formation with at least one binding, but got: %s"
         (printExpression expr)
     )
 validateXmirTopLevel _ _ = pure ()
