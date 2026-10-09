@@ -413,6 +413,10 @@ spec = do
     fromLeft "" (parseExpression "⟦\n  a ↦ ξ,\n  b ↦ ξ,\n  b ↦ Φ\n⟧\n\n\n")
       `shouldSatisfy` isInfixOf "expression:4:3:"
 
+  it "points at the binding that repeats an inline void's attribute, not past the formation" $
+    fromLeft "" (parseExpression "⟦\n  app(a) ↦ ⟦\n    b ↦ ξ.c,\n    a ↦ ξ.d,\n    e ↦ ξ.f\n  ⟧\n⟧\n\n\n")
+      `shouldSatisfy` isInfixOf "expression:4:5:"
+
   describe "an arrow ends an attribute name" $
     forM_
       [ ("⟦ a ↦ ξ.b(c↦ξ) ⟧", "⟦ a ↦ ξ.b(c ↦ ξ) ⟧")
