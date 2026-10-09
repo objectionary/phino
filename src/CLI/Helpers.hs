@@ -15,8 +15,8 @@ import CST (EXPRESSION)
 import Canonizer (canonizeExpr, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
-import Control.Monad ((>=>))
-import Data.Char (toLower)
+import Control.Monad ((>=>), when)
+import Data.Char (isDigit, toLower)
 import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
@@ -41,8 +41,8 @@ import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewrittens', stepHeaders)
 import Sugar (SugarType (SALTY), withoutRho)
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath (takeDirectory, takeExtension)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, listDirectory, removeFile)
+import System.FilePath (splitExtension, takeDirectory, takeExtension, (</>))
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
 import XMIR (Atoms, expressionToXMIR, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
@@ -55,8 +55,27 @@ justMeetPopularity = fromMaybe defaultMeetPopularity
 justMeetLength :: Maybe Int -> Int
 justMeetLength = fromMaybe defaultMeetLength
 
+isStepFileName :: FilePath -> Bool
+isStepFileName name = length base == 5 && all isDigit base && ext `elem` [".phi", ".xmir", ".tex"]
+  where
+    (base, ext) = splitExtension name
+
+clearedStepsDir :: Maybe FilePath -> IO ()
+clearedStepsDir Nothing = pure ()
+clearedStepsDir (Just dir) = do
+  exists <- doesDirectoryExist dir
+  when exists (listDirectory dir >>= mapM_ removedIfStepFile)
+  where
+    removedIfStepFile :: FilePath -> IO ()
+    removedIfStepFile name = when (isStepFileName name) (removedFile (dir </> name))
+    removedFile :: FilePath -> IO ()
+    removedFile path = do
+      isFile <- doesFileExist path
+      when isFile (removeFile path)
+
 saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> IO SaveStepFunc
 saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
+  clearedStepsDir stepsDir
   counter <- newIORef (0 :: Int)
   let ioToExt :: String
       ioToExt
