@@ -23,6 +23,7 @@ import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
+import qualified Data.Yaml as Yaml
 import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
@@ -261,7 +262,14 @@ getRules normalize shuffle rules = do
       | otherwise = do
           logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
           yamls <- mapM ensuredFile (nub rules)
-          mapM (Y.yamlRule >=> validateRewriteRule) yamls
+          mapM (loadRule >=> validateRewriteRule) yamls
+
+loadRule :: FilePath -> IO Y.Rule
+loadRule file =
+  Yaml.decodeFileEither file >>= either reportInvalidRule pure
+  where
+    reportInvalidRule err =
+      invalidCLIArguments (printf "Could not load rule from '%s'\n%s" file (Yaml.prettyPrintParseException err))
 
 validateRewriteRule :: Y.Rule -> IO Y.Rule
 validateRewriteRule rule =
