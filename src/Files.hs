@@ -17,16 +17,22 @@ import Text.Printf (printf)
 data FsException
   = FileDoesNotExist {_file :: FilePath}
   | DirectoryDoesNotExist {_dir :: FilePath}
+  | PathIsDirectory {_path :: FilePath}
   deriving (Exception)
 
 instance Show FsException where
   show FileDoesNotExist{..} = printf "File '%s' does not exist" _file
   show DirectoryDoesNotExist{..} = printf "Directory '%s' does not exist" _dir
+  show PathIsDirectory{..} = printf "'%s' is a directory, while a file is expected" _path
 
 ensuredFile :: FilePath -> IO FilePath
 ensuredFile pth = do
-  exists <- doesFileExist pth
-  if exists then pure pth else throwIO (FileDoesNotExist pth)
+  isDir <- doesDirectoryExist pth
+  if isDir
+    then throwIO (PathIsDirectory pth)
+    else do
+      exists <- doesFileExist pth
+      if exists then pure pth else throwIO (FileDoesNotExist pth)
 
 overwrite :: FilePath -> String -> IO ()
 overwrite path content = do
