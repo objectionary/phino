@@ -284,14 +284,20 @@ tauValue =
           choice
             [ rb >> return []
             , do
-                voids' <- map BiVoid <$> void' `sepBy1` symbol ","
+                voids' <- ((,) <$> getOffset <*> (BiVoid <$> void')) `sepBy1` symbol ","
                 rb >> return voids'
             ]
         _ <- arrow
-        opened <- expression
-        case opened of
-          ExFormation bds -> ExFormation <$> validatedBindings (voids ++ bds)
-          _ -> fail "Inline voids open a formation, so nothing but a formation may follow their arrow"
+        choice
+          [ do
+              bds <- formationBindingsOffsets
+              ExFormation <$> reportDuplicates (voids ++ bds)
+          , do
+              opened <- expression
+              case opened of
+                ExFormation bds -> ExFormation <$> validatedBindings (map snd voids ++ bds)
+                _ -> fail "Inline voids open a formation, so nothing but a formation may follow their arrow"
+          ]
     ]
   where
     rb :: Parser String
@@ -394,30 +400,38 @@ validatedBindings bds = case uniqueBindings bds of
   Left msg -> fail msg
   Right bds' -> return bds'
 
-formationBindings :: Parser [Binding]
-formationBindings = do
-  _ <- choice [symbol "[[", symbol "⟦"]
-  choice
-    [ rsb >> return []
-    , do
-        bs <- ((,) <$> getOffset <*> binding) `sepBy1` symbol ","
-        either (parseError . FancyError (repeating [] bs) . Set.singleton . ErrorFail) (const (pure ())) (uniqueBindings (map snd bs))
-        rsb >> return (map snd bs)
-    ]
+reportDuplicates :: [(Int, Binding)] -> Parser [Binding]
+reportDuplicates bs = do
+  either (parseError . FancyError (repeating [] bs) . Set.singleton . ErrorFail) (const (pure ())) (uniqueBindings (map snd bs))
+  return (map snd bs)
   where
-    rsb :: Parser String
-    rsb = choice [symbol "]]", symbol "⟧"]
     repeating :: [Attribute] -> [(Int, Binding)] -> Int
     repeating _ [] = 0
     repeating seen ((offset, bd) : rest)
       | any (`elem` seen) (attributesFromBindings [bd]) = offset
       | otherwise = repeating (seen ++ attributesFromBindings [bd]) rest
 
+formationBindingsOffsets :: Parser [(Int, Binding)]
+formationBindingsOffsets = do
+  _ <- choice [symbol "[[", symbol "⟦"]
+  choice
+    [ rsb >> return []
+    , do
+        bs <- ((,) <$> getOffset <*> binding) `sepBy1` symbol ","
+        rsb >> return bs
+    ]
+  where
+    rsb :: Parser String
+    rsb = choice [symbol "]]", symbol "⟧"]
+
+formationBindings :: Parser [Binding]
+formationBindings = formationBindingsOffsets >>= reportDuplicates
+
 exHead :: Parser Expression
 exHead =
   choice
     [ do
-        bs <- formationBindings >>= validatedBindings
+        bs <- formationBindings
         return (ExFormation bs)
     , do
         _ <- choice [symbol "$", symbol "ξ"]
