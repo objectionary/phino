@@ -3317,6 +3317,12 @@ spec = do
           ["match", "--pattern=[[ !B ]]", "--when=eq(length(!B),1)"]
           ["[ERROR]: Anonymous meta '!B' cannot be referenced in --when"]
 
+    it "rejects a named meta in --when the pattern does not bind" $
+      withStdin "[[ x -> Q.y ]]" $
+        testCLIFailed
+          ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B2),1)"]
+          ["[ERROR]: The --when condition reads the meta '!B2' it never binds, since neither --pattern binds it"]
+
     it "fails on parsing --when condition" $
       withStdin "[[]]" $
         testCLIFailed
