@@ -1323,6 +1323,15 @@ spec = do
     withStdin "⟦ x ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.b ⟧" $
       testCLIFailed ["dataize", "--locator=Q.x"] ["expects a normal form: 01-:Δ:b.b"]
 
+  describe "--partial parks a universe that --max-cycles stops" $ do
+    let heavy = "⟦ simple ↦ ⟦ Δ ⤍ 01- ⟧, heavy ↦ ⟦ a ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧.a.b.c ⟧"
+    it "in dataize" $
+      withStdin heavy $
+        testCLISucceeded ["dataize", "--locator=Q.simple", "--max-cycles=1", "--partial", "--flat"] ["⟦ Δ ⤍ 01- ⟧"]
+    it "in morph" $
+      withStdin heavy $
+        testCLISucceeded ["morph", "--locator=Q.simple", "--max-cycles=1", "--partial", "--flat"] ["⟦ Δ ⤍ 01- ⟧"]
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
