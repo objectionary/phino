@@ -3231,19 +3231,37 @@ spec = do
     it "turns the flag on in a new cabal.project.local" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
+        writeFile (dir </> "phino.cabal") ""
         withCurrentDirectory dir (runCLI ["compile", "--target=Compiled.hs"])
         readFile (dir </> "cabal.project.local") `shouldReturn` "package phino\n  flags: +compiled\n"
     it "prints the lines an existing cabal.project.local lacks" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
+        writeFile (dir </> "phino.cabal") ""
         writeFile (dir </> "cabal.project.local") "tests: True\n"
         withCurrentDirectory dir (testCLISucceeded ["compile", "--target=Compiled.hs"] ["package phino\n  flags: +compiled"])
     it "leaves an existing cabal.project.local as it is" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
+        writeFile (dir </> "phino.cabal") ""
         writeFile (dir </> "cabal.project.local") "tests: True\n"
         withStdout (withCurrentDirectory dir (runCLI ["compile", "--target=Compiled.hs"]))
         readFile (dir </> "cabal.project.local") `shouldReturn` "tests: True\n"
+    it "writes cabal.project.local next to the module's project, not the current directory" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True (dir </> "project" </> "gen")
+        writeFile (dir </> "project" </> "phino.cabal") ""
+        createDirectoryIfMissing True (dir </> "elsewhere")
+        withCurrentDirectory
+          (dir </> "elsewhere")
+          (runCLI ["compile", "--target=" ++ (dir </> "project" </> "gen" </> "Compiled.hs")])
+        doesFileExist (dir </> "elsewhere" </> "cabal.project.local") `shouldReturn` False
+        readFile (dir </> "project" </> "cabal.project.local") `shouldReturn` "package phino\n  flags: +compiled\n"
+    it "only prints the lines when it cannot find the project of the module" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        withCurrentDirectory dir (testCLISucceeded ["compile", "--target=gen/Compiled.hs"] ["package phino\n  flags: +compiled"])
+        doesFileExist (dir </> "cabal.project.local") `shouldReturn` False
     it "refuses a rule it cannot compile" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir

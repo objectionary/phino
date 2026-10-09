@@ -41,8 +41,9 @@ import qualified Random as R
 import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
 import Slots (anonymous)
-import System.Directory (doesFileExist, getModificationTime)
+import System.Directory (canonicalizePath, doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
+import System.FilePath (takeDirectory, (</>))
 import System.Random (mkStdGen, setStdGen)
 import Tau (seedTaus)
 import Text.Printf (printf)
@@ -415,9 +416,23 @@ runCompile OptsCompile{..} = do
   source <- either (throwIO . CouldNotCompile) pure (emitted Y.normalizationRules custom Y.contextualizationRules Y.morphingRules Y.dataizationRules current)
   overwrite _targetFile source
   logInfo (printf "The rules were compiled into '%s'" _targetFile)
-  exists <- doesFileExist "cabal.project.local"
-  if exists
-    then putStrLn "The file 'cabal.project.local' exists, so add these lines to it to link the compiled rules in:\npackage phino\n  flags: +compiled"
-    else do
-      overwrite "cabal.project.local" "package phino\n  flags: +compiled\n"
-      logInfo "The file 'cabal.project.local' was written, so the next build links the compiled rules in"
+  root <- projectRootOf (takeDirectory _targetFile)
+  case root of
+    Nothing -> putStrLn "package phino\n  flags: +compiled"
+    Just dir -> do
+      let localFile = dir </> "cabal.project.local"
+      exists <- doesFileExist localFile
+      if exists
+        then putStrLn (printf "The file '%s' exists, so add these lines to it to link the compiled rules in:\npackage phino\n  flags: +compiled" localFile)
+        else do
+          overwrite localFile "package phino\n  flags: +compiled\n"
+          logInfo (printf "The file '%s' was written, so the next build links the compiled rules in" localFile)
+  where
+    projectRootOf :: FilePath -> IO (Maybe FilePath)
+    projectRootOf dir = do
+      full <- canonicalizePath dir
+      found <- doesFileExist (full </> "phino.cabal")
+      let parent = takeDirectory full
+      if found
+        then pure (Just full)
+        else if parent == full then pure Nothing else projectRootOf parent
