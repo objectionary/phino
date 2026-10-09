@@ -58,6 +58,7 @@ jobs:
             printf '\\providecommand\\phiDataize[1][]{\\leadsto_{\\mathbb{D}}^{#1}}\n'
             printf '\\providecommand\\phiEvaluate[1][]{\\leadsto_{\\mathbb{E}}^{#1}}\n'
             printf '\\providecommand\\phiContextualize[1][]{\\leadsto_{\\mathcal{C}}^{#1}}\n'
+            printf '\\providecommand\\phiText[1]{\\text{#1}}\n'
             printf '\\newcommand\\indexof[1]{#1}\n'
             printf '\\newcommand\\isnormal[1]{#1}\n'
             printf '\\newcommand\\phinoIsFormation[1]{#1 \\text{ is a formation}}\n'
