@@ -15,7 +15,7 @@ import CST (EXPRESSION)
 import Canonizer (canonizeExpr, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
-import Control.Monad ((>=>), when)
+import Control.Monad (when, (>=>))
 import Data.Char (isDigit, toLower)
 import Data.Functor ((<&>))
 import Data.IORef

@@ -503,6 +503,21 @@ spec = do
           doesFileExist (dir ++ "/00001.phi") `shouldReturn` True
           doesFileExist (dir ++ "/00003.phi") `shouldReturn` True
 
+    it "clears step files left from an earlier, longer run with --steps-dir" $
+      withTempDirectory "phino-steps-stale" $ \dir -> do
+        withStdin "[[ x -> \"hello\"]]" $
+          testCLISucceeded
+            ["rewrite", rule "infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
+            ["hello_hi_hi"]
+        files <- listDirectory dir
+        length files `shouldBe` 4
+        withStdin "[[ x -> \"hello\"]]" $
+          testCLISucceeded
+            ["rewrite", rule "infinite.yaml", "--max-cycles=1", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
+            ["hello_hi"]
+        files2 <- listDirectory dir
+        sort files2 `shouldBe` ["00001.phi", "00002.phi"]
+
     it "gives the saved steps the --canonize and --hide of the printed ones" $
       withTempDirectory "phino-steps-filtered" $ \dir ->
         withStdin "[[ m -> [[ x -> [[ L> Plus ]], y -> $.x ]].y, k -> [[ L> Minus ]] ]]" $ do
