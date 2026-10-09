@@ -105,7 +105,7 @@ lengthOf :: Render a => a -> Int
 lengthOf renderable = displayWidth (render renderable)
 
 displayWidth :: T.Text -> Int
-displayWidth text = T.foldl' addWidth 0 text
+displayWidth = T.foldl' addWidth 0
   where
     addWidth :: Int -> Char -> Int
     addWidth acc character = acc + charWidth character
