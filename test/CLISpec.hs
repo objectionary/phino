@@ -469,6 +469,11 @@ spec = do
         ["rewrite", "--help"]
         ["default: 0"]
 
+    it "describes --must as counting rewriting cycles, not rules applied" $
+      testCLISucceeded
+        ["rewrite", "--help"]
+        ["Stops execution if number of rewriting cycles is not"]
+
     it "reproduces the same shuffle order for the same --seed" $ do
       let args =
             [ "rewrite"
