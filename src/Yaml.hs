@@ -13,9 +13,11 @@ module Yaml where
 
 import AST
 import Control.Applicative (asum, (<|>))
+import Control.Exception (throwIO)
 import Data.Aeson
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
+import Data.Aeson.Types (formatRelativePath)
 import qualified Data.ByteString as BS
 import Data.FileEmbed (embedDir)
 import Data.Maybe (fromMaybe)
@@ -24,6 +26,7 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
+import Data.Yaml.Internal (Warning (DuplicateKey))
 import GHC.Generics (Generic)
 import Metas
 import Parser
@@ -489,7 +492,15 @@ normalizationRules :: [Rule]
 normalizationRules = map decodeRule $(embedDir "resources/normalize")
 
 yamlRule :: FilePath -> IO Rule
-yamlRule = Yaml.decodeFileThrow
+yamlRule path = do
+  decoded <- Yaml.decodeFileWithWarnings path
+  case decoded of
+    Left err -> throwIO err
+    Right (warnings, rule) -> rule <$ mapM_ reportDuplicateKey warnings
+  where
+    reportDuplicateKey :: Warning -> IO ()
+    reportDuplicateKey (DuplicateKey jsonPath) =
+      fail (printf "The key '%s' is repeated in the rule file '%s', only the last value is kept" (formatRelativePath jsonPath) path)
 
 data Premise = Premise
   { result :: Text
