@@ -266,8 +266,9 @@ getRules normalize shuffle rules = do
 
 loadRule :: FilePath -> IO Y.Rule
 loadRule file =
-  Yaml.decodeFileEither file >>= either reportInvalidRule pure
+  catch (Y.yamlRule file) reportInvalidRule
   where
+    reportInvalidRule :: Yaml.ParseException -> IO Y.Rule
     reportInvalidRule err =
       invalidCLIArguments (printf "Could not load rule from '%s'\n%s" file (Yaml.prettyPrintParseException err))
 
