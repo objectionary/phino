@@ -152,13 +152,14 @@ aimed _ _ (Just _) expr _ =
     (printf "The option --inside requires the input expression to be a formation, but given: %s" (P.printExpression expr))
 
 readInput :: Maybe FilePath -> IO String
-readInput inputFile' = withoutBOM <$> case inputFile' of
-  Just pth -> do
-    logDebug (printf "Reading from file: '%s'" pth)
-    readFile =<< ensuredFile pth
-  Nothing -> do
-    logDebug "Reading from stdin"
-    getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
+readInput inputFile' =
+  withoutBOM <$> case inputFile' of
+    Just pth -> do
+      logDebug (printf "Reading from file: '%s'" pth)
+      readFile =<< ensuredFile pth
+    Nothing -> do
+      logDebug "Reading from stdin"
+      getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
 
 withoutBOM :: String -> String
 withoutBOM ('\xFEFF' : rest) = rest
