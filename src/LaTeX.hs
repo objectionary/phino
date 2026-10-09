@@ -35,7 +35,7 @@ import Deps (Judgment (..))
 import Encoding
 import Lining
 import Locator (locatedExpression)
-import Margin (WithMargin, defaultMargin, withMargin)
+import Margin (WithMargin, defaultMargin, withLines)
 import Matcher
 import Metas (lonely)
 import Misc
@@ -133,7 +133,7 @@ meetInExpressions exprs LatexContext{..} = go exprs 1
     popularity = toDouble _meetPopularity / 100.0
 
 renderToLatex :: (ToSalty a, ToASCII a, ToSingleLine a, ToLaTeX a, WithMargin a, Render a) => a -> LatexContext -> String
-renderToLatex renderable LatexContext{..} = T.unpack $ render (toLaTeX $ withLineFormat _line $ withMargin _margin $ withEncoding ASCII $ withSugarType _sugar renderable)
+renderToLatex renderable LatexContext{..} = T.unpack $ render (toLaTeX $ withLines _line _margin $ withEncoding ASCII $ withSugarType _sugar renderable)
 
 phiquation :: LatexContext -> String
 phiquation LatexContext{_nonumber = True} = "phiquation*"
