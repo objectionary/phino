@@ -8,10 +8,11 @@ module CLISpec (spec) where
 
 import CLI (runCLI)
 import CLI.Types (CmdException (..), IOFormat (..))
+import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
-import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
+import Data.List (find, intercalate, isInfixOf, isPrefixOf, sort)
 import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
@@ -91,7 +92,13 @@ withTempDirectory prefix action = do
   tmp <- getTemporaryDirectory
   stamp <- getPOSIXTime
   let dir = tmp </> (prefix ++ "-" ++ show (round (stamp * 1000000) :: Integer))
-  bracket (pure dir) removePathForcibly action
+  bracket (pure dir) removedEventually action
+  where
+    removedEventually :: FilePath -> IO ()
+    removedEventually = retrying (10 :: Int)
+      where
+        retrying 0 dir = removePathForcibly dir
+        retrying left dir = removePathForcibly dir `catch` \(_ :: IOException) -> threadDelay 200000 >> retrying (left - 1) dir
 
 testCLI' :: [String] -> [String] -> Either ExitCode () -> Expectation
 testCLI' args outputs exit = do
@@ -2827,6 +2834,19 @@ spec = do
         few <- recorded ["--jobs=2"]
         many <- recorded ["--jobs=5"]
         many `shouldBe` few
+
+      it "writes the step files of a binding after those of the bindings before it" $
+        withTempDirectory "phino-steps-jobs" $ \dir ->
+          withStdin "[[ a -> [[ x -> 1, y -> $.x ]], b -> [[ x -> 2, y -> $.x ]] ]]" $ do
+            testCLISucceeded
+              ["morph", "--deep", "--steps-dir=" ++ dir, "--quiet", "--jobs=5", "--flat", "--hide-rho", "--sweet"]
+              []
+            files <- sort <$> listDirectory dir
+            contents <- mapM (\file -> readFile (dir ++ "/" ++ file)) files
+            contents `shouldSatisfy` elem "1"
+            contents `shouldSatisfy` elem "2"
+            let named value = fst <$> find ((== value) . snd) (zip files contents)
+            named "1" `shouldSatisfy` (< named "2")
 
       it "keeps a memo of its own for every binding under plausible" $
         withStdin twins $
