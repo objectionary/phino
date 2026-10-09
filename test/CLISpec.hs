@@ -568,6 +568,14 @@ spec = do
           ["rewrite", rule "join-broken.yaml"]
           ["Function join() can work with bindings only"]
 
+    it "reports a broken rule file in plain text with its path" $
+      withStdin "⟦⟧" $
+        testCLIFailed
+          ["rewrite", rule "malformed-pattern.yaml"]
+          [ "Could not load rule from 'test-resources/cli/rules/malformed-pattern.yaml'"
+          , "unexpected '⟧'"
+          ]
+
     it "normalizes with --normalize flag" $
       testCLISucceeded
         ["rewrite", "--normalize", resource "normalize.phi", "--margin=25"]
