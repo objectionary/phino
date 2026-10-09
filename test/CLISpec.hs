@@ -3256,6 +3256,15 @@ spec = do
         ["match", "--help"]
         ["Pattern expression to match against", "Predicate for matched substitutions"]
 
+    it "describes --sweet and --flat as applying to the result only" $
+      testCLISucceeded
+        ["match", "--help"]
+        ["Print result 𝜑-expression using syntax sugar", "Print result 𝜑-expression in one line"]
+
+    it "rejects --sequence, which --help must not mention" $
+      withStdin "[[ ]]" $
+        testCLIFailed ["match", "--sequence", "--pattern=[[ !B ]]"] ["Invalid option"]
+
     it "takes from stdin" $
       withStdin "[[]]" $
         testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]"]
