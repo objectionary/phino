@@ -122,13 +122,13 @@ runRewrite OptsRewrite{..} = do
     output target expr = case (_inPlace, target, _inputFile) of
       (True, _, Just file) -> do
         logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
-        overwrite file expr
+        overwrite file (expr ++ "\n")
         logDebug (printf "The file '%s' was modified in-place" file)
       (True, _, Nothing) ->
         error "The option --in-place requires an input file"
       (False, Just file, _) -> do
         logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-        overwrite file expr
+        overwrite file (expr ++ "\n")
         logDebug (printf "The command result was saved in '%s'" file)
       (False, Nothing, _) -> do
         logDebug "The option '--target' is not specified, printing to console..."
