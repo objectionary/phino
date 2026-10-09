@@ -265,8 +265,8 @@ spec = do
 
   describe "render LOGIC_OPERATOR" $
     forM_
-      [ ("AND", AND, "\\;\\text{and}\\;")
-      , ("OR", OR, "\\;\\text{or}\\;")
+      [ ("AND", AND, "\\phiText{and}")
+      , ("OR", OR, "\\phiText{or}")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))
 
@@ -303,12 +303,12 @@ spec = do
       ,
         ( "CO_LOGIC joins multiple conditions"
         , CO_LOGIC [CO_NF xiExpr, CO_NF rootExpr] AND
-        , "\\isnormal{ ξ } \\;\\text{and}\\; \\isnormal{ Φ }"
+        , "\\isnormal{ ξ } \\phiText{and} \\isnormal{ Φ }"
         )
       ,
         ( "CO_LOGIC wraps a nested non-singleton CO_LOGIC in parens"
         , CO_LOGIC [CO_LOGIC [CO_NF xiExpr, CO_NF rootExpr] OR, CO_NF xiExpr] AND
-        , "\\lparen \\isnormal{ ξ } \\;\\text{or}\\; \\isnormal{ Φ } \\rparen \\;\\text{and}\\; \\isnormal{ ξ }"
+        , "\\lparen \\isnormal{ ξ } \\phiText{or} \\isnormal{ Φ } \\rparen \\phiText{and} \\isnormal{ ξ }"
         )
       , ("CO_NF", CO_NF xiExpr, "\\isnormal{ ξ }")
       , ("CO_ABSOLUTE in", CO_ABSOLUTE xiExpr IN, "\\phinoAbsolute{ ξ }")

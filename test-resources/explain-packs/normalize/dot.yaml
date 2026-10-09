@@ -7,4 +7,4 @@ latex: |-
     { [[ B_1, \tau -> n, B_2 ]] . \tau }
     { e_1 ( \phiTerminal{\rho} -> e_2 ) }
     { [ D \char44{} L ] \not\subseteq \lparen B_1 \cup B_2 \rparen }
-    { \phinoContextualize{ n }{ [[ B_1, B_2 ]] }{ e_1 } \;\text{and}\; \phinoNamed{ e_2 }{ [[ B_1, \tau -> n, B_2 ]] } }
+    { \phinoContextualize{ n }{ [[ B_1, B_2 ]] }{ e_1 } \phiText{and} \phinoNamed{ e_2 }{ [[ B_1, \tau -> n, B_2 ]] } }

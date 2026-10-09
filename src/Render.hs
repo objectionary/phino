@@ -255,8 +255,8 @@ instance Render SET where
   render ST_ATTRIBUTES{..} = "[ " <> T.intercalate " \\char44{} " (map render attrs) <> " ]"
 
 instance Render LOGIC_OPERATOR where
-  render AND = "\\;\\text{and}\\;"
-  render OR = "\\;\\text{or}\\;"
+  render AND = "\\phiText{and}"
+  render OR = "\\phiText{or}"
 
 instance Render NUMBER where
   render IDX_META{..} = render meta

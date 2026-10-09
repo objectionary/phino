@@ -369,8 +369,8 @@ spec = do
           [ "\\phinoNormalizationRule[disp]{myrule}"
           , "{ n }"
           , "{ n }"
-          , "{ \\isnormal{ n } \\;\\text{and}\\; \\phinoIsFormation{ n } }"
-          , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } \\;\\text{and}\\; @ \\coloneqq \\bar{ n } }"
+          , "{ \\isnormal{ n } \\phiText{and} \\phinoIsFormation{ n } }"
+          , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } \\phiText{and} @ \\coloneqq \\bar{ n } }"
           ]
         )
       ,
