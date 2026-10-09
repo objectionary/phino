@@ -1213,6 +1213,10 @@ spec = do
     withStdin "[[ x -> Q.y ]]" $
       testCLIFailed ["rewrite", "--hide=Q.nope"] ["Can't find object by locator: 'Φ.nope'"]
 
+  it "names the term dataization cannot take, and says a normal form is expected" $
+    withStdin "⟦ x ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.b ⟧" $
+      testCLIFailed ["dataize", "--locator=Q.x"] ["expects a normal form: 01-:Δ:b.b"]
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
