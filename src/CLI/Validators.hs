@@ -34,7 +34,7 @@ validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
             ( printf
                 "Only dispatch expression started with Φ (or Q) can be used in --%s, but given: %s"
                 opt
-                (printExpression' expr logPrintConfig)
+                (printExpression' expr saltyLogPrintConfig)
             )
 
 validateNoOverlap :: String -> [Expression] -> String -> [Expression] -> IO ()
