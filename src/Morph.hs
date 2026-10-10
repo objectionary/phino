@@ -555,36 +555,39 @@ deepened focus expr univ state ctx = do
           (entered, state'') <- pooled caller._jobs jobs (gathered floor') ([], state')
           pure (ExFormation (reverse entered), state'')
       where
-        planned :: Int -> Maybe (Expression, [Attribute]) -> (Int, Binding) -> IO (IO ([Evaluation], Int, Either SomeException (Int -> IO (Binding, Maybe State))))
+        planned :: Int -> Maybe (Expression, [Attribute]) -> (Int, Binding) -> IO (IO ([Evaluation], [Expression], Int, Either SomeException (Int -> IO (Binding, Maybe State))))
         planned floor' alias (idx, BiTau attr body)
           | attr /= AtRho = do
               new <- if closed body then fresh alias attr caller else pure True
               pure (if new then worker floor' idx attr body else kept (BiTau attr body))
         planned _ _ (_, bd) = pure (kept bd)
-        kept :: Binding -> IO ([Evaluation], Int, Either SomeException (Int -> IO (Binding, Maybe State)))
-        kept bd = pure ([], 0, Right (const (pure (bd, Nothing))))
-        worker :: Int -> Int -> Attribute -> Expression -> IO ([Evaluation], Int, Either SomeException (Int -> IO (Binding, Maybe State)))
+        kept :: Binding -> IO ([Evaluation], [Expression], Int, Either SomeException (Int -> IO (Binding, Maybe State)))
+        kept bd = pure ([], [], 0, Right (const (pure (bd, Nothing))))
+        worker :: Int -> Int -> Attribute -> Expression -> IO ([Evaluation], [Expression], Int, Either SomeException (Int -> IO (Binding, Maybe State)))
         worker floor' idx attr body = do
           buffer <- newIORef []
+          steps <- newIORef []
           tau <- tausOf idx
           tally <- tallied (fmap (\(Tally cap _) -> cap) caller._tally)
           minted <- newIORef floor'
           memo <- memoized caller._acyclic
           copy <- newIORef =<< readIORef world
           (store, path) <- home standing copy form
-          let own = caller{_jobs = 1, _tally = tally, _minted = minted, _memo = memo, _saveEval = modifyIORef' buffer . (:), _buildTerm = minting tau caller._buildTerm}
+          let own = caller{_jobs = 1, _tally = tally, _minted = minted, _memo = memo, _saveEval = modifyIORef' buffer . (:), _saveStep = modifyIORef' steps . (:), _buildTerm = minting tau caller._buildTerm}
           outcome <- try (try (go (fmap (`ExDispatch` attr) standing) Nothing (Frame copy store path (Just attr)) body state' own))
           records <- reverse <$> readIORef buffer
+          taken' <- reverse <$> readIORef steps
           spent <- subtract floor' <$> readIORef minted
-          pure (records, spent, fmap (either (severed floor') (\(term, walked) offset -> pure (BiTau attr (lifted floor' offset term), Just (moved floor' offset walked)))) outcome)
+          pure (records, taken', spent, fmap (either (severed floor') (\(term, walked) offset -> pure (BiTau attr (lifted floor' offset term), Just (moved floor' offset walked)))) outcome)
         severed :: Int -> Severed -> Int -> IO (Binding, Maybe State)
         severed floor' (Severed answer reached) offset = throwIO (Severed (lifted floor' offset answer) (moved floor' offset reached))
         moved :: Int -> Int -> State -> State
         moved floor' offset walked = walked{_manufactured = fmap (\sym -> if sym > floor' then sym + offset else sym) walked._manufactured}
-        gathered :: Int -> ([Binding], State) -> ([Evaluation], Int, Either SomeException (Int -> IO (Binding, Maybe State))) -> IO ([Binding], State)
-        gathered floor' (done, current) (records, spent, outcome) = do
+        gathered :: Int -> ([Binding], State) -> ([Evaluation], [Expression], Int, Either SomeException (Int -> IO (Binding, Maybe State))) -> IO ([Binding], State)
+        gathered floor' (done, current) (records, taken', spent, outcome) = do
           offset <- subtract floor' <$> readIORef caller._minted
           mapM_ (caller._saveEval . renumbered floor' offset) records
+          mapM_ caller._saveStep taken'
           modifyIORef' caller._minted (+ spent)
           (bd, walked) <- either throwIO ($ offset) outcome
           pure (bd : done, fromMaybe current walked)
