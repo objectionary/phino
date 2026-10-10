@@ -85,7 +85,9 @@ validateMust' :: Must -> IO ()
 validateMust' must = for_ (validateMust must) invalidCLIArguments
 
 validateXmirOptions :: IOFormat -> [(Bool, String)] -> String -> IO ()
-validateXmirOptions XMIR _ focus = when (focus /= "Q") (invalidCLIArguments "Only --focus=Q is allowed to be used with --output=xmir")
+validateXmirOptions XMIR _ focus = do
+  parsed <- parseExpressionThrows focus
+  when (parsed /= ExRoot) (invalidCLIArguments "Only --focus=Q is allowed to be used with --output=xmir")
 validateXmirOptions _ bools _ =
   let (bools', opts) = unzip bools
    in validateBoolOpts (zip bools' (map (printf "The --%s can be used only with --output=xmir") opts))

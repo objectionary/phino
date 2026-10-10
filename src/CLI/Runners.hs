@@ -88,7 +88,8 @@ runRewrite OptsRewrite{..} = do
       when (_inPlace && isJust _targetFile) (invalidCLIArguments "The options --in-place and --target cannot be used together")
       when (_inPlace && _outputFormat /= PHI) (invalidCLIArguments "The option --in-place can only be used together with --output=phi")
       when (_inPlace && _sequence) (invalidCLIArguments "The options --in-place and --sequence cannot be used together, since the file must keep one program")
-      when (_inPlace && _focus /= "Q") (invalidCLIArguments "The options --in-place and --focus cannot be used together, since the file must keep the whole program")
+      focusedExpr <- parseExpressionThrows _focus
+      when (_inPlace && focusedExpr /= ExRoot) (invalidCLIArguments "The options --in-place and --focus cannot be used together, since the file must keep the whole program")
       when (_inPlace && not (null _show)) (invalidCLIArguments "The options --in-place and --show cannot be used together, since the file must keep the whole program")
       when (_update && _inPlace) (invalidCLIArguments "The options --update and --in-place cannot be used together")
       when (_update && isNothing _targetFile) (invalidCLIArguments "The option --update requires --target")
