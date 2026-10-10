@@ -72,6 +72,9 @@ spec = do
     it "asks the condition 'nf' the way the matcher does" $
       fromRight "" (emitted [] [Y.Rule "nc" Nothing Nothing (ExDispatch (ExMeta "e3") (AtLabel "jb")) ExRoot (Just (Y.NF (ExMeta "e3"))) Nothing Nothing] [] [] [] [])
         `shouldSatisfy` ("Ru.normalHeld nf x1" `isInfixOf`)
+    it "compiles a rule rewriting a formation into a formation the fast way, when it has a 'when' condition" $
+      fromRight "" (emitted [] [Y.Rule "fw" Nothing Nothing (ExFormation [BiMeta "B1", BiVoid (AtLabel "x"), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "y"), BiMeta "B2"]) (Just (Y.In [AtLabel "z"] [BiMeta "B1"])) Nothing Nothing] [] [] [] [])
+        `shouldSatisfy` ("stepFw ::" `isInfixOf`)
   describe "emitted refuses a rule of contextualization" $
     it "with a premise that is no contextualization" $
       emitted [] [] [Y.ContextualizeRule "cm" Nothing (ExMeta "n1") (ExMeta "k1") (ExMeta "n2") [Y.Premise "n2" (Y.OpNormalize (ExMeta "n1"))]] [] [] []
