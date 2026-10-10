@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:key-duplicates
+name: duplicate-key
+pattern: 'Q'
+result: 'Q'
+when:
+  eq: [1, 1]
+when:
+  eq: [2, 2]
