@@ -2544,6 +2544,12 @@ spec = do
             ["dataize", "--focus=Q.x(Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --focus"]
 
+      it "with wrong --locator option written through ξ, keeping ξ in the error" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--locator=ξ.x"]
+            ["[ERROR]:", "but given: ξ.x"]
+
     it "accepts --depth-sensitive" $
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
