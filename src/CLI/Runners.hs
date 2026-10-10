@@ -90,6 +90,8 @@ runRewrite OptsRewrite{..} = do
       when (_inPlace && _sequence) (invalidCLIArguments "The options --in-place and --sequence cannot be used together, since the file must keep one program")
       when (_inPlace && _focus /= "Q") (invalidCLIArguments "The options --in-place and --focus cannot be used together, since the file must keep the whole program")
       when (_inPlace && not (null _show)) (invalidCLIArguments "The options --in-place and --show cannot be used together, since the file must keep the whole program")
+      when (_inPlace && not (null _hide)) (invalidCLIArguments "The options --in-place and --hide cannot be used together, since the file must keep the whole program")
+      when (_inPlace && _hideRho) (invalidCLIArguments "The options --in-place and --hide-rho cannot be used together, since the file must keep the whole program")
       when (_update && _inPlace) (invalidCLIArguments "The options --update and --in-place cannot be used together")
       when (_update && isNothing _targetFile) (invalidCLIArguments "The option --update requires --target")
       when (_update && isNothing _inputFile) (invalidCLIArguments "The option --update requires an input file")

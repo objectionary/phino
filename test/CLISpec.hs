@@ -367,6 +367,18 @@ spec = do
           , ["--update and --in-place cannot be used together"]
           )
         ,
+          ( "when --hide is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--hide=Q.y", "--in-place", "input.phi"]
+          , ["--in-place and --hide cannot be used together"]
+          )
+        ,
+          ( "when --hide-rho is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--hide-rho", "--in-place", "input.phi"]
+          , ["--in-place and --hide-rho cannot be used together"]
+          )
+        ,
           ( "with --depth-sensitive"
           , "[[ x -> \"x\"]]"
           , ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", rule "infinite.yaml"]
