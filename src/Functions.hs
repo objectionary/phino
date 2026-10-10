@@ -21,7 +21,7 @@ import Deps
 import Logger (logDebug)
 import Matcher
 import Misc
-import Parser (parseAttributeThrows, parseNumberThrows)
+import Parser (ParserException (CouldNotParseAttribute), parseAttributeThrows, parseNumberThrows)
 import Printer (printAttribute, printExpression, printExtraArg)
 import Random (randomString)
 import Regexp
@@ -175,8 +175,13 @@ _size _ _ = throwIO (userError "Function size() requires exactly 1 meta binding"
 _tau :: BuildTermMethod
 _tau [Y.ArgExpression expr] subst = do
   TeBytes bts <- _dataize [Y.ArgExpression expr] subst
-  attr <- parseAttributeThrows (btsToUnescapedStr bts)
-  pure (TeAttribute attr)
+  let str = btsToUnescapedStr bts
+  attr <- parseAttributeThrows str
+  let notReal = throwIO (CouldNotParseAttribute (printf "'%s' is a meta attribute, not a real one" str))
+  case attr of
+    AtMeta _ -> notReal
+    AtAny _ -> notReal
+    _ -> pure (TeAttribute attr)
 _tau _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
 
 _string :: BuildTermMethod

@@ -224,6 +224,18 @@ spec = describe "Functions" $ do
       , ("size fails on a non-meta binding argument", "size", [ArgBinding (BiVoid AtRho)], "size() requires exactly 1 meta binding")
       , ("tau fails on the wrong number of arguments", "tau", [], "tau() requires exactly 1 argument")
       ,
+        ( "tau fails when the string is a meta attribute"
+        , "tau"
+        , [ArgExpression (DataString (strToBts "𝜏1"))]
+        , "is a meta attribute, not a real one"
+        )
+      ,
+        ( "tau fails when the string is an any-slot attribute"
+        , "tau"
+        , [ArgExpression (DataString (strToBts "!t1"))]
+        , "is a meta attribute, not a real one"
+        )
+      ,
         ( "string fails on an expression that is neither a number nor a string"
         , "string"
         , [ArgExpression ExRoot]

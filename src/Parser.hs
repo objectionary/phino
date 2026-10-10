@@ -9,6 +9,7 @@ module Parser
   , parseExpressionThrows
   , parseAttribute
   , parseAttributeThrows
+  , ParserException (..)
   , parseAlpha
   , parseIndex
   , parseNumber
