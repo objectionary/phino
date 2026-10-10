@@ -152,6 +152,7 @@ test-suite spec
   other-modules:
     AbridgeSpec
     ASTSpec
+    BrokenPipeSpec
     BuilderSpec
     BytesSpec
     CanonizerSpec
@@ -226,6 +227,9 @@ test-suite spec
     time >=1.12 && <1.17,
     xml-conduit >=1.9 && <1.11,
     yaml >=0.11.8 && <0.12,
+
+  if !os(windows)
+    build-depends: unix >=2.8 && <2.9
 
   build-tool-depends:
     hspec-discover:hspec-discover >=2.11.0 && <2.12
