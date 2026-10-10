@@ -281,7 +281,7 @@ printOut target content = case target of
     putStrLn content
   Just file -> do
     logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-    overwrite file content
+    overwrite file (content ++ "\n")
     logDebug (printf "The command result was saved in '%s'" file)
 
 engine :: IO Engine
