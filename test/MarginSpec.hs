@@ -33,6 +33,20 @@ longCalleeShortArg = ExApplication bigFormation (ArTau (AtLabel "y") (ExDispatch
 shortCalleeLongArg :: Expression
 shortCalleeLongArg = ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "y") bigFormation)
 
+wideStringFormation :: Expression
+wideStringFormation =
+  ExFormation
+    [ BiTau (AtLabel "b") (DataString (strToBts "你好世界你好世界"))
+    , BiTau (AtLabel "c") (ExFormation [])
+    ]
+
+narrowStringFormation :: Expression
+narrowStringFormation =
+  ExFormation
+    [ BiTau (AtLabel "b") (DataString (strToBts "abcdabcd"))
+    , BiTau (AtLabel "c") (ExFormation [])
+    ]
+
 spec :: Spec
 spec = do
   describe "withMargin on EX_FORMATION" $ do
@@ -183,3 +197,11 @@ spec = do
     it "threads the margin into its body" $ do
       let again = expressionToCST (ExPhiAgain Nothing 3 bigFormation)
       withMargin 1 again `shouldNotBe` withMargin 1000 again
+
+  describe "withMargin measures display width rather than code points" $ do
+    it "wraps a formation whose string has wide characters that push it past the margin" $
+      render (withMargin 30 (expressionToCST wideStringFormation))
+        `shouldBe` "⟦\n  b ↦ \"你好世界你好世界\",\n  c ↦ ⟦⟧\n⟧"
+    it "keeps a same length narrow string on one line within the same margin" $
+      render (withMargin 30 (expressionToCST narrowStringFormation))
+        `shouldBe` "⟦ b ↦ \"abcdabcd\", c ↦ ⟦⟧ ⟧"
