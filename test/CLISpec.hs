@@ -1241,7 +1241,7 @@ spec = do
         withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
           testCLIFailed
             ["dataize", "--symbolic=" ++ endless, "--max-steps=40"]
-            ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+            ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
     it "parks --max-steps on a residual with --partial" $
       loopingLambdas $ \endless ->
@@ -1263,7 +1263,7 @@ spec = do
         withStdin circling $
           testCLIFailed
             ["dataize", "--locator=Q.t", "--max-steps=40"]
-            ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+            ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
       it "names the term it came back to with the flag" $
         withStdin circling $
@@ -2676,7 +2676,13 @@ spec = do
       withStdin chained $
         testCLIFailed
           ["morph", "--locator=Q.@", "--max-steps=3"]
-          ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
+          ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=3"]
+
+    it "names morphing, not dataization, when the budget is spent before dataization starts" $
+      withStdin "⟦ x ↦ Φ.x.y ⟧" $
+        testCLIFailed
+          ["morph", "--locator=Q.x", "--max-steps=5"]
+          ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=5"]
 
     describe "--max-firings" $ do
       let splitting = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: Φ.s.foo\n    𝑛2: Φ.s.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
@@ -2981,7 +2987,7 @@ spec = do
           withStdin looping $
             testCLIFailed
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--max-steps=40"]
-              ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+              ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
       it "prints the residue and exits successfully with the flag" $
         loopingLambdas $ \endless ->
