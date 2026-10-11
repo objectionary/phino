@@ -13,7 +13,7 @@ import qualified Text.Regex.PCRE.ByteString as R
 
 compile :: B.ByteString -> IO R.Regex
 compile pat = do
-  compiled <- R.compile R.compBlank R.execBlank pat
+  compiled <- R.compile R.compUTF8 R.execBlank pat
   case compiled of
     Left (_, err) -> throwIO (userError ("Regex compilation failed: " ++ err))
     Right regex -> pure regex
