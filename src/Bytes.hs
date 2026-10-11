@@ -193,7 +193,7 @@ unescapeStr = go
                     chr (0x10000 + (code - 0xD800) * 0x400 + (low - 0xDC00)) : go rest'
               _ -> chr code : go rest
             else chr code : go rest
-    goUnicode rest = go rest
+    goUnicode rest = '\\' : 'u' : go rest
     hexQuad :: Char -> Char -> Char -> Char -> Maybe Int
     hexQuad a b c d = case readHex [a, b, c, d] of
       [(code, "")] -> Just code
