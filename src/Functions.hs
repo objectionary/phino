@@ -243,12 +243,12 @@ _join args subst = do
       let groupAttrs = Set.fromList [attr | bd <- bds, Just attr <- [attributeFromBinding bd]]
       (renamed, used, changes) <- renameBindings bds attrs (Set.union attrs groupAttrs) Map.empty
       pure (map (renameValue changes) renamed, used)
-    renameBindings
-      :: [Binding]
-      -> Set.Set Attribute
-      -> Set.Set Attribute
-      -> Map.Map Attribute Attribute
-      -> IO ([Binding], Set.Set Attribute, Map.Map Attribute Attribute)
+    renameBindings ::
+      [Binding] ->
+      Set.Set Attribute ->
+      Set.Set Attribute ->
+      Map.Map Attribute Attribute ->
+      IO ([Binding], Set.Set Attribute, Map.Map Attribute Attribute)
     renameBindings [] attrs _ changes = pure ([], attrs, changes)
     renameBindings (bd : bds) attrs unavailable changes =
       case attributeFromBinding bd of
@@ -261,18 +261,20 @@ _join args subst = do
                     BiTau _ ex -> BiTau new ex
                     BiVoid _ -> BiVoid new
                     other -> other
-              (rest, used, next) <- renameBindings
-                bds
-                (Set.insert new attrs)
-                (Set.insert new unavailable)
-                (Map.insert attr new changes)
+              (rest, used, next) <-
+                renameBindings
+                  bds
+                  (Set.insert new attrs)
+                  (Set.insert new unavailable)
+                  (Map.insert attr new changes)
               pure (renamed : rest, used, next)
           | otherwise -> do
-              (rest, used, next) <- renameBindings
-                bds
-                (Set.insert attr attrs)
-                unavailable
-                changes
+              (rest, used, next) <-
+                renameBindings
+                  bds
+                  (Set.insert attr attrs)
+                  unavailable
+                  changes
               pure (bd : rest, used, next)
         Nothing -> do
           (rest, used, next) <- renameBindings bds attrs unavailable changes
