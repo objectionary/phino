@@ -79,7 +79,7 @@ replaceFirst (Regex regex _) rep input = do
     Left _ -> return input
     Right Nothing -> return input
     Right (Just arr) -> do
-      groups <- extractGroups regex input
+      groups <- extractGroupsWith regex input
       let (off, len) = arr ! 0
           (before, rest) = B.splitAt off input
           (_, after) = B.splitAt len rest
