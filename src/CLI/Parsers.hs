@@ -23,6 +23,13 @@ validateIntOption cmp msg num
   | cmp num = return num
   | otherwise = readerError msg
 
+boundedIntOption :: ReadM Int
+boundedIntOption = do
+  num <- auto :: ReadM Integer
+  if num < toInteger (minBound :: Int) || num > toInteger (maxBound :: Int)
+    then readerError (printf "value must be between %d and %d" (minBound :: Int) (maxBound :: Int))
+    else return (fromInteger num)
+
 optLogLevel :: Parser LogLevel
 optLogLevel =
   option
@@ -46,7 +53,7 @@ optLogLevel =
 optLogLines :: Parser Int
 optLogLines =
   option
-    (auto >>= validateIntOption (>= -1) "--log-lines must be >= -1")
+    (boundedIntOption >>= validateIntOption (>= -1) "--log-lines must be >= -1")
     (long "log-lines" <> metavar "LINES" <> help "Amount of lines printed to console per each log operation (0 - print nothing, -1 - no limits)" <> value 25 <> showDefault)
 
 optRule :: Parser [FilePath]
@@ -74,26 +81,26 @@ argInputFile = optional (argument str (metavar "FILE" <> help "Path to input fil
 optMaxDepth :: Parser Int
 optMaxDepth =
   option
-    (auto >>= validateIntOption (> 0) "--max-depth must be positive")
+    (boundedIntOption >>= validateIntOption (> 0) "--max-depth must be positive")
     (long "max-depth" <> metavar "DEPTH" <> help "Maximum number of rewriting iterations per rule" <> value 25 <> showDefault)
 
 optMaxCycles :: Parser Int
 optMaxCycles =
   option
-    (auto >>= validateIntOption (> 0) "--max-cycles must be positive")
+    (boundedIntOption >>= validateIntOption (> 0) "--max-cycles must be positive")
     (long "max-cycles" <> metavar "CYCLES" <> help "Maximum number of rewriting cycles across all rules" <> value 25 <> showDefault)
 
 optMaxSteps :: Parser Int
 optMaxSteps =
   option
-    (auto >>= validateIntOption (> 0) "--max-steps must be positive")
+    (boundedIntOption >>= validateIntOption (> 0) "--max-steps must be positive")
     (long "max-steps" <> metavar "STEPS" <> help "Maximum number of nested morphing and dataization steps" <> value 1000 <> showDefault)
 
 optMaxFirings :: Parser (Maybe Int)
 optMaxFirings =
   optional
     ( option
-        (auto >>= validateIntOption (> 0) "--max-firings must be positive")
+        (boundedIntOption >>= validateIntOption (> 0) "--max-firings must be positive")
         (long "max-firings" <> metavar "FIRINGS" <> help "Maximum number of λ functions the whole run may fire, unlimited unless given")
     )
 
@@ -101,21 +108,21 @@ optMaxSeconds :: Parser (Maybe Int)
 optMaxSeconds =
   optional
     ( option
-        (auto >>= validateIntOption (> 0) "--max-seconds must be positive")
+        (boundedIntOption >>= validateIntOption (> 0) "--max-seconds must be positive")
         (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, unlimited unless given")
     )
 
 optMargin :: Parser Int
 optMargin =
   option
-    (auto >>= validateIntOption (> 0) "--margin must be positive")
+    (boundedIntOption >>= validateIntOption (> 0) "--margin must be positive")
     (long "margin" <> help "The maximum right margin for the printed 𝜑-expressions" <> value defaultMargin <> showDefault)
 
 optMeetPopularity :: Parser (Maybe Int)
 optMeetPopularity =
   optional
     ( option
-        ( auto
+        ( boundedIntOption
             >>= validateIntOption (> 0) "--meet-popularity must be positive"
             >>= validateIntOption (<= 100) "--meet-popularity must be <= 100"
         )
@@ -129,7 +136,7 @@ optMeetLength :: Parser (Maybe Int)
 optMeetLength =
   optional
     ( option
-        (auto >>= validateIntOption (> 0) "--meet-length must be positive")
+        (boundedIntOption >>= validateIntOption (> 0) "--meet-length must be positive")
         ( long "meet-length"
             <> metavar "NODES"
             <> help (printf "The minimum length of an expression that fits into \\phinoMeet{}, in AST nodes (default: %d)" defaultMeetLength)
@@ -229,7 +236,7 @@ optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter 
 optJobs :: Parser Int
 optJobs =
   option
-    (auto >>= validateIntOption (> 0) "--jobs must be positive")
+    (boundedIntOption >>= validateIntOption (> 0) "--jobs must be positive")
     (long "jobs" <> metavar "JOBS" <> help "Number of workers the --deep walk morphs the bindings of the formation it starts at on, side by side, each with a memo, a tally and fresh names of its own" <> value 1 <> showDefault)
 
 optAcyclic :: Parser (Maybe Acyclic)
