@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A formation declares a receiver only when it lists ρ among its voids, so a
+# dispatch of ρ on one that does not is ⊥. 'stop' leaves it alone while the
+# formation has a φ, and morphing would then read ρ through φ (#1859).
+name: norho
+pattern: ⟦𝐵1⟧.ρ
+result: ⊥
+when:
+  not:
+    in:
+      - ρ
+      - 𝐵1
