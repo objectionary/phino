@@ -3046,6 +3046,18 @@ spec = do
           records <- readProtocol path
           lines records `shouldContain` ["    𝑛3·1 := ⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧:φ  # [𝑛1, 𝑛2]"]
 
+      it "gets stuck on a fork pairing a bare symbol with a call holding one symbol when the entry is strict" $
+        withLambdasOf strict $ \forks ->
+          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ r ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧ ⟧ ⟧" $
+            testCLIFailed ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--deep"] ["No entry of --symbolic answers the λ function 'L_fork'"]
+
+      it "joins a bare symbol with a call holding one symbol into a copy of the call under --deep" $
+        withLambdasOf lenient $ \forks ->
+          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ r ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧ ⟧ ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--deep", "--sweet", "--hide-rho", "--flat"]
+              ["Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎3:λ ⟧ ):φ:r"]
+
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
           recorded :: String -> IO [String]
