@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvComputed, EvData, EvDeferred, EvDelta, EvFiring, EvJoined, EvLooped, EvMinted, EvRun, EvStarted, EvTerm), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvComputed, EvData, EvDeferred, EvDelta, EvFiring, EvJoined, EvLooped, EvMinted, EvRun, EvStarted, EvTerm, EvTerminate), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -145,6 +145,10 @@ spec = do
       case renumbered 1 3 (EvStarted 2 Morphing (ExFormation [BiLambda (FnSymbol 5)])) of
         EvStarted _ _ site -> symbols site `shouldBe` [8]
         _ -> expectationFailure "The record did not stay the record it was"
+    it "raises the symbols the message of a raising fork carries above the floor" $
+      case renumbered 2 5 (EvTerminate 3 (Just (Left 1)) "right" "𝑛4" (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёрш")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 6)]))))) of
+        EvTerminate _ _ _ _ message -> fmap symbols message `shouldBe` Just [11]
+        _ -> expectationFailure "The record did not stay the record it was"
 
   describe "resited" $ do
     it "moves an application made at one site to another" $
@@ -234,6 +238,12 @@ spec = do
     it "names the block over an answer by the line that built it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
       lines written `shouldContain` ["    𝕄(𝑛·1·1):"]
+    it "names the message a fork raises with by the name its application gave it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvTerminate 2 (Just (Left 7)) "right" "𝑛4" (Just (ExFormation [BiTau (AtLabel "q") (ExFormation [])]))])
+      last (lines written) `shouldBe` "    terminate(𝔻(𝜎7:λ), right, 𝑛·1·1)  # 𝑛4"
+    it "writes no message for a fork that raises with none" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ф" Morphing ExRoot, EvTerminate 2 (Just (Right (BtOne "0D"))) "left" "𝑛3" Nothing])
+      last (lines written) `shouldBe` "    terminate(0D-, left)  # 𝑛3"
     it "writes no line for an object the walk computed inside" $ do
       (_, written) <- recorded (\record -> record (EvComputed 1 (ExFormation [BiTau (AtLabel "ю") ExRoot]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 3)])])))
       written `shouldBe` ""
@@ -278,6 +288,12 @@ spec = do
     it "names the element over an answer by the element that built it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
       lines written `shouldContain` ["    <morph at=\"𝑛·1·1\">"]
+    it "names the message a fork raises with by the name its application gave it in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvTerminate 2 (Just (Left 7)) "right" "𝑛4" (Just (ExFormation [BiTau (AtLabel "q") (ExFormation [])]))])
+      lines written `shouldContain` ["    <terminate symbol=\"𝜎7\" branch=\"right\" message=\"𝑛·1·1\"/>"]
+    it "writes the message a fork raises with beside the datum of its condition" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvTerminate 1 (Just (Right (BtOne "0D"))) "left" "𝑛3" (Just (ExDispatch ExRoot (AtLabel "щука")))])
+      lines written `shouldContain` ["  <terminate branch=\"left\" message=\"Φ.щука\">0D-</terminate>"]
 
   describe "perSecond" $ do
     it "divides the firings by the seconds the run took" $

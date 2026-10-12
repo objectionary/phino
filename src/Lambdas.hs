@@ -14,6 +14,7 @@ module Lambdas
   , emptyLambdas
   , joined
   , matched
+  , message
   , minted
   , readLambdas
   , symbolized
@@ -350,6 +351,12 @@ thrown :: [Text] -> Expression -> Bool
 thrown names (ExApplication expr _) = thrown names expr
 thrown names (ExFormation bds) = any (`elem` [BiLambda (Function name) | name <- names]) bds
 thrown _ _ = False
+
+message :: Expression -> Maybe Expression
+message (ExApplication _ (ArTau (AtLabel "message") body)) = Just body
+message (ExApplication expr _) = message expr
+message (ExFormation bds) = listToMaybe [body | BiTau (AtLabel "message") body <- bds]
+message _ = Nothing
 
 minted :: Expression -> Int -> ([(Slot, Function)], Int)
 minted answer spent = (zip fresh [FnSymbol idx | idx <- [spent + 1 ..]], spent + length fresh)
