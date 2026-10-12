@@ -20,7 +20,7 @@ import Data.IORef (newIORef)
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Maybe (fromJust, isJust, isNothing, listToMaybe)
 import qualified Data.Text as T
 import Dataize
 import Deps (Judgment (..), dontSaveMade)
@@ -34,6 +34,7 @@ import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules,
 import Logger
 import Margin (defaultMargin)
 import Merge (merge)
+import Metas (Metas (..))
 import Morph
 import Parser (parseExpressionThrows)
 import qualified Printer as P
@@ -400,6 +401,7 @@ runMatch OptsMatch{..} = do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
       traverse_ (throwIO . AnonymousMetaInCondition . T.unpack) (anonymous condition)
+      traverse_ (throwIO . UnboundMetaInCondition . T.unpack) (listToMaybe (unboundMetas ptn condition))
       linked <- engine
       substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext (building linked) Nothing linked._normal)
       if null substs
@@ -408,6 +410,10 @@ runMatch OptsMatch{..} = do
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
     rule ptn cnd = Y.Rule "custom" Nothing Nothing ptn ExRoot cnd Nothing Nothing
+    unboundMetas :: Expression -> Maybe Y.Condition -> [T.Text]
+    unboundMetas ptn condition = filter (`notElem` namedMetas ptn) (namedMetas condition)
+    namedMetas :: (Metas a) => a -> [T.Text]
+    namedMetas term = filter ((> 1) . T.length) (metas term)
 
 runCompile :: OptsCompile -> IO ()
 runCompile OptsCompile{..} = do
