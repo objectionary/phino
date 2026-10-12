@@ -7,12 +7,13 @@ module Filter (include, include', exclude, exclude') where
 
 import AST
 import Control.Exception (throwIO)
-import Locator (LocatorException (CanNotFindObjectByLocator, InvalidLocatorProvided))
+import Locator (LocatorException (CanNotFindObjectByLocator, CanNotHideWholeProgram, InvalidLocatorProvided))
 import Misc
 import Rewriter
 
 exclude' :: Expression -> [Expression] -> IO Expression
 exclude' expr [] = pure expr
+exclude' _ (ExRoot : _) = throwIO (CanNotHideWholeProgram ExRoot)
 exclude' expr (fqn : remaining) = case fqnToAttrs fqn of
   Just attrs@(_ : _) -> maybe (throwIO (CanNotFindObjectByLocator fqn)) (`exclude'` remaining) (excludedFormation expr attrs)
   _ -> throwIO (InvalidLocatorProvided fqn)
