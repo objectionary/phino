@@ -15,11 +15,13 @@ import Data.Char (isSpace)
 import Data.List (dropWhileEnd)
 import Data.Version (showVersion)
 import Files (ensuredFile)
+import GHC.IO.Exception (IOErrorType (ResourceVanished))
 import Logger
 import Options.Applicative
 import Paths_phino (version)
 import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hPutStrLn, stderr)
+import System.IO.Error (ioeGetErrorType)
 
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do
@@ -54,9 +56,11 @@ runCLI args = handle handler $ do
     handler e = case fromException e of
       Just ExitSuccess -> pure ()
       Just (ExitFailure _) -> exitFailure
-      _ -> do
-        logError (show e)
-        exitFailure
+      _ -> case fromException e of
+        Just (ioe :: IOError) | ioeGetErrorType ioe == ResourceVanished -> exitWith (ExitFailure 141)
+        _ -> do
+          logError (show e)
+          exitFailure
     setLogger :: Command -> IO ()
     setLogger cmd =
       let (level, lns) = case cmd of
