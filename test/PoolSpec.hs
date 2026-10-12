@@ -3,11 +3,12 @@
 
 module PoolSpec where
 
-import Control.Concurrent (threadDelay)
+import Control.Concurrent (myThreadId, threadDelay)
 import Control.Exception (ErrorCall (..), throwIO, try)
 import Data.IORef (atomicModifyIORef', newIORef, readIORef)
+import Data.List (nub)
 import Pool (pooled)
-import Test.Hspec (Spec, describe, it, shouldReturn)
+import Test.Hspec (Spec, describe, it, shouldReturn, shouldSatisfy)
 
 spec :: Spec
 spec = describe "Pool" $ do
@@ -33,3 +34,6 @@ spec = describe "Pool" $ do
     pooled 4 ([] :: [IO Int]) (\acc val -> pure (acc + val)) 42 `shouldReturn` 42
   it "folds every action where it may run one at a time" $
     pooled 1 (map pure [3, 8, 1]) (\acc val -> pure (acc * 10 + val)) 0 `shouldReturn` (381 :: Int)
+  it "keeps no more threads than it was given, however many actions wait" $ do
+    threads <- pooled 2 (replicate 50 (threadDelay 100 >> myThreadId)) (\seen thread -> pure (thread : seen)) []
+    length (nub threads) `shouldSatisfy` (<= 2)
