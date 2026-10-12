@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  [[
+    x -> "hh"
+  ]]
+output: |-
+  ⟦
+    x ↦ "Xh"
+  ⟧
+rules:
+  custom:
+    - name: sed global replacement keeps the start anchor at the start
+      pattern: '[[ x -> !e1 ]]'
+      result: '[[ x -> !e2 ]]'
+      where:
+        - meta: '!e2'
+          function: sed
+          args:
+            - '!e1'
+            - '"s/^h/X/g"'

@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  [[
+    x -> "héllo"
+  ]]
+output: |-
+  ⟦
+    x ↦ "XXXXX"
+  ⟧
+rules:
+  custom:
+    - name: sed matches one Unicode character with a dot
+      pattern: '[[ x -> !e1 ]]'
+      result: '[[ x -> !e2 ]]'
+      where:
+        - meta: '!e2'
+          function: sed
+          args:
+            - '!e1'
+            - '"s/./X/g"'
