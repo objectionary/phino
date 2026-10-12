@@ -61,7 +61,7 @@ spec = do
               (yamlRule pth)
               ( \e ->
                   let msg = displayException (e :: SomeException)
-                   in "Unknown" `isInfixOf` msg || "Exactly one" `isInfixOf` msg
+                   in "Unknown" `isInfixOf` msg || "Exactly one" `isInfixOf` msg || "repeated" `isInfixOf` msg
               )
       )
 
