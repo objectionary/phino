@@ -92,8 +92,10 @@ btsToNum hx =
               val = wordToDouble word
            in if isNaN val || isInfinite val || isNegativeZero val
                 then Right val
-                else case properFraction val of
-                  (n, 0.0) -> Left n
+                else case properFraction val :: (Integer, Double) of
+                  (n, 0.0)
+                    | n >= toInteger (minBound :: Int) && n <= toInteger (maxBound :: Int) ->
+                        Left (fromInteger n)
                   _ -> Right val
   where
     toWord64BE :: [Word8] -> Word64
