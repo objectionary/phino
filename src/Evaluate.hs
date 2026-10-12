@@ -18,7 +18,7 @@ import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Morphing), State (..), resited)
 import Engine (Engine (..))
-import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized)
+import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Refused (..), Steps (..), admitted, charged, counted, deeper, isLambda, lambda, morphing, normalized, opening, recalled, refused, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
@@ -70,7 +70,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       let ctx = caller{_nesting = caller._nesting + 1}
       outcome <- try $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-        (bound', morphed, normals) <- foldM (through ctx) (bound, dataized, []) entry._morphed
+        (bound', morphed, normals) <- foldM (through ctx{_throwing = entry._terminators}) (bound, dataized, []) entry._morphed
         let firing = Firing func (reverse conditions) (reverse normals)
         known <- remembered caller._memo firing
         maybe (worked ctx entry firing bound' morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
@@ -87,7 +87,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     worked ctx entry firing@(Firing _ operands _) bound state' = do
       rewrote <- foldM (reshaped ctx) bound entry._rewritten
       stood <- foldM (masked ctx) rewrote entry._symbolized
-      forked <- foldM (paired ctx entry._lenient (listToMaybe operands)) stood entry._paired
+      forked <- foldM (paired ctx entry (listToMaybe operands)) stood entry._paired
       (answer, state'') <- answered ctx entry operands forked state'
       remember caller._memo firing answer
       pure (answer, state'')
@@ -156,19 +156,21 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       where
         fact :: (Int, Bytes) -> Evaluation
         fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
-    paired :: ReduceContext -> Bool -> Maybe (Either Int Bytes) -> Subst -> (Meta, (Meta, Meta)) -> IO Subst
-    paired ctx lenient condition bound (meta, (left, right)) = do
+    paired :: ReduceContext -> Lambda -> Maybe (Either Int Bytes) -> Subst -> (Meta, (Meta, Meta)) -> IO Subst
+    paired ctx entry condition bound (meta, (left, right)) = do
       one <- branch left
       two <- branch right
-      case (one, two) of
-        (ExTermination, ExTermination) -> both one two
-        (ExTermination, _) -> terminating "left" left two
-        (_, ExTermination) -> terminating "right" right one
+      case (raising one, raising two) of
+        (True, False) -> terminating "left" left two
+        (False, True) -> terminating "right" right one
         _ -> both one two
       where
+        raising :: Expression -> Bool
+        raising ExTermination = True
+        raising term = thrown entry._terminators term
         both :: Expression -> Expression -> IO Subst
         both one two = do
-          outcome <- joined lenient one two <$> readIORef ctx._minted
+          outcome <- joined entry._lenient one two <$> readIORef ctx._minted
           case outcome of
             Nothing -> throwIO (Stuck func)
             Just (term, made, spent) -> do
