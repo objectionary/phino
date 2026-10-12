@@ -11,24 +11,34 @@ import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import qualified Text.Regex.PCRE.ByteString as R
 
-compile :: B.ByteString -> IO R.Regex
+data Regex = Regex R.Regex R.Regex
+
+compile :: B.ByteString -> IO Regex
 compile pat = do
-  compiled <- R.compile R.compBlank R.execBlank pat
-  case compiled of
-    Left (_, err) -> throwIO (userError ("Regex compilation failed: " ++ err))
-    Right regex -> pure regex
+  first <- compileWith R.execBlank
+  continuation <- compileWith R.execNotBOL
+  pure (Regex first continuation)
+  where
+    compileWith option = do
+      compiled <- R.compile R.compUTF8 option pat
+      case compiled of
+        Left (_, err) -> throwIO (userError ("Regex compilation failed: " ++ err))
+        Right regex -> pure regex
 
 match :: B.ByteString -> B.ByteString -> IO Bool
 match pattern input = do
-  regex <- compile pattern
+  Regex regex _ <- compile pattern
   res <- R.execute regex input
   case res of
     Left err -> regexExecutionFailed err
     Right Nothing -> pure False
     Right (Just _) -> pure True
 
-extractGroups :: R.Regex -> B.ByteString -> IO [B.ByteString]
-extractGroups regex input = do
+extractGroups :: Regex -> B.ByteString -> IO [B.ByteString]
+extractGroups (Regex regex _) input = extractGroupsWith regex input
+
+extractGroupsWith :: R.Regex -> B.ByteString -> IO [B.ByteString]
+extractGroupsWith regex input = do
   result <- R.execute regex input
   case result of
     Left err -> regexExecutionFailed err
@@ -62,25 +72,26 @@ substituteGroups rep groups = B.concat (go (B.unpack rep))
       | i >= 0 && i < length xs = Just (xs !! i)
       | otherwise = Nothing
 
-replaceFirst :: R.Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
-replaceFirst regex rep input = do
+replaceFirst :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
+replaceFirst (Regex regex _) rep input = do
   result <- R.execute regex input
   case result of
     Left err -> regexExecutionFailed err
     Right Nothing -> return input
     Right (Just arr) -> do
-      groups <- extractGroups regex input
+      groups <- extractGroupsWith regex input
       let (off, len) = arr ! 0
           (before, rest) = B.splitAt off input
           (_, after) = B.splitAt len rest
           replacement = substituteGroups rep groups
       return $ B.concat [before, replacement, after]
 
-replaceAll :: R.Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
-replaceAll regex rep input = go input B.empty
+replaceAll :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
+replaceAll (Regex first continuation) rep input = go True input B.empty
   where
-    go :: B.ByteString -> B.ByteString -> IO B.ByteString
-    go bs acc = do
+    go :: Bool -> B.ByteString -> B.ByteString -> IO B.ByteString
+    go initial bs acc = do
+      let regex = if initial then first else continuation
       result <- R.execute regex bs
       case result of
         Left err -> regexExecutionFailed err
@@ -89,15 +100,15 @@ replaceAll regex rep input = go input B.empty
           let (off, len) = arr ! 0
               (before, rest1) = B.splitAt off bs
               (_, rest2) = B.splitAt len rest1
-          groups <- extractGroups regex bs
+          groups <- extractGroupsWith regex bs
           let replacement = substituteGroups rep groups
           if len == 0
             then
               let next = B.take (utf8Width rest2) rest2
                in if B.null next
                     then return $ B.concat [acc, before, replacement]
-                    else go (B.drop (B.length next) rest2) (B.concat [acc, before, replacement, next])
-            else go rest2 (B.concat [acc, before, replacement])
+                    else go False (B.drop (B.length next) rest2) (B.concat [acc, before, replacement, next])
+            else go False rest2 (B.concat [acc, before, replacement])
     utf8Width :: B.ByteString -> Int
     utf8Width bytes =
       case B.uncons bytes of
