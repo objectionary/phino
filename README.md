@@ -359,6 +359,32 @@ came down to, as `terminate(𝔻(𝜎2:λ), right)  # 𝑛4` in the text format 
 such a fork too, since that `⊥` is an argument the program wrote rather than
 one the reduction made.
 
+EO raises with an object too, a copy of `⟦ message ↦ ∅, λ ⤍ L_throw ⟧`, whose
+λ function the file leaves out on purpose, so that an error of the program
+stays an error at runtime. An entry names such functions under `terminators`:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  join:
+    𝑛3: [𝑛1, 𝑛2]
+  terminators: [L_throw]
+  𝑛: 𝑛3
+```
+
+A `join` line of such an entry takes a formation with `λ ⤍ L_throw`, or an
+application of one, for a branch that raises, exactly as it takes `⊥`: it binds
+its meta to the other term and writes `terminate(…)`. The morph of an operand
+of the entry that comes to such a term stops there, and `--deep` walks none of
+its bindings, since its message is what the program reports at runtime and
+there is nothing to reduce in it. A name under `terminators` that a key of the
+file matches is refused when the file is read, since that function fires
+rather than raises.
+
 Every symbol a join mints is written into the protocol as a fact of its own,
 so a reader ties it to the two it stands for without diffing the terms; the
 section on `--protocol` below shows one.

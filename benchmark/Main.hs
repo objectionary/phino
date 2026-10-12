@@ -87,6 +87,7 @@ symbolicCtx acyclic memo minted lambdas locator =
     []
     Map.empty
     lambdas
+    []
     (building linked)
     reduction
     evaluation

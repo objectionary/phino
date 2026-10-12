@@ -164,6 +164,13 @@ reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
+An entry may name `terminators`, λ functions no key of the file matches, such
+as the `L_throw` EO raises with. A `join` line takes a branch that is a
+formation with one of them, or an application of one, for a branch that
+raises, as it takes ⊥ (`thrown` of `Lambdas.hs`, `paired` of `Evaluate.hs`),
+and the morph of an operand that comes to one skips the `--deep` walk, which
+`through` tells `morph` in `_throwing` of `ReduceContext` (#1865).
+
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
 of `ReduceContext`. The count is an `IORef`, as the tally of `--max-firings`
