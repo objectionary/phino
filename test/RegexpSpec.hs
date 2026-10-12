@@ -5,10 +5,15 @@ module RegexpSpec where
 
 import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_, void)
-import Data.ByteString.Char8 qualified as B
+import Data.ByteString (ByteString)
 import Data.List (isInfixOf)
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as TE
 import Regexp qualified as R
 import Test.Hspec (Spec, anyException, describe, it, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
+
+utf8 :: String -> ByteString
+utf8 = TE.encodeUtf8 . T.pack
 
 spec :: Spec
 spec = do
@@ -20,16 +25,16 @@ spec = do
       , ("compiles empty pattern", "", "anything")
       ]
       ( \(desc, pattern, input) -> it desc $ do
-          _ <- R.compile (B.pack pattern)
-          matched <- R.match (B.pack pattern) (B.pack input)
+          _ <- R.compile (utf8 pattern)
+          matched <- R.match (utf8 pattern) (utf8 input)
           matched `shouldBe` True
       )
 
     it "throws on invalid pattern" $
-      R.compile (B.pack "[invalid") `shouldThrow` anyException
+      R.compile (utf8 "[invalid") `shouldThrow` anyException
 
     it "throws with the underlying PCRE error embedded in the message" $ do
-      result <- try (void (R.compile (B.pack "[invalid"))) :: IO (Either SomeException ())
+      result <- try (void (R.compile (utf8 "[invalid"))) :: IO (Either SomeException ())
       case result of
         Left exc -> displayException exc `shouldSatisfy` isInfixOf "Regex compilation failed:"
         Right () -> fail "expected R.compile to fail"
@@ -51,7 +56,7 @@ spec = do
       , ("handles unicode input", "日本語", "これは日本語です", True)
       , ("handles case sensitive match", "Hello", "hello", False)
       ]
-      (\(desc, pattern, input, expected) -> it desc $ R.match (B.pack pattern) (B.pack input) `shouldReturn` expected)
+      (\(desc, pattern, input, expected) -> it desc $ R.match (utf8 pattern) (utf8 input) `shouldReturn` expected)
 
   describe "extractGroups" $
     forM_
@@ -63,9 +68,9 @@ spec = do
       , ("handles pattern without groups", "test", "this is a test", ["test"])
       ]
       ( \(desc, pattern, input, expected) -> it desc $ do
-          regex <- R.compile (B.pack pattern)
-          groups <- R.extractGroups regex (B.pack input)
-          groups `shouldBe` map B.pack expected
+          regex <- R.compile (utf8 pattern)
+          groups <- R.extractGroups regex (utf8 input)
+          groups `shouldBe` map utf8 expected
       )
 
   describe "substituteGroups" $
@@ -90,7 +95,7 @@ spec = do
       , ("handles double dollar", "$$1", ["x", "y"], "$y")
       ]
       ( \(desc, template, groups, expected) ->
-          it desc $ R.substituteGroups (B.pack template) (map B.pack groups) `shouldBe` B.pack expected
+          it desc $ R.substituteGroups (utf8 template) (map utf8 groups) `shouldBe` utf8 expected
       )
 
   describe "replaceFirst" $
@@ -112,9 +117,9 @@ spec = do
       , ("replaces entire string when pattern matches all", "^.*$", "replaced", "original", "replaced")
       ]
       ( \(desc, pattern, replacement, input, expected) -> it desc $ do
-          regex <- R.compile (B.pack pattern)
-          result <- R.replaceFirst regex (B.pack replacement) (B.pack input)
-          result `shouldBe` B.pack expected
+          regex <- R.compile (utf8 pattern)
+          result <- R.replaceFirst regex (utf8 replacement) (utf8 input)
+          result `shouldBe` utf8 expected
       )
 
   describe "replaceAll" $
@@ -129,12 +134,12 @@ spec = do
       , ("replaces overlapping potential matches correctly", "aa", "X", "aaaa", "XX")
       , ("handles single character replacement", ".", "*", "abc", "***")
       , ("handles word boundary", "\\bword\\b", "WORD", "word in a word", "WORD in a WORD")
-      , ("terminates on an empty-match pattern (anchored ^)", "^", "X", "hello", "XhXeXlXlXoX")
+      , ("terminates on an empty-match pattern (anchored ^)", "^", "X", "hello", "Xhello")
       , ("terminates on an empty regex pattern", "", "X", "hello", "XhXeXlXlXoX")
       , ("keeps UTF-8 characters together after an empty match", "(?=.)", "X", "é", "Xé")
       ]
       ( \(desc, pattern, replacement, input, expected) -> it desc $ do
-          regex <- R.compile (B.pack pattern)
-          result <- R.replaceAll regex (B.pack replacement) (B.pack input)
-          result `shouldBe` B.pack expected
+          regex <- R.compile (utf8 pattern)
+          result <- R.replaceAll regex (utf8 replacement) (utf8 input)
+          result `shouldBe` utf8 expected
       )
