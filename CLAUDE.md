@@ -376,7 +376,11 @@ to a bare `⟦ λ ⤍ 𝜎k ⟧`, the step answers the formation with a fresh ba
 symbol and writes `deferred(…)` (`EvDeferred` of `Deps.hs`), carrying the
 copy with its arguments read. The `join` of `Lambdas.hs` pairs such a bare
 symbol with the symbol the φ chain of the other branch ends in, and answers
-a bare fresh symbol, dropping the methods.
+a bare fresh symbol, dropping the methods. Under `lenient: true` a chain
+ending in no symbol, such as one stopping at a call of an object of the
+world, still joins if the other branch holds exactly one symbol (`goSole`
+of `joined`, #1817): the answer is a copy of that branch with the symbol
+replaced by a fresh one, and nothing outside the two branches is read.
 
 The record also carries the copy as a call of the object of the world it was
 made of (#1732): `called` of `deepened` applies the locator `origin` finds to

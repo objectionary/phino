@@ -92,8 +92,10 @@ btsToNum hx =
               val = wordToDouble word
            in if isNaN val || isInfinite val || isNegativeZero val
                 then Right val
-                else case properFraction val of
-                  (n, 0.0) -> Left n
+                else case properFraction val :: (Integer, Double) of
+                  (n, 0.0)
+                    | n >= toInteger (minBound :: Int) && n <= toInteger (maxBound :: Int) ->
+                        Left (fromInteger n)
                   _ -> Right val
   where
     toWord64BE :: [Word8] -> Word64
@@ -193,7 +195,7 @@ unescapeStr = go
                     chr (0x10000 + (code - 0xD800) * 0x400 + (low - 0xDC00)) : go rest'
               _ -> chr code : go rest
             else chr code : go rest
-    goUnicode rest = go rest
+    goUnicode rest = '\\' : 'u' : go rest
     hexQuad :: Char -> Char -> Char -> Char -> Maybe Int
     hexQuad a b c d = case readHex [a, b, c, d] of
       [(code, "")] -> Just code
@@ -244,11 +246,13 @@ btsSize = length . btsToWord8
 
 btsSlice :: Int -> Int -> Bytes -> Maybe Bytes
 btsSlice start len bts
-  | start < 0 || len < 0 || start + len > length octets = Nothing
+  | start < 0 || len < 0 || start > size || len > size - start = Nothing
   | otherwise = Just (word8ToBytes (take len (drop start octets)))
   where
     octets :: [Word8]
     octets = btsToWord8 bts
+    size :: Int
+    size = length octets
 
 btsShift :: Int -> Bytes -> Bytes
 btsShift bits bts

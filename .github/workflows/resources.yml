@@ -45,4 +45,11 @@ jobs:
             exit 1
           fi
 
-          echo "Success: 'resources/' directory is present in the tarball."
+          # Check if test-resources directory is inside the tarball
+          if ! tar -tzf "$TARBALL" 2>/dev/null | grep -q "^${PKG_NAME}-${PKG_VERSION}/test-resources/"; then
+            echo "ERROR: 'test-resources/' directory not found in the tarball!"
+            echo "Make sure 'extra-source-files' lists 'test-resources/**/*' in your .cabal file."
+            exit 1
+          fi
+
+          echo "Success: 'resources/' and 'test-resources/' directories are present in the tarball."

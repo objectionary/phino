@@ -45,6 +45,7 @@ data CmdException
   | CouldNotPrintExpressionInXMIR
   | EmptySubstsOnMatch
   | AnonymousMetaInCondition String
+  | UnboundMetaInCondition String
   | VersionMismatch String String
   | CouldNotCompile String
   | StaleEngine
@@ -58,6 +59,8 @@ instance Show CmdException where
   show EmptySubstsOnMatch = "Provided pattern was not matched, no substitutions are built"
   show (AnonymousMetaInCondition kind) =
     printf "Anonymous meta '!%s' cannot be referenced in --when, only a named one can" kind
+  show (UnboundMetaInCondition kind) =
+    printf "The --when condition reads the meta '!%s' it never binds, since neither --pattern binds it" kind
   show (VersionMismatch expected actual) =
     printf "Version mismatch: --pin requires '%s', but this is phino %s" expected actual
   show (CouldNotCompile reason) = reason

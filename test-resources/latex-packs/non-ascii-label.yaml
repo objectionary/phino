@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+expression: |
+  [[ t🌵1 -> Q ]]
+result: |-
+  \begin{phiquation}
+  Q : |t[U+1F335]1|{.}
+  \end{phiquation}

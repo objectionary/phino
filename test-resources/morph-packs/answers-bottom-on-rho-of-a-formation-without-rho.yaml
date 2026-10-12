@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A formation that declares no ρ has no receiver, so asking it for one is
+# dead and does not go through its φ (#1859).
+location: 'Q.x'
+input: '[[ x -> [[ @ -> $.y, y -> [[ ]] ]].^ ]]'
+result: '⊥'

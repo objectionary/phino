@@ -13,6 +13,7 @@ import Control.Exception (throwIO)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import Data.Functor
+import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -21,7 +22,7 @@ import Deps
 import Logger (logDebug)
 import Matcher
 import Misc
-import Parser (parseAttributeThrows, parseNumberThrows)
+import Parser (ParserException (CouldNotParseAttribute), parseAttributeThrows, parseNumberThrows)
 import Printer (printAttribute, printExpression, printExtraArg)
 import Random (randomString)
 import Regexp
@@ -101,6 +102,7 @@ _dataize [Y.ArgExpression expr] subst = do
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
     ExApplication (BaseObject "bytes") (ArTau AtPhi (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
+    ExApplication (BaseObject "bytes") (ArAlpha (Alpha 0) (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
     ExFormation bds | Just bytes <- delta bds -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
   where
@@ -142,21 +144,24 @@ _sed args subst = do
     parse input =
       case B.stripPrefix "s/" input of
         Just body ->
-          let (pat, rest) = nextUntilSlash body B.empty False
-              (rep, flag) = nextUntilSlash rest B.empty True
-           in case flag of
-                "g" -> pure (pat, rep, True)
-                "" -> pure (pat, rep, False)
-                _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+          let (pat, rest, separator) = nextUntilSlash body B.empty False
+           in if separator
+                then
+                  let (rep, flag, _) = nextUntilSlash rest B.empty True
+                   in case flag of
+                        "g" -> pure (pat, rep, True)
+                        "" -> pure (pat, rep, False)
+                        _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+                else throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
-    nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
+    nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString, Bool)
     nextUntilSlash input acc escape = case B.uncons input of
-      Nothing -> (acc, B.empty)
+      Nothing -> (acc, B.empty, False)
       Just (h, rest)
         | h == '\\' -> case B.uncons rest of
             Just (h', rest') -> nextUntilSlash rest' ((if escape then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
-            Nothing -> (if escape then acc else B.snoc acc '\\', B.empty)
-        | h == '/' -> (acc, rest)
+            Nothing -> (if escape then acc else B.snoc acc '\\', B.empty, False)
+        | h == '/' -> (acc, rest, True)
         | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
 
 _randomString :: BuildTermMethod
@@ -175,8 +180,13 @@ _size _ _ = throwIO (userError "Function size() requires exactly 1 meta binding"
 _tau :: BuildTermMethod
 _tau [Y.ArgExpression expr] subst = do
   TeBytes bts <- _dataize [Y.ArgExpression expr] subst
-  attr <- parseAttributeThrows (btsToUnescapedStr bts)
-  pure (TeAttribute attr)
+  let str = btsToUnescapedStr bts
+  attr <- parseAttributeThrows str
+  let notReal = throwIO (CouldNotParseAttribute (printf "'%s' is a meta attribute, not a real one" str))
+  case attr of
+    AtMeta _ -> notReal
+    AtAny _ -> notReal
+    _ -> pure (TeAttribute attr)
 _tau _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
 
 _string :: BuildTermMethod
@@ -221,37 +231,85 @@ _sum args subst = do
 _join :: BuildTermMethod
 _join [] _ = pure (TeBindings [])
 _join args subst = do
-  bds <- buildBindings args
+  bds <- buildBindingGroups args
   TeBindings <$> go bds Set.empty
   where
-    buildBindings :: [Y.ExtraArgument] -> IO [Binding]
-    buildBindings [] = pure []
-    buildBindings (Y.ArgBinding bd : args') = do
+    buildBindingGroups :: [Y.ExtraArgument] -> IO [[Binding]]
+    buildBindingGroups [] = pure []
+    buildBindingGroups (Y.ArgBinding bd : args') = do
       bds <- buildBindingThrows bd subst
-      next <- buildBindings args'
-      pure (bds ++ next)
-    buildBindings _ = throwIO (userError "Function join() can work with bindings only")
-    go :: [Binding] -> Set.Set Attribute -> IO [Binding]
+      next <- buildBindingGroups args'
+      pure (bds : next)
+    buildBindingGroups _ = throwIO (userError "Function join() can work with bindings only")
+    go :: [[Binding]] -> Set.Set Attribute -> IO [Binding]
     go [] _ = pure []
-    go (bd : bds) attrs =
+    go (group : groups) attrs = do
+      (renamed, next) <- renameGroup group attrs
+      rest <- go groups next
+      pure (renamed ++ rest)
+    renameGroup :: [Binding] -> Set.Set Attribute -> IO ([Binding], Set.Set Attribute)
+    renameGroup bds attrs = do
+      let groupAttrs = Set.fromList [attr | bd <- bds, Just attr <- [attributeFromBinding bd]]
+      (renamed, used, changes) <- renameBindings bds attrs (Set.union attrs groupAttrs) Map.empty
+      pure (map (renameValue changes) renamed, used)
+    renameBindings ::
+      [Binding] ->
+      Set.Set Attribute ->
+      Set.Set Attribute ->
+      Map.Map Attribute Attribute ->
+      IO ([Binding], Set.Set Attribute, Map.Map Attribute Attribute)
+    renameBindings [] attrs _ changes = pure ([], attrs, changes)
+    renameBindings (bd : bds) attrs unavailable changes =
       case attributeFromBinding bd of
         Just attr
-          | Set.member attr attrs ->
-              if attr == AtRho || attr == AtDelta || attr == AtLambda
-                then go bds attrs
-                else do
-                  new <- case bd of
-                    BiTau _ ex -> (`BiTau` ex) <$> freshAttr
-                    BiVoid _ -> BiVoid <$> freshAttr
-                    other -> pure other
-                  (new :) <$> go bds attrs
-          | otherwise -> (bd :) <$> go bds (Set.insert attr attrs)
-        Nothing -> (bd :) <$> go bds attrs
-    freshAttr :: IO Attribute
-    freshAttr = do
+          | Set.member attr attrs && (attr == AtRho || attr == AtDelta || attr == AtLambda) ->
+              renameBindings bds attrs unavailable changes
+          | Set.member attr attrs -> do
+              new <- freshAttr unavailable
+              let renamed = case bd of
+                    BiTau _ ex -> BiTau new ex
+                    BiVoid _ -> BiVoid new
+                    other -> other
+              (rest, used, next) <-
+                renameBindings
+                  bds
+                  (Set.insert new attrs)
+                  (Set.insert new unavailable)
+                  (Map.insert attr new changes)
+              pure (renamed : rest, used, next)
+          | otherwise -> do
+              (rest, used, next) <-
+                renameBindings
+                  bds
+                  (Set.insert attr attrs)
+                  unavailable
+                  changes
+              pure (bd : rest, used, next)
+        Nothing -> do
+          (rest, used, next) <- renameBindings bds attrs unavailable changes
+          pure (bd : rest, used, next)
+    renameValue :: Map.Map Attribute Attribute -> Binding -> Binding
+    renameValue changes (BiTau attr expr) = BiTau attr (renameExpression changes expr)
+    renameValue _ binding = binding
+    renameExpression :: Map.Map Attribute Attribute -> Expression -> Expression
+    renameExpression changes expression = case expression of
+      ExFormation _ -> expression
+      ExApplication expr arg -> ExApplication (renameExpression changes expr) (renameArgument changes arg)
+      ExDispatch ExXi attr -> ExDispatch ExXi (Map.findWithDefault attr attr changes)
+      ExDispatch expr attr -> ExDispatch (renameExpression changes expr) attr
+      ExPhiMeet prefix idx expr -> ExPhiMeet prefix idx (renameExpression changes expr)
+      ExPhiAgain prefix idx expr -> ExPhiAgain prefix idx (renameExpression changes expr)
+      other -> other
+    renameArgument :: Map.Map Attribute Attribute -> Argument -> Argument
+    renameArgument changes (ArTau attr expr) = ArTau attr (renameExpression changes expr)
+    renameArgument changes (ArAlpha alpha expr) = ArAlpha alpha (renameExpression changes expr)
+    freshAttr :: Set.Set Attribute -> IO Attribute
+    freshAttr unavailable = do
       term <- _randomTau [] subst
       case term of
-        TeAttribute attr' -> pure attr'
+        TeAttribute attr'
+          | Set.member attr' unavailable -> freshAttr unavailable
+          | otherwise -> pure attr'
         _ -> throwIO (userError "random-tau() did not return an attribute, internal invariant violated")
 
 _unsupported :: BuildTermFunc

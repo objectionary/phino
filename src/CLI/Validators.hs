@@ -15,6 +15,7 @@ import Misc (fqnToAttrs)
 import Must
 import Parser (parseExpressionThrows)
 import Printer
+import Sugar (revealXi)
 import Text.Printf (printf)
 
 invalidCLIArguments :: String -> IO a
@@ -34,7 +35,7 @@ validatedDispatches opt = traverse (parseExpressionThrows >=> asDispatch)
             ( printf
                 "Only dispatch expression started with Φ (or Q) can be used in --%s, but given: %s"
                 opt
-                (printExpression' expr logPrintConfig)
+                (printExpressionWith revealXi expr logPrintConfig)
             )
 
 validateNoOverlap :: String -> [Expression] -> String -> [Expression] -> IO ()
@@ -85,7 +86,9 @@ validateMust' :: Must -> IO ()
 validateMust' must = for_ (validateMust must) invalidCLIArguments
 
 validateXmirOptions :: IOFormat -> [(Bool, String)] -> String -> IO ()
-validateXmirOptions XMIR _ focus = when (focus /= "Q") (invalidCLIArguments "Only --focus=Q is allowed to be used with --output=xmir")
+validateXmirOptions XMIR _ focus = do
+  parsed <- parseExpressionThrows focus
+  when (parsed /= ExRoot) (invalidCLIArguments "Only --focus=Q is allowed to be used with --output=xmir")
 validateXmirOptions _ bools _ =
   let (bools', opts) = unzip bools
    in validateBoolOpts (zip bools' (map (printf "The --%s can be used only with --output=xmir") opts))

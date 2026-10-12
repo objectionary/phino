@@ -27,7 +27,7 @@ import Control.Exception (Exception, throwIO)
 import Control.Monad (void)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object), withObject, (.!=), (.:), (.:?))
 import Data.Char (isDigit)
-import Data.List (find, sortOn)
+import Data.List (find, nub, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (listToMaybe)
@@ -395,7 +395,7 @@ joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty
     taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
     taking (term, (spent', _, made)) = (term, reverse made, spent')
     goExpr :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
-    goExpr one two joining = goAlike one two joining <|> goDecorated one two joining
+    goExpr one two joining = goAlike one two joining <|> goSole one two joining <|> goDecorated one two joining
     goAlike :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
     goAlike one@(ExFormation _) two@(ExFormation _) joining
       | bare one /= bare two = do
@@ -425,8 +425,17 @@ joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty
     goAlike one two joining
       | one == two = Just (one, joining)
       | otherwise = Nothing
+    goSole :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goSole (ExFormation [BiLambda (FnSymbol mine)]) two joining
+      | lenient, [theirs] <- nub (symbols two) = Just (renamed theirs two (picked (mine, theirs) joining))
+    goSole one (ExFormation [BiLambda (FnSymbol theirs)]) joining
+      | lenient, [mine] <- nub (symbols one) = Just (renamed mine one (picked (mine, theirs) joining))
+    goSole _ _ _ = Nothing
+    renamed :: Int -> Expression -> (Int, Joining) -> (Expression, Joining)
+    renamed old term (fresh, joining) = (lifted (old - 1) (fresh - old) term, joining)
     goDecorated :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
     goDecorated one two joining
+      | bare one || bare two = Nothing
       | lenient && depth one < depth two = peeled (goExpr one) two
       | lenient && depth two < depth one = peeled (`goExpr` two) one
       | otherwise = Nothing

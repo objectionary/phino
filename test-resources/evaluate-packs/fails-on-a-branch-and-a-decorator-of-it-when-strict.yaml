@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The fork the lenient join of #1815 brings together, under an entry that
+# does not say 'lenient: true'. A copy and a decorator of it differ in shape,
+# so the strict join refuses them and the firing gets stuck, as an entry is
+# strict unless it says otherwise.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    𝑛: 𝑛3
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := ⟦ φ ↦ 𝜎1:λ, neg ↦ ⟦⟧ ⟧  # 𝕄(ξ.a)
+      𝑛2·1 := ⟦ φ ↦ 𝜎2:λ, neg ↦ ⟦⟧ ⟧:φ  # 𝕄(ξ.b)
+      stuck(L_fork)

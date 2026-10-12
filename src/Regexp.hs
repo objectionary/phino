@@ -30,7 +30,7 @@ match pattern input = do
   Regex regex _ <- compile pattern
   res <- R.execute regex input
   case res of
-    Left _ -> pure False
+    Left err -> regexExecutionFailed err
     Right Nothing -> pure False
     Right (Just _) -> pure True
 
@@ -41,7 +41,7 @@ extractGroupsWith :: R.Regex -> B.ByteString -> IO [B.ByteString]
 extractGroupsWith regex input = do
   result <- R.execute regex input
   case result of
-    Left _ -> pure []
+    Left err -> regexExecutionFailed err
     Right Nothing -> pure []
     Right (Just arr) ->
       let (start, end) = bounds arr
@@ -76,7 +76,7 @@ replaceFirst :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
 replaceFirst (Regex regex _) rep input = do
   result <- R.execute regex input
   case result of
-    Left _ -> return input
+    Left err -> regexExecutionFailed err
     Right Nothing -> return input
     Right (Just arr) -> do
       groups <- extractGroupsWith regex input
@@ -94,7 +94,7 @@ replaceAll (Regex first continuation) rep input = go True input B.empty
       let regex = if initial then first else continuation
       result <- R.execute regex bs
       case result of
-        Left _ -> return $ B.append acc bs
+        Left err -> regexExecutionFailed err
         Right Nothing -> return $ B.append acc bs
         Right (Just arr) -> do
           let (off, len) = arr ! 0
@@ -126,3 +126,6 @@ replaceAll (Regex first continuation) rep input = go True input B.empty
         else 1
     isContinuation :: Char -> Bool
     isContinuation byte = ord byte >= 0x80 && ord byte < 0xC0
+
+regexExecutionFailed :: Show err => err -> IO value
+regexExecutionFailed err = throwIO (userError ("Regex execution failed: " ++ show err))
