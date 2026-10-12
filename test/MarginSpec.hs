@@ -9,6 +9,7 @@ import AST
 import Bytes (numToBts, strToBts)
 import CST
 import Control.Monad (forM_)
+import Data.Text qualified as T
 import Lining (LineFormat (..), toSingleLine)
 import Margin (withLines, withMargin)
 import Render (render)
@@ -45,6 +46,29 @@ narrowStringFormation =
   ExFormation
     [ BiTau (AtLabel "b") (DataString (strToBts "abcdabcd"))
     , BiTau (AtLabel "c") (ExFormation [])
+    ]
+
+wide :: Expression
+wide =
+  ExFormation
+    [ BiTau
+        (AtLabel "r")
+        (ExApplication (ExDispatch callee (AtLabel "h大家大家大家大家")) (ArTau (AtLabel "cc") ExRoot))
+    ]
+
+narrow :: Expression
+narrow =
+  ExFormation
+    [ BiTau
+        (AtLabel "r")
+        (ExApplication (ExDispatch callee (AtLabel "haaaaaaaaaaaaaaaa")) (ArTau (AtLabel "cc") ExRoot))
+    ]
+
+callee :: Expression
+callee =
+  ExFormation
+    [ BiTau (AtLabel "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") (ExFormation [])
+    , BiTau (AtLabel "bb") (ExFormation [])
     ]
 
 spec :: Spec
@@ -215,6 +239,9 @@ spec = do
         it ("wraps " ++ desc ++ " at margin " ++ show margin ++ " as the margin pass does") $
           withLines MULTILINE margin (expressionToCST expression)
             `shouldBe` withMargin margin (expressionToCST expression)
+  describe "withMargin measures the last line of a call by display width" $
+    it "breaks the argument of a call whose callee ends in wide characters" $
+      rows wide `shouldBe` rows narrow
   where
     terms :: [(String, Expression)]
     terms =
@@ -230,3 +257,6 @@ spec = do
       ]
     margins :: [Int]
     margins = [0, 1, 40, 80, 1000]
+
+    rows :: Expression -> Int
+    rows expression = length (T.lines (render (withMargin 30 (expressionToCST expression))))
