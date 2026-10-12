@@ -341,7 +341,7 @@ optMust =
     auto
     ( long "must"
         <> metavar "RANGE"
-        <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rules applied is not in range. Use 0 to disable."
+        <> help "Must-rewrite range (e.g., '3', '..5', '3..', '3..5'). Stops execution if number of rewriting cycles is not in range. Use 0 to disable."
         <> value MtDisabled
         <> showDefaultWith show
     )
