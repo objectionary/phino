@@ -18,6 +18,7 @@ module Lambdas
   , readLambdas
   , symbolized
   , taken
+  , thrown
   )
 where
 
@@ -59,6 +60,7 @@ data Lambda = Lambda
   , _symbolized :: [(Meta, Expression)]
   , _paired :: [(Meta, (Meta, Meta))]
   , _lenient :: Bool
+  , _terminators :: [Text]
   , _answer :: Expression
   }
 
@@ -84,6 +86,7 @@ instance FromJSON Lambda where
         <*> operands key expressionMeta entry "symbolize"
         <*> pairs (T.unpack key) entry
         <*> entry .:? "lenient" .!= False
+        <*> entry .:? "terminators" .!= []
         <*> pure answer
     sigmas (T.unpack key) lambda._answer
     dataless (T.unpack key) lambda._answer
@@ -289,6 +292,7 @@ readLambdas path = do
   mapM_ (unique entries) entries
   registered <- mapM keyed entries
   overlaps path registered
+  mapM_ (unanswered registered) entries
   logDebug (printf "Loaded %d λ function(s) from '%s'" (length entries) path)
   pure (Lambdas registered)
   where
@@ -305,6 +309,15 @@ readLambdas path = do
     unreadable :: Text -> (a, String) -> IO b
     unreadable key (_, failure) =
       throwIO (BrokenLambdas path (printf "the key '%s' is not a regular expression: %s" (T.unpack key) failure))
+    unanswered :: [(Regex, Lambda)] -> Lambda -> IO ()
+    unanswered registered entry = case [(name, other) | name <- entry._terminators, Just other <- [matched (Lambdas registered) name]] of
+      [] -> pure ()
+      (name, other) : _ ->
+        throwIO
+          ( BrokenLambdas
+              path
+              (printf "the terminator '%s' of the key '%s' is answered by the key '%s'" (T.unpack name) (T.unpack entry._key) (T.unpack other._key))
+          )
 
     overlaps :: FilePath -> [(Regex, Lambda)] -> IO ()
     overlaps _ [_] = pure ()
@@ -332,6 +345,11 @@ readLambdas path = do
 
 matched :: Lambdas -> Text -> Maybe Lambda
 matched (Lambdas entries) func = snd <$> find (\(key, _) -> matchTest key (encodeUtf8 func)) entries
+
+thrown :: [Text] -> Expression -> Bool
+thrown names (ExApplication expr _) = thrown names expr
+thrown names (ExFormation bds) = any (`elem` [BiLambda (Function name) | name <- names]) bds
+thrown _ _ = False
 
 minted :: Expression -> Int -> ([(Slot, Function)], Int)
 minted answer spent = (zip fresh [FnSymbol idx | idx <- [spent + 1 ..]], spent + length fresh)

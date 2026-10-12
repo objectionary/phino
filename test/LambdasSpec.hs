@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, minted, readLambdas, symbolized, taken)
+import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, minted, readLambdas, symbolized, taken, thrown)
 import Parser (parseExpressionThrows)
 import Test.Hspec
 
@@ -129,6 +129,18 @@ spec = do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
       fmap _lenient (matched known "L_fork") `shouldBe` Just False
 
+    it "reads the terminators an entry names beside its 'join' block" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  terminators: [L_throw, L_halt]\n  𝑛: 𝑛3\n"
+      fmap _terminators (matched known "L_fork") `shouldBe` Just ["L_throw", "L_halt"]
+
+    it "reads an entry saying nothing of terminators as one naming none" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
+      fmap _terminators (matched known "L_fork") `shouldBe` Just []
+
+    it "reads a terminator that no key of the file matches" $ do
+      known <- lambdasOf ("- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: [L_throw]\n  𝑛: 𝑛1\n" <> entry "L_throw_[0-9]+")
+      fmap _terminators (matched known "L_fork") `shouldBe` Just ["L_throw"]
+
     it "reads the lines of 'rewrite' with the metas they read and their rules" $ do
       known <- lambdasOf (rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "    𝑛3:\n      of: 𝑛2\n" <> rules <> "  𝑛: 𝑛3\n")
       map rewrote (maybe [] _rewritten (matched known "L_fork")) `shouldBe` [("𝑛2", "𝑛1", 1), ("𝑛3", "𝑛2", 1)]
@@ -196,6 +208,12 @@ spec = do
       , ("a lenient entry with no 'join' line to be lenient in", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  lenient: true\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is lenient but has no 'join' line")
       , ("a 'lenient' key which is no boolean", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: often\n  𝑛: 𝑛3\n", "lenient: expected Bool")
       , ("a 'symbolize' line standing what a 'join' line made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛5: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛5\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'terminators' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: L_throw\n  𝑛: 𝑛1\n", "expected Array")
+      ,
+        ( "a terminator an entry of the file answers"
+        , "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: [L_throw]\n  𝑛: 𝑛1\n" <> entry "L_th[a-z]+"
+        , "the terminator 'L_throw' of the key 'L_fork' is answered by the key 'L_th[a-z]+'"
+        )
       ]
       ( \(desc, text, message) ->
           it ("cannot read " ++ desc) $
@@ -443,6 +461,28 @@ spec = do
           it ("cannot join " ++ desc) $ do
             made <- joining False left right 4
             fmap (\(joint, _, _) -> joint) made `shouldBe` Nothing
+      )
+
+  describe "thrown" $ do
+    it "finds a terminator in a formation whose λ it names" $ do
+      term <- parseExpressionThrows "⟦ message ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ ), λ ⤍ L_throw ⟧"
+      thrown ["L_halt", "L_throw"] term `shouldBe` True
+
+    it "finds a terminator in an application of a formation whose λ it names" $ do
+      term <- parseExpressionThrows "⟦ message ↦ ∅, code ↦ ∅, λ ⤍ L_throw ⟧( message ↦ ξ.x.printf( ξ.y ) )( code ↦ Φ.z )"
+      thrown ["L_throw"] term `shouldBe` True
+
+    forM_
+      [ ("a formation whose λ it does not name" :: String, "⟦ message ↦ ⟦⟧, λ ⤍ L_halt ⟧" :: String)
+      , ("a formation whose φ throws", "⟦ φ ↦ ⟦ message ↦ ⟦⟧, λ ⤍ L_throw ⟧ ⟧")
+      , ("a dispatch from a formation whose λ it names", "⟦ message ↦ ⟦⟧, λ ⤍ L_throw ⟧.message")
+      , ("an application whose argument throws", "Φ.f( x ↦ ⟦ message ↦ ⟦⟧, λ ⤍ L_throw ⟧ )")
+      , ("the terminator ⊥", "⊥")
+      ]
+      ( \(desc, text) ->
+          it ("finds no terminator in " ++ desc) $ do
+            term <- parseExpressionThrows text
+            thrown ["L_throw"] term `shouldBe` False
       )
 
   describe "taken" $ do
