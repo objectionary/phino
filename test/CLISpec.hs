@@ -1042,7 +1042,7 @@ spec = do
           hClose h
           testCLISucceeded ["rewrite", "--sweet", printf "--target=%s" path] []
           content <- readFile path
-          content `shouldBe` "⟦⟧"
+          content `shouldBe` "⟦⟧\n"
 
     it "modifies file in-place" $
       withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
@@ -1050,7 +1050,23 @@ spec = do
         hClose h
         testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
         content <- readFile path
-        content `shouldBe` "\"bar\":x"
+        content `shouldBe` "\"bar\":x\n"
+
+    it "writes the same bytes to --target as it prints to the console" $
+      withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
+        hClose h
+        (console, _) <- withStdout (withStdin "[[ ]]" (runCLI ["rewrite", "--sweet"]))
+        withStdin "[[ ]]" (testCLISucceeded ["rewrite", "--sweet", printf "--target=%s" path] [])
+        content <- readFile path
+        content `shouldBe` console
+
+    it "keeps the trailing newline of the source file when nothing is rewritten by --in-place" $
+      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+        hPutStr h "⟦⟧\n"
+        hClose h
+        testCLISucceeded ["rewrite", "--in-place", "--sweet", path] []
+        content <- readFile path
+        content `shouldBe` "⟦⟧\n"
 
     it "modifies file in-place with --focus=Φ, since Φ and Q are the same locator" $
       withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
@@ -1108,7 +1124,7 @@ spec = do
             ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgt, src]
             []
           content <- readFile tgt
-          content `shouldBe` "\"bar\":x"
+          content `shouldBe` "\"bar\":x\n"
 
     it "rewrites with cycles" $
       withStdin "[[ x -> \"x\" ]]" $
