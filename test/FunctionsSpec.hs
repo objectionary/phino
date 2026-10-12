@@ -215,6 +215,24 @@ spec = describe "Functions" $ do
         , "sed pattern must start with s/"
         )
       ,
+        ( "sed fails when the pattern has no replacement separator"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/a"))]
+        , "sed pattern must be in format s/pat/rep/[g]"
+        )
+      ,
+        ( "sed fails when the pattern is only a delimiter"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/"))]
+        , "sed pattern must be in format s/pat/rep/[g]"
+        )
+      ,
+        ( "sed fails when an escaped slash is mistaken for the replacement separator"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/a\\/"))]
+        , "sed pattern must be in format s/pat/rep/[g]"
+        )
+      ,
         ( "sed fails when the pattern has an unknown trailing flag"
         , "sed"
         , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/l/L/x"))]
