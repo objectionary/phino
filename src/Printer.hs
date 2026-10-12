@@ -29,7 +29,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 import Encoding
 import Lining
-import Margin (defaultMargin, withMargin)
+import Margin (defaultMargin, withLines)
 import Matcher
 import Render
 import Sugar
@@ -52,7 +52,7 @@ printExpressionHidingRho' = printExpressionWith withoutRho
 
 printExpressionWith :: (SugarType -> EXPRESSION -> EXPRESSION) -> Expression -> PrintConfig -> String
 printExpressionWith hide ex (sugar, encoding, line, margin) =
-  T.unpack $ render (withLineFormat line $ withMargin margin $ withEncoding encoding $ hide sugar $ withSugarType sugar $ expressionToCST ex)
+  T.unpack $ render (withLines line margin $ withEncoding encoding $ hide sugar $ withSugarType sugar $ expressionToCST ex)
 
 printExpression :: Expression -> String
 printExpression ex = printExpression' ex defaultPrintConfig
