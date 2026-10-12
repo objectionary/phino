@@ -22,7 +22,7 @@ import Deps
 import Logger (logDebug)
 import Matcher
 import Misc
-import Parser (parseAttributeThrows, parseNumberThrows)
+import Parser (ParserException (CouldNotParseAttribute), parseAttributeThrows, parseNumberThrows)
 import Printer (printAttribute, printExpression, printExtraArg)
 import Random (randomString)
 import Regexp
@@ -102,6 +102,7 @@ _dataize [Y.ArgExpression expr] subst = do
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
     ExApplication (BaseObject "bytes") (ArTau AtPhi (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
+    ExApplication (BaseObject "bytes") (ArAlpha (Alpha 0) (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
     ExFormation bds | Just bytes <- delta bds -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
   where
@@ -143,21 +144,24 @@ _sed args subst = do
     parse input =
       case B.stripPrefix "s/" input of
         Just body ->
-          let (pat, rest) = nextUntilSlash body B.empty False
-              (rep, flag) = nextUntilSlash rest B.empty True
-           in case flag of
-                "g" -> pure (pat, rep, True)
-                "" -> pure (pat, rep, False)
-                _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+          let (pat, rest, separator) = nextUntilSlash body B.empty False
+           in if separator
+                then
+                  let (rep, flag, _) = nextUntilSlash rest B.empty True
+                   in case flag of
+                        "g" -> pure (pat, rep, True)
+                        "" -> pure (pat, rep, False)
+                        _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+                else throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
-    nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString)
+    nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString, Bool)
     nextUntilSlash input acc escape = case B.uncons input of
-      Nothing -> (acc, B.empty)
+      Nothing -> (acc, B.empty, False)
       Just (h, rest)
         | h == '\\' -> case B.uncons rest of
             Just (h', rest') -> nextUntilSlash rest' ((if escape then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
-            Nothing -> (if escape then acc else B.snoc acc '\\', B.empty)
-        | h == '/' -> (acc, rest)
+            Nothing -> (if escape then acc else B.snoc acc '\\', B.empty, False)
+        | h == '/' -> (acc, rest, True)
         | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
 
 _randomString :: BuildTermMethod
@@ -176,8 +180,13 @@ _size _ _ = throwIO (userError "Function size() requires exactly 1 meta binding"
 _tau :: BuildTermMethod
 _tau [Y.ArgExpression expr] subst = do
   TeBytes bts <- _dataize [Y.ArgExpression expr] subst
-  attr <- parseAttributeThrows (btsToUnescapedStr bts)
-  pure (TeAttribute attr)
+  let str = btsToUnescapedStr bts
+  attr <- parseAttributeThrows str
+  let notReal = throwIO (CouldNotParseAttribute (printf "'%s' is a meta attribute, not a real one" str))
+  case attr of
+    AtMeta _ -> notReal
+    AtAny _ -> notReal
+    _ -> pure (TeAttribute attr)
 _tau _ _ = throwIO (userError "Function tau() requires exactly 1 argument as expression")
 
 _string :: BuildTermMethod

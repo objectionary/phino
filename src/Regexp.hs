@@ -23,7 +23,7 @@ match pattern input = do
   regex <- compile pattern
   res <- R.execute regex input
   case res of
-    Left _ -> pure False
+    Left err -> regexExecutionFailed err
     Right Nothing -> pure False
     Right (Just _) -> pure True
 
@@ -31,7 +31,7 @@ extractGroups :: R.Regex -> B.ByteString -> IO [B.ByteString]
 extractGroups regex input = do
   result <- R.execute regex input
   case result of
-    Left _ -> pure []
+    Left err -> regexExecutionFailed err
     Right Nothing -> pure []
     Right (Just arr) ->
       let (start, end) = bounds arr
@@ -66,7 +66,7 @@ replaceFirst :: R.Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
 replaceFirst regex rep input = do
   result <- R.execute regex input
   case result of
-    Left _ -> return input
+    Left err -> regexExecutionFailed err
     Right Nothing -> return input
     Right (Just arr) -> do
       groups <- extractGroups regex input
@@ -83,7 +83,7 @@ replaceAll regex rep input = go input B.empty
     go bs acc = do
       result <- R.execute regex bs
       case result of
-        Left _ -> return $ B.append acc bs
+        Left err -> regexExecutionFailed err
         Right Nothing -> return $ B.append acc bs
         Right (Just arr) -> do
           let (off, len) = arr ! 0
@@ -115,3 +115,6 @@ replaceAll regex rep input = go input B.empty
         else 1
     isContinuation :: Char -> Bool
     isContinuation byte = ord byte >= 0x80 && ord byte < 0xC0
+
+regexExecutionFailed :: Show err => err -> IO value
+regexExecutionFailed err = throwIO (userError ("Regex execution failed: " ++ show err))

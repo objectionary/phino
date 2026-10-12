@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The lenient join of #1815 does not care which branch is the decorator: with
+# the decorator on the left and the copy it decorates on the right, it answers
+# the same decorator. A copy is a decorator of its own symbol too, so the join
+# takes the branch with the longer φ chain for the decorator.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    lenient: true
+    𝑛: 𝑛3
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := ⟦ φ ↦ 𝜎1:λ, neg ↦ ⟦⟧ ⟧:φ  # 𝕄(ξ.a)
+      𝑛2·1 := ⟦ φ ↦ 𝜎2:λ, neg ↦ ⟦⟧ ⟧  # 𝕄(ξ.b)
+      𝔻(𝜎3:λ) ∈ { 𝔻(𝜎1:λ), 𝔻(𝜎2:λ) }
+      𝑛3·1 := ⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧:φ  # [𝑛1, 𝑛2]
+      𝑛·1·1 := 𝑛3·1  # 𝑛
+      𝑛·1·2 := 𝑛3·1  # 𝕄(𝑛·1·1)

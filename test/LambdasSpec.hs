@@ -388,10 +388,38 @@ spec = do
       made <- joining True "Φ.f( x ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) )" "Φ.f( x ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧ )" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
+    it "joins a bare symbol with a term holding one symbol into a copy of that term when lenient" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧ ) ⟧"
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧" 4
+      made `shouldBe` Just (term, [(5, (1, 2))], 5)
+
+    it "joins a term holding one symbol with a bare symbol standing second when lenient" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ) ⟧"
+      made <- joining True "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧ ) ⟧" "⟦ λ ⤍ 𝜎3 ⟧" 7
+      made `shouldBe` Just (term, [(8, (6, 3))], 8)
+
+    it "keeps every binding of the term holding one symbol when lenient" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧"
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧" 4
+      fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
+
+    it "replaces every place the one symbol of a term stands at when lenient" $ do
+      term <- parseExpressionThrows "Φ.f( a ↦ ⟦ λ ⤍ 𝜎5 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎5 ⟧ )"
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
+      made `shouldBe` Just (term, [(5, (1, 2))], 5)
+
+    it "still joins a bare symbol with the symbol a φ chain ends in into a bare one when lenient" $ do
+      term <- parseExpressionThrows "⟦ λ ⤍ 𝜎8 ⟧"
+      made <- joining True "⟦ λ ⤍ 𝜎3 ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, neg ↦ ⟦⟧ ⟧" 7
+      made `shouldBe` Just (term, [(8, (3, 6))], 8)
+
     forM_
       [ ("a term with a formation carrying no φ" :: String, "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" :: String, "⟦ neg ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" :: String)
       , ("a term with a decorator of a term of another forma", "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )", "⟦ φ ↦ Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧")
       , ("two decorators one of which carries a binding more", "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧")
+      , ("a bare symbol with a term holding two symbols", "⟦ λ ⤍ 𝜎1 ⟧", "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎3 ⟧ )")
+      , ("a bare symbol with a term holding a second symbol in its ρ", "⟦ λ ⤍ 𝜎1 ⟧", "⟦ φ ↦ Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ), ρ ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧ ⟧")
+      , ("a bare symbol with a term holding no symbol", "⟦ λ ⤍ 𝜎1 ⟧", "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧, x ↦ ⟦⟧ ⟧")
       ]
       ( \(desc, left, right) ->
           it ("cannot leniently join " ++ desc) $ do
@@ -409,6 +437,7 @@ spec = do
       , ("a bare symbol with a formation whose φ chain ends in a datum", "⟦ λ ⤍ 𝜎1 ⟧", "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧, x ↦ ⟦⟧ ⟧")
       , ("a bare symbol with a formation carrying no φ", "⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧", "⟦ λ ⤍ 𝜎1 ⟧")
       , ("a bare symbol with an application", "⟦ λ ⤍ 𝜎1 ⟧", "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )")
+      , ("a bare symbol with a decorator of an application", "⟦ λ ⤍ 𝜎1 ⟧", "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧")
       ]
       ( \(desc, left, right) ->
           it ("cannot join " ++ desc) $ do

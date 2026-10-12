@@ -215,6 +215,24 @@ spec = describe "Functions" $ do
         , "sed pattern must start with s/"
         )
       ,
+        ( "sed fails when the pattern has no replacement separator"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/a"))]
+        , "sed pattern must be in format s/pat/rep/[g]"
+        )
+      ,
+        ( "sed fails when the pattern is only a delimiter"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/"))]
+        , "sed pattern must be in format s/pat/rep/[g]"
+        )
+      ,
+        ( "sed fails when an escaped slash is mistaken for the replacement separator"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/a\\/"))]
+        , "sed pattern must be in format s/pat/rep/[g]"
+        )
+      ,
         ( "sed fails when the pattern has an unknown trailing flag"
         , "sed"
         , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/l/L/x"))]
@@ -223,6 +241,18 @@ spec = describe "Functions" $ do
       , ("random-string fails on the wrong number of arguments", "random-string", [], "random-string() requires exactly 1")
       , ("size fails on a non-meta binding argument", "size", [ArgBinding (BiVoid AtRho)], "size() requires exactly 1 meta binding")
       , ("tau fails on the wrong number of arguments", "tau", [], "tau() requires exactly 1 argument")
+      ,
+        ( "tau fails when the string is a meta attribute"
+        , "tau"
+        , [ArgExpression (DataString (strToBts "𝜏1"))]
+        , "is a meta attribute, not a real one"
+        )
+      ,
+        ( "tau fails when the string is an any-slot attribute"
+        , "tau"
+        , [ArgExpression (DataString (strToBts "!t1"))]
+        , "is a meta attribute, not a real one"
+        )
       ,
         ( "string fails on an expression that is neither a number nor a string"
         , "string"

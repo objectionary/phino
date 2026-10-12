@@ -12,7 +12,7 @@ import Control.Monad (zipWithM)
 import Data.Char (isAlphaNum, isDigit, toLower, toUpper)
 import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe, isJust, isNothing)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import Deps (Judgment)
@@ -217,7 +217,7 @@ rewriting (name, rule) = do
     refused :: Either String ()
     refused
       | isJust rule.having = Left (printf "The rule '%s' cannot be compiled, since it has a 'having' condition" rule.name)
-      | fast rule.pattern rule.result = Left (printf "The rule '%s' cannot be compiled, since it rewrites a formation into a formation the fast way" rule.name)
+      | isNothing rule.when && fast rule.pattern rule.result = Left (printf "The rule '%s' cannot be compiled, since it rewrites a formation into a formation the fast way" rule.name)
       | rooted rule.pattern = Left (printf "The rule '%s' cannot be compiled, since its pattern applies Φ to a ρ" rule.name)
       | otherwise = Right ()
     walked :: Emitting a -> Either String a

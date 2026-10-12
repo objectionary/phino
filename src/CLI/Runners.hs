@@ -20,7 +20,7 @@ import Data.IORef (newIORef)
 import Data.List (intercalate)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Maybe (fromJust, isJust, isNothing, listToMaybe)
 import qualified Data.Text as T
 import Dataize
 import Deps (Judgment (..), dontSaveMade)
@@ -34,6 +34,7 @@ import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules,
 import Logger
 import Margin (defaultMargin)
 import Merge (merge)
+import Metas (Metas (..))
 import Morph
 import Parser (parseExpressionThrows)
 import qualified Printer as P
@@ -41,8 +42,9 @@ import qualified Random as R
 import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
 import Slots (anonymous)
-import System.Directory (doesFileExist, getModificationTime)
+import System.Directory (canonicalizePath, doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
+import System.FilePath (takeDirectory, (</>))
 import System.Random (mkStdGen, setStdGen)
 import Tau (seedTaus)
 import Text.Printf (printf)
@@ -86,10 +88,13 @@ runRewrite OptsRewrite{..} = do
     validateOpts = do
       when (_inPlace && isNothing _inputFile) (invalidCLIArguments "The option --in-place requires an input file")
       when (_inPlace && isJust _targetFile) (invalidCLIArguments "The options --in-place and --target cannot be used together")
-      when (_inPlace && _outputFormat /= PHI) (invalidCLIArguments "The option --in-place can only be used together with --output=phi")
+      when (_inPlace && _outputFormat /= _inputFormat) (invalidCLIArguments "The option --in-place requires the output format to match the input format")
       when (_inPlace && _sequence) (invalidCLIArguments "The options --in-place and --sequence cannot be used together, since the file must keep one program")
-      when (_inPlace && _focus /= "Q") (invalidCLIArguments "The options --in-place and --focus cannot be used together, since the file must keep the whole program")
+      focusedExpr <- parseExpressionThrows _focus
+      when (_inPlace && focusedExpr /= ExRoot) (invalidCLIArguments "The options --in-place and --focus cannot be used together, since the file must keep the whole program")
       when (_inPlace && not (null _show)) (invalidCLIArguments "The options --in-place and --show cannot be used together, since the file must keep the whole program")
+      when (_inPlace && not (null _hide)) (invalidCLIArguments "The options --in-place and --hide cannot be used together, since the file must keep the whole program")
+      when (_inPlace && _hideRho) (invalidCLIArguments "The options --in-place and --hide-rho cannot be used together, since the file must keep the whole program")
       when (_update && _inPlace) (invalidCLIArguments "The options --update and --in-place cannot be used together")
       when (_update && isNothing _targetFile) (invalidCLIArguments "The option --update requires --target")
       when (_update && isNothing _inputFile) (invalidCLIArguments "The option --update requires an input file")
@@ -122,13 +127,13 @@ runRewrite OptsRewrite{..} = do
     output target expr = case (_inPlace, target, _inputFile) of
       (True, _, Just file) -> do
         logDebug (printf "The option '--in-place' is specified, writing back to '%s'..." file)
-        overwrite file expr
+        overwrite file (expr ++ "\n")
         logDebug (printf "The file '%s' was modified in-place" file)
       (True, _, Nothing) ->
         error "The option --in-place requires an input file"
       (False, Just file, _) -> do
         logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-        overwrite file expr
+        overwrite file (expr ++ "\n")
         logDebug (printf "The command result was saved in '%s'" file)
       (False, Nothing, _) -> do
         logDebug "The option '--target' is not specified, printing to console..."
@@ -400,6 +405,7 @@ runMatch OptsMatch{..} = do
       ptn <- parseExpressionThrows (fromJust _pattern)
       condition <- traverse parseConditionThrows _when
       traverse_ (throwIO . AnonymousMetaInCondition . T.unpack) (anonymous condition)
+      traverse_ (throwIO . UnboundMetaInCondition . T.unpack) (listToMaybe (unboundMetas ptn condition))
       linked <- engine
       substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext (building linked) Nothing linked._normal)
       if null substs
@@ -408,6 +414,10 @@ runMatch OptsMatch{..} = do
   where
     rule :: Expression -> Maybe Y.Condition -> Y.Rule
     rule ptn cnd = Y.Rule "custom" Nothing Nothing ptn ExRoot cnd Nothing Nothing
+    unboundMetas :: Expression -> Maybe Y.Condition -> [T.Text]
+    unboundMetas ptn condition = filter (`notElem` namedMetas ptn) (namedMetas condition)
+    namedMetas :: (Metas a) => a -> [T.Text]
+    namedMetas term = filter ((> 1) . T.length) (metas term)
 
 runCompile :: OptsCompile -> IO ()
 runCompile OptsCompile{..} = do
@@ -415,9 +425,23 @@ runCompile OptsCompile{..} = do
   source <- either (throwIO . CouldNotCompile) pure (emitted Y.normalizationRules custom Y.contextualizationRules Y.morphingRules Y.dataizationRules current)
   overwrite _targetFile source
   logInfo (printf "The rules were compiled into '%s'" _targetFile)
-  exists <- doesFileExist "cabal.project.local"
-  if exists
-    then putStrLn "The file 'cabal.project.local' exists, so add these lines to it to link the compiled rules in:\npackage phino\n  flags: +compiled"
-    else do
-      overwrite "cabal.project.local" "package phino\n  flags: +compiled\n"
-      logInfo "The file 'cabal.project.local' was written, so the next build links the compiled rules in"
+  root <- projectRootOf (takeDirectory _targetFile)
+  case root of
+    Nothing -> putStrLn "package phino\n  flags: +compiled"
+    Just dir -> do
+      let localFile = dir </> "cabal.project.local"
+      exists <- doesFileExist localFile
+      if exists
+        then putStrLn (printf "The file '%s' exists, so add these lines to it to link the compiled rules in:\npackage phino\n  flags: +compiled" localFile)
+        else do
+          overwrite localFile "package phino\n  flags: +compiled\n"
+          logInfo (printf "The file '%s' was written, so the next build links the compiled rules in" localFile)
+  where
+    projectRootOf :: FilePath -> IO (Maybe FilePath)
+    projectRootOf dir = do
+      full <- canonicalizePath dir
+      found <- doesFileExist (full </> "phino.cabal")
+      let parent = takeDirectory full
+      if found
+        then pure (Just full)
+        else if parent == full then pure Nothing else projectRootOf parent

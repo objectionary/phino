@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '[[ a -> [[ x -> Q ]], b -> [[ z -> $, x -> Q ]] ]]'
+output: |-
+  ⟦
+    a ↦ ⟦ x ↦ Φ ⟧,
+    b ↦ ⟦ z ↦ ξ, y ↦ Φ ⟧
+  ⟧
+rules:
+  custom:
+    - name: rename-next-to-z
+      pattern: '[[ !B1, x -> !e1, !B2 ]]'
+      result: '[[ !B1, y -> !e1, !B2 ]]'
+      having:
+        in: ['z', '!B1']

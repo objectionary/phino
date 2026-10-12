@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# This rule has a 'pattern' that is not a valid phi-expression. It is used
+# to test that a broken --rule file is reported in plain text, with real
+# characters and the path of the failing file, instead of an escaped
+# AesonException dump.
+name: malformed
+pattern: '⟦ x ↦ ⟧'
+result: 'ξ'

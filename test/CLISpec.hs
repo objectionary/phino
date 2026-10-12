@@ -8,10 +8,11 @@ module CLISpec (spec) where
 
 import CLI (runCLI)
 import CLI.Types (CmdException (..), IOFormat (..))
+import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
-import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
+import Data.List (find, intercalate, isInfixOf, isPrefixOf, sort)
 import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
@@ -91,7 +92,13 @@ withTempDirectory prefix action = do
   tmp <- getTemporaryDirectory
   stamp <- getPOSIXTime
   let dir = tmp </> (prefix ++ "-" ++ show (round (stamp * 1000000) :: Integer))
-  bracket (pure dir) removePathForcibly action
+  bracket (pure dir) removedEventually action
+  where
+    removedEventually :: FilePath -> IO ()
+    removedEventually = retrying (10 :: Int)
+      where
+        retrying 0 dir = removePathForcibly dir
+        retrying left dir = removePathForcibly dir `catch` \(_ :: IOException) -> threadDelay 200000 >> retrying (left - 1) dir
 
 testCLI' :: [String] -> [String] -> Either ExitCode () -> Expectation
 testCLI' args outputs exit = do
@@ -244,6 +251,12 @@ spec = do
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
         , ["b( c, d ):a"]
         )
+      ,
+        ( "drops the rho from the LaTeX output too"
+        , "[[ n -> [[ ^ -> ?, k -> $ ]] ]]"
+        , ["rewrite", "--flat", "--hide-rho", "--output=latex"]
+        , ["[[ |n| -> [[ |k| -> \\phiTerminal{\\xi} ]] ]]"]
+        )
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 
@@ -283,6 +296,15 @@ spec = do
       testCLIFailed ["rewrite", "--log-level=verbose"] ["unknown log-level: verbose"]
 
   describe "rewriting" $ do
+    let xmir =
+          unlines
+            [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            , "<object>"
+            , "  <o name=\"bar\">"
+            , "    <o base=\"∅\" name=\"x\"/>"
+            , "  </o>"
+            , "</object>"
+            ]
     describe "fails" $ do
       forM_
         [ ("with --input=latex", "", ["rewrite", "--input=latex"], ["The value 'latex' can't be used for '--input' option"])
@@ -290,6 +312,7 @@ spec = do
         , ("with negative --max-depth", "", ["rewrite", "--max-depth=-1"], ["--max-depth must be positive"])
         , ("with zero --max-cycles", "", ["rewrite", "--max-cycles=0"], ["--max-cycles must be positive"])
         , ("with zero --meet-length", "", ["rewrite", "--output=latex", "--meet-length=0"], ["--meet-length must be positive"])
+        , ("with a --max-cycles value above maxBound Int", "", ["rewrite", "--max-cycles=18446744073709551617"], ["value must be between", "9223372036854775807"])
         ,
           ( "with --normalize and --must=1"
           , "[[ x -> [[ y -> 5 ]].y ]].x"
@@ -320,7 +343,13 @@ spec = do
           hClose h
           testCLIFailed
             ["rewrite", "--in-place", "--output=latex", path]
-            ["--in-place can only be used together with --output=phi"]
+            ["The option --in-place requires the output format to match the input format"]
+
+      it "requires an XMIR input to be written back as XMIR" $
+        withTempFileContent "inplaceXXXXXX.xmir" xmir $ \path ->
+          testCLIFailed
+            ["rewrite", "--input=xmir", "--in-place", path]
+            ["The option --in-place requires the output format to match the input format"]
 
       it "does not leak a HasCallStack backtrace into errors" $ do
         (out, _) <- withStdout (try (runCLI ["rewrite", "--in-place"]) :: IO (Either ExitCode ()))
@@ -365,6 +394,18 @@ spec = do
           , "[[ ]]"
           , ["rewrite", "--update", "--in-place", "input.phi"]
           , ["--update and --in-place cannot be used together"]
+          )
+        ,
+          ( "when --hide is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--hide=Q.y", "--in-place", "input.phi"]
+          , ["--in-place and --hide cannot be used together"]
+          )
+        ,
+          ( "when --hide-rho is used with --in-place"
+          , "[[ ]]"
+          , ["rewrite", "--hide-rho", "--in-place", "input.phi"]
+          , ["--in-place and --hide-rho cannot be used together"]
           )
         ,
           ( "with --depth-sensitive"
@@ -469,6 +510,11 @@ spec = do
         ["rewrite", "--help"]
         ["default: 0"]
 
+    it "describes --must as counting rewriting cycles, not rules applied" $
+      testCLISucceeded
+        ["rewrite", "--help"]
+        ["Stops execution if number of rewriting cycles is not"]
+
     it "reproduces the same shuffle order for the same --seed" $ do
       let args =
             [ "rewrite"
@@ -502,6 +548,21 @@ spec = do
           length files `shouldBe` 4
           doesFileExist (dir ++ "/00001.phi") `shouldReturn` True
           doesFileExist (dir ++ "/00003.phi") `shouldReturn` True
+
+    it "clears step files left from an earlier, longer run with --steps-dir" $
+      withTempDirectory "phino-steps-stale" $ \dir -> do
+        withStdin "[[ x -> \"hello\"]]" $
+          testCLISucceeded
+            ["rewrite", rule "infinite.yaml", "--max-cycles=2", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
+            ["hello_hi_hi"]
+        files <- listDirectory dir
+        length files `shouldBe` 4
+        withStdin "[[ x -> \"hello\"]]" $
+          testCLISucceeded
+            ["rewrite", rule "infinite.yaml", "--max-cycles=1", "--max-depth=2", "--steps-dir=" ++ dir, "--sweet"]
+            ["hello_hi"]
+        files2 <- listDirectory dir
+        sort files2 `shouldBe` ["00001.phi", "00002.phi"]
 
     it "gives the saved steps the --canonize and --hide of the printed ones" $
       withTempDirectory "phino-steps-filtered" $ \dir ->
@@ -568,6 +629,14 @@ spec = do
           ["rewrite", rule "join-broken.yaml"]
           ["Function join() can work with bindings only"]
 
+    it "reports a broken rule file in plain text with its path" $
+      withStdin "⟦⟧" $
+        testCLIFailed
+          ["rewrite", rule "malformed-pattern.yaml"]
+          [ "Could not load rule from 'test-resources/cli/rules/malformed-pattern.yaml'"
+          , "unexpected '⟧'"
+          ]
+
     it "normalizes with --normalize flag" $
       testCLISucceeded
         ["rewrite", "--normalize", resource "normalize.phi", "--margin=25"]
@@ -602,6 +671,12 @@ spec = do
       withStdin "[[ x -> Q.y ]]" $
         testCLISucceeded
           ["rewrite", "--output=xmir"]
+          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
+
+    it "accepts --focus=Φ together with --output=xmir, since Φ and Q are the same locator" $
+      withStdin "[[ x -> Q.y ]]" $
+        testCLISucceeded
+          ["rewrite", "--focus=Φ", "--output=xmir"]
           ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
     it "emits a real revision and ms in XMIR" $ do
@@ -1029,7 +1104,7 @@ spec = do
           hClose h
           testCLISucceeded ["rewrite", "--sweet", printf "--target=%s" path] []
           content <- readFile path
-          content `shouldBe` "⟦⟧"
+          content `shouldBe` "⟦⟧\n"
 
     it "modifies file in-place" $
       withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
@@ -1037,7 +1112,38 @@ spec = do
         hClose h
         testCLISucceeded ["rewrite", rule "simple.yaml", "--in-place", "--sweet", path] []
         content <- readFile path
-        content `shouldBe` "\"bar\":x"
+        content `shouldBe` "\"bar\":x\n"
+
+    it "writes the same bytes to --target as it prints to the console" $
+      withTempFile "targetXXXXXX.tmp" $ \(path, h) -> do
+        hClose h
+        (console, _) <- withStdout (withStdin "[[ ]]" (runCLI ["rewrite", "--sweet"]))
+        withStdin "[[ ]]" (testCLISucceeded ["rewrite", "--sweet", printf "--target=%s" path] [])
+        content <- readFile path
+        content `shouldBe` console
+
+    it "keeps the trailing newline of the source file when nothing is rewritten by --in-place" $
+      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+        hPutStr h "⟦⟧\n"
+        hClose h
+        testCLISucceeded ["rewrite", "--in-place", "--sweet", path] []
+        content <- readFile path
+        content `shouldBe` "⟦⟧\n"
+
+    it "modifies file in-place with --focus=Φ, since Φ and Q are the same locator" $
+      withTempFile "inplaceXXXXXX.phi" $ \(path, h) -> do
+        hPutStr h "[[ x -> \"foo\" ]]"
+        hClose h
+        testCLISucceeded ["rewrite", rule "simple.yaml", "--focus=Φ", "--in-place", "--sweet", path] []
+        content <- readFile path
+        content `shouldBe` "\"bar\":x\n"
+
+    it "keeps the XMIR format when rewriting an XMIR file in-place" $
+      withTempFileContent "inplaceXXXXXX.xmir" xmir $ \path -> do
+        testCLISucceeded ["rewrite", "--input=xmir", "--output=xmir", "--in-place", path] []
+        content <- readFile path
+        _ <- evaluate (length content)
+        content `shouldContain` "<object"
 
     it "skips rewriting with --update when target is newer than source" $
       withTempFileContent "src-XXXXXX.phi" "[[ x -> \"foo\" ]]" $ \src ->
@@ -1087,7 +1193,7 @@ spec = do
             ["rewrite", rule "simple.yaml", "--update", "--sweet", "--target=" ++ tgt, src]
             []
           content <- readFile tgt
-          content `shouldBe` "\"bar\":x"
+          content `shouldBe` "\"bar\":x\n"
 
     it "rewrites with cycles" $
       withStdin "[[ x -> \"x\" ]]" $
@@ -1213,6 +1319,10 @@ spec = do
     withStdin "[[ x -> Q.y ]]" $
       testCLIFailed ["rewrite", "--hide=Q.nope"] ["Can't find object by locator: 'Φ.nope'"]
 
+  it "names the term dataization cannot take, and says a normal form is expected" $
+    withStdin "⟦ x ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.b ⟧" $
+      testCLIFailed ["dataize", "--locator=Q.x"] ["expects a normal form: 01-:Δ:b.b"]
+
   describe "dataize" $ do
     it "prints help" $
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
@@ -1241,7 +1351,7 @@ spec = do
         withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
           testCLIFailed
             ["dataize", "--symbolic=" ++ endless, "--max-steps=40"]
-            ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+            ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
     it "parks --max-steps on a residual with --partial" $
       loopingLambdas $ \endless ->
@@ -1263,7 +1373,7 @@ spec = do
         withStdin circling $
           testCLIFailed
             ["dataize", "--locator=Q.t", "--max-steps=40"]
-            ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+            ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
       it "names the term it came back to with the flag" $
         withStdin circling $
@@ -2544,6 +2654,12 @@ spec = do
             ["dataize", "--focus=Q.x(Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --focus"]
 
+      it "with wrong --locator option written through ξ, keeping ξ in the error" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--locator=ξ.x"]
+            ["[ERROR]:", "but given: ξ.x"]
+
     it "accepts --depth-sensitive" $
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
@@ -2676,7 +2792,13 @@ spec = do
       withStdin chained $
         testCLIFailed
           ["morph", "--locator=Q.@", "--max-steps=3"]
-          ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=3"]
+          ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=3"]
+
+    it "names morphing, not dataization, when the budget is spent before dataization starts" $
+      withStdin "⟦ x ↦ Φ.x.y ⟧" $
+        testCLIFailed
+          ["morph", "--locator=Q.x", "--max-steps=5"]
+          ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=5"]
 
     describe "--max-firings" $ do
       let splitting = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: Φ.s.foo\n    𝑛2: Φ.s.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
@@ -2725,6 +2847,12 @@ spec = do
       it "fails with non-positive --max-seconds" $
         withStdin rungs $
           testCLIFailed ["morph", "--max-seconds=0"] ["--max-seconds must be positive"]
+
+      it "fails with a --max-seconds value above maxBound Int, naming the limit" $
+        withStdin rungs $
+          testCLIFailed
+            ["morph", "--max-seconds=9223372036854775808"]
+            ["value must be between", "9223372036854775807"]
 
       it "fails once the --max-seconds budget is spent" $
         ladder $ \table ->
@@ -2827,6 +2955,19 @@ spec = do
         few <- recorded ["--jobs=2"]
         many <- recorded ["--jobs=5"]
         many `shouldBe` few
+
+      it "writes the step files of a binding after those of the bindings before it" $
+        withTempDirectory "phino-steps-jobs" $ \dir ->
+          withStdin "[[ a -> [[ x -> 1, y -> $.x ]], b -> [[ x -> 2, y -> $.x ]] ]]" $ do
+            testCLISucceeded
+              ["morph", "--deep", "--steps-dir=" ++ dir, "--quiet", "--jobs=5", "--flat", "--hide-rho", "--sweet"]
+              []
+            files <- sort <$> listDirectory dir
+            contents <- mapM (\file -> readFile (dir ++ "/" ++ file)) files
+            contents `shouldSatisfy` elem "1"
+            contents `shouldSatisfy` elem "2"
+            let named value = fst <$> find ((== value) . snd) (zip files contents)
+            named "1" `shouldSatisfy` (< named "2")
 
       it "keeps a memo of its own for every binding under plausible" $
         withStdin twins $
@@ -2933,6 +3074,18 @@ spec = do
           records <- readProtocol path
           lines records `shouldContain` ["    𝑛3·1 := ⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧:φ  # [𝑛1, 𝑛2]"]
 
+      it "gets stuck on a fork pairing a bare symbol with a call holding one symbol when the entry is strict" $
+        withLambdasOf strict $ \forks ->
+          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ r ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧ ⟧ ⟧" $
+            testCLIFailed ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--deep"] ["No entry of --symbolic answers the λ function 'L_fork'"]
+
+      it "joins a bare symbol with a call holding one symbol into a copy of the call under --deep" $
+        withLambdasOf lenient $ \forks ->
+          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ r ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧ ⟧ ⟧" $
+            testCLISucceeded
+              ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--deep", "--sweet", "--hide-rho", "--flat"]
+              ["Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎3:λ ⟧ ):φ:r"]
+
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], a -> 7.plus( 5.plus( 6 ) ), b -> 7.plus( 5.plus( 6 ) ) ]]"
           recorded :: String -> IO [String]
@@ -2981,7 +3134,7 @@ spec = do
           withStdin looping $
             testCLIFailed
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--max-steps=40"]
-              ["[ERROR]: Dataization did not finish before reaching the limit of steps: --max-steps=40"]
+              ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
       it "prints the residue and exits successfully with the flag" $
         loopingLambdas $ \endless ->
@@ -3231,19 +3384,37 @@ spec = do
     it "turns the flag on in a new cabal.project.local" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
+        writeFile (dir </> "phino.cabal") ""
         withCurrentDirectory dir (runCLI ["compile", "--target=Compiled.hs"])
         readFile (dir </> "cabal.project.local") `shouldReturn` "package phino\n  flags: +compiled\n"
     it "prints the lines an existing cabal.project.local lacks" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
+        writeFile (dir </> "phino.cabal") ""
         writeFile (dir </> "cabal.project.local") "tests: True\n"
         withCurrentDirectory dir (testCLISucceeded ["compile", "--target=Compiled.hs"] ["package phino\n  flags: +compiled"])
     it "leaves an existing cabal.project.local as it is" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
+        writeFile (dir </> "phino.cabal") ""
         writeFile (dir </> "cabal.project.local") "tests: True\n"
         withStdout (withCurrentDirectory dir (runCLI ["compile", "--target=Compiled.hs"]))
         readFile (dir </> "cabal.project.local") `shouldReturn` "tests: True\n"
+    it "writes cabal.project.local next to the module's project, not the current directory" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True (dir </> "project" </> "gen")
+        writeFile (dir </> "project" </> "phino.cabal") ""
+        createDirectoryIfMissing True (dir </> "elsewhere")
+        withCurrentDirectory
+          (dir </> "elsewhere")
+          (runCLI ["compile", "--target=" ++ (dir </> "project" </> "gen" </> "Compiled.hs")])
+        doesFileExist (dir </> "elsewhere" </> "cabal.project.local") `shouldReturn` False
+        readFile (dir </> "project" </> "cabal.project.local") `shouldReturn` "package phino\n  flags: +compiled\n"
+    it "only prints the lines when it cannot find the project of the module" $
+      withTempDirectory "phino-compile" $ \dir -> do
+        createDirectoryIfMissing True dir
+        withCurrentDirectory dir (testCLISucceeded ["compile", "--target=gen/Compiled.hs"] ["package phino\n  flags: +compiled"])
+        doesFileExist (dir </> "cabal.project.local") `shouldReturn` False
     it "refuses a rule it cannot compile" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
@@ -3255,6 +3426,15 @@ spec = do
       testCLISucceeded
         ["match", "--help"]
         ["Pattern expression to match against", "Predicate for matched substitutions"]
+
+    it "describes --sweet and --flat as applying to the result only" $
+      testCLISucceeded
+        ["match", "--help"]
+        ["Print result 𝜑-expression using syntax sugar", "Print result 𝜑-expression in one line"]
+
+    it "rejects --sequence, which --help must not mention" $
+      withStdin "[[ ]]" $
+        testCLIFailed ["match", "--sequence", "--pattern=[[ !B ]]"] ["Invalid option"]
 
     it "takes from stdin" $
       withStdin "[[]]" $
@@ -3316,6 +3496,12 @@ spec = do
         testCLIFailed
           ["match", "--pattern=[[ !B ]]", "--when=eq(length(!B),1)"]
           ["[ERROR]: Anonymous meta '!B' cannot be referenced in --when"]
+
+    it "rejects a named meta in --when the pattern does not bind" $
+      withStdin "[[ x -> Q.y ]]" $
+        testCLIFailed
+          ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B2),1)"]
+          ["[ERROR]: The --when condition reads the meta '!B2' it never binds, since neither --pattern binds it"]
 
     it "fails on parsing --when condition" $
       withStdin "[[]]" $

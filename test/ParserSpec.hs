@@ -413,6 +413,10 @@ spec = do
     fromLeft "" (parseExpression "⟦\n  a ↦ ξ,\n  b ↦ ξ,\n  b ↦ Φ\n⟧\n\n\n")
       `shouldSatisfy` isInfixOf "expression:4:3:"
 
+  it "points at the binding that repeats an inline void's attribute, not past the formation" $
+    fromLeft "" (parseExpression "⟦\n  app(a) ↦ ⟦\n    b ↦ ξ.c,\n    a ↦ ξ.d,\n    e ↦ ξ.f\n  ⟧\n⟧\n\n\n")
+      `shouldSatisfy` isInfixOf "expression:4:5:"
+
   describe "an arrow ends an attribute name" $
     forM_
       [ ("⟦ a ↦ ξ.b(c↦ξ) ⟧", "⟦ a ↦ ξ.b(c ↦ ξ) ⟧")
@@ -723,6 +727,12 @@ spec = do
       , ("⟦ x(y, z) ↦ ∅:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, z ↦ ∅, a ↦ ∅ ⟧ ⟧")
       , ("[[ x(y) -> Plus:L ]]", "⟦ x ↦ ⟦ y ↦ ∅, λ ⤍ Plus ⟧ ⟧")
       , ("Q.x(y(z) ↦ FF-:Δ)", "Q.x(y ↦ ⟦ z ↦ ∅, Δ ⤍ FF- ⟧)")
+      , ("⟦ x(y) ↦ ⟦ z ↦ ξ ⟧:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ z ↦ ξ ⟧ ⟧ ⟧")
+      , ("⟦ x(y) ↦ ⟦ ⟧ : a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ ⟧ ⟧ ⟧")
+      , ("⟦ x(y) ↦ ⟦ z ↦ ξ ⟧.z:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ z ↦ ξ ⟧.z ⟧ ⟧")
+      , ("⟦ x(y) ↦ ⟦ z ↦ ∅ ⟧(z ↦ Φ):a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ z ↦ ∅ ⟧(z ↦ Φ) ⟧ ⟧")
+      , ("⟦ x(y) ↦ ⟦ z(w) ↦ ⟦ ⟧:b ⟧:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ z ↦ ⟦ w ↦ ∅, b ↦ ⟦ ⟧ ⟧ ⟧ ⟧ ⟧")
+      , ("Q.x(y(z) ↦ ⟦ w ↦ ξ ⟧:a)", "Q.x(y ↦ ⟦ z ↦ ∅, a ↦ ⟦ w ↦ ξ ⟧ ⟧)")
       ]
       ( \(sweet, plain) ->
           it sweet $ do
@@ -743,5 +753,5 @@ spec = do
       parseExpression
       ( map
           (\ipt -> (ipt, Nothing :: Maybe Expression))
-          ["⟦ x(y) ↦ 42 ⟧", "⟦ x(y) ↦ 42:a.b ⟧", "⟦ x(y) ↦ 42:a(z) ⟧", "⟦ x(y) ↦ ξ.a ⟧", "Q.x(y(z) ↦ FF-:Δ.b)"]
+          ["⟦ x(y) ↦ 42 ⟧", "⟦ x(y) ↦ 42:a.b ⟧", "⟦ x(y) ↦ 42:a(z) ⟧", "⟦ x(y) ↦ ξ.a ⟧", "Q.x(y(z) ↦ FF-:Δ.b)", "⟦ x(y) ↦ ⟦ ⟧.a ⟧", "⟦ x(y) ↦ ⟦ ⟧(a ↦ ξ) ⟧", "⟦ x(y) ↦ ⟦ ⟧:y ⟧"]
       )

@@ -102,4 +102,38 @@ instance WithMargin EXTRA where
   withMargin' _ = id
 
 lengthOf :: Render a => a -> Int
-lengthOf renderable = T.length (render renderable)
+lengthOf renderable = displayWidth (render renderable)
+
+displayWidth :: T.Text -> Int
+displayWidth = T.foldl' addWidth 0
+  where
+    addWidth :: Int -> Char -> Int
+    addWidth acc character = acc + charWidth character
+
+charWidth :: Char -> Int
+charWidth character
+  | isWideCodePoint (fromEnum character) = 2
+  | otherwise = 1
+  where
+    isWideCodePoint :: Int -> Bool
+    isWideCodePoint codePoint = any (inRange codePoint) wideRanges
+
+    inRange :: Int -> (Int, Int) -> Bool
+    inRange codePoint (lo, hi) = codePoint >= lo && codePoint <= hi
+
+    wideRanges :: [(Int, Int)]
+    wideRanges =
+      [ (0x1100, 0x115F)
+      , (0x2E80, 0x303E)
+      , (0x3041, 0x33FF)
+      , (0x3400, 0x4DBF)
+      , (0x4E00, 0x9FFF)
+      , (0xA000, 0xA4CF)
+      , (0xAC00, 0xD7A3)
+      , (0xF900, 0xFAFF)
+      , (0xFE30, 0xFE4F)
+      , (0xFF00, 0xFF60)
+      , (0xFFE0, 0xFFE6)
+      , (0x1F300, 0x1FAFF)
+      , (0x20000, 0x3FFFD)
+      ]

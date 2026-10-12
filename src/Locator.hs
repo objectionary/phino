@@ -16,6 +16,7 @@ import Text.Printf (printf)
 data LocatorException
   = InvalidLocatorProvided {fqn :: Expression}
   | CanNotFindObjectByLocator {fqn :: Expression}
+  | CanNotHideWholeProgram {fqn :: Expression}
   deriving (Exception)
 
 instance Show LocatorException where
@@ -24,6 +25,10 @@ instance Show LocatorException where
       "Invalid locator is provided. 'Q' or dispatch started with 'Q' expected, but got: '%s'"
       (printExpression fqn)
   show CanNotFindObjectByLocator{..} = printf "Can't find object by locator: '%s'" (printExpression fqn)
+  show CanNotHideWholeProgram{..} =
+    printf
+      "The --hide locator must name an attribute, '%s' would hide the whole program"
+      (printExpression fqn)
 
 locatedExpression :: Expression -> Expression -> IO Expression
 locatedExpression ExRoot expr = pure expr

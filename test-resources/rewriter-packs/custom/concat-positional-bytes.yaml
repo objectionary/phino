@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '[[ x -> Q.bytes([[ D> 68-69 ]]) ]]'
+output: |-
+  ⟦
+    s ↦ "hi"
+  ⟧
+rules:
+  custom:
+    - name: concat positional bytes
+      pattern: '[[ x -> !e1 ]]'
+      result: '[[ s -> !e2 ]]'
+      where:
+        - meta: '!e2'
+          function: concat
+          args:
+            - '!e1'

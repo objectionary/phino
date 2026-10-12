@@ -4,52 +4,61 @@
 module Canonizer (canonize, canonizeExpr, lambdaNames) where
 
 import AST
+import qualified Data.Map as Map
 import qualified Data.Text as T
 import Rewriter (Rewritten)
 
-canonizeBindings :: [Binding] -> Int -> ([Binding], Int)
-canonizeBindings [] idx = ([], idx)
-canonizeBindings ((BiLambda (Function name)) : rest) idx
+type CanonState = (Map.Map T.Text T.Text, Int)
+
+canonizeBindings :: [Binding] -> CanonState -> ([Binding], CanonState)
+canonizeBindings [] st = ([], st)
+canonizeBindings ((BiLambda (Function name)) : rest) st
   | name == T.pack "Package" =
-      let (bds', idx') = canonizeBindings rest idx
-       in (BiLambda (Function name) : bds', idx')
-canonizeBindings ((BiLambda (Function _)) : rest) idx =
-  let (bds', idx') = canonizeBindings rest (idx + 1)
-   in (BiLambda (Function (T.pack ("Fn" <> show idx))) : bds', idx')
-canonizeBindings (BiTau attr expr : rest) idx =
-  let (expr', idx') = canonizeExpression expr idx
-      (bds', idx'') = canonizeBindings rest idx'
-   in (BiTau attr expr' : bds', idx'')
-canonizeBindings (bd : rest) idx =
-  let (bds', idx') = canonizeBindings rest idx
-   in (bd : bds', idx')
+      let (bds', st') = canonizeBindings rest st
+       in (BiLambda (Function name) : bds', st')
+canonizeBindings ((BiLambda (Function name)) : rest) (names, idx) =
+  case Map.lookup name names of
+    Just canonical ->
+      let (bds', st') = canonizeBindings rest (names, idx)
+       in (BiLambda (Function canonical) : bds', st')
+    Nothing ->
+      let canonical = T.pack ("Fn" <> show idx)
+          (bds', st') = canonizeBindings rest (Map.insert name canonical names, idx + 1)
+       in (BiLambda (Function canonical) : bds', st')
+canonizeBindings (BiTau attr expr : rest) st =
+  let (expr', st') = canonizeExpression expr st
+      (bds', st'') = canonizeBindings rest st'
+   in (BiTau attr expr' : bds', st'')
+canonizeBindings (bd : rest) st =
+  let (bds', st') = canonizeBindings rest st
+   in (bd : bds', st')
 
-canonizeExpression :: Expression -> Int -> (Expression, Int)
-canonizeExpression (ExFormation bds) idx =
-  let (bds', idx') = canonizeBindings bds idx
-   in (ExFormation bds', idx')
-canonizeExpression (ExDispatch expr attr) idx =
-  let (expr', idx') = canonizeExpression expr idx
-   in (ExDispatch expr' attr, idx')
-canonizeExpression (ExApplication expr arg) idx =
-  let (expr', idx') = canonizeExpression expr idx
-      (arg', idx'') = canonizeArgument arg idx'
-   in (ExApplication expr' arg', idx'')
-canonizeExpression (ExPhiMeet prefix num expr) idx =
-  let (expr', idx') = canonizeExpression expr idx
-   in (ExPhiMeet prefix num expr', idx')
-canonizeExpression (ExPhiAgain prefix num expr) idx =
-  let (expr', idx') = canonizeExpression expr idx
-   in (ExPhiAgain prefix num expr', idx')
-canonizeExpression expr idx = (expr, idx)
+canonizeExpression :: Expression -> CanonState -> (Expression, CanonState)
+canonizeExpression (ExFormation bds) st =
+  let (bds', st') = canonizeBindings bds st
+   in (ExFormation bds', st')
+canonizeExpression (ExDispatch expr attr) st =
+  let (expr', st') = canonizeExpression expr st
+   in (ExDispatch expr' attr, st')
+canonizeExpression (ExApplication expr arg) st =
+  let (expr', st') = canonizeExpression expr st
+      (arg', st'') = canonizeArgument arg st'
+   in (ExApplication expr' arg', st'')
+canonizeExpression (ExPhiMeet prefix num expr) st =
+  let (expr', st') = canonizeExpression expr st
+   in (ExPhiMeet prefix num expr', st')
+canonizeExpression (ExPhiAgain prefix num expr) st =
+  let (expr', st') = canonizeExpression expr st
+   in (ExPhiAgain prefix num expr', st')
+canonizeExpression expr st = (expr, st)
 
-canonizeArgument :: Argument -> Int -> (Argument, Int)
-canonizeArgument (ArTau attr expr) idx =
-  let (expr', idx') = canonizeExpression expr idx
-   in (ArTau attr expr', idx')
-canonizeArgument (ArAlpha alpha expr) idx =
-  let (expr', idx') = canonizeExpression expr idx
-   in (ArAlpha alpha expr', idx')
+canonizeArgument :: Argument -> CanonState -> (Argument, CanonState)
+canonizeArgument (ArTau attr expr) st =
+  let (expr', st') = canonizeExpression expr st
+   in (ArTau attr expr', st')
+canonizeArgument (ArAlpha alpha expr) st =
+  let (expr', st') = canonizeExpression expr st
+   in (ArAlpha alpha expr', st')
 
 lambdaNames :: Expression -> [T.Text]
 lambdaNames (ExFormation bds) = concatMap named bds
@@ -66,7 +75,7 @@ lambdaNames (ExPhiAgain _ _ expr) = lambdaNames expr
 lambdaNames _ = []
 
 canonizeExpr :: Expression -> Expression
-canonizeExpr expr = fst (canonizeExpression expr 1)
+canonizeExpr expr = fst (canonizeExpression expr (Map.empty, 1))
 
 canonize :: [Rewritten] -> [Rewritten]
 canonize [] = []

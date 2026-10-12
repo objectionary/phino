@@ -15,14 +15,15 @@ import CST (EXPRESSION)
 import Canonizer (canonizeExpr, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
-import Control.Monad ((>=>))
-import Data.Char (toLower)
+import Control.Monad (when, (>=>))
+import Data.Char (isDigit, toLower)
 import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
+import qualified Data.Yaml as Yaml
 import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
@@ -41,8 +42,8 @@ import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewrittens', stepHeaders)
 import Sugar (SugarType (SALTY), withoutRho)
-import System.Directory (createDirectoryIfMissing)
-import System.FilePath (takeDirectory, takeExtension)
+import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, listDirectory, removeFile)
+import System.FilePath (splitExtension, takeDirectory, takeExtension, (</>))
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
 import XMIR (Atoms, expressionToXMIR, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
@@ -55,8 +56,27 @@ justMeetPopularity = fromMaybe defaultMeetPopularity
 justMeetLength :: Maybe Int -> Int
 justMeetLength = fromMaybe defaultMeetLength
 
+isStepFileName :: FilePath -> Bool
+isStepFileName name = length base == 5 && all isDigit base && ext `elem` [".phi", ".xmir", ".tex"]
+  where
+    (base, ext) = splitExtension name
+
+clearedStepsDir :: Maybe FilePath -> IO ()
+clearedStepsDir Nothing = pure ()
+clearedStepsDir (Just dir) = do
+  exists <- doesDirectoryExist dir
+  when exists (listDirectory dir >>= mapM_ removedIfStepFile)
+  where
+    removedIfStepFile :: FilePath -> IO ()
+    removedIfStepFile name = when (isStepFileName name) (removedFile (dir </> name))
+    removedFile :: FilePath -> IO ()
+    removedFile path = do
+      isFile <- doesFileExist path
+      when isFile (removeFile path)
+
 saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> IO SaveStepFunc
 saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
+  clearedStepsDir stepsDir
   counter <- newIORef (0 :: Int)
   let ioToExt :: String
       ioToExt
@@ -152,13 +172,18 @@ aimed _ _ (Just _) expr _ =
     (printf "The option --inside requires the input expression to be a formation, but given: %s" (P.printExpression expr))
 
 readInput :: Maybe FilePath -> IO String
-readInput inputFile' = case inputFile' of
-  Just pth -> do
-    logDebug (printf "Reading from file: '%s'" pth)
-    readFile =<< ensuredFile pth
-  Nothing -> do
-    logDebug "Reading from stdin"
-    getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
+readInput inputFile' =
+  withoutBOM <$> case inputFile' of
+    Just pth -> do
+      logDebug (printf "Reading from file: '%s'" pth)
+      readFile =<< ensuredFile pth
+    Nothing -> do
+      logDebug "Reading from stdin"
+      getContents' `catch` (\(e :: SomeException) -> throwIO (CouldNotReadFromStdin (show e)))
+
+withoutBOM :: String -> String
+withoutBOM ('\xFEFF' : rest) = rest
+withoutBOM input = input
 
 parseInput :: String -> IOFormat -> IO Expression
 parseInput phi PHI = parseExpressionThrows phi
@@ -236,7 +261,7 @@ hidden PrintCtx{..} sugar
 
 printCtxToLatexCtx :: PrintContext -> LatexContext
 printCtxToLatexCtx PrintCtx{..} =
-  LatexContext _sugar _line _margin _nonumber _compress _canonize _meetPopularity _meetLength _focus _expression _label _meetPrefix _headers
+  LatexContext _sugar _line _margin _nonumber _compress _canonize _meetPopularity _meetLength _focus _expression _label _meetPrefix _headers _hideRho
 
 getRules :: Bool -> Bool -> [FilePath] -> IO [Y.Rule]
 getRules normalize shuffle rules = do
@@ -261,7 +286,15 @@ getRules normalize shuffle rules = do
       | otherwise = do
           logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
           yamls <- mapM ensuredFile (nub rules)
-          mapM (Y.yamlRule >=> validateRewriteRule) yamls
+          mapM (loadRule >=> validateRewriteRule) yamls
+
+loadRule :: FilePath -> IO Y.Rule
+loadRule file =
+  catch (Y.yamlRule file) reportInvalidRule
+  where
+    reportInvalidRule :: Yaml.ParseException -> IO Y.Rule
+    reportInvalidRule err =
+      invalidCLIArguments (printf "Could not load rule from '%s'\n%s" file (Yaml.prettyPrintParseException err))
 
 validateRewriteRule :: Y.Rule -> IO Y.Rule
 validateRewriteRule rule =
@@ -281,7 +314,7 @@ printOut target content = case target of
     putStrLn content
   Just file -> do
     logDebug (printf "The option '--target' is specified, printing to '%s'..." file)
-    overwrite file content
+    overwrite file (content ++ "\n")
     logDebug (printf "The command result was saved in '%s'" file)
 
 engine :: IO Engine

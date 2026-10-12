@@ -31,6 +31,7 @@ import Test.Hspec (Spec, describe, it, pendingWith, shouldBe, shouldReturn, shou
 exceptionPath :: FsException -> FilePath
 exceptionPath (FileDoesNotExist file) = file
 exceptionPath (DirectoryDoesNotExist directory) = directory
+exceptionPath (PathIsDirectory path) = path
 
 withScratchDir :: (FilePath -> IO a) -> IO a
 withScratchDir =
@@ -46,12 +47,20 @@ withScratchDir =
 
 spec :: Spec
 spec = do
-  describe "ensuredFile" $
+  describe "ensuredFile" $ do
     it "returns the path of an existing file" $
       withScratchDir $ \dir -> do
         let path = dir </> "existing.txt"
         writeFile path "content"
         ensuredFile path >>= (`shouldBe` path)
+    it "throws PathIsDirectory for a directory" $
+      withScratchDir $ \dir -> do
+        let path = dir </> "subdir"
+        createDirectoryIfMissing True path
+        result <- try (ensuredFile path) :: IO (Either FsException FilePath)
+        case result of
+          Left exc -> exceptionPath exc `shouldBe` path
+          _ -> fail "expected a PathIsDirectory exception to be thrown"
 
   describe "overwrite" $ do
     it "replaces the content of an existing file with utf-8 bytes" $ withScratchDir $ \dir -> do
@@ -142,6 +151,11 @@ spec = do
         ( "shows a readable message for DirectoryDoesNotExist"
         , DirectoryDoesNotExist "/no/such/dir"
         , "Directory '/no/such/dir' does not exist"
+        )
+      ,
+        ( "shows a readable message for PathIsDirectory"
+        , PathIsDirectory "/no/such/dir"
+        , "'/no/such/dir' is a directory, while a file is expected"
         )
       ]
       (\(desc, exc, message) -> it desc (show exc `shouldBe` message))

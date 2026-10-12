@@ -7,7 +7,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Sugar (toSalty, withSugarType, withoutRho, SugarType (..), ToSalty) where
+module Sugar (toSalty, withSugarType, withoutRho, revealXi, SugarType (..), ToSalty) where
 
 import AST
 import Bytes (nonFiniteBts, numToBts, strToBts, unescapeStr)
@@ -115,6 +115,39 @@ withoutRho sugar = goExpr
     isRho PA_TAU{attr = AT_RHO _} = True
     isRho PA_FORMATION{attr = AT_RHO _} = True
     isRho _ = False
+
+revealXi :: SugarType -> EXPRESSION -> EXPRESSION
+revealXi _ = goExpr
+  where
+    goExpr :: EXPRESSION -> EXPRESSION
+    goExpr EX_ATTR{..} = EX_DISPATCH (EX_XI XI) NO_SPACE attr
+    goExpr EX_DISPATCH{..} = EX_DISPATCH (goExpr expr) space attr
+    goExpr EX_APPLICATION{..} = EX_APPLICATION (goExpr expr) space eol tab (goArgument argument) eol' tab' indent
+    goExpr EX_FORMATION{..} = EX_FORMATION lsb eol tab (goBinding binding) eol' tab' rsb
+    goExpr EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (goExpr expr)
+    goExpr EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (goExpr expr)
+    goExpr EX_SINGLE{..} = EX_SINGLE (goPair pair) space (goExpr formation)
+    goExpr expr = expr
+    goArgument :: APP_ARGUMENT -> APP_ARGUMENT
+    goArgument (AA_TAU (APP_BINDING pair)) = AA_TAU (APP_BINDING (goPair pair))
+    goArgument (AA_TAUS binding) = AA_TAUS (goBinding binding)
+    goArgument (AA_EXPRS arg) = AA_EXPRS (goAppArg arg)
+    goAppArg :: APP_ARG -> APP_ARG
+    goAppArg APP_ARG{..} = APP_ARG (goExpr expr) (goAppArgs args)
+    goAppArgs :: APP_ARGS -> APP_ARGS
+    goAppArgs AAS_EMPTY = AAS_EMPTY
+    goAppArgs AAS_EXPR{..} = AAS_EXPR eol tab (goExpr expr) (goAppArgs args)
+    goBinding :: BINDING -> BINDING
+    goBinding BI_PAIR{..} = BI_PAIR (goPair pair) (goBindings bindings) tab
+    goBinding binding = binding
+    goBindings :: BINDINGS -> BINDINGS
+    goBindings BDS_PAIR{..} = BDS_PAIR eol tab (goPair pair) (goBindings bindings)
+    goBindings bindings = bindings
+    goPair :: PAIR -> PAIR
+    goPair PA_TAU{..} = PA_TAU attr arrow (goExpr expr)
+    goPair PA_ALPHA{..} = PA_ALPHA alpha arrow (goExpr expr)
+    goPair PA_FORMATION{..} = PA_FORMATION attr voids arrow (goExpr expr)
+    goPair pair = pair
 
 class ToSalty a where
   toSalty :: a -> a
