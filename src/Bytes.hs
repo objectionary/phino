@@ -244,11 +244,13 @@ btsSize = length . btsToWord8
 
 btsSlice :: Int -> Int -> Bytes -> Maybe Bytes
 btsSlice start len bts
-  | start < 0 || len < 0 || start + len > length octets = Nothing
+  | start < 0 || len < 0 || start > size || len > size - start = Nothing
   | otherwise = Just (word8ToBytes (take len (drop start octets)))
   where
     octets :: [Word8]
     octets = btsToWord8 bts
+    size :: Int
+    size = length octets
 
 btsShift :: Int -> Bytes -> Bytes
 btsShift bits bts
