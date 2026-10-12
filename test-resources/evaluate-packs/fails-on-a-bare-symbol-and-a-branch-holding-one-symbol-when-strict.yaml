@@ -3,9 +3,9 @@
 ---
 # yamllint disable rule:line-length
 # The fork of 'bool.and' from #1817 under an entry that does not say
-# 'lenient: true'. A strict join never reads the world: the φ chain of the
-# second branch stops at the call of 'Φ.bool', there is no symbol to pair the
-# bare one with, and the firing gets stuck.
+# 'lenient: true'. A strict join pairs a bare symbol only with the symbol a φ
+# chain ends in, and the chain of the second branch stops at the call of
+# 'Φ.bool', so there is no symbol to pair it with and the firing gets stuck.
 symbolic: |
   - λ: L_fork
     morph:

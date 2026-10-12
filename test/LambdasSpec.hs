@@ -277,14 +277,11 @@ spec = do
       spent `shouldBe` 4
 
   describe "joined" $ do
-    let joiningIn :: [(String, String)] -> Bool -> String -> String -> Int -> IO (Maybe (Expression, [(Int, (Int, Int))], Int))
-        joiningIn world lenient left right spent = do
+    let joining :: Bool -> String -> String -> Int -> IO (Maybe (Expression, [(Int, (Int, Int))], Int))
+        joining lenient left right spent = do
           one <- parseExpressionThrows left
           two <- parseExpressionThrows right
-          known <- mapM (\(decorator, form) -> (,) <$> parseExpressionThrows decorator <*> parseExpressionThrows form) world
-          joined (\term -> pure (lookup term known)) lenient one two spent
-        joining :: Bool -> String -> String -> Int -> IO (Maybe (Expression, [(Int, (Int, Int))], Int))
-        joining = joiningIn []
+          pure (joined lenient one two spent)
 
     it "joins two branches differing in one symbol into a fresh one" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧"
@@ -391,52 +388,38 @@ spec = do
       made <- joining True "Φ.f( x ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) )" "Φ.f( x ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧ )" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
-    it "joins a bare symbol with a decorator of an object whose φ ends in a symbol when lenient" $ do
-      term <- parseExpressionThrows "⟦ λ ⤍ 𝜎5 ⟧"
-      made <- joiningIn [("⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧", "⟦ if ↦ ⟦ λ ⤍ L_fork ⟧, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧")] True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧" 4
+    it "joins a bare symbol with a term holding one symbol into a copy of that term when lenient" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧ ) ⟧"
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧" 4
+      made `shouldBe` Just (term, [(5, (1, 2))], 5)
+
+    it "joins a term holding one symbol with a bare symbol standing second when lenient" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ) ⟧"
+      made <- joining True "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧ ) ⟧" "⟦ λ ⤍ 𝜎3 ⟧" 7
+      made `shouldBe` Just (term, [(8, (6, 3))], 8)
+
+    it "keeps every binding of the term holding one symbol when lenient" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧"
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
-    it "joins a decorator of an object whose φ ends in a symbol with a bare symbol standing second when lenient" $ do
+    it "replaces every place the one symbol of a term stands at when lenient" $ do
+      term <- parseExpressionThrows "Φ.f( a ↦ ⟦ λ ⤍ 𝜎5 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎5 ⟧ )"
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
+      made `shouldBe` Just (term, [(5, (1, 2))], 5)
+
+    it "still joins a bare symbol with the symbol a φ chain ends in into a bare one when lenient" $ do
       term <- parseExpressionThrows "⟦ λ ⤍ 𝜎8 ⟧"
-      made <- joiningIn [("⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧", "⟦ if ↦ ⟦ λ ⤍ L_fork ⟧, φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧")] True "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧" "⟦ λ ⤍ 𝜎6 ⟧" 7
-      fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
-
-    it "records the symbol it found through the world beside the bare one when lenient" $ do
-      made <- joiningIn [("⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧", "⟦ if ↦ ⟦ λ ⤍ L_fork ⟧, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧")] True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧" 4
-      fmap (\(_, pairs, _) -> pairs) made `shouldBe` Just [(5, (1, 2))]
-
-    it "keeps reading the world through every object the φ chain passes when lenient" $ do
-      term <- parseExpressionThrows "⟦ λ ⤍ 𝜎5 ⟧"
-      made <-
-        joiningIn
-          [ ("⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧", "⟦ if ↦ ⟦ λ ⤍ L_fork ⟧, φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧ ) ⟧")
-          , ("⟦ if ↦ ⟦ λ ⤍ L_fork ⟧, φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧ ) ⟧", "⟦ left ↦ ⟦ Δ ⤍ FF- ⟧, λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧")
-          ]
-          True
-          "⟦ λ ⤍ 𝜎1 ⟧"
-          "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧"
-          4
-      fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
-
-    it "cannot join a bare symbol with a decorator of an object unless the join is lenient" $ do
-      made <- joiningIn [("⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧", "⟦ if ↦ ⟦ λ ⤍ L_fork ⟧, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧")] False "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧" 4
-      fmap (\(joint, _, _) -> joint) made `shouldBe` Nothing
-
-    forM_
-      [ ("a bare symbol with a decorator of an object the world knows nothing of" :: String, [] :: [(String, String)])
-      , ("a bare symbol with a decorator of an object whose φ ends in a datum", [("⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧", "⟦ if ↦ ⟦ λ ⤍ L_fork ⟧, φ ↦ ⟦ Δ ⤍ 00- ⟧ ⟧")])
-      , ("a bare symbol with a decorator of an object carrying no φ", [("⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧", "⟦ if ↦ ⟦ λ ⤍ L_fork ⟧ ⟧")])
-      ]
-      ( \(desc, world) ->
-          it ("cannot leniently join " ++ desc) $ do
-            made <- joiningIn world True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork ⟧ ) ⟧" 4
-            fmap (\(joint, _, _) -> joint) made `shouldBe` Nothing
-      )
+      made <- joining True "⟦ λ ⤍ 𝜎3 ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, neg ↦ ⟦⟧ ⟧" 7
+      made `shouldBe` Just (term, [(8, (3, 6))], 8)
 
     forM_
       [ ("a term with a formation carrying no φ" :: String, "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" :: String, "⟦ neg ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" :: String)
       , ("a term with a decorator of a term of another forma", "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )", "⟦ φ ↦ Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧")
       , ("two decorators one of which carries a binding more", "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧")
+      , ("a bare symbol with a term holding two symbols", "⟦ λ ⤍ 𝜎1 ⟧", "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎3 ⟧ )")
+      , ("a bare symbol with a term holding a second symbol in its ρ", "⟦ λ ⤍ 𝜎1 ⟧", "⟦ φ ↦ Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ), ρ ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧ ⟧")
+      , ("a bare symbol with a term holding no symbol", "⟦ λ ⤍ 𝜎1 ⟧", "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧, x ↦ ⟦⟧ ⟧")
       ]
       ( \(desc, left, right) ->
           it ("cannot leniently join " ++ desc) $ do
@@ -454,6 +437,7 @@ spec = do
       , ("a bare symbol with a formation whose φ chain ends in a datum", "⟦ λ ⤍ 𝜎1 ⟧", "⟦ φ ↦ ⟦ Δ ⤍ 00- ⟧, x ↦ ⟦⟧ ⟧")
       , ("a bare symbol with a formation carrying no φ", "⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧", "⟦ λ ⤍ 𝜎1 ⟧")
       , ("a bare symbol with an application", "⟦ λ ⤍ 𝜎1 ⟧", "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )")
+      , ("a bare symbol with a decorator of an application", "⟦ λ ⤍ 𝜎1 ⟧", "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧")
       ]
       ( \(desc, left, right) ->
           it ("cannot join " ++ desc) $ do
