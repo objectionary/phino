@@ -1136,7 +1136,7 @@ spec = do
         hClose h
         testCLISucceeded ["rewrite", rule "simple.yaml", "--focus=Φ", "--in-place", "--sweet", path] []
         content <- readFile path
-        content `shouldBe` "\"bar\":x"
+        content `shouldBe` "\"bar\":x\n"
 
     it "keeps the XMIR format when rewriting an XMIR file in-place" $
       withTempFileContent "inplaceXXXXXX.xmir" xmir $ \path -> do

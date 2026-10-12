@@ -292,17 +292,19 @@ tauValue =
         choice
           [ do
               bds <- formationBindingsOffsets
-              ExFormation <$> reportDuplicates (voids ++ bds)
-          , do
-              opened <- expression
-              case opened of
-                ExFormation bds -> ExFormation <$> validatedBindings (map snd voids ++ bds)
-                _ -> fail "Inline voids open a formation, so nothing but a formation may follow their arrow"
+              tailed <- option False (True <$ lookAhead (oneOf ".(:"))
+              if tailed
+                then reportDuplicates bds >>= exTail . ExFormation >>= opening voids
+                else ExFormation <$> reportDuplicates (voids ++ bds)
+          , expression >>= opening voids
           ]
     ]
   where
     rb :: Parser String
     rb = symbol ")"
+    opening :: [(Int, Binding)] -> Expression -> Parser Expression
+    opening voids (ExFormation bds) = ExFormation <$> validatedBindings (map snd voids ++ bds)
+    opening _ _ = fail "Inline voids open a formation, so nothing but a formation may follow their arrow"
 
 lambdaName :: Parser Function
 lambdaName = choice [Function . T.pack <$> function, try (either FnAny FnMeta <$> metaVar 'F' "𝑓"), sigma]
