@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  ⟦ a ↦ ⟦ x ↦ "first" ⟧, b ↦ ⟦ x ↦ "second", y ↦ ξ.x ⟧ ⟧
+output: |-
+  ⟦ c ↦ ⟦ x ↦ "first", a🌵0 ↦ "second", y ↦ ξ.a🌵0 ⟧ ⟧
+rules:
+  custom:
+    - name: join keeps a sibling reference with its binding
+      pattern: |
+        ⟦ a ↦ ⟦ !B1 ⟧, b ↦ ⟦ !B2 ⟧ ⟧
+      result: |
+        ⟦ c ↦ ⟦ !B3 ⟧ ⟧
+      where:
+        - meta: '!B3'
+          function: join
+          args:
+            - '!B1'
+            - '!B2'
