@@ -284,12 +284,9 @@ _join args subst = do
     renameValue _ binding = binding
     renameExpression :: Map.Map Attribute Attribute -> Expression -> Expression
     renameExpression changes expression = case expression of
-      ExFormation bds ->
-        let local = Set.fromList [attr | bd <- bds, Just attr <- [attributeFromBinding bd]]
-            visible = Map.filterWithKey (\attr _ -> Set.notMember attr local) changes
-         in ExFormation (map (renameValue visible) bds)
+      ExFormation _ -> expression
       ExApplication expr arg -> ExApplication (renameExpression changes expr) (renameArgument changes arg)
-      ExDispatch ExRoot attr -> ExDispatch ExRoot (Map.findWithDefault attr attr changes)
+      ExDispatch ExXi attr -> ExDispatch ExXi (Map.findWithDefault attr attr changes)
       ExDispatch expr attr -> ExDispatch (renameExpression changes expr) attr
       ExPhiMeet prefix idx expr -> ExPhiMeet prefix idx (renameExpression changes expr)
       ExPhiAgain prefix idx expr -> ExPhiAgain prefix idx (renameExpression changes expr)
