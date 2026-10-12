@@ -167,9 +167,11 @@ using the same `insideUniverse` trick the `--inside` option exposes.
 An entry may name `terminators`, λ functions no key of the file matches, such
 as the `L_throw` EO raises with. A `join` line takes a branch that is a
 formation with one of them, or an application of one, for a branch that
-raises, as it takes ⊥ (`thrown` of `Lambdas.hs`, `paired` of `Evaluate.hs`),
-and the morph of an operand that comes to one skips the `--deep` walk, which
-`through` tells `morph` in `_throwing` of `ReduceContext` (#1865).
+raises, as it takes ⊥ (`thrown` of `Lambdas.hs` and `paired` of
+`Evaluate.hs`, #1865). The `--deep` walk reduces the arguments of such a copy
+like any other code and never fires the terminator, since no entry answers it,
+and the `terminate` record names the `message` the branch raises with
+(`message` of `Lambdas.hs`), so the error path can be lowered too (#1867).
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`

@@ -378,12 +378,18 @@ stays an error at runtime. An entry names such functions under `terminators`:
 
 A `join` line of such an entry takes a formation with `λ ⤍ L_throw`, or an
 application of one, for a branch that raises, exactly as it takes `⊥`: it binds
-its meta to the other term and writes `terminate(…)`. The morph of an operand
-of the entry that comes to such a term stops there, and `--deep` walks none of
-its bindings, since its message is what the program reports at runtime and
-there is nothing to reduce in it. A name under `terminators` that a key of the
-file matches is refused when the file is read, since that function fires
-rather than raises.
+its meta to the other term and writes `terminate(…)`. Under `--deep` the walk
+reduces the message of that copy like any other code, records and all, and
+never fires `L_throw` itself, since no entry answers it. The record names the
+reduced `message` as its last argument, as
+`terminate(𝔻(𝜎2:λ), right, 𝑛·4·6)  # 𝑛4` in the text format and
+`<terminate symbol="𝜎2" branch="right" message="𝑛·4·6"/>` in the markup, so
+the error path can be lowered as well as the other branch. A message the walk
+cannot reduce ends the way any operand does: a call no entry answers stays as
+it is written, and a firing that gets stuck fails the run, unless `--partial`
+is given. A raising term with no `message` names none. A name under
+`terminators` that a key of the file matches is refused when the file is read,
+since that function fires rather than raises.
 
 Every symbol a join mints is written into the protocol as a fact of its own,
 so a reader ties it to the two it stands for without diffing the terms; the

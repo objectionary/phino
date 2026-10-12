@@ -114,7 +114,7 @@ data Evaluation
   | EvKnown Int Int Bytes
   | EvJoin Int T.Text (T.Text, T.Text) Expression
   | EvJoined Int Int (Int, Int)
-  | EvTerminate Int (Maybe (Either Int Bytes)) T.Text T.Text
+  | EvTerminate Int (Maybe (Either Int Bytes)) T.Text T.Text (Maybe Expression)
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
   | EvApplied Int Judgment Expression Expression Expression
@@ -141,7 +141,7 @@ renumbered floor' offset = record
     record (EvKnown depth sym bytes) = EvKnown depth (symbol sym) bytes
     record (EvJoin depth spelling pair value) = EvJoin depth spelling pair (term value)
     record (EvJoined depth fresh (one, two)) = EvJoined depth (symbol fresh) (symbol one, symbol two)
-    record (EvTerminate depth condition side raising) = EvTerminate depth (fmap datum condition) side raising
+    record (EvTerminate depth condition side raising message) = EvTerminate depth (fmap datum condition) side raising (fmap term message)
     record (EvMinted depth sym operands) = EvMinted depth (symbol sym) (map datum operands)
     record (EvDeferred depth sym judgment copy call site) = EvDeferred depth (symbol sym) judgment (term copy) (fmap term call) (term site)
     record (EvApplied depth judgment call object site) = EvApplied depth judgment (term call) (term object) (term site)
@@ -199,7 +199,7 @@ tier (EvSymbolize depth _ _ _) = depth
 tier (EvKnown depth _ _) = depth
 tier (EvJoin depth _ _ _) = depth
 tier (EvJoined depth _ _) = depth
-tier (EvTerminate depth _ _ _) = depth
+tier (EvTerminate depth _ _ _ _) = depth
 tier (EvMinted depth _ _) = depth
 tier (EvDeferred depth _ _ _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
@@ -403,9 +403,10 @@ saveEval handle cursor printed printed' report = do
       left <- render (standing one)
       right <- render (standing two)
       pure (protocol, Just (indented depth (printf "𝔻(%s) ∈ { 𝔻(%s), 𝔻(%s) }" form left right)))
-    written (EvTerminate depth condition side raised) protocol = do
+    written (EvTerminate depth condition side raised message) protocol = do
       cond <- maybe (pure []) (fmap pure . spelled) condition
-      pure (protocol, Just (indented depth (printf "terminate(%s)  # %s" (intercalate ", " (cond ++ [T.unpack side])) (T.unpack raised))))
+      said <- maybe (pure []) (fmap pure . render) message
+      pure (protocol, Just (indented depth (printf "terminate(%s)  # %s" (intercalate ", " (cond ++ [T.unpack side] ++ said)) (T.unpack raised))))
       where
         spelled :: Either Int Bytes -> IO String
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
@@ -614,13 +615,17 @@ saveEvalXml handle cursor printed report = do
         (kept, closers) = closed depth nesting._closing
         joint :: String
         joint = printf "<joined symbol=\"%s\">%s %s</joined>" (sigma fresh) (sigma one) (sigma two)
-    elements (EvTerminate depth condition side _) nesting = do
+    elements (EvTerminate depth condition side _ message) nesting = do
+      said <- maybe (pure "") attributed message
       terminal <- case condition of
-        Just (Left symbol) -> pure (printf "<terminate symbol=\"%s\" branch=\"%s\"/>" (sigma symbol) (quoted side))
-        Just (Right bytes) -> printf "<terminate branch=\"%s\">%s</terminate>" (quoted side) . escapeXMLText <$> render (ExBytes bytes)
-        Nothing -> pure (printf "<terminate branch=\"%s\"/>" (quoted side))
+        Just (Left symbol) -> pure (printf "<terminate symbol=\"%s\" branch=\"%s\"%s/>" (sigma symbol) (quoted side) said)
+        Just (Right bytes) -> printf "<terminate branch=\"%s\"%s>%s</terminate>" (quoted side) said . escapeXMLText <$> render (ExBytes bytes)
+        Nothing -> pure (printf "<terminate branch=\"%s\"%s/>" (quoted side) said)
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth terminal])
+      where
+        attributed :: Expression -> IO String
+        attributed term = printf " message=\"%s\"" . escapeXML <$> render term
     elements (EvMinted depth symbol operands) nesting = do
       spelledOperands <- mapM spelled operands
       let (kept, closers) = closed depth nesting._closing

@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, minted, readLambdas, symbolized, taken, thrown)
+import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, message, minted, readLambdas, symbolized, taken, thrown)
 import Parser (parseExpressionThrows)
 import Test.Hspec
 
@@ -215,9 +215,9 @@ spec = do
         , "the terminator 'L_throw' of the key 'L_fork' is answered by the key 'L_th[a-z]+'"
         )
       ]
-      ( \(desc, text, message) ->
+      ( \(desc, text, reason) ->
           it ("cannot read " ++ desc) $
-            lambdasOf text `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
+            lambdasOf text `shouldThrow` (\err -> reason `isInfixOf` show (err :: SomeException))
       )
 
   describe "emptyLambdas" $
@@ -483,6 +483,29 @@ spec = do
           it ("finds no terminator in " ++ desc) $ do
             term <- parseExpressionThrows text
             thrown ["L_throw"] term `shouldBe` False
+      )
+
+  describe "message" $ do
+    it "finds the message a formation that throws carries" $ do
+      said <- parseExpressionThrows "Φ.pike( φ ↦ ⟦ λ ⤍ 𝜎9 ⟧ )"
+      term <- parseExpressionThrows "⟦ message ↦ Φ.pike( φ ↦ ⟦ λ ⤍ 𝜎9 ⟧ ), λ ⤍ L_throw ⟧"
+      message term `shouldBe` Just said
+
+    it "finds the message an application gives a formation that throws" $ do
+      said <- parseExpressionThrows "ξ.hog.printf( ξ.y )"
+      term <- parseExpressionThrows "⟦ message ↦ ∅, code ↦ ∅, λ ⤍ L_throw ⟧( message ↦ ξ.hog.printf( ξ.y ) )( code ↦ Φ.z )"
+      message term `shouldBe` Just said
+
+    forM_
+      [ ("the terminator ⊥" :: String, "⊥" :: String)
+      , ("a formation whose message is void", "⟦ message ↦ ∅, λ ⤍ L_throw ⟧")
+      , ("a formation that carries no message", "⟦ code ↦ Φ.cat, λ ⤍ L_throw ⟧")
+      , ("an application that gives no message", "⟦ message ↦ ∅, code ↦ ∅, λ ⤍ L_throw ⟧( code ↦ Φ.cat )")
+      ]
+      ( \(desc, text) ->
+          it ("finds no message in " ++ desc) $ do
+            term <- parseExpressionThrows text
+            message term `shouldBe` Nothing
       )
 
   describe "taken" $ do

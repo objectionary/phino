@@ -31,7 +31,7 @@ import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judg
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
-import Lambdas (Lambdas, emptyLambdas, thrown)
+import Lambdas (Lambdas, emptyLambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
 import Must (Must (..))
@@ -110,7 +110,6 @@ data ReduceContext = ReduceContext
   , _parked :: [T.Text]
   , _entered :: Seen
   , _symbolic :: Lambdas
-  , _throwing :: [T.Text]
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
@@ -401,7 +400,7 @@ morph universe state caller@ReduceContext{..} = do
     marked ctx func = (walking ctx){_parked = func : _parked}
     walked :: ReduceContext -> Expression -> NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
     walked walker morphed seq state'
-      | not _deep || thrown _throwing morphed = pure (morphed, reverse (NE.toList seq), state')
+      | not _deep = pure (morphed, reverse (NE.toList seq), state')
       | otherwise = do
           (deep, state'') <- deepened Nothing morphed universe state' walker
           seq' <- leadsTo seq (Morphing, "deep") deep walker

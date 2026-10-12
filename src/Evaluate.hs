@@ -18,7 +18,7 @@ import Data.Maybe (fromMaybe, isNothing, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Morphing), State (..), resited)
 import Engine (Engine (..))
-import Lambdas (Lambda (..), Meta (..), joined, matched, minted, symbolized, thrown)
+import Lambdas (Lambda (..), Meta (..), joined, matched, message, minted, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Refused (..), Steps (..), admitted, charged, counted, deeper, isLambda, lambda, morphing, normalized, opening, recalled, refused, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
@@ -70,7 +70,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       let ctx = caller{_nesting = caller._nesting + 1}
       outcome <- try $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-        (bound', morphed, normals) <- foldM (through ctx{_throwing = entry._terminators}) (bound, dataized, []) entry._morphed
+        (bound', morphed, normals) <- foldM (through ctx) (bound, dataized, []) entry._morphed
         let firing = Firing func (reverse conditions) (reverse normals)
         known <- remembered caller._memo firing
         maybe (worked ctx entry firing bound' morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
@@ -161,8 +161,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       one <- branch left
       two <- branch right
       case (raising one, raising two) of
-        (True, False) -> terminating "left" left two
-        (False, True) -> terminating "right" right one
+        (True, False) -> terminating "left" left one two
+        (False, True) -> terminating "right" right two one
         _ -> both one two
       where
         raising :: Expression -> Bool
@@ -178,9 +178,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
               mapM_ (ctx._saveEval . fact) made
               ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
               bind meta (MvExpression term) bound
-        terminating :: T.Text -> Meta -> Expression -> IO Subst
-        terminating side raised term = do
-          ctx._saveEval (EvTerminate ctx._nesting condition side raised._spelling)
+        terminating :: T.Text -> Meta -> Expression -> Expression -> IO Subst
+        terminating side raised fault term = do
+          ctx._saveEval (EvTerminate ctx._nesting condition side raised._spelling (message fault))
           ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
           bind meta (MvExpression term) bound
         branch :: Meta -> IO Expression
