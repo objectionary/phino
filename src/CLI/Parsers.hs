@@ -230,15 +230,6 @@ optStepsDir = optional (strOption (long "steps-dir" <> metavar "FILE" <> help "D
 optPartial :: Parser Bool
 optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on a λ function that cannot fire (no entry of the --symbolic file answers it), leave it in place and print the residual 𝜑-program")
 
-optDeep :: Parser Bool
-optDeep = switch (long "deep" <> help "Don't stop at the first formation: enter its bindings too, recursively, firing every λ function the --symbolic file answers and standing its answer in the place of what it computed, while everything else stays as it was written")
-
-optJobs :: Parser Int
-optJobs =
-  option
-    (boundedIntOption >>= validateIntOption (> 0) "--jobs must be positive")
-    (long "jobs" <> metavar "JOBS" <> help "Number of workers the --deep walk morphs the bindings of the formation it starts at on, side by side, each with a memo, a tally and fresh names of its own" <> value 1 <> showDefault)
-
 optAcyclic :: Parser (Maybe Acyclic)
 optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again) instead of going round until --max-steps runs out, and leave the term in place the way --partial leaves a λ function that cannot fire; 'proven' takes it for the same one up to a renaming of symbols, 'plausible' also when it holds the earlier one under wrappers it gained, such as a growing accumulator"))
   where
@@ -452,8 +443,6 @@ morphParser =
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
             <*> optPartial
-            <*> optDeep
-            <*> optJobs
             <*> optAcyclic
             <*> optCompress
             <*> optMaxDepth

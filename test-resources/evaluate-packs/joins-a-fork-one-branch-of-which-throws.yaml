@@ -4,11 +4,11 @@
 # yamllint disable rule:line-length
 # EO raises with a copy of an object whose λ function the file leaves out on
 # purpose, here 'L_throw', rather than with ⊥. The entry of the fork names it
-# among its terminators, so the join takes the branch that comes to such a
-# copy for one that raises, the way it takes ⊥, and answers the other branch.
-# The walk reduces the message of that copy like any other code, firing
-# 'L_number_plus' for it, and never fires 'L_throw', and the 'terminate' line
-# names the meta of the reduced message (#1867).
+# among its terminators, so its 'evaluate' line leaves that copy unfired
+# (#1874), and the join takes the branch that comes to such a copy for one
+# that raises, the way it takes ⊥, and answers the other branch (#1865). The
+# 'terminate' line names the message of the copy as the program wrote it,
+# since nothing fires 'L_number_plus' for it (#1867).
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -26,7 +26,7 @@ symbolic: |
     morph:
       𝑛1: $.then
       𝑛2: $.else
-    symbolize:
+    evaluate:
       𝑛3: 𝑛1
       𝑛4: 𝑛2
     join:
@@ -34,7 +34,6 @@ symbolic: |
     terminators: [L_throw]
     𝑛: 𝑛5
 location: 'Q.@'
-deep: true
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     error(message) ↦ ⟦ λ ⤍ L_throw ⟧,
@@ -42,9 +41,8 @@ input: >
     number(φ) ↦ ⟦
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    @ ↦ 5.gt( 0 ).if( then ↦ 1.plus( 2 ), else ↦ Φ.error( message ↦ 7.plus( 8 ) ) ).plus( 6 ) ⟧
-result: |-
-  ⟦ φ ↦ 𝜎4:λ, gt(x) ↦ L_number_gt:λ, plus(x) ↦ L_number_plus:λ ⟧
+    @ ↦ 5.gt( 0 ).if( then ↦ 1.plus( 2 ), else ↦ Φ.error( message ↦ 7.plus( 8 ) ) ).plus( 6 ).φ ⟧
+result: '𝜎3:λ'
 protocol: |
   𝕄(Φ.φ):
     𝑛·0·1 := 5
@@ -76,77 +74,46 @@ protocol: |
       𝕄(Φ.a🌵3):
         𝑛·2·2 := 1
         𝑛·2·3 := 𝑛·2·2.plus( x ↦ 2 )
-        𝕄(Φ.a🌵3.x):
-          𝑛·2·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
-          𝑛·2·5 := Φ.number( φ ↦ 𝑛·2·4 )
-        𝔼(L_number_plus):
-          𝔻(Φ.a🌵4):
-            𝕄(Φ.a🌵4):
-              𝑛·3·1 := 1
-              𝑛·3·2 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
-            𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
-          𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
-          𝔻(Φ.a🌵5):
-            𝕄(Φ.a🌵5):
-              𝑛·3·3 := Φ.number( φ ↦ 𝑛·2·4 )
-              𝑛·3·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
-            𝛿·3·2 := 40-00-00-00-00-00-00-00  # 2.0
-          𝛿2·3 := 𝛿·3·2  # 𝔻(ξ.x)
-          𝑛·3·5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
-          𝕄(𝑛·3·5):
-            𝑛·3·6 := Φ.number( φ ↦ 𝜎2:λ )
-          𝑛·3·7 := 𝑛·3·6  # 𝕄(𝑛·3·5)
-      𝑛1·2 := 𝑛·3·7  # 𝕄(ξ.then)
-      𝕄(Φ.a🌵6):
-        𝑛·2·6 := Φ.error( message ↦ 7.plus( 8 ) )
-        𝕄(Φ.a🌵6.message):
-          𝑛·2·7 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )
-          𝑛·2·8 := Φ.number( φ ↦ 𝑛·2·7 )
-          𝑛·2·9 := Φ.number( φ ↦ 𝑛·2·7 )
-          𝑛·2·10 := Φ.bytes( φ ↦ 40-20-00-00-00-00-00-00:Δ )
-          𝑛·2·11 := Φ.number( φ ↦ 𝑛·2·10 )
-          𝑛·2·12 := Φ.number( φ ↦ 𝑛·2·7 )
-          𝑛·2·13 := 𝑛·2·12.plus( x ↦ 𝑛·2·11 )
-          𝔼(L_number_plus):
-            𝔻(Φ.a🌵7):
-              𝕄(Φ.a🌵7):
-                𝑛·4·1 := Φ.number( φ ↦ 𝑛·2·7 )
-                𝑛·4·2 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )
-              𝛿·4·1 := 40-1C-00-00-00-00-00-00  # 7.0
-            𝛿1·4 := 𝛿·4·1  # 𝔻(ξ.ρ)
-            𝔻(Φ.a🌵8):
-              𝕄(Φ.a🌵8):
-                𝑛·4·3 := Φ.number( φ ↦ 𝑛·2·10 )
-                𝑛·4·4 := Φ.bytes( φ ↦ 40-20-00-00-00-00-00-00:Δ )
-              𝛿·4·2 := 40-20-00-00-00-00-00-00  # 8.0
-            𝛿2·4 := 𝛿·4·2  # 𝔻(ξ.x)
-            𝑛·4·5 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
-            𝕄(𝑛·4·5):
-              𝑛·4·6 := Φ.number( φ ↦ 𝜎3:λ )
-            𝑛·4·7 := 𝑛·4·6  # 𝕄(𝑛·4·5)
-      𝑛2·2 := 𝑛·2·6  # 𝕄(ξ.else)
-      𝑛3·2 := 𝑛1·2  # 𝑛1
-      𝑛4·2 := 𝑛·2·6  # 𝑛2
-      terminate(𝔻(𝜎1:λ), right, 𝑛·4·6)  # 𝑛4
+      𝑛1·2 := 𝑛·2·3  # 𝕄(ξ.then)
+      𝕄(Φ.a🌵4):
+        𝑛·2·4 := Φ.error( message ↦ 7.plus( 8 ) )
+      𝑛2·2 := 𝑛·2·4  # 𝕄(ξ.else)
+      𝔼(L_number_plus):  # 𝔼(𝑛1)
+        𝔻(Φ.a🌵5):
+          𝕄(Φ.a🌵5):
+            𝑛·3·1 := 1
+            𝑛·3·2 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+          𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
+        𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
+        𝔻(Φ.a🌵6):
+          𝕄(Φ.a🌵6):
+            𝑛·3·3 := 2
+            𝑛·3·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
+          𝛿·3·2 := 40-00-00-00-00-00-00-00  # 2.0
+        𝛿2·3 := 𝛿·3·2  # 𝔻(ξ.x)
+        𝑛·3·5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
+        𝕄(𝑛·3·5):
+          𝑛·3·6 := Φ.number( φ ↦ 𝜎2:λ )
+        𝑛·3·7 := 𝑛·3·6  # 𝕄(𝑛·3·5)
+      𝑛3·2 := 𝑛·3·7  # 𝔼(𝑛1)
+      𝑛4·2 := 𝑛·2·4  # 𝔼(𝑛2)
+      terminate(𝔻(𝜎1:λ), right, 7.plus( 8 ))  # 𝑛4
       𝑛5·2 := 𝑛3·2  # [𝑛3, 𝑛4]
-      𝑛·2·14 := 𝑛5·2  # 𝑛
-      𝑛·2·15 := 𝑛5·2  # 𝕄(𝑛·2·14)
+      𝑛·2·5 := 𝑛5·2  # 𝑛
+      𝑛·2·6 := 𝑛5·2  # 𝕄(𝑛·2·5)
     𝑛·0·5 := 𝑛·3·6.plus( x ↦ 6 )
-    𝕄(Φ.φ.x):
-      𝑛·0·6 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
-      𝑛·0·7 := Φ.number( φ ↦ 𝑛·0·6 )
     𝔼(L_number_plus):
-      𝔻(Φ.a🌵9):
-        𝕄(Φ.a🌵9):
-          𝑛·5·1 := Φ.number( φ ↦ 𝜎2:λ )
-      𝛿1·5 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵10):
-        𝕄(Φ.a🌵10):
-          𝑛·5·2 := Φ.number( φ ↦ 𝑛·0·6 )
-          𝑛·5·3 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
-        𝛿·5·1 := 40-18-00-00-00-00-00-00  # 6.0
-      𝛿2·5 := 𝛿·5·1  # 𝔻(ξ.x)
-      𝑛·5·4 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
-      𝕄(𝑛·5·4):
-        𝑛·5·5 := Φ.number( φ ↦ 𝜎4:λ )
-      𝑛·5·6 := 𝑛·5·5  # 𝕄(𝑛·5·4)
+      𝔻(Φ.a🌵7):
+        𝕄(Φ.a🌵7):
+          𝑛·4·1 := Φ.number( φ ↦ 𝜎2:λ )
+      𝛿1·4 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)
+      𝔻(Φ.a🌵8):
+        𝕄(Φ.a🌵8):
+          𝑛·4·2 := 6
+          𝑛·4·3 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
+        𝛿·4·1 := 40-18-00-00-00-00-00-00  # 6.0
+      𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)
+      𝑛·4·4 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
+      𝕄(𝑛·4·4):
+        𝑛·4·5 := Φ.number( φ ↦ 𝜎3:λ )
+      𝑛·4·6 := 𝑛·4·5  # 𝕄(𝑛·4·4)

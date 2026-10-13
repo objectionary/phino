@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A branch that raises through a terminator of the entry is not fired by an
+# 'evaluate' line, since no entry answers 'L_throw': the line leaves it as it
+# is, and the join takes it as the branch that raises (#1874).
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.ρ
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    evaluate:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      𝑛5: [𝑛3, 𝑛4]
+    terminators: [L_throw]
+    𝑛: 𝑛5
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ ρ ↦ ⟦ Δ ⤍ 01- ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ λ ⤍ L_throw ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '𝜎1:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝔻(Φ.a🌵0):
+        𝛿·1·1 := 01-
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
+      𝑛1·1 := 𝜎1:λ:φ  # 𝕄(ξ.a)
+      𝑛2·1 := L_throw:λ  # 𝕄(ξ.b)
+      𝑛3·1 := 𝑛1·1  # 𝔼(𝑛1)
+      𝑛4·1 := L_throw:λ  # 𝔼(𝑛2)
+      terminate(01-, right)  # 𝑛4
+      𝑛5·1 := 𝑛3·1  # [𝑛3, 𝑛4]
+      𝑛·1·1 := 𝑛5·1  # 𝑛
+      𝑛·1·2 := 𝑛5·1  # 𝕄(𝑛·1·1)

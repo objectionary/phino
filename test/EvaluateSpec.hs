@@ -39,7 +39,6 @@ data SymbolPack = SymbolPack
   { symbolic :: String
   , location :: Maybe String
   , input :: String
-  , deep :: Maybe Bool
   , partial :: Maybe Bool
   , acyclic :: Maybe String
   , steps :: Maybe Int
@@ -68,8 +67,7 @@ testSymbols pth = do
       base <- defaultReduceContext loc
       let ctx =
             base
-              { _deep = deep == Just True
-              , _partial = partial == Just True
+              { _partial = partial == Just True
               , _acyclic = mode
               , _memo = cells
               , _steps = Steps (fromMaybe 250 steps) 0

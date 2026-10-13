@@ -4,16 +4,13 @@
 # A firing whose 'dataize' operand was parked gets stuck on the λ function
 # that parked it and never on its own: an entry answers 'L_entry', so blaming
 # it would name a λ function the file carries where the one nothing answers,
-# 'L_none', stands one reduction deeper. The spine parks that name, so the
-# deep walk over the residue writes no second 'unanswered(L_none)' for the one
-# site (#1288, #1300).
+# 'L_none', stands one reduction deeper (#1288).
 symbolic: |
   - λ: L_entry
     dataize:
       𝛿1: $.v
     𝑛: ⟦ ⟧
 location: 'Q.x'
-deep: true
 partial: true
 input: '⟦ x ↦ ⟦ v ↦ ⟦ λ ⤍ L_none ⟧.foo, λ ⤍ L_entry, ρ ↦ ∅ ⟧.z ⟧'
 protocol: |
@@ -22,6 +19,4 @@ protocol: |
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
           unanswered(L_none)  # 𝕄(L_none:λ)
-      stuck(L_none)
-    𝔼(L_entry):
       stuck(L_none)

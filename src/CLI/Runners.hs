@@ -12,7 +12,6 @@ import CLI.Helpers
 import CLI.Types
 import CLI.Validators
 import Condition (parseConditionThrows)
-import Control.Concurrent (rtsSupportsBoundThreads, setNumCapabilities)
 import Control.Exception
 import Control.Monad (unless, when)
 import Data.Foldable (traverse_)
@@ -27,7 +26,7 @@ import Deps (Judgment (..), dontSaveMade)
 import Emit (emitted)
 import Encoding
 import Engine (Engine (..), building, current, stepOf)
-import Evaluate (evaluation, fired)
+import Evaluate (evaluation)
 import Files (overwrite)
 import qualified Filter as F
 import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules, explainRules)
@@ -188,7 +187,7 @@ runDataize OptsDataize{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial False 1 _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
           started universe aiming
           dataize universe emptyState aiming
@@ -246,7 +245,6 @@ runMorph :: OptsMorph -> IO ()
 runMorph OptsMorph{..} = do
   validateOpts
   deadline <- timed _maxSeconds
-  when rtsSupportsBoundThreads (setNumCapabilities _jobs)
   lambdas <- lambdasOf _symbolic
   excluded <- validatedDispatches "hide" _hide
   included <- validatedDispatches "show" _show
@@ -270,7 +268,7 @@ runMorph OptsMorph{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _deep _jobs _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation fired save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Morphing _inside expr ctx
           started universe aiming
           morph universe emptyState aiming
@@ -299,7 +297,6 @@ runMorph OptsMorph{..} = do
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
-      when (_jobs > 1 && not _deep) (invalidCLIArguments "The option --jobs requires --deep, since only the deep walk runs on several workers")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")

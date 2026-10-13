@@ -4,9 +4,9 @@
 # yamllint disable rule:line-length
 # A fork one branch of which is a literal ⊥ is how a program spells "raise
 # unless the condition holds", and the other branch is a perfectly good value.
-# The deep walk fires it, since that ⊥ is an argument the program wrote and no
-# ξ.ρ the walk reduced to nothing, and the join says on which side of the
-# condition the program raises and answers the other side (#1405).
+# An 'evaluate' line fires the good branch and leaves ⊥ as it is (#1874), and
+# the join says on which side of the condition the program raises and answers
+# the other side (#1405).
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -24,23 +24,21 @@ symbolic: |
     morph:
       𝑛1: $.then
       𝑛2: $.else
-    symbolize:
+    evaluate:
       𝑛3: 𝑛1
       𝑛4: 𝑛2
     join:
       𝑛5: [𝑛3, 𝑛4]
     𝑛: 𝑛5
 location: 'Q.@'
-deep: true
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     bool(φ) ↦ ⟦ if ↦ ⟦ ρ ↦ ∅, then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧ ⟧,
     number(φ) ↦ ⟦
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    @ ↦ 5.gt( 0 ).if( then ↦ 1.plus( 2 ), else ↦ ⊥ ).plus( 6 ) ⟧
-result: |-
-  ⟦ φ ↦ 𝜎3:λ, gt(x) ↦ L_number_gt:λ, plus(x) ↦ L_number_plus:λ ⟧
+    @ ↦ 5.gt( 0 ).if( then ↦ 1.plus( 2 ), else ↦ ⊥ ).plus( 6 ).φ ⟧
+result: '𝜎3:λ'
 protocol: |
   𝕄(Φ.φ):
     𝑛·0·1 := 5
@@ -72,38 +70,32 @@ protocol: |
       𝕄(Φ.a🌵3):
         𝑛·2·2 := 1
         𝑛·2·3 := 𝑛·2·2.plus( x ↦ 2 )
-        𝕄(Φ.a🌵3.x):
-          𝑛·2·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
-          𝑛·2·5 := Φ.number( φ ↦ 𝑛·2·4 )
-        𝔼(L_number_plus):
-          𝔻(Φ.a🌵4):
-            𝕄(Φ.a🌵4):
-              𝑛·3·1 := 1
-              𝑛·3·2 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
-            𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
-          𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
-          𝔻(Φ.a🌵5):
-            𝕄(Φ.a🌵5):
-              𝑛·3·3 := Φ.number( φ ↦ 𝑛·2·4 )
-              𝑛·3·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
-            𝛿·3·2 := 40-00-00-00-00-00-00-00  # 2.0
-          𝛿2·3 := 𝛿·3·2  # 𝔻(ξ.x)
-          𝑛·3·5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
-          𝕄(𝑛·3·5):
-            𝑛·3·6 := Φ.number( φ ↦ 𝜎2:λ )
-          𝑛·3·7 := 𝑛·3·6  # 𝕄(𝑛·3·5)
-      𝑛1·2 := 𝑛·3·7  # 𝕄(ξ.then)
+      𝑛1·2 := 𝑛·2·3  # 𝕄(ξ.then)
       𝑛2·2 := ⊥  # 𝕄(ξ.else)
-      𝑛3·2 := 𝑛1·2  # 𝑛1
-      𝑛4·2 := ⊥  # 𝑛2
+      𝔼(L_number_plus):  # 𝔼(𝑛1)
+        𝔻(Φ.a🌵5):
+          𝕄(Φ.a🌵5):
+            𝑛·3·1 := 1
+            𝑛·3·2 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+          𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
+        𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
+        𝔻(Φ.a🌵6):
+          𝕄(Φ.a🌵6):
+            𝑛·3·3 := 2
+            𝑛·3·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
+          𝛿·3·2 := 40-00-00-00-00-00-00-00  # 2.0
+        𝛿2·3 := 𝛿·3·2  # 𝔻(ξ.x)
+        𝑛·3·5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
+        𝕄(𝑛·3·5):
+          𝑛·3·6 := Φ.number( φ ↦ 𝜎2:λ )
+        𝑛·3·7 := 𝑛·3·6  # 𝕄(𝑛·3·5)
+      𝑛3·2 := 𝑛·3·7  # 𝔼(𝑛1)
+      𝑛4·2 := ⊥  # 𝔼(𝑛2)
       terminate(𝔻(𝜎1:λ), right)  # 𝑛4
       𝑛5·2 := 𝑛3·2  # [𝑛3, 𝑛4]
-      𝑛·2·6 := 𝑛5·2  # 𝑛
-      𝑛·2·7 := 𝑛5·2  # 𝕄(𝑛·2·6)
+      𝑛·2·4 := 𝑛5·2  # 𝑛
+      𝑛·2·5 := 𝑛5·2  # 𝕄(𝑛·2·4)
     𝑛·0·5 := 𝑛·3·6.plus( x ↦ 6 )
-    𝕄(Φ.φ.x):
-      𝑛·0·6 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
-      𝑛·0·7 := Φ.number( φ ↦ 𝑛·0·6 )
     𝔼(L_number_plus):
       𝔻(Φ.a🌵7):
         𝕄(Φ.a🌵7):
@@ -111,7 +103,7 @@ protocol: |
       𝛿1·4 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵8):
         𝕄(Φ.a🌵8):
-          𝑛·4·2 := Φ.number( φ ↦ 𝑛·0·6 )
+          𝑛·4·2 := 6
           𝑛·4·3 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
         𝛿·4·1 := 40-18-00-00-00-00-00-00  # 6.0
       𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)

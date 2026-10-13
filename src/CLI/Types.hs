@@ -154,8 +154,6 @@ data OptsMorph = OptsMorph
   , _seed :: Int
   , _quiet :: Bool
   , _partial :: Bool
-  , _deep :: Bool
-  , _jobs :: Int
   , _acyclic :: Maybe Acyclic
   , _compress :: Bool
   , _maxDepth :: Int

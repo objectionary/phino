@@ -6,65 +6,16 @@
 # worked out looks like: ⟦ λ ⤍ 𝜎1 ⟧. Dispatching an attribute off it asks 𝕄 to
 # reduce it, 'ml' fires 𝔼 on the target, and before #1287 𝔼 refused the
 # formation outright — a 'userError' nothing catches, so the whole run died on
-# the first such term and everything standing after it never ran. 𝔼 now gets
-# stuck on the symbol the way it gets stuck on a λ name no entry of the
-# '--symbolic' file answers, so '--partial' parks the site: 'a' is left exactly
-# as it was written, a taint with no root, and the walk goes on to 'b', which
-# fires and computes. The site is written to the protocol as 'unanswered(𝜎1)',
-# spelled the way every term carrying that symbol spells it.
-#
-# The site is recorded twice because the walk passes it twice — once for the
-# dispatch 'x.plus' and once for the application 'x.plus( 5 )' around it — which
-# is what a λ name nothing answers does on this shape too; nothing about the
-# symbol makes it write more than a name would.
-symbolic: |
-  - λ: L_number_plus
-    dataize:
-      𝛿1: $.ρ
-      𝛿2: $.x
-    𝑛: Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ) )
-location: 'Q.demo'
-deep: true
+# the first such term. 𝔼 now gets stuck on the symbol the way it gets stuck on
+# a λ name no entry of the '--symbolic' file answers, so '--partial' parks the
+# site: 'a' is left exactly as it was written, a taint with no root. The site
+# is written to the protocol as 'unanswered(𝜎1)', spelled the way every term
+# carrying that symbol spells it.
+symbolic: '[]'
+location: 'Q.a'
 partial: true
-input: >
-  ⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧,
-    number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    demo ↦ ⟦
-      a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( 5 ),
-      b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ).plus( 5 ) ⟧ ⟧
-result: |-
-  ⟦
-    a ↦ 𝜎1:λ.plus( 5 ),
-    b ↦ ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ), plus(x) ↦ L_number_plus:λ ⟧
-  ⟧
+input: '⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( 5 ) ⟧'
+result: '𝜎1:λ.plus( 5 )'
 protocol: |
-  𝕄(Φ.demo):
-    𝕄(Φ.demo.a):
-      unanswered(𝜎1)  # 𝕄(𝜎1:λ)
-      𝑛·0·1 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-      𝑛·0·2 := Φ.number( φ ↦ 𝑛·0·1 )
-      unanswered(𝜎1)  # 𝕄(𝜎1:λ)
-    𝕄(Φ.demo.b):
-      𝑛·0·3 := Φ.bytes( φ ↦ 𝜎2:λ )
-      𝑛·0·4 := Φ.number( φ ↦ 𝑛·0·3 )
-      𝑛·0·5 := Φ.number( φ ↦ 𝑛·0·3 )
-      𝑛·0·6 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-      𝑛·0·7 := Φ.number( φ ↦ 𝑛·0·6 )
-      𝑛·0·8 := Φ.number( φ ↦ 𝑛·0·3 )
-      𝑛·0·9 := 𝑛·0·8.plus( x ↦ 𝑛·0·7 )
-      𝔼(L_number_plus):
-        𝔻(Φ.a🌵0):
-          𝕄(Φ.a🌵0):
-            𝑛·1·1 := Φ.number( φ ↦ 𝑛·0·3 )
-            𝑛·1·2 := Φ.bytes( φ ↦ 𝜎2:λ )
-        𝛿1·1 := 𝔻(𝜎2:λ)  # 𝔻(ξ.ρ)
-        𝔻(Φ.a🌵1):
-          𝕄(Φ.a🌵1):
-            𝑛·1·3 := Φ.number( φ ↦ 𝑛·0·6 )
-            𝑛·1·4 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-          𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
-        𝛿2·1 := 𝛿·1·1  # 𝔻(ξ.x)
-        𝑛·1·5 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ) )  # 𝑛
-        𝕄(𝑛·1·5):
-          𝑛·1·6 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ) )
-        𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
+  𝕄(Φ.a):
+    unanswered(𝜎1)  # 𝕄(𝜎1:λ)

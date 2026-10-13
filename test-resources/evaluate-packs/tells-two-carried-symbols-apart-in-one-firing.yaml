@@ -12,19 +12,16 @@ symbolic: |
       𝛿2: $.x
     𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 location: 'Q.@'
-deep: true
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     @ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ).plus(
-          Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ) ⟧
-result: '⟦ φ ↦ 𝜎6:λ, plus(x) ↦ L_number_plus:λ ⟧'
+          Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ).φ ⟧
+result: '𝜎6:λ'
 protocol: |
   𝕄(Φ.φ):
     𝑛·0·1 := Φ.number( φ ↦ 𝜎2:λ )
     𝑛·0·2 := 𝑛·0·1.plus( x ↦ Φ.number( φ ↦ 𝜎5:λ ) )
-    𝕄(Φ.φ.x):
-      𝑛·0·3 := Φ.number( φ ↦ 𝜎5:λ )
     𝔼(L_number_plus):
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):

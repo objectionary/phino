@@ -156,8 +156,13 @@ spine, or concluding with no `morph` or `dataize` premise, is refused.
 the `--symbolic` option names, one entry per function: a `λ` key, a regular
 expression over λ names; the operands brought down to data through 𝔻 under
 `dataize`, each binding a bytes meta `𝛿1`; the operands reduced to a normal
-form through 𝕄 under `morph`, each binding an expression meta `𝑛1`; and the
-answer under `𝑛`. No two keys may match one λ name, whether or not either
+form through 𝕄 under `morph`, each binding an expression meta `𝑛1`; the lines
+under `evaluate`, each firing through 𝔼 the term a `morph` meta or an earlier
+line is bound to and binding a meta of its own to the answer (`evaluated` of
+`Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
+formation with no λ and ⊥ as they are, never fires a terminator of its entry,
+and never fires its answer again, so another call takes another line. No two
+keys may match one λ name, whether or not either
 spells it: `Language.hs` reads each key as an automaton and looks for a name
 both accept, refusing a key beyond a regular language, such as a back
 reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
@@ -168,10 +173,17 @@ An entry may name `terminators`, λ functions no key of the file matches, such
 as the `L_throw` EO raises with. A `join` line takes a branch that is a
 formation with one of them, or an application of one, for a branch that
 raises, as it takes ⊥ (`thrown` of `Lambdas.hs` and `paired` of
-`Evaluate.hs`, #1865). The `--deep` walk reduces the arguments of such a copy
-like any other code and never fires the terminator, since no entry answers it,
-and the `terminate` record names the `message` the branch raises with
-(`message` of `Lambdas.hs`), so the error path can be lowered too (#1867).
+`Evaluate.hs`, #1865). The `terminate` record names the `message` the branch
+raises with, as written (`message` of `Lambdas.hs`), so the error path can be
+lowered too (#1867).
+
+A bare symbol, `⟦ λ ⤍ 𝜎k ⟧`, joins too: the `join` of `Lambdas.hs` pairs it
+with the symbol the φ chain of the other branch ends in, and answers a bare
+fresh symbol, dropping the methods. Under `lenient: true` a chain ending in no
+symbol, such as one stopping at a call of an object of the world, still joins
+if the other branch holds exactly one symbol (`goSole` of `joined`, #1817):
+the answer is a copy of that branch with the symbol replaced by a fresh one,
+and nothing outside the two branches is read.
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
@@ -189,12 +201,11 @@ the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)`
 firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment of a
 line is a judgment applied to a term — the intent the value beside it came
 from: the judgment that asked for a firing and the site it was fired at
-(`_site` of `ReduceContext`, which the `--deep` walk refines as it enters a
-binding), and the one that reduced an operand and the term it was reduced
-from. A line no judgment made — a `symbolize` or a `join` one — names a meta
-of the entry instead. The extension of
-the file picks the format: `.xml` gets markup (`Nesting` and `saveEvalXml`),
-anything else the indented text. Both carry the same facts and both stream, so
+(`_site` of `ReduceContext`), and the one that reduced an operand and the term
+it was reduced from. A line no judgment made — a `symbolize` or a `join` one —
+names a meta of the entry instead. The extension of the file picks the format:
+`.xml` gets markup (`Nesting` and `saveEvalXml`), anything else the indented
+text. Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
 the symbol it denotes and spells it `𝜎1` as everywhere else, where the text
 names a line by counting.
@@ -211,17 +222,13 @@ command saves nothing (`dontSaveMade`). The name of the object is counted with
 a stack every record prunes by its depth (`tier`), and from then on
 `abbreviated` writes the object, and the call too, since `copy` makes the same
 object of the same call, by that name wherever a later line holds it whole.
-The line itself, and the call of a `deferred` one, go through
-`abbreviatedInside`, which names the head and each argument and never the call
-as a whole, so an application made again is spelled out again (#1756). The
+The line itself goes through `abbreviatedInside`, which names the head and
+each argument and never the call as a whole, so an application made again is
+spelled out again (#1756). The
 markup writes the head in `of` and the argument in an `<attr>`: its name, the
 symbol where it is a bare one, or the term. Under `--inside` the universe is
 normalized before the heading, so `aimed` of `CLI/Helpers.hs` holds those
-records back and writes them after it. The `--deep` walk makes no new object
-when it stands its answers inside one, so the object keeps its name (#1757):
-a step of `deepened` whose walk changed its term writes `EvComputed` with the
-term before and after, which writes no line and has both writers give the
-term after the name of the term before (`namedCarry`).
+records back and writes them after it.
 
 ### Dependency inversion for circular imports
 
@@ -237,12 +244,11 @@ Evaluation (E) one, with named rules: PRIM, NMZ, LAMBDA, PHI (morphing) and
 DELTA, BOX, NORM (dataization). `Morph.hs` also holds what all three judgments
 share — the context, the step budget, the signals and the premise plumbing —
 so `Dataize.hs` and `Evaluate.hs` import it and nothing points back. Nothing
-but three edges, each injected into the context rather than imported, the way
+but two edges, each injected into the context rather than imported, the way
 `Deps.hs` injects `_buildTerm`: an atom asking phino to reduce an operand of
 its own is a whole run of D, so it goes in as `_reduce` (a `ReductionFunc`),
 and E is reached as `_evaluate` (an `EvaluationFunc`, what an `evaluate`
-premise fires and what answers a normal form) and `_fire` (a `FiringFunc`,
-what the `--deep` walk fires and what answers the raw term the entry wrote).
+premise fires and what answers a normal form).
 All configuration is threaded through
 `ReduceContext` and `RewriteContext` records — no global state. Each
 function has a top-level wrapper that locates the subterm and starts the
@@ -254,9 +260,9 @@ The step budget `--max-steps` is what ends that recursion, and the only thing
 that does unless `morph` or `dataize` is given `--acyclic=<mode>`: the option
 has every 𝕄 and every 𝔻 frame remember the formations its ancestors have
 entered (`entering` and `enter` in `Morph.hs`, one store for both judgments,
-since only `box` and `fire` of 𝔻, `ml` of 𝕄 and the firing of the `--deep`
-walk, `fired` in `Evaluate.hs`, enter one) and park the site the moment a frame
-is about to enter one of them again, the way `--partial` parks a λ that cannot
+since only `box` and `fire` of 𝔻 and `ml` of 𝕄 enter one) and park the site
+the moment a frame is about to enter one of them again, the way `--partial`
+parks a λ that cannot
 fire. The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
 default. Under `proven` two formations are the same up to a renaming of their
 symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
@@ -334,104 +340,6 @@ which the step budget ran out keeps its stall beside the steps it had spent
 (`starved` in `Morph.hs`), and the memo tells it only to a firing that has
 spent at least as many, since the same formation fired at a shallower site may
 bring the operand down (#1514, #1521).
-
-Beside the answers, the memo keeps the bindings of the world the `--deep`
-walk has entered (`visited` and `visit` in `Morph.hs`, asked by `fresh` of
-`deepened`). A copy of an object of the world goes by the name `pathOf` of
-`Builder.hs` gives it, and that name with its applications erased, such as
-`Φ.num`, is a synonym of every copy: the walk enters a binding of `Φ.num` in
-the first copy it meets and leaves it as written in every later one, except
-the voids a copy filled, which belong to that copy alone (#1480), and a body
-reading ξ outside the formations nested in it, which reads the copy it stands
-in and is walked in every copy (`closed` in `Morph.hs`, #1485).
-
-The walk writes back what it made, so one λ fires once per object and not
-once per read (#1720). A `Frame` of `deepened` holds the world, the formation
-the walk stands in and the binding it walks: the formation is a place in the
-world when the walk reached it from the locator, and a store of its own when
-it is a copy or a formation nested in a term (`home`). What a binding comes to
-replaces the binding there (`bindings`), and the answer of a read the walk
-fired through Φ or ξ replaces the binding it read (`noted` and `address`),
-unless that binding holds the site the walk stands at, which it replaces
-anyway once it is done. Every step fires against the world as it stands, as
-the universe and as `_universe`, so a later read of the same attribute, by the
-walk or by a rule, finds the answer and fires nothing. The answer of a read
-through ξ is worked out against the object minus the attribute walked, the
-way #967 reads a dot, and lands in the whole object.
-
-Under `--deep` the head pass of 𝕄 writes back too (#1727). The normalize
-premise of a rule like `md` or `mphi` reads an attribute of a formation, and
-`dot` would copy every sibling that attribute reads into each read before
-anything fires, so each copy would fire on its own. Before the premise runs,
-`prewalked` fires the reads of siblings through ξ in that binding, the way the
-walk fires them (`sibling` of `deepened`), and writes their answers back into
-the formation, so every copy `dot` makes carries the answer. It skips a read
-of ρ, which the walk never writes back, and fires nothing else in the
-binding: the head pass reduces the rest itself, and the walk keeps only what
-a λ answered, so a part it settled to anything else would be reduced twice.
-The reads spend the step budget from the depth the head pass began at, the
-way the walk at the end of 𝕄 does, and not from the step the pass stands at:
-every step of the pass is one deeper, so a read fired after a few of them
-would start with the budget nearly gone (#1731).
-
-The walk does not enter a copy over a bare symbol (#1729). Before a step
-walks a formation (`deferrable` of `deepened`), it checks that the formation
-is `boxed`, has no void, has a φ written as code rather than as a formation,
-and is not the target of a dispatch to an attribute it has. If so, it reads
-every argument written as a dispatch, other than ρ and φ, with `settled`
-under a context that cannot fire and writes nothing (`resolved` and
-`reading`: an empty table, no memo, no tally, no cut). If an argument comes
-to a bare `⟦ λ ⤍ 𝜎k ⟧`, the step answers the formation with a fresh bare
-symbol and writes `deferred(…)` (`EvDeferred` of `Deps.hs`), carrying the
-copy with its arguments read. The `join` of `Lambdas.hs` pairs such a bare
-symbol with the symbol the φ chain of the other branch ends in, and answers
-a bare fresh symbol, dropping the methods. Under `lenient: true` a chain
-ending in no symbol, such as one stopping at a call of an object of the
-world, still joins if the other branch holds exactly one symbol (`goSole`
-of `joined`, #1817): the answer is a copy of that branch with the symbol
-replaced by a fresh one, and nothing outside the two branches is read.
-
-The record also carries the copy as a call of the object of the world it was
-made of (#1732): `called` of `deepened` applies the locator `origin` finds to
-the arguments filling the voids of that object. `origin` follows the ρ of the
-copy, which is Φ when absent, a name with its applications erased (`erased`,
-shared with `synonym`), or a formation, whose own origin it finds first. Of
-the formations declared there whose attributes cover those of the copy,
-`chosen` keeps the one whose voids the copy fills the most and then the one
-sharing the most bindings, so a declaration wins over a copy the walk wrote
-into the world. With no such object, or a tie, the record has no call. The
-text protocol writes the call in place of the copy; the markup writes it as
-`of` and `<with>`, an `<attr>` per argument, `?` for one that is no bare
-symbol, and the copy in `<e>`.
-
-`--jobs` has the walk take the bindings of the formation it starts at side
-by side (`spread` of `deepened`, over `pooled` of `Pool.hs`), each a root of
-its own: it starts from the state the spine left, with a world, a memo, a
-tally, a count of symbols starting where the spine stopped minting, and a
-source of fresh names of its own (`tausOf` in `Tau.hs`, names
-like `a🌵4-0` that carry the binding), and its protocol records are kept
-aside. One binding never sees what another wrote back. They are
-gathered in the order of the bindings, and gathering raises the symbols a
-binding minted by what the bindings before it minted (`lifted` in `AST.hs`,
-`renumbered` in `Deps.hs`), so the answer and the protocol do not depend on
-the order the workers finished in (#1534). The executable is built
-`-threaded` and the run sets as many capabilities as it has jobs.
-
-A cut at the φ of a copy the walk placed answers the copy, the way a deferred
-one is answered (#1735). The firing the walk asks for writes no cut of its
-own: `fired` asks `admitted`, which is `enter` without the record and the
-throw, and throws `Refused` with the mode, the formation the ancestor entered
-and the state. The step that fired catches it (`cut` of `deepened`). If the
-step walks the φ of a formation at a place of the walk (its `standing` is
-given) and the formation is `copied`, the shape `deferrable` asks for too, the
-step writes `looped(…)` with a fresh symbol and the call `called` makes of the
-copy. It then throws `Severed` with the bare symbol, which the step of the copy
-catches around its walk and answers with. Any other step writes the plain
-record and answers nothing, as `refused` does for the second firing of
-`fired`. Under `--jobs` a worker hands `Severed` to `gathered`, which raises
-its symbols as it raises an answer. The markup writes the formation of a cut
-in `<e>`, and for an answered one `of` and `<with>` as for `deferred`, where
-an argument whose φ chain ends in a symbol is spelled as that symbol.
 
 ### Test pattern: YAML packs
 

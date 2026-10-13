@@ -18,7 +18,7 @@ import Dataize (reduction)
 import Deps (Acyclic (Plausible, Proven), Judgment (Morphing), dontSaveEval, dontSaveMade, dontSaveStep)
 import Encoding (Encoding (UNICODE))
 import Engine (Engine (_matching, _normal), building, stepOf, yaml)
-import Evaluate (evaluation, fired)
+import Evaluate (evaluation)
 import Lambdas (Lambdas, readLambdas)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Margin (defaultMargin)
@@ -80,8 +80,6 @@ symbolicCtx acyclic memo minted lambdas locator =
     False
     False
     True
-    True
-    1
     (Just acyclic)
     Morphing
     []
@@ -90,7 +88,6 @@ symbolicCtx acyclic memo minted lambdas locator =
     (building linked)
     reduction
     evaluation
-    fired
     dontSaveStep
     dontSaveEval
     linked
@@ -179,7 +176,7 @@ main = do
     paddings = [0, 400]
     looped :: Int -> Expression -> Lambdas -> IO ()
     looped count universe counters = do
-      locator <- parseExpressionThrows "Φ.l🌵"
+      locator <- parseExpressionThrows "Φ.l🌵.e1"
       runBench (printf "morph/symbolic/accum/%d" count) (symbolic Plausible universe counters locator)
     padded :: Expression -> Int -> Expression -> Expression
     padded method count (ExFormation bds) = ExFormation (map grown bds)
