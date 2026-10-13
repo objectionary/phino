@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The same recursion through 'evaluate' lines, with no '--acyclic' to cut
+# it. Every firing an 'evaluate' line asks for is one step deeper, the way
+# a frame of 𝕄 or 𝔻 is, so the step budget alone ends the run (#1882): the
+# second firing has one step less to morph 'next' with, and starves there.
+# The budget of firings is there only to end the run if the step is ever
+# lost again.
+symbolic: |
+  - λ: L_loop
+    morph:
+      𝑛1: $.next
+    evaluate:
+      𝑛2: 𝑛1
+    𝑛: 𝑛2
+location: 'Q.app'
+steps: 6
+firings: 20
+input: '⟦ loop ↦ ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧, app ↦ Φ.loop.φ ⟧'
+fails: 'reaching the limit of steps'
+protocol: |
+  𝕄(Φ.app):
+    𝔼(L_loop):
+      𝑛1·1 := ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝕄(ξ.next)
+      𝔼(L_loop):  # 𝔼(𝑛1)
+        𝕄(Φ.a🌵1):
+          starved(6)

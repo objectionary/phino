@@ -20,7 +20,7 @@ import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), resit
 import Engine (Engine (..))
 import Lambdas (Lambda (..), Meta (..), joined, matched, message, minted, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, entering, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import Text.Printf (printf)
@@ -151,7 +151,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         fire :: Expression -> IO (Expression, State)
         fire term
           | raising entry term = pure (term, state')
-        fire term@(ExFormation _) = evaluation ctx{_judgment = Evaluation, _site = ExMeta source._name} state' term univ
+        fire term@(ExFormation _) = do
+          entered <- deeper =<< entering term ctx{_judgment = Evaluation, _site = ExMeta source._name}
+          evaluation entered state' term univ
         fire _ = throwIO (Stuck func)
     reshaped :: ReduceContext -> Subst -> (Meta, (Meta, [Y.Rule])) -> IO Subst
     reshaped ctx bound (meta, (source, rules)) = do
