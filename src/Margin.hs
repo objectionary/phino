@@ -44,7 +44,7 @@ instance WithMargin EXPRESSION where
     let single = toSingleLine ex
         main = withMargin' cfg expr
         singleMain = toSingleLine main
-        extra' = T.length (last (T.lines (render main))) + 4
+        extra' = displayWidth (last (T.lines (render main))) + 4
         arg' = withMargin' (2 * indt, margin) argument
         singleArg = toSingleLine arg'
      in if
