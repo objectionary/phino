@@ -238,6 +238,12 @@ optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> 
       found : _ -> Right found
       [] -> Left (printf "The value '%s' can't be used for '--acyclic' option, use --help to check possible values" mode)
 
+optMaxLoops :: Parser Int
+optMaxLoops =
+  option
+    (boundedIntOption >>= validateIntOption (>= 0) "--max-loops must be >= 0")
+    (long "max-loops" <> metavar "LOOPS" <> help "Number of times the reduction may enter again a formation like one it is already inside before --acyclic cuts it, so that a recursion stopping after that many rounds is not cut" <> value 0 <> showDefault)
+
 optSymbolic :: Parser (Maybe FilePath)
 optSymbolic =
   optional
@@ -396,6 +402,7 @@ dataizeParser =
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
             <*> optPartial
             <*> optAcyclic
+            <*> optMaxLoops
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles
@@ -444,6 +451,7 @@ morphParser =
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
             <*> optPartial
             <*> optAcyclic
+            <*> optMaxLoops
             <*> optCompress
             <*> optMaxDepth
             <*> optMaxCycles

@@ -173,14 +173,14 @@ spec = do
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
         minted <- newIORef 0
-        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing Dataization [] Map.empty endless (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty endless (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
     it "parks the step limit as a residual with --partial" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
         minted <- newIORef 0
-        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing minted Nothing Nothing 1 Nothing False True True Nothing Dataization [] Map.empty endless (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 (Steps 40 0) Nothing minted Nothing Nothing 1 Nothing False True True Nothing 0 Dataization [] Map.empty endless (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
@@ -265,12 +265,12 @@ spec = do
     forM_
       [
         ( "--max-cycles"
-        , \minted -> ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing True True False Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked
+        , \minted -> ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , \minted -> ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing True True False Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked
+        , \minted -> ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked
         , "--max-depth=0"
         )
       ]
@@ -283,12 +283,12 @@ spec = do
     it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
       expr <- parseExpressionThrows boxed
       minted <- newIORef 0
-      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
       value `shouldBe` Dataized (BtOne "00")
     it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
       expr <- parseExpressionThrows boxed
       minted <- newIORef 0
-      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
         `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
 
   describe "labels every step with a defined rule or operation" $ do

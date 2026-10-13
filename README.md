@@ -1655,6 +1655,33 @@ nothing reduced under it, as long as nothing new was answered in between.
 Once something was, the formation is fired again, since an operand that could
 not be brought down the first time may come down now.
 
+The `--max-loops=<n>` option makes either mode more patient. A frame is cut
+only once more than `n` of the formations the frames above it entered are the
+same as the one it is about to enter, so a recursion that stops within `n`
+rounds is never cut, and one that goes on is cut `n` rounds later. The default
+is `0`, which cuts on the first repeat. The option needs `--acyclic`, since
+nothing else cuts a loop. Here the second `f` holds `Φ.start`, which the first
+`f` is bound to, under a `Φ.stop`, so `plausible` cuts it, even though `stop`
+answers data at once:
+
+<!-- markdownlint-disable MD013 -->
+
+```bash
+$ cat once.phi
+⟦
+  f ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.again ⟧,
+  start ↦ ⟦ again ↦ Φ.f( x ↦ Φ.stop( v ↦ Φ.start ) ) ⟧,
+  stop ↦ ⟦ v ↦ ∅, again ↦ ⟦ Δ ⤍ 01- ⟧ ⟧,
+  t ↦ Φ.f( x ↦ Φ.start )
+⟧
+$ phino dataize --locator=Q.t --acyclic=plausible once.phi
+[ERROR]: Reduction entered a formation it is already inside: ⟦ x ↦ Φ.stop( v ↦ Φ.start ), φ ↦ x.again ⟧
+$ phino dataize --locator=Q.t --acyclic=plausible --max-loops=1 once.phi
+01-
+```
+
+<!-- markdownlint-enable MD013 -->
+
 ## Rewrite
 
 You can rewrite this expression with the help of [rules](#rule-structure)
