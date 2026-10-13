@@ -22,7 +22,7 @@ import Lambdas (Lambda (..), Meta (..), joined, matched, message, minted, symbol
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, entering, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
-import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import Rule (RuleContext (RuleContext), matchExpressionWithRule', xiFree)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
@@ -88,8 +88,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (fired, state'') <- foldM (evaluated ctx entry) (bound, state') entry._evaluated
       rewrote <- foldM (reshaped ctx) fired entry._rewritten
       stood <- foldM (masked ctx) rewrote entry._symbolized
-      forked <- foldM (paired ctx entry (listToMaybe operands)) stood entry._paired
-      (answer, state''') <- answered ctx entry operands forked state''
+      (forked, joining) <- foldM (paired ctx entry (listToMaybe operands)) (stood, state'') entry._paired
+      (answer, state''') <- answered ctx entry operands forked joining
       remember caller._memo firing answer
       pure (answer, state''')
     shown :: Int -> Answer -> IO ()
@@ -143,18 +143,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     evaluated :: ReduceContext -> Lambda -> (Subst, State) -> (Meta, Meta) -> IO (Subst, State)
     evaluated ctx entry (bound, state') (meta, source) = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      (answer, state'') <- fire term
+      (answer, state'') <- fire ctx entry source state' term
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Evaluation (ExMeta source._name) answer)
       bound' <- bind meta (MvExpression answer) bound
       pure (bound', state'')
-      where
-        fire :: Expression -> IO (Expression, State)
-        fire term
-          | raising entry term = pure (term, state')
-        fire term@(ExFormation _) = do
-          entered <- deeper =<< entering term ctx{_judgment = Evaluation, _site = ExMeta source._name}
-          evaluation entered state' term univ
-        fire _ = throwIO (Stuck func)
+    fire :: ReduceContext -> Lambda -> Meta -> State -> Expression -> IO (Expression, State)
+    fire _ entry _ state' term
+      | raising entry term = pure (term, state')
+    fire ctx _ source state' term@(ExFormation _) = do
+      entered <- deeper =<< entering term ctx{_judgment = Evaluation, _site = ExMeta source._name}
+      evaluation entered state' term univ
+    fire _ _ _ _ _ = throwIO (Stuck func)
     reshaped :: ReduceContext -> Subst -> (Meta, (Meta, [Y.Rule])) -> IO Subst
     reshaped ctx bound (meta, (source, rules)) = do
       term <- buildExpressionThrows (ExMeta source._name) bound
@@ -172,8 +171,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       where
         fact :: (Int, Bytes) -> Evaluation
         fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
-    paired :: ReduceContext -> Lambda -> Maybe (Either Int Bytes) -> Subst -> (Meta, (Meta, Meta)) -> IO Subst
-    paired ctx entry condition bound (meta, (left, right)) = do
+    paired :: ReduceContext -> Lambda -> Maybe (Either Int Bytes) -> (Subst, State) -> (Meta, (Meta, Meta)) -> IO (Subst, State)
+    paired ctx entry condition (bound, state') (meta, (left, right)) = do
       one <- branch left
       two <- branch right
       case (raising entry one, raising entry two) of
@@ -181,21 +180,43 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         (False, True) -> terminating "right" right two one
         _ -> both one two
       where
-        both :: Expression -> Expression -> IO Subst
+        both :: Expression -> Expression -> IO (Subst, State)
         both one two = do
           outcome <- joined entry._lenient one two <$> readIORef ctx._minted
           case outcome of
-            Nothing -> throwIO (Stuck func)
-            Just (term, made, spent) -> do
-              writeIORef ctx._minted spent
-              mapM_ (ctx._saveEval . fact) made
-              ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
-              bind meta (MvExpression term) bound
-        terminating :: T.Text -> Meta -> Expression -> Expression -> IO Subst
+            Just made -> written state' made
+            Nothing
+              | entry._lenient && (hanging one || hanging two) -> do
+                  (one', reducing) <- reduced left one state'
+                  (two', state'') <- reduced right two reducing
+                  outcome' <- joined entry._lenient one' two' <$> readIORef ctx._minted
+                  maybe (throwIO (Stuck func)) (written state'') outcome'
+              | otherwise -> throwIO (Stuck func)
+        written :: State -> (Expression, [(Int, (Int, Int))], Int) -> IO (Subst, State)
+        written state'' (term, made, spent) = do
+          writeIORef ctx._minted spent
+          mapM_ (ctx._saveEval . fact) made
+          ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
+          bound' <- bind meta (MvExpression term) bound
+          pure (bound', state'')
+        reduced :: Meta -> Expression -> State -> IO (Expression, State)
+        reduced side term state''
+          | hanging term = do
+              (normal, morphed) <- morphing univ ctx (ExDispatch term AtPhi) state''
+              ctx._saveEval (EvTerm ctx._nesting side._spelling Morphing (ExDispatch (ExMeta side._name) AtPhi) normal)
+              (answer, state''') <- fire ctx entry side morphed normal
+              ctx._saveEval (EvTerm ctx._nesting side._spelling Evaluation (ExMeta side._name) answer)
+              pure (answer, state''')
+          | otherwise = pure (term, state'')
+        hanging :: Expression -> Bool
+        hanging (ExFormation bds) = not (any isLambda bds) && or [not (xiFree body) | BiTau AtPhi body <- bds]
+        hanging _ = False
+        terminating :: T.Text -> Meta -> Expression -> Expression -> IO (Subst, State)
         terminating side raised fault term = do
           ctx._saveEval (EvTerminate ctx._nesting condition side raised._spelling (message fault))
           ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
-          bind meta (MvExpression term) bound
+          bound' <- bind meta (MvExpression term) bound
+          pure (bound', state')
         branch :: Meta -> IO Expression
         branch named = buildExpressionThrows (ExMeta named._name) bound
         fact :: (Int, (Int, Int)) -> Evaluation
