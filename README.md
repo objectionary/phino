@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.151
+cabal install --overwrite-policy=always phino-0.0.153
 phino --version
 ```
 
@@ -59,7 +59,7 @@ In a [GitHub Actions][gha] workflow, one step downloads the binary
 for the runner and puts it on the `PATH`:
 
 ```yaml
-- uses: objectionary/phino@0.0.151
+- uses: objectionary/phino@0.0.153
   with:
     version-file: phino-version.txt
 - run: phino --version
