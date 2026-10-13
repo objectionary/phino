@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 name: ml
-label: \lambda
+label: \uplambda
 match: '⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧.𝜏1'
 universe: 𝑒1
 conclusion: 𝑛3
