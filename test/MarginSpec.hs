@@ -71,6 +71,27 @@ callee =
     , BiTau (AtLabel "bb") (ExFormation [])
     ]
 
+blocks :: Expression
+blocks =
+  ExFormation
+    [ BiTau (AtLabel "b") (DataString (strToBts "\11035\11035\11035\11035\11035\11035\11035\11035"))
+    , BiTau (AtLabel "c") (ExFormation [])
+    ]
+
+marks :: Expression
+marks =
+  ExFormation
+    [ BiTau (AtLabel "b") (DataString (strToBts "e\769e\769e\769e\769e\769e\769e\769e\769"))
+    , BiTau (AtLabel "c") (ExFormation [])
+    ]
+
+precomposed :: Expression
+precomposed =
+  ExFormation
+    [ BiTau (AtLabel "b") (DataString (strToBts "\233\233\233\233\233\233\233\233"))
+    , BiTau (AtLabel "c") (ExFormation [])
+    ]
+
 spec :: Spec
 spec = do
   describe "withMargin on EX_FORMATION" $ do
@@ -242,6 +263,16 @@ spec = do
   describe "withMargin measures the last line of a call by display width" $
     it "breaks the argument of a call whose callee ends in wide characters" $
       rows wide `shouldBe` rows narrow
+
+  describe "withMargin measures every wide character as two columns" $
+    it "wraps a string of wide characters the way it wraps the same count of CJK ones" $
+      rows blocks `shouldBe` rows wideStringFormation
+
+  describe "withMargin gives a zero-width character no column" $ do
+    it "keeps a string of combining marks on one line, as its precomposed twin stays" $
+      rows marks `shouldBe` rows precomposed
+    it "keeps that string on one line within the margin" $
+      rows marks `shouldBe` 1
   where
     terms :: [(String, Expression)]
     terms =
