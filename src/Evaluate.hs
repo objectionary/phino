@@ -29,7 +29,7 @@ import qualified Yaml as Y
 evaluation :: ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
 evaluation ctx state form univ = case form of
   ExFormation bds
-    | not (any isLambda bds) -> pure (ExTermination, state)
+    | not (any isLambda bds) -> pure (form, state)
     | otherwise -> case lambda bds of
         Just (func, args) -> do
           (raw, state') <- symbol func form args univ state ctx

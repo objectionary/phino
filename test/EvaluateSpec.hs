@@ -141,12 +141,13 @@ spec = do
     forM_
       [ ("carries no binding at all", ExFormation [])
       , ("carries bindings but none of them a λ", ExFormation [BiVoid AtRho])
+      , ("decorates another object instead of firing a λ", ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "bool"))])
       ]
       ( \(desc, form) ->
-          it ("answers ⊥ for a formation that " ++ desc) $ do
+          it ("answers unchanged a formation that " ++ desc) $ do
             answered <- runEvaluate [ArgExpression form, ArgExpression univ]
             case answered of
-              TeExpression expr -> expr `shouldBe` ExTermination
+              TeExpression expr -> expr `shouldBe` form
               _ -> expectationFailure "expected TeExpression"
       )
     it "evaluates a λ-bearing formation to the answer of its entry, normalized" $ do
