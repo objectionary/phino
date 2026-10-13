@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The step a lenient join takes into a branch of #1885, under
+# '--acyclic=proven', over a branch whose φ fires the same fork again: 'z'
+# decorates a call of 'L_fork' whose branch 'a' is 'z' itself. The join morphs
+# the φ of 'z' and fires the fork it comes to, which meets 'z' again, morphs
+# its φ again and comes to the same fork. The step fires the way an 'evaluate'
+# line does, entering the formation it fires (#1882), so the second firing is
+# cut and writes a 'looped' line where it would have opened, and the run parks
+# the first fork.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    lenient: true
+    𝑛: 𝑛3
+location: 'Q.y'
+acyclic: proven
+input: '⟦ z ↦ ⟦ φ ↦ ξ.f, f ↦ ⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧, y ↦ ⟦ a ↦ Φ.z, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ a ↦ Φ.z, b ↦ 𝜎2:λ:φ, λ ⤍ L_fork ⟧.φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := ⟦ φ ↦ f, f ↦ ⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧ ⟧  # 𝕄(ξ.a)
+      𝑛2·1 := 𝜎2:λ:φ  # 𝕄(ξ.b)
+      𝑛1·1 := ⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧  # 𝕄(𝑛1.φ)
+      𝔼(L_fork):  # 𝔼(𝑛1)
+        𝑛1·2 := ⟦ φ ↦ f, f ↦ ⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧ ⟧  # 𝕄(ξ.a)
+        𝑛2·2 := 𝜎1:λ:φ  # 𝕄(ξ.b)
+        𝑛1·2 := ⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧  # 𝕄(𝑛1.φ)
+        looped(⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧)  # 𝔼(𝑛1), proven

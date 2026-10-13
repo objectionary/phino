@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The fork the lenient join of #1885 gets through, under an entry that does
+# not say 'lenient: true'. The branch that is an ordinary object stays as 𝕄
+# left it, a formation whose φ reads its own attribute, so the strict join
+# refuses it beside a bare symbol and the firing gets stuck.
+symbolic: |
+  - λ: L_eq
+    𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    𝑛: 𝑛3
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ξ.eq, eq ↦ ⟦ λ ⤍ L_eq ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := ⟦ φ ↦ eq, eq ↦ L_eq:λ ⟧  # 𝕄(ξ.a)
+      𝑛2·1 := 𝜎1:λ:φ  # 𝕄(ξ.b)
+      stuck(L_fork)

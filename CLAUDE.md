@@ -183,7 +183,12 @@ fresh symbol, dropping the methods. Under `lenient: true` a chain ending in no
 symbol, such as one stopping at a call of an object of the world, still joins
 if the other branch holds exactly one symbol (`goSole` of `joined`, #1817):
 the answer is a copy of that branch with the symbol replaced by a fresh one,
-and nothing outside the two branches is read.
+and nothing outside the two branches is read. When that fails too, a lenient
+entry morphs the φ of a branch that is a formation with no λ whose φ reads ξ,
+fires what it comes to through 𝔼 the way an `evaluate` line does, and joins
+once more (`reduced` of `paired` in `Evaluate.hs`, #1885). The step is taken
+once, and it fires through `fire`, as an `evaluate` line does, so the step
+budget and `--acyclic` bound it.
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`

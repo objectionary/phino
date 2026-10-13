@@ -390,6 +390,19 @@ answers a copy of the second term with `𝜎2` replaced by a fresh `𝜎3`, whic
 stands for either `𝜎1` or `𝜎2`. The copy keeps every binding of the term, `ρ`
 included. A term with no symbol, or with two, is still refused.
 
+A lenient entry takes one more step before it gives up. A branch may be an
+ordinary object, such as `⟦ φ ↦ ξ.eq, eq ↦ ⟦ λ ⤍ L_eq ⟧ ⟧`: a formation with
+no `λ`, whose `φ` reads an attribute of the object itself. Morphing stops at a
+formation, so the value of such a branch stays one call away and it joins with
+nothing. When a join fails, a lenient entry morphs the `φ` of every such
+branch, fires what it comes to, the way an `evaluate` line does, and joins
+once more. The step is taken once and is written to the protocol like any
+operand. Its firing counts against `--max-steps`, as one of an `evaluate`
+line does, and `--acyclic` cuts it when it fires again what it fired before.
+A branch whose `φ` reads nothing of its own object, such as
+`⟦ φ ↦ Φ.bool( … ) ⟧`, is left as it is, since morphing it only expands the
+call.
+
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
 has a perfectly good value on the other. The join then mints nothing, binds
