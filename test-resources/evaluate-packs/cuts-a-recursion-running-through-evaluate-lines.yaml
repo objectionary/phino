@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A recursion that runs through 'evaluate' lines alone, under
+# '--acyclic=proven'. 'L_loop' morphs 'next' to the very formation it was
+# fired from, and its 'evaluate' line fires that formation again. The line
+# enters the formation the way 'ml' does, so the second firing is cut before
+# it opens and writes a 'looped' line where its block would have stood
+# (#1882). The budget of firings is there only to end the run if the cut
+# is ever lost again.
+symbolic: |
+  - λ: L_loop
+    morph:
+      𝑛1: $.next
+    evaluate:
+      𝑛2: 𝑛1
+    𝑛: 𝑛2
+location: 'Q.app'
+acyclic: proven
+firings: 5
+input: '⟦ loop ↦ ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧, app ↦ Φ.loop.φ ⟧'
+result: '⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧.φ'
+protocol: |
+  𝕄(Φ.app):
+    𝔼(L_loop):
+      𝑛1·1 := ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝕄(ξ.next)
+      looped(⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧)  # 𝔼(𝑛1), proven

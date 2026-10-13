@@ -279,6 +279,8 @@ entrance Dataization term@(ExFormation bds)
   | boxed bds || isJust (lambda bds) = Just term
 entrance Morphing (ExDispatch form@(ExFormation bds) _)
   | isJust (lambda bds) = Just form
+entrance Evaluation term@(ExFormation bds)
+  | isJust (lambda bds) = Just term
 entrance _ _ = Nothing
 
 boxed :: [Binding] -> Bool

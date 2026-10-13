@@ -260,8 +260,10 @@ The step budget `--max-steps` is what ends that recursion, and the only thing
 that does unless `morph` or `dataize` is given `--acyclic=<mode>`: the option
 has every 𝕄 and every 𝔻 frame remember the formations its ancestors have
 entered (`entering` and `enter` in `Morph.hs`, one store for both judgments,
-since only `box` and `fire` of 𝔻 and `ml` of 𝕄 enter one) and park the site
-the moment a frame is about to enter one of them again, the way `--partial`
+since only `box` and `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line, `fire` of
+`evaluated` in `Evaluate.hs`, enter one, and the line spends a step of
+`deeper` as a frame does, #1882) and park the site the moment a frame is about
+to enter one of them again, the way `--partial`
 parks a λ that cannot
 fire. The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
 default. Under `proven` two formations are the same up to a renaming of their

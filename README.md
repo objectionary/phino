@@ -182,7 +182,9 @@ does anywhere else, and `--partial` parks it. A λ function the entry names
 under `terminators` is not fired at all, since it raises rather than answers.
 An answer is not fired again, even when it is one more call: firing it takes
 one more line, so how many calls an entry makes is written in its file and not
-guessed by `phino`.
+guessed by `phino`. Each firing of a line is one step deeper, the way a frame
+of 𝕄 or 𝔻 is, so a recursion running through `evaluate` lines alone spends
+`--max-steps` and is cut by `--acyclic` like any other.
 
 The protocol writes the firing of a line as a block of its own, commented with
 the meta it fired, `𝔼(L_second):  # 𝔼(𝑛2)`, and the line binding the answer
@@ -1400,14 +1402,15 @@ $ phino morph --symbolic=loop.yaml --locator='Q.x' --max-steps=40 loop.phi
 ```
 
 The `--acyclic=<mode>` option makes a reduction notice. Every frame of 𝕄 and
-of 𝔻 remembers the formations the frames above it have entered, and only three
-places enter one: `fire` of 𝔻 and `ml` of 𝕄, which fire the λ function of a
-formation, and `box` of 𝔻, which gets into the `φ` body of a formation carrying
-no λ and no `Δ`. A frame about to enter a formation one of the frames
-above it has already entered is asking a question only ever answered by asking
-it again, so the option stops there and parks the site the way `--partial`
-parks a λ function that cannot fire: the answer is the term the spine had
-reached, left where it stood, and the command exits successfully.
+of 𝔻 remembers the formations the frames above it have entered, and only four
+places enter one: `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line of an entry,
+which fire the λ function of a formation, and `box` of 𝔻, which gets into the
+`φ` body of a formation carrying no λ and no `Δ`. A frame about to enter a
+formation one of the frames above it has already entered is asking a question
+only ever answered by asking it again, so the option stops there and parks the
+site the way `--partial` parks a λ function that cannot fire: the answer is the
+term the spine had reached, left where it stood, and the command exits
+successfully.
 
 ```bash
 $ phino morph --symbolic=loop.yaml --locator='Q.x' --acyclic=proven \
