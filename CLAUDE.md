@@ -276,7 +276,11 @@ symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
 every round and never repeats a term (#1420). Under `plausible` the earlier one
 is embedded in the later one (`within` in `AST.hs`), so a recursion whose
 accumulator gains a wrapper every round is cut too, at the price of cutting
-now and then one that would have stopped (#1451). A judgment started at a site
+now and then one that would have stopped (#1451). `--max-loops=<n>`
+(`_maxLoops` of `ReduceContext`) softens either mode: `enter` cuts a frame only
+once more than `n` of the formations above it are the same as its own, so a
+recursion stopping within `n` rounds, such as the `or` inside `abs` of EO
+reaching `or` once more, gets through (#1889). A judgment started at a site
 opens a block of the protocol, `𝔻(…):` or `𝕄(…):` with the site (`EvStarted`,
 written by `opening` of `Morph.hs`), and what it does stands under it, unless
 the block it stands in is the same judgment at the same site (`_opened` of

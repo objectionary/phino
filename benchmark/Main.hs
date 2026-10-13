@@ -81,6 +81,7 @@ symbolicCtx acyclic memo minted lambdas locator =
     False
     True
     (Just acyclic)
+    0
     Morphing
     []
     Map.empty

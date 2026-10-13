@@ -187,7 +187,7 @@ runDataize OptsDataize{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
           started universe aiming
           dataize universe emptyState aiming
@@ -213,6 +213,7 @@ runDataize OptsDataize{..} = do
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
+      when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
@@ -268,7 +269,7 @@ runMorph OptsMorph{..} = do
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Morphing _inside expr ctx
           started universe aiming
           morph universe emptyState aiming
@@ -297,6 +298,7 @@ runMorph OptsMorph{..} = do
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
+      when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when
         (isJust _inside && _locator /= "Q")
         (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")

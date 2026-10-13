@@ -110,6 +110,7 @@ data OptsDataize = OptsDataize
   , _quiet :: Bool
   , _partial :: Bool
   , _acyclic :: Maybe Acyclic
+  , _maxLoops :: Int
   , _compress :: Bool
   , _maxDepth :: Int
   , _maxCycles :: Int
@@ -155,6 +156,7 @@ data OptsMorph = OptsMorph
   , _quiet :: Bool
   , _partial :: Bool
   , _acyclic :: Maybe Acyclic
+  , _maxLoops :: Int
   , _compress :: Bool
   , _maxDepth :: Int
   , _maxCycles :: Int

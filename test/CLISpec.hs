@@ -1444,6 +1444,32 @@ spec = do
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
           testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=proven"] ["01-02"]
 
+    describe "--max-loops" $ do
+      let once = "⟦ f ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.again ⟧, start ↦ ⟦ again ↦ Φ.f( x ↦ Φ.stop( v ↦ Φ.start ) ) ⟧, stop ↦ ⟦ v ↦ ∅, again ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, t ↦ Φ.f( x ↦ Φ.start ) ⟧"
+      it "cuts a recursion that stops after one round without the flag" $
+        withStdin once $
+          testCLIFailed
+            ["dataize", "--locator=Q.t", "--acyclic=plausible"]
+            ["[ERROR]: Reduction entered a formation it is already inside:"]
+
+      it "dataizes a recursion that stops after one round with --max-loops=1" $
+        withStdin once $
+          testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=1"] ["01-"]
+
+      it "cuts a recursion that never stops with --max-loops=1" $
+        withStdin "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧" $
+          testCLIFailed
+            ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-loops=1", "--max-steps=4000"]
+            ["[ERROR]: Reduction entered a formation it is already inside:"]
+
+      it "refuses a negative count" $
+        withStdin once $
+          testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=-1"] ["--max-loops must be >= 0"]
+
+      it "refuses the flag without --acyclic" $
+        withStdin once $
+          testCLIFailed ["dataize", "--locator=Q.t", "--max-loops=1"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
+
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
         testCLISucceeded
@@ -2946,6 +2972,22 @@ spec = do
           testCLISucceeded
             ["morph", symbolic, "--acyclic=proven", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
             ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+
+    describe "--max-loops" $ do
+      it "fires a looping λ function once more with --max-loops=1" $
+        loopingLambdas $ \endless ->
+          withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧" $
+              testCLISucceeded
+                ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-loops=1", "--protocol=" ++ path, "--quiet"]
+                []
+            records <- readProtocol path
+            length (filter (isInfixOf "𝔼(L_loop)") (lines records)) `shouldBe` 2
+
+      it "refuses the flag without --acyclic" $
+        withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧" $
+          testCLIFailed ["morph", "--locator=Q.x", "--max-loops=3"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
 
     describe "fails" $ do
       it "with --output=xmir on a top formation of several bindings" $

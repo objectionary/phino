@@ -96,6 +96,7 @@ data ReduceContext = ReduceContext
   , _shuffle :: Bool
   , _partial :: Bool
   , _acyclic :: Maybe Acyclic
+  , _maxLoops :: Int
   , _judgment :: Judgment
   , _parked :: [T.Text]
   , _entered :: Seen
@@ -256,7 +257,7 @@ enter form ctx = maybe (pure ctx) remembered ctx._acyclic
   where
     remembered :: Acyclic -> IO ReduceContext
     remembered mode =
-      awaited (find (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered)) >>= \case
+      awaited (listToMaybe (drop ctx._maxLoops (filter (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered)))) >>= \case
         Just before -> do
           ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
           throwIO (Looping form)

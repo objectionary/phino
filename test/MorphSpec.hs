@@ -253,3 +253,17 @@ spec = do
       ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
       timeout 10000000 (enter (formation ExXi 1700) ctx)
         `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))
+
+  describe "enters a formation again as many times as --max-loops allows" $ do
+    it "enters a formation holding the one entered above it under --max-loops=1" $ do
+      let formation :: Int -> Expression
+          formation depth = ExFormation [BiTau (AtLabel "kv") (iterate (`ExDispatch` AtLabel "zu") ExRoot !! depth), BiLambda (Function "L_hop")]
+      base <- defaultReduceContext ExRoot
+      ctx <- enter (formation 4) =<< enter (formation 3) base{_acyclic = Just Plausible, _maxLoops = 1}
+      length (concat ctx._entered) `shouldBe` 2
+    it "cuts a formation holding the two entered above it under --max-loops=1" $ do
+      let formation :: Int -> Expression
+          formation depth = ExFormation [BiTau (AtLabel "qe") (iterate (`ExDispatch` AtLabel "yo") ExRoot !! depth), BiLambda (Function "L_kit")]
+      base <- defaultReduceContext ExRoot
+      (enter (formation 7) =<< enter (formation 6) =<< enter (formation 5) base{_acyclic = Just Plausible, _maxLoops = 1})
+        `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
