@@ -5,7 +5,7 @@
 latex: |-
   \begin{phinoMorphingInference}
     \phinoName{ml}
-    \phinoLabel{\lambda}
+    \phinoLabel{\uplambda}
     \phinoPremise{ \phinoEvaluate{ [[ B_1, L> f, B_2 ]] }{ e }{ s_1 }{ n_1 }{ s_2 } }
     \phinoPremise{ \phinoNormalize{ n_1 . \tau }{ n_2 } }
     \phinoPremise{ \phinoMorph{ n_2 }{ e }{ s_2 }{ n_3 }{ s_3 } }

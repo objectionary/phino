@@ -5,7 +5,7 @@
 latex: |-
   \begin{phinoMorphingInference}
     \phinoName{mphi}
-    \phinoLabel{\varphi}
+    \phinoLabel{\upvarphi}
     \phinoCondition{ @ \in B \phiText{and} [ \tau \char44{} L ] \cap B = \emptyset }
     \phinoPremise{ \phinoNormalize{ [[ B ]] . @ . \tau }{ n_1 } }
     \phinoPremise{ \phinoMorph{ n_1 }{ e }{ s_1 }{ n_2 }{ s_2 } }
