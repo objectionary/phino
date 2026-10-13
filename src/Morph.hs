@@ -1,47 +1,43 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, FiringFunc, Memo (..), ReductionFunc, Morphed, Refused (..), Steps (..), Tally (..), admitted, boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
-import Builder (buildExpressionThrows, nameIn, pathOf)
+import Builder (buildExpressionThrows, nameIn)
 import Control.Applicative ((<|>))
-import Control.Exception (Exception, SomeException, catch, evaluate, throwIO, try)
-import Control.Monad (unless, when)
-import Data.Bifunctor (first)
-import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
+import Control.Exception (Exception, catch, evaluate, throwIO, try)
+import Control.Monad (when)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isJust, listToMaybe)
-import qualified Data.Set as Set
+import Data.Maybe (isJust, listToMaybe)
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveEval, dontSaveStep, renumbered)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
-import Lambdas (Lambdas, emptyLambdas)
+import Lambdas (Lambdas)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
 import Must (Must (..))
-import Pool (pooled)
 import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
 import Rule (RuleContext (RuleContext))
 import System.Timeout (timeout)
-import Tau (tausOf)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
 
@@ -50,8 +46,6 @@ type Morphed = (Expression, NonEmpty Rewritten)
 type ReductionFunc = Expression -> ReduceContext -> Expression -> State -> IO (Maybe Bytes, State)
 
 type EvaluationFunc = ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
-
-type FiringFunc = Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression, State)
 
 emptyState :: State
 emptyState = State Nothing Nothing
@@ -71,7 +65,7 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IORef Int) (IORef Int) (IORef (Set.Set (Expression, Attribute)))
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IORef Int) (IORef Int)
 
 type Answer = (Expression, Expression)
 
@@ -84,8 +78,6 @@ data Kept
   | Stalled T.Text Int
 
 type Store answer = Map.Map Int [(Expression, answer)]
-
-data Frame = Frame (IORef Expression) (IORef Expression) Expression (Maybe Attribute)
 
 data ReduceContext = ReduceContext
   { _locator :: Expression
@@ -103,8 +95,6 @@ data ReduceContext = ReduceContext
   , _depthSensitive :: Bool
   , _shuffle :: Bool
   , _partial :: Bool
-  , _deep :: Bool
-  , _jobs :: Int
   , _acyclic :: Maybe Acyclic
   , _judgment :: Judgment
   , _parked :: [T.Text]
@@ -113,7 +103,6 @@ data ReduceContext = ReduceContext
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
-  , _fire :: FiringFunc
   , _saveStep :: SaveStepFunc
   , _saveEval :: SaveEvalFunc
   , _engine :: Engine
@@ -154,18 +143,6 @@ instance Show ReduceException where
   show (Undataizable term _) = printf "no dataization rule matched, while dataization expects a normal form: %s" (printExpression term)
   show (Unmorphable term) = printf "Morphing expects a normal form, but no morphing rule matches: %s" (printExpression term)
 
-data Refused = Refused Acyclic Expression State
-  deriving anyclass (Exception)
-
-instance Show Refused where
-  show (Refused _ before _) = show (Looping before)
-
-data Severed = Severed Expression State
-  deriving anyclass (Exception)
-
-instance Show Severed where
-  show (Severed answer _) = printf "The deep walk answered a copy it cut with %s" (printExpression answer)
-
 deeper :: ReduceContext -> IO ReduceContext
 deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   clocked ctx
@@ -177,7 +154,7 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   where
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
-    starve (Just (Memo _ _ _ exhausted _)) = modifyIORef' exhausted (+ 1)
+    starve (Just (Memo _ _ _ exhausted)) = modifyIORef' exhausted (+ 1)
 
 tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
@@ -212,12 +189,12 @@ expired ctx cap = do
   throwIO (OutOfTime cap)
 
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> newIORef Set.empty)
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0)
 memoized _ = pure Nothing
 
 recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
 recalled Nothing _ _ = pure Nothing
-recalled (Just (Memo store _ answers _ _)) form spent = do
+recalled (Just (Memo store _ answers _)) form spent = do
   kept <- readIORef store
   count <- readIORef answers
   let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
@@ -232,34 +209,26 @@ recalled (Just (Memo store _ answers _ _)) form spent = do
 
 counted :: Maybe Memo -> IO Int
 counted Nothing = pure 0
-counted (Just (Memo _ _ answers _ _)) = readIORef answers
+counted (Just (Memo _ _ answers _)) = readIORef answers
 
 starved :: Maybe Memo -> IO Int
 starved Nothing = pure 0
-starved (Just (Memo _ _ _ exhausted _)) = readIORef exhausted
+starved (Just (Memo _ _ _ exhausted)) = readIORef exhausted
 
 retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
 retained Nothing _ _ _ = pure ()
-retained (Just (Memo store _ _ _ _)) form stamp kept =
+retained (Just (Memo store _ _ _)) form stamp kept =
   modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
 
 remembered :: Maybe Memo -> Firing -> IO (Maybe Answer)
 remembered Nothing _ = pure Nothing
-remembered (Just (Memo _ firings _ _ _)) firing = Map.lookup firing <$> readIORef firings
+remembered (Just (Memo _ firings _ _)) firing = Map.lookup firing <$> readIORef firings
 
 remember :: Maybe Memo -> Firing -> Answer -> IO ()
 remember Nothing _ _ = pure ()
-remember (Just (Memo _ firings answers _ _)) firing answer = do
+remember (Just (Memo _ firings answers _)) firing answer = do
   modifyIORef' firings (Map.insert firing answer)
   modifyIORef' answers (+ 1)
-
-visited :: Maybe Memo -> Expression -> Attribute -> IO Bool
-visited Nothing _ _ = pure False
-visited (Just (Memo _ _ _ _ walked)) object attr = Set.member (object, attr) <$> readIORef walked
-
-visit :: Maybe Memo -> Expression -> Attribute -> IO ()
-visit Nothing _ _ = pure ()
-visit (Just (Memo _ _ _ _ walked)) object attr = modifyIORef' walked (Set.insert (object, attr))
 
 parking :: NonEmpty Rewritten -> State -> IO a -> IO a
 parking seq state action = action `catch` rethrow
@@ -283,20 +252,15 @@ entering :: Expression -> ReduceContext -> IO ReduceContext
 entering term ctx = maybe (pure ctx) (`enter` ctx) (entrance ctx._judgment term)
 
 enter :: Expression -> ReduceContext -> IO ReduceContext
-enter form ctx = admitted form ctx >>= either refuse pure
+enter form ctx = maybe (pure ctx) remembered ctx._acyclic
   where
-    refuse :: (Acyclic, Expression) -> IO ReduceContext
-    refuse (mode, before) = do
-      looped ctx mode before Nothing
-      throwIO (Looping form)
-
-admitted :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) ReduceContext)
-admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
-  where
-    remembered :: Acyclic -> IO (Either (Acyclic, Expression) ReduceContext)
+    remembered :: Acyclic -> IO ReduceContext
     remembered mode =
-      maybe (Right ctx{_entered = seenInsert (digest mode form) form ctx._entered}) (Left . (mode,))
-        <$> awaited (find (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered))
+      awaited (find (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered)) >>= \case
+        Just before -> do
+          ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
+          throwIO (Looping form)
+        Nothing -> pure ctx{_entered = seenInsert (digest mode form) form ctx._entered}
     awaited :: Maybe Expression -> IO (Maybe Expression)
     awaited found = case ctx._deadline of
       Nothing -> pure found
@@ -309,12 +273,6 @@ admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
     repeated :: Acyclic -> Expression -> Expression -> Bool
     repeated Proven form before = alike form before
     repeated Plausible form before = within before form
-
-refused :: ReduceContext -> Refused -> IO (Maybe Expression, State)
-refused ctx (Refused mode before reached) = (Nothing, reached) <$ looped ctx mode before Nothing
-
-looped :: ReduceContext -> Acyclic -> Expression -> Maybe (Int, Maybe Expression) -> IO ()
-looped ctx mode before answer = ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site answer)
 
 entrance :: Judgment -> Expression -> Maybe Expression
 entrance Dataization term@(ExFormation bds)
@@ -355,26 +313,9 @@ morph' start univ state entry = go start univ state entry
             seq' <- leadsTo seq step built ctx
             pure ((built, seq'), state')
           Just (In.Onward way built world, state') -> do
-            (walked, state'') <- prewalked way built univ state' ctx{_steps = entry._steps}
-            (morphed, state''') <- onward seq state'' way walked ctx
-            go morphed world state''' ctx
+            (morphed, state'') <- onward seq state' way built ctx
+            go morphed world state'' ctx
           Nothing -> throwIO (Unmorphable expr)
-
-prewalked :: In.Way -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-prewalked (In.Normalized _) expr univ state ctx
-  | ctx._deep = go expr
-  where
-    go :: Expression -> IO (Expression, State)
-    go (ExDispatch target@(ExDispatch _ _) attr) = first (`ExDispatch` attr) <$> go target
-    go (ExDispatch form@(ExFormation bds) attr)
-      | attr /= AtRho && reading attr bds && all tau bds = first (`ExDispatch` attr) <$> deepened (Just attr) form univ state ctx
-    go term = pure (term, state)
-    tau :: Binding -> Bool
-    tau (BiTau _ _) = True
-    tau _ = False
-    reading :: Attribute -> [Binding] -> Bool
-    reading attr bds = maybe False (not . closed) (listToMaybe [body | BiTau attr' body <- bds, attr' == attr])
-prewalked _ expr _ state _ = pure (expr, state)
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do
@@ -382,314 +323,16 @@ morph universe state caller@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
   result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
-    Right ((morphed, seq), state') -> walked (walking ctx) morphed seq state'
-    Left (StuckAt func seq parked) | _partial -> do
-      residue <- locatedExpression _locator (fst (NE.head seq))
-      walked (marked ctx func) residue seq parked{_stuck = Just func}
-    Left (OutOfStepsAt _ seq parked) | _partial -> do
-      residue <- locatedExpression _locator (fst (NE.head seq))
-      walked (walking ctx) residue seq parked
-    Left (LoopingAt _ seq parked) -> do
-      residue <- locatedExpression _locator (fst (NE.head seq))
-      walked (walking ctx) residue seq parked
+    Right ((morphed, seq), state') -> pure (morphed, reverse (NE.toList seq), state')
+    Left (StuckAt func seq parked) | _partial -> residue seq parked{_stuck = Just func}
+    Left (OutOfStepsAt _ seq parked) | _partial -> residue seq parked
+    Left (LoopingAt _ seq parked) -> residue seq parked
     Left failure -> throwIO (failure :: ReduceException)
   where
-    walking :: ReduceContext -> ReduceContext
-    walking ctx = ctx{_judgment = Morphing}
-    marked :: ReduceContext -> T.Text -> ReduceContext
-    marked ctx func = (walking ctx){_parked = func : _parked}
-    walked :: ReduceContext -> Expression -> NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
-    walked walker morphed seq state'
-      | not _deep = pure (morphed, reverse (NE.toList seq), state')
-      | otherwise = do
-          (deep, state'') <- deepened Nothing morphed universe state' walker
-          seq' <- leadsTo seq (Morphing, "deep") deep walker
-          pure (deep, reverse (NE.toList seq'), state'')
-
-deepened :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-deepened focus expr univ state ctx = do
-  world <- newIORef (fromMaybe univ ctx._universe)
-  case focus of
-    Just attr -> do
-      (store, path) <- home Nothing world expr
-      body <- held (ExDispatch path attr) store
-      (entered, state') <- sibling Nothing (Frame world store path (Just attr)) body state ctx
-      when (entered /= body) (stored store (ExDispatch path attr) entered)
-      (,state') <$> held path store
-    Nothing -> step (if ctx._jobs > 1 then spread else parts) (Just ctx._site) Nothing (Frame world world ctx._site Nothing) expr state ctx
-  where
-    go :: Maybe Expression -> Maybe Attribute -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    go = step parts
-    step :: (Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)) -> Maybe Expression -> Maybe Attribute -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    step walk standing dispatched frame@(Frame world _ _ _) term state' caller = do
-      here <- maybe (pure caller) (\loc -> opening Morphing caller{_site = loc}) standing
-      ctx' <- deeper here
-      copy <- deferrable dispatched world term state' here
-      case copy of
-        Just form -> deferred form state' here
-        Nothing -> do
-          outcome <- try (walk standing frame term state' here)
-          case outcome of
-            Left (Severed answer reached) -> pure (answer, reached)
-            Right (walked, walkedState) -> do
-              when (walked /= term) (here._saveEval (EvComputed here._nesting term walked))
-              placed <- ctx._engine._contextualize walked =<< context frame
-              current <- readIORef world
-              (answer, answered) <- ctx'._fire dispatched placed current walkedState ctx'{_universe = Just current} `catch` cut standing frame ctx'
-              mapM_ (noted here._site frame walked) answer
-              pure (fromMaybe walked answer, answered)
-    cut :: Maybe Expression -> Frame -> ReduceContext -> Refused -> IO (Maybe Expression, State)
-    cut (Just _) (Frame _ store path (Just AtPhi)) caller refusal@(Refused mode before reached) = do
-      form <- held path store
-      if copied form
-        then do
-          fresh <- coined caller
-          looped caller mode before (Just (fresh, called form))
-          throwIO (Severed (ExFormation [BiLambda (FnSymbol fresh)]) reached)
-        else refused caller refusal
-    cut _ _ caller refusal = refused caller refusal
-    copied :: Expression -> Bool
-    copied (ExFormation bds) = boxed bds && not (any abstract bds) && any code bds
-    copied _ = False
-    deferrable :: Maybe Attribute -> IORef Expression -> Expression -> State -> ReduceContext -> IO (Maybe Expression)
-    deferrable dispatched world form@(ExFormation bds) state' caller
-      | copied form && maybe True (\attr -> not (any (named attr) bds)) dispatched = do
-          current <- readIORef world
-          known <- mapM (resolved current form state' caller) bds
-          pure (if any bare known then Just (ExFormation known) else Nothing)
-    deferrable _ _ _ _ _ = pure Nothing
-    code :: Binding -> Bool
-    code (BiTau AtPhi (ExFormation _)) = False
-    code (BiTau AtPhi _) = True
-    code _ = False
-    bare :: Binding -> Bool
-    bare (BiTau attr (ExFormation [BiLambda (FnSymbol _)])) = attr /= AtPhi && attr /= AtRho
-    bare _ = False
-    resolved :: Expression -> Expression -> State -> ReduceContext -> Binding -> IO Binding
-    resolved current form state' caller bd@(BiTau attr body@(ExDispatch _ _))
-      | attr /= AtPhi && attr /= AtRho = do
-          placed <- ctx._engine._contextualize body (scope attr form)
-          outcome <- try (settled placed current state' (reading current caller))
-          case outcome of
-            Right (made@(ExFormation [BiLambda (FnSymbol _)]), _) -> pure (BiTau attr made)
-            Left (OutOfTime cap) -> expired caller cap
-            _ -> pure bd
-    resolved _ _ _ _ bd = pure bd
-    reading :: Expression -> ReduceContext -> ReduceContext
-    reading current caller =
-      caller
-        { _universe = Just current
-        , _symbolic = emptyLambdas
-        , _memo = Nothing
-        , _tally = Nothing
-        , _acyclic = Nothing
-        , _deep = False
-        , _saveStep = dontSaveStep
-        , _saveEval = dontSaveEval
-        }
-    deferred :: Expression -> State -> ReduceContext -> IO (Expression, State)
-    deferred copy state' caller = do
-      fresh <- coined caller
-      caller._saveEval (EvDeferred caller._nesting fresh caller._judgment copy (called copy) caller._site)
-      pure (ExFormation [BiLambda (FnSymbol fresh)], state')
-    coined :: ReduceContext -> IO Int
-    coined caller = atomicModifyIORef' caller._minted (\count -> (count + 1, count + 1))
-    called :: Expression -> Maybe Expression
-    called copy@(ExFormation bds) = do
-      (path, declared) <- origin copy
-      pure (foldl ExApplication path [ArTau attr value | BiTau attr value <- bds, attr /= AtRho, BiVoid attr `elem` declared])
-    called _ = Nothing
-    origin :: Expression -> Maybe (Expression, [Binding])
-    origin (ExFormation bds) = do
-      parent <- case filter ((== Just AtRho) . attributeFromBinding) bds of
-        [] -> Just ExRoot
-        [BiTau AtRho form@(ExFormation _)] -> fst <$> origin form
-        [BiTau AtRho path] -> Just (erased path)
-        _ -> Nothing
-      ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
-      chosen bds [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
-      where
-        fits :: [Binding] -> Bool
-        fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- bds, attributeFromBinding bd /= Just AtRho]
-    origin _ = Nothing
-    chosen :: [Binding] -> [(Expression, [Binding])] -> Maybe (Expression, [Binding])
-    chosen _ [] = Nothing
-    chosen bds candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
-      [one] -> Just one
-      _ -> Nothing
-      where
-        agreed :: (Expression, [Binding]) -> (Int, Int)
-        agreed (_, declared) = (length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
-    parts :: Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    parts _ _ term@(ExFormation bds) state' _
-      | any abstract bds = pure (term, state')
-    parts standing (Frame world _ _ _) form@(ExFormation bds) state' caller = do
-      (store, path) <- home standing world form
-      state'' <- bindings standing (synonym caller._universe form) (Frame world store path Nothing) [attr | BiTau attr _ <- bds, attr /= AtRho] state' caller
-      entered <- held path store
-      pure (entered, state'')
-    parts _ frame (ExDispatch target attr) state' caller = do
-      (entered, state'') <- go Nothing (Just attr) frame target state' caller
-      pure (ExDispatch entered attr, state'')
-    parts _ frame (ExApplication target arg) state' caller = do
-      (entered, state'') <- go Nothing Nothing frame target state' caller
-      (applied, state''') <- argument (go Nothing Nothing) frame arg state'' caller
-      pure (ExApplication entered applied, state''')
-    parts _ _ term state' _ = pure (term, state')
-    sibling :: Maybe Attribute -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    sibling dispatched frame term@(ExDispatch ExXi attr) state' caller
-      | attr /= AtRho = go Nothing dispatched frame term state' caller
-    sibling _ frame (ExDispatch target attr) state' caller = first (`ExDispatch` attr) <$> sibling (Just attr) frame target state' caller
-    sibling _ frame (ExApplication target arg) state' caller = do
-      (entered, state'') <- sibling Nothing frame target state' caller
-      first (ExApplication entered) <$> argument (sibling Nothing) frame arg state'' caller
-    sibling _ _ term state' _ = pure (term, state')
-    abstract :: Binding -> Bool
-    abstract (BiVoid _) = True
-    abstract _ = False
-    spread :: Maybe Expression -> Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    spread standing (Frame world _ _ _) form@(ExFormation bds) state' caller
-      | not (any abstract bds) = do
-          floor' <- readIORef caller._minted
-          jobs <- mapM (planned floor' (synonym caller._universe form)) (zip [1 ..] bds)
-          (entered, state'') <- pooled caller._jobs jobs (gathered floor') ([], state')
-          pure (ExFormation (reverse entered), state'')
-      where
-        planned :: Int -> Maybe (Expression, [Attribute]) -> (Int, Binding) -> IO (IO ([Evaluation], [Expression], Int, Either SomeException (Int -> IO (Binding, Maybe State))))
-        planned floor' alias (idx, BiTau attr body)
-          | attr /= AtRho = do
-              new <- if closed body then fresh alias attr caller else pure True
-              pure (if new then worker floor' idx attr body else kept (BiTau attr body))
-        planned _ _ (_, bd) = pure (kept bd)
-        kept :: Binding -> IO ([Evaluation], [Expression], Int, Either SomeException (Int -> IO (Binding, Maybe State)))
-        kept bd = pure ([], [], 0, Right (const (pure (bd, Nothing))))
-        worker :: Int -> Int -> Attribute -> Expression -> IO ([Evaluation], [Expression], Int, Either SomeException (Int -> IO (Binding, Maybe State)))
-        worker floor' idx attr body = do
-          buffer <- newIORef []
-          steps <- newIORef []
-          tau <- tausOf idx
-          tally <- tallied (fmap (\(Tally cap _) -> cap) caller._tally)
-          minted <- newIORef floor'
-          memo <- memoized caller._acyclic
-          copy <- newIORef =<< readIORef world
-          (store, path) <- home standing copy form
-          let own = caller{_jobs = 1, _tally = tally, _minted = minted, _memo = memo, _saveEval = modifyIORef' buffer . (:), _saveStep = modifyIORef' steps . (:), _buildTerm = minting tau caller._buildTerm}
-          outcome <- try (try (go (fmap (`ExDispatch` attr) standing) Nothing (Frame copy store path (Just attr)) body state' own))
-          records <- reverse <$> readIORef buffer
-          taken' <- reverse <$> readIORef steps
-          spent <- subtract floor' <$> readIORef minted
-          pure (records, taken', spent, fmap (either (severed floor') (\(term, walked) offset -> pure (BiTau attr (lifted floor' offset term), Just (moved floor' offset walked)))) outcome)
-        severed :: Int -> Severed -> Int -> IO (Binding, Maybe State)
-        severed floor' (Severed answer reached) offset = throwIO (Severed (lifted floor' offset answer) (moved floor' offset reached))
-        moved :: Int -> Int -> State -> State
-        moved floor' offset walked = walked{_manufactured = fmap (\sym -> if sym > floor' then sym + offset else sym) walked._manufactured}
-        gathered :: Int -> ([Binding], State) -> ([Evaluation], [Expression], Int, Either SomeException (Int -> IO (Binding, Maybe State))) -> IO ([Binding], State)
-        gathered floor' (done, current) (records, taken', spent, outcome) = do
-          offset <- subtract floor' <$> readIORef caller._minted
-          mapM_ (caller._saveEval . renumbered floor' offset) records
-          mapM_ caller._saveStep taken'
-          modifyIORef' caller._minted (+ spent)
-          (bd, walked) <- either throwIO ($ offset) outcome
-          pure (bd : done, fromMaybe current walked)
-    spread standing frame term state' caller = parts standing frame term state' caller
-    minting :: IO T.Text -> BuildTermFunc -> BuildTermFunc
-    minting tau build func
-      | func == "random-tau" = \args subst -> if null args then TeAttribute . AtLabel <$> tau else build func args subst
-      | otherwise = build func
-    bindings :: Maybe Expression -> Maybe (Expression, [Attribute]) -> Frame -> [Attribute] -> State -> ReduceContext -> IO State
-    bindings _ _ _ [] state' _ = pure state'
-    bindings standing alias frame@(Frame world store path _) (attr : rest) state' caller = do
-      body <- held (ExDispatch path attr) store
-      new <- if closed body then fresh alias attr caller else pure True
-      state'' <-
-        if new
-          then do
-            (entered, walked) <- go (fmap (`ExDispatch` attr) standing) Nothing (Frame world store path (Just attr)) body state' caller
-            walked <$ when (entered /= body) (stored store (ExDispatch path attr) entered)
-          else pure state'
-      bindings standing alias frame rest state'' caller
-    home :: Maybe Expression -> IORef Expression -> Expression -> IO (IORef Expression, Expression)
-    home (Just path) world form = do
-      placed <- put path form <$> readIORef world
-      case placed of
-        Just whole -> (world, path) <$ writeIORef world whole
-        Nothing -> home Nothing world form
-    home Nothing _ form = (,ExRoot) <$> newIORef form
-    context :: Frame -> IO Expression
-    context (Frame _ _ _ Nothing) = pure ExXi
-    context (Frame _ store path (Just attr)) = scope attr <$> held path store
-    noted :: Expression -> Frame -> Expression -> Expression -> IO ()
-    noted site frame@(Frame world _ _ _) walked answer = case address frame walked of
-      Just (store, path@(ExDispatch _ _))
-        | store /= world || not (above path site) -> stored store path answer
-      _ -> pure ()
-    address :: Frame -> Expression -> Maybe (IORef Expression, Expression)
-    address (Frame world _ _ _) ExRoot = Just (world, ExRoot)
-    address (Frame _ store path (Just _)) ExXi = Just (store, path)
-    address frame (ExDispatch target attr) = fmap (`ExDispatch` attr) <$> address frame target
-    address _ _ = Nothing
-    above :: Expression -> Expression -> Bool
-    above path (ExDispatch target _) = path == target || above path target
-    above _ _ = False
-    held :: Expression -> IORef Expression -> IO Expression
-    held path store = readIORef store >>= maybe (throwIO (userError (printf "The deep walk lost the object at %s" (printExpression path)))) pure . located path
-    stored :: IORef Expression -> Expression -> Expression -> IO ()
-    stored store path value = modifyIORef' store (\whole -> fromMaybe whole (put path value whole))
-    put :: Expression -> Expression -> Expression -> Maybe Expression
-    put ExRoot value _ = Just value
-    put (ExDispatch path attr) value whole = case located path whole of
-      Just (ExFormation bds)
-        | attr /= AtRho && not (any abstract bds) && any (named attr) bds ->
-            put path (ExFormation (map (\bd -> if named attr bd then BiTau attr value else bd) bds)) whole
-      _ -> Nothing
-    put _ _ _ = Nothing
-    located :: Expression -> Expression -> Maybe Expression
-    located ExRoot whole = Just whole
-    located (ExDispatch path attr) whole = case located path whole of
-      Just (ExFormation bds) -> listToMaybe [body | BiTau attr' body <- bds, attr' == attr]
-      _ -> Nothing
-    located _ _ = Nothing
-    synonym :: Maybe Expression -> Expression -> Maybe (Expression, [Attribute])
-    synonym Nothing _ = Nothing
-    synonym (Just world) form = case pathOf world form of
-      ExRoot -> Nothing
-      ExFormation _ -> Nothing
-      name -> Just (erased name, supplied name)
-      where
-        supplied :: Expression -> [Attribute]
-        supplied (ExApplication target (ArTau attr _)) = attr : supplied target
-        supplied _ = []
-    erased :: Expression -> Expression
-    erased (ExApplication target _) = erased target
-    erased (ExDispatch target attr) = ExDispatch (erased target) attr
-    erased other = other
-    fresh :: Maybe (Expression, [Attribute]) -> Attribute -> ReduceContext -> IO Bool
-    fresh (Just (object, filled)) attr caller
-      | attr `notElem` filled = do
-          seen <- visited caller._memo object attr
-          unless seen (visit caller._memo object attr)
-          pure (not seen)
-    fresh _ _ _ = pure True
-    scope :: Attribute -> Expression -> Expression
-    scope attr (ExFormation bds) = ExFormation (filter (not . named attr) bds)
-    scope _ other = other
-    named :: Attribute -> Binding -> Bool
-    named attr (BiTau attr' _) = attr' == attr
-    named _ _ = False
-    argument :: (Frame -> Expression -> State -> ReduceContext -> IO (Expression, State)) -> Frame -> Argument -> State -> ReduceContext -> IO (Argument, State)
-    argument walk frame (ArTau attr arg) state' caller = do
-      (entered, state'') <- walk frame arg state' caller
-      pure (ArTau attr entered, state'')
-    argument walk frame (ArAlpha alpha arg) state' caller = do
-      (entered, state'') <- walk frame arg state' caller
-      pure (ArAlpha alpha entered, state'')
-
-closed :: Expression -> Bool
-closed ExXi = False
-closed (ExDispatch target _) = closed target
-closed (ExApplication target (ArTau _ arg)) = closed target && closed arg
-closed (ExApplication target (ArAlpha _ arg)) = closed target && closed arg
-closed _ = True
+    residue :: NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
+    residue seq parked = do
+      expr <- locatedExpression _locator (fst (NE.head seq))
+      pure (expr, reverse (NE.toList seq), parked)
 
 inferred :: Expression -> Expression -> State -> ReduceContext -> [In.Inference value] -> IO (Maybe (In.Conclusion value, State))
 inferred expr univ state ctx rules = do

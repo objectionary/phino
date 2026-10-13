@@ -57,6 +57,7 @@ data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
+  , _evaluated :: [(Meta, Meta)]
   , _rewritten :: [(Meta, (Meta, [Y.Rule]))]
   , _symbolized :: [(Meta, Expression)]
   , _paired :: [(Meta, (Meta, Meta))]
@@ -83,6 +84,7 @@ instance FromJSON Lambda where
       Lambda key
         <$> operands key bytesMeta entry "dataize"
         <*> operands key expressionMeta entry "morph"
+        <*> evaluations entry
         <*> rewrites (T.unpack key) entry
         <*> operands key expressionMeta entry "symbolize"
         <*> pairs (T.unpack key) entry
@@ -116,6 +118,10 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
+      evaluations :: Object -> Yaml.Parser [(Meta, Meta)]
+      evaluations entry = do
+        mapping <- entry .:? "evaluate" .!= (Map.empty :: Map Text Text)
+        mapM (\(meta, source) -> (,) <$> expressionMeta meta <*> expressionMeta source) (numbered mapping)
       pairs :: String -> Object -> Yaml.Parser [(Meta, (Meta, Meta))]
       pairs key entry = do
         mapping <- entry .:? "join" .!= (Map.empty :: Map Text [Text])
@@ -172,14 +178,15 @@ instance FromJSON Lambda where
               known = metas parsed.pattern ++ concatMap (metas . (.meta)) (concat parsed.where_)
       earlier :: String -> Lambda -> Yaml.Parser ()
       earlier key lambda = do
-        rewrote <- goRewrites (map (_name . fst) lambda._morphed) lambda._rewritten
+        fired <- goSources (map (_name . fst) lambda._morphed) lambda._evaluated
+        rewrote <- goSources fired [(meta, source) | (meta, (source, _)) <- lambda._rewritten]
         stood <- go rewrote lambda._symbolized
         void (goJoins stood lambda._paired)
         where
-          goRewrites :: [Text] -> [(Meta, (Meta, [Y.Rule]))] -> Yaml.Parser [Text]
-          goRewrites reduced [] = pure reduced
-          goRewrites reduced ((meta, (source, _)) : rest)
-            | source._name `elem` reduced = goRewrites (meta._name : reduced) rest
+          goSources :: [Text] -> [(Meta, Meta)] -> Yaml.Parser [Text]
+          goSources reduced [] = pure reduced
+          goSources reduced ((meta, source) : rest)
+            | source._name `elem` reduced = goSources (meta._name : reduced) rest
             | otherwise = unbound source
           go :: [Text] -> [(Meta, Expression)] -> Yaml.Parser [Text]
           go reduced [] = pure reduced
@@ -212,6 +219,7 @@ instance FromJSON Lambda where
           bound :: [Text]
           bound =
             map (_spelling . fst) lambda._morphed
+              ++ map (_spelling . fst) lambda._evaluated
               ++ map (_spelling . fst) lambda._rewritten
               ++ map (_spelling . fst) lambda._symbolized
               ++ map (_spelling . fst) lambda._paired
@@ -241,6 +249,7 @@ instance FromJSON Lambda where
           known =
             map (_name . fst) lambda._dataized
               ++ map (_name . fst) lambda._morphed
+              ++ map (_name . fst) lambda._evaluated
               ++ map (_name . fst) lambda._rewritten
               ++ map (_name . fst) lambda._symbolized
               ++ map (_name . fst) lambda._paired

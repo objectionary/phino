@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# An 'evaluate' line fires once and no more: 'L_first' answers a ready call
+# of 'L_second', which 𝔼 leaves as 𝕄 left it, and only the next line of the
+# block fires that call (#1874).
+symbolic: |
+  - λ: L_first
+    𝑛: ⟦ λ ⤍ L_second ⟧
+  - λ: L_second
+    𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
+  - λ: L_twice
+    morph:
+      𝑛1: $.a
+    evaluate:
+      𝑛2: 𝑛1
+      𝑛3: 𝑛2
+    𝑛: 𝑛3
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ λ ⤍ L_first ⟧, λ ⤍ L_twice ⟧.φ ⟧'
+result: '𝜎1:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_twice):
+      𝑛1·1 := L_first:λ  # 𝕄(ξ.a)
+      𝔼(L_first):  # 𝔼(𝑛1)
+        𝑛·2·1 := L_second:λ  # 𝑛
+        𝑛·2·2 := L_second:λ  # 𝕄(𝑛·2·1)
+      𝑛2·1 := L_second:λ  # 𝔼(𝑛1)
+      𝔼(L_second):  # 𝔼(𝑛2)
+        𝑛·3·1 := 𝜎1:λ:φ  # 𝑛
+        𝑛·3·2 := 𝜎1:λ:φ  # 𝕄(𝑛·3·1)
+      𝑛3·1 := 𝑛·3·2  # 𝔼(𝑛2)
+      𝑛·1·1 := 𝑛3·1  # 𝑛
+      𝑛·1·2 := 𝑛3·1  # 𝕄(𝑛·1·1)

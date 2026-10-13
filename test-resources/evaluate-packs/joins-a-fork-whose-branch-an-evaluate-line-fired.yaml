@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# 𝕄 leaves a formation carrying a λ as it is, so a branch of a fork that
+# morphs to a ready call of 'L_eq' has a shape the other branch, a plain
+# decorator, does not, and the two cannot be joined. An 'evaluate' line asks
+# 𝔼 of each branch once: the decorator carries no λ and stays as it is, the
+# call fires and answers a decorator too, and the two join (#1874).
+symbolic: |
+  - λ: L_eq
+    𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    evaluate:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      𝑛5: [𝑛3, 𝑛4]
+    𝑛: 𝑛5
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ λ ⤍ L_eq ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '𝜎3:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := 𝜎1:λ:φ  # 𝕄(ξ.a)
+      𝑛2·1 := L_eq:λ  # 𝕄(ξ.b)
+      𝑛3·1 := 𝑛1·1  # 𝔼(𝑛1)
+      𝔼(L_eq):  # 𝔼(𝑛2)
+        𝑛·2·1 := 𝜎2:λ:φ  # 𝑛
+        𝑛·2·2 := 𝜎2:λ:φ  # 𝕄(𝑛·2·1)
+      𝑛4·1 := 𝑛·2·2  # 𝔼(𝑛2)
+      𝔻(𝜎3:λ) ∈ { 𝔻(𝜎1:λ), 𝔻(𝜎2:λ) }
+      𝑛5·1 := 𝜎3:λ:φ  # [𝑛3, 𝑛4]
+      𝑛·1·1 := 𝑛5·1  # 𝑛
+      𝑛·1·2 := 𝑛5·1  # 𝕄(𝑛·1·1)

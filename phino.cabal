@@ -80,7 +80,6 @@ library
     Morph
     Must
     Parser
-    Pool
     Printer
     Random
     Regexp
@@ -189,7 +188,6 @@ test-suite spec
     MustSpec
     ParserSpec
     Paths_phino
-    PoolSpec
     PrinterSpec
     RandomSpec
     RegexpSpec

@@ -23,11 +23,11 @@ import Dataize (Outcome (..), dataize)
 import Deps (Acyclic (..), Judgment (..), State, Term (TeExpression))
 import Engine (Engine (_normal))
 import Files (allPathsIn)
-import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives, withLambdas, withLambdasOf)
+import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives)
 import GHC.Clock (getMonotonicTime)
 import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
-import Lambdas (Lambdas, emptyLambdas, readLambdas)
+import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
 import Morph (Deadline (..), ReduceContext (..), emptyState, enter, execBuildTerm, inferred, insideUniverse, morph, morph')
 import Parser (parseExpressionThrows)
@@ -58,8 +58,8 @@ data MorphPack = MorphPack
   }
   deriving (Generic, Show, FromJSON)
 
-testMorph :: Lambdas -> Bool -> FilePath -> Expectation
-testMorph known deep pth = do
+testMorph :: Lambdas -> FilePath -> Expectation
+testMorph known pth = do
   MorphPack{..} <- Decode.decodeFileThrow pth
   expr <- parseExpressionThrows (if model == Just True then primitives input else input)
   seedTaus expr
@@ -67,8 +67,7 @@ testMorph known deep pth = do
   base <- defaultReduceContext loc
   let ctx =
         base
-          { _deep = deep
-          , _partial = partial == Just True
+          { _partial = partial == Just True
           , _symbolic = if symbolic == Just True then known else emptyLambdas
           }
   case (result, fails) of
@@ -87,7 +86,7 @@ spec = do
   describe "morph" $ do
     let resources = "test-resources/morph-packs"
     packs <- runIO (allPathsIn resources)
-    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph known False pth))
+    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph known pth))
 
     it "reports the chain of steps oldest first" $ do
       expr <- parseExpressionThrows "[[ D> 00- ]]"
@@ -103,20 +102,6 @@ spec = do
       ctx <- defaultReduceContext loc
       _ <- morph expr emptyState ctx{_saveStep = const (modifyIORef' saved (+ 1))}
       readIORef saved `shouldReturn` 2
-
-  describe "morph with '_deep'" $ do
-    let resources = "test-resources/morph-deep-packs"
-    packs <- runIO (allPathsIn resources)
-    forM_ packs (\pth -> it (makeRelative resources pth) (testMorph known True pth))
-
-    describe "a dispatch naming an attribute of the formation it stands on" $
-      it "cannot fire the λ the dispatch does not demand" $
-        withLambdasOf "- λ: L_answer\n  𝑛: ⟦ Δ ⤍ FF- ⟧\n" $ \file -> do
-          box <- readLambdas file
-          world <- parseExpressionThrows "[[ foo -> [[ f -> [[ a -> ?, @ -> $.a, L> L_answer ]] ]], x -> Q.foo.f( a -> [[ D> 01- ]] ).@ ]]"
-          ctx <- withLambdas box <$> defaultReduceContext ExRoot
-          (morphed, _, _) <- morph world emptyState ctx{_deep = True}
-          morphed `shouldBe` world
 
   describe "morph'" $
     test'

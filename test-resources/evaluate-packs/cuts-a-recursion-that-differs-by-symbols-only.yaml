@@ -2,170 +2,32 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# A factorial over a symbolic argument, under '--acyclic=proven'. Every round
-# of the recursion mints fresh symbols, so the deep walk fires 'mul' with
-# a ↦ 𝜎1 and b ↦ Φ.fact( n ↦ 𝜎3 ) on the first round and with a ↦ 𝜎3 and
-# b ↦ Φ.fact( n ↦ 𝜎5 ) on the second, and no two rounds are ever the same term.
-# They are the same formation up to a renaming of symbols, which is what the
-# guard compares by (#1420), and the walk enters the formation it fires (#1451),
-# so the second firing is cut before it opens and writes a 'looped' line where
-# its block would have stood, carrying the term of the round that was kept
-# (#1434). The budget is generous here, so what ends the run is the cut and not
-# the limit. The argument 'n' and every symbol 'dec' answers stand in a
-# carrier '⟦ φ ↦ 𝜎 ⟧', since the walk defers a copy one of whose arguments is
-# a bare symbol instead of entering it (#1729). The first 'L_if' gets stuck,
-# yet the symbols it minted stay taken, so the second one mints from 𝜎7 (#1738).
+# A recursion over a symbolic argument, under '--acyclic=proven'. 'L_down'
+# answers a call of 'down' over a fresh symbol, and 'ml' dispatches 'φ' off
+# that answer, which fires 'down' again: the first round fires it with x ↦ 𝜎1,
+# the second with x ↦ 𝜎2, and no two rounds are ever the same term. They are
+# the same formation up to a renaming of symbols, which is what the guard
+# compares by (#1420), and 'ml' enters the formation it fires, so the second
+# firing is cut before it opens and writes a 'looped' line where its block
+# would have stood, carrying the term of the round that was kept (#1434). The
+# budget is generous here, so what ends the run is the cut and not the limit.
 symbolic: |
-  - λ: L_zero
+  - λ: L_down
     dataize:
       𝛿1: $.x
-    𝑛: ⟦ λ ⤍ 𝜎 ⟧
-  - λ: L_dec
-    dataize:
-      𝛿1: $.x
-    𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
-  - λ: L_mul
-    dataize:
-      𝛿1: $.a
-      𝛿2: $.b
-    𝑛: ⟦ λ ⤍ 𝜎 ⟧
-  - λ: L_if
-    dataize:
-      𝛿1: $.c
-    morph:
-      𝑛1: $.left
-      𝑛2: $.right
-    symbolize:
-      𝑛3: 𝑛1
-      𝑛4: 𝑛2
-    join:
-      𝑛5: [𝑛3, 𝑛4]
-    𝑛: 𝑛5
-location: 'Q.x'
-deep: true
+    𝑛: Φ.down( x ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+location: 'Q.y'
 acyclic: proven
-partial: true
 steps: 250
-input: >
-  ⟦ if ↦ ⟦ c ↦ ∅, left ↦ ∅, right ↦ ∅, λ ⤍ L_if ⟧,
-    zero ↦ ⟦ x ↦ ∅, λ ⤍ L_zero ⟧,
-    dec ↦ ⟦ x ↦ ∅, λ ⤍ L_dec ⟧,
-    mul ↦ ⟦ a ↦ ∅, b ↦ ∅, λ ⤍ L_mul ⟧,
-    fact ↦ ⟦ n ↦ ∅, φ ↦ Φ.if( c ↦ Φ.zero( x ↦ ξ.n ), left ↦ ⟦ Δ ⤍ 01- ⟧, right ↦ Φ.mul( a ↦ ξ.n, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ ξ.n ) ) ) ) ⟧,
-    x ↦ Φ.fact( n ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ) ⟧
-result: |-
-  ⟦
-    n ↦ 𝜎1:λ:φ,
-    φ ↦ Φ.if(
-      c ↦ 𝜎2:λ,
-      left ↦ 01-:Δ,
-      right ↦ Φ.mul( a ↦ n, b ↦ Φ.fact( n ↦ 𝜎3:λ:φ ) )
-    )
-  ⟧
+input: '⟦ down ↦ ⟦ x ↦ ∅, λ ⤍ L_down ⟧, y ↦ Φ.down( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ ⟧'
+result: '⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧.φ'
 protocol: |
-  𝕄(Φ.x):
-    𝑛·0·1 := Φ.fact( n ↦ 𝜎1:λ:φ )
-    𝕄(Φ.x.φ):
-      𝑛·0·2 := Φ.zero( x ↦ 𝜎1:λ:φ )
-      𝔼(L_zero):
-        𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-        𝑛·1·1 := 𝜎2:λ  # 𝑛
-        𝑛·1·2 := 𝜎2:λ  # 𝕄(𝑛·1·1)
-      𝑛·0·3 := Φ.if( c ↦ 𝜎2:λ )
-      𝑛·0·4 := Φ.if( c ↦ 𝜎2:λ )
-      𝑛·0·5 := 𝑛·0·4( left ↦ 01-:Δ )
-      𝑛·0·6 := Φ.mul( a ↦ 𝜎1:λ:φ )
-      𝑛·0·7 := Φ.dec( x ↦ 𝜎1:λ:φ )
-      𝔼(L_dec):
-        𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-        𝑛·2·1 := 𝜎3:λ:φ  # 𝑛
-        𝑛·2·2 := 𝜎3:λ:φ  # 𝕄(𝑛·2·1)
-      𝑛·0·8 := Φ.fact( n ↦ 𝜎3:λ:φ )
-      𝑛·0·9 := Φ.mul( a ↦ 𝜎1:λ:φ )
-      𝑛·0·10 := 𝑛·0·9( b ↦ 𝑛·0·8 )
-      𝔼(L_mul):
-        𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
-        𝔻(Φ.a🌵3):
-          𝕄(Φ.a🌵3):
-            𝑛·3·1 := Φ.fact( n ↦ 𝜎3:λ:φ )
-            𝑛·3·2 := Φ.if( c ↦ Φ.zero( x ↦ 𝜎3:λ:φ ) )
-            𝑛·3·3 := 𝑛·3·2( left ↦ 01-:Δ )
-            𝑛·3·4 := 𝑛·3·3( right ↦ Φ.mul( a ↦ 𝜎3:λ:φ, b ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎3:λ:φ ) ) ) )
-          𝔼(L_if):
-            𝔻(Φ.a🌵4):
-              𝕄(Φ.a🌵4):
-                𝑛·4·1 := Φ.zero( x ↦ 𝜎3:λ:φ )
-              𝔼(L_zero):
-                𝛿1·5 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-                𝑛·5·1 := 𝜎4:λ  # 𝑛
-                𝑛·5·2 := 𝜎4:λ  # 𝕄(𝑛·5·1)
-            𝛿1·4 := 𝔻(𝜎4:λ)  # 𝔻(ξ.c)
-            𝑛1·4 := 01-:Δ  # 𝕄(ξ.left)
-            𝕄(Φ.a🌵7):
-              𝑛·4·2 := Φ.mul( a ↦ 𝜎3:λ:φ )
-              𝑛·4·3 := 𝑛·4·2( b ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎3:λ:φ ) ) )
-              𝕄(Φ.a🌵7.b):
-                𝑛·4·4 := Φ.dec( x ↦ 𝜎3:λ:φ )
-                𝔼(L_dec):
-                  𝛿1·6 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-                  𝑛·6·1 := 𝜎5:λ:φ  # 𝑛
-                  𝑛·6·2 := 𝜎5:λ:φ  # 𝕄(𝑛·6·1)
-                𝑛·4·5 := Φ.fact( n ↦ 𝜎5:λ:φ )
-              looped(𝑛·0·10)  # proven
-            𝑛2·4 := 𝑛·4·3  # 𝕄(ξ.right)
-            𝔻(𝜎6:λ) == 01-
-            𝑛3·4 := 𝜎6:λ  # 𝑛1
-            𝑛4·4 := 𝑛·4·3  # 𝑛2
-            stuck(L_if)
-        stuck(L_if)
-      𝑛·0·11 := Φ.if( c ↦ 𝜎2:λ )
-      𝑛·0·12 := 𝑛·0·11( left ↦ 01-:Δ )
-      𝑛·0·13 := 𝑛·0·12( right ↦ 𝑛·0·10 )
-      𝔼(L_if):
-        𝛿1·7 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
-        𝑛1·7 := 01-:Δ  # 𝕄(ξ.left)
-        𝕄(Φ.a🌵11):
-          𝑛·7·1 := Φ.mul( a ↦ 𝜎1:λ:φ )
-          𝑛·7·2 := 𝑛·7·1( b ↦ 𝑛·3·1 )
-          𝕄(Φ.a🌵11.b):
-            𝑛·7·3 := Φ.fact( n ↦ 𝜎3:λ:φ )
-          𝔼(L_mul):
-            𝛿1·8 := 𝔻(𝜎1:λ)  # 𝔻(ξ.a)
-            𝔻(Φ.a🌵13):
-              𝕄(Φ.a🌵13):
-                𝑛·8·1 := Φ.fact( n ↦ 𝜎3:λ:φ )
-                𝑛·8·2 := Φ.if( c ↦ 𝑛·4·1 )
-                𝑛·8·3 := 𝑛·8·2( left ↦ 01-:Δ )
-                𝑛·8·4 := 𝑛·8·3( right ↦ 𝑛·4·3 )
-              𝔼(L_if):
-                𝔻(Φ.a🌵14):
-                  𝕄(Φ.a🌵14):
-                    𝑛·9·1 := Φ.zero( x ↦ 𝜎3:λ:φ )
-                  𝔼(L_zero):
-                    𝛿1·10 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-                    𝑛·10·1 := 𝜎7:λ  # 𝑛
-                    𝑛·10·2 := 𝜎7:λ  # 𝕄(𝑛·10·1)
-                𝛿1·9 := 𝔻(𝜎7:λ)  # 𝔻(ξ.c)
-                𝑛1·9 := 01-:Δ  # 𝕄(ξ.left)
-                𝕄(Φ.a🌵17):
-                  𝑛·9·2 := Φ.mul( a ↦ 𝜎3:λ:φ )
-                  𝑛·9·3 := 𝑛·9·2( b ↦ Φ.fact( n ↦ 𝑛·4·4 ) )
-                  𝕄(Φ.a🌵17.b):
-                    𝑛·9·4 := Φ.dec( x ↦ 𝜎3:λ:φ )
-                    𝔼(L_dec):
-                      𝛿1·11 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-                      𝑛·11·1 := 𝜎8:λ:φ  # 𝑛
-                      𝑛·11·2 := 𝜎8:λ:φ  # 𝕄(𝑛·11·1)
-                    𝑛·9·5 := Φ.fact( n ↦ 𝜎8:λ:φ )
-                  looped(𝑛·7·2)  # proven
-                𝑛2·9 := 𝑛·9·3  # 𝕄(ξ.right)
-                𝔻(𝜎9:λ) == 01-
-                𝑛3·9 := 𝜎9:λ  # 𝑛1
-                𝑛4·9 := 𝑛·9·3  # 𝑛2
-                stuck(L_if)
-            stuck(L_if)
-        𝑛2·7 := 𝑛·7·2  # 𝕄(ξ.right)
-        𝔻(𝜎10:λ) == 01-
-        𝑛3·7 := 𝜎10:λ  # 𝑛1
-        𝑛4·7 := 𝑛·7·2  # 𝑛2
-        stuck(L_if)
+  𝕄(Φ.y):
+    𝑛·0·1 := Φ.down( x ↦ 𝜎1:λ )
+    𝔼(L_down):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+      𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛
+      𝕄(𝑛·1·1):
+        𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
+      𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)
+    looped(𝑛·0·1)  # proven

@@ -3,10 +3,10 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Tau (seedTaus, freshTau, tausOf) where
+module Tau (seedTaus, freshTau) where
 
 import AST
-import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', newIORef, writeIORef)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Text (Text)
@@ -27,27 +27,13 @@ freshTau = atomicModifyIORef' taus advance
       let (minted, idx) = mint taken cursor
        in ((Set.insert minted taken, idx + 1), minted)
 
-tausOf :: Int -> IO (IO Text)
-tausOf entry = do
-  (taken, _) <- readIORef taus
-  own <- newIORef (taken, 0)
-  pure (atomicModifyIORef' own advance)
-  where
-    advance :: (Set Text, Int) -> ((Set Text, Int), Text)
-    advance (taken, cursor) =
-      let (minted, idx) = mint' (T.pack ("a🌵" <> show entry <> "-")) taken cursor
-       in ((Set.insert minted taken, idx + 1), minted)
-
 mint :: Set Text -> Int -> (Text, Int)
-mint = mint' "a🌵"
-
-mint' :: Text -> Set Text -> Int -> (Text, Int)
-mint' stem taken idx
-  | name `Set.member` taken = mint' stem taken (idx + 1)
+mint taken idx
+  | name `Set.member` taken = mint taken (idx + 1)
   | otherwise = (name, idx)
   where
     name :: Text
-    name = stem <> T.pack (show idx)
+    name = "a🌵" <> T.pack (show idx)
 
 exprLabels :: Expression -> Set Text
 exprLabels (ExFormation bds) = Set.unions (map bindingLabels bds)

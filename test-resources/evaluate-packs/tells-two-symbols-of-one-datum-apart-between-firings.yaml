@@ -8,47 +8,56 @@
 # the same bytes, yet they stand for two values nobody worked out. A memo
 # keyed on the bytes would answer the second firing with the symbol the first
 # one minted and make the two values one; this one keys on the symbol, so each
-# firing mints a symbol of its own.
+# firing mints a symbol of its own. The two firings are the two 'morph'
+# operands of 'L_pair', each fired by the dispatch of φ off its call.
 symbolic: |
   - λ: L_dataized
     dataize:
       𝛿1: $.target
     𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
-deep: true
+  - λ: L_pair
+    morph:
+      𝑛1: $.x
+      𝑛2: $.y
+    𝑛: ⟦ φ ↦ ⟦ x ↦ 𝑛1, y ↦ 𝑛2 ⟧ ⟧
+location: 'Q.@'
 acyclic: plausible
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     dataized(target) ↦ L_dataized:λ,
-    x ↦ Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ),
-    y ↦ Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎2:λ ) ) ⟧
-result: >
-  ⟦ bytes(φ) ↦ ⟦⟧,
-    dataized(target) ↦ L_dataized:λ,
-    x ↦ ⟦ φ ↦ 𝜎3:λ ⟧,
-    y ↦ ⟦ φ ↦ 𝜎4:λ ⟧ ⟧
+    pair(x, y) ↦ L_pair:λ,
+    @ ↦ Φ.pair(
+      Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ,
+      Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ ).φ ⟧
+result: '⟦ x ↦ 𝜎3:λ, y ↦ 𝜎4:λ ⟧'
 protocol: |
-  𝕄(Φ):
-    𝕄(Φ.x):
-      𝑛·0·1 := Φ.bytes( φ ↦ 𝜎1:λ )
-      𝑛·0·2 := Φ.dataized( target ↦ 𝑛·0·1 )
-      𝔼(L_dataized):
-        𝔻(Φ.a🌵0):
-          𝕄(Φ.a🌵0):
-            𝑛·1·1 := Φ.bytes( φ ↦ 𝜎1:λ )
-        𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.target)
-        𝑛·1·2 := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝑛
-        𝕄(𝑛·1·2):
-          𝑛·1·3 := Φ.bytes( φ ↦ 𝜎3:λ )
-        𝑛·1·4 := 𝑛·1·3  # 𝕄(𝑛·1·2)
-    𝕄(Φ.y):
-      𝑛·0·3 := Φ.bytes( φ ↦ 𝜎2:λ )
-      𝑛·0·4 := Φ.dataized( target ↦ 𝑛·0·3 )
-      𝔼(L_dataized):
-        𝔻(Φ.a🌵1):
-          𝕄(Φ.a🌵1):
-            𝑛·2·1 := Φ.bytes( φ ↦ 𝜎2:λ )
-        𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.target)
-        𝑛·2·2 := Φ.bytes( φ ↦ 𝜎4:λ )  # 𝑛
-        𝕄(𝑛·2·2):
-          𝑛·2·3 := Φ.bytes( φ ↦ 𝜎4:λ )
-        𝑛·2·4 := 𝑛·2·3  # 𝕄(𝑛·2·2)
+  𝕄(Φ.φ):
+    𝑛·0·1 := Φ.pair( x ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ )
+    𝑛·0·2 := 𝑛·0·1( y ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ )
+    𝔼(L_pair):
+      𝕄(Φ.a🌵0):
+        𝑛·1·1 := Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )
+        𝔼(L_dataized):
+          𝔻(Φ.a🌵1):
+            𝕄(Φ.a🌵1):
+              𝑛·2·1 := Φ.bytes( φ ↦ 𝜎1:λ )
+          𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.target)
+          𝑛·2·2 := Φ.bytes( φ ↦ 𝜎3:λ )  # 𝑛
+          𝕄(𝑛·2·2):
+            𝑛·2·3 := Φ.bytes( φ ↦ 𝜎3:λ )
+          𝑛·2·4 := 𝑛·2·3  # 𝕄(𝑛·2·2)
+      𝑛1·1 := 𝜎3:λ  # 𝕄(ξ.x)
+      𝕄(Φ.a🌵2):
+        𝑛·1·2 := Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎2:λ ) )
+        𝔼(L_dataized):
+          𝔻(Φ.a🌵3):
+            𝕄(Φ.a🌵3):
+              𝑛·3·1 := Φ.bytes( φ ↦ 𝜎2:λ )
+          𝛿1·3 := 𝔻(𝜎2:λ)  # 𝔻(ξ.target)
+          𝑛·3·2 := Φ.bytes( φ ↦ 𝜎4:λ )  # 𝑛
+          𝕄(𝑛·3·2):
+            𝑛·3·3 := Φ.bytes( φ ↦ 𝜎4:λ )
+          𝑛·3·4 := 𝑛·3·3  # 𝕄(𝑛·3·2)
+      𝑛2·1 := 𝜎4:λ  # 𝕄(ξ.y)
+      𝑛·1·3 := ⟦ x ↦ 𝜎3:λ, y ↦ 𝜎4:λ ⟧:φ  # 𝑛
+      𝑛·1·4 := ⟦ x ↦ 𝜎3:λ, y ↦ 𝜎4:λ ⟧:φ  # 𝕄(𝑛·1·3)

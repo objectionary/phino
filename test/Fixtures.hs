@@ -41,7 +41,7 @@ import Data.Yaml qualified as Yaml
 import Dataize (reduction)
 import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
 import Engine (Engine, building, yaml)
-import Evaluate (evaluation, fired)
+import Evaluate (evaluation)
 import GHC.Clock (getMonotonicTime)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Lining (LineFormat (MULTILINE))
@@ -55,7 +55,7 @@ import XMIR (defaultXmirContext)
 defaultReduceContext :: Expression -> IO ReduceContext
 defaultReduceContext loc = do
   minted <- newIORef 0
-  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False False 1 Nothing Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation fired dontSaveStep dontSaveEval linked)
+  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
 
 linked :: Engine
 linked = fromMaybe yaml compiled

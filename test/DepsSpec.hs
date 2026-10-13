@@ -5,13 +5,13 @@
 
 module DepsSpec where
 
-import AST (Argument (ArTau), Attribute (AtLabel, AtPhi), Binding (BiLambda, BiTau), Bytes (BtMany, BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol), symbols)
+import AST (Argument (ArTau), Attribute (AtLabel, AtPhi), Binding (BiLambda, BiTau), Bytes (BtMany, BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol))
 import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvComputed, EvData, EvDeferred, EvDelta, EvFiring, EvJoined, EvLooped, EvMinted, EvRun, EvStarted, EvTerm, EvTerminate), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, renumbered, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvTerm, EvTerminate), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -108,48 +108,6 @@ spec = do
       captured <- hCapture_ [stderr] (progressed cursor 0 (const (pure "Φ.q")) dontSaveEval (EvRun Morphing "Φ.k"))
       captured `shouldBe` ""
 
-  describe "renumbered" $ do
-    it "raises the symbols a record names above the floor" $
-      case renumbered 3 10 (EvMinted 2 5 [Left 4, Left 1, Right (BtOne "7C")]) of
-        EvMinted _ minted operands -> (minted, operands) `shouldBe` (15, [Left 14, Left 1, Right (BtOne "7C")])
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "raises the symbols the terms of a record carry above the floor" $
-      case renumbered 1 6 (EvTerm 4 "𝑛1" (ExFormation [BiLambda (FnSymbol 1)]) (ExFormation [BiLambda (FnSymbol 2)])) of
-        EvTerm _ _ operand term -> (symbols operand, symbols term) `shouldBe` ([1], [8])
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "does not change the depth a record stands at" $
-      case renumbered 0 9 (EvJoined 7 1 (2, 3)) of
-        EvJoined depth fresh pair -> (depth, fresh, pair) `shouldBe` (7, 10, (11, 12))
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "raises the symbol a deferred copy stands for and the symbols it carries above the floor" $
-      case renumbered 2 5 (EvDeferred 3 4 Morphing (ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 1)]), BiTau (AtLabel "y") (ExFormation [BiLambda (FnSymbol 3)])]) Nothing ExXi) of
-        EvDeferred _ fresh _ copy _ _ -> (fresh, symbols copy) `shouldBe` (9, [1, 8])
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "raises the symbols the call a deferred copy stands for carries above the floor" $
-      case renumbered 2 5 (EvDeferred 3 4 Morphing (ExFormation []) (Just (ExApplication (ExDispatch ExRoot (AtLabel "box")) (ArTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 7)])))) ExXi) of
-        EvDeferred _ _ _ _ call _ -> fmap symbols call `shouldBe` Just [12]
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "raises the symbol a cut answers a copy with and the symbols of its call above the floor" $
-      case renumbered 2 5 (EvLooped 3 Morphing Proven (ExFormation []) ExXi (Just (4, Just (ExApplication (ExDispatch ExRoot (AtLabel "box")) (ArTau (AtLabel "n") (ExFormation [BiLambda (FnSymbol 7)])))))) of
-        EvLooped _ _ _ _ _ answer -> fmap (fmap (fmap symbols)) answer `shouldBe` Just (9, Just [12])
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "raises the symbols an application and the object it made carry above the floor" $
-      case renumbered 2 5 (EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "box")) (ArTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 4)]))) (ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (FnSymbol 1)])]) ExXi) of
-        EvApplied _ _ call object _ -> (symbols call, symbols object) `shouldBe` ([9], [1])
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "raises the symbols an object carries before and after the walk computed inside it above the floor" $
-      case renumbered 3 4 (EvComputed 2 (ExFormation [BiTau (AtLabel "ш") (ExFormation [BiLambda (FnSymbol 2)])]) (ExFormation [BiTau (AtLabel "ш") (ExFormation [BiLambda (FnSymbol 6)])])) of
-        EvComputed _ before after -> (symbols before, symbols after) `shouldBe` ([2], [10])
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "raises the symbols the site of a started judgment carries above the floor" $
-      case renumbered 1 3 (EvStarted 2 Morphing (ExFormation [BiLambda (FnSymbol 5)])) of
-        EvStarted _ _ site -> symbols site `shouldBe` [8]
-        _ -> expectationFailure "The record did not stay the record it was"
-    it "raises the symbols the message of a raising fork carries above the floor" $
-      case renumbered 2 5 (EvTerminate 3 (Just (Left 1)) "right" "𝑛4" (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёрш")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 6)]))))) of
-        EvTerminate _ _ _ _ message -> fmap symbols message `shouldBe` Just [11]
-        _ -> expectationFailure "The record did not stay the record it was"
-
   describe "resited" $ do
     it "moves an application made at one site to another" $
       case resited (ExDispatch ExRoot (AtLabel "ёж")) ExXi (EvApplied 2 Morphing (ExFormation []) (ExFormation []) (ExDispatch ExRoot (AtLabel "ёж"))) of
@@ -173,7 +131,7 @@ spec = do
       (_, written) <- recorded (\record -> record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))))
       written `shouldBe` "  𝑛·0·1 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ.w)\n"
     it "spells an object an application made by its name on a later line" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_щ" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvTerm 2 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "z") (ExFormation [BiTau (AtLabel "q") (ExFormation [])]), BiTau (AtLabel "у") (ExFormation [])])])
+      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_щ" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvTerm 2 "𝑛1" Morphing (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "z") (ExFormation [BiTau (AtLabel "q") (ExFormation [])]), BiTau (AtLabel "у") (ExFormation [])])])
       last (lines written) `shouldBe` "    𝑛1·1 := ⟦ z ↦ 𝑛·1·1, у ↦ ⟦⟧ ⟧  # 𝕄(ξ.z)"
     it "numbers the answer of a firing past the objects applications made inside it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ю" Morphing ExRoot, EvBuilt 2 (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvAnswer 2 (ExFormation [BiTau (AtLabel "q") (ExFormation [])])])
@@ -184,15 +142,6 @@ spec = do
     it "spells an application made again by its head and argument rather than by the name of the first one" $ do
       (_, written) <- recorded (\record -> replicateM_ 2 (record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot)))
       last (lines written) `shouldBe` "  𝑛·0·2 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ)"
-    it "writes a deferred copy as the call it was made of even when an earlier application spelled that call" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)]))) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)])]) ExRoot, EvDeferred 1 4 Morphing (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)])]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)])))) ExRoot])
-      last (lines written) `shouldBe` "  deferred(𝜎4) := Φ.ёж( q ↦ 𝜎3:λ )  # 𝕄(Φ)"
-    it "spells an object the walk computed inside by the name its application gave it" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ъ" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) ExRoot, EvComputed 2 (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])]), EvTerm 2 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])])])
-      last (lines written) `shouldBe` "    𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.z)"
-    it "spells out an object the walk computed inside when no application named it" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvComputed 1 (ExFormation [BiTau (AtLabel "ю") ExRoot]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 3)])]), EvTerm 1 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 3)])])])
-      last (lines written) `shouldBe` "  𝑛1·0 := 𝜎3:λ:ю  # 𝕄(ξ.z)"
     it "writes the datum the delta rule found under a name of its own" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 2 (BtMany ["1F", "E0"]), EvDelta 2 (BtOne "33")])
       last (lines written) `shouldBe` "    𝛿·1·2 := 33-"
@@ -233,7 +182,7 @@ spec = do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvDelta 1 (BtOne "0B"), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
       length (filter (== "  𝕄(Φ.w):") (lines written)) `shouldBe` 2
     it "keeps the mode of a cut made at the site of its block" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvLooped 1 Morphing Proven (ExFormation []) ExRoot Nothing])
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvLooped 1 Morphing Proven (ExFormation []) ExRoot])
       last (lines written) `shouldBe` "  looped(⟦⟧)  # proven"
     it "names the block over an answer by the line that built it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
@@ -244,9 +193,6 @@ spec = do
     it "writes no message for a fork that raises with none" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ф" Morphing ExRoot, EvTerminate 2 (Just (Right (BtOne "0D"))) "left" "𝑛3" Nothing])
       last (lines written) `shouldBe` "    terminate(0D-, left)  # 𝑛3"
-    it "writes no line for an object the walk computed inside" $ do
-      (_, written) <- recorded (\record -> record (EvComputed 1 (ExFormation [BiTau (AtLabel "ю") ExRoot]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 3)])])))
-      written `shouldBe` ""
 
   describe "saveEvalXml" $ do
     it "writes an application as an element naming its head and holding its argument" $ do
@@ -270,9 +216,6 @@ spec = do
     it "spells the datum of an operand by the name the delta rule just gave it in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       lines written `shouldContain` ["    <bind meta=\"𝛿1·1\">𝛿·1·1</bind>"]
-    it "spells an object the walk computed inside by its name in a later element" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) ExRoot, EvComputed 1 (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ф"))]) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])]), EvTerm 1 "𝑛1" (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 8)])])])
-      lines written `shouldContain` ["  <bind meta=\"𝑛1·0\">𝑛·0·1</bind>"]
     it "writes a block as an element once an element stands in it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
       lines written `shouldContain` ["  <morph at=\"Φ.w\">"]

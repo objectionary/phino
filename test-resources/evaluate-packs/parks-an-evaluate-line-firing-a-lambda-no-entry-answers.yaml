@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# An 'evaluate' line fires a λ function no entry answers, so the firing of
+# the fork gets stuck the way any firing does, and '--partial' parks the
+# site the fork stands at (#1874).
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+    evaluate:
+      𝑛2: 𝑛1
+    𝑛: 𝑛2
+location: 'Q.y'
+partial: true
+input: '⟦ y ↦ ⟦ a ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ a ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_fork ⟧.φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := L_none:λ  # 𝕄(ξ.a)
+      unanswered(L_none)  # 𝔼(L_none:λ)
+      stuck(L_none)
