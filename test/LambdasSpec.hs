@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, message, minted, readLambdas, stayed, symbolized, taken, thrown)
+import Lambdas (Lambda (..), Lambdas, Line (..), Meta (..), emptyLambdas, joined, matched, message, minted, readLambdas, stayed, symbolized, taken, thrown)
 import Parser (parseExpressionThrows)
 import Test.Hspec
 
@@ -25,17 +25,30 @@ entry key = "- λ: " <> key <> "\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ �
 answering :: Lambdas -> T.Text -> Maybe T.Text
 answering known func = _key <$> matched known func
 
-joins :: Lambdas -> T.Text -> [(T.Text, (T.Text, T.Text))]
-joins known func = map spelled (maybe [] _paired (matched known func))
-  where
-    spelled :: (Meta, (Meta, Meta)) -> (T.Text, (T.Text, T.Text))
-    spelled (meta, (left, right)) = (_spelling meta, (_spelling left, _spelling right))
+lined :: Lambdas -> T.Text -> [Line]
+lined known func = maybe [] _lines (matched known func)
 
-links :: (Lambda -> [(Meta, Meta)]) -> Lambdas -> T.Text -> [(T.Text, T.Text)]
-links block known func = map spelled (maybe [] block (matched known func))
+order :: Lambdas -> T.Text -> [T.Text]
+order known func = map bound (lined known func)
   where
-    spelled :: (Meta, Meta) -> (T.Text, T.Text)
-    spelled (meta, source) = (_spelling meta, _spelling source)
+    bound :: Line -> T.Text
+    bound (Evaluated meta _) = _spelling meta
+    bound (Rewritten meta _ _) = _spelling meta
+    bound (Stayed meta _) = _spelling meta
+    bound (Symbolized meta _) = _spelling meta
+    bound (Paired meta _ _) = _spelling meta
+
+joins :: Lambdas -> T.Text -> [(T.Text, (T.Text, T.Text))]
+joins known func = [(_spelling meta, (_spelling left, _spelling right)) | Paired meta left right <- lined known func]
+
+fired :: Lambdas -> T.Text -> [(T.Text, T.Text)]
+fired known func = [(_spelling meta, _spelling source) | Evaluated meta source <- lined known func]
+
+stays :: Lambdas -> T.Text -> [(T.Text, T.Text)]
+stays known func = [(_spelling meta, _spelling source) | Stayed meta source <- lined known func]
+
+stood :: Lambdas -> T.Text -> [T.Text]
+stood known func = [_spelling meta | Symbolized meta _ <- lined known func]
 
 rewriting :: T.Text -> T.Text
 rewriting lines' = "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  rewrite:\n" <> lines'
@@ -43,8 +56,8 @@ rewriting lines' = "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  rewrite:\n" <> lin
 rules :: T.Text
 rules = "      rules:\n        - name: no-x\n          pattern: ⟦ !B1, x ↦ ⟦⟧, !B2 ⟧\n          result: ⟦ !B1, !B2 ⟧\n"
 
-rewrote :: (Meta, (Meta, [a])) -> (T.Text, T.Text, Int)
-rewrote (meta, (source, written)) = (_spelling meta, _spelling source, length written)
+rewrote :: Lambdas -> T.Text -> [(T.Text, T.Text, Int)]
+rewrote known func = [(_spelling meta, _spelling source, length written) | Rewritten meta source written <- lined known func]
 
 spec :: Spec
 spec = do
@@ -83,7 +96,7 @@ spec = do
 
     it "reads a 'symbolize' line that stands the term of line nine as line ten" $ do
       known <- lambdasOf "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛9: 𝑛1\n    𝑛10: 𝑛9\n  𝑛: 𝑛10\n"
-      map (_spelling . fst) (maybe [] _symbolized (matched known "L_pair")) `shouldBe` ["𝑛9", "𝑛10"]
+      stood known "L_pair" `shouldBe` ["𝑛9", "𝑛10"]
 
     it "reads a meta under both the name it is spelled with and the name it binds" $ do
       known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
@@ -95,11 +108,11 @@ spec = do
 
     it "reads the operands of 'symbolize' under expression metas" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n"
-      map (_spelling . fst) (maybe [] _symbolized (matched known "L_fork")) `shouldBe` ["𝑛2"]
+      stood known "L_fork" `shouldBe` ["𝑛2"]
 
     it "reads a 'symbolize' line standing the term the line above it made" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  symbolize:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
-      map (_spelling . fst) (maybe [] _symbolized (matched known "L_fork")) `shouldBe` ["𝑛2", "𝑛3"]
+      stood known "L_fork" `shouldBe` ["𝑛2", "𝑛3"]
 
     it "reads the term an operand is reduced from" $ do
       known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
@@ -157,43 +170,67 @@ spec = do
 
     it "reads the lines of 'rewrite' with the metas they read and their rules" $ do
       known <- lambdasOf (rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "    𝑛3:\n      of: 𝑛2\n" <> rules <> "  𝑛: 𝑛3\n")
-      map rewrote (maybe [] _rewritten (matched known "L_fork")) `shouldBe` [("𝑛2", "𝑛1", 1), ("𝑛3", "𝑛2", 1)]
+      rewrote known "L_fork" `shouldBe` [("𝑛2", "𝑛1", 1), ("𝑛3", "𝑛2", 1)]
 
     it "reads a 'symbolize' line standing the term a 'rewrite' line made" $ do
       known <- lambdasOf (rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "  symbolize:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n")
-      map (_spelling . fst) (maybe [] _symbolized (matched known "L_fork")) `shouldBe` ["𝑛3"]
+      stood known "L_fork" `shouldBe` ["𝑛3"]
 
     it "reads the metas the lines of 'evaluate' fire" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n"
-      links _evaluated known "L_fork" `shouldBe` [("𝑛3", "𝑛1"), ("𝑛4", "𝑛2")]
+      fired known "L_fork" `shouldBe` [("𝑛3", "𝑛1"), ("𝑛4", "𝑛2")]
 
     it "reads an 'evaluate' line firing what the line above it fired" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
-      links _evaluated known "L_fork" `shouldBe` [("𝑛2", "𝑛1"), ("𝑛3", "𝑛2")]
+      fired known "L_fork" `shouldBe` [("𝑛2", "𝑛1"), ("𝑛3", "𝑛2")]
 
     it "reads a 'rewrite' line rewriting what an 'evaluate' line fired" $ do
       known <- lambdasOf ("- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛1\n  rewrite:\n    𝑛3:\n      of: 𝑛2\n" <> rules <> "  𝑛: 𝑛3\n")
-      map rewrote (maybe [] _rewritten (matched known "L_fork")) `shouldBe` [("𝑛3", "𝑛2", 1)]
+      rewrote known "L_fork" `shouldBe` [("𝑛3", "𝑛2", 1)]
 
     it "reads the metas the lines of 'stay' keep, a line keeping what the line above it kept" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
-      links _stayed known "L_fork" `shouldBe` [("𝑛2", "𝑛1"), ("𝑛3", "𝑛2")]
+      stays known "L_fork" `shouldBe` [("𝑛2", "𝑛1"), ("𝑛3", "𝑛2")]
 
     it "reads a 'stay' line keeping what a 'rewrite' line made" $ do
       known <- lambdasOf (rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "  stay:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n")
-      links _stayed known "L_fork" `shouldBe` [("𝑛3", "𝑛2")]
+      stays known "L_fork" `shouldBe` [("𝑛3", "𝑛2")]
 
     it "reads a 'symbolize' line standing what a 'stay' line kept" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: 𝑛1\n  symbolize:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
-      map (_spelling . fst) (maybe [] _symbolized (matched known "L_fork")) `shouldBe` ["𝑛3"]
+      stood known "L_fork" `shouldBe` ["𝑛3"]
+
+    it "runs a 'rewrite' line before the 'evaluate' line firing what it made" $ do
+      known <- lambdasOf (rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "  evaluate:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n")
+      order known "L_fork" `shouldBe` ["𝑛2", "𝑛3"]
+
+    it "runs a line before the line of its own block reading what it made" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛3\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n"
+      order known "L_fork" `shouldBe` ["𝑛3", "𝑛2"]
+
+    it "runs a 'symbolize' line before the 'rewrite' line rewriting what it stood" $ do
+      known <- lambdasOf (rewriting "    𝑛3:\n      of: 𝑛2\n" <> rules <> "  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n")
+      order known "L_fork" `shouldBe` ["𝑛2", "𝑛3"]
+
+    it "runs a 'symbolize' line before the 'stay' line keeping what it stood" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛2\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n"
+      order known "L_fork" `shouldBe` ["𝑛2", "𝑛3"]
+
+    it "runs a 'join' line before the 'symbolize' line standing what it joined" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛4: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛4\n"
+      order known "L_fork" `shouldBe` ["𝑛3", "𝑛4"]
+
+    it "runs the lines no meta orders in the order of their blocks" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  symbolize:\n    𝑛4: 𝑛1\n  stay:\n    𝑛5: 𝑛2\n  evaluate:\n    𝑛6: 𝑛1\n  𝑛: 𝑛3\n"
+      order known "L_fork" `shouldBe` ["𝑛6", "𝑛5", "𝑛4", "𝑛3"]
 
     it "reads an entry naming no 'stay' block at all" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
-      links _stayed known "L_fork" `shouldBe` []
+      stays known "L_fork" `shouldBe` []
 
     it "reads an entry naming no 'evaluate' block at all" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
-      links _evaluated known "L_fork" `shouldBe` []
+      fired known "L_fork" `shouldBe` []
 
     it "reads an entry naming no 'join' block at all" $ do
       known <- lambdasOf "- λ: L_pair\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
@@ -225,8 +262,7 @@ spec = do
       , ("an operand of 'morph' which is no expression meta", "- λ: L_pair\n  morph:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not an expression meta")
       , ("an operand of 'symbolize' which is no expression meta", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
       , ("an operand of 'symbolize' the entry never bound", "- λ: L_pair\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "names no meta")
-      , ("an operand of 'symbolize' which is no meta at all", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: $.x\n  𝑛: 𝑛2\n", "names no meta")
-      , ("an operand of 'symbolize' standing the term of a line below it", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛3\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "names no meta")
+      , ("an operand of 'symbolize' which is no meta at all", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: $.x\n  𝑛: 𝑛2\n", "is not an expression meta")
       , ("an operand referencing a meta the entry never matched", "- λ: L_pair\n  dataize:\n    𝛿1: '!n'\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "cannot be referenced")
       , ("an answer reading the data its operands came down to", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ Δ ⤍ 𝛿1 ⟧\n", "reads data")
       , ("a meta bound by 'morph' and again by 'symbolize'", "- λ: L_pair\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_pair' is bound by more than one line")
@@ -236,32 +272,27 @@ spec = do
       , ("a 'join' line joining three metas", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  join:\n    𝑛4: [𝑛1, 𝑛2, 𝑛3]\n  𝑛: 𝑛4\n", "must join exactly two metas")
       , ("a 'join' line joining what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛2: [𝑛1, $.else]\n  𝑛: 𝑛2\n", "is not an expression meta")
       , ("a 'join' line bound to what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝛿1: [𝑛1, 𝑛2]\n  𝑛: 𝑛1\n", "is not an expression meta")
-      , ("a 'join' line joining a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'join' line joining a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("a 'join' line joining a meta that came down to data", "- λ: L_fork\n  dataize:\n    𝛿1: $.ρ\n  morph:\n    𝑛1: $.then\n  join:\n    𝑛2: [𝑛1, 𝛿1]\n  𝑛: 𝑛2\n", "is not an expression meta")
-      , ("a 'join' line joining what a line below it made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛4]\n    𝑛4: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
-      , ("a 'rewrite' line rewriting a meta the entry never bound", rewriting "    𝑛2:\n      of: 𝑛5\n" <> rules <> "  𝑛: 𝑛2\n", "names no meta bound by 'morph' or by a line above it")
-      , ("a 'rewrite' line rewriting what a line below it made", rewriting "    𝑛2:\n      of: 𝑛3\n" <> rules <> "    𝑛3:\n      of: 𝑛1\n" <> rules <> "  𝑛: 𝑛2\n", "names no meta bound by 'morph' or by a line above it")
-      , ("a 'rewrite' line rewriting what a 'symbolize' line made", rewriting "    𝑛3:\n      of: 𝑛2\n" <> rules <> "  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'rewrite' line rewriting a meta the entry never bound", rewriting "    𝑛2:\n      of: 𝑛5\n" <> rules <> "  𝑛: 𝑛2\n", "names no meta bound by 'morph' or by any line")
       , ("a 'rewrite' line bound to what is no expression meta", rewriting "    𝛿1:\n      of: 𝑛1\n" <> rules <> "  𝑛: 𝑛1\n", "is not an expression meta")
       , ("a 'rewrite' line with no rules at all", rewriting "    𝑛2:\n      of: 𝑛1\n  𝑛: 𝑛2\n", "cannot be read")
       , ("a rule of 'rewrite' minting a fresh symbol", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: minting\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ λ ⤍ 𝜎 ⟧\n  𝑛: 𝑛2\n", "writes a symbol 𝜎 into its result")
       , ("a rule of 'rewrite' writing a symbol nobody minted", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: naming\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ λ ⤍ 𝜎1 ⟧\n  𝑛: 𝑛2\n", "writes a symbol 𝜎 into its result")
       , ("a rule of 'rewrite' reading a meta it never binds", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: unbound\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ φ ↦ 𝑒2 ⟧\n  𝑛: 𝑛2\n", "reads the meta 'e2' it never binds")
       , ("a rule of 'rewrite' with no result", rewriting "    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: empty\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n  𝑛: 𝑛2\n", "cannot be read")
-      , ("an 'evaluate' line firing a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
-      , ("an 'evaluate' line firing what a line below it fired", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛3\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "names no meta bound by 'morph' or by a line above it")
-      , ("an 'evaluate' line firing what a 'rewrite' line made", rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "  evaluate:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("an 'evaluate' line firing a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("an 'evaluate' line bound to what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
       , ("an 'evaluate' line firing a meta that came down to data", "- λ: L_fork\n  dataize:\n    𝛿1: $.ρ\n  evaluate:\n    𝑛1: 𝛿1\n  𝑛: 𝑛1\n", "is not an expression meta")
       , ("an 'evaluate' line firing a term instead of a meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: $.a\n  𝑛: 𝑛2\n", "is not an expression meta")
       , ("a meta bound by 'morph' and again by 'evaluate'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_fork' is bound by more than one line")
-      , ("a 'stay' line keeping a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
-      , ("a 'stay' line keeping what a line below it kept", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: 𝑛3\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "names no meta bound by 'morph' or by a line above it")
-      , ("a 'stay' line keeping what a 'symbolize' line made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛2\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
-      , ("a 'rewrite' line rewriting what a 'stay' line kept", rewriting "    𝑛3:\n      of: 𝑛2\n" <> rules <> "  stay:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'stay' line keeping a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("a 'stay' line bound to what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
       , ("a 'stay' line keeping a term instead of a meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: $.a\n  𝑛: 𝑛2\n", "is not an expression meta")
       , ("a meta bound by 'morph' and again by 'stay'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_fork' is bound by more than one line")
+      , ("a line reading the meta it binds", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛2\n  𝑛: 𝑛2\n", "The line binding '𝑛2' of λ function 'L_fork' reads the meta it binds")
+      , ("two lines reading what each other made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛3\n  symbolize:\n    𝑛3: 𝑛2\n  𝑛: 𝑛2\n", "The line binding '𝑛2' of λ function 'L_fork' reads the meta it binds")
+      , ("a line reading what two lines reading each other made, blaming one of the two", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛5: 𝑛3\n  symbolize:\n    𝑛3: 𝑛4\n    𝑛4: 𝑛3\n  𝑛: 𝑛5\n", "The line binding '𝑛3' of λ function 'L_fork' reads the meta it binds")
       , ("an answer naming a meta no block binds", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: 𝑛7\n", "reads the meta 'n7' that no block binds")
       , ("an operand of 'dataize' reading a meta", "- λ: L_pair\n  dataize:\n    𝛿1: 𝑛5\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "of 'dataize' of λ function 'L_pair' reads the meta 'n5'")
       , ("an operand of 'morph' reading a meta", "- λ: L_pair\n  morph:\n    𝑛1: $.x.𝜏1\n  𝑛: 𝑛1\n", "of 'morph' of λ function 'L_pair' reads the meta 't1'")
@@ -269,7 +300,6 @@ spec = do
       , ("a 'lenient' key which is no boolean", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: often\n  𝑛: 𝑛3\n", "lenient: expected Bool")
       , ("an entry that defers but is not lenient", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  defer: true\n  𝑛: 𝑛3\n", "defers but is not lenient")
       , ("a 'defer' key which is no boolean", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  defer: later\n  𝑛: 𝑛3\n", "defer: expected Bool")
-      , ("a 'symbolize' line standing what a 'join' line made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛5: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛5\n", "names no meta bound by 'morph' or by a line above it")
       , ("a 'terminators' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: L_throw\n  𝑛: 𝑛1\n", "expected Array")
       ,
         ( "a terminator an entry of the file answers"

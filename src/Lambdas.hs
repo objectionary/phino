@@ -10,6 +10,7 @@ module Lambdas
   ( Lambda (..)
   , LambdaException (..)
   , Lambdas
+  , Line (..)
   , Meta (..)
   , emptyLambdas
   , joined
@@ -27,13 +28,12 @@ where
 import AST
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, throwIO)
-import Control.Monad (void)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object), withObject, (.!=), (.:), (.:?))
 import Data.Char (isDigit)
 import Data.List (find, nub, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (listToMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
@@ -54,15 +54,18 @@ data Meta = Meta
   , _name :: Text
   }
 
+data Line
+  = Evaluated Meta Meta
+  | Rewritten Meta Meta [Y.Rule]
+  | Stayed Meta Meta
+  | Symbolized Meta Meta
+  | Paired Meta Meta Meta
+
 data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
-  , _evaluated :: [(Meta, Meta)]
-  , _rewritten :: [(Meta, (Meta, [Y.Rule]))]
-  , _stayed :: [(Meta, Meta)]
-  , _symbolized :: [(Meta, Expression)]
-  , _paired :: [(Meta, (Meta, Meta))]
+  , _lines :: [Line]
   , _lenient :: Bool
   , _defer :: Bool
   , _terminators :: [Text]
@@ -83,22 +86,17 @@ instance FromJSON Lambda where
   parseJSON = withObject "Lambda" $ \entry -> do
     key <- entry .:? "λ" >>= maybe (fail "The entry has no 'λ' key") pure
     answer <- entry .:? "𝑛" >>= maybe (fail "The entry has no '𝑛' key") pure
+    dataized <- operands key bytesMeta entry "dataize"
+    morphed <- operands key expressionMeta entry "morph"
     lambda <-
-      Lambda key
-        <$> operands key bytesMeta entry "dataize"
-        <*> operands key expressionMeta entry "morph"
-        <*> links entry "evaluate"
-        <*> rewrites (T.unpack key) entry
-        <*> links entry "stay"
-        <*> operands key expressionMeta entry "symbolize"
-        <*> pairs (T.unpack key) entry
+      Lambda key dataized morphed
+        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed))
         <*> entry .:? "lenient" .!= False
         <*> entry .:? "defer" .!= False
         <*> entry .:? "terminators" .!= []
         <*> pure answer
     sigmas (T.unpack key) lambda._answer
     dataless (T.unpack key) lambda._answer
-    earlier (T.unpack key) lambda
     once (T.unpack key) lambda
     mapM_ (metaless (T.unpack key) "dataize") lambda._dataized
     mapM_ (metaless (T.unpack key) "morph") lambda._morphed
@@ -123,20 +121,27 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
-      links :: Object -> Key -> Yaml.Parser [(Meta, Meta)]
-      links entry name = do
+      written :: String -> Object -> Yaml.Parser [Line]
+      written key entry =
+        concat
+          <$> sequence
+            [ links Evaluated entry "evaluate"
+            , rewrites key entry
+            , links Stayed entry "stay"
+            , links Symbolized entry "symbolize"
+            , pairs key entry
+            ]
+      links :: (Meta -> Meta -> Line) -> Object -> Key -> Yaml.Parser [Line]
+      links kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Text)
-        mapM (\(meta, source) -> (,) <$> expressionMeta meta <*> expressionMeta source) (numbered mapping)
-      pairs :: String -> Object -> Yaml.Parser [(Meta, (Meta, Meta))]
+        mapM (\(meta, source) -> kind <$> expressionMeta meta <*> expressionMeta source) (numbered mapping)
+      pairs :: String -> Object -> Yaml.Parser [Line]
       pairs key entry = do
         mapping <- entry .:? "join" .!= (Map.empty :: Map Text [Text])
         mapM joins (numbered mapping)
         where
-          joins :: (Text, [Text]) -> Yaml.Parser (Meta, (Meta, Meta))
-          joins (meta, [left, right]) = do
-            named <- expressionMeta meta
-            branches <- (,) <$> expressionMeta left <*> expressionMeta right
-            pure (named, branches)
+          joins :: (Text, [Text]) -> Yaml.Parser Line
+          joins (meta, [left, right]) = Paired <$> expressionMeta meta <*> expressionMeta left <*> expressionMeta right
           joins (meta, _) =
             fail
               ( printf
@@ -144,18 +149,17 @@ instance FromJSON Lambda where
                   (T.unpack meta)
                   key
               )
-      rewrites :: String -> Object -> Yaml.Parser [(Meta, (Meta, [Y.Rule]))]
+      rewrites :: String -> Object -> Yaml.Parser [Line]
       rewrites key entry = do
         mapping <- entry .:? "rewrite" .!= (Map.empty :: Map Text Object)
         mapM line (numbered mapping)
         where
-          line :: (Text, Object) -> Yaml.Parser (Meta, (Meta, [Y.Rule]))
+          line :: (Text, Object) -> Yaml.Parser Line
           line (meta, body) = do
             named <- expressionMeta meta
             source <- body .: "of" >>= expressionMeta
-            written <- body .: "rules"
-            rules <- mapM rule written
-            pure (named, (source, rules))
+            listed <- body .: "rules"
+            Rewritten named source <$> mapM rule listed
           rule :: Object -> Yaml.Parser Y.Rule
           rule body = do
             result <- body .: "result"
@@ -181,37 +185,49 @@ instance FromJSON Lambda where
             where
               known :: [Text]
               known = metas parsed.pattern ++ concatMap (metas . (.meta)) (concat parsed.where_)
-      earlier :: String -> Lambda -> Yaml.Parser ()
-      earlier key lambda = do
-        fired <- goSources (map (_name . fst) lambda._morphed) lambda._evaluated
-        rewrote <- goSources fired [(meta, source) | (meta, (source, _)) <- lambda._rewritten]
-        kept <- goSources rewrote lambda._stayed
-        stood <- go kept lambda._symbolized
-        void (goJoins stood lambda._paired)
+      ordered :: String -> [Text] -> [Line] -> Yaml.Parser [Line]
+      ordered key reduced waiting = mapM_ bound (concatMap sources waiting) >> go reduced waiting
         where
-          goSources :: [Text] -> [(Meta, Meta)] -> Yaml.Parser [Text]
-          goSources reduced [] = pure reduced
-          goSources reduced ((meta, source) : rest)
-            | source._name `elem` reduced = goSources (meta._name : reduced) rest
-            | otherwise = unbound source
-          go :: [Text] -> [(Meta, Expression)] -> Yaml.Parser [Text]
-          go reduced [] = pure reduced
-          go reduced ((meta, term) : rest) = case term of
-            ExMeta name | name `elem` reduced -> go (meta._name : reduced) rest
-            _ -> unbound meta
-          goJoins :: [Text] -> [(Meta, (Meta, Meta))] -> Yaml.Parser [Text]
-          goJoins reduced [] = pure reduced
-          goJoins reduced ((meta, (left, right)) : rest)
-            | all ((`elem` reduced) . _name) [left, right] = goJoins (meta._name : reduced) rest
-            | otherwise = unbound (if left._name `elem` reduced then right else left)
-          unbound :: Meta -> Yaml.Parser a
-          unbound meta =
-            fail
-              ( printf
-                  "The operand '%s' of λ function '%s' names no meta bound by 'morph' or by a line above it"
-                  (T.unpack meta._spelling)
-                  key
-              )
+          bound :: Meta -> Yaml.Parser ()
+          bound meta
+            | meta._name `elem` reduced ++ map (_name . binding) waiting = pure ()
+            | otherwise =
+                fail
+                  ( printf
+                      "The operand '%s' of λ function '%s' names no meta bound by 'morph' or by any line"
+                      (T.unpack meta._spelling)
+                      key
+                  )
+          go :: [Text] -> [Line] -> Yaml.Parser [Line]
+          go _ [] = pure []
+          go known pending@(first : _) = case break (all ((`elem` known) . _name) . sources) pending of
+            (before, line : after) -> (line :) <$> go ((binding line)._name : known) (before ++ after)
+            (_, []) ->
+              fail
+                ( printf
+                    "The line binding '%s' of λ function '%s' reads the meta it binds, directly or through other lines"
+                    (T.unpack (goCircle [] (binding first))._spelling)
+                    key
+                )
+            where
+              goCircle :: [Text] -> Meta -> Meta
+              goCircle seen meta
+                | meta._name `elem` seen = meta
+                | otherwise = goCircle (meta._name : seen) (fromMaybe meta (listToMaybe (feeding meta)))
+              feeding :: Meta -> [Meta]
+              feeding meta = [source | line <- pending, (binding line)._name == meta._name, source <- sources line, source._name `notElem` known]
+          sources :: Line -> [Meta]
+          sources (Evaluated _ source) = [source]
+          sources (Rewritten _ source _) = [source]
+          sources (Stayed _ source) = [source]
+          sources (Symbolized _ source) = [source]
+          sources (Paired _ left right) = [left, right]
+      binding :: Line -> Meta
+      binding (Evaluated meta _) = meta
+      binding (Rewritten meta _ _) = meta
+      binding (Stayed meta _) = meta
+      binding (Symbolized meta _) = meta
+      binding (Paired meta _ _) = meta
       sigmas :: String -> Expression -> Yaml.Parser ()
       sigmas key answer = case ([kind | Slot kind _ <- slots answer, kind /= "S"], symbols answer) of
         ([], []) -> pure ()
@@ -224,12 +240,7 @@ instance FromJSON Lambda where
         where
           bound :: [Text]
           bound =
-            map (_spelling . fst) lambda._morphed
-              ++ map (_spelling . fst) lambda._evaluated
-              ++ map (_spelling . fst) lambda._rewritten
-              ++ map (_spelling . fst) lambda._stayed
-              ++ map (_spelling . fst) lambda._symbolized
-              ++ map (_spelling . fst) lambda._paired
+            map (_spelling . fst) lambda._morphed ++ map (_spelling . binding) lambda._lines
           twice :: [Text] -> [Text] -> Maybe Text
           twice _ [] = Nothing
           twice seen (meta : rest)
@@ -256,14 +267,10 @@ instance FromJSON Lambda where
           known =
             map (_name . fst) lambda._dataized
               ++ map (_name . fst) lambda._morphed
-              ++ map (_name . fst) lambda._evaluated
-              ++ map (_name . fst) lambda._rewritten
-              ++ map (_name . fst) lambda._stayed
-              ++ map (_name . fst) lambda._symbolized
-              ++ map (_name . fst) lambda._paired
+              ++ map (_name . binding) lambda._lines
       lonely :: String -> Lambda -> Yaml.Parser ()
       lonely key lambda
-        | lambda._lenient && null lambda._paired = fail (printf "The λ function '%s' is lenient but has no 'join' line to be lenient in" key)
+        | lambda._lenient && null [meta | Paired meta _ _ <- lambda._lines] = fail (printf "The λ function '%s' is lenient but has no 'join' line to be lenient in" key)
         | lambda._defer && not lambda._lenient = fail (printf "The λ function '%s' defers but is not lenient, while only a lenient join may enter a copy" key)
         | otherwise = pure ()
       dataless :: String -> Expression -> Yaml.Parser ()

@@ -161,7 +161,11 @@ under `evaluate`, each firing through 𝔼 the term a `morph` meta or an earlier
 line is bound to and binding a meta of its own to the answer (`evaluated` of
 `Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
 formation with no λ and ⊥ as they are, never fires a terminator of its entry,
-and never fires its answer again, so another call takes another line. No two
+and never fires its answer again, so another call takes another line. The
+lines of `evaluate`, `rewrite`, `stay`, `symbolize` and `join` are one list,
+`_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
+line reads, keeping the order of the blocks where no meta decides, and refuses
+a line reading what nothing binds or what it binds itself (#1903). No two
 keys may match one λ name, whether or not either
 spells it: `Language.hs` reads each key as an automaton and looks for a name
 both accept, refusing a key beyond a regular language, such as a back
