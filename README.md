@@ -403,6 +403,24 @@ A branch whose `φ` reads nothing of its own object, such as
 `⟦ φ ↦ Φ.bool( … ) ⟧`, is left as it is, since morphing it only expands the
 call.
 
+That step gets stuck on a branch that is a copy, such as
+`Φ.step( tup ↦ Φ.items.tail )`, one of whose arguments reads to a bare
+symbol `⟦ λ ⤍ 𝜎1 ⟧`: morphing its `φ`, `tup.next`, asks `𝜎1` for an
+attribute nobody knows. An entry that says `defer: true` beside
+`lenient: true` does not enter such a copy. It answers the copy with a fresh
+symbol, joins that symbol instead, and writes what it stands for:
+
+```text
+deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
+```
+
+The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
+`<with>` element with an `<attr name="tup">𝜎1</attr>` per argument, a `?` for
+an argument that is no bare symbol, and the copy itself in `<e>`. The `of` is
+left out when the world declares no object the copy was made of. A copy whose
+arguments read to no bare symbol is entered as before. An entry that says
+`defer: true` and is not lenient is refused when the file is read.
+
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
 has a perfectly good value on the other. The join then mints nothing, binds
