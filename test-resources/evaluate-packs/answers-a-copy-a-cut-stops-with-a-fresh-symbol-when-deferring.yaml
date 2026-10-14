@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The cut of #1735 without the walk of --deep: the branch 'b' of the fork is
+# the copy 'rec( n ↦ ⟦ φ ↦ 𝜎2 ⟧ )', whose argument reads to no bare symbol, so
+# a lenient join enters it, morphs its φ to the same fork and fires it.
+# '--acyclic=proven' refuses that firing, since the run is already inside the
+# fork. An entry that says 'defer: true' answers the copy with a fresh symbol
+# there, writes it on the 'looped' line, and joins it with the symbol the
+# other branch holds, instead of losing the whole entry (#1895).
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    lenient: true
+    defer: true
+    𝑛: ⟦ φ ↦ 𝑛3 ⟧
+location: 'Q.y'
+acyclic: proven
+input: '⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝑛·0·1 := Φ.rec( n ↦ 𝜎2:λ:φ )
+    𝑛·0·2 := Φ.fork( a ↦ 𝜎1:λ )
+    𝑛·0·3 := 𝑛·0·2( b ↦ Φ.rec( 𝜎2:λ:φ ) )
+    𝔼(L_fork):
+      𝑛1·1 := 𝜎1:λ  # 𝕄(ξ.a)
+      𝕄(Φ.a🌵1):
+        𝑛·1·1 := Φ.rec( n ↦ 𝜎2:λ:φ )
+      𝑛2·1 := 𝑛·1·1  # 𝕄(ξ.b)
+      𝕄(Φ.a🌵2):
+        𝑛·1·2 := Φ.fork( a ↦ 𝜎1:λ )
+        𝑛·1·3 := 𝑛·1·2( b ↦ Φ.rec( 𝜎2:λ:φ ) )
+      𝑛2·1 := 𝑛·1·3  # 𝕄(𝑛2.φ)
+      looped(𝑛·1·3) := 𝜎3  # 𝔼(𝑛2), proven
+      𝑛2·1 := 𝜎3:λ  # 𝔼(𝑛2)
+      𝔻(𝜎4:λ) ∈ { 𝔻(𝜎1:λ), 𝔻(𝜎3:λ) }
+      𝑛3·1 := 𝜎4:λ  # [𝑛1, 𝑛2]
+      𝑛·1·4 := 𝜎4:λ:φ  # 𝑛
+      𝑛·1·5 := 𝜎4:λ:φ  # 𝕄(𝑛·1·4)

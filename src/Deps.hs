@@ -101,7 +101,7 @@ data Evaluation
   | EvFiring Int T.Text Judgment Expression
   | EvStarted Int Judgment Expression
   | EvDelta Int Bytes
-  | EvLooped Int Judgment Acyclic Expression Expression
+  | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Maybe Expression))
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
@@ -129,7 +129,7 @@ resited from to = record
     record :: Evaluation -> Evaluation
     record (EvFiring depth key judgment site) = EvFiring depth key judgment (moved site)
     record (EvStarted depth judgment site) = EvStarted depth judgment (moved site)
-    record (EvLooped depth judgment mode self site) = EvLooped depth judgment mode self (moved site)
+    record (EvLooped depth judgment mode self site answered) = EvLooped depth judgment mode self (moved site) answered
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (moved site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (moved site)
     record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (moved site)
@@ -151,7 +151,7 @@ tier EvRun{} = 0
 tier (EvFiring depth _ _ _) = depth
 tier (EvStarted depth _ _) = depth
 tier (EvDelta depth _) = depth
-tier (EvLooped depth _ _ _ _) = depth
+tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
 tier (EvStuckOn depth _) = depth
@@ -309,10 +309,13 @@ saveEval handle cursor printed printed' report = do
           naming :: String
           naming = printf "%s·%d" (labelled protocol sigil) index
       pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
-    written (EvLooped depth judgment mode self site) protocol = do
+    written (EvLooped depth judgment mode self site answered) protocol = do
       form <- render self
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented depth (remarked (printf "looped(%s)" form) (remarks ++ [certainty mode]))))
+      pure (protocol, Just (indented depth (remarked (printf "looped(%s)%s" form (maybe "" symbolized answered)) (remarks ++ [certainty mode]))))
+      where
+        symbolized :: (Int, Maybe Expression) -> String
+        symbolized (symbol, _) = printf " := %s" (printFunction (FnSymbol symbol))
     written (EvStuck depth key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented depth (printf "unanswered(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -497,11 +500,15 @@ saveEvalXml handle cursor printed report = do
       pure $ case inner of
         (level, opening') : _ | level == depth && opening' == opening -> (nesting{_heads = inner, _pending = pending}, [])
         _ -> (nesting{_heads = (depth, opening) : dropWhile ((>= depth) . fst) inner, _pending = (depth, opened judgment, opening) : dropWhile (\(level, _, _) -> level >= depth) pending, _closing = kept}, closers)
-    elements (EvLooped depth judgment mode self site) nesting = do
+    elements (EvLooped depth judgment mode self site answered) nesting = do
       form <- render self
       locator <- located nesting site
+      (origin, given) <- maybe (pure ("", "")) called (answered >>= snd)
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<looped by=\"%s\" match=\"%s\" at=\"%s\"><e>%s</e></looped>" (opened judgment) (certainty mode) (escapeXML locator) (escapeXMLText form))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<looped%s by=\"%s\" match=\"%s\" at=\"%s\"%s>%s<e>%s</e></looped>" (maybe "" symbolized answered) (opened judgment) (certainty mode) (escapeXML locator) origin given (escapeXMLText form))])
+      where
+        symbolized :: (Int, Maybe Expression) -> String
+        symbolized (symbol, _) = printf " symbol=\"%s\"" (sigma symbol)
     elements (EvStuck depth key judgment self) nesting = do
       form <- render self
       let (kept, closers) = closed depth nesting._closing

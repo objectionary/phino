@@ -195,6 +195,11 @@ symbol: `deferred` of `Evaluate.hs` reduces every argument with no entry of the
 file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it answers a fresh symbol instead and
 writes `deferred(…)` (`EvDeferred`), naming the call the copy stands for by the
 object of the world it was made of, the way the record of 0.0.153 did (#1892).
+A copy the step does enter gets a fresh symbol too once `--acyclic` refuses
+the firing its φ comes to: `fire` asks `admitting` of `Morph.hs` and hands a
+refusal to the function it is given, `refused` for an `evaluate` line and for
+a step that does not defer, `severed` for one that does, which writes the
+symbol and the call on the `looped(…)` line (`EvLooped`, #1895).
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`

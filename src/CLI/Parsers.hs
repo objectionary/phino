@@ -257,8 +257,8 @@ optSymbolic =
               \\"rewrite\", the terms of those it stands the data of into unknowns under \"symbolize\" and the \
               \pairs of branches it joins into one term under \"join\", whether a join takes a term and a \
               \formation whose φ is that term for one under \"lenient\", whether a lenient join answers a fresh \
-              \symbol for a copy one of whose arguments reads to a bare symbol instead of entering it under \
-              \\"defer\", the λ functions whose objects a join takes for a branch that raises under \
+              \symbol for a copy one of whose arguments reads to a bare symbol instead of entering it, or for \
+              \a copy whose firing a cut refuses, under \"defer\", the λ functions whose objects a join takes for a branch that raises under \
               \\"terminators\", and answering with the term under \"𝑛\""
         )
     )
