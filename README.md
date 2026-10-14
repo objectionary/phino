@@ -173,8 +173,8 @@ through 𝔼 and binds an expression meta of its own to the answer:
   𝑛: 𝑛5
 ```
 
-The right-hand side of a line names a meta bound by `morph` or by an `evaluate`
-line above it, and nothing else. A formation with a λ function is fired by the
+The right-hand side of a line names a meta bound by `morph` or by another line
+of the entry, and nothing else. A formation with a λ function is fired by the
 entry its λ name matches, the way 𝕄 fires it, and the line binds its meta to
 the normal form of the answer. A formation with no λ function is no call and
 stays as it is, and so does `⊥`. A λ name no entry answers gets stuck, as it
@@ -222,8 +222,8 @@ meta of its own to the outcome:
   𝑛: 𝑛3
 ```
 
-The meta under `of` is one bound by `morph`, by `evaluate` or by a `rewrite`
-line above it, and nothing else. A rule is tried at every position of the term,
+The meta under `of` is one bound by `morph` or by another line of the entry,
+and nothing else. A rule is tried at every position of the term,
 the outermost first; the first rule whose pattern matches a position rewrites
 it, and a rewritten position is not walked into again, so a rule whose result
 carries its own pattern never loops. Nothing is normalized afterwards: a
@@ -235,9 +235,10 @@ binds, is refused where the file is read.
 This is how a program brings two branches of a fork to one shape before they
 are compared. In EO a `Φ.false` is written `φ ↦ ξ.right` while a bool a firing
 answered carries a symbol, and the two are one value in two spellings that
-only the program knows to be one. The block runs before `symbolize` on purpose:
-a result may write the datum a literal stands for, as `⟦ Δ ⤍ 00- ⟧` above, and
-that datum is then stood into a known symbol the join can pair.
+only the program knows to be one. A `symbolize` line may read what a `rewrite`
+line made on purpose: a result may write the datum a literal stands for, as
+`⟦ Δ ⤍ 00- ⟧` above, and that datum is then stood into a known symbol the join
+can pair.
 
 ### Dropping the ρ of a dispatch
 
@@ -259,11 +260,11 @@ applied to a dispatch:
   𝑛: 𝑛5
 ```
 
-The right-hand side of a line names a meta bound by `morph`, by `evaluate`, by
-`rewrite` or by a `stay` line above it, and nothing else. Every position of the
-term is walked, the methods and the `ρ` of a formation among them, and
-`𝑒.𝜏( ρ ↦ 𝑒2 )` becomes `𝑒.𝜏`. So does a dispatch heading a chain of
-applications that bind no `ρ`: `𝑒.𝜏( φ ↦ 𝑒3 )( ρ ↦ 𝑒2 )` becomes
+The right-hand side of a line names a meta bound by `morph` or by another line
+of the entry, and nothing else. Every position of the term is walked, the
+methods and the `ρ` of a formation among them, and `𝑒.𝜏( ρ ↦ 𝑒2 )` becomes
+`𝑒.𝜏`. So does a dispatch heading a chain of applications that bind no `ρ`:
+`𝑒.𝜏( φ ↦ 𝑒3 )( ρ ↦ 𝑒2 )` becomes
 `𝑒.𝜏( φ ↦ 𝑒3 )`. A `ρ` applied to anything else, such as a formation, stays.
 
 Dropping it changes no value. The `dot` rule answers a dispatch as
@@ -278,9 +279,9 @@ reads its `data` as `ρ`, so a branch computed through it comes to
 `Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1 )( ρ ↦ ⟦ … ⟧ ) )`, with the copy hung on the
 bytes as their `ρ`, while a branch made of no object comes to
 `Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2 ) )`. The join compares the two as written and
-the tail refuses it; after `stay` they differ in their symbols alone. The block
-runs after `rewrite` and before `symbolize`, and the protocol writes each of
-its lines the way it writes a `rewrite` one, commented with the meta it took.
+the tail refuses it; after `stay` they differ in their symbols alone. The
+protocol writes each line of the block the way it writes a `rewrite` one,
+commented with the meta it took.
 
 ### Standing data into unknowns
 
@@ -301,10 +302,9 @@ its own to that same term with every datum in it standing for an unknown:
   𝑛: 𝑛3
 ```
 
-The right-hand side of a line names a meta bound by `morph`, by `evaluate`, by
-`rewrite`, by `stay` or by a `symbolize` line above it, and nothing else; a
-term nobody reduced has no data to stand. Every `Δ ⤍ b` binding of that term
-becomes a
+The right-hand side of a line names a meta bound by `morph` or by another line
+of the entry, and nothing else; a term nobody reduced has no data to stand.
+Every `Δ ⤍ b` binding of that term becomes a
 `λ ⤍ 𝜎k` naming a fresh symbol, one per occurrence, so `⟦ Δ ⤍ b ⟧` reads as
 `⟦ λ ⤍ 𝜎k ⟧` and a
 literal tuple gets several. A term carrying no datum passes through as it was.
@@ -350,13 +350,10 @@ binds one of its own to the two terms joined into one.
   𝑛: 𝑛5
 ```
 
-A line names two metas bound by `morph`, by `evaluate`, by `rewrite`, by
-`stay`, by `symbolize` or by a `join` line above it, and never three: it
-stands for a
-choice between two branches, and a walk over three terms in parallel is no such
-choice. The meta it binds is one like any other, so the answer may name it
-alone, as above, or stand
-it inside a larger term.
+A line names two metas bound by `morph` or by other lines of the entry, and
+never three: it stands for a choice between two branches, and a walk over three
+terms in parallel is no such choice. The meta it binds is one like any other,
+so the answer may name it alone, as above, or stand it inside a larger term.
 
 `phino` takes the two terms and requires them to match verbatim, with one
 exception: where `⟦ λ ⤍ 𝜎A ⟧` in one meets a different `⟦ λ ⤍ 𝜎B ⟧` in the
@@ -379,11 +376,12 @@ term keeps the methods and the `ρ` of the first of the two, being of its shape,
 which is what lets the program go on dispatching on what the fork answered.
 
 A join is only ever between two expressions and a datum is never joined with
-anything, which is why `symbolize` runs before it: a known symbol, one that
-stage minted for a datum, is a symbol like any other here, so a literal branch
-joins with a computed one and two literal branches join too. Any other
-difference — a datum against a symbol, two different data, a binding one term
-carries and the other does not — is no join at all, and the firing gets stuck
+anything, which is why its branches go through `symbolize` first: a known
+symbol, one that stage minted for a datum, is a symbol like any other here, so
+a literal branch joins with a computed one and two literal branches join too.
+Any other difference — a datum against a symbol, two different data, a binding
+one term carries and the other does not — is no join at all, and the firing
+gets stuck
 the way a λ function no entry answers does, so `--partial` parks it rather than
 aborting the run. A fork whose branches differ in structure, such as a `Φ.true`
 and a `Φ.false` written as `φ ↦ ξ.left` against `φ ↦ ξ.right`, is stuck, and
@@ -523,6 +521,37 @@ since that function fires rather than raises.
 Every symbol a join mints is written into the protocol as a fact of its own,
 so a reader ties it to the two it stands for without diffing the terms; the
 section on `--protocol` below shows one.
+
+### The order of the lines
+
+The lines of `evaluate`, `rewrite`, `stay`, `symbolize` and `join` run in the
+order of the metas they read, not in the order of their blocks. A line runs
+once every meta it reads is bound, so this entry fires what its `rewrite` line
+unwrapped:
+
+```yaml
+- λ: L_pick
+  morph:
+    𝑛1: $.x
+  rewrite:
+    𝑛2:
+      of: 𝑛1
+      rules:
+        - name: unwrap
+          pattern: ⟦ φ ↦ 𝑒1 ⟧
+          result: 𝑒1
+  evaluate:
+    𝑛3: 𝑛2
+  𝑛: 𝑛3
+```
+
+The `evaluate` line reads `𝑛2`, which the `rewrite` line binds, so the
+`rewrite` line runs first. The `dataize` and `morph` blocks read no meta and
+always run before all the others. Where no meta orders two lines, they run in
+the order the list above gives their blocks, and the lines of one block in the
+order of their metas, `𝑛2` before `𝑛10`. A line reading a meta nothing binds
+is refused when the file is read, and so is a line that reads the meta it
+binds, directly or through other lines, since it could never run.
 
 ### Symbols
 

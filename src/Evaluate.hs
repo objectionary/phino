@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -18,7 +19,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Acyclic, Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Lambdas (Lambda (..), Meta (..), emptyLambdas, joined, matched, message, minted, stayed, symbolized, thrown)
+import Lambdas (Lambda (..), Line (..), Meta (..), emptyLambdas, joined, matched, message, minted, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), admitting, boxed, charged, counted, deeper, expired, isLambda, lambda, morphing, normalized, opening, recalled, refused, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
@@ -85,14 +86,16 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           throwIO (escaped failure)
     worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
     worked ctx entry firing@(Firing _ operands _) bound state' = do
-      (fired, state'') <- foldM (evaluated ctx entry) (bound, state') entry._evaluated
-      rewrote <- foldM (reshaped ctx) fired entry._rewritten
-      tailless <- foldM (trimmed ctx) rewrote entry._stayed
-      stood <- foldM (masked ctx) tailless entry._symbolized
-      (forked, joining) <- foldM (paired ctx entry (listToMaybe operands)) (stood, state'') entry._paired
-      (answer, state''') <- answered ctx entry operands forked joining
+      (lined, state'') <- foldM (line ctx entry (listToMaybe operands)) (bound, state') entry._lines
+      (answer, state''') <- answered ctx entry operands lined state''
       remember caller._memo firing answer
       pure (answer, state''')
+    line :: ReduceContext -> Lambda -> Maybe (Either Int Bytes) -> (Subst, State) -> Line -> IO (Subst, State)
+    line ctx entry _ held (Evaluated meta source) = evaluated ctx entry held meta source
+    line ctx _ _ (bound, state') (Rewritten meta source rules) = (,state') <$> reshaped ctx bound meta source rules
+    line ctx _ _ (bound, state') (Stayed meta source) = (,state') <$> trimmed ctx bound meta source
+    line ctx _ _ (bound, state') (Symbolized meta source) = (,state') <$> masked ctx bound meta source
+    line ctx entry condition held (Paired meta left right) = paired ctx entry condition held meta left right
     shown :: Int -> Answer -> IO ()
     shown depth (built, normal) = do
       caller._saveEval (EvBuilt depth built)
@@ -144,8 +147,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'', normal : normals)
-    evaluated :: ReduceContext -> Lambda -> (Subst, State) -> (Meta, Meta) -> IO (Subst, State)
-    evaluated ctx entry (bound, state') (meta, source) = do
+    evaluated :: ReduceContext -> Lambda -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
+    evaluated ctx entry (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
       (answer, state'') <- fire refused ctx entry source state' term
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Evaluation (ExMeta source._name) answer)
@@ -165,30 +168,30 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           entered <- deeper admitted
           evaluation entered state' term univ
     fire _ _ _ _ _ _ = throwIO (Stuck func)
-    reshaped :: ReduceContext -> Subst -> (Meta, (Meta, [Y.Rule])) -> IO Subst
-    reshaped ctx bound (meta, (source, rules)) = do
+    reshaped :: ReduceContext -> Subst -> Meta -> Meta -> [Y.Rule] -> IO Subst
+    reshaped ctx bound meta source rules = do
       term <- buildExpressionThrows (ExMeta source._name) bound
       shaped <- rewritten rules (RuleContext ctx._buildTerm Nothing ctx._engine._normal) term
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) shaped)
       bind meta (MvExpression shaped) bound
-    trimmed :: ReduceContext -> Subst -> (Meta, Meta) -> IO Subst
-    trimmed ctx bound (meta, source) = do
+    trimmed :: ReduceContext -> Subst -> Meta -> Meta -> IO Subst
+    trimmed ctx bound meta source = do
       term <- stayed <$> buildExpressionThrows (ExMeta source._name) bound
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) term)
       bind meta (MvExpression term) bound
-    masked :: ReduceContext -> Subst -> (Meta, Expression) -> IO Subst
-    masked ctx bound (meta, term) = do
-      reduced <- buildExpressionThrows term bound
+    masked :: ReduceContext -> Subst -> Meta -> Meta -> IO Subst
+    masked ctx bound meta source = do
+      reduced <- buildExpressionThrows (ExMeta source._name) bound
       (stood, known, spent) <- symbolized reduced <$> readIORef ctx._minted
       writeIORef ctx._minted spent
       mapM_ (ctx._saveEval . fact) known
-      ctx._saveEval (EvSymbolize ctx._nesting meta._spelling term stood)
+      ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) stood)
       bind meta (MvExpression stood) bound
       where
         fact :: (Int, Bytes) -> Evaluation
         fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
-    paired :: ReduceContext -> Lambda -> Maybe (Either Int Bytes) -> (Subst, State) -> (Meta, (Meta, Meta)) -> IO (Subst, State)
-    paired ctx entry condition (bound, state') (meta, (left, right)) = do
+    paired :: ReduceContext -> Lambda -> Maybe (Either Int Bytes) -> (Subst, State) -> Meta -> Meta -> Meta -> IO (Subst, State)
+    paired ctx entry condition (bound, state') meta left right = do
       one <- branch left
       two <- branch right
       case (raising entry one, raising entry two) of
