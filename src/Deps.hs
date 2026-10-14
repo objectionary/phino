@@ -105,6 +105,7 @@ data Evaluation
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
+  | EvUnjoined Int T.Text Expression Expression
   | EvStarved Int Int Judgment Expression
   | EvTimeout Int Int Judgment Expression
   | EvSpent Int Int Judgment Expression
@@ -155,6 +156,7 @@ tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
 tier (EvStuckOn depth _) = depth
+tier (EvUnjoined depth _ _ _) = depth
 tier (EvStarved depth _ _ _) = depth
 tier (EvTimeout depth _ _ _) = depth
 tier (EvSpent depth _ _ _) = depth
@@ -323,6 +325,10 @@ saveEval handle cursor printed printed' report = do
       pure (protocol, Just (indented depth (printf "stall(%s)" (T.unpack key))))
     written (EvStuckOn depth key) protocol =
       pure (protocol, Just (indented depth (printf "stuck(%s)" (T.unpack key))))
+    written (EvUnjoined depth key one two) protocol = do
+      left <- render one
+      right <- render two
+      pure (protocol, Just (indented depth (printf "unjoined(%s)  # %s vs %s" (T.unpack key) left right)))
     written (EvStarved depth limit judgment site) protocol = do
       remarks <- context protocol judgment site
       pure (protocol, Just (indented depth (remarked (printf "starved(%d)" limit) remarks)))
@@ -518,7 +524,12 @@ saveEvalXml handle cursor printed report = do
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<stall λ=\"%s\"/>" (quoted key))])
     elements (EvStuckOn depth key) nesting = do
       let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unfinished λ=\"%s\"/>" (quoted key))])
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<stuck λ=\"%s\"/>" (quoted key))])
+    elements (EvUnjoined depth key one two) nesting = do
+      left <- render one
+      right <- render two
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unjoined λ=\"%s\"><e>%s</e><e>%s</e></unjoined>" (quoted key) (escapeXMLText left) (escapeXMLText right))])
     elements (EvStarved depth limit judgment site) nesting = do
       locator <- located nesting site
       let (kept, closers) = closed depth nesting._closing

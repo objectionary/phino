@@ -80,9 +80,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           pure (snd answer, state')
         Left failure -> do
           exhausted' <- starved caller._memo
-          mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) failure)
+          mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) (escaped failure))
           mapM_ (caller._saveEval . EvStuckOn (caller._nesting + 1)) (stranded failure)
-          throwIO failure
+          throwIO (escaped failure)
     worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
     worked ctx entry firing@(Firing _ operands _) bound state' = do
       (fired, state'') <- foldM (evaluated ctx entry) (bound, state') entry._evaluated
@@ -109,6 +109,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     stranded (Stuck name) = Just name
     stranded (StuckAt name _ _) = Just name
     stranded _ = Nothing
+    escaped :: ReduceException -> ReduceException
+    escaped (Unjoined name) = Stuck name
+    escaped failure = failure
     told :: Kept -> IO (Expression, State)
     told (Answered answer) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -197,8 +200,12 @@ symbol func form self univ state caller = case matched caller._symbolic func of
                   (one', reducing) <- reduced left one state'
                   (two', state'') <- reduced right two reducing
                   outcome' <- joined entry._lenient one' two' <$> readIORef ctx._minted
-                  maybe (throwIO (Stuck func)) (written state'') outcome'
-              | otherwise -> throwIO (Stuck func)
+                  maybe (unjoined one' two') (written state'') outcome'
+              | otherwise -> unjoined one two
+        unjoined :: Expression -> Expression -> IO a
+        unjoined one two = do
+          ctx._saveEval (EvUnjoined ctx._nesting func one two)
+          throwIO (Unjoined func)
         written :: State -> (Expression, [(Int, (Int, Int))], Int) -> IO (Subst, State)
         written state'' (term, made, spent) = do
           writeIORef ctx._minted spent

@@ -755,11 +755,16 @@ The very same file comes back with `--partial`, where the run answers the
 residue instead of failing: what `phino` could not decide is a property of the
 program and not of the option that decides what to do about it.
 
-Three more lines say why a firing gave no answer.
+Four more lines say why a firing gave no answer.
 `stuck(L_outer)` is the last line of a firing that got stuck, naming the λ
 function it got stuck on, which is seldom the one `unanswered(…)` names: that
 one is written where it was asked for, and this one closes every firing the
 failure passed on its way out.
+`unjoined(L_fork)` takes its place in the firing whose `join` line could not
+pair its two branches, and carries them as the join last saw them,
+`unjoined(L_fork)  # 𝜎1:λ:l vs ⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧`, so a fork the program
+left in two shapes never reads as an operand that ran out of steps; the
+firings around it still close with `stuck(L_fork)`.
 `stall(L_outer)` stands under a firing that `--acyclic=plausible` answered
 with the stall an earlier firing of the same formation kept, so a told stall
 never reads as a fresh firing that wrote nothing.
@@ -782,8 +787,9 @@ right in a firing, it is commented with them instead, `starved(3)  # 𝔻(Φ.a�
     stuck(L_outer)
 ```
 
-The markup spells them `<unfinished λ="L_outer"/>`, `<stall λ="L_outer"/>`
-and `<starved limit="3" by="dataize" at="Φ.a🌵2"/>`.
+The markup spells them `<stuck λ="L_outer"/>`,
+`<unjoined λ="L_fork"><e>𝜎1:λ:l</e><e>⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧</e></unjoined>`,
+`<stall λ="L_outer"/>` and `<starved limit="3" by="dataize" at="Φ.a🌵2"/>`.
 
 `timeout(5)` is where `--max-seconds=5` ran out, placed and commented the same
 way and written at the first step the deadline refused.
