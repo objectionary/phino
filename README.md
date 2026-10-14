@@ -421,6 +421,22 @@ left out when the world declares no object the copy was made of. A copy whose
 arguments read to no bare symbol is entered as before. An entry that says
 `defer: true` and is not lenient is refused when the file is read.
 
+The same entry answers a copy it did enter when `--acyclic` cuts the firing
+its `φ` comes to. With `rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧`,
+the copy `Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )` reads to no bare symbol, so the step
+enters it, comes to the same fork, and fires it again, and the cut refuses
+that firing. A lenient entry without `defer: true` loses the whole firing to
+the cut. A deferring one answers the copy with a fresh symbol, joins that
+symbol, and writes it on the `looped` line:
+
+```text
+looped(𝑛·1·3) := 𝜎3  # 𝔼(𝑛2), proven
+```
+
+The markup writes it as `<looped symbol="𝜎3" … of="Φ.rec">` with the same
+`<with>` element a `deferred` record holds, here `<attr name="n">𝜎2</attr>`,
+since an argument whose `φ` holds a bare symbol counts as that symbol.
+
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
 has a perfectly good value on the other. The join then mints nothing, binds

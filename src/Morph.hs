@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -11,7 +10,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -252,16 +251,24 @@ unparked action = action `catch` rethrow
 entering :: Expression -> ReduceContext -> IO ReduceContext
 entering term ctx = maybe (pure ctx) (`enter` ctx) (entrance ctx._judgment term)
 
+admitting :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) ReduceContext)
+admitting term ctx = maybe (pure (Right ctx)) (`admitted` ctx) (entrance ctx._judgment term)
+
 enter :: Expression -> ReduceContext -> IO ReduceContext
-enter form ctx = maybe (pure ctx) remembered ctx._acyclic
+enter form ctx = admitted form ctx >>= either (refused form ctx) pure
+
+refused :: Expression -> ReduceContext -> (Acyclic, Expression) -> IO a
+refused form ctx (mode, before) = do
+  ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site Nothing)
+  throwIO (Looping form)
+
+admitted :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) ReduceContext)
+admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
   where
-    remembered :: Acyclic -> IO ReduceContext
+    remembered :: Acyclic -> IO (Either (Acyclic, Expression) ReduceContext)
     remembered mode =
-      awaited (listToMaybe (drop ctx._maxLoops (filter (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered)))) >>= \case
-        Just before -> do
-          ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
-          throwIO (Looping form)
-        Nothing -> pure ctx{_entered = seenInsert (digest mode form) form ctx._entered}
+      maybe (Right ctx{_entered = seenInsert (digest mode form) form ctx._entered}) (\before -> Left (mode, before))
+        <$> awaited (listToMaybe (drop ctx._maxLoops (filter (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered))))
     awaited :: Maybe Expression -> IO (Maybe Expression)
     awaited found = case ctx._deadline of
       Nothing -> pure found
