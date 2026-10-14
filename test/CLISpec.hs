@@ -2908,16 +2908,16 @@ spec = do
 
     describe "a deferring join" $ do
       let deferring = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  defer: true\n  𝑛: ⟦ φ ↦ 𝑛3 ⟧\n"
-          deferred :: String -> IO [String]
-          deferred program =
+          deferred :: [String] -> String -> IO [String]
+          deferred options program =
             withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
               hClose stream
               withLambdasOf deferring $ \forks ->
                 withStdin program $
-                  testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+                  testCLISucceeded (["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) []
               lines <$> readProtocol path
       it "writes the copy it deferred to the XML protocol as a call of the object it was made of" $ do
-        records <- deferred "⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧"
+        records <- deferred [] "⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧"
         records
           `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                      , "<morph at=\"Φ.y\">"
@@ -2937,16 +2937,20 @@ spec = do
                      ]
 
       it "names the object a deferred copy was made of through the formation its ρ holds" $ do
-        records <- deferred "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.joined( items ↦ Φ.items.tail ).φ, λ ⤍ L_fork ⟧.φ ⟧"
+        records <- deferred [] "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.joined( items ↦ Φ.items.tail ).φ, λ ⤍ L_fork ⟧.φ ⟧"
         records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>⟦ tup ↦ 𝜎1:λ, φ ↦ tup.next ⟧</e></deferred>"]
 
       it "writes a question mark for an argument of a deferred copy that is no bare symbol" $ do
-        records <- deferred "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ ⟦ z ↦ Φ ⟧ ), λ ⤍ L_fork ⟧.φ ⟧"
+        records <- deferred [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ ⟦ z ↦ Φ ⟧ ), λ ⤍ L_fork ⟧.φ ⟧"
         records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">?</attr></with><e>⟦ x ↦ 𝜎1:λ, w ↦ Φ:z, φ ↦ x.next ⟧</e></deferred>"]
 
       it "writes no object for a deferred copy of a formation the world does not declare" $ do
-        records <- deferred "⟦ wrap(v) ↦ ⟦⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.wrap( v ↦ ⟦ inner(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.inner( x ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧"
+        records <- deferred [] "⟦ wrap(v) ↦ ⟦⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.wrap( v ↦ ⟦ inner(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.inner( x ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧"
         records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\"><e>⟦ x ↦ 𝜎1:λ, φ ↦ x.next ⟧</e></deferred>"]
+
+      it "writes the copy a cut stopped to the XML protocol with its symbol and the call of the object it was made of" $ do
+        records <- deferred ["--acyclic=proven"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
+        records `shouldContain` ["    <looped symbol=\"𝜎3\" by=\"evaluate\" match=\"proven\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝜎2</attr></with><e>𝑛·1·3</e></looped>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"
