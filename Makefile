@@ -71,7 +71,7 @@ benchmark/tmp/native.phi: benchmark/tmp/Native.xmir
 benchmark/tmp/Native.xmir:
 	command -v java >/dev/null 2>&1 || { echo "java is required to run benchmarks but was not found in PATH"; exit 1; }
 	mkdir -p $(CURDIR)/benchmark/tmp/jeo/target/classes/com/sun/jna
-	curl -sSL https://repo1.maven.org/maven2/net/java/dev/jna/jna/$(JNA_VERSION)/jna-$(JNA_VERSION).jar -o $(CURDIR)/benchmark/tmp/jna.jar
+	curl -sSL --fail --retry 3 https://repo1.maven.org/maven2/net/java/dev/jna/jna/$(JNA_VERSION)/jna-$(JNA_VERSION).jar -o $(CURDIR)/benchmark/tmp/jna.jar
 	cd $(CURDIR)/benchmark/tmp/jeo/target/classes && jar xf $(CURDIR)/benchmark/tmp/jna.jar com/sun/jna/Native.class
 	cd $(CURDIR)/benchmark/tmp/jeo && $(MVNW) org.eolang:jeo-maven-plugin:$(JEO_VERSION):disassemble -Djeo.disassemble.sourcesDir=target/classes -Djeo.disassemble.outputDir=xmir -q
 	mv $(CURDIR)/benchmark/tmp/jeo/xmir/com/sun/jna/Native.xmir $(CURDIR)/benchmark/tmp/Native.xmir
