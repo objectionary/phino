@@ -188,7 +188,13 @@ entry morphs the φ of a branch that is a formation with no λ whose φ reads ξ
 fires what it comes to through 𝔼 the way an `evaluate` line does, and joins
 once more (`reduced` of `paired` in `Evaluate.hs`, #1885). The step is taken
 once, and it fires through `fire`, as an `evaluate` line does, so the step
-budget and `--acyclic` bound it.
+budget and `--acyclic` bound it. Under `defer: true` (`_defer` of `Lambdas.hs`,
+refused unless lenient) the step never enters a copy, a formation with no λ, no
+void and code in φ, one of whose arguments other than φ and ρ reads to a bare
+symbol: `deferred` of `Evaluate.hs` reduces every argument with no entry of the
+file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it answers a fresh symbol instead and
+writes `deferred(…)` (`EvDeferred`), naming the call the copy stands for by the
+object of the world it was made of, the way the record of 0.0.153 did (#1892).
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
