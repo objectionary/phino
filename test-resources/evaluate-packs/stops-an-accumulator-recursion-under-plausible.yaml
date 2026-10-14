@@ -74,4 +74,4 @@ protocol: |
       𝑛3·1 := 𝜎3:λ  # 𝑛1
       𝔻(𝜎4:λ) == 00-
       𝑛4·1 := 𝑛·1·2( acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 𝜎4:λ ) ).φ  # 𝑛2
-      stuck(L_if)
+      unjoined(L_if)  # 𝜎3:λ vs 𝑛·1·2( acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ 𝜎4:λ ) ).φ

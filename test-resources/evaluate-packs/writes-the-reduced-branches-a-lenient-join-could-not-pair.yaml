@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A lenient entry morphs the φ of the branch that reads its own object, fires
+# what it comes to and joins once more, but a symbol never joins a datum, so
+# the firing gets stuck all the same. The protocol says why: 'unjoined(…)'
+# closes the firing in place of the generic 'stuck(…)', and it carries the two
+# branches as the last join saw them, the reduced one included (#1900).
+symbolic: |
+  - λ: L_eq
+    𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    lenient: true
+    𝑛: 𝑛3
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ξ.eq, eq ↦ ⟦ λ ⤍ L_eq ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := ⟦ φ ↦ eq, eq ↦ L_eq:λ ⟧  # 𝕄(ξ.a)
+      𝑛2·1 := 01-:Δ:φ  # 𝕄(ξ.b)
+      𝑛1·1 := L_eq:λ  # 𝕄(𝑛1.φ)
+      𝔼(L_eq):  # 𝔼(𝑛1)
+        𝑛·2·1 := 𝜎1:λ:φ  # 𝑛
+        𝑛·2·2 := 𝜎1:λ:φ  # 𝕄(𝑛·2·1)
+      𝑛1·1 := 𝑛·2·2  # 𝔼(𝑛1)
+      unjoined(L_fork)  # 𝜎1:λ:φ vs 01-:Δ:φ

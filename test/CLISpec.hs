@@ -1853,7 +1853,16 @@ spec = do
             withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_absent ⟧, λ ⤍ L_outer ⟧.φ ⟧" $
               testCLISucceeded ["morph", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          lines records `shouldContain` ["    <unfinished λ=\"L_absent\"/>"]
+          lines records `shouldContain` ["    <stuck λ=\"L_absent\"/>"]
+
+      it "writes a fork whose branches do not join to the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
+            withStdin "⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧" $
+              testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records `shouldContain` ["    <unjoined λ=\"L_fork\"><e>𝜎1:λ:l</e><e>⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧</e></unjoined>"]
 
       it "writes a starved step budget to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do

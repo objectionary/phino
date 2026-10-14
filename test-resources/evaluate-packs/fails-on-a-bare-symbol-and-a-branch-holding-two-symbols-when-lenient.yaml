@@ -31,4 +31,4 @@ protocol: |
     𝔼(L_fork):
       𝑛1·1 := 𝜎1:λ  # 𝕄(ξ.a)
       𝑛2·1 := Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ, was ↦ 𝜎3:λ ⟧ ):φ  # 𝕄(ξ.b)
-      stuck(L_fork)
+      unjoined(L_fork)  # 𝜎1:λ vs Φ.bool( if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ, was ↦ 𝜎3:λ ⟧ ):φ
