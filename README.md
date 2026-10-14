@@ -239,9 +239,52 @@ only the program knows to be one. The block runs before `symbolize` on purpose:
 a result may write the datum a literal stands for, as `⟦ Δ ⤍ 00- ⟧` above, and
 that datum is then stood into a known symbol the join can pair.
 
+### Dropping the ρ of a dispatch
+
+There is a fifth block, `stay`, and it reduces nothing either. Each line of it
+takes a term another meta of the entry is already bound to and binds an
+expression meta of its own to that term with every `( ρ ↦ … )` dropped that is
+applied to a dispatch:
+
+```yaml
+- λ: L_fork
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  stay:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  join:
+    𝑛5: [𝑛3, 𝑛4]
+  𝑛: 𝑛5
+```
+
+The right-hand side of a line names a meta bound by `morph`, by `evaluate`, by
+`rewrite` or by a `stay` line above it, and nothing else. Every position of the
+term is walked, the methods and the `ρ` of a formation among them, and
+`𝑒.𝜏( ρ ↦ 𝑒2 )` becomes `𝑒.𝜏`. So does a dispatch heading a chain of
+applications that bind no `ρ`: `𝑒.𝜏( φ ↦ 𝑒3 )( ρ ↦ 𝑒2 )` becomes
+`𝑒.𝜏( φ ↦ 𝑒3 )`. A `ρ` applied to anything else, such as a formation, stays.
+
+Dropping it changes no value. The `dot` rule answers a dispatch as
+`𝑛1( ρ ↦ ⟦…⟧ )`, and then `copy` fills a void `ρ` of the body, `stay` keeps a
+bound one and `skip` drops it where the body declares none. So once `𝑒.𝜏`
+comes to a formation, a later `( ρ ↦ 𝑒2 )` meets a `ρ` that is bound or not
+there, and `stay` or `skip` drops it. The block only drops it earlier, before
+the dispatch is reduced.
+
+This is how a fork brings two numbers to one shape. In EO `bytes.as-number`
+reads its `data` as `ρ`, so a branch computed through it comes to
+`Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1 )( ρ ↦ ⟦ … ⟧ ) )`, with the copy hung on the
+bytes as their `ρ`, while a branch made of no object comes to
+`Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2 ) )`. The join compares the two as written and
+the tail refuses it; after `stay` they differ in their symbols alone. The block
+runs after `rewrite` and before `symbolize`, and the protocol writes each of
+its lines the way it writes a `rewrite` one, commented with the meta it took.
+
 ### Standing data into unknowns
 
-There is a fifth block, `symbolize`, and it reduces nothing. It takes a term
+There is a sixth block, `symbolize`, and it reduces nothing. It takes a term
 another meta of the entry is already bound to and binds an expression meta of
 its own to that same term with every datum in it standing for an unknown:
 
@@ -259,8 +302,9 @@ its own to that same term with every datum in it standing for an unknown:
 ```
 
 The right-hand side of a line names a meta bound by `morph`, by `evaluate`, by
-`rewrite` or by a `symbolize` line above it, and nothing else; a term nobody
-reduced has no data to stand. Every `Δ ⤍ b` binding of that term becomes a
+`rewrite`, by `stay` or by a `symbolize` line above it, and nothing else; a
+term nobody reduced has no data to stand. Every `Δ ⤍ b` binding of that term
+becomes a
 `λ ⤍ 𝜎k` naming a fresh symbol, one per occurrence, so `⟦ Δ ⤍ b ⟧` reads as
 `⟦ λ ⤍ 𝜎k ⟧` and a
 literal tuple gets several. A term carrying no datum passes through as it was.
@@ -287,7 +331,7 @@ after the stage both branches carry `⟦ λ ⤍ 𝜎 ⟧` where they differ.
 A branching λ function answers neither of its branches. Which one the program
 takes is decided by a value nobody worked out, so handing one of them through
 would drop the branch point from the program altogether and a reader would see
-the condition computed and thrown away. `join` is the sixth block, and it
+the condition computed and thrown away. `join` is the seventh block, and it
 reduces nothing either: it takes two metas the entry has bound already and
 binds one of its own to the two terms joined into one.
 
@@ -307,7 +351,8 @@ binds one of its own to the two terms joined into one.
 ```
 
 A line names two metas bound by `morph`, by `evaluate`, by `rewrite`, by
-`symbolize` or by a `join` line above it, and never three: it stands for a
+`stay`, by `symbolize` or by a `join` line above it, and never three: it
+stands for a
 choice between two branches, and a walk over three terms in parallel is no such
 choice. The meta it binds is one like any other, so the answer may name it
 alone, as above, or stand

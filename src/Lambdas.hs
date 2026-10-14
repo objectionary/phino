@@ -17,6 +17,7 @@ module Lambdas
   , message
   , minted
   , readLambdas
+  , stayed
   , symbolized
   , taken
   , thrown
@@ -59,6 +60,7 @@ data Lambda = Lambda
   , _morphed :: [(Meta, Expression)]
   , _evaluated :: [(Meta, Meta)]
   , _rewritten :: [(Meta, (Meta, [Y.Rule]))]
+  , _stayed :: [(Meta, Meta)]
   , _symbolized :: [(Meta, Expression)]
   , _paired :: [(Meta, (Meta, Meta))]
   , _lenient :: Bool
@@ -85,8 +87,9 @@ instance FromJSON Lambda where
       Lambda key
         <$> operands key bytesMeta entry "dataize"
         <*> operands key expressionMeta entry "morph"
-        <*> evaluations entry
+        <*> links entry "evaluate"
         <*> rewrites (T.unpack key) entry
+        <*> links entry "stay"
         <*> operands key expressionMeta entry "symbolize"
         <*> pairs (T.unpack key) entry
         <*> entry .:? "lenient" .!= False
@@ -120,9 +123,9 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
-      evaluations :: Object -> Yaml.Parser [(Meta, Meta)]
-      evaluations entry = do
-        mapping <- entry .:? "evaluate" .!= (Map.empty :: Map Text Text)
+      links :: Object -> Key -> Yaml.Parser [(Meta, Meta)]
+      links entry name = do
+        mapping <- entry .:? name .!= (Map.empty :: Map Text Text)
         mapM (\(meta, source) -> (,) <$> expressionMeta meta <*> expressionMeta source) (numbered mapping)
       pairs :: String -> Object -> Yaml.Parser [(Meta, (Meta, Meta))]
       pairs key entry = do
@@ -182,7 +185,8 @@ instance FromJSON Lambda where
       earlier key lambda = do
         fired <- goSources (map (_name . fst) lambda._morphed) lambda._evaluated
         rewrote <- goSources fired [(meta, source) | (meta, (source, _)) <- lambda._rewritten]
-        stood <- go rewrote lambda._symbolized
+        kept <- goSources rewrote lambda._stayed
+        stood <- go kept lambda._symbolized
         void (goJoins stood lambda._paired)
         where
           goSources :: [Text] -> [(Meta, Meta)] -> Yaml.Parser [Text]
@@ -223,6 +227,7 @@ instance FromJSON Lambda where
             map (_spelling . fst) lambda._morphed
               ++ map (_spelling . fst) lambda._evaluated
               ++ map (_spelling . fst) lambda._rewritten
+              ++ map (_spelling . fst) lambda._stayed
               ++ map (_spelling . fst) lambda._symbolized
               ++ map (_spelling . fst) lambda._paired
           twice :: [Text] -> [Text] -> Maybe Text
@@ -253,6 +258,7 @@ instance FromJSON Lambda where
               ++ map (_name . fst) lambda._morphed
               ++ map (_name . fst) lambda._evaluated
               ++ map (_name . fst) lambda._rewritten
+              ++ map (_name . fst) lambda._stayed
               ++ map (_name . fst) lambda._symbolized
               ++ map (_name . fst) lambda._paired
       lonely :: String -> Lambda -> Yaml.Parser ()
@@ -375,6 +381,29 @@ minted answer spent = (zip fresh [FnSymbol idx | idx <- [spent + 1 ..]], spent +
   where
     fresh :: [Slot]
     fresh = [slot | slot@(Slot kind _) <- slots answer, kind == "S"]
+
+stayed :: Expression -> Expression
+stayed = goExpr
+  where
+    goExpr :: Expression -> Expression
+    goExpr (ExFormation bds) = ExFormation (map goBinding bds)
+    goExpr (ExApplication expr arg) = case (goExpr expr, arg) of
+      (target, ArTau AtRho _) | dispatched target -> target
+      (target, _) -> ExApplication target (goArgument arg)
+    goExpr (ExDispatch expr attr) = ExDispatch (goExpr expr) attr
+    goExpr (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx (goExpr expr)
+    goExpr (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx (goExpr expr)
+    goExpr expr = expr
+    goBinding :: Binding -> Binding
+    goBinding (BiTau attr expr) = BiTau attr (goExpr expr)
+    goBinding bd = bd
+    goArgument :: Argument -> Argument
+    goArgument (ArTau attr expr) = ArTau attr (goExpr expr)
+    goArgument (ArAlpha alpha expr) = ArAlpha alpha (goExpr expr)
+    dispatched :: Expression -> Bool
+    dispatched (ExDispatch _ _) = True
+    dispatched (ExApplication expr _) = dispatched expr
+    dispatched _ = False
 
 type Minting = (Int, [(Int, Bytes)])
 

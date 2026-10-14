@@ -18,7 +18,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Acyclic, Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Lambdas (Lambda (..), Meta (..), emptyLambdas, joined, matched, message, minted, symbolized, thrown)
+import Lambdas (Lambda (..), Meta (..), emptyLambdas, joined, matched, message, minted, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), admitting, boxed, charged, counted, deeper, expired, isLambda, lambda, morphing, normalized, opening, recalled, refused, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
@@ -87,7 +87,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     worked ctx entry firing@(Firing _ operands _) bound state' = do
       (fired, state'') <- foldM (evaluated ctx entry) (bound, state') entry._evaluated
       rewrote <- foldM (reshaped ctx) fired entry._rewritten
-      stood <- foldM (masked ctx) rewrote entry._symbolized
+      tailless <- foldM (trimmed ctx) rewrote entry._stayed
+      stood <- foldM (masked ctx) tailless entry._symbolized
       (forked, joining) <- foldM (paired ctx entry (listToMaybe operands)) (stood, state'') entry._paired
       (answer, state''') <- answered ctx entry operands forked joining
       remember caller._memo firing answer
@@ -170,6 +171,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       shaped <- rewritten rules (RuleContext ctx._buildTerm Nothing ctx._engine._normal) term
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) shaped)
       bind meta (MvExpression shaped) bound
+    trimmed :: ReduceContext -> Subst -> (Meta, Meta) -> IO Subst
+    trimmed ctx bound (meta, source) = do
+      term <- stayed <$> buildExpressionThrows (ExMeta source._name) bound
+      ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) term)
+      bind meta (MvExpression term) bound
     masked :: ReduceContext -> Subst -> (Meta, Expression) -> IO Subst
     masked ctx bound (meta, term) = do
       reduced <- buildExpressionThrows term bound

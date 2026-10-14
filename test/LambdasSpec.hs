@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, message, minted, readLambdas, symbolized, taken, thrown)
+import Lambdas (Lambda (..), Lambdas, Meta (..), emptyLambdas, joined, matched, message, minted, readLambdas, stayed, symbolized, taken, thrown)
 import Parser (parseExpressionThrows)
 import Test.Hspec
 
@@ -31,8 +31,8 @@ joins known func = map spelled (maybe [] _paired (matched known func))
     spelled :: (Meta, (Meta, Meta)) -> (T.Text, (T.Text, T.Text))
     spelled (meta, (left, right)) = (_spelling meta, (_spelling left, _spelling right))
 
-evaluates :: Lambdas -> T.Text -> [(T.Text, T.Text)]
-evaluates known func = map spelled (maybe [] _evaluated (matched known func))
+links :: (Lambda -> [(Meta, Meta)]) -> Lambdas -> T.Text -> [(T.Text, T.Text)]
+links block known func = map spelled (maybe [] block (matched known func))
   where
     spelled :: (Meta, Meta) -> (T.Text, T.Text)
     spelled (meta, source) = (_spelling meta, _spelling source)
@@ -165,19 +165,35 @@ spec = do
 
     it "reads the metas the lines of 'evaluate' fire" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n"
-      evaluates known "L_fork" `shouldBe` [("𝑛3", "𝑛1"), ("𝑛4", "𝑛2")]
+      links _evaluated known "L_fork" `shouldBe` [("𝑛3", "𝑛1"), ("𝑛4", "𝑛2")]
 
     it "reads an 'evaluate' line firing what the line above it fired" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
-      evaluates known "L_fork" `shouldBe` [("𝑛2", "𝑛1"), ("𝑛3", "𝑛2")]
+      links _evaluated known "L_fork" `shouldBe` [("𝑛2", "𝑛1"), ("𝑛3", "𝑛2")]
 
     it "reads a 'rewrite' line rewriting what an 'evaluate' line fired" $ do
       known <- lambdasOf ("- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛1\n  rewrite:\n    𝑛3:\n      of: 𝑛2\n" <> rules <> "  𝑛: 𝑛3\n")
       map rewrote (maybe [] _rewritten (matched known "L_fork")) `shouldBe` [("𝑛3", "𝑛2", 1)]
 
+    it "reads the metas the lines of 'stay' keep, a line keeping what the line above it kept" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
+      links _stayed known "L_fork" `shouldBe` [("𝑛2", "𝑛1"), ("𝑛3", "𝑛2")]
+
+    it "reads a 'stay' line keeping what a 'rewrite' line made" $ do
+      known <- lambdasOf (rewriting "    𝑛2:\n      of: 𝑛1\n" <> rules <> "  stay:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n")
+      links _stayed known "L_fork" `shouldBe` [("𝑛3", "𝑛2")]
+
+    it "reads a 'symbolize' line standing what a 'stay' line kept" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: 𝑛1\n  symbolize:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
+      map (_spelling . fst) (maybe [] _symbolized (matched known "L_fork")) `shouldBe` ["𝑛3"]
+
+    it "reads an entry naming no 'stay' block at all" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
+      links _stayed known "L_fork" `shouldBe` []
+
     it "reads an entry naming no 'evaluate' block at all" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
-      evaluates known "L_fork" `shouldBe` []
+      links _evaluated known "L_fork" `shouldBe` []
 
     it "reads an entry naming no 'join' block at all" $ do
       known <- lambdasOf "- λ: L_pair\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
@@ -239,6 +255,13 @@ spec = do
       , ("an 'evaluate' line firing a meta that came down to data", "- λ: L_fork\n  dataize:\n    𝛿1: $.ρ\n  evaluate:\n    𝑛1: 𝛿1\n  𝑛: 𝑛1\n", "is not an expression meta")
       , ("an 'evaluate' line firing a term instead of a meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: $.a\n  𝑛: 𝑛2\n", "is not an expression meta")
       , ("a meta bound by 'morph' and again by 'evaluate'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_fork' is bound by more than one line")
+      , ("a 'stay' line keeping a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'stay' line keeping what a line below it kept", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: 𝑛3\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'stay' line keeping what a 'symbolize' line made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛2\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'rewrite' line rewriting what a 'stay' line kept", rewriting "    𝑛3:\n      of: 𝑛2\n" <> rules <> "  stay:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by a line above it")
+      , ("a 'stay' line bound to what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
+      , ("a 'stay' line keeping a term instead of a meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: $.a\n  𝑛: 𝑛2\n", "is not an expression meta")
+      , ("a meta bound by 'morph' and again by 'stay'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_fork' is bound by more than one line")
       , ("an answer naming a meta no block binds", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: 𝑛7\n", "reads the meta 'n7' that no block binds")
       , ("an operand of 'dataize' reading a meta", "- λ: L_pair\n  dataize:\n    𝛿1: 𝑛5\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "of 'dataize' of λ function 'L_pair' reads the meta 'n5'")
       , ("an operand of 'morph' reading a meta", "- λ: L_pair\n  morph:\n    𝑛1: $.x.𝜏1\n  𝑛: 𝑛1\n", "of 'morph' of λ function 'L_pair' reads the meta 't1'")
@@ -332,6 +355,41 @@ spec = do
       term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
       let (_, _, spent) = symbolized term 4
       spent `shouldBe` 4
+
+  describe "stayed" $ do
+    let keeping :: String -> String -> IO (Expression, Expression)
+        keeping written expected = do
+          term <- parseExpressionThrows written
+          kept <- parseExpressionThrows expected
+          pure (stayed term, kept)
+
+    it "drops the ρ a dispatch is applied to" $ do
+      (term, kept) <- keeping "Φ.bytes( ρ ↦ ⟦ x ↦ ∅ ⟧ )" "Φ.bytes"
+      term `shouldBe` kept
+
+    it "drops the ρ a dispatch is applied to after an argument binding no ρ" $ do
+      (term, kept) <- keeping "Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( ρ ↦ ⟦ x ↦ ∅ ⟧ )" "Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
+      term `shouldBe` kept
+
+    it "drops every ρ a chain of applications gives a dispatch" $ do
+      (term, kept) <- keeping "ξ.f( ρ ↦ ⟦ a ↦ ∅ ⟧ )( α0 ↦ ⟦⟧ )( ρ ↦ ⟦ b ↦ ∅ ⟧ )" "ξ.f( α0 ↦ ⟦⟧ )"
+      term `shouldBe` kept
+
+    it "keeps the ρ a formation is applied to" $ do
+      (term, kept) <- keeping "⟦ ρ ↦ ∅, t ↦ ∅ ⟧( t ↦ ⟦⟧ )( ρ ↦ ⟦ x ↦ ∅ ⟧ )" "⟦ ρ ↦ ∅, t ↦ ∅ ⟧( t ↦ ⟦⟧ )( ρ ↦ ⟦ x ↦ ∅ ⟧ )"
+      term `shouldBe` kept
+
+    it "drops a ρ standing deep inside the argument of an application" $ do
+      (term, kept) <- keeping "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( ρ ↦ ⟦ x ↦ ∅ ⟧ ) )" "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) )"
+      term `shouldBe` kept
+
+    it "drops a ρ standing in a method of a formation and not only in its φ" $ do
+      (term, kept) <- keeping "⟦ φ ↦ ⟦⟧, m ↦ ⟦ φ ↦ Φ.f( ρ ↦ ⟦ x ↦ ∅ ⟧ ) ⟧ ⟧" "⟦ φ ↦ ⟦⟧, m ↦ ⟦ φ ↦ Φ.f ⟧ ⟧"
+      term `shouldBe` kept
+
+    it "drops a ρ standing inside a ρ the term keeps" $ do
+      (term, kept) <- keeping "⟦ x ↦ ∅ ⟧( ρ ↦ Φ.f( ρ ↦ ⟦ y ↦ ∅ ⟧ ) )" "⟦ x ↦ ∅ ⟧( ρ ↦ Φ.f )"
+      term `shouldBe` kept
 
   describe "joined" $ do
     let joining :: Bool -> String -> String -> Int -> IO (Maybe (Expression, [(Int, (Int, Int))], Int))
