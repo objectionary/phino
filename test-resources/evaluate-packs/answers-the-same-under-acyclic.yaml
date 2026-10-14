@@ -17,7 +17,7 @@ acyclic: proven
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    @ ↦ 5.plus( 6 ).φ ⟧
+    φ ↦ 5.plus( 6 ).φ ⟧
 result: '𝜎1:λ'
 protocol: |
   𝕄(Φ.φ):

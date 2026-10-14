@@ -5,7 +5,7 @@
 
 module CLIHelpersSpec (spec) where
 
-import AST (Expression (ExRoot))
+import AST (Attribute (AtLabel), Binding (BiTau), Expression (ExFormation, ExRoot))
 import CLI.Helpers (getRules, parseInput, printExpression, readInput)
 import CLI.Types (IOFormat (LATEX, PHI, XMIR), PrintContext (PrintCtx))
 import Control.Exception (SomeException, bracket, try)
@@ -15,6 +15,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Lining (LineFormat (MULTILINE))
+import Parser (Form (MONOFORM, POLYFORM))
 import Sugar (SugarType (SWEET))
 import System.Directory (createDirectoryIfMissing, getTemporaryDirectory, removeDirectoryRecursive)
 import System.FilePath ((</>))
@@ -44,10 +45,15 @@ testPrintContext format =
 
 spec :: Spec
 spec = do
-  describe "parseInput" $
+  describe "parseInput" $ do
     it "fails when asked to parse LaTeX as an input format" $ do
-      result <- try (parseInput "whatever" LATEX) :: IO (Either SomeException Expression)
+      result <- try (parseInput "whatever" LATEX POLYFORM) :: IO (Either SomeException Expression)
       result `shouldSatisfy` isLeft
+    it "fails on a 𝜑-expression mixing ASCII and Unicode symbols under monoform" $ do
+      result <- try (parseInput "⟦ x -> ? ]]" PHI MONOFORM) :: IO (Either SomeException Expression)
+      result `shouldSatisfy` isLeft
+    it "parses a 𝜑-expression mixing ASCII and Unicode symbols without monoform" $
+      parseInput "⟦ x -> Q ]]" PHI POLYFORM `shouldReturn` ExFormation [BiTau (AtLabel "x") ExRoot]
 
   describe "printExpression" $
     forM_

@@ -3,8 +3,8 @@
 # yamllint disable rule:line-length
 ---
 expression: |
-  [[
-    x -> Q.x(Φ.jeo.opcode.lconst_0(
+  ⟦
+    x ↦ Φ.x(Φ.jeo.opcode.lconst_0(
       9
     ),
     Φ.jeo.opcode.lstore(
@@ -25,7 +25,7 @@ expression: |
         ⟧
       )
     ))
-  ]]
+  ⟧
 result: |-
   Φ.x(
     Φ.jeo.opcode.lconst_0( 9 ),

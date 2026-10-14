@@ -17,7 +17,7 @@ import Deps (Judgment (..))
 import Files (allPathsIn)
 import Filter qualified as F
 import GHC.Generics (Generic)
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import System.FilePath
 import Test.Hspec
@@ -42,10 +42,10 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           YamlPack{..} <- yamlPack pth
-          expr <- parseExpressionThrows expression
-          included <- traverse parseExpressionThrows shown
-          excluded <- traverse parseExpressionThrows hidden
-          res <- parseExpressionThrows result
+          expr <- parseExpressionThrows' MONOFORM expression
+          included <- traverse (parseExpressionThrows' MONOFORM) shown
+          excluded <- traverse (parseExpressionThrows' MONOFORM) hidden
+          res <- parseExpressionThrows' MONOFORM result
           [(expr', _)] <- F.include [(expr, Nothing)] included >>= (`F.exclude` excluded)
           expr' `shouldBe` res
       )

@@ -21,7 +21,7 @@ import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Lining (LineFormat (SINGLELINE), withLineFormat)
 import Margin (defaultMargin, withMargin)
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Render (Render (render))
 import Sugar
 import System.FilePath
@@ -105,7 +105,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          parsed <- parseExpressionThrows (expression pack)
+          parsed <- parseExpressionThrows' MONOFORM (expression pack)
           render (withMargin defaultMargin (expressionToCST parsed)) `shouldBe` result pack
       )
 
@@ -116,7 +116,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          parsed <- parseExpressionThrows (expression pack)
+          parsed <- parseExpressionThrows' MONOFORM (expression pack)
           let cst = expressionToCST parsed
               salty = toSalty cst
           render salty `shouldBe` result pack
@@ -129,7 +129,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          parsed <- parseExpressionThrows (expression pack)
+          parsed <- parseExpressionThrows' MONOFORM (expression pack)
           let cst = expressionToCST parsed
               ascii = withMargin defaultMargin (withEncoding ASCII cst)
           render ascii `shouldBe` result pack
@@ -142,7 +142,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- cstPack pth
-          parsed <- parseExpressionThrows (expression pack)
+          parsed <- parseExpressionThrows' MONOFORM (expression pack)
           let cst = expressionToCST parsed
               ascii = withLineFormat SINGLELINE cst
           render ascii `shouldBe` result pack

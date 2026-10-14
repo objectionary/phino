@@ -14,6 +14,7 @@ import Logger
 import Margin (defaultMargin)
 import Must
 import Options.Applicative
+import Parser (Form (..))
 import Paths_phino (version)
 import Sugar (SugarType (..))
 import Text.Printf (printf)
@@ -68,6 +69,9 @@ parseIOFormat type' = eitherReader $ \format -> case (map toLower format, type')
   ("phi", _) -> Right PHI
   ("latex", "output") -> Right LATEX
   _ -> Left (printf "The value '%s' can't be used for '--%s' option, use --help to check possible values" format type')
+
+optMonoform :: Parser Form
+optMonoform = flag POLYFORM MONOFORM (long "monoform" <> help "Reject a 𝜑-expression that spells some symbols in ASCII and others in Unicode, such as -> inside ⟦ ⟧")
 
 optOutputFormat :: Parser IOFormat
 optOutputFormat =
@@ -388,6 +392,7 @@ dataizeParser =
             <$> optLogLevel
             <*> optLogLines
             <*> optInputFormat
+            <*> optMonoform
             <*> optOutputFormat
             <*> optSugar
             <*> optHideRho
@@ -437,6 +442,7 @@ morphParser =
             <$> optLogLevel
             <*> optLogLines
             <*> optInputFormat
+            <*> optMonoform
             <*> optOutputFormat
             <*> optSugar
             <*> optHideRho
@@ -486,6 +492,7 @@ rewriteParser =
             <$> optLogLevel
             <*> optLogLines
             <*> optInputFormat
+            <*> optMonoform
             <*> optOutputFormat
             <*> optSugar
             <*> optHideRho
@@ -530,6 +537,7 @@ mergeParser =
             <$> optLogLevel
             <*> optLogLines
             <*> optInputFormat
+            <*> optMonoform
             <*> option (parseIOFormat "output") (long "output" <> metavar "FORMAT" <> help (printf "Result expression output format (phi, xmir, latex)") <> value PHI <> showDefault)
             <*> optSugar'
             <*> optLineFormat'
@@ -547,6 +555,7 @@ matchParser =
     <$> ( OptsMatch
             <$> optLogLevel
             <*> optLogLines
+            <*> optMonoform
             <*> optSugar'
             <*> optLineFormat'
             <*> optional (strOption (long "pattern" <> metavar "EXPRESSION" <> help "Pattern expression to match against"))

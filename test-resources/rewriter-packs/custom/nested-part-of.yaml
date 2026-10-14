@@ -4,10 +4,10 @@
 repeat: 10
 input: '[[ x -> Q.y ]]'
 output: |-
-  ⟦
-    x ↦ Φ.y,
+  [[
+    x -> Q.y,
     z -> [[ w -> [[ q -> "foo" ]] ]]
-  ⟧
+  ]]
 rules:
   custom:
     - name: nested part of

@@ -16,7 +16,7 @@ location: 'Q.@'
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    @ ↦ 5.plus( 6 ).plus( 7 ).φ ⟧
+    φ ↦ 5.plus( 6 ).plus( 7 ).φ ⟧
 result: '𝜎2:λ'
 protocol: |
   𝕄(Φ.φ):

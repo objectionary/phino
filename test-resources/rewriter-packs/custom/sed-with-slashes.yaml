@@ -13,7 +13,7 @@ output: |-
     x ↦ "java/lang/Integer",
     y ↦ "invokevirtual",
     z ↦ "invokestatic",
-    w -> "java\\/lang\\/Integer"
+    w ↦ "java\\/lang\\/Integer"
   ⟧
 rules:
   custom:

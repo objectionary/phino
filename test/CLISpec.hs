@@ -3419,3 +3419,33 @@ spec = do
           it (desc ++ " renders as " ++ expected) $
             show format `shouldBe` expected
       )
+
+  describe "--monoform" $ do
+    forM_
+      [ ("rewrite", ["rewrite", "--monoform"])
+      , ("dataize", ["dataize", "--monoform"])
+      , ("morph", ["morph", "--monoform"])
+      , ("match", ["match", "--monoform", "--pattern=[[ !B ]]"])
+      ]
+      ( \(command, args) ->
+          it (command ++ " rejects a program mixing ASCII and Unicode symbols") $
+            withStdin "⟦ x -> ? ]]" $
+              testCLIFailed args ["The ASCII symbol \"->\" at 1:5 mixes with the Unicode \"⟦\" at 1:1, while --monoform is set"]
+      )
+    it "merge rejects a program mixing ASCII and Unicode symbols" $
+      withTempFileContent "monoformXXXXXX.phi" "⟦ x -> ? ]]" $ \path ->
+        testCLIFailed ["merge", "--monoform", path] ["The ASCII symbol \"->\" at 1:5 mixes with the Unicode \"⟦\" at 1:1, while --monoform is set"]
+    forM_
+      [ ("rewrite accepts a program spelled in ASCII alone", "[[ x -> ? ]]", ["rewrite", "--monoform"], "⟦ x ↦ ∅ ⟧")
+      , ("rewrite accepts a program spelled in Unicode alone", "⟦ x ↦ ∅ ⟧", ["rewrite", "--monoform"], "⟦ x ↦ ∅ ⟧")
+      , ("rewrite accepts a program mixing ASCII and Unicode symbols without --monoform", "⟦ x -> ? ]]", ["rewrite"], "⟦ x ↦ ∅ ⟧")
+      , ("dataize accepts a program spelled in ASCII alone", "[[ D> 01- ]]", ["dataize", "--monoform"], "01-")
+      , ("morph accepts a program spelled in ASCII alone", "[[ x -> ? ]]", ["morph", "--monoform"], "⟦ x ↦ ∅ ⟧")
+      , ("match accepts a program spelled in ASCII alone", "[[ x -> ? ]]", ["match", "--monoform", "--pattern=[[ !B ]]"], "B >> ⟦ x ↦ ∅ ⟧")
+      ]
+      (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args [expected])))
+    it "merge accepts programs spelled in ASCII alone" $
+      withTempFileContent "monoformXXXXXX.phi" "[[ x -> ? ]]" $ \path ->
+        testCLISucceeded ["merge", "--monoform", path] ["⟦ x ↦ ∅ ⟧"]
+    it "rewrite names --monoform in its help" $
+      testCLISucceeded ["rewrite", "--help"] ["--monoform"]

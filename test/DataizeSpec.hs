@@ -29,7 +29,7 @@ import GHC.Generics (Generic)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Matcher (substEmpty)
 import Morph (ReduceContext (..), Steps (..), emptyState, execBuildTerm)
-import Parser (parseBytes, parseExpressionThrows)
+import Parser (Form (MONOFORM), parseBytes, parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import System.FilePath (makeRelative)
@@ -56,8 +56,8 @@ data DataizePack = DataizePack
 testDataize :: Lambdas -> FilePath -> Expectation
 testDataize known pth = do
   DataizePack{..} <- Decode.decodeFileThrow pth
-  expr <- parseExpressionThrows (if model == Just True then primitives input else input)
-  loc <- parseExpressionThrows (fromMaybe "Q" location)
+  expr <- parseExpressionThrows' MONOFORM (if model == Just True then primitives input else input)
+  loc <- parseExpressionThrows' MONOFORM (fromMaybe "Q" location)
   base <- defaultReduceContext loc
   let ctx = base{_symbolic = if symbolic == Just True then known else emptyLambdas}
   case (result, fails) of

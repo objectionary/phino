@@ -4,7 +4,7 @@
 input: '[[ x -> 5, y -> 6 ]]'
 output: |-
   ⟦
-    z -> 12
+    z ↦ 12
   ⟧
 rules:
   custom:

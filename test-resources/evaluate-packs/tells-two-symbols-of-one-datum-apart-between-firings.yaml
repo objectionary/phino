@@ -26,7 +26,7 @@ input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     dataized(target) ↦ L_dataized:λ,
     pair(x, y) ↦ L_pair:λ,
-    @ ↦ Φ.pair(
+    φ ↦ Φ.pair(
       Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ,
       Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ ).φ ⟧
 result: '⟦ x ↦ 𝜎3:λ, y ↦ 𝜎4:λ ⟧'

@@ -6,4 +6,4 @@ rules:
 input: |
   [[ L> Fn, x -> ? ]](~0 -> Q.y)
 output: |-
-  ⟦ L> Fn, x ↦ ∅ ⟧(x ↦ Φ.y)
+  ⟦ λ ⤍ Fn, x ↦ ∅ ⟧(x ↦ Φ.y)

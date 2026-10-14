@@ -26,7 +26,7 @@ import Fixtures (linked)
 import Functions (buildTerm)
 import GHC.Generics
 import Must (Must (..))
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printExpression)
 import Rewriter (RewriteContext (RewriteContext), direct, every, fast, rewrite)
 import Rule (RuleContext (RuleContext), Step (Step, _applied))
@@ -205,7 +205,7 @@ spec = do
           case skip pack of
             Just True -> pending
             _ -> do
-              expr <- parseExpressionThrows (input pack)
+              expr <- parseExpressionThrows' MONOFORM (input pack)
               seedTaus expr
               rules' <- case rules pack of
                 Just _rules -> case custom _rules of
@@ -243,7 +243,7 @@ spec = do
                       dontSaveMade
                   )
               let (rewritten, _) = NE.last rewrittens
-              result' <- parseExpressionThrows (output pack)
+              result' <- parseExpressionThrows' MONOFORM (output pack)
               unless (rewritten == result') $
                 expectationFailure
                   ( "Wrong rewritten expression. Expected:\n"

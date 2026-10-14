@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 input: '[[ x -> ? ]](~0 -> Q.y)'
-output: '⟦ x ↦ ∅ ⟧(~0 ↦ Φ)'
+output: '⟦ x ↦ ∅ ⟧(α0 ↦ Φ)'
 rules:
   custom:
     - name: with-alpha-index

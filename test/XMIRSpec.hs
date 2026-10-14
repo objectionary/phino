@@ -20,7 +20,7 @@ import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import GHC.Generics (Generic)
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printExpression)
 import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
@@ -197,7 +197,7 @@ spec = do
             Just True -> xmir' `shouldThrow` anyException
             _ -> do
               xmir'' <- xmir'
-              phi'' <- parseExpressionThrows phi'
+              phi'' <- parseExpressionThrows' MONOFORM phi'
               xmir'' `shouldBe` phi''
       )
 
@@ -287,7 +287,7 @@ spec = do
           it (makeRelative resources pth) $ do
             pack <- printPack pth
             let PrintPack{phi = phi', xpaths = xpaths'} = pack
-            expr <- parseExpressionThrows phi'
+            expr <- parseExpressionThrows' MONOFORM phi'
             xmir' <- expressionToXMIR expr defaultXmirContext
             let failed = filter (not . matches xmir') xpaths'
             unless

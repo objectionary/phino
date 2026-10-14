@@ -24,7 +24,7 @@ import GHC.Generics (Generic)
 import Lambdas (Lambdas, readLambdas)
 import Morph (ReduceContext (..), Steps (..), emptyState, morph')
 import Must (Must (MtDisabled))
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows')
 import Rewriter (RewriteContext (RewriteContext), rewrite)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule)
 import System.Random (StdGen, mkStdGen, randomR)
@@ -40,7 +40,7 @@ spec =
     it "runs the rules phino carries" $
       fresh linked `shouldBe` True
     it "normalizes the term of every rewriter pack into the chain the rules of YAML make" $ do
-      terms <- allPathsIn "test-resources/rewriter-packs" >>= mapM (Yaml.decodeFileThrow >=> parseExpressionThrows . input)
+      terms <- allPathsIn "test-resources/rewriter-packs" >>= mapM (Yaml.decodeFileThrow >=> parseExpressionThrows' MONOFORM . input)
       filterM (\expr -> (/=) <$> chain linked Nothing expr <*> chain yaml Nothing expr) terms
         `shouldReturn` []
     it "normalizes random terms into the chains the rules of YAML make" $

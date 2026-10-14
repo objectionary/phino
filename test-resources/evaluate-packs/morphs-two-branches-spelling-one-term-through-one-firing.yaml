@@ -36,7 +36,7 @@ input: >
     number(φ) ↦ ⟦
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    @ ↦ 5.gt( 0 ).if( 1.plus( 2 ).plus( 3 ), 1.plus( 2 ).plus( 3 ) ).plus( 9 ) ⟧
+    φ ↦ 5.gt( 0 ).if( 1.plus( 2 ).plus( 3 ), 1.plus( 2 ).plus( 3 ) ).plus( 9 ) ⟧
 result: '⟦ x ↦ 9, λ ⤍ L_number_plus ⟧'
 protocol: |
   𝕄(Φ.φ):

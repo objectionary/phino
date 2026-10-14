@@ -5,7 +5,7 @@ input: '[[ x -> "5", y -> "42.1" ]]'
 output: |-
   ⟦
     x ↦ 5,
-    y -> 42.1
+    y ↦ 42.1
   ⟧
 rules:
   custom:
