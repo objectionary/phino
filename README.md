@@ -1773,6 +1773,13 @@ $ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
 ⟧
 ```
 
+The two styles may be mixed in one expression, so `[[ x -> ∅ ]]` reads the
+same as `⟦ x ↦ ∅ ⟧`. The `--monoform` option forbids that: the first symbol
+that has two spellings picks the style of the whole expression, and a later
+symbol of the other style is an error. Under `--monoform`, `[[ x -> ∅ ]]`
+fails, since `∅` at 1:9 mixes with the ASCII `[[` at 1:1. The option is
+accepted by `rewrite`, `dataize`, `morph`, `merge` and `match`.
+
 A formation of a single binding may be written as its asset, a colon,
 and the attribute the asset is bound to:
 

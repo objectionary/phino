@@ -6,8 +6,8 @@
 location: 'Q.x'
 input: |
   [[
-    number ↦ ⟦ φ ↦ ∅ ⟧,
-    bytes ↦ ⟦ φ ↦ ∅ ⟧,
+    number -> [[ @ -> ? ]],
+    bytes -> [[ @ -> ? ]],
     x -> 5
   ]]
 result: '40-14-00-00-00-00-00-00'

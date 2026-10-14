@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: '[[ x -> ⊥.𝜏1 ]]'
+expression: '[[ x -> T.!t1 ]]'
 pattern: '[[ x -> !e1 ]]'
 condition:
   not:

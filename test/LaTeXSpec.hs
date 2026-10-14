@@ -33,7 +33,7 @@ import LaTeX
   , rewrittensToLatex
   )
 import Lining (LineFormat (MULTILINE))
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import System.FilePath (makeRelative, (<.>), (</>))
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldContain)
 import Yaml qualified as Y
@@ -56,7 +56,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- latexPack pth
-          parsed <- parseExpressionThrows (expression pack)
+          parsed <- parseExpressionThrows' MONOFORM (expression pack)
           expressionToLaTeX parsed defaultLatexContext `shouldBe` result pack
       )
 

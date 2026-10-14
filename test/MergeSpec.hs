@@ -15,7 +15,7 @@ import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
 import GHC.Generics (Generic)
 import Merge (merge)
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printExpression)
 import System.FilePath
 import Test.Hspec
@@ -41,11 +41,11 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           YamlPack{..} <- yamlPack pth
-          parsed <- mapM parseExpressionThrows [left, right]
+          parsed <- mapM (parseExpressionThrows' MONOFORM) [left, right]
           case (result, fails) of
             (Just expected, Nothing) -> do
               merged <- merge parsed
-              expected' <- parseExpressionThrows expected
+              expected' <- parseExpressionThrows' MONOFORM expected
               merged `shouldBe` expected'
             (Nothing, Just message) -> do
               thrown <- try (merge parsed) :: IO (Either SomeException Expression)

@@ -6,7 +6,10 @@
 
 module Parser
   ( parseExpression
+  , parseExpression'
   , parseExpressionThrows
+  , parseExpressionThrows'
+  , Form (..)
   , parseAttribute
   , parseAttributeThrows
   , ParserException (..)
@@ -25,6 +28,7 @@ import AST
 import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
 import Control.Monad (guard, when)
+import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, put)
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.Scientific (scientific, toRealFloat)
 import qualified Data.Set as Set
@@ -38,7 +42,15 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Text.Printf (printf)
 
-type Parser = Parsec Void String
+data Form = MONOFORM | POLYFORM
+  deriving (Eq, Show)
+
+data Script = Ascii | Unicode
+  deriving (Eq)
+
+data Style = Free | Open | Fixed Script String SourcePos
+
+type Parser = StateT Style (Parsec Void String)
 
 data ParserException
   = CouldNotParseExpression {message :: String}
@@ -47,16 +59,19 @@ data ParserException
   deriving (Exception)
 
 data PhiParser = PhiParser
-  { _attribute :: Parser Attribute
-  , _alpha :: Parser Alpha
-  , _index :: Parser (Either Slot T.Text)
-  , _binding :: Parser Binding
-  , _expression :: Parser Expression
-  , _string :: Parser String
+  { _attribute :: Parsec Void String Attribute
+  , _alpha :: Parsec Void String Alpha
+  , _index :: Parsec Void String (Either Slot T.Text)
+  , _binding :: Parsec Void String Binding
+  , _expression :: Parsec Void String Expression
+  , _string :: Parsec Void String String
   }
 
 phiParser :: PhiParser
-phiParser = PhiParser attribute alpha indexVar binding expression quotedStr
+phiParser = PhiParser (free attribute) (free alpha) (free indexVar) (free binding) (free expression) (free quotedStr)
+  where
+    free :: Parser a -> Parsec Void String a
+    free parser = evalStateT parser Free
 
 instance Show ParserException where
   show CouldNotParseExpression{..} = printf "Couldn't parse given phi expression, cause: %s" message
@@ -71,6 +86,34 @@ lexeme = L.lexeme whiteSpace
 
 symbol :: String -> Parser String
 symbol = L.symbol whiteSpace
+
+twofold :: Parser String -> Parser String -> Parser String
+twofold ascii' unicode' = get >>= spelled
+  where
+    spelled :: Style -> Parser String
+    spelled Free = ascii' <|> unicode'
+    spelled Open = do
+      pos <- getSourcePos
+      (script, word) <- written
+      put (Fixed script word pos)
+      return word
+    spelled (Fixed first spelling at) = do
+      offset <- getOffset
+      pos <- getSourcePos
+      (script, word) <- written
+      when
+        (script /= first)
+        ( registerParseError (FancyError offset (Set.singleton (ErrorFail (printf "The %s symbol \"%s\" at %s mixes with the %s \"%s\" at %s, while --monoform is set" (named script) word (place pos) (named first) spelling (place at)))))
+            >> put Free
+        )
+      return word
+    written :: Parser (Script, String)
+    written = ((,) Ascii <$> ascii') <|> ((,) Unicode <$> unicode')
+    named :: Script -> String
+    named Ascii = "ASCII"
+    named Unicode = "Unicode"
+    place :: SourcePos -> String
+    place pos = printf "%d:%d" (unPos (sourceLine pos)) (unPos (sourceColumn pos))
 
 label' :: Parser T.Text
 label' = lexeme $ do
@@ -94,27 +137,19 @@ function =
     <?> "function name"
 
 delta :: Parser String
-delta =
-  choice
-    [ symbol "D>"
-    , symbol "Δ" >> dashedArrow
-    ]
+delta = twofold (symbol "D>") ("Δ ⤍" <$ (symbol "Δ" >> dashedArrow))
 
 lambda :: Parser String
-lambda =
-  choice
-    [ symbol "L>"
-    , symbol "λ" >> dashedArrow
-    ]
+lambda = twofold (symbol "L>") ("λ ⤍" <$ (symbol "λ" >> dashedArrow))
 
 dashedArrow :: Parser String
 dashedArrow = symbol "⤍"
 
 arrow :: Parser String
-arrow = choice [symbol "->", symbol "↦"]
+arrow = twofold (symbol "->") (symbol "↦")
 
 global :: Parser String
-global = choice [ascii 'Q', symbol "Φ"]
+global = twofold (ascii 'Q') (symbol "Φ")
 
 ascii :: Char -> Parser String
 ascii letter = lexeme (try (pure <$> char letter <* notFollowedBy (satisfy named <|> '_' <$ lambdaOf)))
@@ -130,11 +165,7 @@ metaSuffix = lexeme (many (oneOf ('_' : '-' : ['0' .. '9'] ++ ['a' .. 'z'] ++ ['
 metaVar :: Char -> String -> Parser (Either Slot T.Text)
 metaVar ch uni = do
   offset <- getOffset
-  suf <-
-    choice
-      [ char '!' >> char ch >> metaSuffix
-      , string uni >> metaSuffix
-      ]
+  suf <- twofold (['!', ch] <$ (char '!' >> char ch)) (string uni) >> metaSuffix
   when
     (suf == "0")
     (fail (printf "the meta variable '!%c0' is indexed with zero, while indexes start with one" ch))
@@ -318,15 +349,18 @@ alone bd = ExFormation . pure <$> bd
 deltaHead :: Parser Expression
 deltaHead =
   lookAhead (satisfy (\ch -> isDigit ch || ('A' <= ch && ch <= 'F') || ch `elem` ("-!𝛿" :: String)))
-    >> alone (try (BiDelta <$> bytes <* colon <* choice [symbol "D", symbol "Δ"]))
+    >> alone (try (BiDelta <$> bytes <* colon <* twofold (symbol "D") (symbol "Δ")))
 
 lambdaHead :: Parser Expression
 lambdaHead =
   lookAhead (satisfy (\ch -> isAsciiUpper ch || ch `elem` ("!𝑓𝜎" :: String)))
-    >> alone (try (BiLambda <$> lambdaName <* colon <* choice [symbol "L", symbol "λ"]))
+    >> alone (try (BiLambda <$> lambdaName <* colon <* twofold (symbol "L") (symbol "λ")))
 
 voidHead :: Parser Expression
-voidHead = alone (choice [symbol "?", symbol "∅"] >> colon >> BiVoid <$> attribute)
+voidHead = alone (vacant >> colon >> BiVoid <$> attribute)
+
+vacant :: Parser String
+vacant = twofold (symbol "?") (symbol "∅")
 
 metaBinding :: Parser Binding
 metaBinding = either BiAny BiMeta <$> metaVar 'B' "𝐵"
@@ -351,17 +385,17 @@ binding =
     <?> "binding"
   where
     blank :: Parser String
-    blank = arrow >> choice [symbol "?", symbol "∅"] <* notFollowedBy colon
+    blank = arrow >> vacant <* notFollowedBy colon
 
 void' :: Parser Attribute
 void' =
   choice
     [ AtLabel <$> label'
     , do
-        _ <- choice [symbol "^", symbol "ρ"]
+        _ <- twofold (symbol "^") (symbol "ρ")
         return AtRho
     , do
-        _ <- choice [symbol "@", symbol "φ"]
+        _ <- twofold (symbol "@") (symbol "φ")
         return AtPhi
     ]
 
@@ -378,7 +412,7 @@ indexVar = metaVar 'i' "𝑖"
 
 alpha :: Parser Alpha
 alpha = do
-  _ <- choice [symbol "~", symbol "α"]
+  _ <- twofold (symbol "~") (symbol "α")
   choice
     [ lexeme L.decimal >>= ranged
     , either AlAny AlMeta <$> indexVar
@@ -416,7 +450,7 @@ reportDuplicates bs = do
 
 formationBindingsOffsets :: Parser [(Int, Binding)]
 formationBindingsOffsets = do
-  _ <- choice [symbol "[[", symbol "⟦"]
+  _ <- twofold (symbol "[[") (symbol "⟦")
   choice
     [ rsb >> return []
     , do
@@ -425,7 +459,7 @@ formationBindingsOffsets = do
     ]
   where
     rsb :: Parser String
-    rsb = choice [symbol "]]", symbol "⟧"]
+    rsb = twofold (symbol "]]") (symbol "⟧")
 
 formationBindings :: Parser [Binding]
 formationBindings = formationBindingsOffsets >>= reportDuplicates
@@ -435,11 +469,11 @@ exHead =
   choice
     [ ExFormation <$> formationBindings
     , do
-        _ <- choice [symbol "$", symbol "ξ"]
+        _ <- twofold (symbol "$") (symbol "ξ")
         return ExXi
     , root
     , do
-        _ <- choice [ascii 'T', symbol "⊥"]
+        _ <- twofold (ascii 'T') (symbol "⊥")
         return ExTermination
     , lexeme (DataString . strToBts <$> quotedStr)
     , deltaHead
@@ -500,11 +534,14 @@ parse' :: String -> Parser a -> String -> Either String a
 parse' name parser input = do
   let parsed =
         runParser
-          ( do
-              _ <- whiteSpace
-              p <- parser
-              _ <- eof
-              return p
+          ( evalStateT
+              ( do
+                  _ <- whiteSpace
+                  p <- parser
+                  _ <- eof
+                  return p
+              )
+              Free
           )
           name
           input
@@ -537,7 +574,14 @@ parseAttributeThrows :: String -> IO Attribute
 parseAttributeThrows attr = orThrow CouldNotParseAttribute (parseAttribute attr)
 
 parseExpression :: String -> Either String Expression
-parseExpression = parse' "expression" expression
+parseExpression = parseExpression' POLYFORM
+
+parseExpression' :: Form -> String -> Either String Expression
+parseExpression' MONOFORM = parse' "expression" (put Open >> expression)
+parseExpression' POLYFORM = parse' "expression" expression
 
 parseExpressionThrows :: String -> IO Expression
-parseExpressionThrows ex = orThrow CouldNotParseExpression (parseExpression ex)
+parseExpressionThrows = parseExpressionThrows' POLYFORM
+
+parseExpressionThrows' :: Form -> String -> IO Expression
+parseExpressionThrows' form ex = orThrow CouldNotParseExpression (parseExpression' form ex)

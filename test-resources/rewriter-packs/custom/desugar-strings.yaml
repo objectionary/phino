@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 input: |
-  ⟦
+  [[
     str -> "hello",
     ch -> "h",
     uni -> "\u0001\u0002",
     empty -> "",
     new-line -> "h\ne"
-  ⟧
+  ]]
 output: |-
   ⟦
     str ↦ Φ.string(

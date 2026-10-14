@@ -3,9 +3,9 @@
 ---
 input: '[[ k -> [[ x -> "hello" ]] ]]'
 output: |-
-  ⟦
+  [[
     k -> [[ x -> "hi" ]]
-  ⟧
+  ]]
 rules:
   custom:
     - name: custom

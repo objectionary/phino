@@ -19,7 +19,7 @@ import Fixtures (linked)
 import Functions (buildTerm)
 import GHC.Generics
 import Matcher
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printSubsts)
 import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normalHeld, redex)
 import System.FilePath
@@ -28,7 +28,7 @@ import Yaml qualified
 
 data ConditionPack = ConditionPack
   { failure :: Maybe Bool
-  , expression :: Expression
+  , expression :: String
   , pattern :: Expression
   , condition :: Yaml.Condition
   }
@@ -43,7 +43,7 @@ spec = do
       packs
       ( \pth -> it (makeRelative resources pth) $ do
           pack <- Y.decodeFileThrow pth :: IO ConditionPack
-          let expr = expression pack
+          expr <- parseExpressionThrows' MONOFORM (expression pack)
           let matched = matchExpression (pattern pack) expr
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
           met <- meetCondition (condition pack) matched (RuleContext buildTerm Nothing (_normal linked))

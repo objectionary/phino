@@ -64,7 +64,7 @@ runRewrite OptsRewrite{..} = do
   linked <- engine
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
-  (expr, atoms) <- parseInputWithAtoms input _inputFormat
+  (expr, atoms) <- parseInputWithAtoms input _inputFormat _monoform
   validateXmirTopLevel _outputFormat expr
   seedTaus expr
   logDebug (printf "Amount of rewriting cycles across all the rules: %d, per rule: %d" _maxCycles _maxDepth)
@@ -171,7 +171,7 @@ runDataize OptsDataize{..} = do
   [foc] <- validatedDispatches "focus" [_focus]
   validateNoOverlap "show" included "hide" excluded
   input <- readInput _inputFile
-  (expr, atoms) <- parseInputWithAtoms input _inputFormat
+  (expr, atoms) <- parseInputWithAtoms input _inputFormat _monoform
   setStdGen (mkStdGen _seed)
   seedTaus expr
   let printCtx = toPrintCtx atoms foc
@@ -253,7 +253,7 @@ runMorph OptsMorph{..} = do
   [foc] <- validatedDispatches "focus" [_focus]
   validateNoOverlap "show" included "hide" excluded
   input <- readInput _inputFile
-  (expr, atoms) <- parseInputWithAtoms input _inputFormat
+  (expr, atoms) <- parseInputWithAtoms input _inputFormat _monoform
   setStdGen (mkStdGen _seed)
   seedTaus expr
   let printCtx = toPrintCtx atoms foc
@@ -356,7 +356,7 @@ runMerge OptsMerge{..} = do
   validateOpts
   inputs' <- traverse (readInput . Just) _inputs
   setStdGen (mkStdGen _seed)
-  (exprs, atoms) <- unzip <$> traverse (`parseInputWithAtoms` _inputFormat) inputs'
+  (exprs, atoms) <- unzip <$> traverse (\input -> parseInputWithAtoms input _inputFormat _monoform) inputs'
   expr <- merge exprs
   validateXmirTopLevel _outputFormat expr
   let listing = const (escapeXMLText (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin)))
@@ -397,7 +397,7 @@ runMatch OptsMatch{..} = do
   when (isJust _when && isNothing _pattern) (invalidCLIArguments "The option --when requires --pattern, since there is nothing to check it against")
   setStdGen (mkStdGen _seed)
   input <- readInput _inputFile
-  expr <- parseInput input PHI
+  expr <- parseInput input PHI _monoform
   if isNothing _pattern
     then logDebug "The --pattern is not provided, no substitutions are built"
     else do

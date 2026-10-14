@@ -7,13 +7,13 @@
 # must be 'a🌵2'.
 input: |
   [[
-    used -> [[ a🌵0 -> ⟦⟧, a🌵1 -> ⟦⟧ ]],
+    used -> [[ a🌵0 -> [[]], a🌵1 -> [[]] ]],
     target -> [[ x -> "foo" ]]
   ]]
 output: |-
   [[
-    used -> [[ a🌵0 -> ⟦⟧, a🌵1 -> ⟦⟧ ]],
-    target -> [[ x -> "foo", a🌵2 -> ⟦⟧ ]]
+    used -> [[ a🌵0 -> [[]], a🌵1 -> [[]] ]],
+    target -> [[ x -> "foo", a🌵2 -> [[]] ]]
   ]]
 rules:
   custom:

@@ -37,7 +37,7 @@ import Lining (LineFormat (SINGLELINE))
 import Locator (locatedExpression)
 import Logger
 import Morph (ReduceContext (..), insideUniverse)
-import Parser (parseExpressionThrows)
+import Parser (Form, parseExpressionThrows, parseExpressionThrows')
 import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewrittens', stepHeaders)
@@ -185,16 +185,16 @@ withoutBOM :: String -> String
 withoutBOM ('\xFEFF' : rest) = rest
 withoutBOM input = input
 
-parseInput :: String -> IOFormat -> IO Expression
-parseInput phi PHI = parseExpressionThrows phi
-parseInput xmir XMIR = parseXMIRThrows xmir >>= xmirToPhi
-parseInput _ LATEX = invalidCLIArguments "LaTeX cannot be used as input format"
+parseInput :: String -> IOFormat -> Form -> IO Expression
+parseInput phi PHI form = parseExpressionThrows' form phi
+parseInput xmir XMIR _ = parseXMIRThrows xmir >>= xmirToPhi
+parseInput _ LATEX _ = invalidCLIArguments "LaTeX cannot be used as input format"
 
-parseInputWithAtoms :: String -> IOFormat -> IO (Expression, Atoms)
-parseInputWithAtoms xmir XMIR = do
+parseInputWithAtoms :: String -> IOFormat -> Form -> IO (Expression, Atoms)
+parseInputWithAtoms xmir XMIR _ = do
   doc <- parseXMIRThrows xmir
   (,) <$> xmirToPhi doc <*> xmirAtoms doc
-parseInputWithAtoms input format = (,M.empty) <$> parseInput input format
+parseInputWithAtoms input format form = (,M.empty) <$> parseInput input format form
 
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)

@@ -755,3 +755,72 @@ spec = do
           (\ipt -> (ipt, Nothing :: Maybe Expression))
           ["⟦ x(y) ↦ 42 ⟧", "⟦ x(y) ↦ 42:a.b ⟧", "⟦ x(y) ↦ 42:a(z) ⟧", "⟦ x(y) ↦ ξ.a ⟧", "Q.x(y(z) ↦ FF-:Δ.b)", "⟦ x(y) ↦ ⟦ ⟧.a ⟧", "⟦ x(y) ↦ ⟦ ⟧(a ↦ ξ) ⟧", "⟦ x(y) ↦ ⟦ ⟧:y ⟧"]
       )
+
+  describe "rejects a mix of ASCII and Unicode symbols under monoform" $
+    fails
+      (parseExpression' MONOFORM)
+      [ ("⟦ x -> ? ]]", "The ASCII symbol \"->\" at 1:5 mixes with the Unicode \"⟦\" at 1:1, while --monoform is set")
+      , ("[[ x ↦ ∅ ]]", "The Unicode symbol \"↦\" at 1:6 mixes with the ASCII \"[[\" at 1:1, while --monoform is set")
+      , ("⟦\n  x -> ?\n⟧", "The ASCII symbol \"->\" at 2:5 mixes with the Unicode \"⟦\" at 1:1")
+      , ("\"hi\".x(y ↦ ξ, z -> $)", "The ASCII symbol \"->\" at 1:17 mixes with the Unicode \"↦\" at 1:10")
+      , ("[[ x -> ∅ ]]", "The Unicode symbol \"∅\" at 1:9")
+      , ("⟦ x ↦ ? ⟧", "The ASCII symbol \"?\" at 1:7")
+      , ("[[ x -> ξ ]]", "The Unicode symbol \"ξ\" at 1:9")
+      , ("⟦ x ↦ $ ⟧", "The ASCII symbol \"$\" at 1:7")
+      , ("[[ x -> Φ.y ]]", "The Unicode symbol \"Φ\" at 1:9")
+      , ("⟦ x ↦ Q.y ⟧", "The ASCII symbol \"Q\" at 1:7")
+      , ("[[ x -> ⊥ ]]", "The Unicode symbol \"⊥\" at 1:9")
+      , ("⟦ x ↦ T ⟧", "The ASCII symbol \"T\" at 1:7")
+      , ("[[ x -> $.ρ ]]", "The Unicode symbol \"ρ\" at 1:11")
+      , ("⟦ x ↦ ξ.^ ⟧", "The ASCII symbol \"^\" at 1:9")
+      , ("[[ φ -> $ ]]", "The Unicode symbol \"φ\" at 1:4")
+      , ("⟦ @ ↦ ξ ⟧", "The ASCII symbol \"@\" at 1:3")
+      , ("Q.x(α0 -> $)", "The Unicode symbol \"α\" at 1:5 mixes with the ASCII \"Q\" at 1:1")
+      , ("Φ.x(~0 ↦ ξ)", "The ASCII symbol \"~\" at 1:5 mixes with the Unicode \"Φ\" at 1:1")
+      , ("[[ Δ ⤍ 00- ]]", "The Unicode symbol \"Δ ⤍\" at 1:4")
+      , ("⟦ D> 00- ⟧", "The ASCII symbol \"D>\" at 1:3")
+      , ("[[ λ ⤍ Fn ]]", "The Unicode symbol \"λ ⤍\" at 1:4")
+      , ("⟦ L> Fn ⟧", "The ASCII symbol \"L>\" at 1:3")
+      , ("[[ x -> 00-:Δ ]]", "The Unicode symbol \"Δ\" at 1:13")
+      , ("⟦ x ↦ 00-:D ⟧", "The ASCII symbol \"D\" at 1:11")
+      , ("[[ x -> Fn:λ ]]", "The Unicode symbol \"λ\" at 1:12")
+      , ("⟦ x ↦ Fn:L ⟧", "The ASCII symbol \"L\" at 1:10")
+      , ("⟦ x ↦ ∅ ]]", "The ASCII symbol \"]]\" at 1:9")
+      , ("[[ x -> 𝑒1 ]]", "The Unicode symbol \"𝑒\" at 1:9")
+      , ("⟦ x ↦ !e1 ⟧", "The ASCII symbol \"!e\" at 1:7")
+      , ("⟦ x ↦ !n1 ⟧", "The ASCII symbol \"!n\" at 1:7")
+      , ("⟦ x ↦ !k1 ⟧", "The ASCII symbol \"!k\" at 1:7")
+      , ("[[ 𝐵1 ]]", "The Unicode symbol \"𝐵\" at 1:4")
+      , ("[[ 𝜏1 -> $ ]]", "The Unicode symbol \"𝜏\" at 1:4")
+      , ("[[ D> 𝛿1 ]]", "The Unicode symbol \"𝛿\" at 1:7")
+      , ("[[ L> 𝑓1 ]]", "The Unicode symbol \"𝑓\" at 1:7")
+      , ("[[ L> 𝜎1 ]]", "The Unicode symbol \"𝜎\" at 1:7")
+      , ("Φ.x(α!i1 ↦ ξ)", "The ASCII symbol \"!i\" at 1:6")
+      , ("⟦ y ↦ ξ, x -> ξ ⟧", "expression:1:12:")
+      ]
+
+  describe "accepts a program spelled in one script under monoform" $
+    test
+      (parseExpression' MONOFORM)
+      [ ("[[ x -> ? ]]", Just (ExFormation [BiVoid (AtLabel "x")]))
+      , ("⟦ x ↦ ∅ ⟧", Just (ExFormation [BiVoid (AtLabel "x")]))
+      , ("\"hi\".x(42)", Just (ExApplication (ExDispatch (DataString (BtMany ["68", "69"])) (AtLabel "x")) (ArAlpha (Alpha 0) (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])))))
+      , ("Q:λ", Just (ExFormation [BiLambda (Function "Q")]))
+      , ("T:L", Just (ExFormation [BiLambda (Function "T")]))
+      , ("Q.x(~0 -> [[ D> 00-, L> Fn, ^ -> $, @ -> T, y -> !e1, z -> 01-:D ]])", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArAlpha (Alpha 0) (ExFormation [BiDelta (BtOne "00"), BiLambda (Function "Fn"), BiTau AtRho ExXi, BiTau AtPhi ExTermination, BiTau (AtLabel "y") (ExMeta "e1"), BiTau (AtLabel "z") (ExFormation [BiDelta (BtOne "01")])]))))
+      , ("Φ.x(α0 ↦ ⟦ Δ ⤍ 00-, λ ⤍ Fn, ρ ↦ ξ, φ ↦ ⊥, y ↦ 𝑒1, z ↦ 01-:Δ ⟧)", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArAlpha (Alpha 0) (ExFormation [BiDelta (BtOne "00"), BiLambda (Function "Fn"), BiTau AtRho ExXi, BiTau AtPhi ExTermination, BiTau (AtLabel "y") (ExMeta "e1"), BiTau (AtLabel "z") (ExFormation [BiDelta (BtOne "01")])]))))
+      ]
+
+  describe "accepts a mix of ASCII and Unicode symbols without monoform" $
+    test
+      (parseExpression' POLYFORM)
+      [ ("⟦ x -> ? ]]", Just (ExFormation [BiVoid (AtLabel "x")]))
+      , ("[[ x ↦ ∅ ⟧", Just (ExFormation [BiVoid (AtLabel "x")]))
+      ]
+
+  describe "parseExpressionThrows' under monoform" $
+    forM_
+      [ ("throws on a program mixing ASCII and Unicode symbols", parseExpressionThrows' MONOFORM "⟦ x -> ? ]]" `shouldThrow` anyException)
+      , ("returns the expression of a program spelled in Unicode alone", parseExpressionThrows' MONOFORM "⟦ x ↦ ∅ ⟧" `shouldReturn` ExFormation [BiVoid (AtLabel "x")])
+      ]
+      (uncurry it)

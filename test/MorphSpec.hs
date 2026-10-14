@@ -30,7 +30,7 @@ import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
 import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
 import Morph (Deadline (..), ReduceContext (..), emptyState, enter, execBuildTerm, inferred, insideUniverse, morph, morph')
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import System.FilePath (makeRelative)
@@ -61,9 +61,9 @@ data MorphPack = MorphPack
 testMorph :: Lambdas -> FilePath -> Expectation
 testMorph known pth = do
   MorphPack{..} <- Decode.decodeFileThrow pth
-  expr <- parseExpressionThrows (if model == Just True then primitives input else input)
+  expr <- parseExpressionThrows' MONOFORM (if model == Just True then primitives input else input)
   seedTaus expr
-  loc <- parseExpressionThrows (fromMaybe "Q" location)
+  loc <- parseExpressionThrows' MONOFORM (fromMaybe "Q" location)
   base <- defaultReduceContext loc
   let ctx =
         base
@@ -72,7 +72,7 @@ testMorph known pth = do
           }
   case (result, fails) of
     (Just res, Nothing) -> do
-      expected <- parseExpressionThrows res
+      expected <- parseExpressionThrows' MONOFORM res
       (morphed, _, _) <- morph expr emptyState ctx
       morphed `shouldBe` expected
     (Nothing, Just message) ->

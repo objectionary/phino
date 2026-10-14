@@ -6,7 +6,7 @@ input: '[[ x -> Q.y ]]'
 output: |-
   ⟦
     x ↦ Φ.y,
-    z -> "foo"
+    z ↦ "foo"
   ⟧
 rules:
   custom:

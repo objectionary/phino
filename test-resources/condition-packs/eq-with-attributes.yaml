@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: '[[ x -> Φ.hone.o-filter ]]'
+expression: '[[ x -> Q.hone.o-filter ]]'
 pattern: '[[ x -> Q.hone.𝜏-filter ]]'
 condition:
   or:

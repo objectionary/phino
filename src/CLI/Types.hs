@@ -12,6 +12,7 @@ import Deps (Acyclic)
 import Lining (LineFormat)
 import Logger (LogLevel)
 import Must (Must)
+import Parser (Form)
 import Sugar (SugarType)
 import Text.Printf (printf)
 import XMIR (XmirContext)
@@ -94,6 +95,7 @@ data OptsDataize = OptsDataize
   { _logLevel :: LogLevel
   , _logLines :: Int
   , _inputFormat :: IOFormat
+  , _monoform :: Form
   , _outputFormat :: IOFormat
   , _sugarType :: SugarType
   , _hideRho :: Bool
@@ -140,6 +142,7 @@ data OptsMorph = OptsMorph
   { _logLevel :: LogLevel
   , _logLines :: Int
   , _inputFormat :: IOFormat
+  , _monoform :: Form
   , _outputFormat :: IOFormat
   , _sugarType :: SugarType
   , _hideRho :: Bool
@@ -199,6 +202,7 @@ data OptsRewrite = OptsRewrite
   { _logLevel :: LogLevel
   , _logLines :: Int
   , _inputFormat :: IOFormat
+  , _monoform :: Form
   , _outputFormat :: IOFormat
   , _sugarType :: SugarType
   , _hideRho :: Bool
@@ -240,6 +244,7 @@ data OptsMerge = OptsMerge
   { _logLevel :: LogLevel
   , _logLines :: Int
   , _inputFormat :: IOFormat
+  , _monoform :: Form
   , _outputFormat :: IOFormat
   , _sugarType :: SugarType
   , _flat :: LineFormat
@@ -254,6 +259,7 @@ data OptsMerge = OptsMerge
 data OptsMatch = OptsMatch
   { _logLevel :: LogLevel
   , _logLines :: Int
+  , _monoform :: Form
   , _sugarType :: SugarType
   , _flat :: LineFormat
   , _pattern :: Maybe String

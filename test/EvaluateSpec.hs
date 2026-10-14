@@ -27,7 +27,7 @@ import Lining (LineFormat (SINGLELINE))
 import Margin (defaultMargin)
 import Matcher (substEmpty)
 import Morph (ReduceContext (..), Steps (..), emptyState, execBuildTerm, memoized, morph, tallied)
-import Parser (parseExpressionThrows)
+import Parser (Form (MONOFORM), parseExpressionThrows')
 import Printer (printExpression, printExpression', printExpressionHidingRho')
 import Sugar (SugarType (SWEET))
 import System.FilePath (makeRelative)
@@ -56,9 +56,9 @@ instance FromJSON SymbolPack where
 testSymbols :: FilePath -> Expectation
 testSymbols pth = do
   SymbolPack{..} <- Decode.decodeFileThrow pth
-  expr <- parseExpressionThrows input
+  expr <- parseExpressionThrows' MONOFORM input
   seedTaus expr
-  loc <- parseExpressionThrows (fromMaybe "Q" location)
+  loc <- parseExpressionThrows' MONOFORM (fromMaybe "Q" location)
   let hidden = hideRho /= Just False
   withLambdasOf (T.pack symbolic) $ \file -> do
     known <- readLambdas file
@@ -86,7 +86,7 @@ testSymbols pth = do
         Nothing -> do
           (morphed, _, _) <- morph expr emptyState ctx
           forM_ result $ \res -> do
-            expected <- parseExpressionThrows res
+            expected <- parseExpressionThrows' MONOFORM res
             spelled hidden morphed `shouldBe` spelled False expected
     written `shouldBe` protocol
   where

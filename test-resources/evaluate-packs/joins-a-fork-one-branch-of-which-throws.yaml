@@ -41,7 +41,7 @@ input: >
     number(φ) ↦ ⟦
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    @ ↦ 5.gt( 0 ).if( then ↦ 1.plus( 2 ), else ↦ Φ.error( message ↦ 7.plus( 8 ) ) ).plus( 6 ).φ ⟧
+    φ ↦ 5.gt( 0 ).if( then ↦ 1.plus( 2 ), else ↦ Φ.error( message ↦ 7.plus( 8 ) ) ).plus( 6 ).φ ⟧
 result: '𝜎3:λ'
 protocol: |
   𝕄(Φ.φ):
