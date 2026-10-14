@@ -135,6 +135,14 @@ spec = do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
       fmap _lenient (matched known "L_fork") `shouldBe` Just False
 
+    it "reads a lenient entry that defers a copy reading a bare symbol" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  defer: true\n  𝑛: 𝑛3\n"
+      fmap _defer (matched known "L_fork") `shouldBe` Just True
+
+    it "reads a lenient entry saying nothing of deferring as entering every copy" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  𝑛: 𝑛3\n"
+      fmap _defer (matched known "L_fork") `shouldBe` Just False
+
     it "reads the terminators an entry names beside its 'join' block" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  terminators: [L_throw, L_halt]\n  𝑛: 𝑛3\n"
       fmap _terminators (matched known "L_fork") `shouldBe` Just ["L_throw", "L_halt"]
@@ -236,6 +244,8 @@ spec = do
       , ("an operand of 'morph' reading a meta", "- λ: L_pair\n  morph:\n    𝑛1: $.x.𝜏1\n  𝑛: 𝑛1\n", "of 'morph' of λ function 'L_pair' reads the meta 't1'")
       , ("a lenient entry with no 'join' line to be lenient in", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  lenient: true\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is lenient but has no 'join' line")
       , ("a 'lenient' key which is no boolean", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: often\n  𝑛: 𝑛3\n", "lenient: expected Bool")
+      , ("an entry that defers but is not lenient", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  defer: true\n  𝑛: 𝑛3\n", "defers but is not lenient")
+      , ("a 'defer' key which is no boolean", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  defer: later\n  𝑛: 𝑛3\n", "defer: expected Bool")
       , ("a 'symbolize' line standing what a 'join' line made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛5: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛5\n", "names no meta bound by 'morph' or by a line above it")
       , ("a 'terminators' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: L_throw\n  𝑛: 𝑛1\n", "expected Array")
       ,

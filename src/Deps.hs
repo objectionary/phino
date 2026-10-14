@@ -116,6 +116,7 @@ data Evaluation
   | EvJoined Int Int (Int, Int)
   | EvTerminate Int (Maybe (Either Int Bytes)) T.Text T.Text (Maybe Expression)
   | EvMinted Int Int [Either Int Bytes]
+  | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
   | EvApplied Int Judgment Expression Expression Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
@@ -132,6 +133,7 @@ resited from to = record
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (moved site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (moved site)
     record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (moved site)
+    record (EvDeferred depth sym judgment copy call site) = EvDeferred depth sym judgment copy call (moved site)
     record (EvApplied depth judgment call object site) = EvApplied depth judgment call object (moved site)
     record other = other
     moved :: Expression -> Expression
@@ -164,6 +166,7 @@ tier (EvJoin depth _ _ _) = depth
 tier (EvJoined depth _ _) = depth
 tier (EvTerminate depth _ _ _ _) = depth
 tier (EvMinted depth _ _) = depth
+tier (EvDeferred depth _ _ _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
@@ -366,6 +369,10 @@ saveEval handle cursor printed printed' report = do
         spelled (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
         spelled (Right bytes) = render (ExBytes bytes)
     written EvMinted{} protocol = pure (protocol, Nothing)
+    written (EvDeferred depth symbol judgment copy call site) protocol = do
+      form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call
+      remarks <- context protocol judgment site
+      pure (protocol, Just (indented depth (remarked (printf "deferred(%s) := %s" (printFunction (FnSymbol symbol)) form) remarks)))
     written (EvApplied depth judgment call object site) protocol = do
       let (index, counted) = numbered protocol
           aliased :: Expression
@@ -581,6 +588,12 @@ saveEvalXml handle cursor printed report = do
         spelled :: Either Int Bytes -> IO String
         spelled (Left fresh) = pure (sigma fresh)
         spelled (Right bytes) = render (ExBytes bytes)
+    elements (EvDeferred depth symbol judgment copy call site) nesting = do
+      form <- render copy
+      locator <- located nesting site
+      (origin, given) <- maybe (pure ("", "")) called call
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"%s>%s<e>%s</e></deferred>" (sigma symbol) (opened judgment) (escapeXML locator) origin given (escapeXMLText form))])
     elements (EvApplied depth judgment call object site) nesting = do
       (origin, given) <- parted (abbreviatedInside nesting._objects call)
       locator <- located nesting site
@@ -616,6 +629,21 @@ saveEvalXml handle cursor printed report = do
       where
         index :: Int
         index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._numbered)
+    called :: Expression -> IO (String, String)
+    called term = do
+      let (object, arguments) = invoked term
+      path <- render object
+      pure (printf " of=\"%s\"" (escapeXML path), printf "<with>%s</with>" (concat arguments))
+    invoked :: Expression -> (Expression, [String])
+    invoked (ExApplication term (ArTau attr value)) =
+      let (object, arguments) = invoked term
+       in (object, arguments ++ [printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) (escapeXMLText (valued value))])
+    invoked term = (term, [])
+    valued :: Expression -> String
+    valued (ExFormation [BiLambda (FnSymbol idx)]) = sigma idx
+    valued (ExFormation bds) = maybe "?" valued (listToMaybe [body | BiTau AtPhi body <- bds])
+    valued (ExApplication _ (ArTau AtPhi body)) = valued body
+    valued _ = "?"
     parted :: Expression -> IO (String, String)
     parted (ExApplication term (ArTau attr value)) = do
       origin <- printed term

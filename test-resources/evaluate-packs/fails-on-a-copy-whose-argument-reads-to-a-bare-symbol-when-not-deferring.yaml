@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The fork the deferral of #1892 gets through, under a lenient entry that does
+# not say 'defer: true'. The lenient join morphs the φ of the copy
+# 'step( tup ↦ Φ.items.tail )', which asks the bare symbol '𝜎1' for 'next',
+# and the firing gets stuck on that symbol, as it did since '--deep' was gone.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      𝑛3: [𝑛1, 𝑛2]
+    lenient: true
+    𝑛: ⟦ φ ↦ 𝑛3 ⟧
+location: 'Q.y'
+input: '⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function '𝜎1'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := 𝜎2:λ  # 𝕄(ξ.a)
+      𝕄(Φ.a🌵1):
+        𝑛·1·1 := Φ.step( tup ↦ Φ.items.tail )
+      𝑛2·1 := 𝑛·1·1  # 𝕄(ξ.b)
+      𝕄(Φ.a🌵2):
+        unanswered(𝜎1)  # 𝕄(𝜎1:λ)
+      stuck(𝜎1)

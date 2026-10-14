@@ -16,11 +16,11 @@ import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
-import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), resited)
+import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Lambdas (Lambda (..), Meta (..), joined, matched, message, minted, symbolized, thrown)
+import Lambdas (Lambda (..), Meta (..), emptyLambdas, joined, matched, message, minted, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), charged, counted, deeper, entering, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, entering, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule', xiFree)
 import Text.Printf (printf)
@@ -201,16 +201,95 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           pure (bound', state'')
         reduced :: Meta -> Expression -> State -> IO (Expression, State)
         reduced side term state''
-          | hanging term = do
-              (normal, morphed) <- morphing univ ctx (ExDispatch term AtPhi) state''
-              ctx._saveEval (EvTerm ctx._nesting side._spelling Morphing (ExDispatch (ExMeta side._name) AtPhi) normal)
-              (answer, state''') <- fire ctx entry side morphed normal
-              ctx._saveEval (EvTerm ctx._nesting side._spelling Evaluation (ExMeta side._name) answer)
-              pure (answer, state''')
+          | hanging term && entry._defer = deferred side term state'' >>= maybe (entered side term state'') (\answer -> pure (answer, state''))
+          | hanging term = entered side term state''
           | otherwise = pure (term, state'')
+        entered :: Meta -> Expression -> State -> IO (Expression, State)
+        entered side term state'' = do
+          (normal, morphed) <- morphing univ ctx (ExDispatch term AtPhi) state''
+          ctx._saveEval (EvTerm ctx._nesting side._spelling Morphing (ExDispatch (ExMeta side._name) AtPhi) normal)
+          (answer, state''') <- fire ctx entry side morphed normal
+          ctx._saveEval (EvTerm ctx._nesting side._spelling Evaluation (ExMeta side._name) answer)
+          pure (answer, state''')
         hanging :: Expression -> Bool
         hanging (ExFormation bds) = not (any isLambda bds) && or [not (xiFree body) | BiTau AtPhi body <- bds]
         hanging _ = False
+        deferred :: Meta -> Expression -> State -> IO (Maybe Expression)
+        deferred side (ExFormation bds) state''
+          | copied = do
+              known <- mapM resolved bds
+              if any bare known then Just <$> postponed known else pure Nothing
+          where
+            copied :: Bool
+            copied = boxed bds && not (any void bds) && or [not (formed body) | BiTau AtPhi body <- bds]
+            void :: Binding -> Bool
+            void (BiVoid _) = True
+            void _ = False
+            formed :: Expression -> Bool
+            formed (ExFormation _) = True
+            formed _ = False
+            bare :: Binding -> Bool
+            bare (BiTau attr (ExFormation [BiLambda (FnSymbol _)])) = attr /= AtPhi && attr /= AtRho
+            bare _ = False
+            resolved :: Binding -> IO Binding
+            resolved bd@(BiTau attr body)
+              | attr /= AtPhi && attr /= AtRho && reducible body = do
+                  placed <- ctx._engine._contextualize body (ExFormation (filter (not . named attr) bds))
+                  outcome <- try (settled placed univ state'' reading)
+                  case outcome of
+                    Right (sole@(ExFormation [BiLambda (FnSymbol _)]), _) -> pure (BiTau attr sole)
+                    Left (OutOfTime cap) -> expired ctx cap
+                    _ -> pure bd
+            resolved bd = pure bd
+            reducible :: Expression -> Bool
+            reducible (ExDispatch _ _) = True
+            reducible (ExApplication _ _) = True
+            reducible _ = False
+            named :: Attribute -> Binding -> Bool
+            named attr (BiTau attr' _) = attr == attr'
+            named _ _ = False
+            reading :: ReduceContext
+            reading = ctx{_symbolic = emptyLambdas, _memo = Nothing, _tally = Nothing, _acyclic = Nothing, _saveStep = dontSaveStep, _saveEval = dontSaveEval}
+            postponed :: [Binding] -> IO Expression
+            postponed known = do
+              fresh <- succ <$> readIORef ctx._minted
+              writeIORef ctx._minted fresh
+              ctx._saveEval (EvDeferred ctx._nesting fresh Morphing (ExFormation known) (called known) (ExDispatch (ExMeta side._name) AtPhi))
+              pure (ExFormation [BiLambda (FnSymbol fresh)])
+            called :: [Binding] -> Maybe Expression
+            called known = do
+              (path, declared) <- origin known
+              pure (foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` declared])
+            origin :: [Binding] -> Maybe (Expression, [Binding])
+            origin known = do
+              parent <- case filter ((== Just AtRho) . attributeFromBinding) known of
+                [] -> Just ExRoot
+                [BiTau AtRho (ExFormation outer)] -> fst <$> origin outer
+                [BiTau AtRho path] -> Just (erased path)
+                _ -> Nothing
+              ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
+              chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
+              where
+                fits :: [Binding] -> Bool
+                fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- known, attributeFromBinding bd /= Just AtRho]
+                chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
+                chosen [] = Nothing
+                chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
+                  [one] -> Just one
+                  _ -> Nothing
+                agreed :: (Expression, [Binding]) -> (Int, Int)
+                agreed (_, declared) = (length [attr | BiTau attr _ <- known, BiVoid attr `elem` declared], length (filter (`elem` declared) known))
+            located :: Expression -> Expression -> Maybe Expression
+            located ExRoot whole = Just whole
+            located (ExDispatch path attr) whole = case located path whole of
+              Just (ExFormation siblings) -> listToMaybe [body | BiTau attr' body <- siblings, attr' == attr]
+              _ -> Nothing
+            located _ _ = Nothing
+            erased :: Expression -> Expression
+            erased (ExApplication target _) = erased target
+            erased (ExDispatch target attr) = ExDispatch (erased target) attr
+            erased other = other
+        deferred _ _ _ = pure Nothing
         terminating :: T.Text -> Meta -> Expression -> Expression -> IO (Subst, State)
         terminating side raised fault term = do
           ctx._saveEval (EvTerminate ctx._nesting condition side raised._spelling (message fault))

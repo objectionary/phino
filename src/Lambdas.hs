@@ -62,6 +62,7 @@ data Lambda = Lambda
   , _symbolized :: [(Meta, Expression)]
   , _paired :: [(Meta, (Meta, Meta))]
   , _lenient :: Bool
+  , _defer :: Bool
   , _terminators :: [Text]
   , _answer :: Expression
   }
@@ -89,6 +90,7 @@ instance FromJSON Lambda where
         <*> operands key expressionMeta entry "symbolize"
         <*> pairs (T.unpack key) entry
         <*> entry .:? "lenient" .!= False
+        <*> entry .:? "defer" .!= False
         <*> entry .:? "terminators" .!= []
         <*> pure answer
     sigmas (T.unpack key) lambda._answer
@@ -256,6 +258,7 @@ instance FromJSON Lambda where
       lonely :: String -> Lambda -> Yaml.Parser ()
       lonely key lambda
         | lambda._lenient && null lambda._paired = fail (printf "The λ function '%s' is lenient but has no 'join' line to be lenient in" key)
+        | lambda._defer && not lambda._lenient = fail (printf "The λ function '%s' defers but is not lenient, while only a lenient join may enter a copy" key)
         | otherwise = pure ()
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer

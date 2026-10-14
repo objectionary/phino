@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvTerm, EvTerminate), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvTerm, EvTerminate), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -193,6 +193,12 @@ spec = do
     it "writes no message for a fork that raises with none" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ф" Morphing ExRoot, EvTerminate 2 (Just (Right (BtOne "0D"))) "left" "𝑛3" Nothing])
       last (lines written) `shouldBe` "    terminate(0D-, left)  # 𝑛3"
+    it "writes a deferred copy as the call of the object it was made of" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)]), BiTau AtPhi (ExDispatch (ExDispatch ExXi (AtLabel "щ")) (AtLabel "й"))]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)])))) ExRoot])
+      last (lines written) `shouldBe` "  deferred(𝜎9) := Φ.ёж( щ ↦ 𝜎4:λ )"
+    it "writes a deferred copy as it stands when no object of the world made it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)]), BiTau AtPhi (ExDispatch (ExDispatch ExXi (AtLabel "щ")) (AtLabel "й"))]) Nothing ExRoot])
+      last (lines written) `shouldBe` "  deferred(𝜎9) := ⟦ щ ↦ 𝜎4:λ, φ ↦ щ.й ⟧"
 
   describe "saveEvalXml" $ do
     it "writes an application as an element naming its head and holding its argument" $ do
@@ -237,6 +243,9 @@ spec = do
     it "writes the message a fork raises with beside the datum of its condition" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvTerminate 1 (Just (Right (BtOne "0D"))) "left" "𝑛3" (Just (ExDispatch ExRoot (AtLabel "щука")))])
       lines written `shouldContain` ["  <terminate branch=\"left\" message=\"Φ.щука\">0D-</terminate>"]
+    it "writes a deferred copy as an element naming its object and the symbols of its arguments" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)]), BiTau AtPhi (ExDispatch (ExDispatch ExXi (AtLabel "щ")) (AtLabel "й"))]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)])))) ExRoot])
+      lines written `shouldContain` ["  <deferred symbol=\"𝜎9\" by=\"morph\" at=\"Φ\" of=\"Φ.ёж\"><with><attr name=\"щ\">𝜎4</attr></with><e>⟦ щ ↦ 𝜎4:λ, φ ↦ щ.й ⟧</e></deferred>"]
 
   describe "perSecond" $ do
     it "divides the firings by the seconds the run took" $

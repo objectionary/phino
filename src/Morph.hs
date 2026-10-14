@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
