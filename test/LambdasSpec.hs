@@ -295,6 +295,9 @@ spec = do
       , ("a lenient entry with no 'join' line to be lenient in", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  lenient: []\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is lenient but has no 'join' line")
       , ("a 'lenient' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  𝑛: 𝑛3\n", "lenient: parsing [] failed, expected Array")
       , ("a 'lenient' key naming an option phino does not know", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defr]\n  𝑛: 𝑛3\n", "The option 'defr' of 'lenient' of λ function 'L_fork' is unknown")
+      , ("a misspelled 'lenient' key", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenent: []\n  𝑛: 𝑛3\n", "The key 'lenent' of λ function 'L_fork' is none of the keys an entry reads")
+      , ("a 'defer' key beside 'lenient', which now lists it", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: []\n  defer: true\n  𝑛: 𝑛3\n", "The key 'defer' of λ function 'L_fork' is none of the keys an entry reads")
+      , ("a misspelled 'dataize' block", "- λ: L_pair\n  datize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The key 'datize' of λ function 'L_pair' is none of the keys an entry reads")
       , ("a 'terminators' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: L_throw\n  𝑛: 𝑛1\n", "expected Array")
       ,
         ( "a terminator an entry of the file answers"
