@@ -29,16 +29,16 @@ lined :: Lambdas -> T.Text -> [Line]
 lined known func = maybe [] _lines (matched known func)
 
 order :: Lambdas -> T.Text -> [T.Text]
-order known func = map bound (lined known func)
+order known func = concatMap bound (lined known func)
   where
-    bound :: Line -> T.Text
-    bound (Evaluated meta _) = _spelling meta
-    bound (Unfolded meta _ _) = _spelling meta
-    bound (Rewritten meta _ _) = _spelling meta
-    bound (Stayed meta _) = _spelling meta
-    bound (Symbolized meta _) = _spelling meta
-    bound (Upcasted meta _ _) = _spelling meta
-    bound (Paired meta _ _) = _spelling meta
+    bound :: Line -> [T.Text]
+    bound (Evaluated meta _) = [_spelling meta]
+    bound (Unfolded meta _ _) = [_spelling meta]
+    bound (Rewritten meta _ _) = [_spelling meta]
+    bound (Stayed meta _) = [_spelling meta]
+    bound (Symbolized meta _) = [_spelling meta]
+    bound (Upcasted one _ two _) = [_spelling one, _spelling two]
+    bound (Paired meta _ _) = [_spelling meta]
 
 joins :: Lambdas -> T.Text -> [(T.Text, (T.Text, T.Text))]
 joins known func = [(_spelling meta, (_spelling left, _spelling right)) | Paired meta left right <- lined known func]
@@ -49,8 +49,8 @@ fired known func = [(_spelling meta, _spelling source) | Evaluated meta source <
 unfolds :: Lambdas -> T.Text -> [(T.Text, T.Text, Bool)]
 unfolds known func = [(_spelling meta, _spelling source, deferring) | Unfolded meta source deferring <- lined known func]
 
-casts :: Lambdas -> T.Text -> [(T.Text, T.Text, T.Text)]
-casts known func = [(_spelling meta, _spelling source, _spelling shape) | Upcasted meta source shape <- lined known func]
+casts :: Lambdas -> T.Text -> [((T.Text, T.Text), (T.Text, T.Text))]
+casts known func = [((_spelling one, _spelling first), (_spelling two, _spelling second)) | Upcasted one first two second <- lined known func]
 
 stays :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 stays known func = [(_spelling meta, _spelling source) | Stayed meta source <- lined known func]
@@ -164,9 +164,9 @@ spec = do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1}\n  𝑛: 𝑛2\n"
       unfolds known "L_fork" `shouldBe` [("𝑛2", "𝑛1", False)]
 
-    it "reads an 'upcast' line with the meta it casts and the meta it casts to" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛2}\n  𝑛: 𝑛3\n"
-      casts known "L_fork" `shouldBe` [("𝑛3", "𝑛1", "𝑛2")]
+    it "reads the two lines of an 'upcast' block as one pair" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛4: 𝑛2\n    𝑛3: 𝑛1\n  𝑛: 𝑛3\n"
+      casts known "L_fork" `shouldBe` [(("𝑛3", "𝑛1"), ("𝑛4", "𝑛2"))]
 
     it "reads the terminators an entry names beside its 'join' block" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  terminators: [L_throw, L_halt]\n  𝑛: 𝑛3\n"
@@ -232,17 +232,21 @@ spec = do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛4: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛4\n"
       order known "L_fork" `shouldBe` ["𝑛3", "𝑛4"]
 
-    it "runs an 'upcast' line after the line binding the meta it casts to" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛4}\n  unfold:\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n"
-      order known "L_fork" `shouldBe` ["𝑛4", "𝑛3"]
+    it "runs an 'upcast' block once the line binding either meta it reads has run" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: 𝑛1\n    𝑛5: 𝑛4\n  unfold:\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n"
+      order known "L_fork" `shouldBe` ["𝑛4", "𝑛3", "𝑛5"]
+
+    it "runs a line reading either meta an 'upcast' block binds after that block" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  evaluate:\n    𝑛3: 𝑛5\n  upcast:\n    𝑛4: 𝑛1\n    𝑛5: 𝑛2\n  𝑛: 𝑛3\n"
+      order known "L_fork" `shouldBe` ["𝑛4", "𝑛5", "𝑛3"]
 
     it "runs the lines of a fork in the order of the metas they read, whatever the order of their blocks" $ do
-      known <- lambdasOf (T.concat ["- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛15: [𝑛13, 𝑛14]\n  upcast:\n    𝑛13: {of: 𝑛11, to: 𝑛12}\n    𝑛14: {of: 𝑛12, to: 𝑛11}\n  symbolize:\n    𝑛11: 𝑛9\n    𝑛12: 𝑛10\n  stay:\n    𝑛9: 𝑛7\n    𝑛10: 𝑛8\n  rewrite:\n    𝑛7:\n      of: 𝑛5\n", rules, "    𝑛8:\n      of: 𝑛6\n", rules, "  unfold:\n    𝑛5: {of: 𝑛3, defer: true}\n    𝑛6: {of: 𝑛4, defer: true}\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛15\n"])
+      known <- lambdasOf (T.concat ["- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛15: [𝑛13, 𝑛14]\n  upcast:\n    𝑛13: 𝑛11\n    𝑛14: 𝑛12\n  symbolize:\n    𝑛11: 𝑛9\n    𝑛12: 𝑛10\n  stay:\n    𝑛9: 𝑛7\n    𝑛10: 𝑛8\n  rewrite:\n    𝑛7:\n      of: 𝑛5\n", rules, "    𝑛8:\n      of: 𝑛6\n", rules, "  unfold:\n    𝑛5: {of: 𝑛3, defer: true}\n    𝑛6: {of: 𝑛4, defer: true}\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛15\n"])
       order known "L_fork" `shouldBe` ["𝑛3", "𝑛4", "𝑛5", "𝑛6", "𝑛7", "𝑛8", "𝑛9", "𝑛10", "𝑛11", "𝑛12", "𝑛13", "𝑛14", "𝑛15"]
 
     it "runs the lines no meta orders in the order of their blocks" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  upcast:\n    𝑛7: {of: 𝑛1, to: 𝑛2}\n  symbolize:\n    𝑛4: 𝑛1\n  stay:\n    𝑛5: 𝑛2\n  unfold:\n    𝑛8: 𝑛2\n  evaluate:\n    𝑛6: 𝑛1\n  𝑛: 𝑛3\n"
-      order known "L_fork" `shouldBe` ["𝑛6", "𝑛8", "𝑛5", "𝑛4", "𝑛7", "𝑛3"]
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  upcast:\n    𝑛7: 𝑛1\n    𝑛9: 𝑛2\n  symbolize:\n    𝑛4: 𝑛1\n  stay:\n    𝑛5: 𝑛2\n  unfold:\n    𝑛8: 𝑛2\n  evaluate:\n    𝑛6: 𝑛1\n  𝑛: 𝑛3\n"
+      order known "L_fork" `shouldBe` ["𝑛6", "𝑛8", "𝑛5", "𝑛4", "𝑛7", "𝑛9", "𝑛3"]
 
     it "reads an entry naming no 'stay' block at all" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
@@ -325,9 +329,12 @@ spec = do
       , ("an 'unfold' line naming a list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: [𝑛1]\n  𝑛: 𝑛2\n", "The line '𝑛2' of 'unfold' of λ function 'L_fork' names neither a meta nor a mapping with 'of'")
       , ("an 'unfold' line with no 'of'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {defer: true}\n  𝑛: 𝑛2\n", "key \"of\" not found")
       , ("an 'unfold' line whose 'defer' is no flag", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1, defer: often}\n  𝑛: 𝑛2\n", "expected Bool")
-      , ("an 'upcast' line with no 'to'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛2: {of: 𝑛1}\n  𝑛: 𝑛2\n", "key \"to\" not found")
-      , ("an 'upcast' line casting to a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛2}\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
-      , ("a meta bound by 'unfold' and again by 'upcast'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n  upcast:\n    𝑛2: {of: 𝑛1, to: 𝑛1}\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_fork' is bound by more than one line")
+      , ("an 'upcast' block holding one line", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The 'upcast' block of λ function 'L_fork' holds 1 line, while it casts one pair and takes exactly two")
+      , ("an 'upcast' block holding three lines", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  upcast:\n    𝑛4: 𝑛1\n    𝑛5: 𝑛2\n    𝑛6: 𝑛3\n  𝑛: 𝑛4\n", "The 'upcast' block of λ function 'L_fork' holds 3 lines, while it casts one pair and takes exactly two")
+      , ("an 'upcast' line written as the gone mapping with 'of' and 'to'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛2}\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n", "The line '𝑛3' of 'upcast' of λ function 'L_fork' names no meta")
+      , ("an 'upcast' line reading a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
+      , ("a meta bound by 'unfold' and again by 'upcast'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n  upcast:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_fork' is bound by more than one line")
+      , ("an 'upcast' block reading a meta it binds itself", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛2\n", "reads the meta it binds")
       , ("a misspelled 'lenient' key", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenent: []\n  𝑛: 𝑛3\n", "The key 'lenent' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a 'defer' key beside 'lenient', which now lists it", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: []\n  defer: true\n  𝑛: 𝑛3\n", "The key 'defer' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a misspelled 'dataize' block", "- λ: L_pair\n  datize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The key 'datize' of λ function 'L_pair' is none of the keys an entry reads")
@@ -682,6 +689,7 @@ spec = do
       , ("a term holding symbols in a dispatch", "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧.plus( x ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) )")
       , ("a term holding symbols in positional arguments", "Φ.f( α0 ↦ ⟦ λ ⤍ 𝜎2 ⟧, α1 ↦ ⟦ λ ⤍ 𝜎3 ⟧ )")
       , ("a term holding no symbol", "Φ.tuple.empty")
+      , ("another bare symbol", "⟦ λ ⤍ 𝜎2 ⟧")
       ]
       ( \(desc, shape) ->
           it ("cannot cast a bare symbol to " ++ desc) $ do

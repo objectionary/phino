@@ -447,11 +447,10 @@ after the stage both branches carry `⟦ λ ⤍ 𝜎 ⟧` where they differ.
 A bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, says nothing of the object it stands for, while
 the other branch of a fork may be a copy of `Φ.tuple` with a symbol in `tail`,
 in `head` and in `length`, as one in `bytes.array` is. There is an eighth
-block, `upcast`, and each line of it takes the bare symbol for an object of
-the same kind as another term. It casts the symbol under `of` into a copy of
-the term under `to` where every symbol is a fresh one, read off the bare
-symbol by the path to its place, and binds an expression meta of its own to
-the copy:
+block, `upcast`, and it holds exactly two lines, each reading a meta the way
+a line of any other block does. The block takes the two terms as one pair,
+casts the smaller of them into the shape of the larger, and binds the metas
+of its two lines to the two results, in the order the lines are written:
 
 ```yaml
 - λ: L_fork
@@ -466,14 +465,24 @@ the copy:
           pattern: ⟦ tail ↦ 𝑒1, head ↦ 𝑒2, length ↦ 𝑒3, !B ⟧
           result: Φ.tuple( tail ↦ 𝑒1, head ↦ 𝑒2, length ↦ 𝑒3 )
   upcast:
-    𝑛4: {of: 𝑛1, to: 𝑛3}
+    𝑛4: 𝑛1
+    𝑛5: 𝑛3
   join:
-    𝑛5: [𝑛4, 𝑛3]
-  𝑛: 𝑛5
+    𝑛6: [𝑛4, 𝑛5]
+  𝑛: 𝑛6
 ```
 
-Both sides name metas bound by `morph` or by other lines of the entry. The
-`rewrite` line spells the tuple 𝕄 made as the call it was made of, for the
+Today the smaller term is a bare symbol, and the larger one is a term it can
+be cast into: every symbol of it is reached by a path, and the cast is a copy
+of it where every symbol is a fresh one, read off the bare symbol by the path
+to its place. The line that read the bare symbol binds the cast, here `𝑛4`,
+and the other line binds its term as it is. The author of the entry does not
+say which of the two is cast, since the terms tell. The block runs once both
+metas it reads are bound, and a line reading either meta it binds runs after
+it. A block with one line, or with more than two, is refused when the file is
+read.
+
+The `rewrite` line spells the tuple 𝕄 made as the call it was made of, for the
 reason the end of this section gives. The `join` line then pairs the two
 calls symbol by symbol, minting a symbol for every pair the usual way:
 
@@ -491,13 +500,14 @@ A program reading `length` off the answer gets `𝜎10`, which stands for either
 length, and does not get stuck. A path walks through the attributes of a
 formation and the arguments of a copy of an object of the world, such as
 `Φ.tuple( … )`. A `φ` is an attribute like any other, so the symbol of
-`Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )` is read as `𝜎1.φ.φ`. A term
-under `of` that is no bare symbol is bound as it stands, and so is the bare
-symbol itself when the term under `to` holds no symbol, or one no path
-reaches, such as one in an argument of a call `x.slice( start ↦ 𝜎2 )`. The
-term alone does not prove that both branches are objects of one kind. The
-record is what lets a reader check that against what it knows about the
-program.
+`Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )` is read as `𝜎1.φ.φ`. When both
+terms are bare symbols, when neither is, or when the other term holds no
+symbol, or one no path reaches, such as one in an argument of a call
+`x.slice( start ↦ 𝜎2 )`, both lines bind their terms as they are and nothing
+is written for the cast. The protocol writes the two bindings the way it
+writes any other line, `𝑛4·1 := …  # 𝑛1`. The term alone does not prove
+that both branches are objects of one kind. The record is what lets a reader
+check that against what it knows about the program.
 
 A `join` compares only the `φ` chain of two formations, so a cast into a
 formation, which is what 𝕄 makes of a copy, pairs nothing but that chain.
@@ -601,7 +611,7 @@ attributes of the decorator, so it is not exactly the object either branch
 made, which is why an entry is strict unless it says otherwise. Dataization
 still reaches the same data through it. The list takes no option and stays
 empty. A name in it is refused when the file is read, `defer` and `upcast`
-among them, since an `unfold` line and an `upcast` line now do their work, and
+among them, since an `unfold` line and an `upcast` block now do their work, and
 so is a lenient entry with no `join` line.
 
 A lenient entry also joins a bare symbol with a term that holds exactly one
@@ -615,7 +625,7 @@ included. A term with no symbol, or with two, is still refused.
 
 A bare symbol meeting a term with more symbols than one is no join, lenient
 or not. The entry casts it into the shape of that term first, with an
-`upcast` line, and a branch one call away from its value is fired first with
+`upcast` block, and a branch one call away from its value is fired first with
 an `unfold` line.
 
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
@@ -1334,7 +1344,7 @@ symbols the term holds, separated by a space the way `<joined>` lists its pair,
 and `<e>` holds the term the symbol stands for.
 
 `<upcast symbol="𝜎1"><path symbol="𝜎5">tail</path>…<e>…</e></upcast>` is a
-bare symbol an `upcast` line cast into a copy of another term, which the
+bare symbol an `upcast` block cast into a copy of another term, which the
 text format writes as `upcast(𝜎1) := …` with a line `𝜎5 := 𝜎1.tail` per fresh
 symbol. The bare symbol stands in `symbol`. Every `<path>` holds a fresh symbol
 of the copy in `symbol` and, as its text, the attributes that read it off the

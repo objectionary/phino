@@ -200,16 +200,20 @@ object of the world, still joins if the other branch holds exactly one symbol
 (`goSole` of `joined`, #1817): the answer is a copy of that branch with the
 symbol replaced by a fresh one, and nothing outside the two branches is read.
 
-An `upcast` line, `𝑛3: {of: 𝑛1, to: 𝑛2}` (`Upcasted` of `Lambdas.hs`, `cast`
-of `Evaluate.hs`, #1914, #1921), casts the term of `of`, when it is a bare
-symbol, into a copy of the term of `to` whose every symbol is a fresh one,
-read off the bare symbol by a path through the attributes of formations and
-the arguments of copies of objects of the world (`upcasted` of `Lambdas.hs`),
-writes the cast as `upcast(…)` (`EvUpcast`), and binds the copy. Any other
-term, or a shape with no symbol or one no path reaches, is bound as it is. A
-`join` compares only the φ chain of two formations (#1293), so a cast into a
-formation pairs nothing else, and an entry spells such a copy as its call with
-a `rewrite` line first.
+An `upcast` block holds exactly two plain lines, `𝑛3: 𝑛1` and `𝑛4: 𝑛2`, read
+as one `Upcasted` line of `Lambdas.hs` that reads both metas and binds both
+(`bindings`, so `ordered` and `once` treat the block as one unit), and refused
+with one line or more than two (#1914, #1921). `cast` of `Evaluate.hs` takes
+the two terms as a pair and casts the smaller into the shape of the larger:
+today that means exactly one bare symbol and another term whose every symbol
+a path reaches through the attributes of formations and the arguments of
+copies of objects of the world (`upcasted` of `Lambdas.hs`, which refuses a
+bare shape). It writes the cast as `upcast(…)` (`EvUpcast`), binds it under
+the line that read the bare symbol and the other term as it is, and writes
+both bindings as `EvSymbolize`. In any other case both terms are bound as
+they are. A `join` compares only the φ chain of two formations (#1293), so a
+cast into a formation pairs nothing else, and an entry spells such a copy as
+its call with a `rewrite` line first.
 
 An `unfold` line, `𝑛3: 𝑛1` or `𝑛3: {of: 𝑛1, defer: true}` (`Unfolded` of
 `Lambdas.hs`, `unfolded` of `Evaluate.hs`, #1885, #1921), morphs the φ of a

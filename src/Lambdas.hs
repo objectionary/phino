@@ -63,7 +63,7 @@ data Line
   | Rewritten Meta Meta [Y.Rule]
   | Stayed Meta Meta
   | Symbolized Meta Meta
-  | Upcasted Meta Meta Meta
+  | Upcasted Meta Meta Meta Meta
   | Paired Meta Meta Meta
 
 data Lambda = Lambda
@@ -136,7 +136,7 @@ instance FromJSON Lambda where
       lenient key entry = entry .:? "lenient" >>= maybe (pure False) (\names -> True <$ mapM_ (option key) (names :: [Text]))
       option :: String -> Text -> Yaml.Parser ()
       option key "defer" = fail (printf "The option 'defer' of 'lenient' of λ function '%s' is gone, while an 'unfold' line saying 'defer: true' does its work" key)
-      option key "upcast" = fail (printf "The option 'upcast' of 'lenient' of λ function '%s' is gone, while an 'upcast' line does its work" key)
+      option key "upcast" = fail (printf "The option 'upcast' of 'lenient' of λ function '%s' is gone, while an 'upcast' block does its work" key)
       option key name = fail (printf "The option '%s' of 'lenient' of λ function '%s' is unknown, while the list takes no option" (T.unpack name) key)
       written :: String -> Object -> Yaml.Parser [Line]
       written key entry =
@@ -147,7 +147,7 @@ instance FromJSON Lambda where
             , rewrites key entry
             , links Stayed entry "stay"
             , links Symbolized entry "symbolize"
-            , casts entry
+            , casts key entry
             , pairs key entry
             ]
       links :: (Meta -> Meta -> Line) -> Object -> Key -> Yaml.Parser [Line]
@@ -169,10 +169,30 @@ instance FromJSON Lambda where
                   (T.unpack meta)
                   key
               )
-      casts :: Object -> Yaml.Parser [Line]
-      casts entry = do
-        mapping <- entry .:? "upcast" .!= (Map.empty :: Map Text Object)
-        mapM (\(meta, body) -> Upcasted <$> expressionMeta meta <*> (body .: "of" >>= expressionMeta) <*> (body .: "to" >>= expressionMeta)) (numbered mapping)
+      casts :: String -> Object -> Yaml.Parser [Line]
+      casts key entry = do
+        mapping <- entry .:? "upcast" .!= (Map.empty :: Map Text Value)
+        case numbered mapping of
+          [] -> pure []
+          [(one, first), (two, second)] -> (: []) <$> (Upcasted <$> expressionMeta one <*> plain one first <*> expressionMeta two <*> plain two second)
+          lines' ->
+            fail
+              ( printf
+                  "The 'upcast' block of λ function '%s' holds %d %s, while it casts one pair and takes exactly two"
+                  key
+                  (length lines')
+                  (if length lines' == 1 then "line" else "lines" :: String)
+              )
+        where
+          plain :: Text -> Value -> Yaml.Parser Meta
+          plain _ (String source) = expressionMeta source
+          plain meta _ =
+            fail
+              ( printf
+                  "The line '%s' of 'upcast' of λ function '%s' names no meta, such as '𝑛3: 𝑛1', while the block itself finds which of its two terms to cast"
+                  (T.unpack meta)
+                  key
+              )
       pairs :: String -> Object -> Yaml.Parser [Line]
       pairs key entry = do
         mapping <- entry .:? "join" .!= (Map.empty :: Map Text [Text])
@@ -228,7 +248,7 @@ instance FromJSON Lambda where
         where
           bound :: Meta -> Yaml.Parser ()
           bound meta
-            | meta._name `elem` reduced ++ map (_name . binding) waiting = pure ()
+            | meta._name `elem` reduced ++ map _name (concatMap bindings waiting) = pure ()
             | otherwise =
                 fail
                   ( printf
@@ -239,7 +259,7 @@ instance FromJSON Lambda where
           go :: [Text] -> [Line] -> Yaml.Parser [Line]
           go _ [] = pure []
           go known pending@(first : _) = case break (all ((`elem` known) . _name) . sources) pending of
-            (before, line : after) -> (line :) <$> go ((binding line)._name : known) (before ++ after)
+            (before, line : after) -> (line :) <$> go (map _name (bindings line) ++ known) (before ++ after)
             (_, []) ->
               fail
                 ( printf
@@ -253,14 +273,14 @@ instance FromJSON Lambda where
                 | meta._name `elem` seen = meta
                 | otherwise = goCircle (meta._name : seen) (fromMaybe meta (listToMaybe (feeding meta)))
               feeding :: Meta -> [Meta]
-              feeding meta = [source | line <- pending, (binding line)._name == meta._name, source <- sources line, source._name `notElem` known]
+              feeding meta = [source | line <- pending, meta._name `elem` map _name (bindings line), source <- sources line, source._name `notElem` known]
           sources :: Line -> [Meta]
           sources (Evaluated _ source) = [source]
           sources (Unfolded _ source _) = [source]
           sources (Rewritten _ source _) = [source]
           sources (Stayed _ source) = [source]
           sources (Symbolized _ source) = [source]
-          sources (Upcasted _ source shape) = [source, shape]
+          sources (Upcasted _ first _ second) = [first, second]
           sources (Paired _ left right) = [left, right]
       binding :: Line -> Meta
       binding (Evaluated meta _) = meta
@@ -268,8 +288,11 @@ instance FromJSON Lambda where
       binding (Rewritten meta _ _) = meta
       binding (Stayed meta _) = meta
       binding (Symbolized meta _) = meta
-      binding (Upcasted meta _ _) = meta
+      binding (Upcasted meta _ _ _) = meta
       binding (Paired meta _ _) = meta
+      bindings :: Line -> [Meta]
+      bindings (Upcasted one _ two _) = [one, two]
+      bindings line = [binding line]
       sigmas :: String -> Expression -> Yaml.Parser ()
       sigmas key answer = case ([kind | Slot kind _ <- slots answer, kind /= "S"], symbols answer) of
         ([], []) -> pure ()
@@ -282,7 +305,7 @@ instance FromJSON Lambda where
         where
           bound :: [Text]
           bound =
-            map (_spelling . fst) lambda._morphed ++ map (_spelling . binding) lambda._lines
+            map (_spelling . fst) lambda._morphed ++ map _spelling (concatMap bindings lambda._lines)
           twice :: [Text] -> [Text] -> Maybe Text
           twice _ [] = Nothing
           twice seen (meta : rest)
@@ -610,6 +633,7 @@ joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty
         fresh = spent' + 1
 
 upcasted :: Expression -> Expression -> Int -> Maybe (Int, Expression, [(Int, [Attribute])], Int)
+upcasted (ExFormation [BiLambda (FnSymbol _)]) (ExFormation [BiLambda (FnSymbol _)]) _ = Nothing
 upcasted (ExFormation [BiLambda (FnSymbol bare)]) shape spent = do
   paths@(_ : _) <- goReached [] shape
   let fresh = [spent + 1 .. spent + length paths]

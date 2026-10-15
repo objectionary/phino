@@ -9,9 +9,10 @@
 # a tuple, whose φ builds a copy of 'Φ.tuple' with three arguments; its
 # 'unfold' line morphs that φ into the real tuple. The 'rewrite' line then
 # shrinks the tuple into a call of 'Φ.tuple' with every argument reminted,
-# 'stay' and 'symbolize' see the unfolded term, the 'upcast' line casts the
-# bare symbol into the shape of the call by the paths 'tail', 'head' and
-# 'length', and the 'join' line pairs the two calls symbol by symbol. The
+# 'stay' and 'symbolize' see the unfolded term, the two lines of the 'upcast'
+# block take the two terms as one pair and cast the smaller, the bare symbol,
+# into the shape of the larger by the paths 'tail', 'head' and 'length', and
+# the 'join' line pairs the two metas the block wrote symbol by symbol. The
 # program reads 'length' off the answer.
 symbolic: |
   - λ: L_fork
@@ -48,8 +49,8 @@ symbolic: |
       𝑛9: 𝑛7
       𝑛10: 𝑛8
     upcast:
-      𝑛11: {of: 𝑛9, to: 𝑛10}
-      𝑛12: {of: 𝑛10, to: 𝑛9}
+      𝑛11: 𝑛9
+      𝑛12: 𝑛10
     join:
       𝑛13: [𝑛11, 𝑛12]
     𝑛: ⟦ φ ↦ 𝑛13 ⟧

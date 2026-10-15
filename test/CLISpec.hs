@@ -2210,14 +2210,23 @@ spec = do
             records <- readProtocol path
             lines records `shouldContain` ["    <reminted symbol=\"𝜎3\">𝜎1 𝜎2<e>⟦ φ ↦ 𝜎1:λ, k ↦ 𝜎2:λ ⟧</e></reminted>"]
 
-        it "writes the path of every symbol an upcast line cast a bare symbol into" $
+        it "writes the path of every symbol an upcast block cast a bare symbol into" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛2}\n  join:\n    𝑛4: [𝑛3, 𝑛2]\n  𝑛: 𝑛4\n") $ \forks ->
+            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: 𝑛2\n    𝑛4: 𝑛1\n  join:\n    𝑛5: [𝑛3, 𝑛4]\n  𝑛: 𝑛5\n") $ \forks ->
               withStdin "⟦ y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ sh ↦ ⟦ λ ⤍ 𝜎2 ⟧, zj ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
             lines records `shouldContain` ["    <upcast symbol=\"𝜎1\"><path symbol=\"𝜎4\">sh</path><path symbol=\"𝜎5\">zj</path><e>⟦ sh ↦ 𝜎4:λ, zj ↦ 𝜎5:λ ⟧</e></upcast>"]
+
+        it "binds both metas of an upcast block, the cast under the line that read the bare symbol" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: 𝑛2\n    𝑛4: 𝑛1\n  join:\n    𝑛5: [𝑛3, 𝑛4]\n  𝑛: 𝑛5\n") $ \forks ->
+              withStdin "⟦ y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ sh ↦ ⟦ λ ⤍ 𝜎2 ⟧, zj ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            filter (isInfixOf "<bind meta=\"𝑛3·1\"") (lines records) ++ filter (isInfixOf "<bind meta=\"𝑛4·1\"") (lines records) `shouldBe` ["    <bind meta=\"𝑛3·1\">⟦ sh ↦ 𝜎2:λ, zj ↦ 𝜎3:λ ⟧</bind>", "    <bind meta=\"𝑛4·1\">⟦ sh ↦ 𝜎4:λ, zj ↦ 𝜎5:λ ⟧</bind>"]
 
         it "nests a firing an operand took inside the firing that asked" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do

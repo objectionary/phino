@@ -96,7 +96,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     line ctx _ _ (bound, state') (Rewritten meta source rules) = (,state') <$> reshaped ctx bound meta source rules
     line ctx _ _ (bound, state') (Stayed meta source) = (,state') <$> trimmed ctx bound meta source
     line ctx _ _ (bound, state') (Symbolized meta source) = (,state') <$> masked ctx bound meta source
-    line ctx _ _ (bound, state') (Upcasted meta source shape) = (,state') <$> cast ctx bound meta source shape
+    line ctx _ _ (bound, state') (Upcasted one first two second) = (,state') <$> cast ctx bound (one, first) (two, second)
     line ctx entry condition held (Paired meta left right) = paired ctx entry condition held meta left right
     shown :: Int -> Answer -> IO ()
     shown depth (built, normal) = do
@@ -203,20 +203,26 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       where
         fact :: (Int, Bytes) -> Evaluation
         fact (fresh, bytes) = EvKnown ctx._nesting fresh bytes
-    cast :: ReduceContext -> Subst -> Meta -> Meta -> Meta -> IO Subst
-    cast ctx bound meta source shape = do
-      term <- buildExpressionThrows (ExMeta source._name) bound
-      target <- buildExpressionThrows (ExMeta shape._name) bound
-      outcome <- upcasted term target <$> readIORef ctx._minted
-      made <- maybe (pure term) recorded outcome
-      ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) made)
-      bind meta (MvExpression made) bound
+    cast :: ReduceContext -> Subst -> (Meta, Meta) -> (Meta, Meta) -> IO Subst
+    cast ctx bound (one, first) (two, second) = do
+      left <- buildExpressionThrows (ExMeta first._name) bound
+      right <- buildExpressionThrows (ExMeta second._name) bound
+      spent <- readIORef ctx._minted
+      (left', right') <- case (upcasted left right spent, upcasted right left spent) of
+        (Just outcome, _) -> (,right) <$> recorded outcome
+        (_, Just outcome) -> (left,) <$> recorded outcome
+        _ -> pure (left, right)
+      written one first left' bound >>= written two second right'
       where
         recorded :: (Int, Expression, [(Int, [Attribute])], Int) -> IO Expression
         recorded (bare, made, paths, spent) = do
           writeIORef ctx._minted spent
           ctx._saveEval (EvUpcast ctx._nesting bare made paths)
           pure made
+        written :: Meta -> Meta -> Expression -> Subst -> IO Subst
+        written meta source term subst = do
+          ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) term)
+          bind meta (MvExpression term) subst
     paired :: ReduceContext -> Lambda -> Maybe (Either Int Bytes) -> (Subst, State) -> Meta -> Meta -> Meta -> IO (Subst, State)
     paired ctx entry condition (bound, state') meta left right = do
       one <- branch left
