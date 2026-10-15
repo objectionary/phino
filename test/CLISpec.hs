@@ -2201,6 +2201,15 @@ spec = do
                          , "</morph>"
                          ]
 
+        it "writes the symbols and the term a 'remint' step minted a symbol for" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_shrink\n  morph:\n    𝑛1: $.x\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: small\n          pattern: ⟦ !B1, tail ↦ 𝑒1, !B2 ⟧\n          result: ⟦ !B1, tail ↦ 𝑒2, !B2 ⟧\n          where:\n            - meta: 𝑒2\n              function: remint\n              args: [𝑒1]\n  𝑛: 𝑛2\n") $ \shrinks ->
+              withStdin "⟦ y ↦ ⟦ x ↦ ⟦ tail ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, k ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧, λ ⤍ L_shrink ⟧.tail ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ shrinks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records `shouldContain` ["    <reminted symbol=\"𝜎3\">𝜎1 𝜎2<e>⟦ φ ↦ 𝜎1:λ, k ↦ 𝜎2:λ ⟧</e></reminted>"]
+
         it "nests a firing an operand took inside the firing that asked" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream

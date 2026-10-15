@@ -181,6 +181,13 @@ raises, as it takes ⊥ (`thrown` of `Lambdas.hs` and `paired` of
 raises with, as written (`message` of `Lambdas.hs`), so the error path can be
 lowered too (#1867).
 
+A rule of a `rewrite` line may not write a `𝜎` into its result, but its
+`where` may call `remint`, which only `reshaped` of `Evaluate.hs` knows: it
+mints a fresh symbol for the term it is given, answers the bare
+`⟦ λ ⤍ 𝜎k ⟧`, and writes `reminted(…)` (`EvReminted`) with the symbols the
+term holds and the term itself, so a large term becomes a small one made of
+symbols, each of which the protocol explains (#1909).
+
 A bare symbol, `⟦ λ ⤍ 𝜎k ⟧`, joins too: the `join` of `Lambdas.hs` pairs it
 with the symbol the φ chain of the other branch ends in, and answers a bare
 fresh symbol, dropping the methods. Under `lenient: true` a chain ending in no

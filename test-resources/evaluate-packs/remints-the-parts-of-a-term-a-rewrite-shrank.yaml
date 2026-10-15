@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A rule of a 'rewrite' block may not write a 𝜎 into its result, but a 'where'
+# step may call 'remint', which mints a fresh 𝜎 for the term it is given and
+# writes on a line of its own what the symbol stands for. So a large term
+# becomes a small one made of symbols: each attribute of the pair below is
+# one symbol, and the protocol tells what each of them stands for (#1909).
+symbolic: |
+  - λ: L_shrink
+    morph:
+      𝑛1: $.x
+    rewrite:
+      𝑛2:
+        of: 𝑛1
+        rules:
+          - name: small-pair
+            pattern: ⟦ !B1, head ↦ 𝑒1, tail ↦ 𝑒2, !B2 ⟧
+            result: ⟦ !B1, head ↦ 𝑒3, tail ↦ 𝑒4, !B2 ⟧
+            where:
+              - meta: 𝑒3
+                function: remint
+                args: [𝑒1]
+              - meta: 𝑒4
+                function: remint
+                args: [𝑒2]
+    𝑛: 𝑛2
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ x ↦ ⟦ head ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, tail ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, k ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧ ⟧, λ ⤍ L_shrink ⟧.tail ⟧'
+result: '𝜎5:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_shrink):
+      𝑛1·1 := ⟦ head ↦ 𝜎1:λ:φ, tail ↦ ⟦ φ ↦ 𝜎2:λ, k ↦ 𝜎3:λ ⟧ ⟧  # 𝕄(ξ.x)
+      reminted(𝜎4) := 𝜎1:λ:φ
+      reminted(𝜎5) := ⟦ φ ↦ 𝜎2:λ, k ↦ 𝜎3:λ ⟧
+      𝑛2·1 := ⟦ head ↦ 𝜎4:λ, tail ↦ 𝜎5:λ ⟧  # 𝑛1
+      𝑛·1·1 := ⟦ head ↦ 𝜎4:λ, tail ↦ 𝜎5:λ ⟧  # 𝑛
+      𝑛·1·2 := ⟦ head ↦ 𝜎4:λ, tail ↦ 𝜎5:λ ⟧  # 𝕄(𝑛·1·1)
