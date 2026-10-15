@@ -196,7 +196,15 @@ refuses a name it does not know (#1913). Under it a chain ending in no
 symbol, such as one stopping at a call of an object of the world, still joins
 if the other branch holds exactly one symbol (`goSole` of `joined`, #1817):
 the answer is a copy of that branch with the symbol replaced by a fresh one,
-and nothing outside the two branches is read. When that fails too, a lenient
+and nothing outside the two branches is read. Under `lenient: [upcast]`
+(`Upcast` of `Lambdas.hs`) `goUpcast` of `joined` comes first (#1914): it casts
+the bare symbol into a copy of the other branch whose every symbol is a fresh
+one, read off the bare symbol by a path through the attributes of formations
+and the arguments of copies of objects of the world (`goReached`), and pairs
+every fresh symbol with the symbol at its place in the branch. `paired` of
+`Evaluate.hs` writes the cast as `upcast(…)` (`EvUpcast`) ahead of the pairs.
+A symbol no path reaches, or no symbol at all, refuses the cast, and `goSole`
+takes over. When that fails too, a lenient
 entry morphs the φ of a branch that is a formation with no λ whose φ reads ξ,
 fires what it comes to through 𝔼 the way an `evaluate` line does, and joins
 once more (`reduced` of `paired` in `Evaluate.hs`, #1885). The step is taken

@@ -262,7 +262,8 @@ optSymbolic =
               \pairs of branches it joins into one term under \"join\", whether a join takes a term and a \
               \formation whose φ is that term for one under \"lenient\", a list of options where \"defer\" has \
               \a lenient join answer a fresh symbol for a copy one of whose arguments reads to a bare symbol \
-              \instead of entering it, or for a copy whose firing a cut refuses, the λ functions whose objects \
+              \instead of entering it, or for a copy whose firing a cut refuses, and \"upcast\" has it cast a bare \
+              \symbol into a copy of the other branch read off that symbol by paths, the λ functions whose objects \
               \a join takes for a branch that raises under \"terminators\", and answering with the term under \
               \\"𝑛\""
         )

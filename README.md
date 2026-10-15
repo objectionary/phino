@@ -468,6 +468,37 @@ answers a copy of the second term with `𝜎2` replaced by a fresh `𝜎3`, whic
 stands for either `𝜎1` or `𝜎2`. The copy keeps every binding of the term, `ρ`
 included. A term with no symbol, or with two, is still refused.
 
+An entry that says `lenient: [upcast]` joins a bare symbol with a term holding
+any number of symbols. In `bytes.array` one branch of a fork comes to a bare
+`⟦ λ ⤍ 𝜎1 ⟧` and the other to a copy of `Φ.tuple` with a symbol in `tail`, in
+`head` and in `length`. The entry takes the bare symbol for an object of the
+same kind as the other branch. It casts `𝜎1` into a copy of that branch where
+every symbol is a fresh one, read off `𝜎1` by the path to its place. Then it
+joins the two copies symbol by symbol, minting a symbol for every pair the
+usual way:
+
+```text
+upcast(𝜎1) := ⟦ tail ↦ 𝜎5:λ, head ↦ 𝜎6:λ, length ↦ 𝜎7:λ, empty ↦ ⟦⟧ ⟧
+  𝜎5 := 𝜎1.tail
+  𝜎6 := 𝜎1.head
+  𝜎7 := 𝜎1.length
+𝔻(𝜎8:λ) ∈ { 𝔻(𝜎5:λ), 𝔻(𝜎2:λ) }
+𝔻(𝜎9:λ) ∈ { 𝔻(𝜎6:λ), 𝔻(𝜎3:λ) }
+𝔻(𝜎10:λ) ∈ { 𝔻(𝜎7:λ), 𝔻(𝜎4:λ) }
+```
+
+A program reading `length` off the answer gets `𝜎10`, which stands for either
+length, and does not get stuck. A path walks through the attributes of a
+formation and the arguments of a copy of an object of the world, such as
+`Φ.tuple( … )`. A `φ` is an attribute like any other, so the symbol of
+`Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )` is read as `𝜎1.φ.φ`. A symbol no
+path reaches, such as one in an argument of a call `x.slice( start ↦ 𝜎2 )`,
+refuses the upcast, and so does a term with no symbol. The join then goes on
+as it would without the option, so a term holding one symbol no path reaches
+still joins the way the paragraph above says. The term alone does not prove
+that both branches are objects of one kind. The record is what lets a reader
+check that against what it knows about the program.
+
 A lenient entry takes one more step before it gives up. A branch may be an
 ordinary object, such as `⟦ φ ↦ ξ.eq, eq ↦ ⟦ λ ⤍ L_eq ⟧ ⟧`: a formation with
 no `λ`, whose `φ` reads an attribute of the object itself. Morphing stops at a
@@ -1228,6 +1259,13 @@ of a `rewrite` line minted, which the text format writes as
 `reminted(𝜎4) := …`. The fresh symbol stands in `symbol`, the text lists the
 symbols the term holds, separated by a space the way `<joined>` lists its pair,
 and `<e>` holds the term the symbol stands for.
+
+`<upcast symbol="𝜎1"><path symbol="𝜎5">tail</path>…<e>…</e></upcast>` is a
+bare symbol a lenient join cast into a copy of the other branch, which the
+text format writes as `upcast(𝜎1) := …` with a line `𝜎5 := 𝜎1.tail` per fresh
+symbol. The bare symbol stands in `symbol`. Every `<path>` holds a fresh symbol
+of the copy in `symbol` and, as its text, the attributes that read it off the
+bare one, joined by dots. `<e>` holds the copy.
 
 A λ name no entry answers is `<unanswered λ="…">`, standing where its
 `<evaluate>` would have stood with the formation 𝔼 was fired against as its text
