@@ -212,23 +212,24 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       where
         both :: Expression -> Expression -> IO (Subst, State)
         both one two = do
-          outcome <- joined (isJust entry._lenient) one two <$> readIORef ctx._minted
+          outcome <- joined entry._lenient one two <$> readIORef ctx._minted
           case outcome of
             Just made -> written state' made
             Nothing
               | isJust entry._lenient && (hanging one || hanging two) -> do
                   (one', reducing) <- reduced left one state'
                   (two', state'') <- reduced right two reducing
-                  outcome' <- joined (isJust entry._lenient) one' two' <$> readIORef ctx._minted
+                  outcome' <- joined entry._lenient one' two' <$> readIORef ctx._minted
                   maybe (unjoined one' two') (written state'') outcome'
               | otherwise -> unjoined one two
         unjoined :: Expression -> Expression -> IO a
         unjoined one two = do
           ctx._saveEval (EvUnjoined ctx._nesting func one two)
           throwIO (Unjoined func)
-        written :: State -> (Expression, [(Int, (Int, Int))], Int) -> IO (Subst, State)
-        written state'' (term, made, spent) = do
+        written :: State -> (Expression, [(Int, Expression, [(Int, [Attribute])])], [(Int, (Int, Int))], Int) -> IO (Subst, State)
+        written state'' (term, casts, made, spent) = do
           writeIORef ctx._minted spent
+          mapM_ (\(bare, cast, paths) -> ctx._saveEval (EvUpcast ctx._nesting bare cast paths)) casts
           mapM_ (ctx._saveEval . fact) made
           ctx._saveEval (EvJoin ctx._nesting meta._spelling (left._spelling, right._spelling) term)
           bound' <- bind meta (MvExpression term) bound

@@ -5,13 +5,13 @@
 
 module DepsSpec where
 
-import AST (Argument (ArTau), Attribute (AtLabel, AtPhi), Binding (BiLambda, BiTau), Bytes (BtMany, BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol))
+import AST (Argument (ArTau), Attribute (AtLabel, AtPhi, AtRho), Binding (BiLambda, BiTau), Bytes (BtMany, BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol))
 import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvStuckOn, EvTerm, EvTerminate, EvUnjoined), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvStuckOn, EvTerm, EvTerminate, EvUnjoined, EvUpcast), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -205,8 +205,17 @@ spec = do
     it "writes a join that failed with the two branches it could not pair" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvUnjoined 2 "L_щ" (ExFormation [BiLambda (FnSymbol 5)]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 8)]), BiTau (AtLabel "ц") ExRoot])])
       last (lines written) `shouldBe` "    unjoined(L_щ)  # 𝜎5:λ vs ⟦ ю ↦ 𝜎8:λ, ц ↦ Φ ⟧"
+    it "writes an upcast as the term a bare symbol was cast to" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvUpcast 2 41 (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "кортеж")) (ArTau (AtLabel "хвост") (ExFormation [BiLambda (FnSymbol 43)]))) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 44)]))) [(43, [AtLabel "хвост"]), (44, [AtPhi])]])
+      lines written `shouldContain` ["    upcast(𝜎41) := Φ.кортеж( хвост ↦ 𝜎43:λ, φ ↦ 𝜎44:λ )"]
+    it "writes every symbol of an upcast as the path that reads it off the bare symbol" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvUpcast 2 41 (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "кортеж")) (ArTau (AtLabel "хвост") (ExFormation [BiLambda (FnSymbol 43)]))) (ArTau AtPhi (ExFormation [BiTau AtRho (ExFormation [BiLambda (FnSymbol 44)])]))) [(43, [AtLabel "хвост"]), (44, [AtPhi, AtRho])]])
+      drop 3 (lines written) `shouldBe` ["      𝜎43 := 𝜎41.хвост", "      𝜎44 := 𝜎41.φ.ρ"]
 
   describe "saveEvalXml" $ do
+    it "writes an upcast as an element holding the path of every symbol and the term" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvUpcast 2 41 (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "кортеж")) (ArTau (AtLabel "хвост") (ExFormation [BiLambda (FnSymbol 43)]))) (ArTau AtPhi (ExFormation [BiTau AtRho (ExFormation [BiLambda (FnSymbol 44)])]))) [(43, [AtLabel "хвост"]), (44, [AtPhi, AtRho])]])
+      lines written `shouldContain` ["    <upcast symbol=\"𝜎41\"><path symbol=\"𝜎43\">хвост</path><path symbol=\"𝜎44\">φ.ρ</path><e>Φ.кортеж( хвост ↦ 𝜎43:λ, φ ↦ 𝜎44:λ:ρ )</e></upcast>"]
     it "writes an application as an element naming its head and holding its argument" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ.w", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
       lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ.w\" of=\"Φ.ёж\"><attr name=\"q\">⟦⟧</attr></applied>"]

@@ -119,6 +119,7 @@ data Evaluation
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
   | EvReminted Int Int [Int] Expression
+  | EvUpcast Int Int Expression [(Int, [Attribute])]
   | EvApplied Int Judgment Expression Expression Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
@@ -171,6 +172,7 @@ tier (EvTerminate depth _ _ _ _) = depth
 tier (EvMinted depth _ _) = depth
 tier (EvDeferred depth _ _ _ _ _) = depth
 tier (EvReminted depth _ _ _) = depth
+tier (EvUpcast depth _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
@@ -251,7 +253,7 @@ saveEval handle cursor printed printed' report = do
     headed (protocol, Nothing) = (protocol, [])
     headed (protocol, Just line) =
       ( protocol{_blocks = [(level, heading, True) | (level, heading, _) <- protocol._blocks]}
-      , [indented level (heading ++ ":") | (level, Just heading, False) <- reverse protocol._blocks] ++ [line]
+      , [indented level (heading ++ ":") | (level, Just heading, False) <- reverse protocol._blocks] ++ lines line
       )
     render :: Expression -> IO String
     render term = do
@@ -387,6 +389,12 @@ saveEval handle cursor printed printed' report = do
     written (EvReminted depth symbol _ term) protocol = do
       form <- render term
       pure (protocol, Just (indented depth (printf "reminted(%s) := %s" (printFunction (FnSymbol symbol)) form)))
+    written (EvUpcast depth bare cast paths) protocol = do
+      form <- render cast
+      pure (protocol, Just (intercalate "\n" (indented depth (printf "upcast(%s) := %s" (printFunction (FnSymbol bare)) form) : map path paths)))
+      where
+        path :: (Int, [Attribute]) -> String
+        path (fresh, attrs) = indented (depth + 1) (printf "%s := %s" (printFunction (FnSymbol fresh)) (intercalate "." (printFunction (FnSymbol bare) : map printAttribute attrs)))
     written (EvApplied depth judgment call object site) protocol = do
       let (index, counted) = numbered protocol
           aliased :: Expression
@@ -621,6 +629,13 @@ saveEvalXml handle cursor printed report = do
       form <- render term
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<reminted symbol=\"%s\">%s<e>%s</e></reminted>" (sigma symbol) (unwords (map sigma made)) (escapeXMLText form))])
+    elements (EvUpcast depth bare cast paths) nesting = do
+      form <- render cast
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<upcast symbol=\"%s\">%s<e>%s</e></upcast>" (sigma bare) (concatMap path paths) (escapeXMLText form))])
+      where
+        path :: (Int, [Attribute]) -> String
+        path (fresh, attrs) = printf "<path symbol=\"%s\">%s</path>" (sigma fresh) (escapeXMLText (intercalate "." (map printAttribute attrs)))
     elements (EvApplied depth judgment call object site) nesting = do
       (origin, given) <- parted (abbreviatedInside nesting._objects call)
       locator <- located nesting site

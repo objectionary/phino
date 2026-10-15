@@ -64,7 +64,7 @@ data Line
   | Symbolized Meta Meta
   | Paired Meta Meta Meta
 
-data Option = Defer
+data Option = Defer | Upcast
   deriving stock (Eq, Show)
 
 data Lambda = Lambda
@@ -135,7 +135,8 @@ instance FromJSON Lambda where
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
       option :: String -> Text -> Yaml.Parser Option
       option _ "defer" = pure Defer
-      option key name = fail (printf "The option '%s' of 'lenient' of λ function '%s' is unknown, while only 'defer' is known" (T.unpack name) key)
+      option _ "upcast" = pure Upcast
+      option key name = fail (printf "The option '%s' of 'lenient' of λ function '%s' is unknown, while only 'defer' and 'upcast' are known" (T.unpack name) key)
       written :: String -> Object -> Yaml.Parser [Line]
       written key entry =
         concat
@@ -474,15 +475,19 @@ symbolized term spent = case goExpr term (spent, []) of
       let (expr', minting') = goExpr expr minting
        in (ArAlpha alpha expr', minting')
 
-type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+type Cast = (Int, Expression, [(Int, [Attribute])])
 
-joined :: Bool -> Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
-joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty, [])
+type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))], [Cast])
+
+joined :: Maybe [Option] -> Expression -> Expression -> Int -> Maybe (Expression, [Cast], [(Int, (Int, Int))], Int)
+joined options left right spent = taking <$> goExpr left right (spent, Map.empty, [], [])
   where
-    taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
-    taking (term, (spent', _, made)) = (term, reverse made, spent')
+    lenient :: Bool
+    lenient = isJust options
+    taking :: (Expression, Joining) -> (Expression, [Cast], [(Int, (Int, Int))], Int)
+    taking (term, (spent', _, made, casts)) = (term, reverse casts, reverse made, spent')
     goExpr :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
-    goExpr one two joining = goAlike one two joining <|> goSole one two joining <|> goDecorated one two joining
+    goExpr one two joining = goAlike one two joining <|> goUpcast one two joining <|> goSole one two joining <|> goDecorated one two joining
     goAlike :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
     goAlike one@(ExFormation _) two@(ExFormation _) joining
       | bare one /= bare two = do
@@ -518,6 +523,74 @@ joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty
     goSole one (ExFormation [BiLambda (FnSymbol theirs)]) joining
       | lenient, [mine] <- nub (symbols one) = Just (renamed mine one (picked (mine, theirs) joining))
     goSole _ _ _ = Nothing
+    goUpcast :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
+    goUpcast (ExFormation [BiLambda (FnSymbol mine)]) two joining
+      | any (elem Upcast) options = cast mine (,) two joining
+    goUpcast one (ExFormation [BiLambda (FnSymbol theirs)]) joining
+      | any (elem Upcast) options = cast theirs (flip (,)) one joining
+    goUpcast _ _ _ = Nothing
+    cast :: Int -> (Int -> Int -> (Int, Int)) -> Expression -> Joining -> Maybe (Expression, Joining)
+    cast symbol paired term (spent', names, made, casts) = do
+      paths@(_ : _) <- goReached [] term
+      let fresh = [spent' + 1 .. spent' + length paths]
+          (joints, joining) = goPaired (zip fresh (map fst paths)) (spent' + length paths, names, made, (symbol, swapped fresh term, zip fresh (map snd paths)) : casts)
+      pure (swapped joints term, joining)
+      where
+        goPaired :: [(Int, Int)] -> Joining -> ([Int], Joining)
+        goPaired [] joining = ([], joining)
+        goPaired ((mine, theirs) : rest) joining =
+          let (joint, joining') = picked (paired mine theirs) joining
+              (joints, joining'') = goPaired rest joining'
+           in (joint : joints, joining'')
+    goReached :: [Attribute] -> Expression -> Maybe [(Int, [Attribute])]
+    goReached _ term
+      | null (symbols term) = Just []
+    goReached path (ExFormation bds) = concat <$> mapM goReachedBinding bds
+      where
+        goReachedBinding :: Binding -> Maybe [(Int, [Attribute])]
+        goReachedBinding (BiLambda (FnSymbol idx)) = Just [(idx, path)]
+        goReachedBinding (BiTau attr expr) = goReached (path ++ [attr]) expr
+        goReachedBinding _ = Just []
+    goReached path (ExApplication expr (ArTau attr arg))
+      | copied expr = (++) <$> goReached path expr <*> goReached (path ++ [attr]) arg
+      where
+        copied :: Expression -> Bool
+        copied (ExApplication target _) = copied target
+        copied target = global target
+        global :: Expression -> Bool
+        global ExRoot = True
+        global (ExDispatch target _) = global target
+        global _ = False
+    goReached _ _ = Nothing
+    swapped :: [Int] -> Expression -> Expression
+    swapped fresh term = fst (goSwapped term fresh)
+      where
+        goSwapped :: Expression -> [Int] -> (Expression, [Int])
+        goSwapped (ExFormation bds) rest =
+          let (bds', rest') = goSwappedBindings bds rest
+           in (ExFormation bds', rest')
+        goSwapped (ExApplication expr arg) rest =
+          let (expr', rest') = goSwapped expr rest
+              (arg', rest'') = goSwappedArgument arg rest'
+           in (ExApplication expr' arg', rest'')
+        goSwapped expr rest = (expr, rest)
+        goSwappedBindings :: [Binding] -> [Int] -> ([Binding], [Int])
+        goSwappedBindings [] rest = ([], rest)
+        goSwappedBindings (bd : bds) rest =
+          let (bd', rest') = goSwappedBinding bd rest
+              (bds', rest'') = goSwappedBindings bds rest'
+           in (bd' : bds', rest'')
+        goSwappedBinding :: Binding -> [Int] -> (Binding, [Int])
+        goSwappedBinding (BiLambda (FnSymbol _)) (idx : rest) = (BiLambda (FnSymbol idx), rest)
+        goSwappedBinding (BiTau attr expr) rest =
+          let (expr', rest') = goSwapped expr rest
+           in (BiTau attr expr', rest')
+        goSwappedBinding bd rest = (bd, rest)
+        goSwappedArgument :: Argument -> [Int] -> (Argument, [Int])
+        goSwappedArgument (ArTau attr expr) rest =
+          let (expr', rest') = goSwapped expr rest
+           in (ArTau attr expr', rest')
+        goSwappedArgument arg rest = (arg, rest)
     renamed :: Int -> Expression -> (Int, Joining) -> (Expression, Joining)
     renamed old term (fresh, joining) = (lifted (old - 1) (fresh - old) term, joining)
     goDecorated :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
@@ -575,9 +648,9 @@ joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty
       | one == two = Just (one, joining)
       | otherwise = Nothing
     picked :: (Int, Int) -> Joining -> (Int, Joining)
-    picked pair joining@(spent', names, made)
+    picked pair joining@(spent', names, made, casts)
       | Just name <- Map.lookup pair names = (name, joining)
-      | otherwise = (fresh, (fresh, Map.insert pair fresh names, (fresh, pair) : made))
+      | otherwise = (fresh, (fresh, Map.insert pair fresh names, (fresh, pair) : made, casts))
       where
         fresh :: Int
         fresh = spent' + 1
