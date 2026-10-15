@@ -2935,14 +2935,17 @@ spec = do
 
     describe "a deferring join" $ do
       let deferring = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defer]\n  𝑛: ⟦ φ ↦ 𝑛3 ⟧\n"
-          deferred :: [String] -> String -> IO [String]
-          deferred options program =
+          counting = deferring <> T.pack "- λ: L_inc\n  dataize:\n    𝛿1: $.x\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
+          recordedWith :: T.Text -> [String] -> String -> IO [String]
+          recordedWith entries options program =
             withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
               hClose stream
-              withLambdasOf deferring $ \forks ->
+              withLambdasOf entries $ \forks ->
                 withStdin program $
                   testCLISucceeded (["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) []
               lines <$> readProtocol path
+          deferred :: [String] -> String -> IO [String]
+          deferred = recordedWith deferring
       it "writes the copy it deferred to the XML protocol as a call of the object it was made of" $ do
         records <- deferred [] "⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧"
         records
@@ -2978,6 +2981,22 @@ spec = do
       it "writes the copy a cut stopped to the XML protocol with its symbol and the call of the object it was made of" $ do
         records <- deferred ["--acyclic=proven"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
         records `shouldContain` ["    <looped symbol=\"𝜎3\" by=\"evaluate\" match=\"proven\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝜎2</attr></with><e>𝑛·1·3</e></looped>"]
+
+      it "names an argument of a copy a cut stopped by the object its morph answered" $ do
+        records <- recordedWith counting ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.inc( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
+        filter (isInfixOf "<looped") records `shouldBe` ["    <looped symbol=\"𝜎4\" by=\"evaluate\" match=\"plausible\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝑛·2·2</attr></with><e>𝑛·0·3</e></looped>"]
+
+      it "fires the argument of a copy a cut stopped before it writes the cut" $ do
+        records <- recordedWith counting ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.inc( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
+        takeWhile (not . isInfixOf "<looped") records `shouldContain` ["    <evaluate λ=\"L_inc\" by=\"evaluate\" at=\"𝑛2.n\">"]
+
+      it "keeps a question mark for an argument of a copy a cut stopped whose firing gets stuck" $ do
+        records <- recordedWith deferring ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, dec(x) ↦ ⟦ λ ⤍ L_dec ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.dec( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
+        filter (isInfixOf "<looped") records `shouldBe` ["    <looped symbol=\"𝜎3\" by=\"evaluate\" match=\"plausible\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">?</attr></with><e>𝑛·0·3</e></looped>"]
+
+      it "names an argument of a deferred copy by the object its morph answered" $ do
+        records <- recordedWith counting [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧.φ ⟧"
+        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·2·2</attr></with><e>⟦ x ↦ 𝜎1:λ, w ↦ Φ.inc( 2A-:Δ ), φ ↦ x.next ⟧</e></deferred>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"

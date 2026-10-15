@@ -530,10 +530,19 @@ deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
 ```
 
 The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
-`<with>` element with an `<attr name="tup">𝜎1</attr>` per argument, a `?` for
-an argument that is no bare symbol, and the copy itself in `<e>`. The `of` is
-left out when the world declares no object the copy was made of. A copy whose
-arguments read to no bare symbol is entered as before.
+`<with>` element with an `<attr name="tup">𝜎1</attr>` per argument, and the
+copy itself in `<e>`. The `of` is left out when the world declares no object
+the copy was made of. A copy whose arguments read to no bare symbol is entered
+as before.
+
+An argument that is no bare symbol, such as `w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ )`, is
+worked out before the line is written. The entry morphs it in the copy, fires
+what that comes to, the way an `evaluate` line does, and writes every step to
+the protocol under `𝕄(𝑛2.w):`. The line then names the object the firing
+answered, `Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·2 )`, and so does the markup,
+`<attr name="w">𝑛·2·2</attr>`. A reader follows the meta to the application
+that made the object. An argument whose morph gets stuck, is cut or runs out
+of steps is written as the code spells it, and as `?` in the markup.
 
 The same entry answers a copy it did enter when `--acyclic` cuts the firing
 its `φ` comes to. With `rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧`,
