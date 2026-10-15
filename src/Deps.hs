@@ -118,6 +118,7 @@ data Evaluation
   | EvTerminate Int (Maybe (Either Int Bytes)) T.Text T.Text (Maybe Expression)
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
+  | EvReminted Int Int [Int] Expression
   | EvApplied Int Judgment Expression Expression Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
@@ -169,6 +170,7 @@ tier (EvJoined depth _ _) = depth
 tier (EvTerminate depth _ _ _ _) = depth
 tier (EvMinted depth _ _) = depth
 tier (EvDeferred depth _ _ _ _ _) = depth
+tier (EvReminted depth _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
@@ -382,6 +384,9 @@ saveEval handle cursor printed printed' report = do
       form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call
       remarks <- context protocol judgment site
       pure (protocol, Just (indented depth (remarked (printf "deferred(%s) := %s" (printFunction (FnSymbol symbol)) form) remarks)))
+    written (EvReminted depth symbol _ term) protocol = do
+      form <- render term
+      pure (protocol, Just (indented depth (printf "reminted(%s) := %s" (printFunction (FnSymbol symbol)) form)))
     written (EvApplied depth judgment call object site) protocol = do
       let (index, counted) = numbered protocol
           aliased :: Expression
@@ -612,6 +617,10 @@ saveEvalXml handle cursor printed report = do
       (origin, given) <- maybe (pure ("", "")) called call
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"%s>%s<e>%s</e></deferred>" (sigma symbol) (opened judgment) (escapeXML locator) origin given (escapeXMLText form))])
+    elements (EvReminted depth symbol made term) nesting = do
+      form <- render term
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<reminted symbol=\"%s\">%s<e>%s</e></reminted>" (sigma symbol) (unwords (map sigma made)) (escapeXMLText form))])
     elements (EvApplied depth judgment call object site) nesting = do
       (origin, given) <- parted (abbreviatedInside nesting._objects call)
       locator <- located nesting site

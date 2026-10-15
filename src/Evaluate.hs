@@ -13,11 +13,11 @@ import Builder (buildExpressionThrows)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.IORef (atomicModifyIORef', readIORef, writeIORef)
-import Data.List (partition)
+import Data.List (nub, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
-import Deps (Acyclic, Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
+import Deps (Acyclic, BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (Evaluation, Morphing), State (..), Term (TeExpression), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
 import Lambdas (Lambda (..), Line (..), Meta (..), emptyLambdas, joined, matched, message, minted, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
@@ -171,9 +171,20 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     reshaped :: ReduceContext -> Subst -> Meta -> Meta -> [Y.Rule] -> IO Subst
     reshaped ctx bound meta source rules = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      shaped <- rewritten rules (RuleContext ctx._buildTerm Nothing ctx._engine._normal) term
+      shaped <- rewritten rules (RuleContext reminting Nothing ctx._engine._normal) term
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) shaped)
       bind meta (MvExpression shaped) bound
+      where
+        reminting :: BuildTermFunc
+        reminting "remint" = reminted
+        reminting func = ctx._buildTerm func
+        reminted :: BuildTermMethod
+        reminted [Y.ArgExpression expr] subst = do
+          term <- buildExpressionThrows expr subst
+          fresh <- coined
+          ctx._saveEval (EvReminted ctx._nesting fresh (nub (symbols term)) term)
+          pure (TeExpression (ExFormation [BiLambda (FnSymbol fresh)]))
+        reminted _ _ = throwIO (userError "Function remint() requires exactly 1 argument as expression")
     trimmed :: ReduceContext -> Subst -> Meta -> Meta -> IO Subst
     trimmed ctx bound meta source = do
       term <- stayed <$> buildExpressionThrows (ExMeta source._name) bound
@@ -284,8 +295,6 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           fresh <- coined
           firing._saveEval (EvLooped firing._nesting firing._judgment mode before firing._site (Just (fresh, called bds)))
           pure (ExFormation [BiLambda (FnSymbol fresh)])
-        coined :: IO Int
-        coined = atomicModifyIORef' ctx._minted (\count -> (succ count, succ count))
         called :: [Binding] -> Maybe Expression
         called known = do
           (path, declared) <- origin known
@@ -329,6 +338,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         branch named = buildExpressionThrows (ExMeta named._name) bound
         fact :: (Int, (Int, Int)) -> Evaluation
         fact (fresh, pair) = EvJoined ctx._nesting fresh pair
+    coined :: IO Int
+    coined = atomicModifyIORef' caller._minted (\count -> (succ count, succ count))
     raising :: Lambda -> Expression -> Bool
     raising _ ExTermination = True
     raising entry term = thrown entry._terminators term
