@@ -2201,14 +2201,14 @@ spec = do
                          , "</morph>"
                          ]
 
-        it "writes the symbols and the term a 'remint' step minted a symbol for" $
+        it "writes the copy of an object of the world a 'remint' step deferred, naming every argument by a symbol" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withLambdasOf (T.pack "- λ: L_shrink\n  morph:\n    𝑛1: $.x\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: small\n          pattern: ⟦ !B1, tail ↦ 𝑒1, !B2 ⟧\n          result: ⟦ !B1, tail ↦ 𝑒2, !B2 ⟧\n          where:\n            - meta: 𝑒2\n              function: remint\n              args: [𝑒1]\n  𝑛: 𝑛2\n") $ \shrinks ->
-              withStdin "⟦ y ↦ ⟦ x ↦ ⟦ tail ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, k ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧, λ ⤍ L_shrink ⟧.tail ⟧" $
+            withLambdasOf (T.pack "- λ: L_shrink\n  morph:\n    𝑛1: $.x\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: small\n          pattern: ⟦ !B1, tail ↦ 𝑒1, !B2 ⟧\n          result: ⟦ !B1, tail ↦ 𝑒2, !B2 ⟧\n          where:\n            - meta: 𝑒2\n              function: remint\n              args: [𝑒1]\n  terminators: [L_throw]\n  𝑛: 𝑛2\n") $ \shrinks ->
+              withStdin "⟦ l/ ↦ ⟦ throw(message) ↦ ⟦ λ ⤍ L_throw ⟧ ⟧, y ↦ ⟦ x ↦ ⟦ tail ↦ Φ.l/.throw( message ↦ ⟦ Δ ⤍ 4B- ⟧ ) ⟧, λ ⤍ L_shrink ⟧.tail ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ shrinks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
-            lines records `shouldContain` ["    <reminted symbol=\"𝜎3\">𝜎1 𝜎2<e>⟦ φ ↦ 𝜎1:λ, k ↦ 𝜎2:λ ⟧</e></reminted>"]
+            lines records `shouldContain` ["    <deferred symbol=\"𝜎2\" by=\"morph\" at=\"Φ.l/.throw( message ↦ 4B-:Δ )\" of=\"Φ.l/.throw\"><with><attr name=\"message\">𝜎1</attr></with><e>𝑛·1·1</e></deferred>"]
 
         it "writes the path of every symbol an upcast block cast a bare symbol into" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do

@@ -106,6 +106,7 @@ data Evaluation
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
   | EvUnjoined Int T.Text Expression Expression
+  | EvUnreminted Int T.Text Expression
   | EvStarved Int Int Judgment Expression
   | EvTimeout Int Int Judgment Expression
   | EvSpent Int Int Judgment Expression
@@ -118,7 +119,6 @@ data Evaluation
   | EvTerminate Int (Maybe (Either Int Bytes)) T.Text T.Text (Maybe Expression)
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
-  | EvReminted Int Int [Int] Expression
   | EvUpcast Int Int Expression [(Int, [Attribute])]
   | EvApplied Int Judgment Expression Expression Expression
   | EvBuilt Int Expression
@@ -159,6 +159,7 @@ tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
 tier (EvStuckOn depth _) = depth
 tier (EvUnjoined depth _ _ _) = depth
+tier (EvUnreminted depth _ _) = depth
 tier (EvStarved depth _ _ _) = depth
 tier (EvTimeout depth _ _ _) = depth
 tier (EvSpent depth _ _ _) = depth
@@ -171,7 +172,6 @@ tier (EvJoined depth _ _) = depth
 tier (EvTerminate depth _ _ _ _) = depth
 tier (EvMinted depth _ _) = depth
 tier (EvDeferred depth _ _ _ _ _) = depth
-tier (EvReminted depth _ _ _) = depth
 tier (EvUpcast depth _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
@@ -333,6 +333,9 @@ saveEval handle cursor printed printed' report = do
       left <- render one
       right <- render two
       pure (protocol, Just (indented depth (printf "unjoined(%s)  # %s vs %s" (T.unpack key) left right)))
+    written (EvUnreminted depth key term) protocol = do
+      form <- render term
+      pure (protocol, Just (indented depth (printf "unreminted(%s)  # %s" (T.unpack key) form)))
     written (EvStarved depth limit judgment site) protocol = do
       remarks <- context protocol judgment site
       pure (protocol, Just (indented depth (remarked (printf "starved(%d)" limit) remarks)))
@@ -386,9 +389,6 @@ saveEval handle cursor printed printed' report = do
       form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call
       remarks <- context protocol judgment site
       pure (protocol, Just (indented depth (remarked (printf "deferred(%s) := %s" (printFunction (FnSymbol symbol)) form) remarks)))
-    written (EvReminted depth symbol _ term) protocol = do
-      form <- render term
-      pure (protocol, Just (indented depth (printf "reminted(%s) := %s" (printFunction (FnSymbol symbol)) form)))
     written (EvUpcast depth bare cast paths) protocol = do
       form <- render cast
       pure (protocol, Just (intercalate "\n" (indented depth (printf "upcast(%s) := %s" (printFunction (FnSymbol bare)) form) : map path paths)))
@@ -543,6 +543,10 @@ saveEvalXml handle cursor printed report = do
       right <- render two
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unjoined λ=\"%s\"><e>%s</e><e>%s</e></unjoined>" (quoted key) (escapeXMLText left) (escapeXMLText right))])
+    elements (EvUnreminted depth key term) nesting = do
+      form <- render term
+      let (kept, closers) = closed depth nesting._closing
+      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unreminted λ=\"%s\"><e>%s</e></unreminted>" (quoted key) (escapeXMLText form))])
     elements (EvStarved depth limit judgment site) nesting = do
       locator <- located nesting site
       let (kept, closers) = closed depth nesting._closing
@@ -625,10 +629,6 @@ saveEvalXml handle cursor printed report = do
       (origin, given) <- maybe (pure ("", "")) called call
       let (kept, closers) = closed depth nesting._closing
       pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"%s>%s<e>%s</e></deferred>" (sigma symbol) (opened judgment) (escapeXML locator) origin given (escapeXMLText form))])
-    elements (EvReminted depth symbol made term) nesting = do
-      form <- render term
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<reminted symbol=\"%s\">%s<e>%s</e></reminted>" (sigma symbol) (unwords (map sigma made)) (escapeXMLText form))])
     elements (EvUpcast depth bare cast paths) nesting = do
       form <- render cast
       let (kept, closers) = closed depth nesting._closing

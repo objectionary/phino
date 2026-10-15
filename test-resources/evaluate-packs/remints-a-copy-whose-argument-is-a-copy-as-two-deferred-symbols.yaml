@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The tail of the pair below is a copy of 'Φ.pair' whose own tail is a copy of
+# 'Φ.l/.throw', the way the tail of a tuple of EO ends in the empty tuple,
+# whose tail throws. A 'remint' step works every argument of a copy out as it
+# works out the term itself, so the inner copy is deferred first, as '𝜎4', and
+# the outer one names it as its argument, as '𝜎5' (#1923).
+symbolic: |
+  - λ: L_shrink
+    morph:
+      𝑛1: $.x
+    rewrite:
+      𝑛2:
+        of: 𝑛1
+        rules:
+          - name: small-pair
+            pattern: ⟦ !B1, head ↦ 𝑒1, tail ↦ 𝑒2, !B2 ⟧
+            result: ⟦ !B1, head ↦ 𝑒3, tail ↦ 𝑒4, !B2 ⟧
+            where:
+              - meta: 𝑒3
+                function: remint
+                args: [𝑒1]
+              - meta: 𝑒4
+                function: remint
+                args: [𝑒2]
+    terminators: [L_throw]
+    𝑛: 𝑛2
+location: 'Q.y'
+input: '⟦ l/ ↦ ⟦ throw(message) ↦ ⟦ λ ⤍ L_throw ⟧ ⟧, pair(tail, head) ↦ ⟦⟧, y ↦ ⟦ x ↦ ⟦ head ↦ ⟦ λ ⤍ 𝜎1 ⟧, tail ↦ Φ.pair( tail ↦ Φ.l/.throw( message ↦ ⟦ Δ ⤍ 01- ⟧ ), head ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_shrink ⟧.tail ⟧'
+result: '𝜎5:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_shrink):
+      𝑛1·1 := ⟦ head ↦ 𝜎1:λ, tail ↦ Φ.pair( tail ↦ Φ.l/.throw( message ↦ 01-:Δ ), head ↦ 𝜎2:λ:φ ) ⟧  # 𝕄(ξ.x)
+      𝕄(Φ.pair( tail ↦ Φ.l/.throw( message ↦ 01-:Δ ), head ↦ 𝜎2:λ:φ )):
+        𝑛·1·1 := Φ.pair( tail ↦ Φ.l/.throw( message ↦ 01-:Δ ) )
+        𝑛·1·2 := 𝑛·1·1( head ↦ 𝜎2:λ:φ )  # 𝕄(𝑛·1·1( head ↦ 𝜎2:λ:φ ))
+      𝕄(𝑛·1·2.tail):
+        𝑛·1·3 := ⟦ message ↦ ∅, λ ⤍ L_throw ⟧( message ↦ 01-:Δ )
+      𝔻(𝜎3:λ) == 01-
+      deferred(𝜎4) := Φ.l/.throw( message ↦ 𝜎3:λ )  # 𝕄(𝑛·1·2.tail)
+      deferred(𝜎5) := Φ.pair( tail ↦ 𝜎4:λ, head ↦ 𝜎2:λ )  # 𝕄(𝑛·1·2)
+      𝑛2·1 := ⟦ head ↦ 𝜎1:λ, tail ↦ 𝜎5:λ ⟧  # 𝑛1
+      𝑛·1·4 := ⟦ head ↦ 𝜎1:λ, tail ↦ 𝜎5:λ ⟧  # 𝑛
+      𝑛·1·5 := ⟦ head ↦ 𝜎1:λ, tail ↦ 𝜎5:λ ⟧  # 𝕄(𝑛·1·4)

@@ -3,10 +3,10 @@
 ---
 # yamllint disable rule:line-length
 # A rule of a 'rewrite' block may not write a 𝜎 into its result, but a 'where'
-# step may call 'remint', which mints a fresh 𝜎 for the term it is given and
-# writes on a line of its own what the symbol stands for. So a large term
-# becomes a small one made of symbols: each attribute of the pair below is
-# one symbol, and the protocol tells what each of them stands for (#1909).
+# step may call 'remint', which answers the symbol the term it is given stands
+# for. A term whose φ chain ends in a bare symbol is that symbol, so nothing is
+# minted and no line is written: the head of the pair below is '𝜎1' and its
+# tail '𝜎2', whatever else the tail holds (#1923).
 symbolic: |
   - λ: L_shrink
     morph:
@@ -28,13 +28,11 @@ symbolic: |
     𝑛: 𝑛2
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ x ↦ ⟦ head ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, tail ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, k ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧ ⟧, λ ⤍ L_shrink ⟧.tail ⟧'
-result: '𝜎5:λ'
+result: '𝜎2:λ'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_shrink):
       𝑛1·1 := ⟦ head ↦ 𝜎1:λ:φ, tail ↦ ⟦ φ ↦ 𝜎2:λ, k ↦ 𝜎3:λ ⟧ ⟧  # 𝕄(ξ.x)
-      reminted(𝜎4) := 𝜎1:λ:φ
-      reminted(𝜎5) := ⟦ φ ↦ 𝜎2:λ, k ↦ 𝜎3:λ ⟧
-      𝑛2·1 := ⟦ head ↦ 𝜎4:λ, tail ↦ 𝜎5:λ ⟧  # 𝑛1
-      𝑛·1·1 := ⟦ head ↦ 𝜎4:λ, tail ↦ 𝜎5:λ ⟧  # 𝑛
-      𝑛·1·2 := ⟦ head ↦ 𝜎4:λ, tail ↦ 𝜎5:λ ⟧  # 𝕄(𝑛·1·1)
+      𝑛2·1 := ⟦ head ↦ 𝜎1:λ, tail ↦ 𝜎2:λ ⟧  # 𝑛1
+      𝑛·1·1 := ⟦ head ↦ 𝜎1:λ, tail ↦ 𝜎2:λ ⟧  # 𝑛
+      𝑛·1·2 := ⟦ head ↦ 𝜎1:λ, tail ↦ 𝜎2:λ ⟧  # 𝕄(𝑛·1·1)
