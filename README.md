@@ -232,6 +232,39 @@ an answer is. A rule writing a `𝜎` into its result, or reading a meta its
 pattern never
 binds, is refused where the file is read.
 
+A rule may still turn a large term into a small one made of symbols, through
+`remint` in its `where` block. The function takes one expression, mints a
+fresh `𝜎` for it, and answers the bare `⟦ λ ⤍ 𝜎k ⟧`:
+
+```yaml
+- λ: L_fork
+  morph:
+    𝑛1: $.left
+  rewrite:
+    𝑛2:
+      of: 𝑛1
+      rules:
+        - name: small-tuple
+          pattern: Φ.tuple( tail ↦ 𝑒1, head ↦ 𝑒2 )
+          result: Φ.tuple( tail ↦ 𝑒3, head ↦ 𝑒4 )
+          where:
+            - meta: 𝑒3
+              function: remint
+              args: [𝑒1]
+            - meta: 𝑒4
+              function: remint
+              args: [𝑒2]
+  𝑛: 𝑛2
+```
+
+The result still writes no `𝜎`, and each symbol comes with a record of what it
+stands for. The protocol writes it as `reminted(𝜎4) := …` in text and as
+`<reminted symbol="𝜎4">𝜎1 𝜎2<e>…</e></reminted>` in markup: the fresh symbol,
+the symbols the term holds, and the term itself. A reader of the protocol can
+build the object back from the term, working out the symbols it lists first.
+`remint` is known only to the rules of a `rewrite` block, since nowhere else is
+there a firing to mint for.
+
 This is how a program brings two branches of a fork to one shape before they
 are compared. In EO a `Φ.false` is written `φ ↦ ξ.right` while a bool a firing
 answered carries a symbol, and the two are one value in two spellings that
@@ -1188,6 +1221,12 @@ above, `𝔼(L_gt)` writes `<minted symbol="𝜎2">` although `𝜎2` sits under
 and not where the value of the term is, while `𝔼(L_fork)` writes none at all,
 since the symbol it answers with comes from a `join` line and stands in a
 `<joined>` of its own.
+
+`<reminted symbol="𝜎4">𝜎1 𝜎2<e>…</e></reminted>` is a symbol a `remint` step
+of a `rewrite` line minted, which the text format writes as
+`reminted(𝜎4) := …`. The fresh symbol stands in `symbol`, the text lists the
+symbols the term holds, separated by a space the way `<joined>` lists its pair,
+and `<e>` holds the term the symbol stands for.
 
 A λ name no entry answers is `<unanswered λ="…">`, standing where its
 `<evaluate>` would have stood with the formation 𝔼 was fired against as its text
@@ -2183,6 +2222,9 @@ Here's list of functions that are supported for extensions:
 * `join` - accepts list of bindings and returns list of joined bindings. Duplicated
   `ρ`, `Δ` and `λ` attributes are ignored, all other duplicated attributes are replaced
   with unique attributes using `random-tau` function.
+* `remint` - accepts one expression and answers a fresh symbol standing for it.
+  It works only in a `rewrite` block of the `--symbolic` file, see
+  [above](#rewriting-a-term-into-another-shape).
 
 ## Meta variables
 
