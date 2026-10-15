@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# The fork the lenient join of #1815 brings together, under an entry that
-# does not say 'lenient: true'. A copy and a decorator of it differ in shape,
-# so the strict join refuses them and the firing gets stuck, as an entry is
-# strict unless it says otherwise.
+# The fork the lenient join of #1815 brings together, under an entry with no
+# 'lenient' key. A copy and a decorator of it differ in shape, so the strict
+# join refuses them and the firing gets stuck, as an entry is strict unless it
+# says otherwise.
 symbolic: |
   - λ: L_fork
     morph:

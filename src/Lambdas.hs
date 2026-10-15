@@ -12,6 +12,7 @@ module Lambdas
   , Lambdas
   , Line (..)
   , Meta (..)
+  , Option (..)
   , emptyLambdas
   , joined
   , matched
@@ -33,7 +34,7 @@ import Data.Char (isDigit)
 import Data.List (find, nub, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
@@ -61,13 +62,15 @@ data Line
   | Symbolized Meta Meta
   | Paired Meta Meta Meta
 
+data Option = Defer
+  deriving stock (Eq, Show)
+
 data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
   , _lines :: [Line]
-  , _lenient :: Bool
-  , _defer :: Bool
+  , _lenient :: Maybe [Option]
   , _terminators :: [Text]
   , _answer :: Expression
   }
@@ -91,8 +94,7 @@ instance FromJSON Lambda where
     lambda <-
       Lambda key dataized morphed
         <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed))
-        <*> entry .:? "lenient" .!= False
-        <*> entry .:? "defer" .!= False
+        <*> (entry .:? "lenient" >>= traverse (mapM (option (T.unpack key))))
         <*> entry .:? "terminators" .!= []
         <*> pure answer
     sigmas (T.unpack key) lambda._answer
@@ -121,6 +123,9 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
+      option :: String -> Text -> Yaml.Parser Option
+      option _ "defer" = pure Defer
+      option key name = fail (printf "The option '%s' of 'lenient' of λ function '%s' is unknown, while only 'defer' is known" (T.unpack name) key)
       written :: String -> Object -> Yaml.Parser [Line]
       written key entry =
         concat
@@ -270,8 +275,7 @@ instance FromJSON Lambda where
               ++ map (_name . binding) lambda._lines
       lonely :: String -> Lambda -> Yaml.Parser ()
       lonely key lambda
-        | lambda._lenient && null [meta | Paired meta _ _ <- lambda._lines] = fail (printf "The λ function '%s' is lenient but has no 'join' line to be lenient in" key)
-        | lambda._defer && not lambda._lenient = fail (printf "The λ function '%s' defers but is not lenient, while only a lenient join may enter a copy" key)
+        | isJust lambda._lenient && null [meta | Paired meta _ _ <- lambda._lines] = fail (printf "The λ function '%s' is lenient but has no 'join' line to be lenient in" key)
         | otherwise = pure ()
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer

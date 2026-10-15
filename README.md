@@ -434,7 +434,7 @@ A fork whose one branch calls a method often meets a decorator. In
 `if. (value.gte 0) (0.plus value) value.neg` the first branch comes to a
 number `X`, while `value.neg` is a method, `times -1 > @`, and comes to
 `⟦ φ ↦ X ⟧`, with the number one level down. The two differ in shape, so the
-join is refused. An entry that says `lenient: true` beside its `join` block
+join is refused. An entry that says `lenient: []` beside its `join` block
 lets it through:
 
 ```yaml
@@ -444,7 +444,7 @@ lets it through:
     𝑛2: $.right
   join:
     𝑛3: [𝑛1, 𝑛2]
-  lenient: true
+  lenient: []
   𝑛: 𝑛3
 ```
 
@@ -454,8 +454,10 @@ that term, in either order, and answers `⟦ φ ↦ X ⟧`, with symbols minted 
 chain is taken for the decorator. The answer drops the `ρ` and the other
 attributes of the decorator, so it is not exactly the object either branch
 made, which is why an entry is strict unless it says otherwise. Dataization
-still reaches the same data through it. An entry that says `lenient: true` and
-has no `join` line is refused when the file is read.
+still reaches the same data through it. The list names the options of the
+lenient join, described below, and is empty when the entry needs none. An
+option phino does not know, such as `lenient: [defr]`, is refused when the
+file is read, and so is a lenient entry with no `join` line.
 
 A lenient entry also joins a bare symbol with a term that holds exactly one
 symbol anywhere inside. In `bool.and` one branch comes to a bare
@@ -482,9 +484,9 @@ call.
 That step gets stuck on a branch that is a copy, such as
 `Φ.step( tup ↦ Φ.items.tail )`, one of whose arguments reads to a bare
 symbol `⟦ λ ⤍ 𝜎1 ⟧`: morphing its `φ`, `tup.next`, asks `𝜎1` for an
-attribute nobody knows. An entry that says `defer: true` beside
-`lenient: true` does not enter such a copy. It answers the copy with a fresh
-symbol, joins that symbol instead, and writes what it stands for:
+attribute nobody knows. An entry that says `lenient: [defer]` does not enter
+such a copy. It answers the copy with a fresh symbol, joins that symbol
+instead, and writes what it stands for:
 
 ```text
 deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
@@ -494,16 +496,15 @@ The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
 `<with>` element with an `<attr name="tup">𝜎1</attr>` per argument, a `?` for
 an argument that is no bare symbol, and the copy itself in `<e>`. The `of` is
 left out when the world declares no object the copy was made of. A copy whose
-arguments read to no bare symbol is entered as before. An entry that says
-`defer: true` and is not lenient is refused when the file is read.
+arguments read to no bare symbol is entered as before.
 
 The same entry answers a copy it did enter when `--acyclic` cuts the firing
 its `φ` comes to. With `rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧`,
 the copy `Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )` reads to no bare symbol, so the step
 enters it, comes to the same fork, and fires it again, and the cut refuses
-that firing. A lenient entry without `defer: true` loses the whole firing to
-the cut. A deferring one answers the copy with a fresh symbol, joins that
-symbol, and writes it on the `looped` line:
+that firing. A lenient entry whose list does not name `defer` loses the whole
+firing to the cut. A deferring one answers the copy with a fresh symbol, joins
+that symbol, and writes it on the `looped` line:
 
 ```text
 looped(𝑛·1·3) := 𝜎3  # 𝔼(𝑛2), proven

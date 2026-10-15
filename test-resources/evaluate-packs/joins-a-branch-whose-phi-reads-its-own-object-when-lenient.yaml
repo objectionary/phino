@@ -5,7 +5,7 @@
 # A fork whose one branch is an ordinary object: a formation with no λ, whose
 # value sits in a φ that reads an attribute of the object itself. 𝕄 stops at
 # that formation, so the branch and a bare symbol differ in shape and depth,
-# and the join alone cannot pair them. An entry that says 'lenient: true'
+# and the join alone cannot pair them. An entry that says 'lenient: []'
 # takes one more step before it gets stuck: it morphs the φ of that branch,
 # fires what it comes to through 𝔼, the way 'morph' and 'evaluate' lines do,
 # and joins once more, now two bare symbols (#1885).
@@ -18,7 +18,7 @@ symbolic: |
       𝑛2: $.b
     join:
       𝑛3: [𝑛1, 𝑛2]
-    lenient: true
+    lenient: []
     𝑛: 𝑛3
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ξ.eq, eq ↦ ⟦ λ ⤍ L_eq ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'

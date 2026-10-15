@@ -6,9 +6,9 @@
 # the copy 'rec( n ↦ ⟦ φ ↦ 𝜎2 ⟧ )', whose argument reads to no bare symbol, so
 # a lenient join enters it, morphs its φ to the same fork and fires it.
 # '--acyclic=proven' refuses that firing, since the run is already inside the
-# fork. An entry that says 'defer: true' answers the copy with a fresh symbol
-# there, writes it on the 'looped' line, and joins it with the symbol the
-# other branch holds, instead of losing the whole entry (#1895).
+# fork. An entry that says 'lenient: [defer]' answers the copy with a fresh
+# symbol there, writes it on the 'looped' line, and joins it with the symbol
+# the other branch holds, instead of losing the whole entry (#1895).
 symbolic: |
   - λ: L_fork
     morph:
@@ -16,8 +16,7 @@ symbolic: |
       𝑛2: $.b
     join:
       𝑛3: [𝑛1, 𝑛2]
-    lenient: true
-    defer: true
+    lenient: [defer]
     𝑛: ⟦ φ ↦ 𝑛3 ⟧
 location: 'Q.y'
 acyclic: proven

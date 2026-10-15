@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# An entry that says 'defer: true' defers only a copy one of whose arguments
-# reads to a bare symbol (#1892). Here 'Φ.items.tail' reads to an object that
-# knows its 'next', so the lenient join enters the copy as it did before
-# (#1885): it morphs its φ, fires what it comes to, and joins two symbols. No
-# 'deferred' line is written and no symbol is minted for the copy.
+# An entry that says 'lenient: [defer]' defers only a copy one of whose
+# arguments reads to a bare symbol (#1892). Here 'Φ.items.tail' reads to an
+# object that knows its 'next', so the lenient join enters the copy as it did
+# before (#1885): it morphs its φ, fires what it comes to, and joins two
+# symbols. No 'deferred' line is written and no symbol is minted for the copy.
 symbolic: |
   - λ: L_fork
     morph:
@@ -14,8 +14,7 @@ symbolic: |
       𝑛2: $.b
     join:
       𝑛3: [𝑛1, 𝑛2]
-    lenient: true
-    defer: true
+    lenient: [defer]
     𝑛: ⟦ φ ↦ 𝑛3 ⟧
 location: 'Q.y'
 input: '⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ next ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧'
