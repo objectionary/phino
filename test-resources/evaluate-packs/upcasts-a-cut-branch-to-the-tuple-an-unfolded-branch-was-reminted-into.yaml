@@ -1,0 +1,118 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The fork of 'bytes.array' from #1921, spelled as a pipeline. The left branch
+# 'Φ.rec( ξ.n )' leads back to the same fork, so its 'unfold' line, which says
+# 'defer: true', has '--acyclic=proven' cut the firing and answers the copy
+# with the looped bare symbol '𝜎3'. The right branch is the 'with' object of
+# a tuple, whose φ builds a copy of 'Φ.tuple' with three arguments; its
+# 'unfold' line morphs that φ into the real tuple. The 'rewrite' line then
+# shrinks the tuple into a call of 'Φ.tuple' with every argument reminted,
+# 'stay' and 'symbolize' see the unfolded term, the two lines of the 'upcast'
+# block take the two terms as one pair and cast the smaller, the bare symbol,
+# into the shape of the larger by the paths 'tail', 'head' and 'length', and
+# the 'join' line pairs the two metas the block wrote symbol by symbol. The
+# program reads 'length' off the answer.
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    unfold:
+      𝑛3: {of: 𝑛1, defer: true}
+      𝑛4: {of: 𝑛2, defer: true}
+    rewrite:
+      𝑛5:
+        of: 𝑛3
+        rules: &shape
+          - name: shrunk
+            pattern: ⟦ tail ↦ 𝑒1, head ↦ 𝑒2, length ↦ 𝑒3, !B ⟧
+            result: Φ.tuple( tail ↦ 𝑒4, head ↦ 𝑒5, length ↦ 𝑒6 )
+            where:
+              - meta: 𝑒4
+                function: remint
+                args: [𝑒1]
+              - meta: 𝑒5
+                function: remint
+                args: [𝑒2]
+              - meta: 𝑒6
+                function: remint
+                args: [𝑒3]
+      𝑛6:
+        of: 𝑛4
+        rules: *shape
+    stay:
+      𝑛7: 𝑛5
+      𝑛8: 𝑛6
+    symbolize:
+      𝑛9: 𝑛7
+      𝑛10: 𝑛8
+    upcast:
+      𝑛11: 𝑛9
+      𝑛12: 𝑛10
+    join:
+      𝑛13: [𝑛11, 𝑛12]
+    𝑛: ⟦ φ ↦ 𝑛13 ⟧
+location: 'Q.y'
+acyclic: proven
+input: |
+  ⟦
+    fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧,
+    tuple(tail, head, length) ↦ ⟦⟧,
+    items ↦ ⟦
+      length ↦ ⟦ λ ⤍ 𝜎1 ⟧,
+      with(ρ, x) ↦ ⟦ φ ↦ Φ.tuple( tail ↦ ξ.ρ, head ↦ ξ.x, length ↦ ξ.ρ.length.plus( 1 ) ) ⟧
+    ⟧,
+    rec(n) ↦ ⟦ φ ↦ Φ.fork( Φ.rec( ξ.n ), Φ.items.with( ξ.n ) ) ⟧,
+    y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ.length
+  ⟧
+result: '𝜎12:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝑛·0·1 := Φ.rec( n ↦ 𝜎2:λ:φ )
+    𝑛·0·2 := Φ.fork( a ↦ Φ.rec( 𝜎2:λ:φ ) )
+    𝑛·0·3 := 𝑛·0·2( b ↦ Φ.items.with( 𝜎2:λ:φ ) )
+    𝔼(L_fork):
+      𝕄(Φ.a🌵0):
+        𝑛·1·1 := Φ.rec( n ↦ 𝜎2:λ:φ )
+      𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.a)
+      𝕄(Φ.a🌵1):
+        𝑛·1·2 := Φ.items.with( x ↦ 𝜎2:λ:φ )
+      𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
+      𝕄(Φ.a🌵2):
+        𝑛·1·3 := Φ.fork( a ↦ Φ.rec( 𝜎2:λ:φ ) )
+        𝑛·1·4 := 𝑛·1·3( b ↦ Φ.items.with( 𝜎2:λ:φ ) )
+      𝑛3·1 := 𝑛·1·4  # 𝕄(𝑛1.φ)
+      looped(𝑛·1·4) := 𝜎3  # 𝔼(𝑛1), proven
+      𝑛3·1 := 𝜎3:λ  # 𝔼(𝑛1)
+      𝕄(Φ.a🌵3):
+        𝑛·1·5 := Φ.tuple( tail ↦ Φ.items )
+        𝑛·1·6 := 𝑛·1·5( head ↦ 𝜎2:λ:φ )
+        𝑛·1·7 := 𝑛·1·6( length ↦ Φ.items.length.plus( 1 ) )
+      𝑛4·1 := 𝑛·1·7  # 𝕄(𝑛2.φ)
+      𝑛4·1 := 𝑛·1·7  # 𝔼(𝑛2)
+      𝑛5·1 := 𝑛3·1  # 𝑛3
+      reminted(𝜎4) := Φ.items
+      reminted(𝜎5) := 𝜎2:λ:φ
+      reminted(𝜎6) := Φ.items.length.plus( 1 )
+      𝑛6·1 := Φ.tuple( tail ↦ 𝜎4:λ, head ↦ 𝜎5:λ, length ↦ 𝜎6:λ )  # 𝑛4
+      𝑛7·1 := 𝑛5·1  # 𝑛5
+      𝑛8·1 := Φ.tuple( tail ↦ 𝜎4:λ, head ↦ 𝜎5:λ, length ↦ 𝜎6:λ )  # 𝑛6
+      𝑛9·1 := 𝑛7·1  # 𝑛7
+      𝑛10·1 := Φ.tuple( tail ↦ 𝜎4:λ, head ↦ 𝜎5:λ, length ↦ 𝜎6:λ )  # 𝑛8
+      upcast(𝜎3) := Φ.tuple( tail ↦ 𝜎7:λ, head ↦ 𝜎8:λ, length ↦ 𝜎9:λ )
+        𝜎7 := 𝜎3.tail
+        𝜎8 := 𝜎3.head
+        𝜎9 := 𝜎3.length
+      𝑛11·1 := Φ.tuple( tail ↦ 𝜎7:λ, head ↦ 𝜎8:λ, length ↦ 𝜎9:λ )  # 𝑛9
+      𝑛12·1 := Φ.tuple( tail ↦ 𝜎4:λ, head ↦ 𝜎5:λ, length ↦ 𝜎6:λ )  # 𝑛10
+      𝔻(𝜎10:λ) ∈ { 𝔻(𝜎7:λ), 𝔻(𝜎4:λ) }
+      𝔻(𝜎11:λ) ∈ { 𝔻(𝜎8:λ), 𝔻(𝜎5:λ) }
+      𝔻(𝜎12:λ) ∈ { 𝔻(𝜎9:λ), 𝔻(𝜎6:λ) }
+      𝑛13·1 := Φ.tuple( tail ↦ 𝜎10:λ, head ↦ 𝜎11:λ, length ↦ 𝜎12:λ )  # [𝑛11, 𝑛12]
+      𝑛·1·8 := Φ.tuple( tail ↦ 𝜎10:λ, head ↦ 𝜎11:λ, length ↦ 𝜎12:λ ):φ  # 𝑛
+      𝑛·1·9 := Φ.tuple( tail ↦ 𝜎10:λ, head ↦ 𝜎11:λ, length ↦ 𝜎12:λ ):φ  # 𝕄(𝑛·1·8)
+    𝑛·0·4 := Φ.tuple( tail ↦ 𝜎10:λ )
+    𝑛·0·5 := 𝑛·0·4( head ↦ 𝜎11:λ )
+    𝑛·0·6 := 𝑛·0·5( length ↦ 𝜎12:λ )

@@ -4,18 +4,19 @@
 # yamllint disable rule:line-length
 # The deferral of #1892 over a copy with two arguments: 'x' reads to the bare
 # symbol '𝜎1', so the copy is deferred, and 'w' is a call of 'L_inc'. Before it
-# writes the 'deferred' line, the entry morphs 'w' at '𝑛2.w' and fires what it
-# comes to, so the line names the object 'Φ.num' the argument stands for,
-# instead of the call as the code spells it (#1916).
+# writes the 'deferred' line, the 'unfold' line morphs 'w' at '𝑛2.w' and fires
+# what it comes to, so the line names the object 'Φ.num' the argument stands
+# for, instead of the call as the code spells it (#1916, #1921).
 symbolic: |
   - λ: L_fork
     morph:
       𝑛1: $.a
       𝑛2: $.b
+    unfold:
+      𝑛3: {of: 𝑛2, defer: true}
     join:
-      𝑛3: [𝑛1, 𝑛2]
-    lenient: [defer]
-    𝑛: ⟦ φ ↦ 𝑛3 ⟧
+      𝑛4: [𝑛1, 𝑛3]
+    𝑛: ⟦ φ ↦ 𝑛4 ⟧
   - λ: L_inc
     dataize:
       𝛿1: $.x
@@ -43,6 +44,6 @@ protocol: |
         𝑛·2·3 := 𝑛·2·2  # 𝕄(𝑛·2·1)
       deferred(𝜎4) := Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·2 )  # 𝕄(𝑛2.φ)
       𝔻(𝜎5:λ) ∈ { 𝔻(𝜎2:λ), 𝔻(𝜎4:λ) }
-      𝑛3·1 := 𝜎5:λ  # [𝑛1, 𝑛2]
+      𝑛4·1 := 𝜎5:λ  # [𝑛1, 𝑛3]
       𝑛·1·4 := 𝜎5:λ:φ  # 𝑛
       𝑛·1·5 := 𝜎5:λ:φ  # 𝕄(𝑛·1·4)

@@ -5,19 +5,20 @@
 # The cut of #1895 over a recursion whose argument changes every round: the
 # copy 'rec( n ↦ Φ.inc( … ) )' is cut by '--acyclic=plausible', and its
 # argument is a call of 'L_inc' nothing has fired yet. Before it writes the
-# 'looped' line, an entry that says 'lenient: [defer]' morphs that argument at
-# '𝑛2.n' and fires what it comes to, so the protocol shows the object 'Φ.num'
-# the argument stands for, and the markup names it in the call of the cut
-# (#1916).
+# 'looped' line, an 'unfold' line that says 'defer: true' morphs that argument
+# at '𝑛2.n' and fires what it comes to, so the protocol shows the object
+# 'Φ.num' the argument stands for, and the markup names it in the call of the
+# cut (#1916, #1921).
 symbolic: |
   - λ: L_fork
     morph:
       𝑛1: $.a
       𝑛2: $.b
+    unfold:
+      𝑛3: {of: 𝑛2, defer: true}
     join:
-      𝑛3: [𝑛1, 𝑛2]
-    lenient: [defer]
-    𝑛: ⟦ φ ↦ 𝑛3 ⟧
+      𝑛4: [𝑛1, 𝑛3]
+    𝑛: ⟦ φ ↦ 𝑛4 ⟧
   - λ: L_inc
     dataize:
       𝛿1: $.x
@@ -39,7 +40,7 @@ protocol: |
       𝕄(Φ.a🌵2):
         𝑛·1·2 := Φ.fork( a ↦ 𝜎1:λ )
         𝑛·1·3 := 𝑛·1·2( b ↦ Φ.rec( Φ.inc( Φ.inc( 𝜎2:λ:φ ) ) ) )
-      𝑛2·1 := 𝑛·1·3  # 𝕄(𝑛2.φ)
+      𝑛3·1 := 𝑛·1·3  # 𝕄(𝑛2.φ)
       𝕄(𝑛2.n):
         𝑛·1·4 := Φ.inc( x ↦ 𝜎2:λ:φ )
       𝔼(L_inc):  # 𝔼(𝑛2.n)
@@ -49,8 +50,8 @@ protocol: |
           𝑛·2·2 := Φ.num( φ ↦ 𝜎3:λ )
         𝑛·2·3 := 𝑛·2·2  # 𝕄(𝑛·2·1)
       looped(𝑛·0·3) := 𝜎4  # 𝔼(𝑛2), plausible
-      𝑛2·1 := 𝜎4:λ  # 𝔼(𝑛2)
+      𝑛3·1 := 𝜎4:λ  # 𝔼(𝑛2)
       𝔻(𝜎5:λ) ∈ { 𝔻(𝜎1:λ), 𝔻(𝜎4:λ) }
-      𝑛3·1 := 𝜎5:λ  # [𝑛1, 𝑛2]
+      𝑛4·1 := 𝜎5:λ  # [𝑛1, 𝑛3]
       𝑛·1·5 := 𝜎5:λ:φ  # 𝑛
       𝑛·1·6 := 𝜎5:λ:φ  # 𝕄(𝑛·1·5)
