@@ -406,6 +406,7 @@ universed :: Expression -> ReduceContext -> IO ReduceContext
 universed _ ctx@ReduceContext{_universe = Just _} = pure ctx
 universed univ ctx = do
   (normal, _) <- normalized univ ((univ, Nothing) :| []) ctx{_locator = ExRoot, _saveStep = dontSaveStep}
+  ctx._saveEval (EvWorld normal)
   pure ctx{_universe = Just normal}
 
 insideUniverse :: Expression -> Expression -> ReduceContext -> IO (Expression, ReduceContext)

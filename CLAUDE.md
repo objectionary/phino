@@ -244,7 +244,8 @@ such as `𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluat
 line does, and writes every step to the protocol, so the markup names the
 argument by the object an application made of it, such as `𝑛·77·3`. An
 argument whose morph or firing gets stuck, is cut or runs out of steps keeps
-the call as written, and the markup writes `?` for it (#1916).
+the call as written, and the markup names it by the meta a record gave it
+earlier, or by an expression meta such as `𝑒1` (#1916, #1924).
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
@@ -286,10 +287,21 @@ object of the same call, by that name wherever a later line holds it whole.
 The line itself goes through `abbreviatedInside`, which names the head and
 each argument and never the call as a whole, so an application made again is
 spelled out again (#1756). The
-markup writes the head in `of` and the argument in an `<attr>`: its name, the
-symbol where it is a bare one, or the term. Under `--inside` the universe is
-normalized before the heading, so `aimed` of `CLI/Helpers.hs` holds those
-records back and writes them after it.
+markup writes the head in `of` and the argument in an `<attr>`, both by name.
+Under `--inside` the universe is normalized before the heading, so `aimed` of
+`CLI/Helpers.hs` holds those records back and writes them after it.
+
+The markup is read by programs and never writes a term (#1924): every value is
+a symbol, a datum, a meta, a path off `Φ`, `ξ`, `ρ` or a meta, a name, or `⊥`.
+`leaf` of `saveEvalXml` names any other term before the record that holds it
+and by that name from then on: an application by an `<applied>` record with no
+`by` and `at`, a formation by a `<formed>` one, and anything else by an
+expression meta, `𝑒1`, which nothing defines. A `<formed>` record names in `of`
+the object of the world the formation copies and holds only the attributes it
+binds anew (`copied`); the world is the normalized universe, which `universed`
+of `Morph.hs` hands to the writers as `EvWorld` and the text writer ignores.
+Since the markup names terms the text writes out, the two count their metas
+apart, and an `𝑛` of one may be another `𝑛` of the other.
 
 ### Dependency inversion for circular imports
 

@@ -20,7 +20,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (Acyclic (..), Judgment (..), State, Term (TeExpression))
+import Deps (Acyclic (..), Evaluation (EvWorld), Judgment (..), State, Term (TeExpression))
 import Engine (Engine (_normal))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives)
@@ -102,6 +102,14 @@ spec = do
       ctx <- defaultReduceContext loc
       _ <- morph expr emptyState ctx{_saveStep = const (modifyIORef' saved (+ 1))}
       readIORef saved `shouldReturn` 2
+
+    it "tells the protocol the world it has normalized" $ do
+      expr <- parseExpressionThrows "[[ ezh -> [[ D> 0E- ]] ]]"
+      told <- newIORef []
+      ctx <- defaultReduceContext ExRoot
+      _ <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
+      records <- readIORef told
+      [world | EvWorld world <- records] `shouldBe` [expr]
 
   describe "morph'" $
     test'
