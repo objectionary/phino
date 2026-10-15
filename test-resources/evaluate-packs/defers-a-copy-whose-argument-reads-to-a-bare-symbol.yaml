@@ -6,9 +6,9 @@
 # the copy 'step( tup ↦ Φ.items.tail )', and 'Φ.items.tail' reads to the bare
 # symbol '𝜎1', an object nobody knows. A lenient join fails on the copy and
 # morphs its φ, which asks '𝜎1' for 'next' and gets stuck. An entry that says
-# 'defer: true' does not enter such a copy: it answers it with a fresh symbol,
-# writes a 'deferred' line naming the call the copy stands for, and joins that
-# symbol with the one the other branch holds (#1892).
+# 'lenient: [defer]' does not enter such a copy: it answers it with a fresh
+# symbol, writes a 'deferred' line naming the call the copy stands for, and
+# joins that symbol with the one the other branch holds (#1892).
 symbolic: |
   - λ: L_fork
     morph:
@@ -16,8 +16,7 @@ symbolic: |
       𝑛2: $.b
     join:
       𝑛3: [𝑛1, 𝑛2]
-    lenient: true
-    defer: true
+    lenient: [defer]
     𝑛: ⟦ φ ↦ 𝑛3 ⟧
 location: 'Q.y'
 input: '⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧'

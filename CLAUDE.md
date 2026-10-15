@@ -190,7 +190,9 @@ symbols, each of which the protocol explains (#1909).
 
 A bare symbol, `⟦ λ ⤍ 𝜎k ⟧`, joins too: the `join` of `Lambdas.hs` pairs it
 with the symbol the φ chain of the other branch ends in, and answers a bare
-fresh symbol, dropping the methods. Under `lenient: true` a chain ending in no
+fresh symbol, dropping the methods. An entry naming a `lenient` list, empty or
+not, is lenient: `_lenient` of `Lambdas.hs` holds the options of the list and
+refuses a name it does not know (#1913). Under it a chain ending in no
 symbol, such as one stopping at a call of an object of the world, still joins
 if the other branch holds exactly one symbol (`goSole` of `joined`, #1817):
 the answer is a copy of that branch with the symbol replaced by a fresh one,
@@ -199,9 +201,9 @@ entry morphs the φ of a branch that is a formation with no λ whose φ reads ξ
 fires what it comes to through 𝔼 the way an `evaluate` line does, and joins
 once more (`reduced` of `paired` in `Evaluate.hs`, #1885). The step is taken
 once, and it fires through `fire`, as an `evaluate` line does, so the step
-budget and `--acyclic` bound it. Under `defer: true` (`_defer` of `Lambdas.hs`,
-refused unless lenient) the step never enters a copy, a formation with no λ, no
-void and code in φ, one of whose arguments other than φ and ρ reads to a bare
+budget and `--acyclic` bound it. Under `lenient: [defer]` (`Defer` of
+`Lambdas.hs`) the step never enters a copy, a formation with no λ, no void
+and code in φ, one of whose arguments other than φ and ρ reads to a bare
 symbol: `deferred` of `Evaluate.hs` reduces every argument with no entry of the
 file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it answers a fresh symbol instead and
 writes `deferred(…)` (`EvDeferred`), naming the call the copy stands for by the

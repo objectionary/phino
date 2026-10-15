@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# The fork the lenient join of #1885 gets through, under an entry that does
-# not say 'lenient: true'. The branch that is an ordinary object stays as 𝕄
-# left it, a formation whose φ reads its own attribute, so the strict join
-# refuses it beside a bare symbol and the firing gets stuck.
+# The fork the lenient join of #1885 gets through, under an entry with no
+# 'lenient' key. The branch that is an ordinary object stays as 𝕄 left it, a
+# formation whose φ reads its own attribute, so the strict join refuses it
+# beside a bare symbol and the firing gets stuck.
 symbolic: |
   - λ: L_eq
     𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧

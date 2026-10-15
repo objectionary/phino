@@ -5,7 +5,7 @@
 # A fork whose one branch calls a method often meets a decorator: one branch
 # comes to a copy, the other to a formation whose φ is that copy. The two
 # differ in shape, so a strict join refuses them. An entry that says
-# 'lenient: true' joins them into the decorator, with a fresh symbol minted
+# 'lenient: []' joins them into the decorator, with a fresh symbol minted
 # inside it the usual way (#1815).
 symbolic: |
   - λ: L_fork
@@ -14,7 +14,7 @@ symbolic: |
       𝑛2: $.b
     join:
       𝑛3: [𝑛1, 𝑛2]
-    lenient: true
+    lenient: []
     𝑛: 𝑛3
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'

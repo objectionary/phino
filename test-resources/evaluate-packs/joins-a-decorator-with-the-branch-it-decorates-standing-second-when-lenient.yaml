@@ -13,7 +13,7 @@ symbolic: |
       𝑛2: $.b
     join:
       𝑛3: [𝑛1, 𝑛2]
-    lenient: true
+    lenient: []
     𝑛: 𝑛3
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'

@@ -15,11 +15,11 @@ import Control.Monad (foldM, unless)
 import Data.IORef (atomicModifyIORef', readIORef, writeIORef)
 import Data.List (nub, partition)
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Acyclic, BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (Evaluation, Morphing), State (..), Term (TeExpression), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Lambdas (Lambda (..), Line (..), Meta (..), emptyLambdas, joined, matched, message, minted, stayed, symbolized, thrown)
+import Lambdas (Lambda (..), Line (..), Meta (..), Option (..), emptyLambdas, joined, matched, message, minted, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer, Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), admitting, boxed, charged, counted, deeper, expired, isLambda, lambda, morphing, normalized, opening, recalled, refused, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
@@ -212,14 +212,14 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       where
         both :: Expression -> Expression -> IO (Subst, State)
         both one two = do
-          outcome <- joined entry._lenient one two <$> readIORef ctx._minted
+          outcome <- joined (isJust entry._lenient) one two <$> readIORef ctx._minted
           case outcome of
             Just made -> written state' made
             Nothing
-              | entry._lenient && (hanging one || hanging two) -> do
+              | isJust entry._lenient && (hanging one || hanging two) -> do
                   (one', reducing) <- reduced left one state'
                   (two', state'') <- reduced right two reducing
-                  outcome' <- joined entry._lenient one' two' <$> readIORef ctx._minted
+                  outcome' <- joined (isJust entry._lenient) one' two' <$> readIORef ctx._minted
                   maybe (unjoined one' two') (written state'') outcome'
               | otherwise -> unjoined one two
         unjoined :: Expression -> Expression -> IO a
@@ -235,7 +235,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           pure (bound', state'')
         reduced :: Meta -> Expression -> State -> IO (Expression, State)
         reduced side term@(ExFormation bds) state''
-          | hanging term && entry._defer && copied bds = deferred side bds state'' >>= maybe (entered (severed bds) side term state'') (\answer -> pure (answer, state''))
+          | hanging term && any (elem Defer) entry._lenient && copied bds = deferred side bds state'' >>= maybe (entered (severed bds) side term state'') (\answer -> pure (answer, state''))
         reduced side term state''
           | hanging term = entered refused side term state''
           | otherwise = pure (term, state'')
