@@ -258,12 +258,13 @@ optSymbolic =
               "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
               \it reduces to a normal form under \"morph\", the terms it rewrites by rules of its own under \
-              \\"rewrite\", the terms of those it stands the data of into unknowns under \"symbolize\" and the \
-              \pairs of branches it joins into one term under \"join\", whether a join takes a term and a \
-              \formation whose φ is that term for one under \"lenient\", a list of options where \"defer\" has \
-              \a lenient join answer a fresh symbol for a copy one of whose arguments reads to a bare symbol \
-              \instead of entering it, or for a copy whose firing a cut refuses, and \"upcast\" has it cast a bare \
-              \symbol into a copy of the other branch read off that symbol by paths, the λ functions whose objects \
+              \\"rewrite\", the terms whose φ it fires the way \"evaluate\" does under \"unfold\", where \
+              \\"defer: true\" has a copy one of whose arguments reads to a bare symbol, or a copy whose firing \
+              \a cut refuses, answer a fresh symbol instead, the terms of those it stands the data of into \
+              \unknowns under \"symbolize\", the bare symbols it casts into a copy of another term read off \
+              \that symbol by paths under \"upcast\", the pairs of branches it joins into one term under \
+              \\"join\", whether a join takes a term and a formation whose φ is that term for one under \
+              \\"lenient\", an empty list, the λ functions whose objects \
               \a join takes for a branch that raises under \"terminators\", and answering with the term under \
               \\"𝑛\""
         )

@@ -12,7 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Lambda (..), Lambdas, Line (..), Meta (..), Option (..), emptyLambdas, joined, matched, message, minted, readLambdas, stayed, symbolized, taken, thrown)
+import Lambdas (Lambda (..), Lambdas, Line (..), Meta (..), emptyLambdas, joined, matched, message, minted, readLambdas, stayed, symbolized, taken, thrown, upcasted)
 import Parser (parseExpressionThrows)
 import Test.Hspec
 
@@ -33,9 +33,11 @@ order known func = map bound (lined known func)
   where
     bound :: Line -> T.Text
     bound (Evaluated meta _) = _spelling meta
+    bound (Unfolded meta _ _) = _spelling meta
     bound (Rewritten meta _ _) = _spelling meta
     bound (Stayed meta _) = _spelling meta
     bound (Symbolized meta _) = _spelling meta
+    bound (Upcasted meta _ _) = _spelling meta
     bound (Paired meta _ _) = _spelling meta
 
 joins :: Lambdas -> T.Text -> [(T.Text, (T.Text, T.Text))]
@@ -43,6 +45,12 @@ joins known func = [(_spelling meta, (_spelling left, _spelling right)) | Paired
 
 fired :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 fired known func = [(_spelling meta, _spelling source) | Evaluated meta source <- lined known func]
+
+unfolds :: Lambdas -> T.Text -> [(T.Text, T.Text, Bool)]
+unfolds known func = [(_spelling meta, _spelling source, deferring) | Unfolded meta source deferring <- lined known func]
+
+casts :: Lambdas -> T.Text -> [(T.Text, T.Text, T.Text)]
+casts known func = [(_spelling meta, _spelling source, _spelling shape) | Upcasted meta source shape <- lined known func]
 
 stays :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 stays known func = [(_spelling meta, _spelling source) | Stayed meta source <- lined known func]
@@ -142,19 +150,23 @@ spec = do
 
     it "reads an entry whose 'join' lines are lenient with no option" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: []\n  𝑛: 𝑛3\n"
-      fmap _lenient (matched known "L_fork") `shouldBe` Just (Just [])
+      fmap _lenient (matched known "L_fork") `shouldBe` Just True
 
     it "reads an entry saying nothing of leniency as strict" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
-      fmap _lenient (matched known "L_fork") `shouldBe` Just Nothing
+      fmap _lenient (matched known "L_fork") `shouldBe` Just False
 
-    it "reads a lenient entry that defers a copy reading a bare symbol" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defer]\n  𝑛: 𝑛3\n"
-      fmap _lenient (matched known "L_fork") `shouldBe` Just (Just [Defer])
+    it "reads the lines of 'unfold' with the metas they read and whether they defer" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n    𝑛3: {of: 𝑛2, defer: true}\n  𝑛: 𝑛3\n"
+      unfolds known "L_fork" `shouldBe` [("𝑛2", "𝑛1", False), ("𝑛3", "𝑛2", True)]
 
-    it "reads a lenient entry that upcasts a bare symbol" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [upcast, defer]\n  𝑛: 𝑛3\n"
-      fmap _lenient (matched known "L_fork") `shouldBe` Just (Just [Upcast, Defer])
+    it "reads an 'unfold' line saying 'of' alone as one that does not defer" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1}\n  𝑛: 𝑛2\n"
+      unfolds known "L_fork" `shouldBe` [("𝑛2", "𝑛1", False)]
+
+    it "reads an 'upcast' line with the meta it casts and the meta it casts to" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛2}\n  𝑛: 𝑛3\n"
+      casts known "L_fork" `shouldBe` [("𝑛3", "𝑛1", "𝑛2")]
 
     it "reads the terminators an entry names beside its 'join' block" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  terminators: [L_throw, L_halt]\n  𝑛: 𝑛3\n"
@@ -220,9 +232,17 @@ spec = do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛4: 𝑛3\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛4\n"
       order known "L_fork" `shouldBe` ["𝑛3", "𝑛4"]
 
+    it "runs an 'upcast' line after the line binding the meta it casts to" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛4}\n  unfold:\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n"
+      order known "L_fork" `shouldBe` ["𝑛4", "𝑛3"]
+
+    it "runs the lines of a fork in the order of the metas they read, whatever the order of their blocks" $ do
+      known <- lambdasOf (T.concat ["- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛15: [𝑛13, 𝑛14]\n  upcast:\n    𝑛13: {of: 𝑛11, to: 𝑛12}\n    𝑛14: {of: 𝑛12, to: 𝑛11}\n  symbolize:\n    𝑛11: 𝑛9\n    𝑛12: 𝑛10\n  stay:\n    𝑛9: 𝑛7\n    𝑛10: 𝑛8\n  rewrite:\n    𝑛7:\n      of: 𝑛5\n", rules, "    𝑛8:\n      of: 𝑛6\n", rules, "  unfold:\n    𝑛5: {of: 𝑛3, defer: true}\n    𝑛6: {of: 𝑛4, defer: true}\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛15\n"])
+      order known "L_fork" `shouldBe` ["𝑛3", "𝑛4", "𝑛5", "𝑛6", "𝑛7", "𝑛8", "𝑛9", "𝑛10", "𝑛11", "𝑛12", "𝑛13", "𝑛14", "𝑛15"]
+
     it "runs the lines no meta orders in the order of their blocks" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  symbolize:\n    𝑛4: 𝑛1\n  stay:\n    𝑛5: 𝑛2\n  evaluate:\n    𝑛6: 𝑛1\n  𝑛: 𝑛3\n"
-      order known "L_fork" `shouldBe` ["𝑛6", "𝑛5", "𝑛4", "𝑛3"]
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  upcast:\n    𝑛7: {of: 𝑛1, to: 𝑛2}\n  symbolize:\n    𝑛4: 𝑛1\n  stay:\n    𝑛5: 𝑛2\n  unfold:\n    𝑛8: 𝑛2\n  evaluate:\n    𝑛6: 𝑛1\n  𝑛: 𝑛3\n"
+      order known "L_fork" `shouldBe` ["𝑛6", "𝑛8", "𝑛5", "𝑛4", "𝑛7", "𝑛3"]
 
     it "reads an entry naming no 'stay' block at all" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
@@ -299,6 +319,15 @@ spec = do
       , ("a lenient entry with no 'join' line to be lenient in", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  lenient: []\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is lenient but has no 'join' line")
       , ("a 'lenient' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  𝑛: 𝑛3\n", "lenient: parsing [] failed, expected Array")
       , ("a 'lenient' key naming an option phino does not know", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defr]\n  𝑛: 𝑛3\n", "The option 'defr' of 'lenient' of λ function 'L_fork' is unknown")
+      , ("a 'lenient' key naming 'defer', which an 'unfold' line took over", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defer]\n  𝑛: 𝑛3\n", "The option 'defer' of 'lenient' of λ function 'L_fork' is gone")
+      , ("a 'lenient' key naming 'upcast', which an 'upcast' line took over", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [upcast, defer]\n  𝑛: 𝑛3\n", "The option 'upcast' of 'lenient' of λ function 'L_fork' is gone")
+      , ("an 'unfold' line unfolding a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
+      , ("an 'unfold' line naming a list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: [𝑛1]\n  𝑛: 𝑛2\n", "The line '𝑛2' of 'unfold' of λ function 'L_fork' names neither a meta nor a mapping with 'of'")
+      , ("an 'unfold' line with no 'of'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {defer: true}\n  𝑛: 𝑛2\n", "key \"of\" not found")
+      , ("an 'unfold' line whose 'defer' is no flag", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1, defer: often}\n  𝑛: 𝑛2\n", "expected Bool")
+      , ("an 'upcast' line with no 'to'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛2: {of: 𝑛1}\n  𝑛: 𝑛2\n", "key \"to\" not found")
+      , ("an 'upcast' line casting to a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛2}\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
+      , ("a meta bound by 'unfold' and again by 'upcast'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n  upcast:\n    𝑛2: {of: 𝑛1, to: 𝑛1}\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_fork' is bound by more than one line")
       , ("a misspelled 'lenient' key", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenent: []\n  𝑛: 𝑛3\n", "The key 'lenent' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a 'defer' key beside 'lenient', which now lists it", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: []\n  defer: true\n  𝑛: 𝑛3\n", "The key 'defer' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a misspelled 'dataize' block", "- λ: L_pair\n  datize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The key 'datize' of λ function 'L_pair' is none of the keys an entry reads")
@@ -424,223 +453,148 @@ spec = do
       term `shouldBe` kept
 
   describe "joined" $ do
-    let joining :: Maybe [Option] -> String -> String -> Int -> IO (Maybe (Expression, [(Int, (Int, Int))], Int))
-        joining options left right spent = do
+    let joining :: Bool -> String -> String -> Int -> IO (Maybe (Expression, [(Int, (Int, Int))], Int))
+        joining lenient left right spent = do
           one <- parseExpressionThrows left
           two <- parseExpressionThrows right
-          pure ((\(joint, _, facts, spent') -> (joint, facts, spent')) <$> joined options one two spent)
-        casting :: String -> String -> Int -> IO (Maybe [(Int, Expression, [(Int, [Attribute])])])
-        casting left right spent = do
-          one <- parseExpressionThrows left
-          two <- parseExpressionThrows right
-          pure ((\(_, casts, _, _) -> casts) <$> joined (Just [Upcast]) one two spent)
+          pure (joined lenient one two spent)
 
     it "joins two branches differing in one symbol into a fresh one" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧"
-      made <- joining Nothing "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" 4
+      made <- joining False "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
     it "tells the two symbols every fresh one stands for" $ do
-      made <- joining Nothing "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" 4
+      made <- joining False "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧" 4
       fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(5, (1, 2))]
 
     it "counts every symbol it minted into the state" $ do
-      made <- joining Nothing "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ⟧" 4
+      made <- joining False "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ⟧" 4
       fmap (\(_, _, spent) -> spent) made `shouldBe` Just 6
 
     it "mints one symbol per pair of differing symbols" $ do
-      made <- joining Nothing "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ⟧" 4
+      made <- joining False "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ⟧" 4
       fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(5, (1, 3)), (6, (2, 4))]
 
     it "mints one symbol for the pair it meets twice" $ do
       term <- parseExpressionThrows "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧"
-      made <- joining Nothing "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" 4
+      made <- joining False "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧" "⟦ φ ↦ Φ.f( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( t ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" 4
       made `shouldBe` Just (term, [(5, (1, 2))], 5)
 
     it "carries a method from the first branch and mints nothing for it" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, neg ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧"
-      made <- joining Nothing "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ⟧" 4
+      made <- joining False "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ⟧" 4
       made `shouldBe` Just (term, [(5, (1, 2))], 5)
 
     it "refuses two branches whose bindings are named differently" $ do
-      made <- joining Nothing "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, m ↦ ⟦ x ↦ ∅ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, other ↦ ⟦ x ↦ ∅ ⟧ ⟧" 4
+      made <- joining False "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, m ↦ ⟦ x ↦ ∅ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, other ↦ ⟦ x ↦ ∅ ⟧ ⟧" 4
       made `shouldBe` Nothing
 
     it "joins two branches that are one term into that very term" $ do
       term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )"
-      made <- joining Nothing "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" 4
+      made <- joining False "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" 4
       made `shouldBe` Just (term, [], 4)
 
     it "joins two branches through the argument of an application" $ do
       term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ )"
-      made <- joining Nothing "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
+      made <- joining False "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
     it "leaves what a ρ carries alone" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧"
-      made <- joining Nothing "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, ρ ↦ ⟦ y ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧" 4
+      made <- joining False "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, ρ ↦ ⟦ y ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧" 4
       made `shouldBe` Just (term, [(5, (1, 2))], 5)
 
     it "joins a bare symbol with the symbol the φ chain of a formation ends in" $ do
       term <- parseExpressionThrows "⟦ λ ⤍ 𝜎5 ⟧"
-      made <- joining Nothing "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, eq ↦ ⟦ b ↦ ∅ ⟧ ⟧" "⟦ λ ⤍ 𝜎2 ⟧" 4
+      made <- joining False "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, eq ↦ ⟦ b ↦ ∅ ⟧ ⟧" "⟦ λ ⤍ 𝜎2 ⟧" 4
       made `shouldBe` Just (term, [(5, (1, 2))], 5)
 
     it "joins a formation with a bare symbol standing first" $ do
       term <- parseExpressionThrows "⟦ λ ⤍ 𝜎8 ⟧"
-      made <- joining Nothing "⟦ λ ⤍ 𝜎3 ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, neg ↦ ⟦⟧ ⟧" 7
+      made <- joining False "⟦ λ ⤍ 𝜎3 ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, neg ↦ ⟦⟧ ⟧" 7
       made `shouldBe` Just (term, [(8, (3, 6))], 8)
 
     it "mints nothing for a bare symbol the φ chain of a formation ends in" $ do
       term <- parseExpressionThrows "⟦ λ ⤍ 𝜎2 ⟧"
-      made <- joining Nothing "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, m ↦ ⟦⟧ ⟧" "⟦ λ ⤍ 𝜎2 ⟧" 4
+      made <- joining False "⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, m ↦ ⟦⟧ ⟧" "⟦ λ ⤍ 𝜎2 ⟧" 4
       made `shouldBe` Just (term, [], 4)
 
     it "joins two branches differing in their ρ alone" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧"
-      made <- joining Nothing "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ y ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧" 4
+      made <- joining False "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ x ↦ ⟦ Δ ⤍ 00- ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, ρ ↦ ⟦ y ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ⟧" 4
       made `shouldBe` Just (term, [], 4)
 
     it "cannot join a term with a decorator of it unless the join is lenient" $ do
-      made <- joining Nothing "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" 4
+      made <- joining False "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" 4
       made `shouldBe` Nothing
 
     it "joins a term with a decorator of it into the decorator when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧"
-      made <- joining (Just []) "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" 4
+      made <- joining True "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧" 4
       made `shouldBe` Just (term, [(5, (1, 2))], 5)
 
     it "joins a decorator with the term it decorates standing second when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ) ⟧"
-      made <- joining (Just []) "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ⟧" "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )" 7
+      made <- joining True "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ⟧" "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )" 7
       made `shouldBe` Just (term, [(8, (3, 6))], 8)
 
     it "drops every binding of the decorator but its φ when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧"
-      made <- joining (Just []) "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧" 4
+      made <- joining True "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
     it "joins a copy with a decorator of another copy into the decorator when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, neg ↦ ⟦⟧ ⟧ ⟧"
-      made <- joining (Just []) "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧" "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧" 4
+      made <- joining True "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧" "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
     it "joins a decorator of a copy with another copy standing second into the decorator when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, neg ↦ ⟦⟧ ⟧ ⟧"
-      made <- joining (Just []) "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧" 4
+      made <- joining True "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
     it "joins a term with a decorator of a decorator of it when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧ ⟧"
-      made <- joining (Just []) "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "⟦ φ ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧ ⟧" 4
+      made <- joining True "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ )" "⟦ φ ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧ ⟧" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
     it "joins a term with a decorator of it inside an argument when lenient" $ do
       term <- parseExpressionThrows "Φ.f( x ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧ )"
-      made <- joining (Just []) "Φ.f( x ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) )" "Φ.f( x ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧ )" 4
+      made <- joining True "Φ.f( x ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) )" "Φ.f( x ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ⟧ )" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
     it "joins a bare symbol with a term holding one symbol into a copy of that term when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧ ) ⟧"
-      made <- joining (Just []) "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧" 4
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧" 4
       made `shouldBe` Just (term, [(5, (1, 2))], 5)
 
     it "joins a term holding one symbol with a bare symbol standing second when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ) ⟧"
-      made <- joining (Just []) "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧ ) ⟧" "⟦ λ ⤍ 𝜎3 ⟧" 7
+      made <- joining True "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧ ) ⟧" "⟦ λ ⤍ 𝜎3 ⟧" 7
       made `shouldBe` Just (term, [(8, (6, 3))], 8)
 
     it "keeps every binding of the term holding one symbol when lenient" $ do
       term <- parseExpressionThrows "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧"
-      made <- joining (Just []) "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧" 4
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.number( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ), ρ ↦ ⟦ x ↦ ⟦⟧ ⟧, neg ↦ ⟦⟧ ⟧" 4
       fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
 
     it "replaces every place the one symbol of a term stands at when lenient" $ do
       term <- parseExpressionThrows "Φ.f( a ↦ ⟦ λ ⤍ 𝜎5 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎5 ⟧ )"
-      made <- joining (Just []) "⟦ λ ⤍ 𝜎1 ⟧" "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
       made `shouldBe` Just (term, [(5, (1, 2))], 5)
 
     it "still joins a bare symbol with the symbol a φ chain ends in into a bare one when lenient" $ do
       term <- parseExpressionThrows "⟦ λ ⤍ 𝜎8 ⟧"
-      made <- joining (Just []) "⟦ λ ⤍ 𝜎3 ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, neg ↦ ⟦⟧ ⟧" 7
+      made <- joining True "⟦ λ ⤍ 𝜎3 ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, neg ↦ ⟦⟧ ⟧" 7
       made `shouldBe` Just (term, [(8, (3, 6))], 8)
 
-    it "joins a bare symbol with a term holding three symbols when upcasting" $ do
-      term <- parseExpressionThrows "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎8 ⟧, head ↦ ⟦ λ ⤍ 𝜎9 ⟧, length ↦ ⟦ λ ⤍ 𝜎10 ⟧ )"
-      made <- joining (Just [Upcast]) "⟦ λ ⤍ 𝜎1 ⟧" "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎2 ⟧, head ↦ ⟦ λ ⤍ 𝜎3 ⟧, length ↦ ⟦ λ ⤍ 𝜎4 ⟧ )" 4
-      fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
-
-    it "pairs every symbol of the cast with the symbol at its place in the other branch" $ do
-      made <- joining (Just [Upcast]) "⟦ λ ⤍ 𝜎1 ⟧" "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎2 ⟧, head ↦ ⟦ λ ⤍ 𝜎3 ⟧, length ↦ ⟦ λ ⤍ 𝜎4 ⟧ )" 4
+    it "joins the cast of a bare symbol with the term it was cast to symbol by symbol" $ do
+      made <- joining False "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎5 ⟧, head ↦ ⟦ λ ⤍ 𝜎6 ⟧, length ↦ ⟦ λ ⤍ 𝜎7 ⟧ )" "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎2 ⟧, head ↦ ⟦ λ ⤍ 𝜎3 ⟧, length ↦ ⟦ λ ⤍ 𝜎4 ⟧ )" 7
       fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(8, (5, 2)), (9, (6, 3)), (10, (7, 4))]
 
-    it "counts the symbols of the cast into the state" $ do
-      made <- joining (Just [Upcast]) "⟦ λ ⤍ 𝜎1 ⟧" "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎2 ⟧, head ↦ ⟦ λ ⤍ 𝜎3 ⟧, length ↦ ⟦ λ ⤍ 𝜎4 ⟧ )" 4
-      fmap (\(_, _, spent) -> spent) made `shouldBe` Just 10
-
-    it "casts a bare symbol into a copy of the other branch made of fresh symbols" $ do
-      cast <- parseExpressionThrows "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎5 ⟧, head ↦ ⟦ λ ⤍ 𝜎6 ⟧, length ↦ ⟦ λ ⤍ 𝜎7 ⟧ )"
-      casts <- casting "⟦ λ ⤍ 𝜎1 ⟧" "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎2 ⟧, head ↦ ⟦ λ ⤍ 𝜎3 ⟧, length ↦ ⟦ λ ⤍ 𝜎4 ⟧ )" 4
-      casts `shouldBe` Just [(1, cast, [(5, [AtLabel "tail"]), (6, [AtLabel "head"]), (7, [AtLabel "length"])])]
-
-    it "pairs the symbols of a term with the cast of a bare symbol standing second" $ do
-      made <- joining (Just [Upcast]) "Φ.cortege( qx ↦ ⟦ λ ⤍ 𝜎2 ⟧, zw ↦ ⟦ λ ⤍ 𝜎3 ⟧ )" "⟦ λ ⤍ 𝜎7 ⟧" 7
-      fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(10, (2, 8)), (11, (3, 9))]
-
-    it "reads a symbol in the φ chain of a data object by a path through every φ" $ do
-      casts <- casting "⟦ λ ⤍ 𝜎1 ⟧" "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )" 6
-      fmap (concatMap (\(_, _, paths) -> paths)) casts `shouldBe` Just [(7, [AtPhi, AtPhi])]
-
-    it "reads the one symbol of a decorated term by its path when upcasting" $ do
-      cast <- parseExpressionThrows "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧ ) ⟧"
-      casts <- casting "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧" 4
-      casts `shouldBe` Just [(1, cast, [(5, [AtPhi, AtLabel "if", AtPhi])])]
-
-    it "joins every symbol of a formation carrying no φ when upcasting" $ do
-      term <- parseExpressionThrows "⟦ kj ↦ ⟦ λ ⤍ 𝜎14 ⟧, vy ↦ ⟦ λ ⤍ 𝜎15 ⟧, ρ ↦ ⟦⟧ ⟧"
-      made <- joining (Just [Upcast]) "⟦ λ ⤍ 𝜎9 ⟧" "⟦ kj ↦ ⟦ λ ⤍ 𝜎3 ⟧, vy ↦ ⟦ λ ⤍ 𝜎5 ⟧, ρ ↦ ⟦⟧ ⟧" 11
-      fmap (\(joint, _, _) -> joint) made `shouldBe` Just term
-
-    it "reads the symbol a formation carries by the path of that formation" $ do
-      casts <- casting "⟦ λ ⤍ 𝜎1 ⟧" "⟦ x ↦ ⟦ λ ⤍ 𝜎2, q ↦ ⟦⟧ ⟧ ⟧" 4
-      fmap (concatMap (\(_, _, paths) -> paths)) casts `shouldBe` Just [(5, [AtLabel "x"])]
-
-    it "mints a fresh symbol for every place a symbol of the other branch stands at" $ do
-      made <- joining (Just [Upcast]) "⟦ λ ⤍ 𝜎1 ⟧" "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
-      fmap (\(_, facts, _) -> facts) made `shouldBe` Just [(7, (5, 2)), (8, (6, 2))]
-
-    it "reads the paths of a bare symbol nested in a branch off that symbol" $ do
-      cast <- parseExpressionThrows "Φ.t( x ↦ ⟦ λ ⤍ 𝜎6 ⟧, y ↦ ⟦ λ ⤍ 𝜎7 ⟧ )"
-      casts <- casting "Φ.pair( a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" "Φ.pair( a ↦ Φ.t( x ↦ ⟦ λ ⤍ 𝜎3 ⟧, y ↦ ⟦ λ ⤍ 𝜎4 ⟧ ), b ↦ ⟦ λ ⤍ 𝜎5 ⟧ )" 5
-      casts `shouldBe` Just [(1, cast, [(6, [AtLabel "x"]), (7, [AtLabel "y"])])]
-
-    it "casts nothing for a bare symbol the φ chain of a formation ends in when upcasting" $ do
-      casts <- casting "⟦ λ ⤍ 𝜎3 ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, neg ↦ ⟦⟧ ⟧" 7
-      casts `shouldBe` Just []
-
-    it "joins a term holding one symbol no path reaches the lenient way when upcasting" $ do
-      term <- parseExpressionThrows "⟦ k ↦ ⟦⟧ ⟧.slice( start ↦ ⟦ λ ⤍ 𝜎5 ⟧ )"
-      made <- joining (Just [Upcast]) "⟦ λ ⤍ 𝜎1 ⟧" "⟦ k ↦ ⟦⟧ ⟧.slice( start ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
-      made `shouldBe` Just (term, [(5, (1, 2))], 5)
-
-    it "casts nothing for a term holding one symbol no path reaches" $ do
-      casts <- casting "⟦ λ ⤍ 𝜎1 ⟧" "⟦ k ↦ ⟦⟧ ⟧.slice( start ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
-      casts `shouldBe` Just []
-
-    forM_
-      [ ("a call holding symbols in its arguments" :: String, "⟦ k ↦ ⟦⟧ ⟧.slice( start ↦ ⟦ λ ⤍ 𝜎2 ⟧, len ↦ ⟦ λ ⤍ 𝜎3 ⟧ )" :: String)
-      , ("a term holding symbols in a dispatch", "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧.plus( x ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) )")
-      , ("a term holding symbols in positional arguments", "Φ.f( α0 ↦ ⟦ λ ⤍ 𝜎2 ⟧, α1 ↦ ⟦ λ ⤍ 𝜎3 ⟧ )")
-      , ("a term holding no symbol", "Φ.tuple.empty")
-      ]
-      ( \(desc, right) ->
-          it ("cannot upcast a bare symbol to " ++ desc) $ do
-            made <- joining (Just [Upcast]) "⟦ λ ⤍ 𝜎1 ⟧" right 4
-            fmap (\(joint, _, _) -> joint) made `shouldBe` Nothing
-      )
-
-    it "cannot join a bare symbol with a term holding three symbols unless upcasting" $ do
-      made <- joining (Just [Defer]) "⟦ λ ⤍ 𝜎1 ⟧" "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎2 ⟧, head ↦ ⟦ λ ⤍ 𝜎3 ⟧, length ↦ ⟦ λ ⤍ 𝜎4 ⟧ )" 4
+    it "cannot join a bare symbol with a term holding three symbols even when lenient" $ do
+      made <- joining True "⟦ λ ⤍ 𝜎1 ⟧" "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎2 ⟧, head ↦ ⟦ λ ⤍ 𝜎3 ⟧, length ↦ ⟦ λ ⤍ 𝜎4 ⟧ )" 4
       made `shouldBe` Nothing
 
     forM_
@@ -653,7 +607,7 @@ spec = do
       ]
       ( \(desc, left, right) ->
           it ("cannot leniently join " ++ desc) $ do
-            made <- joining (Just []) left right 4
+            made <- joining True left right 4
             fmap (\(joint, _, _) -> joint) made `shouldBe` Nothing
       )
 
@@ -671,8 +625,68 @@ spec = do
       ]
       ( \(desc, left, right) ->
           it ("cannot join " ++ desc) $ do
-            made <- joining Nothing left right 4
+            made <- joining False left right 4
             fmap (\(joint, _, _) -> joint) made `shouldBe` Nothing
+      )
+
+  describe "upcasted" $ do
+    let casting :: String -> String -> Int -> IO (Maybe (Int, Expression, [(Int, [Attribute])], Int))
+        casting source shape spent = do
+          one <- parseExpressionThrows source
+          two <- parseExpressionThrows shape
+          pure (upcasted one two spent)
+
+    it "casts a bare symbol into a copy of the other term made of fresh symbols" $ do
+      cast <- parseExpressionThrows "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎5 ⟧, head ↦ ⟦ λ ⤍ 𝜎6 ⟧, length ↦ ⟦ λ ⤍ 𝜎7 ⟧ )"
+      made <- casting "⟦ λ ⤍ 𝜎1 ⟧" "Φ.tuple( tail ↦ ⟦ λ ⤍ 𝜎2 ⟧, head ↦ ⟦ λ ⤍ 𝜎3 ⟧, length ↦ ⟦ λ ⤍ 𝜎4 ⟧ )" 4
+      made `shouldBe` Just (1, cast, [(5, [AtLabel "tail"]), (6, [AtLabel "head"]), (7, [AtLabel "length"])], 7)
+
+    it "counts the symbols of the cast into the state" $ do
+      made <- casting "⟦ λ ⤍ 𝜎9 ⟧" "Φ.pair( left ↦ ⟦ λ ⤍ 𝜎2 ⟧, right ↦ ⟦ λ ⤍ 𝜎3 ⟧ )" 12
+      fmap (\(_, _, _, spent) -> spent) made `shouldBe` Just 14
+
+    it "reads a symbol in the φ chain of a data object by a path through every φ" $ do
+      made <- casting "⟦ λ ⤍ 𝜎1 ⟧" "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )" 6
+      fmap (\(_, _, paths, _) -> paths) made `shouldBe` Just [(7, [AtPhi, AtPhi])]
+
+    it "reads the one symbol of a decorated term by its path" $ do
+      cast <- parseExpressionThrows "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧ ) ⟧"
+      made <- casting "⟦ λ ⤍ 𝜎1 ⟧" "⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧" 4
+      made `shouldBe` Just (1, cast, [(5, [AtPhi, AtLabel "if", AtPhi])], 5)
+
+    it "casts every symbol of a formation carrying no φ" $ do
+      cast <- parseExpressionThrows "⟦ kj ↦ ⟦ λ ⤍ 𝜎12 ⟧, vy ↦ ⟦ λ ⤍ 𝜎13 ⟧, ρ ↦ ⟦⟧ ⟧"
+      made <- casting "⟦ λ ⤍ 𝜎9 ⟧" "⟦ kj ↦ ⟦ λ ⤍ 𝜎3 ⟧, vy ↦ ⟦ λ ⤍ 𝜎5 ⟧, ρ ↦ ⟦⟧ ⟧" 11
+      fmap (\(_, term, _, _) -> term) made `shouldBe` Just cast
+
+    it "reads the symbol a formation carries by the path of that formation" $ do
+      made <- casting "⟦ λ ⤍ 𝜎1 ⟧" "⟦ x ↦ ⟦ λ ⤍ 𝜎2, q ↦ ⟦⟧ ⟧ ⟧" 4
+      fmap (\(_, _, paths, _) -> paths) made `shouldBe` Just [(5, [AtLabel "x"])]
+
+    it "mints a fresh symbol for every place a symbol of the other term stands at" $ do
+      made <- casting "⟦ λ ⤍ 𝜎1 ⟧" "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧ )( b ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" 4
+      fmap (\(_, _, paths, _) -> paths) made `shouldBe` Just [(5, [AtLabel "a"]), (6, [AtLabel "b"])]
+
+    it "casts a bare symbol into the φ chain of a formation ending in a symbol" $ do
+      cast <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎8 ⟧, neg ↦ ⟦⟧ ⟧"
+      made <- casting "⟦ λ ⤍ 𝜎3 ⟧" "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, neg ↦ ⟦⟧ ⟧" 7
+      fmap (\(_, term, _, _) -> term) made `shouldBe` Just cast
+
+    it "cannot cast a term that is no bare symbol" $ do
+      made <- casting "Φ.pair( a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" "Φ.pair( a ↦ Φ.t( x ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), b ↦ ⟦ λ ⤍ 𝜎5 ⟧ )" 5
+      made `shouldBe` Nothing
+
+    forM_
+      [ ("a call holding a symbol no path reaches" :: String, "⟦ k ↦ ⟦⟧ ⟧.slice( start ↦ ⟦ λ ⤍ 𝜎2 ⟧ )" :: String)
+      , ("a call holding symbols in its arguments", "⟦ k ↦ ⟦⟧ ⟧.slice( start ↦ ⟦ λ ⤍ 𝜎2 ⟧, len ↦ ⟦ λ ⤍ 𝜎3 ⟧ )")
+      , ("a term holding symbols in a dispatch", "Φ.f( a ↦ ⟦ λ ⤍ 𝜎2 ⟧.plus( x ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) )")
+      , ("a term holding symbols in positional arguments", "Φ.f( α0 ↦ ⟦ λ ⤍ 𝜎2 ⟧, α1 ↦ ⟦ λ ⤍ 𝜎3 ⟧ )")
+      , ("a term holding no symbol", "Φ.tuple.empty")
+      ]
+      ( \(desc, shape) ->
+          it ("cannot cast a bare symbol to " ++ desc) $ do
+            made <- casting "⟦ λ ⤍ 𝜎1 ⟧" shape 4
+            made `shouldBe` Nothing
       )
 
   describe "thrown" $ do

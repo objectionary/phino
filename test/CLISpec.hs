@@ -1328,7 +1328,7 @@ spec = do
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
 
     it "names every block of a --symbolic entry in its help" $
-      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"rewrite\"", "\"symbolize\"", "\"join\"", "\"lenient\"", "\"defer\"", "\"terminators\""]
+      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"rewrite\"", "\"symbolize\"", "\"join\"", "\"lenient\"", "\"unfold\"", "\"upcast\"", "\"terminators\""]
 
     it "dataizes simple expression" $
       withStdin "[[ D> 01- ]]" $
@@ -2210,10 +2210,10 @@ spec = do
             records <- readProtocol path
             lines records `shouldContain` ["    <reminted symbol=\"𝜎3\">𝜎1 𝜎2<e>⟦ φ ↦ 𝜎1:λ, k ↦ 𝜎2:λ ⟧</e></reminted>"]
 
-        it "writes the path of every symbol a join cast a bare symbol into" $
+        it "writes the path of every symbol an upcast line cast a bare symbol into" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [upcast]\n  𝑛: 𝑛3\n") $ \forks ->
+            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛2}\n  join:\n    𝑛4: [𝑛3, 𝑛2]\n  𝑛: 𝑛4\n") $ \forks ->
               withStdin "⟦ y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ sh ↦ ⟦ λ ⤍ 𝜎2 ⟧, zj ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
@@ -2933,8 +2933,8 @@ spec = do
               ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
               ["⟦ if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎3:λ ⟧, φ ↦ if( FF-:Δ, 00-:Δ ) ⟧"]
 
-    describe "a deferring join" $ do
-      let deferring = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defer]\n  𝑛: ⟦ φ ↦ 𝑛3 ⟧\n"
+    describe "a deferring unfold" $ do
+      let deferring = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  unfold:\n    𝑛3: {of: 𝑛2, defer: true}\n  join:\n    𝑛4: [𝑛1, 𝑛3]\n  𝑛: ⟦ φ ↦ 𝑛4 ⟧\n"
           counting = deferring <> T.pack "- λ: L_inc\n  dataize:\n    𝛿1: $.x\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
           recordedWith :: T.Text -> [String] -> String -> IO [String]
           recordedWith entries options program =
@@ -2959,7 +2959,7 @@ spec = do
                      , "    <bind meta=\"𝑛2·1\">𝑛·1·1</bind>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><attr name=\"tup\">𝜎1</attr></with><e>⟦ tup ↦ 𝜎1:λ, φ ↦ tup.next ⟧</e></deferred>"
                      , "    <joined symbol=\"𝜎4\">𝜎2 𝜎3</joined>"
-                     , "    <bind meta=\"𝑛3·1\">𝜎4:λ</bind>"
+                     , "    <bind meta=\"𝑛4·1\">𝜎4:λ</bind>"
                      , "    <built meta=\"𝑛·1·2\">𝜎4:λ:φ</built>"
                      , "    <answer meta=\"𝑛·1·3\">𝜎4:λ:φ</answer>"
                      , "  </evaluate>"

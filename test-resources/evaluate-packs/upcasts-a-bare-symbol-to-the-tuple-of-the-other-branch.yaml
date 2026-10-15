@@ -3,20 +3,30 @@
 ---
 # yamllint disable rule:line-length
 # The fork of 'bytes.array' from #1914: one branch is a bare symbol, the other
-# a copy of 'Φ.tuple' holding three symbols, so a lenient join cannot tell
-# which of them the bare one pairs with. An entry that upcasts casts '𝜎1'
-# into a copy of the tuple whose every symbol is read off '𝜎1' by a path,
-# then joins the two tuples symbol by symbol. The program reads 'length' off
-# the answer and gets the symbol standing for either length.
+# a tuple holding three symbols, so a lenient join cannot tell which of them
+# the bare one pairs with. A 'rewrite' line spells the tuple as the call
+# 'Φ.tuple( … )' it was made of, and an 'upcast' line casts '𝜎1' into a copy
+# of that call whose every symbol is read off '𝜎1' by a path (#1921). The
+# 'join' line then pairs the two calls symbol by symbol, through their
+# arguments. The program reads 'length' off the answer and gets the symbol
+# standing for either length.
 symbolic: |
   - λ: L_fork
     morph:
       𝑛1: $.a
       𝑛2: $.b
+    rewrite:
+      𝑛3:
+        of: 𝑛2
+        rules:
+          - name: called
+            pattern: ⟦ tail ↦ 𝑒1, head ↦ 𝑒2, length ↦ 𝑒3, !B ⟧
+            result: Φ.tuple( tail ↦ 𝑒1, head ↦ 𝑒2, length ↦ 𝑒3 )
+    upcast:
+      𝑛4: {of: 𝑛1, to: 𝑛3}
     join:
-      𝑛3: [𝑛1, 𝑛2]
-    lenient: [upcast]
-    𝑛: 𝑛3
+      𝑛5: [𝑛4, 𝑛3]
+    𝑛: 𝑛5
 location: 'Q.y'
 input: |
   ⟦
@@ -37,13 +47,19 @@ protocol: |
         𝑛·1·2 := 𝑛·1·1( head ↦ 𝜎3:λ )
         𝑛·1·3 := 𝑛·1·2( length ↦ 𝜎4:λ )
       𝑛2·1 := 𝑛·1·3  # 𝕄(ξ.b)
-      upcast(𝜎1) := ⟦ tail ↦ 𝜎5:λ, head ↦ 𝜎6:λ, length ↦ 𝜎7:λ, empty ↦ ⟦⟧ ⟧
+      𝑛3·1 := 𝑛·1·3  # 𝑛2
+      upcast(𝜎1) := Φ.tuple( tail ↦ 𝜎5:λ, head ↦ 𝜎6:λ, length ↦ 𝜎7:λ )
         𝜎5 := 𝜎1.tail
         𝜎6 := 𝜎1.head
         𝜎7 := 𝜎1.length
+      𝑛4·1 := Φ.tuple( tail ↦ 𝜎5:λ, head ↦ 𝜎6:λ, length ↦ 𝜎7:λ )  # 𝑛1
       𝔻(𝜎8:λ) ∈ { 𝔻(𝜎5:λ), 𝔻(𝜎2:λ) }
       𝔻(𝜎9:λ) ∈ { 𝔻(𝜎6:λ), 𝔻(𝜎3:λ) }
       𝔻(𝜎10:λ) ∈ { 𝔻(𝜎7:λ), 𝔻(𝜎4:λ) }
-      𝑛3·1 := ⟦ tail ↦ 𝜎8:λ, head ↦ 𝜎9:λ, length ↦ 𝜎10:λ, empty ↦ ⟦⟧ ⟧  # [𝑛1, 𝑛2]
-      𝑛·1·4 := ⟦ tail ↦ 𝜎8:λ, head ↦ 𝜎9:λ, length ↦ 𝜎10:λ, empty ↦ ⟦⟧ ⟧  # 𝑛
-      𝑛·1·5 := ⟦ tail ↦ 𝜎8:λ, head ↦ 𝜎9:λ, length ↦ 𝜎10:λ, empty ↦ ⟦⟧ ⟧  # 𝕄(𝑛·1·4)
+      𝑛5·1 := Φ.tuple( tail ↦ 𝜎8:λ, head ↦ 𝜎9:λ, length ↦ 𝜎10:λ )  # [𝑛4, 𝑛3]
+      𝑛·1·4 := Φ.tuple( tail ↦ 𝜎8:λ, head ↦ 𝜎9:λ, length ↦ 𝜎10:λ )  # 𝑛
+      𝕄(𝑛·1·4):
+        𝑛·1·5 := Φ.tuple( tail ↦ 𝜎8:λ )
+        𝑛·1·6 := 𝑛·1·5( head ↦ 𝜎9:λ )
+        𝑛·1·7 := 𝑛·1·6( length ↦ 𝜎10:λ )
+      𝑛·1·8 := 𝑛·1·7  # 𝕄(𝑛·1·4)

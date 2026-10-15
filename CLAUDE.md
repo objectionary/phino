@@ -162,7 +162,8 @@ line is bound to and binding a meta of its own to the answer (`evaluated` of
 `Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
 formation with no λ and ⊥ as they are, never fires a terminator of its entry,
 and never fires its answer again, so another call takes another line. The
-lines of `evaluate`, `rewrite`, `stay`, `symbolize` and `join` are one list,
+lines of `evaluate`, `unfold`, `rewrite`, `stay`, `symbolize`, `upcast` and
+`join` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
 line reads, keeping the order of the blocks where no meta decides, and refuses
 a line reading what nothing binds or what it binds itself (#1903). No two
@@ -190,38 +191,44 @@ symbols, each of which the protocol explains (#1909).
 
 A bare symbol, `⟦ λ ⤍ 𝜎k ⟧`, joins too: the `join` of `Lambdas.hs` pairs it
 with the symbol the φ chain of the other branch ends in, and answers a bare
-fresh symbol, dropping the methods. An entry naming a `lenient` list, empty or
-not, is lenient: `_lenient` of `Lambdas.hs` holds the options of the list and
-refuses a name it does not know (#1913). Under it a chain ending in no
-symbol, such as one stopping at a call of an object of the world, still joins
-if the other branch holds exactly one symbol (`goSole` of `joined`, #1817):
-the answer is a copy of that branch with the symbol replaced by a fresh one,
-and nothing outside the two branches is read. Under `lenient: [upcast]`
-(`Upcast` of `Lambdas.hs`) `goUpcast` of `joined` comes first (#1914): it casts
-the bare symbol into a copy of the other branch whose every symbol is a fresh
-one, read off the bare symbol by a path through the attributes of formations
-and the arguments of copies of objects of the world (`goReached`), and pairs
-every fresh symbol with the symbol at its place in the branch. `paired` of
-`Evaluate.hs` writes the cast as `upcast(…)` (`EvUpcast`) ahead of the pairs.
-A symbol no path reaches, or no symbol at all, refuses the cast, and `goSole`
-takes over. When that fails too, a lenient
-entry morphs the φ of a branch that is a formation with no λ whose φ reads ξ,
-fires what it comes to through 𝔼 the way an `evaluate` line does, and joins
-once more (`reduced` of `paired` in `Evaluate.hs`, #1885). The step is taken
-once, and it fires through `fire`, as an `evaluate` line does, so the step
-budget and `--acyclic` bound it. Under `lenient: [defer]` (`Defer` of
-`Lambdas.hs`) the step never enters a copy, a formation with no λ, no void
-and code in φ, one of whose arguments other than φ and ρ reads to a bare
-symbol: `deferred` of `Evaluate.hs` reduces every argument with no entry of the
-file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it answers a fresh symbol instead and
-writes `deferred(…)` (`EvDeferred`), naming the call the copy stands for by the
-object of the world it was made of, the way the record of 0.0.153 did (#1892).
-A copy the step does enter gets a fresh symbol too once `--acyclic` refuses
-the firing its φ comes to: `fire` asks `admitting` of `Morph.hs` and hands a
-refusal to the function it is given, `refused` for an `evaluate` line and for
-a step that does not defer, `severed` for one that does, which writes the
+fresh symbol, dropping the methods. A `join` line only matches (#1921): an
+entry naming a `lenient` list is lenient, `_lenient` of `Lambdas.hs` is a
+`Bool`, and the list takes no option, refusing `defer` and `upcast` with a
+pointer to the blocks that took their work and any other name as unknown.
+Under it a chain ending in no symbol, such as one stopping at a call of an
+object of the world, still joins if the other branch holds exactly one symbol
+(`goSole` of `joined`, #1817): the answer is a copy of that branch with the
+symbol replaced by a fresh one, and nothing outside the two branches is read.
+
+An `upcast` line, `𝑛3: {of: 𝑛1, to: 𝑛2}` (`Upcasted` of `Lambdas.hs`, `cast`
+of `Evaluate.hs`, #1914, #1921), casts the term of `of`, when it is a bare
+symbol, into a copy of the term of `to` whose every symbol is a fresh one,
+read off the bare symbol by a path through the attributes of formations and
+the arguments of copies of objects of the world (`upcasted` of `Lambdas.hs`),
+writes the cast as `upcast(…)` (`EvUpcast`), and binds the copy. Any other
+term, or a shape with no symbol or one no path reaches, is bound as it is. A
+`join` compares only the φ chain of two formations (#1293), so a cast into a
+formation pairs nothing else, and an entry spells such a copy as its call with
+a `rewrite` line first.
+
+An `unfold` line, `𝑛3: 𝑛1` or `𝑛3: {of: 𝑛1, defer: true}` (`Unfolded` of
+`Lambdas.hs`, `unfolded` of `Evaluate.hs`, #1885, #1921), morphs the φ of a
+term that is a formation with no λ whose φ reads ξ, fires what it comes to
+through 𝔼 the way an `evaluate` line does, and binds the answer; any other
+term is bound as it is. It fires through `fire`, as an `evaluate` line does,
+so the step budget and `--acyclic` bound it. With `defer: true` the line never
+enters a copy, a formation with no λ, no void and code in φ, one of whose
+arguments other than φ and ρ reads to a bare symbol: `deferred` of `unfolded`
+reduces every argument with no entry of the file, and once one comes to
+`⟦ λ ⤍ 𝜎k ⟧` it binds a fresh symbol instead and writes `deferred(…)`
+(`EvDeferred`), naming the call the copy stands for by the object of the world
+it was made of, the way the record of 0.0.153 did (#1892). A copy the line
+does enter gets a fresh symbol too once `--acyclic` refuses the firing its φ
+comes to: `fire` asks `admitting` of `Morph.hs` and hands a refusal to the
+function it is given, `refused` for an `evaluate` line and for an `unfold`
+line that does not defer, `severed` for one that does, which writes the
 symbol and the call on the `looped(…)` line (`EvLooped`, #1895). Before
-either line is written, `argued` of `paired` works out every argument of the
+either line is written, `argued` of `unfolded` works out every argument of the
 call that is no bare symbol: it morphs the argument in the copy, at a site
 such as `𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluate`
 line does, and writes every step to the protocol, so the markup names the

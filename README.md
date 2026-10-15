@@ -152,11 +152,11 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 `--max-steps` work on it unchanged. It may name any meta the entry bound,
 those of the two blocks below among them.
 
-An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `rewrite`,
-`stay`, `symbolize`, `join`, `lenient`, `terminators` and `𝑛`, and any other
-key, such as a misspelled `lenent` or a `defer` that now belongs in the list
-of `lenient`, refuses the whole file, so a typo never drops a block or an
-option without a word.
+An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `unfold`,
+`rewrite`, `stay`, `symbolize`, `upcast`, `join`, `lenient`, `terminators` and
+`𝑛`, and any other key, such as a misspelled `lenent` or a `defer` that now
+belongs to a line of `unfold`, refuses the whole file, so a typo never drops a
+block or an option without a word.
 
 ### Firing what an operand came to
 
@@ -196,9 +196,86 @@ The protocol writes the firing of a line as a block of its own, commented with
 the meta it fired, `𝔼(L_second):  # 𝔼(𝑛2)`, and the line binding the answer
 the same way, `𝑛3·1 := 𝑛·3·2  # 𝔼(𝑛2)`.
 
+### Unfolding an ordinary object
+
+A branch may be an ordinary object, such as
+`⟦ φ ↦ ξ.eq, eq ↦ ⟦ λ ⤍ L_eq ⟧ ⟧`: a formation with no `λ`, whose `φ` reads
+an attribute of the object itself. Morphing stops at a formation, so the value
+of such a branch stays one call away, and it joins with nothing. There is a
+fourth block, `unfold`, and each line of it morphs the `φ` of such a term,
+fires what that comes to, the way an `evaluate` line does, and binds an
+expression meta of its own to the answer:
+
+```yaml
+- λ: L_fork
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  unfold:
+    𝑛3: 𝑛1
+  join:
+    𝑛4: [𝑛3, 𝑛2]
+  𝑛: 𝑛4
+```
+
+The right-hand side of a line names a meta bound by `morph` or by another line
+of the entry, and nothing else. A term whose `φ` reads nothing of its own
+object, such as `⟦ φ ↦ Φ.bool( … ) ⟧`, is bound as it stands, since morphing
+it only expands the call, and so is a term that is no such formation at all.
+The step is written to the protocol like any operand. Its firing counts
+against `--max-steps`, as one of an `evaluate` line does, and `--acyclic`
+cuts it when it fires again what it fired before.
+
+That step gets stuck on a term that is a copy, such as
+`Φ.step( tup ↦ Φ.items.tail )`, one of whose arguments reads to a bare
+symbol `⟦ λ ⤍ 𝜎1 ⟧`: morphing its `φ`, `tup.next`, asks `𝜎1` for an
+attribute nobody knows. A line that says `defer: true` does not enter such a
+copy. It binds its meta to a fresh symbol instead and writes what the symbol
+stands for:
+
+```yaml
+  unfold:
+    𝑛3: {of: 𝑛2, defer: true}
+```
+
+```text
+deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
+```
+
+The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
+`<with>` element with an `<attr name="tup">𝜎1</attr>` per argument, and the
+copy itself in `<e>`. The `of` is left out when the world declares no object
+the copy was made of. A copy whose arguments read to no bare symbol is entered
+as before. The short `𝑛3: 𝑛2` stands for `𝑛3: {of: 𝑛2, defer: false}`.
+
+An argument that is no bare symbol, such as `w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ )`, is
+worked out before the line is written. The entry morphs it in the copy, fires
+what that comes to, the way an `evaluate` line does, and writes every step to
+the protocol under `𝕄(𝑛2.w):`. The line then names the object the firing
+answered, `Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·2 )`, and so does the markup,
+`<attr name="w">𝑛·2·2</attr>`. A reader follows the meta to the application
+that made the object. An argument whose morph gets stuck, is cut or runs out
+of steps is written as the code spells it, and as `?` in the markup.
+
+A deferring line also answers a copy it did enter when `--acyclic` cuts the
+firing its `φ` comes to. With
+`rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧`, the copy
+`Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )` reads to no bare symbol, so the line enters it,
+comes to the same fork, and fires it again, and the cut refuses that firing.
+A line that does not defer loses the whole firing to the cut. A deferring one
+binds its meta to a fresh symbol and writes it on the `looped` line:
+
+```text
+looped(𝑛·1·3) := 𝜎3  # 𝔼(𝑛2), proven
+```
+
+The markup writes it as `<looped symbol="𝜎3" … of="Φ.rec">` with the same
+`<with>` element a `deferred` record holds, here `<attr name="n">𝜎2</attr>`,
+since an argument whose `φ` holds a bare symbol counts as that symbol.
+
 ### Rewriting a term into another shape
 
-There is a fourth block, `rewrite`, and it reduces nothing. Each line of it
+There is a fifth block, `rewrite`, and it reduces nothing. Each line of it
 takes a term another meta of the entry is already bound to, named under `of`,
 applies a list of ordinary rules to it, spelled with the very `pattern`,
 `result`, `when` and meta variables a rule file uses, and binds an expression
@@ -281,7 +358,7 @@ can pair.
 
 ### Dropping the ρ of a dispatch
 
-There is a fifth block, `stay`, and it reduces nothing either. Each line of it
+There is a sixth block, `stay`, and it reduces nothing either. Each line of it
 takes a term another meta of the entry is already bound to and binds an
 expression meta of its own to that term with every `( ρ ↦ … )` dropped that is
 applied to a dispatch:
@@ -324,7 +401,7 @@ commented with the meta it took.
 
 ### Standing data into unknowns
 
-There is a sixth block, `symbolize`, and it reduces nothing. It takes a term
+There is a seventh block, `symbolize`, and it reduces nothing. It takes a term
 another meta of the entry is already bound to and binds an expression meta of
 its own to that same term with every datum in it standing for an unknown:
 
@@ -365,12 +442,74 @@ keeps a datum three levels down where a branch computed from an unknown keeps
 `⟦ λ ⤍ 𝜎 ⟧`. A `Δ` against a `λ` is a difference in kind and not in value, and
 after the stage both branches carry `⟦ λ ⤍ 𝜎 ⟧` where they differ.
 
+### Casting a bare symbol into a shape
+
+A bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, says nothing of the object it stands for, while
+the other branch of a fork may be a copy of `Φ.tuple` with a symbol in `tail`,
+in `head` and in `length`, as one in `bytes.array` is. There is an eighth
+block, `upcast`, and each line of it takes the bare symbol for an object of
+the same kind as another term. It casts the symbol under `of` into a copy of
+the term under `to` where every symbol is a fresh one, read off the bare
+symbol by the path to its place, and binds an expression meta of its own to
+the copy:
+
+```yaml
+- λ: L_fork
+  morph:
+    𝑛1: $.left
+    𝑛2: $.right
+  rewrite:
+    𝑛3:
+      of: 𝑛2
+      rules:
+        - name: called
+          pattern: ⟦ tail ↦ 𝑒1, head ↦ 𝑒2, length ↦ 𝑒3, !B ⟧
+          result: Φ.tuple( tail ↦ 𝑒1, head ↦ 𝑒2, length ↦ 𝑒3 )
+  upcast:
+    𝑛4: {of: 𝑛1, to: 𝑛3}
+  join:
+    𝑛5: [𝑛4, 𝑛3]
+  𝑛: 𝑛5
+```
+
+Both sides name metas bound by `morph` or by other lines of the entry. The
+`rewrite` line spells the tuple 𝕄 made as the call it was made of, for the
+reason the end of this section gives. The `join` line then pairs the two
+calls symbol by symbol, minting a symbol for every pair the usual way:
+
+```text
+upcast(𝜎1) := Φ.tuple( tail ↦ 𝜎5:λ, head ↦ 𝜎6:λ, length ↦ 𝜎7:λ )
+  𝜎5 := 𝜎1.tail
+  𝜎6 := 𝜎1.head
+  𝜎7 := 𝜎1.length
+𝔻(𝜎8:λ) ∈ { 𝔻(𝜎5:λ), 𝔻(𝜎2:λ) }
+𝔻(𝜎9:λ) ∈ { 𝔻(𝜎6:λ), 𝔻(𝜎3:λ) }
+𝔻(𝜎10:λ) ∈ { 𝔻(𝜎7:λ), 𝔻(𝜎4:λ) }
+```
+
+A program reading `length` off the answer gets `𝜎10`, which stands for either
+length, and does not get stuck. A path walks through the attributes of a
+formation and the arguments of a copy of an object of the world, such as
+`Φ.tuple( … )`. A `φ` is an attribute like any other, so the symbol of
+`Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )` is read as `𝜎1.φ.φ`. A term
+under `of` that is no bare symbol is bound as it stands, and so is the bare
+symbol itself when the term under `to` holds no symbol, or one no path
+reaches, such as one in an argument of a call `x.slice( start ↦ 𝜎2 )`. The
+term alone does not prove that both branches are objects of one kind. The
+record is what lets a reader check that against what it knows about the
+program.
+
+A `join` compares only the `φ` chain of two formations, so a cast into a
+formation, which is what 𝕄 makes of a copy, pairs nothing but that chain.
+An entry that needs the arguments paired spells the copy as the call it was
+made of first, with a `rewrite` line such as the one above.
+
 ### Joining the branches of a fork
 
 A branching λ function answers neither of its branches. Which one the program
 takes is decided by a value nobody worked out, so handing one of them through
 would drop the branch point from the program altogether and a reader would see
-the condition computed and thrown away. `join` is the seventh block, and it
+the condition computed and thrown away. `join` is the ninth block, and it
 reduces nothing either: it takes two metas the entry has bound already and
 binds one of its own to the two terms joined into one.
 
@@ -460,10 +599,10 @@ that term, in either order, and answers `⟦ φ ↦ X ⟧`, with symbols minted 
 chain is taken for the decorator. The answer drops the `ρ` and the other
 attributes of the decorator, so it is not exactly the object either branch
 made, which is why an entry is strict unless it says otherwise. Dataization
-still reaches the same data through it. The list names the options of the
-lenient join, described below, and is empty when the entry needs none. An
-option phino does not know, such as `lenient: [defr]`, is refused when the
-file is read, and so is a lenient entry with no `join` line.
+still reaches the same data through it. The list takes no option and stays
+empty. A name in it is refused when the file is read, `defer` and `upcast`
+among them, since an `unfold` line and an `upcast` line now do their work, and
+so is a lenient entry with no `join` line.
 
 A lenient entry also joins a bare symbol with a term that holds exactly one
 symbol anywhere inside. In `bool.and` one branch comes to a bare
@@ -474,91 +613,10 @@ answers a copy of the second term with `𝜎2` replaced by a fresh `𝜎3`, whic
 stands for either `𝜎1` or `𝜎2`. The copy keeps every binding of the term, `ρ`
 included. A term with no symbol, or with two, is still refused.
 
-An entry that says `lenient: [upcast]` joins a bare symbol with a term holding
-any number of symbols. In `bytes.array` one branch of a fork comes to a bare
-`⟦ λ ⤍ 𝜎1 ⟧` and the other to a copy of `Φ.tuple` with a symbol in `tail`, in
-`head` and in `length`. The entry takes the bare symbol for an object of the
-same kind as the other branch. It casts `𝜎1` into a copy of that branch where
-every symbol is a fresh one, read off `𝜎1` by the path to its place. Then it
-joins the two copies symbol by symbol, minting a symbol for every pair the
-usual way:
-
-```text
-upcast(𝜎1) := ⟦ tail ↦ 𝜎5:λ, head ↦ 𝜎6:λ, length ↦ 𝜎7:λ, empty ↦ ⟦⟧ ⟧
-  𝜎5 := 𝜎1.tail
-  𝜎6 := 𝜎1.head
-  𝜎7 := 𝜎1.length
-𝔻(𝜎8:λ) ∈ { 𝔻(𝜎5:λ), 𝔻(𝜎2:λ) }
-𝔻(𝜎9:λ) ∈ { 𝔻(𝜎6:λ), 𝔻(𝜎3:λ) }
-𝔻(𝜎10:λ) ∈ { 𝔻(𝜎7:λ), 𝔻(𝜎4:λ) }
-```
-
-A program reading `length` off the answer gets `𝜎10`, which stands for either
-length, and does not get stuck. A path walks through the attributes of a
-formation and the arguments of a copy of an object of the world, such as
-`Φ.tuple( … )`. A `φ` is an attribute like any other, so the symbol of
-`Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )` is read as `𝜎1.φ.φ`. A symbol no
-path reaches, such as one in an argument of a call `x.slice( start ↦ 𝜎2 )`,
-refuses the upcast, and so does a term with no symbol. The join then goes on
-as it would without the option, so a term holding one symbol no path reaches
-still joins the way the paragraph above says. The term alone does not prove
-that both branches are objects of one kind. The record is what lets a reader
-check that against what it knows about the program.
-
-A lenient entry takes one more step before it gives up. A branch may be an
-ordinary object, such as `⟦ φ ↦ ξ.eq, eq ↦ ⟦ λ ⤍ L_eq ⟧ ⟧`: a formation with
-no `λ`, whose `φ` reads an attribute of the object itself. Morphing stops at a
-formation, so the value of such a branch stays one call away and it joins with
-nothing. When a join fails, a lenient entry morphs the `φ` of every such
-branch, fires what it comes to, the way an `evaluate` line does, and joins
-once more. The step is taken once and is written to the protocol like any
-operand. Its firing counts against `--max-steps`, as one of an `evaluate`
-line does, and `--acyclic` cuts it when it fires again what it fired before.
-A branch whose `φ` reads nothing of its own object, such as
-`⟦ φ ↦ Φ.bool( … ) ⟧`, is left as it is, since morphing it only expands the
-call.
-
-That step gets stuck on a branch that is a copy, such as
-`Φ.step( tup ↦ Φ.items.tail )`, one of whose arguments reads to a bare
-symbol `⟦ λ ⤍ 𝜎1 ⟧`: morphing its `φ`, `tup.next`, asks `𝜎1` for an
-attribute nobody knows. An entry that says `lenient: [defer]` does not enter
-such a copy. It answers the copy with a fresh symbol, joins that symbol
-instead, and writes what it stands for:
-
-```text
-deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
-```
-
-The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
-`<with>` element with an `<attr name="tup">𝜎1</attr>` per argument, and the
-copy itself in `<e>`. The `of` is left out when the world declares no object
-the copy was made of. A copy whose arguments read to no bare symbol is entered
-as before.
-
-An argument that is no bare symbol, such as `w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ )`, is
-worked out before the line is written. The entry morphs it in the copy, fires
-what that comes to, the way an `evaluate` line does, and writes every step to
-the protocol under `𝕄(𝑛2.w):`. The line then names the object the firing
-answered, `Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·2 )`, and so does the markup,
-`<attr name="w">𝑛·2·2</attr>`. A reader follows the meta to the application
-that made the object. An argument whose morph gets stuck, is cut or runs out
-of steps is written as the code spells it, and as `?` in the markup.
-
-The same entry answers a copy it did enter when `--acyclic` cuts the firing
-its `φ` comes to. With `rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧`,
-the copy `Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )` reads to no bare symbol, so the step
-enters it, comes to the same fork, and fires it again, and the cut refuses
-that firing. A lenient entry whose list does not name `defer` loses the whole
-firing to the cut. A deferring one answers the copy with a fresh symbol, joins
-that symbol, and writes it on the `looped` line:
-
-```text
-looped(𝑛·1·3) := 𝜎3  # 𝔼(𝑛2), proven
-```
-
-The markup writes it as `<looped symbol="𝜎3" … of="Φ.rec">` with the same
-`<with>` element a `deferred` record holds, here `<attr name="n">𝜎2</attr>`,
-since an argument whose `φ` holds a bare symbol counts as that symbol.
+A bare symbol meeting a term with more symbols than one is no join, lenient
+or not. The entry casts it into the shape of that term first, with an
+`upcast` line, and a branch one call away from its value is fired first with
+an `unfold` line.
 
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and
@@ -604,10 +662,10 @@ section on `--protocol` below shows one.
 
 ### The order of the lines
 
-The lines of `evaluate`, `rewrite`, `stay`, `symbolize` and `join` run in the
-order of the metas they read, not in the order of their blocks. A line runs
-once every meta it reads is bound, so this entry fires what its `rewrite` line
-unwrapped:
+The lines of `evaluate`, `unfold`, `rewrite`, `stay`, `symbolize`, `upcast`
+and `join` run in the order of the metas they read, not in the order of their
+blocks. A line runs once every meta it reads is bound, so this entry fires
+what its `rewrite` line unwrapped:
 
 ```yaml
 - λ: L_pick
@@ -1276,7 +1334,7 @@ symbols the term holds, separated by a space the way `<joined>` lists its pair,
 and `<e>` holds the term the symbol stands for.
 
 `<upcast symbol="𝜎1"><path symbol="𝜎5">tail</path>…<e>…</e></upcast>` is a
-bare symbol a lenient join cast into a copy of the other branch, which the
+bare symbol an `upcast` line cast into a copy of another term, which the
 text format writes as `upcast(𝜎1) := …` with a line `𝜎5 := 𝜎1.tail` per fresh
 symbol. The bare symbol stands in `symbol`. Every `<path>` holds a fresh symbol
 of the copy in `symbol` and, as its text, the attributes that read it off the

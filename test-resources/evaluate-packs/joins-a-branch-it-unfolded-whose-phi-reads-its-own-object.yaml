@@ -5,10 +5,10 @@
 # A fork whose one branch is an ordinary object: a formation with no λ, whose
 # value sits in a φ that reads an attribute of the object itself. 𝕄 stops at
 # that formation, so the branch and a bare symbol differ in shape and depth,
-# and the join alone cannot pair them. An entry that says 'lenient: []'
-# takes one more step before it gets stuck: it morphs the φ of that branch,
-# fires what it comes to through 𝔼, the way 'morph' and 'evaluate' lines do,
-# and joins once more, now two bare symbols (#1885).
+# and the join alone cannot pair them. An 'unfold' line takes the step the
+# join used to hide (#1921): it morphs the φ of that branch, fires what it
+# comes to through 𝔼, the way an 'evaluate' line does, and binds the answer,
+# so the 'join' line pairs two bare symbols (#1885).
 symbolic: |
   - λ: L_eq
     𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
@@ -16,10 +16,11 @@ symbolic: |
     morph:
       𝑛1: $.a
       𝑛2: $.b
+    unfold:
+      𝑛3: 𝑛1
     join:
-      𝑛3: [𝑛1, 𝑛2]
-    lenient: []
-    𝑛: 𝑛3
+      𝑛4: [𝑛3, 𝑛2]
+    𝑛: 𝑛4
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ξ.eq, eq ↦ ⟦ λ ⤍ L_eq ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
 result: '𝜎3:λ'
@@ -28,12 +29,12 @@ protocol: |
     𝔼(L_fork):
       𝑛1·1 := ⟦ φ ↦ eq, eq ↦ L_eq:λ ⟧  # 𝕄(ξ.a)
       𝑛2·1 := 𝜎1:λ:φ  # 𝕄(ξ.b)
-      𝑛1·1 := L_eq:λ  # 𝕄(𝑛1.φ)
+      𝑛3·1 := L_eq:λ  # 𝕄(𝑛1.φ)
       𝔼(L_eq):  # 𝔼(𝑛1)
         𝑛·2·1 := 𝜎2:λ:φ  # 𝑛
         𝑛·2·2 := 𝜎2:λ:φ  # 𝕄(𝑛·2·1)
-      𝑛1·1 := 𝑛·2·2  # 𝔼(𝑛1)
+      𝑛3·1 := 𝑛·2·2  # 𝔼(𝑛1)
       𝔻(𝜎3:λ) ∈ { 𝔻(𝜎2:λ), 𝔻(𝜎1:λ) }
-      𝑛3·1 := 𝜎3:λ:φ  # [𝑛1, 𝑛2]
-      𝑛·1·1 := 𝑛3·1  # 𝑛
-      𝑛·1·2 := 𝑛3·1  # 𝕄(𝑛·1·1)
+      𝑛4·1 := 𝜎3:λ:φ  # [𝑛3, 𝑛2]
+      𝑛·1·1 := 𝑛4·1  # 𝑛
+      𝑛·1·2 := 𝑛4·1  # 𝕄(𝑛·1·1)
