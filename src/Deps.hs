@@ -10,18 +10,21 @@ module Deps where
 
 import AST
 import Bytes (btsSize, btsToNum)
-import Control.Monad (unless, when)
+import Control.Monad (foldM, guard, unless, when, zipWithM, (>=>))
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.State.Strict (StateT, get, modify, put, runStateT)
 import Data.Bifunctor (bimap, first, second)
+import Data.Either (lefts, rights)
 import Data.IORef (IORef, readIORef, writeIORef)
-import Data.List (intercalate)
+import Data.List (intercalate, sortOn)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import qualified Data.Text as T
 import Files (overwrite)
 import GHC.Clock (getMonotonicTime)
 import Logger (logDebug, logInfo)
 import Matcher
-import Printer (printAttribute, printFunction)
+import Printer (printAlpha, printAttribute, printFunction)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
 import System.IO (Handle, hPutStrLn)
@@ -123,6 +126,7 @@ data Evaluation
   | EvApplied Int Judgment Expression Expression Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
+  | EvWorld Expression
 
 type SaveEvalFunc = Evaluation -> IO ()
 
@@ -176,6 +180,7 @@ tier (EvUpcast depth _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
+tier EvWorld{} = maxBound
 
 type Named a = Map.Map Int [(Expression, a)]
 
@@ -229,13 +234,18 @@ data Nesting = Nesting
   , _numbered :: Map.Map Int Int
   , _datums :: Map.Map Int Int
   , _held :: Maybe (Bytes, String)
-  , _heads :: [(Int, String)]
-  , _pending :: [(Int, String, String)]
+  , _heads :: [(Int, (Judgment, Expression))]
+  , _pending :: [(Int, Judgment, Expression)]
   , _sources :: [(Int, Expression, String)]
+  , _world :: Map.Map Attribute Expression
+  , _shapes :: Map.Map [Maybe Attribute] [(Expression, [Binding])]
+  , _opaque :: Int
   }
 
+type Naming = StateT (Nesting, [String]) IO
+
 emptyNesting :: Nesting
-emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Nothing [] [] []
+emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Nothing [] [] [] Map.empty Map.empty 0
 
 saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
 saveEval handle cursor printed printed' report = do
@@ -244,6 +254,7 @@ saveEval handle cursor printed printed' report = do
   where
     forgotten :: Evaluation -> Protocol -> Protocol
     forgotten EvDelta{} protocol = protocol
+    forgotten EvWorld{} protocol = protocol
     forgotten _ protocol = protocol{_found = Nothing}
     beside :: Evaluation -> Protocol -> Protocol
     beside EvStarted{} protocol = protocol
@@ -415,6 +426,7 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" stem index
       (protocol', value) <- valued counted naming term
       pure (protocol', Just (indented depth (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
+    written EvWorld{} protocol = pure (protocol, Nothing)
     valued :: Protocol -> String -> Expression -> IO (Protocol, String)
     valued protocol naming term = case denoted term of
       Nothing -> (,) protocol <$> render term
@@ -459,33 +471,39 @@ perSecond firings taken = round (fromIntegral firings * 1000 / fromIntegral (max
 
 saveEvalXml :: Handle -> IORef Nesting -> (Expression -> IO String) -> SaveEvalFunc
 saveEvalXml handle cursor printed report = do
-  written <- atomicModify cursor (opened' . flushed . beside report . outer (tier report))
+  written <- atomicModify cursor (flushed . beside report . outer (tier report) >=> opened')
   mapM_ (hPutStrLn handle) written
   logDebug (printf "Saved %d line(s) of the XML protocol" (length written))
   where
-    render :: Expression -> IO String
-    render term = do
-      nesting <- readIORef cursor
-      printed (abbreviated nesting._objects term)
-    located :: Nesting -> Expression -> IO String
-    located nesting site = case [naming | (_, built, naming) <- nesting._sources, built == site] of
-      naming : _ -> pure naming
-      [] -> render site
     opened' :: (Nesting, [String]) -> IO (Nesting, [String])
     opened' (nesting, openings) = bimap (forgotten report) (openings ++) <$> elements report nesting
     beside :: Evaluation -> Nesting -> Nesting
     beside EvStarted{} nesting = nesting
     beside report' nesting = nesting{_heads = dropWhile ((>= tier report') . fst) nesting._heads, _pending = dropWhile (\(level, _, _) -> level >= tier report') nesting._pending}
-    flushed :: Nesting -> (Nesting, [String])
+    flushed :: Nesting -> IO (Nesting, [String])
     flushed nesting
-      | silent report = (nesting, [])
-      | otherwise = (nesting{_pending = [], _closing = [(level, element) | (level, element, _) <- nesting._pending] ++ nesting._closing}, [opening | (_, _, opening) <- reverse nesting._pending])
+      | silent report = pure (nesting, [])
+      | otherwise = foldM pended (nesting{_pending = []}, []) (reverse nesting._pending)
+    pended :: (Nesting, [String]) -> (Int, Judgment, Expression) -> IO (Nesting, [String])
+    pended (nesting, openings) (level, judgment, site) = do
+      (nesting', lines') <- staged level nesting (printf "<%s at=\"%s\">" (opened judgment) . escapeXML <$> located level site)
+      pure (nesting'{_closing = (level, opened judgment) : nesting'._closing}, openings ++ lines')
     silent :: Evaluation -> Bool
     silent EvStarted{} = True
+    silent EvWorld{} = True
     silent _ = False
     forgotten :: Evaluation -> Nesting -> Nesting
     forgotten EvDelta{} nesting = nesting
+    forgotten EvWorld{} nesting = nesting
     forgotten _ nesting = nesting{_held = Nothing}
+    staged :: Int -> Nesting -> Naming String -> IO (Nesting, [String])
+    staged depth nesting naming = do
+      (element, (nesting', records)) <- runStateT naming (nesting, [])
+      pure (nesting', map (indentedXml depth) (reverse (element : records)))
+    placed :: Int -> Nesting -> Naming String -> IO (Nesting, [String])
+    placed depth nesting naming = second (closers ++) <$> staged depth nesting{_closing = kept} naming
+      where
+        (kept, closers) = closed depth nesting._closing
     elements :: Evaluation -> Nesting -> IO (Nesting, [String])
     elements (EvRun judgment locator) nesting =
       pure
@@ -497,169 +515,115 @@ saveEvalXml handle cursor printed report = do
           ]
         )
     elements (EvFiring depth key judgment site) nesting = do
-      locator <- located nesting site
-      pure
-        ( nesting
-            { _fires = fires
-            , _openedAt = (depth, fires) : nesting._openedAt
-            , _closing = (depth, "evaluate") : kept
-            }
-        , closers ++ [indentedXml depth (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) (escapeXML locator))]
-        )
-      where
-        (kept, closers) = closed depth nesting._closing
-        fires :: Int
-        fires = nesting._fires + 1
-    elements (EvStarted depth judgment site) nesting = do
-      locator <- located nesting site
-      let opening = indentedXml depth (printf "<%s at=\"%s\">" (opened judgment) (escapeXML locator))
-          inner = dropWhile ((> depth) . fst) nesting._heads
-          pending = dropWhile (\(level, _, _) -> level > depth) nesting._pending
-          (kept, closers) = closed depth nesting._closing
+      (fired, lines') <- placed depth nesting (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) . escapeXML <$> located depth site)
+      pure (fired{_fires = fired._fires + 1, _openedAt = (depth, fired._fires + 1) : fired._openedAt, _closing = (depth, "evaluate") : fired._closing}, lines')
+    elements (EvStarted depth judgment site) nesting =
       pure $ case inner of
-        (level, opening') : _ | level == depth && opening' == opening -> (nesting{_heads = inner, _pending = pending}, [])
-        _ -> (nesting{_heads = (depth, opening) : dropWhile ((>= depth) . fst) inner, _pending = (depth, opened judgment, opening) : dropWhile (\(level, _, _) -> level >= depth) pending, _closing = kept}, closers)
-    elements (EvLooped depth judgment mode self site answered) nesting = do
-      form <- render self
-      locator <- located nesting site
-      (origin, given) <- maybe (pure ("", "")) called (answered >>= snd)
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<looped%s by=\"%s\" match=\"%s\" at=\"%s\"%s>%s<e>%s</e></looped>" (maybe "" symbolized answered) (opened judgment) (certainty mode) (escapeXML locator) origin given (escapeXMLText form))])
+        (level, opening) : _ | level == depth && opening == (judgment, site) -> (nesting{_heads = inner, _pending = pending}, [])
+        _ -> (nesting{_heads = (depth, (judgment, site)) : dropWhile ((>= depth) . fst) inner, _pending = (depth, judgment, site) : dropWhile (\(level, _, _) -> level >= depth) pending, _closing = kept}, closers)
+      where
+        inner :: [(Int, (Judgment, Expression))]
+        inner = dropWhile ((> depth) . fst) nesting._heads
+        pending :: [(Int, Judgment, Expression)]
+        pending = dropWhile (\(level, _, _) -> level > depth) nesting._pending
+        (kept, closers) = closed depth nesting._closing
+    elements (EvLooped depth judgment mode self site answered) nesting =
+      placed depth nesting $ do
+        locator <- located depth site
+        origin <- maybe (sole depth self) (called depth) (answered >>= snd)
+        pure (enclosed "looped" (printf "<looped%s by=\"%s\" match=\"%s\" at=\"%s\"" (maybe "" symbolized answered) (opened judgment) (certainty mode) (escapeXML locator)) origin)
       where
         symbolized :: (Int, Maybe Expression) -> String
         symbolized (symbol, _) = printf " symbol=\"%s\"" (sigma symbol)
-    elements (EvStuck depth key judgment self) nesting = do
-      form <- render self
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) (escapeXMLText form))])
-    elements (EvStall depth key) nesting = do
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<stall λ=\"%s\"/>" (quoted key))])
-    elements (EvStuckOn depth key) nesting = do
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<stuck λ=\"%s\"/>" (quoted key))])
-    elements (EvUnjoined depth key one two) nesting = do
-      left <- render one
-      right <- render two
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unjoined λ=\"%s\"><e>%s</e><e>%s</e></unjoined>" (quoted key) (escapeXMLText left) (escapeXMLText right))])
-    elements (EvUnreminted depth key term) nesting = do
-      form <- render term
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<unreminted λ=\"%s\"><e>%s</e></unreminted>" (quoted key) (escapeXMLText form))])
-    elements (EvStarved depth limit judgment site) nesting = do
-      locator <- located nesting site
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<starved limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
-    elements (EvTimeout depth limit judgment site) nesting = do
-      locator <- located nesting site
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<timeout limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
-    elements (EvSpent depth limit judgment site) nesting = do
-      locator <- located nesting site
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<spent limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) (escapeXML locator))])
+    elements (EvStuck depth key judgment self) nesting =
+      placed depth nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
+    elements (EvStall depth key) nesting =
+      placed depth nesting (pure (printf "<stall λ=\"%s\"/>" (quoted key)))
+    elements (EvStuckOn depth key) nesting =
+      placed depth nesting (pure (printf "<stuck λ=\"%s\"/>" (quoted key)))
+    elements (EvUnjoined depth key one two) nesting =
+      placed depth nesting $ do
+        left <- leaf depth one
+        right <- leaf depth two
+        pure (printf "<unjoined λ=\"%s\">%s %s</unjoined>" (quoted key) (escapeXMLText left) (escapeXMLText right))
+    elements (EvUnreminted depth key term) nesting =
+      placed depth nesting (printf "<unreminted λ=\"%s\">%s</unreminted>" (quoted key) . escapeXMLText <$> leaf depth term)
+    elements (EvStarved depth limit judgment site) nesting =
+      placed depth nesting (printf "<starved limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
+    elements (EvTimeout depth limit judgment site) nesting =
+      placed depth nesting (printf "<timeout limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
+    elements (EvSpent depth limit judgment site) nesting =
+      placed depth nesting (printf "<spent limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
     elements (EvDelta depth bytes) nesting = do
-      datum <- render (ExBytes bytes)
+      datum <- printed (ExBytes bytes)
       let index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._datums)
           naming :: String
           naming = printf "%s·%d" (labelled nesting sigil) index
-          (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept, _datums = Map.insert (opener nesting) index nesting._datums, _held = Just (bytes, naming)}, closers ++ [indentedXml depth (printf "<delta meta=\"%s\"%s>%s</delta>" (escapeXML naming) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum))])
-    elements (EvData depth spelling _ value) nesting = do
-      record <- maybe (stood value) (pure . printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) . escapeXMLText) (found value nesting._held)
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth record])
+      placed depth nesting{_datums = Map.insert (opener nesting) index nesting._datums, _held = Just (bytes, naming)} (pure (printf "<delta meta=\"%s\"%s>%s</delta>" (escapeXML naming) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum)))
+    elements (EvData depth spelling _ value) nesting =
+      placed depth nesting $ case (found value nesting._held, value) of
+        (Just naming, _) -> pure (bound (escapeXMLText naming))
+        (Nothing, Left symbol) -> pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting spelling)) (sigma symbol))
+        (Nothing, Right bytes) -> bound . escapeXMLText <$> lift (printed (ExBytes bytes))
       where
-        (kept, closers) = closed depth nesting._closing
-        stood :: Either Int Bytes -> IO String
-        stood (Left symbol) = do
-          form <- render (standing symbol)
-          pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting spelling)) (escapeXMLText form))
-        stood (Right bytes) = do
-          form <- render (ExBytes bytes)
-          pure (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) (escapeXMLText form))
-    elements (EvTerm depth spelling _ _ term) nesting = do
-      body <- render term
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) (escapeXMLText body))])
-    elements (EvSymbolize depth spelling _ term) nesting = do
-      body <- render term
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) (escapeXMLText body))])
+        bound :: String -> String
+        bound = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling))
+    elements (EvTerm depth spelling _ _ term) nesting = placed depth nesting (bind depth nesting spelling term)
+    elements (EvSymbolize depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvKnown depth symbol bytes) nesting = do
-      value <- render (ExBytes bytes)
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<known symbol=\"%s\">%s</known>" (sigma symbol) (escapeXMLText value))])
-    elements (EvJoin depth spelling _ term) nesting = do
-      body <- render term
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) (escapeXMLText body))])
+      value <- printed (ExBytes bytes)
+      placed depth nesting (pure (printf "<known symbol=\"%s\">%s</known>" (sigma symbol) (escapeXMLText value)))
+    elements (EvJoin depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvJoined depth fresh (one, two)) nesting =
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth joint])
-      where
-        (kept, closers) = closed depth nesting._closing
-        joint :: String
-        joint = printf "<joined symbol=\"%s\">%s %s</joined>" (sigma fresh) (sigma one) (sigma two)
-    elements (EvTerminate depth condition side _ message) nesting = do
-      said <- maybe (pure "") attributed message
-      terminal <- case condition of
-        Just (Left symbol) -> pure (printf "<terminate symbol=\"%s\" branch=\"%s\"%s/>" (sigma symbol) (quoted side) said)
-        Just (Right bytes) -> printf "<terminate branch=\"%s\"%s>%s</terminate>" (quoted side) said . escapeXMLText <$> render (ExBytes bytes)
-        Nothing -> pure (printf "<terminate branch=\"%s\"%s/>" (quoted side) said)
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth terminal])
-      where
-        attributed :: Expression -> IO String
-        attributed term = printf " message=\"%s\"" . escapeXML <$> render term
+      placed depth nesting (pure (printf "<joined symbol=\"%s\">%s %s</joined>" (sigma fresh) (sigma one) (sigma two)))
+    elements (EvTerminate depth condition side _ message) nesting =
+      placed depth nesting $ do
+        said <- maybe (pure "") (fmap (printf " message=\"%s\"" . escapeXML) . leaf depth) message :: Naming String
+        case condition of
+          Just (Left symbol) -> pure (printf "<terminate symbol=\"%s\" branch=\"%s\"%s/>" (sigma symbol) (quoted side) said)
+          Just (Right bytes) -> printf "<terminate branch=\"%s\"%s>%s</terminate>" (quoted side) said . escapeXMLText <$> lift (printed (ExBytes bytes))
+          Nothing -> pure (printf "<terminate branch=\"%s\"%s/>" (quoted side) said)
     elements (EvMinted depth symbol operands) nesting = do
-      spelledOperands <- mapM spelled operands
-      let (kept, closers) = closed depth nesting._closing
-          mint :: String
-          mint
-            | null operands = printf "<minted symbol=\"%s\"/>" (sigma symbol)
-            | otherwise = printf "<minted symbol=\"%s\">%s</minted>" (sigma symbol) (escapeXMLText (unwords spelledOperands))
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth mint])
+      spelledOperands <- mapM spelled' operands
+      placed depth nesting (pure (minted spelledOperands))
       where
-        spelled :: Either Int Bytes -> IO String
-        spelled (Left fresh) = pure (sigma fresh)
-        spelled (Right bytes) = render (ExBytes bytes)
-    elements (EvDeferred depth symbol judgment copy call site) nesting = do
-      form <- render copy
-      locator <- located nesting site
-      (origin, given) <- maybe (pure ("", "")) called call
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"%s>%s<e>%s</e></deferred>" (sigma symbol) (opened judgment) (escapeXML locator) origin given (escapeXMLText form))])
-    elements (EvUpcast depth bare cast paths) nesting = do
-      form <- render cast
-      let (kept, closers) = closed depth nesting._closing
-      pure (nesting{_closing = kept}, closers ++ [indentedXml depth (printf "<upcast symbol=\"%s\">%s<e>%s</e></upcast>" (sigma bare) (concatMap path paths) (escapeXMLText form))])
+        spelled' :: Either Int Bytes -> IO String
+        spelled' (Left fresh') = pure (sigma fresh')
+        spelled' (Right bytes) = printed (ExBytes bytes)
+        minted :: [String] -> String
+        minted [] = printf "<minted symbol=\"%s\"/>" (sigma symbol)
+        minted spelt = printf "<minted symbol=\"%s\">%s</minted>" (sigma symbol) (escapeXMLText (unwords spelt))
+    elements (EvDeferred depth symbol judgment copy call site) nesting =
+      placed depth nesting $ do
+        locator <- located depth site
+        origin <- maybe (sole depth copy) (called depth) call
+        pure (enclosed "deferred" (printf "<deferred symbol=\"%s\" by=\"%s\" at=\"%s\"" (sigma symbol) (opened judgment) (escapeXML locator)) origin)
+    elements (EvUpcast depth bare cast paths) nesting =
+      placed depth nesting $ do
+        origin <- leaf depth cast
+        pure (printf "<upcast symbol=\"%s\" of=\"%s\">%s</upcast>" (sigma bare) (escapeXML origin) (concatMap path paths))
       where
         path :: (Int, [Attribute]) -> String
-        path (fresh, attrs) = printf "<path symbol=\"%s\">%s</path>" (sigma fresh) (escapeXMLText (intercalate "." (map printAttribute attrs)))
-    elements (EvApplied depth judgment call object site) nesting = do
-      (origin, given) <- parted (abbreviatedInside nesting._objects call)
-      locator <- located nesting site
-      let (index, counted) = numbered nesting
-          (kept, closers) = closed depth nesting._closing
-          naming :: String
-          naming = printf "%s·%d" (labelled nesting answer) index
-          aliased :: Expression
-          aliased = alias (opener nesting) index
-      pure (counted{_closing = kept, _objects = namedInsert call aliased (namedInsert object aliased counted._objects)}, closers ++ [indentedXml depth (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\" of=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXML origin) given)])
-    elements (EvBuilt depth term) nesting = do
-      body <- render term
-      let (index, counted) = numbered nesting
-          (kept, closers) = closed depth nesting._closing
-          naming :: String
-          naming = printf "%s·%d" (labelled nesting answer) index
-      pure (counted{_closing = kept, _sources = (depth, term, naming) : counted._sources}, closers ++ [indentedXml depth (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))])
-    elements (EvAnswer depth term) nesting = do
-      body <- render term
-      let (index, counted) = numbered nesting
-          (kept, closers) = closed depth nesting._closing
-          naming :: String
-          naming = printf "%s·%d" (labelled nesting answer) index
-      pure (counted{_closing = kept}, closers ++ [indentedXml depth (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))])
+        path (fresh', attrs) = printf "<path symbol=\"%s\">%s</path>" (sigma fresh') (escapeXMLText (intercalate "." (map printAttribute attrs)))
+    elements (EvApplied depth judgment call object site) nesting =
+      placed depth nesting $ do
+        locator <- located depth site
+        (origin, given) <- parted depth call
+        (naming, aliased) <- counted
+        modify (first (\nesting' -> nesting'{_objects = namedInsert call aliased (namedInsert object aliased nesting'._objects)}))
+        pure (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\" of=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXML origin) given)
+    elements (EvBuilt depth term) nesting =
+      placed depth nesting $ do
+        body <- leaf depth term
+        (naming, _) <- counted
+        modify (first (\nesting' -> nesting'{_sources = (depth, term, naming) : nesting'._sources}))
+        pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
+    elements (EvAnswer depth term) nesting =
+      placed depth nesting $ do
+        body <- leaf depth term
+        (naming, _) <- counted
+        pure (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))
+    elements (EvWorld world) nesting = pure (known world nesting, [])
     outer :: Int -> Nesting -> Nesting
     outer depth nesting = nesting{_openedAt = dropWhile ((>= depth) . fst) nesting._openedAt, _sources = dropWhile (\(level, _, _) -> level > depth) nesting._sources}
     labelled :: Nesting -> T.Text -> String
@@ -671,35 +635,194 @@ saveEvalXml handle cursor printed report = do
       where
         index :: Int
         index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._numbered)
-    called :: Expression -> IO (String, String)
-    called term = do
-      let (object, arguments) = invoked term
-      path <- render object
+    counted :: Naming (String, Expression)
+    counted = do
+      (nesting, records) <- get
+      let (index, nesting') = numbered nesting
+      put (nesting', records)
+      pure (printf "%s·%d" (labelled nesting answer) index, alias (opener nesting) index)
+    recorded :: Expression -> (String -> String) -> Naming Expression
+    recorded term element = do
+      (naming, aliased) <- counted
+      modify (bimap (\nesting -> nesting{_objects = namedInsert term aliased nesting._objects}) (element (escapeXML naming) :))
+      pure aliased
+    opaque :: Expression -> Naming Expression
+    opaque term = do
+      (nesting, records) <- get
+      let meta = ExMeta (T.pack (printf "e%d" (nesting._opaque + 1)))
+      put (nesting{_opaque = nesting._opaque + 1, _objects = namedInsert term meta nesting._objects}, records)
+      pure meta
+    located :: Int -> Expression -> Naming String
+    located depth site = do
+      (nesting, _) <- get
+      maybe (leaf depth site) pure (listToMaybe [naming | (_, built, naming) <- nesting._sources, built == site])
+    bind :: Int -> Nesting -> T.Text -> Expression -> Naming String
+    bind depth nesting spelling term = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) . escapeXMLText <$> leaf depth term
+    leaf :: Int -> Expression -> Naming String
+    leaf depth term = titled depth term >>= lift . spelled
+    titled :: Int -> Expression -> Naming Expression
+    titled depth term = do
+      (nesting, _) <- get
+      maybe (coined depth term) pure (namedLookup term nesting._objects)
+    coined :: Int -> Expression -> Naming Expression
+    coined _ term@(ExFormation [BiLambda (FnSymbol _)]) = pure term
+    coined _ term@(ExFormation [BiDelta _]) = pure term
+    coined depth term@(ExFormation bds) = do
+      (nesting, _) <- get
+      maybe (anonymous depth term bds) (cloned depth term) (copied nesting bds)
+    coined depth term@(ExDispatch inner attr) = do
+      head' <- titled depth inner
+      if pathed head' then pure (ExDispatch head' attr) else opaque term
+    coined depth term@(ExApplication _ _) = do
+      (nesting, _) <- get
+      let (head', arguments) = chained nesting._objects term
+      origin <- leaf depth head'
+      given <- mapM (argument depth) arguments
+      recorded term (\naming -> printf "<applied meta=\"%s\" of=\"%s\">%s</applied>" naming (escapeXML origin) (concat given))
+    coined _ term
+      | plain term = pure term
+      | otherwise = opaque term
+    cloned :: Int -> Expression -> (Expression, [(Attribute, Expression)]) -> Naming Expression
+    cloned depth term (origin, []) = do
+      path <- titled depth origin
+      modify (first (\nesting -> nesting{_objects = namedInsert term path nesting._objects}))
+      pure path
+    cloned depth term (origin, bound) = do
+      path <- leaf depth origin
+      given <- mapM (\(attr, value) -> attributed (printAttribute attr) <$> leaf depth value) bound
+      recorded term (\naming -> printf "<formed meta=\"%s\" of=\"%s\">%s</formed>" naming (escapeXML path) (concat given))
+    anonymous :: Int -> Expression -> [Binding] -> Naming Expression
+    anonymous depth term bds = do
+      parts <- mapM (part depth) bds
+      let marks = concat (lefts parts)
+          inner = concat (rights parts)
+      recorded term (\naming -> if null inner then printf "<formed meta=\"%s\"%s/>" naming marks else printf "<formed meta=\"%s\"%s>%s</formed>" naming marks inner)
+    part :: Int -> Binding -> Naming (Either String String)
+    part depth (BiTau attr value) = Right . attributed (printAttribute attr) <$> leaf depth value
+    part _ (BiVoid attr) = pure (Right (printf "<void name=\"%s\"/>" (escapeXML (printAttribute attr))))
+    part _ (BiLambda func) = pure (Left (printf " λ=\"%s\"" (escapeXML (printFunction func))))
+    part _ (BiDelta bytes) = Left . printf " Δ=\"%s\"" . escapeXML <$> lift (printed (ExBytes bytes))
+    part _ _ = pure (Right "")
+    argument :: Int -> Argument -> Naming String
+    argument depth (ArTau attr value) = attributed (printAttribute attr) <$> leaf depth value
+    argument depth (ArAlpha alpha value) = attributed (printAlpha alpha) <$> leaf depth value
+    attributed :: String -> String -> String
+    attributed name value = printf "<attr name=\"%s\">%s</attr>" (escapeXML name) (escapeXMLText value)
+    chained :: Named Expression -> Expression -> (Expression, [Argument])
+    chained objects (ExApplication inner arg) = case inner of
+      ExApplication _ _ | Nothing <- namedLookup inner objects -> second (++ [arg]) (chained objects inner)
+      _ -> (inner, [arg])
+    chained _ term = (term, [])
+    parted :: Int -> Expression -> Naming (String, String)
+    parted depth (ExApplication term arg) = (,) <$> leaf depth term <*> argument depth arg
+    parted depth term = (,"") <$> leaf depth term
+    called :: Int -> Expression -> Naming (String, String)
+    called depth term = do
+      path <- leaf depth object
       given <- mapM passed arguments
-      pure (printf " of=\"%s\"" (escapeXML path), printf "<with>%s</with>" (concat given))
+      pure (path, printf "<with>%s</with>" (concat given))
+      where
+        object :: Expression
+        arguments :: [(Attribute, Expression)]
+        (object, arguments) = invoked term
+    sole :: Int -> Expression -> Naming (String, String)
+    sole depth term = (,"") <$> leaf depth term
+    enclosed :: String -> String -> (String, String) -> String
+    enclosed _ opening (origin, "") = printf "%s of=\"%s\"/>" opening (escapeXML origin)
+    enclosed tag opening (origin, inner) = printf "%s of=\"%s\">%s</%s>" opening (escapeXML origin) inner tag
     invoked :: Expression -> (Expression, [(Attribute, Expression)])
     invoked (ExApplication term (ArTau attr value)) = second (++ [(attr, value)]) (invoked term)
     invoked term = (term, [])
-    passed :: (Attribute, Expression) -> IO String
-    passed (attr, value) = printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) . escapeXMLText <$> valued value
-    valued :: Expression -> IO String
+    passed :: (Attribute, Expression) -> Naming String
+    passed (attr, value) = attributed (printAttribute attr) <$> valued value
+    valued :: Expression -> Naming String
     valued value = do
-      nesting <- readIORef cursor
-      maybe (pure (symbolic value)) printed (namedLookup value nesting._objects)
-    symbolic :: Expression -> String
-    symbolic (ExFormation [BiLambda (FnSymbol idx)]) = sigma idx
-    symbolic (ExFormation bds) = maybe "?" symbolic (listToMaybe [body | BiTau AtPhi body <- bds])
+      (nesting, _) <- get
+      case (namedLookup value nesting._objects, symbolic value) of
+        (Just aliased, _) -> lift (spelled aliased)
+        (Nothing, Just symbol) -> pure (sigma symbol)
+        (Nothing, Nothing) -> opaque value >>= lift . spelled
+    symbolic :: Expression -> Maybe Int
+    symbolic (ExFormation [BiLambda (FnSymbol idx)]) = Just idx
+    symbolic (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds] >>= symbolic
     symbolic (ExApplication _ (ArTau AtPhi body)) = symbolic body
-    symbolic _ = "?"
-    parted :: Expression -> IO (String, String)
-    parted (ExApplication term (ArTau attr value)) = do
-      origin <- printed term
-      given <- argued value
-      pure (origin, printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) (escapeXMLText given))
-    parted term = (,"") <$> printed term
-    argued :: Expression -> IO String
-    argued (ExFormation [BiLambda (FnSymbol idx)]) = pure (sigma idx)
-    argued term = printed term
+    symbolic _ = Nothing
+    spelled :: Expression -> IO String
+    spelled (ExFormation [BiLambda (FnSymbol idx)]) = pure (sigma idx)
+    spelled (ExFormation [BiDelta bytes]) = printed (ExBytes bytes)
+    spelled (ExDispatch inner attr)
+      | sigmatic inner = printf "%s.%s" <$> spelled inner <*> pure (printAttribute attr)
+    spelled term = printed term
+    sigmatic :: Expression -> Bool
+    sigmatic (ExFormation [BiLambda (FnSymbol _)]) = True
+    sigmatic (ExDispatch inner _) = sigmatic inner
+    sigmatic _ = False
+    known :: Expression -> Nesting -> Nesting
+    known world@(ExFormation bds) nesting = nesting{_world = world', _shapes = Map.fromListWith (flip (++)) [(shape kept, [(path, kept)]) | (path, kept) <- breadth [(ExDispatch ExRoot attr, inner) | (attr, ExFormation inner) <- Map.toList world']], _objects = namedInsert world ExRoot nesting._objects}
+      where
+        world' :: Map.Map Attribute Expression
+        world' = Map.union (Map.fromList [(attr, value) | BiTau attr value <- bds]) nesting._world
+        breadth :: [(Expression, [Binding])] -> [(Expression, [Binding])]
+        breadth [] = []
+        breadth level = [(path, filter (not . rho) inner) | (path, inner) <- level] ++ breadth [(ExDispatch path attr, inner') | (path, inner) <- level, BiTau attr (ExFormation inner') <- inner, attr /= AtRho]
+    known _ nesting = nesting
+    shape :: [Binding] -> [Maybe Attribute]
+    shape = map label
+      where
+        label :: Binding -> Maybe Attribute
+        label (BiTau attr _) = Just attr
+        label (BiVoid attr) = Just attr
+        label _ = Nothing
+    rho :: Binding -> Bool
+    rho (BiTau AtRho _) = True
+    rho (BiVoid AtRho) = True
+    rho _ = False
+    copied :: Nesting -> [Binding] -> Maybe (Expression, [(Attribute, Expression)])
+    copied nesting bds = snd <$> listToMaybe (sortOn fst (mapMaybe matched candidates))
+      where
+        own :: [Binding]
+        own = filter (not . rho) bds
+        parents :: [Expression]
+        parents = [value | BiTau AtRho value <- bds]
+        candidates :: [(Expression, [Binding])]
+        candidates = case parents of
+          [] -> Map.findWithDefault [] (shape own) nesting._shapes
+          value : _ -> [(ExDispatch value attr, filter (not . rho) origin) | BiTau attr (ExFormation origin) <- fromMaybe [] (declared value), attr /= AtRho]
+        matched :: (Expression, [Binding]) -> Maybe (Int, (Expression, [(Attribute, Expression)]))
+        matched (path, kept) = do
+          guard (length kept == length own)
+          given <- concat <$> zipWithM bound kept own
+          guard (or (zipWith (==) kept own) || not (null parents) && length given == length [() | BiVoid _ <- kept])
+          pure (length given, (path, given))
+        declared :: Expression -> Maybe [Binding]
+        declared ExRoot = Just [BiTau attr value | (attr, value) <- Map.toList nesting._world]
+        declared (ExFormation inner) = Just inner
+        declared (ExApplication target _) = declared target
+        declared (ExDispatch target attr) = do
+          outer' <- declared target
+          listToMaybe [inner | BiTau attr' (ExFormation inner) <- outer', attr' == attr]
+        declared _ = Nothing
+        bound :: Binding -> Binding -> Maybe [(Attribute, Expression)]
+        bound (BiVoid attr) (BiTau attr' value)
+          | attr == attr' = Just [(attr, value)]
+        bound (BiTau attr origin) (BiTau attr' value)
+          | attr == attr' = Just [(attr, value) | origin /= value]
+        bound origin binding
+          | origin == binding = Just []
+          | otherwise = Nothing
+    pathed :: Expression -> Bool
+    pathed ExRoot = True
+    pathed ExXi = True
+    pathed (ExMeta _) = True
+    pathed (ExDispatch inner _) = pathed inner
+    pathed term = sigmatic term
+    plain :: Expression -> Bool
+    plain ExRoot = True
+    plain ExXi = True
+    plain ExTermination = True
+    plain (ExMeta _) = True
+    plain (ExBytes _) = True
+    plain _ = False
     sigma :: Int -> String
     sigma = printFunction . FnSymbol
     quoted :: T.Text -> String
