@@ -30,6 +30,8 @@ import AST
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, throwIO)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object), withObject, (.!=), (.:), (.:?))
+import qualified Data.Aeson.Key as Key
+import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Char (isDigit)
 import Data.List (find, nub, sortOn)
 import Data.Map.Strict (Map)
@@ -89,6 +91,7 @@ instance FromJSON Lambda where
   parseJSON = withObject "Lambda" $ \entry -> do
     key <- entry .:? "λ" >>= maybe (fail "The entry has no 'λ' key") pure
     answer <- entry .:? "𝑛" >>= maybe (fail "The entry has no '𝑛' key") pure
+    unknown (T.unpack key) entry
     dataized <- operands key bytesMeta entry "dataize"
     morphed <- operands key expressionMeta entry "morph"
     lambda <-
@@ -106,6 +109,13 @@ instance FromJSON Lambda where
     lonely (T.unpack key) lambda
     pure lambda
     where
+      unknown :: String -> Object -> Yaml.Parser ()
+      unknown key entry = case filter (`notElem` known) (map Key.toText (KeyMap.keys entry)) of
+        [] -> pure ()
+        name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
+        where
+          known :: [Text]
+          known = ["λ", "dataize", "morph", "evaluate", "rewrite", "stay", "symbolize", "join", "lenient", "terminators", "𝑛"]
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
       operands key kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Expression)

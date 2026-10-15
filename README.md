@@ -152,6 +152,12 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 `--max-steps` work on it unchanged. It may name any meta the entry bound,
 those of the two blocks below among them.
 
+An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `rewrite`,
+`stay`, `symbolize`, `join`, `lenient`, `terminators` and `𝑛`, and any other
+key, such as a misspelled `lenent` or a `defer` that now belongs in the list
+of `lenient`, refuses the whole file, so a typo never drops a block or an
+option without a word.
+
 ### Firing what an operand came to
 
 𝕄 fires a λ function only where a dispatch reads the formation carrying it, so
