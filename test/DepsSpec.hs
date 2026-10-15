@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Plausible, Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvStuckOn, EvTerm, EvTerminate, EvUnjoined, EvUpcast), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Plausible, Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvStuckOn, EvTerm, EvTerminate, EvUnjoined, EvUnreminted, EvUpcast), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -205,6 +205,9 @@ spec = do
     it "writes a join that failed with the two branches it could not pair" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvUnjoined 2 "L_щ" (ExFormation [BiLambda (FnSymbol 5)]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 8)]), BiTau (AtLabel "ц") ExRoot])])
       last (lines written) `shouldBe` "    unjoined(L_щ)  # 𝜎5:λ vs ⟦ ю ↦ 𝜎8:λ, ц ↦ Φ ⟧"
+    it "writes a remint that failed with the term it found no symbol for" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ёж" Morphing ExRoot, EvUnreminted 2 "L_ёж" (ExFormation [BiTau (AtLabel "жук") (ExFormation [BiLambda (FnSymbol 17)]), BiTau (AtLabel "ф") ExRoot])])
+      last (lines written) `shouldBe` "    unreminted(L_ёж)  # ⟦ жук ↦ 𝜎17:λ, ф ↦ Φ ⟧"
     it "writes an upcast as the term a bare symbol was cast to" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvUpcast 2 41 (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "кортеж")) (ArTau (AtLabel "хвост") (ExFormation [BiLambda (FnSymbol 43)]))) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 44)]))) [(43, [AtLabel "хвост"]), (44, [AtPhi])]])
       lines written `shouldContain` ["    upcast(𝜎41) := Φ.кортеж( хвост ↦ 𝜎43:λ, φ ↦ 𝜎44:λ )"]
@@ -273,6 +276,9 @@ spec = do
     it "writes a join that failed as an element holding the two branches it could not pair" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvUnjoined 2 "L_щ" (ExFormation [BiLambda (FnSymbol 5)]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 8)]), BiTau (AtLabel "ц") ExRoot])])
       lines written `shouldContain` ["    <unjoined λ=\"L_щ\"><e>𝜎5:λ</e><e>⟦ ю ↦ 𝜎8:λ, ц ↦ Φ ⟧</e></unjoined>"]
+    it "writes a remint that failed as an element holding the term it found no symbol for" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ёж" Morphing ExRoot, EvUnreminted 2 "L_ёж" (ExFormation [BiTau (AtLabel "жук") (ExFormation [BiLambda (FnSymbol 17)]), BiTau (AtLabel "ф") ExRoot])])
+      lines written `shouldContain` ["    <unreminted λ=\"L_ёж\"><e>⟦ жук ↦ 𝜎17:λ, ф ↦ Φ ⟧</e></unreminted>"]
     it "writes a stuck firing as an element of the word the text uses" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvStuckOn 2 "L_жук"])
       lines written `shouldContain` ["    <stuck λ=\"L_жук\"/>"]

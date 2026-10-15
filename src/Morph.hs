@@ -119,6 +119,7 @@ data ReduceException
   | Stuck T.Text
   | StuckAt T.Text (NonEmpty Rewritten) State
   | Unjoined T.Text
+  | Unreminted T.Text
   | OutOfStepsAt Budget (NonEmpty Rewritten) State
   | Looping Expression
   | LoopingAt Expression (NonEmpty Rewritten) State
@@ -139,6 +140,7 @@ instance Show ReduceException where
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
   show (Unjoined func) = printf "The λ function '%s' could not join its two branches" (T.unpack func)
+  show (Unreminted func) = printf "The λ function '%s' could not remint a term as a symbol" (T.unpack func)
   show (Looping term) = printf "Reduction entered a formation it is already inside: %s" (printExpression term)
   show (LoopingAt term _ _) = show (Looping term)
   show (Undataizable ExTermination _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"

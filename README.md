@@ -316,8 +316,8 @@ pattern never
 binds, is refused where the file is read.
 
 A rule may still turn a large term into a small one made of symbols, through
-`remint` in its `where` block. The function takes one expression, mints a
-fresh `𝜎` for it, and answers the bare `⟦ λ ⤍ 𝜎k ⟧`:
+`remint` in its `where` block. The function takes one expression and answers
+the bare `⟦ λ ⤍ 𝜎k ⟧` the expression stands for:
 
 ```yaml
 - λ: L_fork
@@ -340,11 +340,18 @@ fresh `𝜎` for it, and answers the bare `⟦ λ ⤍ 𝜎k ⟧`:
   𝑛: 𝑛2
 ```
 
-The result still writes no `𝜎`, and each symbol comes with a record of what it
-stands for. The protocol writes it as `reminted(𝜎4) := …` in text and as
-`<reminted symbol="𝜎4">𝜎1 𝜎2<e>…</e></reminted>` in markup: the fresh symbol,
-the symbols the term holds, and the term itself. A reader of the protocol can
-build the object back from the term, working out the symbols it lists first.
+The result still writes no `𝜎`, and every symbol `remint` answers is one a
+reader of the protocol builds without parsing a term. The function first works
+the term out: it morphs the term in the formation it sits in, fires what that
+comes to, follows the φ of a decorator such as `as-number`, and writes every
+step to the protocol. Then it answers by what the term came to. A term whose
+φ chain ends in a bare symbol is that symbol, and nothing is minted. A datum
+is a fresh known symbol, `𝔻(𝜎4:λ) == 00-`, the way `symbolize` writes one. A
+copy of an object of the world is a fresh deferred symbol, such as
+`deferred(𝜎5) := Φ.l/.throw( message ↦ 𝜎4:λ )`, once every argument of the
+copy came to a symbol the same way. Any other term has no symbol a reader
+could build, so the step writes `unreminted(L_fork)` with the term, and the
+firing gets stuck the way a fork whose branches do not join does.
 `remint` is known only to the rules of a `rewrite` block, since nowhere else is
 there a firing to mint for.
 
@@ -977,7 +984,7 @@ The very same file comes back with `--partial`, where the run answers the
 residue instead of failing: what `phino` could not decide is a property of the
 program and not of the option that decides what to do about it.
 
-Four more lines say why a firing gave no answer.
+Five more lines say why a firing gave no answer.
 `stuck(L_outer)` is the last line of a firing that got stuck, naming the λ
 function it got stuck on, which is seldom the one `unanswered(…)` names: that
 one is written where it was asked for, and this one closes every firing the
@@ -987,6 +994,8 @@ pair its two branches, and carries them as the join last saw them,
 `unjoined(L_fork)  # 𝜎1:λ:l vs ⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧`, so a fork the program
 left in two shapes never reads as an operand that ran out of steps; the
 firings around it still close with `stuck(L_fork)`.
+`unreminted(L_fork)` takes its place in the firing whose `remint` step found
+no symbol for a term, and carries the term, `unreminted(L_fork)  # 𝜎2:λ:k`.
 `stall(L_outer)` stands under a firing that `--acyclic=plausible` answered
 with the stall an earlier firing of the same formation kept, so a told stall
 never reads as a fresh firing that wrote nothing.
@@ -1011,6 +1020,7 @@ right in a firing, it is commented with them instead, `starved(3)  # 𝔻(Φ.a�
 
 The markup spells them `<stuck λ="L_outer"/>`,
 `<unjoined λ="L_fork"><e>𝜎1:λ:l</e><e>⟦ l ↦ 𝜎2:λ, x ↦ ⟦⟧ ⟧</e></unjoined>`,
+`<unreminted λ="L_fork"><e>𝜎2:λ:k</e></unreminted>`,
 `<stall λ="L_outer"/>` and `<starved limit="3" by="dataize" at="Φ.a🌵2"/>`.
 
 `timeout(5)` is where `--max-seconds=5` ran out, placed and commented the same
@@ -1336,12 +1346,6 @@ above, `𝔼(L_gt)` writes `<minted symbol="𝜎2">` although `𝜎2` sits under
 and not where the value of the term is, while `𝔼(L_fork)` writes none at all,
 since the symbol it answers with comes from a `join` line and stands in a
 `<joined>` of its own.
-
-`<reminted symbol="𝜎4">𝜎1 𝜎2<e>…</e></reminted>` is a symbol a `remint` step
-of a `rewrite` line minted, which the text format writes as
-`reminted(𝜎4) := …`. The fresh symbol stands in `symbol`, the text lists the
-symbols the term holds, separated by a space the way `<joined>` lists its pair,
-and `<e>` holds the term the symbol stands for.
 
 `<upcast symbol="𝜎1"><path symbol="𝜎5">tail</path>…<e>…</e></upcast>` is a
 bare symbol an `upcast` block cast into a copy of another term, which the
@@ -2344,7 +2348,9 @@ Here's list of functions that are supported for extensions:
 * `join` - accepts list of bindings and returns list of joined bindings. Duplicated
   `ρ`, `Δ` and `λ` attributes are ignored, all other duplicated attributes are replaced
   with unique attributes using `random-tau` function.
-* `remint` - accepts one expression and answers a fresh symbol standing for it.
+* `remint` - accepts one expression and answers the symbol it stands for: the
+  bare symbol its φ chain ends in, a known symbol for a datum, or a deferred
+  symbol for a copy of an object of the world.
   It works only in a `rewrite` block of the `--symbolic` file, see
   [above](#rewriting-a-term-into-another-shape).
 

@@ -184,10 +184,16 @@ lowered too (#1867).
 
 A rule of a `rewrite` line may not write a `𝜎` into its result, but its
 `where` may call `remint`, which only `reshaped` of `Evaluate.hs` knows: it
-mints a fresh symbol for the term it is given, answers the bare
-`⟦ λ ⤍ 𝜎k ⟧`, and writes `reminted(…)` (`EvReminted`) with the symbols the
-term holds and the term itself, so a large term becomes a small one made of
-symbols, each of which the protocol explains (#1909).
+works the term out the way `unfold` works out an argument of a copy
+(`figured`), follows the φ of a formation with no λ (`hollow`, spending a step
+of `deeper` each time), and answers the bare `⟦ λ ⤍ 𝜎k ⟧` the term came to
+(#1909, #1923). That is the symbol a φ chain ends in (`ended`), a fresh known
+symbol for a datum (`EvKnown`), or a fresh deferred symbol for a copy of an
+object of the world, every argument of which came to a symbol the same way
+(`EvDeferred`). The copy is named by the term as written (`spelled`), or by
+`called` when the term is no call of a path. Any other term writes
+`unreminted(…)` (`EvUnreminted`) and throws `Unreminted`, which the firing
+turns into `Stuck` the way it turns `Unjoined`.
 
 A bare symbol, `⟦ λ ⤍ 𝜎k ⟧`, joins too: the `join` of `Lambdas.hs` pairs it
 with the symbol the φ chain of the other branch ends in, and answers a bare
@@ -345,9 +351,10 @@ names it. A cut is a line too, `looped(…)`
 (`EvLooped`), written by `enter` where the refused frame would have opened,
 carrying the formation its ancestor entered (#1434) and naming the mode that
 cut it.
-Four records say why a firing gave no answer (#1524): `stuck(…)` closes a
+Five records say why a firing gave no answer (#1524): `stuck(…)` closes a
 firing that got stuck, `unjoined(…)` closes in its place one whose `join` line
-could not pair its branches, carrying both, `stall(…)` stands under one the
+could not pair its branches, carrying both, `unreminted(…)` one whose `remint`
+found no symbol for a term, carrying it, `stall(…)` stands under one the
 memo answered with a kept stall, and `starved(…)` is written by `deeper` where
 the step budget runs out, with the site it stood at rather than its term
 (#1531). `both` of `paired` in `Evaluate.hs` writes `unjoined(…)` and throws

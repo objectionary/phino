@@ -13,7 +13,7 @@ import Builder (buildExpressionThrows)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.IORef (atomicModifyIORef', readIORef, writeIORef)
-import Data.List (nub, partition)
+import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
@@ -93,7 +93,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     line :: ReduceContext -> Lambda -> Maybe (Either Int Bytes) -> (Subst, State) -> Line -> IO (Subst, State)
     line ctx entry _ held (Evaluated meta source) = evaluated ctx entry held meta source
     line ctx entry _ held (Unfolded meta source deferring) = unfolded ctx entry held meta source deferring
-    line ctx _ _ (bound, state') (Rewritten meta source rules) = (,state') <$> reshaped ctx bound meta source rules
+    line ctx entry _ (bound, state') (Rewritten meta source rules) = (,state') <$> reshaped ctx entry state' bound meta source rules
     line ctx _ _ (bound, state') (Stayed meta source) = (,state') <$> trimmed ctx bound meta source
     line ctx _ _ (bound, state') (Symbolized meta source) = (,state') <$> masked ctx bound meta source
     line ctx _ _ (bound, state') (Upcasted one first two second) = (,state') <$> cast ctx bound (one, first) (two, second)
@@ -117,6 +117,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     stranded _ = Nothing
     escaped :: ReduceException -> ReduceException
     escaped (Unjoined name) = Stuck name
+    escaped (Unreminted name) = Stuck name
     escaped failure = failure
     told :: Kept -> IO (Expression, State)
     told (Answered answer) = do
@@ -170,23 +171,121 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           entered <- deeper admitted
           evaluation entered state' term univ
     fire _ _ _ _ _ _ = throwIO (Stuck func)
-    reshaped :: ReduceContext -> Subst -> Meta -> Meta -> [Y.Rule] -> IO Subst
-    reshaped ctx bound meta source rules = do
+    reshaped :: ReduceContext -> Lambda -> State -> Subst -> Meta -> Meta -> [Y.Rule] -> IO Subst
+    reshaped ctx entry state' bound meta source rules = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      shaped <- rewritten rules (RuleContext reminting Nothing ctx._engine._normal) term
+      shaped <- rewritten rules (\around -> RuleContext (reminting around) Nothing ctx._engine._normal) term
       ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) shaped)
       bind meta (MvExpression shaped) bound
       where
-        reminting :: BuildTermFunc
-        reminting "remint" = reminted
-        reminting func = ctx._buildTerm func
-        reminted :: BuildTermMethod
-        reminted [Y.ArgExpression expr] subst = do
+        reminting :: Maybe Expression -> BuildTermFunc
+        reminting around "remint" = reminted around
+        reminting _ func = ctx._buildTerm func
+        reminted :: Maybe Expression -> BuildTermMethod
+        reminted around [Y.ArgExpression expr] subst = do
           term <- buildExpressionThrows expr subst
+          TeExpression <$> (stood ctx around term term >>= maybe (unreminted term) pure)
+        reminted _ _ _ = throwIO (userError "Function remint() requires exactly 1 argument as expression")
+        stood :: ReduceContext -> Maybe Expression -> Expression -> Expression -> IO (Maybe Expression)
+        stood deep around site term = case ended term of
+          Just found -> Just <$> pinned found
+          Nothing -> do
+            placed <- if xiFree term then pure term else maybe (pure term) (ctx._engine._contextualize term) around
+            figured deep entry state' site placed >>= maybe (pure Nothing) (became deep site term)
+        became :: ReduceContext -> Expression -> Expression -> Expression -> IO (Maybe Expression)
+        became deep site term answer = case (ended answer, answer) of
+          (Just found, _) -> Just <$> pinned found
+          (_, ExFormation bds)
+            | hollow bds -> deeper deep >>= \further -> stood further Nothing (ExDispatch site AtPhi) (ExDispatch answer AtPhi)
+            | otherwise -> maybe (pure Nothing) (deferral deep site bds) (spelled term bds)
+          _ -> pure Nothing
+        spelled :: Expression -> [Binding] -> Maybe Expression
+        spelled term bds = case located (stripped term) (fromMaybe univ caller._universe) of
+          Just (ExFormation declared) -> Just (applied bds (stripped term) declared)
+          _ -> called bds
+          where
+            stripped :: Expression -> Expression
+            stripped (ExApplication target _) = stripped target
+            stripped other = other
+        hollow :: [Binding] -> Bool
+        hollow bds = not (any isLambda bds) && or [True | BiTau AtPhi _ <- bds]
+        deferral :: ReduceContext -> Expression -> [Binding] -> Expression -> IO (Maybe Expression)
+        deferral deep site bds call = argued deep site bds call >>= traverse postponed
+          where
+            postponed :: Expression -> IO Expression
+            postponed made = do
+              fresh <- coined
+              ctx._saveEval (EvDeferred ctx._nesting fresh Morphing (ExFormation bds) (Just made) site)
+              pure (ExFormation [BiLambda (FnSymbol fresh)])
+        argued :: ReduceContext -> Expression -> [Binding] -> Expression -> IO (Maybe Expression)
+        argued deep site bds (ExApplication target (ArTau attr body)) = do
+          target' <- argued deep site bds target
+          case target' of
+            Nothing -> pure Nothing
+            Just made -> fmap (ExApplication made . ArTau attr) <$> stood deep (Just (ExFormation (filter (not . named attr) bds))) (ExDispatch site attr) body
+        argued _ _ _ call = pure (Just call)
+        pinned :: Either Int Bytes -> IO Expression
+        pinned (Left idx) = pure (ExFormation [BiLambda (FnSymbol idx)])
+        pinned (Right bytes) = do
           fresh <- coined
-          ctx._saveEval (EvReminted ctx._nesting fresh (nub (symbols term)) term)
-          pure (TeExpression (ExFormation [BiLambda (FnSymbol fresh)]))
-        reminted _ _ = throwIO (userError "Function remint() requires exactly 1 argument as expression")
+          ctx._saveEval (EvKnown ctx._nesting fresh bytes)
+          pure (ExFormation [BiLambda (FnSymbol fresh)])
+        unreminted :: Expression -> IO a
+        unreminted term = do
+          ctx._saveEval (EvUnreminted ctx._nesting func term)
+          throwIO (Unreminted func)
+    ended :: Expression -> Maybe (Either Int Bytes)
+    ended (ExFormation [BiLambda (FnSymbol idx)]) = Just (Left idx)
+    ended (ExFormation bds) = case [bytes | BiDelta bytes <- bds] of
+      [bytes] -> Just (Right bytes)
+      _ -> listToMaybe [body | BiTau AtPhi body <- bds] >>= ended
+    ended (ExApplication _ (ArTau AtPhi body)) = ended body
+    ended _ = Nothing
+    figured :: ReduceContext -> Lambda -> State -> Expression -> Expression -> IO (Maybe Expression)
+    figured ctx entry state' site placed = do
+      outcome <- try $ do
+        (normal, morphed) <- settled placed univ state' =<< opening Morphing ctx{_site = site}
+        fst <$> fire refused ctx entry site morphed normal
+      case outcome of
+        Right answer -> pure (Just answer)
+        Left (OutOfTime cap) -> throwIO (OutOfTime cap)
+        Left _ -> pure Nothing
+    named :: Attribute -> Binding -> Bool
+    named attr (BiTau attr' _) = attr == attr'
+    named _ _ = False
+    called :: [Binding] -> Maybe Expression
+    called known = uncurry (applied known) <$> origin known
+    applied :: [Binding] -> Expression -> [Binding] -> Expression
+    applied known path declared = foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` declared]
+    origin :: [Binding] -> Maybe (Expression, [Binding])
+    origin known = do
+      parent <- case filter ((== Just AtRho) . attributeFromBinding) known of
+        [] -> Just ExRoot
+        [BiTau AtRho (ExFormation outer)] -> fst <$> origin outer
+        [BiTau AtRho path] -> Just (erased path)
+        _ -> Nothing
+      ExFormation siblings <- located parent (fromMaybe univ caller._universe)
+      chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
+      where
+        fits :: [Binding] -> Bool
+        fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- known, attributeFromBinding bd /= Just AtRho]
+        chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
+        chosen [] = Nothing
+        chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
+          [one] -> Just one
+          _ -> Nothing
+        agreed :: (Expression, [Binding]) -> (Int, Int)
+        agreed (_, declared) = (length [attr | BiTau attr _ <- known, BiVoid attr `elem` declared], length (filter (`elem` declared) known))
+    located :: Expression -> Expression -> Maybe Expression
+    located ExRoot whole = Just whole
+    located (ExDispatch path attr) whole = case located path whole of
+      Just (ExFormation siblings) -> listToMaybe [body | BiTau attr' body <- siblings, attr' == attr]
+      _ -> Nothing
+    located _ _ = Nothing
+    erased :: Expression -> Expression
+    erased (ExApplication target _) = erased target
+    erased (ExDispatch target attr) = ExDispatch (erased target) attr
+    erased other = other
     trimmed :: ReduceContext -> Subst -> Meta -> Meta -> IO Subst
     trimmed ctx bound meta source = do
       term <- stayed <$> buildExpressionThrows (ExMeta source._name) bound
@@ -332,51 +431,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         reckoned :: [Binding] -> Attribute -> Expression -> IO Expression
         reckoned _ _ body@(ExFormation [BiLambda (FnSymbol _)]) = pure body
         reckoned bds attr body = do
-          let site = ExDispatch (ExMeta source._name) attr
           placed <- ctx._engine._contextualize body (ExFormation (filter (not . named attr) bds))
-          outcome <- try $ do
-            (normal, morphed) <- settled placed univ state' =<< opening Morphing ctx{_site = site}
-            fst <$> fire refused ctx entry site morphed normal
-          case outcome of
-            Right answer -> pure answer
-            Left (OutOfTime cap) -> throwIO (OutOfTime cap)
-            Left _ -> pure body
-        named :: Attribute -> Binding -> Bool
-        named attr (BiTau attr' _) = attr == attr'
-        named _ _ = False
-        called :: [Binding] -> Maybe Expression
-        called known = do
-          (path, declared) <- origin known
-          pure (foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` declared])
-        origin :: [Binding] -> Maybe (Expression, [Binding])
-        origin known = do
-          parent <- case filter ((== Just AtRho) . attributeFromBinding) known of
-            [] -> Just ExRoot
-            [BiTau AtRho (ExFormation outer)] -> fst <$> origin outer
-            [BiTau AtRho path] -> Just (erased path)
-            _ -> Nothing
-          ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
-          chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
-          where
-            fits :: [Binding] -> Bool
-            fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- known, attributeFromBinding bd /= Just AtRho]
-            chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
-            chosen [] = Nothing
-            chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
-              [one] -> Just one
-              _ -> Nothing
-            agreed :: (Expression, [Binding]) -> (Int, Int)
-            agreed (_, declared) = (length [attr | BiTau attr _ <- known, BiVoid attr `elem` declared], length (filter (`elem` declared) known))
-        located :: Expression -> Expression -> Maybe Expression
-        located ExRoot whole = Just whole
-        located (ExDispatch path attr) whole = case located path whole of
-          Just (ExFormation siblings) -> listToMaybe [body | BiTau attr' body <- siblings, attr' == attr]
-          _ -> Nothing
-        located _ _ = Nothing
-        erased :: Expression -> Expression
-        erased (ExApplication target _) = erased target
-        erased (ExDispatch target attr) = ExDispatch (erased target) attr
-        erased other = other
+          fromMaybe body <$> figured ctx entry state' (ExDispatch (ExMeta source._name) attr) placed
     coined :: IO Int
     coined = atomicModifyIORef' caller._minted (\count -> (succ count, succ count))
     raising :: Lambda -> Expression -> Bool
@@ -406,29 +462,32 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         throwIO
           (userError (printf "The meta '%s' of λ function '%s' clashes with an existing binding" (T.unpack meta._spelling) (T.unpack func)))
 
-rewritten :: [Y.Rule] -> RuleContext -> Expression -> IO Expression
-rewritten rules ctx = goExpr
+rewritten :: [Y.Rule] -> (Maybe Expression -> RuleContext) -> Expression -> IO Expression
+rewritten rules ctx = goExpr Nothing
   where
-    goExpr :: Expression -> IO Expression
-    goExpr expr = goRules rules
+    goExpr :: Maybe Expression -> Expression -> IO Expression
+    goExpr around expr = goRules rules
       where
         goRules :: [Y.Rule] -> IO Expression
-        goRules [] = inside expr
+        goRules [] = inside around expr
         goRules (rule : rest) = do
-          substs <- matchExpressionWithRule' [substEmpty] expr rule ctx
+          substs <- matchExpressionWithRule' [substEmpty] expr rule (ctx (enclosing expr))
           case substs of
             subst : _ -> buildExpressionThrows rule.result subst
             [] -> goRules rest
-    inside :: Expression -> IO Expression
-    inside (ExFormation bds) = ExFormation <$> mapM goBinding bds
-    inside (ExApplication expr arg) = ExApplication <$> goExpr expr <*> goArgument arg
-    inside (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr expr
-    inside (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goExpr expr
-    inside (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goExpr expr
-    inside expr = pure expr
-    goBinding :: Binding -> IO Binding
-    goBinding (BiTau attr expr) = BiTau attr <$> goExpr expr
-    goBinding bd = pure bd
-    goArgument :: Argument -> IO Argument
-    goArgument (ArTau attr expr) = ArTau attr <$> goExpr expr
-    goArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr expr
+        enclosing :: Expression -> Maybe Expression
+        enclosing form@(ExFormation _) = Just form
+        enclosing _ = around
+    inside :: Maybe Expression -> Expression -> IO Expression
+    inside _ form@(ExFormation bds) = ExFormation <$> mapM (goBinding (Just form)) bds
+    inside around (ExApplication expr arg) = ExApplication <$> goExpr around expr <*> goArgument around arg
+    inside around (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr around expr
+    inside around (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goExpr around expr
+    inside around (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goExpr around expr
+    inside _ expr = pure expr
+    goBinding :: Maybe Expression -> Binding -> IO Binding
+    goBinding around (BiTau attr expr) = BiTau attr <$> goExpr around expr
+    goBinding _ bd = pure bd
+    goArgument :: Maybe Expression -> Argument -> IO Argument
+    goArgument around (ArTau attr expr) = ArTau attr <$> goExpr around expr
+    goArgument around (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr around expr
