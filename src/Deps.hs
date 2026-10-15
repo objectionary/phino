@@ -11,7 +11,7 @@ module Deps where
 import AST
 import Bytes (btsSize, btsToNum)
 import Control.Monad (unless, when)
-import Data.Bifunctor (bimap, first)
+import Data.Bifunctor (bimap, first, second)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.List (intercalate)
 import qualified Data.Map.Strict as Map
@@ -675,17 +675,22 @@ saveEvalXml handle cursor printed report = do
     called term = do
       let (object, arguments) = invoked term
       path <- render object
-      pure (printf " of=\"%s\"" (escapeXML path), printf "<with>%s</with>" (concat arguments))
-    invoked :: Expression -> (Expression, [String])
-    invoked (ExApplication term (ArTau attr value)) =
-      let (object, arguments) = invoked term
-       in (object, arguments ++ [printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) (escapeXMLText (valued value))])
+      given <- mapM passed arguments
+      pure (printf " of=\"%s\"" (escapeXML path), printf "<with>%s</with>" (concat given))
+    invoked :: Expression -> (Expression, [(Attribute, Expression)])
+    invoked (ExApplication term (ArTau attr value)) = second (++ [(attr, value)]) (invoked term)
     invoked term = (term, [])
-    valued :: Expression -> String
-    valued (ExFormation [BiLambda (FnSymbol idx)]) = sigma idx
-    valued (ExFormation bds) = maybe "?" valued (listToMaybe [body | BiTau AtPhi body <- bds])
-    valued (ExApplication _ (ArTau AtPhi body)) = valued body
-    valued _ = "?"
+    passed :: (Attribute, Expression) -> IO String
+    passed (attr, value) = printf "<attr name=\"%s\">%s</attr>" (escapeXML (printAttribute attr)) . escapeXMLText <$> valued value
+    valued :: Expression -> IO String
+    valued value = do
+      nesting <- readIORef cursor
+      maybe (pure (symbolic value)) printed (namedLookup value nesting._objects)
+    symbolic :: Expression -> String
+    symbolic (ExFormation [BiLambda (FnSymbol idx)]) = sigma idx
+    symbolic (ExFormation bds) = maybe "?" symbolic (listToMaybe [body | BiTau AtPhi body <- bds])
+    symbolic (ExApplication _ (ArTau AtPhi body)) = symbolic body
+    symbolic _ = "?"
     parted :: Expression -> IO (String, String)
     parted (ExApplication term (ArTau attr value)) = do
       origin <- printed term

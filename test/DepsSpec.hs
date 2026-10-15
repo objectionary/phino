@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvStuckOn, EvTerm, EvTerminate, EvUnjoined, EvUpcast), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Plausible, Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvLooped, EvRun, EvStarted, EvStuckOn, EvTerm, EvTerminate, EvUnjoined, EvUpcast), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -264,6 +264,12 @@ spec = do
     it "writes a cut that answered a copy as an element naming its symbol, its object and the symbols of its arguments" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvLooped 1 Morphing Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (Just (13, Just (ExApplication (ExDispatch ExRoot (AtLabel "ёрш")) (ArTau (AtLabel "ц") (ExFormation [BiLambda (FnSymbol 6)])))))])
       lines written `shouldContain` ["  <looped symbol=\"𝜎13\" by=\"morph\" match=\"proven\" at=\"Φ\" of=\"Φ.ёрш\"><with><attr name=\"ц\">𝜎6</attr></with><e>Φ:ъ</e></looped>"]
+    it "names an argument of a copy a cut answered by the application that made it" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жаба")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 17)]))) (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 17)])]) ExRoot, EvLooped 1 Morphing Plausible (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (Just (23, Just (ExApplication (ExDispatch ExRoot (AtLabel "ёрш")) (ArTau (AtLabel "ц") (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 17)])])))))])
+      lines written `shouldContain` ["  <looped symbol=\"𝜎23\" by=\"morph\" match=\"plausible\" at=\"Φ\" of=\"Φ.ёрш\"><with><attr name=\"ц\">𝑛·0·1</attr></with><e>Φ:ъ</e></looped>"]
+    it "names an argument of a deferred copy by the application that made it" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "кулик")) (ArTau (AtLabel "ш") ExRoot)) (ExFormation [BiTau (AtLabel "ш") ExRoot]) ExRoot, EvDeferred 1 31 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiTau (AtLabel "ш") ExRoot]), BiTau AtPhi (ExDispatch ExXi (AtLabel "щ"))]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExFormation [BiTau (AtLabel "ш") ExRoot])))) ExRoot])
+      lines written `shouldContain` ["  <deferred symbol=\"𝜎31\" by=\"morph\" at=\"Φ\" of=\"Φ.ёж\"><with><attr name=\"щ\">𝑛·0·1</attr></with><e>⟦ щ ↦ 𝑛·0·1, φ ↦ щ ⟧</e></deferred>"]
     it "writes a join that failed as an element holding the two branches it could not pair" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvUnjoined 2 "L_щ" (ExFormation [BiLambda (FnSymbol 5)]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (FnSymbol 8)]), BiTau (AtLabel "ц") ExRoot])])
       lines written `shouldContain` ["    <unjoined λ=\"L_щ\"><e>𝜎5:λ</e><e>⟦ ю ↦ 𝜎8:λ, ц ↦ Φ ⟧</e></unjoined>"]

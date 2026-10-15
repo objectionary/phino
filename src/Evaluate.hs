@@ -150,15 +150,15 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     evaluated :: ReduceContext -> Lambda -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     evaluated ctx entry (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      (answer, state'') <- fire refused ctx entry source state' term
+      (answer, state'') <- fire refused ctx entry (ExMeta source._name) state' term
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Evaluation (ExMeta source._name) answer)
       bound' <- bind meta (MvExpression answer) bound
       pure (bound', state'')
-    fire :: (Expression -> ReduceContext -> (Acyclic, Expression) -> IO Expression) -> ReduceContext -> Lambda -> Meta -> State -> Expression -> IO (Expression, State)
+    fire :: (Expression -> ReduceContext -> (Acyclic, Expression) -> IO Expression) -> ReduceContext -> Lambda -> Expression -> State -> Expression -> IO (Expression, State)
     fire _ _ entry _ state' term
       | raising entry term = pure (term, state')
-    fire cut ctx _ source state' term@(ExFormation _) = do
-      let firing = ctx{_judgment = Evaluation, _site = ExMeta source._name}
+    fire cut ctx _ site state' term@(ExFormation _) = do
+      let firing = ctx{_judgment = Evaluation, _site = site}
       admission <- admitting term firing
       case admission of
         Left refusal -> do
@@ -236,7 +236,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           pure (bound', state'')
         reduced :: Meta -> Expression -> State -> IO (Expression, State)
         reduced side term@(ExFormation bds) state''
-          | hanging term && any (elem Defer) entry._lenient && copied bds = deferred side bds state'' >>= maybe (entered (severed bds) side term state'') (\answer -> pure (answer, state''))
+          | hanging term && any (elem Defer) entry._lenient && copied bds = deferred side bds state'' >>= maybe (entered (severed side bds state'') side term state'') (\answer -> pure (answer, state''))
         reduced side term state''
           | hanging term = entered refused side term state''
           | otherwise = pure (term, state'')
@@ -244,7 +244,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         entered cut side term state'' = do
           (normal, morphed) <- morphing univ ctx (ExDispatch term AtPhi) state''
           ctx._saveEval (EvTerm ctx._nesting side._spelling Morphing (ExDispatch (ExMeta side._name) AtPhi) normal)
-          (answer, state''') <- fire cut ctx entry side morphed normal
+          (answer, state''') <- fire cut ctx entry (ExMeta side._name) morphed normal
           ctx._saveEval (EvTerm ctx._nesting side._spelling Evaluation (ExMeta side._name) answer)
           pure (answer, state''')
         hanging :: Expression -> Bool
@@ -281,21 +281,40 @@ symbol func form self univ state caller = case matched caller._symbolic func of
             reducible (ExDispatch _ _) = True
             reducible (ExApplication _ _) = True
             reducible _ = False
-            named :: Attribute -> Binding -> Bool
-            named attr (BiTau attr' _) = attr == attr'
-            named _ _ = False
             reading :: ReduceContext
             reading = ctx{_symbolic = emptyLambdas, _memo = Nothing, _tally = Nothing, _acyclic = Nothing, _saveStep = dontSaveStep, _saveEval = dontSaveEval}
             postponed :: [Binding] -> IO Expression
             postponed known = do
+              call <- traverse (argued side known state'') (called known)
               fresh <- coined
-              ctx._saveEval (EvDeferred ctx._nesting fresh Morphing (ExFormation known) (called known) (ExDispatch (ExMeta side._name) AtPhi))
+              ctx._saveEval (EvDeferred ctx._nesting fresh Morphing (ExFormation known) call (ExDispatch (ExMeta side._name) AtPhi))
               pure (ExFormation [BiLambda (FnSymbol fresh)])
-        severed :: [Binding] -> Expression -> ReduceContext -> (Acyclic, Expression) -> IO Expression
-        severed bds _ firing (mode, before) = do
+        severed :: Meta -> [Binding] -> State -> Expression -> ReduceContext -> (Acyclic, Expression) -> IO Expression
+        severed side bds state'' _ firing (mode, before) = do
+          call <- traverse (argued side bds state'') (called bds)
           fresh <- coined
-          firing._saveEval (EvLooped firing._nesting firing._judgment mode before firing._site (Just (fresh, called bds)))
+          firing._saveEval (EvLooped firing._nesting firing._judgment mode before firing._site (Just (fresh, call)))
           pure (ExFormation [BiLambda (FnSymbol fresh)])
+        argued :: Meta -> [Binding] -> State -> Expression -> IO Expression
+        argued side bds state'' (ExApplication target (ArTau attr body)) = do
+          target' <- argued side bds state'' target
+          ExApplication target' . ArTau attr <$> reckoned side bds state'' attr body
+        argued _ _ _ call = pure call
+        reckoned :: Meta -> [Binding] -> State -> Attribute -> Expression -> IO Expression
+        reckoned _ _ _ _ body@(ExFormation [BiLambda (FnSymbol _)]) = pure body
+        reckoned side bds state'' attr body = do
+          let site = ExDispatch (ExMeta side._name) attr
+          placed <- ctx._engine._contextualize body (ExFormation (filter (not . named attr) bds))
+          outcome <- try $ do
+            (normal, morphed) <- settled placed univ state'' =<< opening Morphing ctx{_site = site}
+            fst <$> fire refused ctx entry site morphed normal
+          case outcome of
+            Right answer -> pure answer
+            Left (OutOfTime cap) -> throwIO (OutOfTime cap)
+            Left _ -> pure body
+        named :: Attribute -> Binding -> Bool
+        named attr (BiTau attr' _) = attr == attr'
+        named _ _ = False
         called :: [Binding] -> Maybe Expression
         called known = do
           (path, declared) <- origin known

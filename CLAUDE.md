@@ -220,7 +220,14 @@ A copy the step does enter gets a fresh symbol too once `--acyclic` refuses
 the firing its φ comes to: `fire` asks `admitting` of `Morph.hs` and hands a
 refusal to the function it is given, `refused` for an `evaluate` line and for
 a step that does not defer, `severed` for one that does, which writes the
-symbol and the call on the `looped(…)` line (`EvLooped`, #1895).
+symbol and the call on the `looped(…)` line (`EvLooped`, #1895). Before
+either line is written, `argued` of `paired` works out every argument of the
+call that is no bare symbol: it morphs the argument in the copy, at a site
+such as `𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluate`
+line does, and writes every step to the protocol, so the markup names the
+argument by the object an application made of it, such as `𝑛·77·3`. An
+argument whose morph or firing gets stuck, is cut or runs out of steps keeps
+the call as written, and the markup writes `?` for it (#1916).
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
