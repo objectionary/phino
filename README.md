@@ -248,6 +248,8 @@ world declares no object the copy was made of, `of` names the `<formed>`
 element that spells the copy out, and there is no `<with>`. A copy whose
 arguments read to no bare symbol is entered as before. The short `𝑛3: 𝑛2`
 stands for `𝑛3: {of: 𝑛2, defer: false}`.
+A mapping reads no key but `of` and `defer`, and any other, such as a
+misspelled `defr`, refuses the whole file, as an unknown key of an entry does.
 
 An argument that is no bare symbol, such as `w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ )`, is
 worked out before the line is written. The entry morphs it in the copy, fires

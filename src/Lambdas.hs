@@ -161,7 +161,9 @@ instance FromJSON Lambda where
         where
           line :: (Text, Value) -> Yaml.Parser Line
           line (meta, String source) = Unfolded <$> expressionMeta meta <*> expressionMeta source <*> pure False
-          line (meta, Object body) = Unfolded <$> expressionMeta meta <*> (body .: "of" >>= expressionMeta) <*> body .:? "defer" .!= False
+          line (meta, Object body) = do
+            mapM_ (stranger meta . Key.toText) (KeyMap.keys body)
+            Unfolded <$> expressionMeta meta <*> (body .: "of" >>= expressionMeta) <*> body .:? "defer" .!= False
           line (meta, _) =
             fail
               ( printf
@@ -169,6 +171,17 @@ instance FromJSON Lambda where
                   (T.unpack meta)
                   key
               )
+          stranger :: Text -> Text -> Yaml.Parser ()
+          stranger meta name
+            | name `elem` ["of", "defer"] = pure ()
+            | otherwise =
+                fail
+                  ( printf
+                      "The key '%s' of the line '%s' of 'unfold' of λ function '%s' is none of the keys a line reads: of, defer"
+                      (T.unpack name)
+                      (T.unpack meta)
+                      key
+                  )
       casts :: String -> Object -> Yaml.Parser [Line]
       casts key entry = do
         mapping <- entry .:? "upcast" .!= (Map.empty :: Map Text Value)

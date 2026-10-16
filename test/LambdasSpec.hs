@@ -328,6 +328,7 @@ spec = do
       , ("an 'unfold' line unfolding a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("an 'unfold' line naming a list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: [𝑛1]\n  𝑛: 𝑛2\n", "The line '𝑛2' of 'unfold' of λ function 'L_fork' names neither a meta nor a mapping with 'of'")
       , ("an 'unfold' line with no 'of'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {defer: true}\n  𝑛: 𝑛2\n", "key \"of\" not found")
+      , ("an 'unfold' line misspelling 'defer'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1, defr: true}\n  𝑛: 𝑛2\n", "The key 'defr' of the line '𝑛2' of 'unfold' of λ function 'L_fork' is none of the keys a line reads: of, defer")
       , ("an 'unfold' line whose 'defer' is no flag", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1, defer: often}\n  𝑛: 𝑛2\n", "expected Bool")
       , ("an 'upcast' block holding one line", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The 'upcast' block of λ function 'L_fork' holds 1 line, while it casts one pair and takes exactly two")
       , ("an 'upcast' block holding three lines", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  upcast:\n    𝑛4: 𝑛1\n    𝑛5: 𝑛2\n    𝑛6: 𝑛3\n  𝑛: 𝑛4\n", "The 'upcast' block of λ function 'L_fork' holds 3 lines, while it casts one pair and takes exactly two")
