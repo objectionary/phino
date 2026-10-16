@@ -333,7 +333,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         _ -> both one two
       where
         both :: Expression -> Expression -> IO (Subst, State)
-        both one two = readIORef ctx._minted >>= maybe (unjoined one two) written . joined entry._lenient one two
+        both one two = readIORef ctx._minted >>= maybe (unjoined one two) written . joined one two
         unjoined :: Expression -> Expression -> IO a
         unjoined one two = do
           ctx._saveEval (EvUnjoined ctx._nesting func one two)

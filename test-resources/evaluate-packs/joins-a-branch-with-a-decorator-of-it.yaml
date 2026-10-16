@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# The fork the lenient join of #1815 brings together, under an entry with no
-# 'lenient' key. A copy and a decorator of it differ in shape, so the strict
-# join refuses them and the firing gets stuck, as an entry is strict unless it
-# says otherwise.
+# A fork whose one branch calls a method often meets a decorator: one branch
+# comes to a copy, the other to a formation whose φ is that copy. The two
+# differ in shape, and the join takes them into the decorator, with a fresh
+# symbol minted inside it the usual way (#1815, #1936).
 symbolic: |
   - λ: L_fork
     morph:
@@ -16,10 +16,13 @@ symbolic: |
     𝑛: 𝑛3
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
-fails: "No entry of --symbolic answers the λ function 'L_fork'"
+result: '⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝑛1·1 := ⟦ φ ↦ 𝜎1:λ, neg ↦ ⟦⟧ ⟧  # 𝕄(ξ.a)
       𝑛2·1 := ⟦ φ ↦ 𝜎2:λ, neg ↦ ⟦⟧ ⟧:φ  # 𝕄(ξ.b)
-      unjoined(L_fork)  # ⟦ φ ↦ 𝜎1:λ, neg ↦ ⟦⟧ ⟧ vs ⟦ φ ↦ 𝜎2:λ, neg ↦ ⟦⟧ ⟧:φ
+      𝔻(𝜎3:λ) ∈ { 𝔻(𝜎1:λ), 𝔻(𝜎2:λ) }
+      𝑛3·1 := ⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧:φ  # [𝑛1, 𝑛2]
+      𝑛·1·1 := 𝑛3·1  # 𝑛
+      𝑛·1·2 := 𝑛3·1  # 𝕄(𝑛·1·1)

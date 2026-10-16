@@ -1328,7 +1328,7 @@ spec = do
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
 
     it "names every block of a --symbolic entry in its help" $
-      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"rewrite\"", "\"symbolize\"", "\"join\"", "\"lenient\"", "\"unfold\"", "\"upcast\"", "\"terminators\""]
+      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"rewrite\"", "\"symbolize\"", "\"join\"", "\"unfold\"", "\"upcast\"", "\"terminators\""]
 
     it "dataizes simple expression" $
       withStdin "[[ D> 01- ]]" $
@@ -2557,16 +2557,10 @@ spec = do
           withStdin sum' $
             testCLIFailed ["dataize", "--symbolic=" ++ path] ["cannot be read"]
 
-    describe "a lenient join" $ do
-      let strict = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
-          lenient = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: []\n  𝑛: 𝑛3\n"
-      it "gets stuck on a fork whose second branch decorates the first when the entry is strict" $
-        withLambdasOf strict $ \forks ->
-          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧" $
-            testCLIFailed ["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ["No entry of --symbolic answers the λ function 'L_fork'"]
-
+    describe "a join of a branch and a decorator of it" $ do
+      let fork = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
       it "dataizes a fork whose second branch decorates the first" $
-        withLambdasOf lenient $ \forks ->
+        withLambdasOf fork $ \forks ->
           withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧" $
             testCLISucceeded ["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ["40-45-00-00-00-00-00-00"]
 
@@ -2935,23 +2929,17 @@ spec = do
             ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
 
-    describe "a lenient join" $ do
-      let strict = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
-          lenient = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: []\n  𝑛: 𝑛3\n"
-      it "gets stuck on a fork whose second branch decorates the first when the entry is strict" $
-        withLambdasOf strict $ \forks ->
-          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-            testCLIFailed ["morph", "--symbolic=" ++ forks, "--locator=Q.y"] ["No entry of --symbolic answers the λ function 'L_fork'"]
-
+    describe "a join of two branches of different shapes" $ do
+      let fork = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
       it "joins a fork whose second branch decorates the first" $
-        withLambdasOf lenient $ \forks ->
+        withLambdasOf fork $ \forks ->
           withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
             testCLISucceeded
               ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
               ["⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧"]
 
       it "joins a fork whose first branch decorates the second" $
-        withLambdasOf lenient $ \forks ->
+        withLambdasOf fork $ \forks ->
           withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
             testCLISucceeded
               ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
@@ -2960,19 +2948,14 @@ spec = do
       it "writes the decorator it joined into the protocol" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
-          withLambdasOf lenient $ \forks ->
+          withLambdasOf fork $ \forks ->
             withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
               testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records `shouldContain` ["    𝑛3·1 := ⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧:φ  # [𝑛1, 𝑛2]"]
 
-      it "gets stuck on a fork pairing a bare symbol with a call holding one symbol when the entry is strict" $
-        withLambdasOf strict $ \forks ->
-          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-            testCLIFailed ["morph", "--symbolic=" ++ forks, "--locator=Q.y"] ["No entry of --symbolic answers the λ function 'L_fork'"]
-
       it "joins a bare symbol with a call holding one symbol into a copy of the call" $
-        withLambdasOf lenient $ \forks ->
+        withLambdasOf fork $ \forks ->
           withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
             testCLISucceeded
               ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]

@@ -153,10 +153,11 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 those of the two blocks below among them.
 
 An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`,
-`unfold`, `rewrite`, `stay`, `symbolize`, `upcast`, `join`, `lenient`,
-`terminators` and `𝑛`, and any other key, such as a misspelled `lenent`,
-refuses the whole file, so a typo never drops a block or an option without a
-word.
+`unfold`, `rewrite`, `stay`, `symbolize`, `upcast`, `join`, `terminators` and
+`𝑛`, and any other key, such as a misspelled `jion`, refuses the whole file,
+so a typo never drops a block without a word. The key `lenient` refuses it
+too, with a word of its own, since every `join` line now joins the way a
+lenient one did.
 
 ### Firing what an operand came to
 
@@ -603,51 +604,31 @@ chain of its own, only the symbol, so the join pairs `𝜎A` with the symbol the
 `φ` chain of the other term ends in, mints a
 fresh `𝜎C` for that pair the usual way, and answers the bare `⟦ λ ⤍ 𝜎C ⟧`.
 The methods of the formation are dropped, since the other branch may have
-none of them. A formation whose `φ` chain ends in a datum, or which has no `φ`
-at all, does not join with a bare symbol.
+none of them.
 
 A fork whose one branch calls a method often meets a decorator. In
 `if. (value.gte 0) (0.plus value) value.neg` the first branch comes to a
 number `X`, while `value.neg` is a method, `times -1 > @`, and comes to
-`⟦ φ ↦ X ⟧`, with the number one level down. The two differ in shape, so the
-join is refused. An entry that says `lenient: []` beside its `join` block
-lets it through:
+`⟦ φ ↦ X ⟧`, with the number one level down. The two differ in shape, and a
+`join` line still joins them: it takes a term and a formation whose `φ` is
+that term, in either order, and answers `⟦ φ ↦ X ⟧`, with symbols minted
+inside `X` the usual way. Where both terms are formations, the one with the
+longer `φ` chain is taken for the decorator. The answer drops the `ρ` and the
+other attributes of the decorator, so it is not exactly the object either
+branch made, yet dataization still reaches the same data through it.
 
-```yaml
-- λ: L_fork
-  morph:
-    𝑛1: $.left
-    𝑛2: $.right
-  join:
-    𝑛3: [𝑛1, 𝑛2]
-  lenient: []
-  𝑛: 𝑛3
-```
-
-Every `join` line of such an entry joins a term with a formation whose `φ` is
-that term, in either order, and answers `⟦ φ ↦ X ⟧`, with symbols minted inside
-`X` the usual way. Where both terms are formations, the one with the longer `φ`
-chain is taken for the decorator. The answer drops the `ρ` and the other
-attributes of the decorator, so it is not exactly the object either branch
-made, which is why an entry is strict unless it says otherwise. Dataization
-still reaches the same data through it. The list takes no option and stays
-empty. A name in it is refused when the file is read, `defer` and `upcast`
-among them, since a `defer` block and an `upcast` block now do their work, and
-so is a lenient entry with no `join` line.
-
-A lenient entry also joins a bare symbol with a term that holds exactly one
-symbol anywhere inside. In `bool.and` one branch comes to a bare
-`⟦ λ ⤍ 𝜎1 ⟧` and the other to `⟦ φ ↦ Φ.bool( if ↦ 𝑘 ) ⟧`, where `𝑘` is
-`⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧`. The `φ` of the second is a call, so its
-`φ` chain ends in no symbol and a strict join stops there. A lenient one
+A `join` line also joins a bare symbol with a term whose `φ` chain ends in no
+symbol, as long as the term holds exactly one symbol anywhere inside. In
+`bool.and` one branch comes to a bare `⟦ λ ⤍ 𝜎1 ⟧` and the other to
+`⟦ φ ↦ Φ.bool( if ↦ 𝑘 ) ⟧`, where `𝑘` is `⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧`.
+The `φ` of the second is a call, so its `φ` chain ends in no symbol. The join
 answers a copy of the second term with `𝜎2` replaced by a fresh `𝜎3`, which
 stands for either `𝜎1` or `𝜎2`. The copy keeps every binding of the term, `ρ`
-included. A term with no symbol, or with two, is still refused.
+included. A term with no symbol, or with two, is refused.
 
-A bare symbol meeting a term with more symbols than one is no join, lenient
-or not. The entry casts it into the shape of that term first, with an
-`upcast` block, and a branch one call away from its value is fired first with
-an `unfold` line.
+A bare symbol meeting a term with more symbols than one is no join. The entry
+casts it into the shape of that term first, with an `upcast` block, and a
+branch one call away from its value is fired first with an `unfold` line.
 
 One term being `⊥` is the exception, since `if. cond value ⊥` is how EO spells
 "raise unless `cond`": the program raises on that side of the condition and

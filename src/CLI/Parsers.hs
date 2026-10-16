@@ -263,8 +263,7 @@ optSymbolic =
               \answering a fresh symbol for one whose firing a cut refuses, the terms of those it stands the data of into \
               \unknowns under \"symbolize\", the pair of terms whose smaller it casts into the shape of the \
               \larger under \"upcast\", in two lines binding the two results, the pairs of branches it joins \
-              \into one term under \"join\", whether a join takes a term and a formation whose φ is that term for one under \
-              \\"lenient\", an empty list, the λ functions whose objects \
+              \into one term under \"join\", the λ functions whose objects \
               \a join takes for a branch that raises under \"terminators\", and answering with the term under \
               \\"𝑛\""
         )
