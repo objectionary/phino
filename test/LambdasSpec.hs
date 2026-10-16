@@ -313,6 +313,8 @@ spec = do
       , ("a 'stay' line keeping a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("a 'stay' line bound to what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
       , ("a 'stay' line keeping a term instead of a meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: $.a\n  𝑛: 𝑛2\n", "is not an expression meta")
+      , ("a meta bound by 'stay' and again by 'symbolize' in its other spelling", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛1\n  symbolize:\n    \"!n3\": 𝑛1\n  𝑛: 𝑛3\n", "The meta '!n3' of λ function 'L_fork' is bound by more than one line")
+      , ("a meta bound twice by 'stay' in its two spellings", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  stay:\n    𝑛3: 𝑛1\n    \"!n3\": 𝑛2\n  𝑛: 𝑛3\n", "is bound by more than one line")
       , ("a meta bound by 'morph' and again by 'stay'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_fork' is bound by more than one line")
       , ("a line reading the meta it binds", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛2\n  𝑛: 𝑛2\n", "The line binding '𝑛2' of λ function 'L_fork' reads the meta it binds")
       , ("two lines reading what each other made", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛3\n  symbolize:\n    𝑛3: 𝑛2\n  𝑛: 𝑛2\n", "The line binding '𝑛2' of λ function 'L_fork' reads the meta it binds")
