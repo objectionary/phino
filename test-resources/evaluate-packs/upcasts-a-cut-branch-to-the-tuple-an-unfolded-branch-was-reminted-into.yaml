@@ -3,9 +3,9 @@
 ---
 # yamllint disable rule:line-length
 # The fork of 'bytes.array' from #1921, spelled as a pipeline. The left branch
-# 'Φ.rec( ξ.n )' leads back to the same fork, so its 'unfold' line, which says
-# 'defer: true', has '--acyclic=proven' cut the firing and answers the copy
-# with the looped bare symbol '𝜎3'. The right branch is the 'with' object of
+# 'Φ.rec( ξ.n )' leads back to the same fork, so its 'unfold' line has
+# '--acyclic=proven' cut the firing and answers the copy with the looped bare
+# symbol '𝜎3' (#1933). The right branch is the 'with' object of
 # a tuple, whose φ builds a copy of 'Φ.tuple' with three arguments; its
 # 'unfold' line morphs that φ into the real tuple. The 'rewrite' line then
 # shrinks the tuple into a call of 'Φ.tuple' with every argument reminted:
@@ -22,8 +22,8 @@ symbolic: |
       𝑛1: $.a
       𝑛2: $.b
     unfold:
-      𝑛3: {of: 𝑛1, defer: true}
-      𝑛4: {of: 𝑛2, defer: true}
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
     rewrite:
       𝑛5:
         of: 𝑛3

@@ -152,11 +152,11 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 `--max-steps` work on it unchanged. It may name any meta the entry bound,
 those of the two blocks below among them.
 
-An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `unfold`,
-`rewrite`, `stay`, `symbolize`, `upcast`, `join`, `lenient`, `terminators` and
-`𝑛`, and any other key, such as a misspelled `lenent` or a `defer` that now
-belongs to a line of `unfold`, refuses the whole file, so a typo never drops a
-block or an option without a word.
+An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`,
+`unfold`, `rewrite`, `stay`, `symbolize`, `upcast`, `join`, `lenient`,
+`terminators` and `𝑛`, and any other key, such as a misspelled `lenent`,
+refuses the whole file, so a typo never drops a block or an option without a
+word.
 
 ### Firing what an operand came to
 
@@ -229,13 +229,17 @@ cuts it when it fires again what it fired before.
 That step gets stuck on a term that is a copy, such as
 `Φ.step( tup ↦ Φ.items.tail )`, one of whose arguments reads to a bare
 symbol `⟦ λ ⤍ 𝜎1 ⟧`: morphing its `φ`, `tup.next`, asks `𝜎1` for an
-attribute nobody knows. A line that says `defer: true` does not enter such a
-copy. It binds its meta to a fresh symbol instead and writes what the symbol
-stands for:
+attribute nobody knows. A block of its own, `defer`, keeps such a copy away
+from the step. Each line of it reads a meta and binds another, the way a line
+of `unfold` does. When the term is a copy one of whose arguments, `φ` and `ρ`
+aside, reads to a bare symbol, the line binds its meta to a fresh symbol and
+writes what the symbol stands for:
 
 ```yaml
+  defer:
+    𝑛3: 𝑛2
   unfold:
-    𝑛3: {of: 𝑛2, defer: true}
+    𝑛4: 𝑛3
 ```
 
 ```text
@@ -245,9 +249,13 @@ deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
 The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
 `<with>` element with an `<attr name="tup">𝜎1</attr>` per argument. When the
 world declares no object the copy was made of, `of` names the `<formed>`
-element that spells the copy out, and there is no `<with>`. A copy whose
-arguments read to no bare symbol is entered as before. The short `𝑛3: 𝑛2`
-stands for `𝑛3: {of: 𝑛2, defer: false}`.
+element that spells the copy out, and there is no `<with>`. Any other term,
+a copy whose arguments read to no bare symbol among them, is bound as it
+stands, as `𝑛3·1 := 𝑛·1·1  # 𝑛2`, and the `unfold` line after it enters the
+copy. A `defer` line asks nothing of the `φ` of a copy, so it also defers one
+that an `unfold` line would never enter. A line of `unfold` names a meta and
+nothing else, and the mapping `{of: 𝑛2, defer: true}` it once took is refused
+when the file is read.
 
 An argument that is no bare symbol, such as `w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ )`, is
 worked out before the line is written. The entry morphs it in the copy, fires
@@ -261,16 +269,16 @@ markup by the meta of the element that named it earlier, such as the
 `<applied>` of the call, or by an expression meta, such as `𝑒1`, when none
 did.
 
-A deferring line also answers a copy it did enter when `--acyclic` cuts the
-firing its `φ` comes to. With
+An `unfold` line answers a term with a fresh symbol too, when `--acyclic` cuts
+the firing its `φ` comes to. With
 `rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧`, the copy
 `Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ )` reads to no bare symbol, so the line enters it,
 comes to the same fork, and fires it again, and the cut refuses that firing.
-A line that does not defer loses the whole firing to the cut. A deferring one
-binds its meta to a fresh symbol and writes it on the `looped` line:
+Rather than lose the whole firing to the cut, the line binds its meta to a
+fresh symbol and writes it on the `looped` line:
 
 ```text
-looped(𝑛·1·3) := 𝜎3  # 𝔼(𝑛2), proven
+looped(𝑛·1·3) := 𝜎3  # 𝔼(𝑛3), proven
 ```
 
 The markup writes it as `<looped symbol="𝜎3" … of="Φ.rec">` with the same
@@ -624,7 +632,7 @@ attributes of the decorator, so it is not exactly the object either branch
 made, which is why an entry is strict unless it says otherwise. Dataization
 still reaches the same data through it. The list takes no option and stays
 empty. A name in it is refused when the file is read, `defer` and `upcast`
-among them, since an `unfold` line and an `upcast` block now do their work, and
+among them, since a `defer` block and an `upcast` block now do their work, and
 so is a lenient entry with no `join` line.
 
 A lenient entry also joins a bare symbol with a term that holds exactly one
@@ -686,9 +694,9 @@ section on `--protocol` below shows one.
 
 ### The order of the lines
 
-The lines of `evaluate`, `unfold`, `rewrite`, `stay`, `symbolize`, `upcast`
-and `join` run in the order of the metas they read, not in the order of their
-blocks. A line runs once every meta it reads is bound, so this entry fires
+The lines of `evaluate`, `defer`, `unfold`, `rewrite`, `stay`, `symbolize`,
+`upcast` and `join` run in the order of the metas they read, not in the order
+of their blocks. A line runs once every meta it reads is bound, so this entry fires
 what its `rewrite` line unwrapped:
 
 ```yaml

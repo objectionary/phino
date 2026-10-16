@@ -33,7 +33,8 @@ order known func = concatMap bound (lined known func)
   where
     bound :: Line -> [T.Text]
     bound (Evaluated meta _) = [_spelling meta]
-    bound (Unfolded meta _ _) = [_spelling meta]
+    bound (Deferred meta _) = [_spelling meta]
+    bound (Unfolded meta _) = [_spelling meta]
     bound (Rewritten meta _ _) = [_spelling meta]
     bound (Stayed meta _) = [_spelling meta]
     bound (Symbolized meta _) = [_spelling meta]
@@ -46,8 +47,11 @@ joins known func = [(_spelling meta, (_spelling left, _spelling right)) | Paired
 fired :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 fired known func = [(_spelling meta, _spelling source) | Evaluated meta source <- lined known func]
 
-unfolds :: Lambdas -> T.Text -> [(T.Text, T.Text, Bool)]
-unfolds known func = [(_spelling meta, _spelling source, deferring) | Unfolded meta source deferring <- lined known func]
+defers :: Lambdas -> T.Text -> [(T.Text, T.Text)]
+defers known func = [(_spelling meta, _spelling source) | Deferred meta source <- lined known func]
+
+unfolds :: Lambdas -> T.Text -> [(T.Text, T.Text)]
+unfolds known func = [(_spelling meta, _spelling source) | Unfolded meta source <- lined known func]
 
 casts :: Lambdas -> T.Text -> [((T.Text, T.Text), (T.Text, T.Text))]
 casts known func = [((_spelling one, _spelling first), (_spelling two, _spelling second)) | Upcasted one first two second <- lined known func]
@@ -156,13 +160,17 @@ spec = do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
       fmap _lenient (matched known "L_fork") `shouldBe` Just False
 
-    it "reads the lines of 'unfold' with the metas they read and whether they defer" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n    𝑛3: {of: 𝑛2, defer: true}\n  𝑛: 𝑛3\n"
-      unfolds known "L_fork" `shouldBe` [("𝑛2", "𝑛1", False), ("𝑛3", "𝑛2", True)]
+    it "reads the lines of 'unfold' with the metas they read" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
+      unfolds known "L_fork" `shouldBe` [("𝑛2", "𝑛1"), ("𝑛3", "𝑛2")]
 
-    it "reads an 'unfold' line saying 'of' alone as one that does not defer" $ do
-      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1}\n  𝑛: 𝑛2\n"
-      unfolds known "L_fork" `shouldBe` [("𝑛2", "𝑛1", False)]
+    it "reads the lines of 'defer' with the metas they read" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛4: 𝑛2\n    𝑛3: 𝑛1\n  𝑛: 𝑛3\n"
+      defers known "L_fork" `shouldBe` [("𝑛3", "𝑛1"), ("𝑛4", "𝑛2")]
+
+    it "runs a 'defer' line before an 'unfold' line no meta orders" $ do
+      known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  unfold:\n    𝑛3: 𝑛1\n  defer:\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n"
+      order known "L_fork" `shouldBe` ["𝑛4", "𝑛3"]
 
     it "reads the two lines of an 'upcast' block as one pair" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛4: 𝑛2\n    𝑛3: 𝑛1\n  𝑛: 𝑛3\n"
@@ -241,8 +249,8 @@ spec = do
       order known "L_fork" `shouldBe` ["𝑛4", "𝑛5", "𝑛3"]
 
     it "runs the lines of a fork in the order of the metas they read, whatever the order of their blocks" $ do
-      known <- lambdasOf (T.concat ["- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛15: [𝑛13, 𝑛14]\n  upcast:\n    𝑛13: 𝑛11\n    𝑛14: 𝑛12\n  symbolize:\n    𝑛11: 𝑛9\n    𝑛12: 𝑛10\n  stay:\n    𝑛9: 𝑛7\n    𝑛10: 𝑛8\n  rewrite:\n    𝑛7:\n      of: 𝑛5\n", rules, "    𝑛8:\n      of: 𝑛6\n", rules, "  unfold:\n    𝑛5: {of: 𝑛3, defer: true}\n    𝑛6: {of: 𝑛4, defer: true}\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛15\n"])
-      order known "L_fork" `shouldBe` ["𝑛3", "𝑛4", "𝑛5", "𝑛6", "𝑛7", "𝑛8", "𝑛9", "𝑛10", "𝑛11", "𝑛12", "𝑛13", "𝑛14", "𝑛15"]
+      known <- lambdasOf (T.concat ["- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛15: [𝑛13, 𝑛14]\n  upcast:\n    𝑛13: 𝑛11\n    𝑛14: 𝑛12\n  symbolize:\n    𝑛11: 𝑛9\n    𝑛12: 𝑛10\n  stay:\n    𝑛9: 𝑛7\n    𝑛10: 𝑛8\n  rewrite:\n    𝑛7:\n      of: 𝑛5\n", rules, "    𝑛8:\n      of: 𝑛6\n", rules, "  unfold:\n    𝑛5: 𝑛16\n    𝑛6: 𝑛17\n  defer:\n    𝑛16: 𝑛3\n    𝑛17: 𝑛4\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛15\n"])
+      order known "L_fork" `shouldBe` ["𝑛3", "𝑛4", "𝑛16", "𝑛17", "𝑛5", "𝑛6", "𝑛7", "𝑛8", "𝑛9", "𝑛10", "𝑛11", "𝑛12", "𝑛13", "𝑛14", "𝑛15"]
 
     it "runs the lines no meta orders in the order of their blocks" $ do
       known <- lambdasOf "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  upcast:\n    𝑛7: 𝑛1\n    𝑛9: 𝑛2\n  symbolize:\n    𝑛4: 𝑛1\n  stay:\n    𝑛5: 𝑛2\n  unfold:\n    𝑛8: 𝑛2\n  evaluate:\n    𝑛6: 𝑛1\n  𝑛: 𝑛3\n"
@@ -325,12 +333,14 @@ spec = do
       , ("a lenient entry with no 'join' line to be lenient in", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  lenient: []\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is lenient but has no 'join' line")
       , ("a 'lenient' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: true\n  𝑛: 𝑛3\n", "lenient: parsing [] failed, expected Array")
       , ("a 'lenient' key naming an option phino does not know", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defr]\n  𝑛: 𝑛3\n", "The option 'defr' of 'lenient' of λ function 'L_fork' is unknown")
-      , ("a 'lenient' key naming 'defer', which an 'unfold' line took over", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defer]\n  𝑛: 𝑛3\n", "The option 'defer' of 'lenient' of λ function 'L_fork' is gone")
+      , ("a 'lenient' key naming 'defer', which a 'defer' block took over", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [defer]\n  𝑛: 𝑛3\n", "The option 'defer' of 'lenient' of λ function 'L_fork' is gone, while a 'defer' block does its work")
       , ("a 'lenient' key naming 'upcast', which an 'upcast' line took over", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: [upcast, defer]\n  𝑛: 𝑛3\n", "The option 'upcast' of 'lenient' of λ function 'L_fork' is gone")
       , ("an 'unfold' line unfolding a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
-      , ("an 'unfold' line naming a list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: [𝑛1]\n  𝑛: 𝑛2\n", "The line '𝑛2' of 'unfold' of λ function 'L_fork' names neither a meta nor a mapping with 'of'")
-      , ("an 'unfold' line with no 'of'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {defer: true}\n  𝑛: 𝑛2\n", "key \"of\" not found")
-      , ("an 'unfold' line whose 'defer' is no flag", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1, defer: often}\n  𝑛: 𝑛2\n", "expected Bool")
+      , ("an 'unfold' line naming a list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: [𝑛1]\n  𝑛: 𝑛2\n", "The line '𝑛2' of 'unfold' of λ function 'L_fork' names no meta, such as '𝑛2: 𝑛1'")
+      , ("an 'unfold' line written as the gone mapping with 'of' and 'defer'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: {of: 𝑛1, defer: true}\n  𝑛: 𝑛2\n", "The line '𝑛2' of 'unfold' of λ function 'L_fork' names no meta, such as '𝑛2: 𝑛1', while a 'defer' block now defers a copy")
+      , ("a 'defer' line deferring a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  defer:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
+      , ("a 'defer' line bound to what is no expression meta", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  defer:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
+      , ("a meta bound by 'defer' and again by 'unfold'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  defer:\n    𝑛2: 𝑛1\n  unfold:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_fork' is bound by more than one line")
       , ("an 'upcast' block holding one line", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The 'upcast' block of λ function 'L_fork' holds 1 line, while it casts one pair and takes exactly two")
       , ("an 'upcast' block holding three lines", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n    𝑛3: $.c\n  upcast:\n    𝑛4: 𝑛1\n    𝑛5: 𝑛2\n    𝑛6: 𝑛3\n  𝑛: 𝑛4\n", "The 'upcast' block of λ function 'L_fork' holds 3 lines, while it casts one pair and takes exactly two")
       , ("an 'upcast' line written as the gone mapping with 'of' and 'to'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: {of: 𝑛1, to: 𝑛2}\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n", "The line '𝑛3' of 'upcast' of λ function 'L_fork' names no meta")
@@ -338,7 +348,7 @@ spec = do
       , ("a meta bound by 'unfold' and again by 'upcast'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n  upcast:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_fork' is bound by more than one line")
       , ("an 'upcast' block reading a meta it binds itself", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛2\n", "reads the meta it binds")
       , ("a misspelled 'lenient' key", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenent: []\n  𝑛: 𝑛3\n", "The key 'lenent' of λ function 'L_fork' is none of the keys an entry reads")
-      , ("a 'defer' key beside 'lenient', which now lists it", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: []\n  defer: true\n  𝑛: 𝑛3\n", "The key 'defer' of λ function 'L_fork' is none of the keys an entry reads")
+      , ("a 'defer' key saying a flag instead of holding lines", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  lenient: []\n  defer: true\n  𝑛: 𝑛3\n", "defer: parsing")
       , ("a misspelled 'dataize' block", "- λ: L_pair\n  datize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The key 'datize' of λ function 'L_pair' is none of the keys an entry reads")
       , ("a 'terminators' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: L_throw\n  𝑛: 𝑛1\n", "expected Array")
       ,

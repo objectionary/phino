@@ -7,8 +7,11 @@
 # whose branch 'a' is 'z' itself. The line morphs the φ of 'z' and fires the
 # fork it comes to, which meets 'z' again, morphs its φ again and comes to the
 # same fork. The step fires the way an 'evaluate' line does, entering the
-# formation it fires (#1882), so the second firing is cut and writes a
-# 'looped' line where it would have opened, and the run parks the first fork.
+# formation it fires (#1882), so the second firing is cut where it would have
+# opened. The line answers the cut with a fresh symbol, written on the
+# 'looped' line, rather than losing the whole firing to it (#1933), so the
+# inner fork joins that symbol with the one its other branch holds, and the
+# outer fork joins what the inner one answered with its own.
 symbolic: |
   - λ: L_fork
     morph:
@@ -18,11 +21,11 @@ symbolic: |
       𝑛3: 𝑛1
     join:
       𝑛4: [𝑛3, 𝑛2]
-    𝑛: 𝑛4
+    𝑛: ⟦ φ ↦ 𝑛4 ⟧
 location: 'Q.y'
 acyclic: proven
 input: '⟦ z ↦ ⟦ φ ↦ ξ.f, f ↦ ⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧, y ↦ ⟦ a ↦ Φ.z, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
-result: '⟦ a ↦ Φ.z, b ↦ 𝜎2:λ:φ, λ ⤍ L_fork ⟧.φ'
+result: '𝜎5:λ:φ'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
@@ -33,4 +36,14 @@ protocol: |
         𝑛1·2 := ⟦ φ ↦ f, f ↦ ⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧ ⟧  # 𝕄(ξ.a)
         𝑛2·2 := 𝜎1:λ:φ  # 𝕄(ξ.b)
         𝑛3·2 := ⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧  # 𝕄(𝑛1.φ)
-        looped(⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧)  # 𝔼(𝑛1), proven
+        looped(⟦ λ ⤍ L_fork, a ↦ Φ.z, b ↦ 𝜎1:λ:φ ⟧) := 𝜎3  # 𝔼(𝑛1), proven
+        𝑛3·2 := 𝜎3:λ  # 𝔼(𝑛1)
+        𝔻(𝜎4:λ) ∈ { 𝔻(𝜎3:λ), 𝔻(𝜎1:λ) }
+        𝑛4·2 := 𝜎4:λ  # [𝑛3, 𝑛2]
+        𝑛·2·1 := 𝜎4:λ:φ  # 𝑛
+        𝑛·2·2 := 𝜎4:λ:φ  # 𝕄(𝑛·2·1)
+      𝑛3·1 := 𝑛·2·2  # 𝔼(𝑛1)
+      𝔻(𝜎5:λ) ∈ { 𝔻(𝜎4:λ), 𝔻(𝜎2:λ) }
+      𝑛4·1 := 𝜎5:λ:φ  # [𝑛3, 𝑛2]
+      𝑛·1·1 := 𝜎5:λ:φ:φ  # 𝑛
+      𝑛·1·2 := 𝜎5:λ:φ:φ  # 𝕄(𝑛·1·1)
