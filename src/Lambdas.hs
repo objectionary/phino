@@ -304,16 +304,16 @@ instance FromJSON Lambda where
       once :: String -> Lambda -> Yaml.Parser ()
       once key lambda = case twice [] bound of
         Nothing -> pure ()
-        Just meta -> fail (printf "The meta '%s' of λ function '%s' is bound by more than one line, while each meta may be bound once" (T.unpack meta) key)
+        Just meta -> fail (printf "The meta '%s' of λ function '%s' is bound by more than one line, while each meta may be bound once" (T.unpack meta._spelling) key)
         where
-          bound :: [Text]
+          bound :: [Meta]
           bound =
-            map (_spelling . fst) lambda._morphed ++ map _spelling (concatMap bindings lambda._lines)
-          twice :: [Text] -> [Text] -> Maybe Text
+            map fst lambda._morphed ++ concatMap bindings lambda._lines
+          twice :: [Text] -> [Meta] -> Maybe Meta
           twice _ [] = Nothing
           twice seen (meta : rest)
-            | meta `elem` seen = Just meta
-            | otherwise = twice (meta : seen) rest
+            | meta._name `elem` seen = Just meta
+            | otherwise = twice (meta._name : seen) rest
       metaless :: String -> String -> (Meta, Expression) -> Yaml.Parser ()
       metaless key block (meta, term) = case metas term of
         [] -> pure ()
