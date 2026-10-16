@@ -1328,7 +1328,7 @@ spec = do
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
 
     it "names every block of a --symbolic entry in its help" $
-      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"rewrite\"", "\"symbolize\"", "\"join\"", "\"unfold\"", "\"upcast\"", "\"terminators\""]
+      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"evaluate\"", "\"defer\"", "\"fork\""]
 
     it "dataizes simple expression" $
       withStdin "[[ D> 01- ]]" $
@@ -1821,23 +1821,6 @@ spec = do
                        , "    𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
                        ]
 
-      it "writes what is known about every symbol a 'symbolize' line minted" $
-        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          withLambdasOf (T.pack "- λ: L_stand\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: ⟦ z ↦ 𝑛2 ⟧\n") $ \stands ->
-            withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_stand ⟧.z ⟧" $
-              testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readProtocol path
-          lines records
-            `shouldBe` [ "𝕄(Φ.y):"
-                       , "  𝔼(L_stand):"
-                       , "    𝑛1·1 := 01-:Δ  # 𝕄(ξ.x)"
-                       , "    𝔻(𝜎1:λ) == 01-"
-                       , "    𝑛2·1 := 𝜎1:λ  # 𝑛1"
-                       , "    𝑛·1·1 := 𝜎1:λ:z  # 𝑛"
-                       , "    𝑛·1·2 := 𝜎1:λ:z  # 𝕄(𝑛·1·1)"
-                       ]
-
       it "writes a told stall to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
@@ -1855,15 +1838,6 @@ spec = do
               testCLISucceeded ["morph", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records `shouldContain` ["    <stuck λ=\"L_absent\"/>"]
-
-      it "writes a fork whose branches do not join to the XML protocol" $
-        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-          hClose stream
-          withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
-            withStdin "⟦ y ↦ ⟦ a ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ l ↦ ⟦ λ ⤍ 𝜎2 ⟧, x ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.l ⟧" $
-              testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readProtocol path
-          lines records `shouldContain` ["    <unjoined λ=\"L_fork\">𝑛·1·1 𝑛·1·3</unjoined>"]
 
       it "writes a starved step budget to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -1980,17 +1954,18 @@ spec = do
                          , "</dataize>"
                          ]
 
-        it "nests the judgment one level inside a '<protocol>' root" $
+        it "nests the judgment inside a '<path>' of the '<protocol>' root" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            take 4 (lines records)
+            take 5 (lines records)
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol>"
-                         , "  <dataize at=\"Φ\">"
-                         , "    <delta meta=\"𝛿·0·1\">01-</delta>"
+                         , "  <path>"
+                         , "    <dataize at=\"Φ\">"
+                         , "      <delta meta=\"𝛿·0·1\">01-</delta>"
                          ]
 
         it "closes the '<protocol>' root with its msec" $
@@ -1999,7 +1974,7 @@ spec = do
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            (lines records !! 5) `shouldSatisfy` isPrefixOf "  <msec>"
+            (lines records !! 7) `shouldSatisfy` isPrefixOf "  <msec>"
 
         it "closes the '<protocol>' root with its firings" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2015,7 +1990,7 @@ spec = do
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            drop 7 (lines records) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
+            drop 9 (lines records) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
 
         it "nests what a φ body dataizes inside the element of the box rule that entered it" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2112,56 +2087,11 @@ spec = do
                          , "</dataize>"
                          ]
 
-        it "writes what is known about a symbol as an element of its own" $
+        it "writes the side a fork took and the side it came to as elements of its own" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withLambdasOf (T.pack "- λ: L_stand\n  morph:\n    𝑛1: $.x\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: ⟦ z ↦ 𝑛2 ⟧\n") $ \stands ->
-              withStdin "⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_stand ⟧.z ⟧" $
-                testCLISucceeded ["morph", "--symbolic=" ++ stands, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readProtocol path
-            lines records
-              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph at=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_stand\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <bind meta=\"𝑛1·1\">01-</bind>"
-                         , "    <known symbol=\"𝜎1\">01-</known>"
-                         , "    <bind meta=\"𝑛2·1\">𝜎1</bind>"
-                         , "    <formed meta=\"𝑛·1·1\"><attr name=\"z\">𝜎1</attr></formed>"
-                         , "    <built meta=\"𝑛·1·2\">𝑛·1·1</built>"
-                         , "    <answer meta=\"𝑛·1·3\">𝑛·1·1</answer>"
-                         , "  </evaluate>"
-                         , "</morph>"
-                         ]
-
-        it "writes what a 'join' line knows as an element of its own" $
-          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-            hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
-              withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readProtocol path
-            lines records
-              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<morph at=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <formed meta=\"𝑛·1·1\"><attr name=\"φ\">𝜎1</attr></formed>"
-                         , "    <bind meta=\"𝑛1·1\">𝑛·1·1</bind>"
-                         , "    <formed meta=\"𝑛·1·2\"><attr name=\"φ\">𝜎2</attr></formed>"
-                         , "    <bind meta=\"𝑛2·1\">𝑛·1·2</bind>"
-                         , "    <joined symbol=\"𝜎3\">𝜎1 𝜎2</joined>"
-                         , "    <formed meta=\"𝑛·1·3\"><attr name=\"φ\">𝜎3</attr></formed>"
-                         , "    <bind meta=\"𝑛3·1\">𝑛·1·3</bind>"
-                         , "    <built meta=\"𝑛·1·4\">𝑛·1·3</built>"
-                         , "    <answer meta=\"𝑛·1·5\">𝑛·1·3</answer>"
-                         , "  </evaluate>"
-                         , "</morph>"
-                         ]
-
-        it "writes on which side of the condition a fork raises" $
-          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-            hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n") $ \forks ->
-              withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⊥, λ ⤍ L_fork ⟧.φ ⟧" $
+            withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n") $ \forks ->
+              withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
             lines records
@@ -2169,13 +2099,17 @@ spec = do
                          , "<morph at=\"Φ.y\">"
                          , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
                          , "    <dataize meta=\"𝛿1·1\">𝜎1</dataize>"
+                         , "    <forked side=\"left\">𝜎1</forked>"
                          , "    <formed meta=\"𝑛·1·1\"><attr name=\"φ\">𝜎2</attr></formed>"
-                         , "    <bind meta=\"𝑛1·1\">𝑛·1·1</bind>"
-                         , "    <bind meta=\"𝑛2·1\">⊥</bind>"
-                         , "    <terminate symbol=\"𝜎1\" branch=\"right\"/>"
-                         , "    <bind meta=\"𝑛3·1\">𝑛·1·1</bind>"
-                         , "    <built meta=\"𝑛·1·2\">𝑛·1·1</built>"
-                         , "    <answer meta=\"𝑛·1·3\">𝑛·1·1</answer>"
+                         , "    <answer meta=\"𝑛·1·2\">𝑛·1·1</answer>"
+                         , "  </evaluate>"
+                         , "</morph>"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
+                         , "    <dataize meta=\"𝛿1·2\">𝜎1</dataize>"
+                         , "    <forked side=\"right\">𝜎1</forked>"
+                         , "    <formed meta=\"𝑛·2·1\"><attr name=\"φ\">𝜎3</attr></formed>"
+                         , "    <answer meta=\"𝑛·2·2\">𝑛·2·1</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2219,33 +2153,6 @@ spec = do
                          , "  </evaluate>"
                          , "</morph>"
                          ]
-
-        it "writes the copy of an object of the world a 'remint' step deferred, naming every argument by a symbol" $
-          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-            hClose stream
-            withLambdasOf (T.pack "- λ: L_shrink\n  morph:\n    𝑛1: $.x\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: small\n          pattern: ⟦ !B1, tail ↦ 𝑒1, !B2 ⟧\n          result: ⟦ !B1, tail ↦ 𝑒2, !B2 ⟧\n          where:\n            - meta: 𝑒2\n              function: remint\n              args: [𝑒1]\n  terminators: [L_throw]\n  𝑛: 𝑛2\n") $ \shrinks ->
-              withStdin "⟦ l/ ↦ ⟦ throw(message) ↦ ⟦ λ ⤍ L_throw ⟧ ⟧, y ↦ ⟦ x ↦ ⟦ tail ↦ Φ.l/.throw( message ↦ ⟦ Δ ⤍ 4B- ⟧ ) ⟧, λ ⤍ L_shrink ⟧.tail ⟧" $
-                testCLISucceeded ["morph", "--symbolic=" ++ shrinks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readProtocol path
-            lines records `shouldContain` ["    <deferred symbol=\"𝜎2\" by=\"morph\" at=\"𝑛·1·1\" of=\"Φ.l/.throw\"><with><attr name=\"message\">𝜎1</attr></with></deferred>"]
-
-        it "writes the path of every symbol an upcast block cast a bare symbol into" $
-          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-            hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: 𝑛2\n    𝑛4: 𝑛1\n  join:\n    𝑛5: [𝑛3, 𝑛4]\n  𝑛: 𝑛5\n") $ \forks ->
-              withStdin "⟦ y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ sh ↦ ⟦ λ ⤍ 𝜎2 ⟧, zj ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readProtocol path
-            lines records `shouldContain` ["    <upcast symbol=\"𝜎1\" of=\"𝑛·1·2\"><path symbol=\"𝜎4\">sh</path><path symbol=\"𝜎5\">zj</path></upcast>"]
-
-        it "binds both metas of an upcast block, the cast under the line that read the bare symbol" $
-          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-            hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: 𝑛2\n    𝑛4: 𝑛1\n  join:\n    𝑛5: [𝑛3, 𝑛4]\n  𝑛: 𝑛5\n") $ \forks ->
-              withStdin "⟦ y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ sh ↦ ⟦ λ ⤍ 𝜎2 ⟧, zj ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readProtocol path
-            filter (isInfixOf "<bind meta=\"𝑛3·1\"") (lines records) ++ filter (isInfixOf "<bind meta=\"𝑛4·1\"") (lines records) `shouldBe` ["    <bind meta=\"𝑛3·1\">𝑛·1·1</bind>", "    <bind meta=\"𝑛4·1\">𝑛·1·2</bind>"]
 
         it "nests a firing an operand took inside the firing that asked" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2557,12 +2464,46 @@ spec = do
           withStdin sum' $
             testCLIFailed ["dataize", "--symbolic=" ++ path] ["cannot be read"]
 
-    describe "a join of a branch and a decorator of it" $ do
-      let fork = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
-      it "dataizes a fork whose second branch decorates the first" $
-        withLambdasOf fork $ \forks ->
-          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧" $
-            testCLISucceeded ["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ["40-45-00-00-00-00-00-00"]
+    describe "a fork on a condition nobody decided" $ do
+      let fork = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n"
+          forked :: [String] -> String -> IO String
+          forked options program =
+            withLambdasOf fork $ \forks ->
+              withStdin program $
+                fst <$> withStdout (runCLI (["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ++ options))
+      it "dataizes the left side first and the right side on another path" $ do
+        printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
+        lines printed `shouldBe` ["01-", "02-"]
+
+      it "runs no more paths than --max-paths allows" $ do
+        printed <- forked ["--max-paths=1"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
+        lines printed `shouldBe` ["01-"]
+
+      it "fails with non-positive --max-paths" $
+        withStdin "[[ D> 01- ]]" $
+          testCLIFailed ["dataize", "--max-paths=0"] ["--max-paths must be positive"]
+
+      it "takes the side a path already decided on for the same condition and opens no new path" $ do
+        printed <- forked [] "⟦ cond ↦ ⟦ λ ⤍ 𝜎1 ⟧, y ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧, b ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ Δ ⤍ 03- ⟧, b ↦ ⟦ Δ ⤍ 04- ⟧, λ ⤍ L_fork ⟧, λ ⤍ L_fork ⟧ ⟧"
+        lines printed `shouldBe` ["01-", "04-"]
+
+      it "forks again on another condition met on a path" $ do
+        printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧, b ↦ ⟦ Δ ⤍ 03- ⟧, λ ⤍ L_fork ⟧ ⟧"
+        lines printed `shouldBe` ["01-", "03-", "02-"]
+
+      it "writes one path element per path to the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          _ <- forked ["--protocol=" ++ path, "--quiet"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
+          records <- readUtf8 path
+          filter (isInfixOf "path>") (lines records) `shouldBe` ["  <path>", "  </path>", "  <path>", "  </path>"]
+
+      it "writes every path to the text protocol under a heading of its own" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          _ <- forked ["--protocol=" ++ path, "--quiet"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
+          records <- readProtocol path
+          filter (== "𝔻(Φ.y):") (lines records) `shouldBe` ["𝔻(Φ.y):", "𝔻(Φ.y):"]
 
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
@@ -2929,43 +2870,8 @@ spec = do
             ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
 
-    describe "a join of two branches of different shapes" $ do
-      let fork = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n"
-      it "joins a fork whose second branch decorates the first" $
-        withLambdasOf fork $ \forks ->
-          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-            testCLISucceeded
-              ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
-              ["⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧"]
-
-      it "joins a fork whose first branch decorates the second" $
-        withLambdasOf fork $ \forks ->
-          withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-            testCLISucceeded
-              ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
-              ["⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧"]
-
-      it "writes the decorator it joined into the protocol" $
-        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          withLambdasOf fork $ \forks ->
-            withStdin "⟦ y ↦ ⟦ a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧, neg ↦ ⟦⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, neg ↦ ⟦⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-              testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readProtocol path
-          lines records `shouldContain` ["    𝑛3·1 := ⟦ φ ↦ 𝜎3:λ, neg ↦ ⟦⟧ ⟧:φ  # [𝑛1, 𝑛2]"]
-
-      it "joins a bare symbol with a call holding one symbol into a copy of the call" $
-        withLambdasOf fork $ \forks ->
-          withStdin "⟦ bool(if) ↦ ⟦ φ ↦ ξ.if( α0 ↦ ⟦ Δ ⤍ FF- ⟧, α1 ↦ ⟦ Δ ⤍ 00- ⟧ ) ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-            testCLISucceeded
-              ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
-              ["⟦ if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎3:λ ⟧, φ ↦ if( FF-:Δ, 00-:Δ ) ⟧"]
-
-    describe "a copy a 'defer' line defers or a cut stops" $ do
-      let forking :: String -> T.Text
-          forking block = T.pack ("- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  " ++ block ++ ":\n    𝑛3: 𝑛2\n  join:\n    𝑛4: [𝑛1, 𝑛3]\n  𝑛: ⟦ φ ↦ 𝑛4 ⟧\n")
-          deferring = forking "defer"
-          unfolding = forking "unfold"
+    describe "a copy the side a fork takes comes to" $ do
+      let forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n"
           counting = T.pack "- λ: L_inc\n  dataize:\n    𝛿1: $.x\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
           recordedWith :: T.Text -> [String] -> String -> IO [String]
           recordedWith entries options program =
@@ -2973,62 +2879,50 @@ spec = do
               hClose stream
               withLambdasOf entries $ \forks ->
                 withStdin program $
-                  testCLISucceeded (["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) []
+                  testCLISucceeded (["dataize", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) []
               lines <$> readProtocol path
           deferred :: [String] -> String -> IO [String]
-          deferred = recordedWith deferring
+          deferred = recordedWith forking
       it "writes the copy it deferred to the XML protocol as a call of the object it was made of" $ do
-        records <- deferred [] "⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧"
+        records <- deferred [] "⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧ ⟧"
         records
           `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                     , "<morph at=\"Φ.y\">"
-                     , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
-                     , "    <bind meta=\"𝑛1·1\">𝜎2</bind>"
-                     , "    <morph at=\"Φ.a🌵1\">"
-                     , "      <applied meta=\"𝑛·1·1\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.step\"><attr name=\"tup\">Φ.items.tail</attr></applied>"
-                     , "    </morph>"
-                     , "    <bind meta=\"𝑛2·1\">𝑛·1·1</bind>"
-                     , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"
-                     , "    <joined symbol=\"𝜎4\">𝜎2 𝜎3</joined>"
-                     , "    <bind meta=\"𝑛4·1\">𝜎4</bind>"
-                     , "    <formed meta=\"𝑛·1·2\"><attr name=\"φ\">𝜎4</attr></formed>"
-                     , "    <built meta=\"𝑛·1·3\">𝑛·1·2</built>"
-                     , "    <answer meta=\"𝑛·1·4\">𝑛·1·2</answer>"
+                     , "<dataize at=\"Φ.y\">"
+                     , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
+                     , "    <dataize meta=\"𝛿1·1\">𝜎2</dataize>"
+                     , "    <forked side=\"left\">𝜎2</forked>"
+                     , "    <answer meta=\"𝑛·1·1\">01-</answer>"
                      , "  </evaluate>"
-                     , "</morph>"
+                     , "  <delta meta=\"𝛿·0·1\">01-</delta>"
+                     , "</dataize>"
+                     , "<dataize at=\"Φ.y\">"
+                     , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
+                     , "    <dataize meta=\"𝛿1·2\">𝜎2</dataize>"
+                     , "    <forked side=\"right\">𝜎2</forked>"
+                     , "    <morph at=\"Φ.a🌵3\">"
+                     , "      <applied meta=\"𝑛·2·1\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.step\"><attr name=\"tup\">Φ.items.tail</attr></applied>"
+                     , "    </morph>"
+                     , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"Φ.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"
+                     , "    <answer meta=\"𝑛·2·2\">𝜎3</answer>"
+                     , "  </evaluate>"
+                     , "</dataize>"
                      ]
 
       it "names the object a deferred copy was made of through the formation its ρ holds" $ do
-        records <- deferred [] "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.joined( items ↦ Φ.items.tail ).φ, λ ⤍ L_fork ⟧.φ ⟧"
-        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"]
+        records <- deferred [] "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.joined( items ↦ Φ.items.tail ).φ, λ ⤍ L_fork ⟧ ⟧"
+        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"]
 
       it "names an argument of a deferred copy that is no bare symbol by the element that formed it" $ do
-        records <- deferred [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ ⟦ z ↦ Φ ⟧ ), λ ⤍ L_fork ⟧.φ ⟧"
-        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·1·2</attr></with></deferred>"]
+        records <- deferred [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ ⟦ z ↦ Φ ⟧ ), λ ⤍ L_fork ⟧ ⟧"
+        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·2·2</attr></with></deferred>"]
 
       it "names a deferred copy of a formation the world does not declare by the element that formed it" $ do
-        records <- deferred [] "⟦ wrap(v) ↦ ⟦⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.wrap( v ↦ ⟦ inner(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.inner( x ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧"
-        records `shouldContain` ["    <formed meta=\"𝑛·1·5\"><attr name=\"x\">𝜎1</attr><attr name=\"φ\">x.next</attr></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"𝑛·1·5\"/>"]
-
-      it "writes the copy a cut stopped to the XML protocol with its symbol and the call of the object it was made of" $ do
-        records <- recordedWith unfolding ["--acyclic=proven"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
-        records `shouldContain` ["    <looped symbol=\"𝜎3\" by=\"evaluate\" match=\"proven\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝑛·0·1</attr></with></looped>"]
-
-      it "names an argument of a copy a cut stopped by the object its morph answered" $ do
-        records <- recordedWith (unfolding <> counting) ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.inc( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
-        filter (isInfixOf "<looped") records `shouldBe` ["    <looped symbol=\"𝜎4\" by=\"evaluate\" match=\"plausible\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝑛·2·3</attr></with></looped>"]
-
-      it "fires the argument of a copy a cut stopped before it writes the cut" $ do
-        records <- recordedWith (unfolding <> counting) ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.inc( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
-        takeWhile (not . isInfixOf "<looped") records `shouldContain` ["    <evaluate λ=\"L_inc\" by=\"evaluate\" at=\"𝑛2.n\">"]
-
-      it "names an argument of a copy a cut stopped whose firing gets stuck by the application it stands for" $ do
-        records <- recordedWith unfolding ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, dec(x) ↦ ⟦ λ ⤍ L_dec ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.dec( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
-        filter (isInfixOf "<looped") records `shouldBe` ["    <looped symbol=\"𝜎3\" by=\"evaluate\" match=\"plausible\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝑛·0·4</attr></with></looped>"]
+        records <- deferred [] "⟦ wrap(v) ↦ ⟦⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.wrap( v ↦ ⟦ inner(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.inner( x ↦ Φ.items.tail ), λ ⤍ L_fork ⟧ ⟧"
+        records `shouldContain` ["    <formed meta=\"𝑛·2·5\"><attr name=\"x\">𝜎1</attr><attr name=\"φ\">x.next</attr></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"𝑛·2·5\"/>"]
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
-        records <- recordedWith (deferring <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧.φ ⟧"
-        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·2·3</attr></with></deferred>"]
+        records <- recordedWith (forking <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
+        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·3·3</attr></with></deferred>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"

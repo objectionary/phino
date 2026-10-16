@@ -27,21 +27,16 @@
     𝛿2: $.x
   𝑛: Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧ )
 
-# A branch answers neither of its sides: nobody has picked between the two, so
-# both of them reach a normal form through 𝕄, are stood into unknowns and are
-# joined into the one shape they share.
+# A branch forks the run: nobody has picked between the two sides, so the
+# path takes the left one, reaches a normal form through 𝕄 and answers it,
+# and the right one is left pending for another path.
 - λ: L_fork
   dataize:
     𝛿1: $.φ
-  morph:
-    𝑛1: $.left
-    𝑛2: $.right
-  symbolize:
-    𝑛3: 𝑛1
-    𝑛4: 𝑛2
-  join:
-    𝑛5: [𝑛3, 𝑛4]
-  𝑛: 𝑛5
+  fork:
+    on: 𝛿1
+    left: $.left
+    right: $.right
 
 # An entry of the demo world: its number comes down through 𝔻 and the term it
 # marks reaches a normal form through 𝕄, which is the work the symbolic cases

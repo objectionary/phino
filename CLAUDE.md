@@ -160,66 +160,40 @@ form through 𝕄 under `morph`, each binding an expression meta `𝑛1`; the li
 under `evaluate`, each firing through 𝔼 the term a `morph` meta or an earlier
 line is bound to and binding a meta of its own to the answer (`evaluated` of
 `Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
-formation with no λ and ⊥ as they are, never fires a terminator of its entry,
-and never fires its answer again, so another call takes another line. The
-lines of `evaluate`, `defer`, `unfold`, `rewrite`, `stay`, `symbolize`,
-`upcast` and `join` are one list,
-`_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
-line reads, keeping the order of the blocks where no meta decides, and refuses
-a line reading what nothing binds or what it binds itself (#1903). No two
-keys may match one λ name, whether or not either
+formation with no λ and ⊥ as they are, and never fires its answer again, so
+another call takes another line. The lines of `evaluate` and `defer` are one
+list, `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas
+each line reads, keeping the order of the blocks where no meta decides, and
+refuses a line reading what nothing binds or what it binds itself (#1903). No
+two keys may match one λ name, whether or not either
 spells it: `Language.hs` reads each key as an automaton and looks for a name
 both accept, refusing a key beyond a regular language, such as a back
 reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`,
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
-An entry may name `terminators`, λ functions no key of the file matches, such
-as the `L_throw` EO raises with. A `join` line takes a branch that is a
-formation with one of them, or an application of one, for a branch that
-raises, as it takes ⊥ (`thrown` of `Lambdas.hs` and `paired` of
-`Evaluate.hs`, #1865). The `terminate` record names the `message` the branch
-raises with, as written (`message` of `Lambdas.hs`), so the error path can be
-lowered too (#1867).
-
-A rule of a `rewrite` line may not write a `𝜎` into its result, but its
-`where` may call `remint`, which only `reshaped` of `Evaluate.hs` knows: it
-works the term out the way `unfold` works out an argument of a copy
-(`figured`), follows the φ of a formation with no λ (`hollow`, spending a step
-of `deeper` each time), and answers the bare `⟦ λ ⤍ 𝜎k ⟧` the term came to
-(#1909, #1923). That is the symbol a φ chain ends in (`ended`), a fresh known
-symbol for a datum (`EvKnown`), or a fresh deferred symbol for a copy of an
-object of the world, every argument of which came to a symbol the same way
-(`EvDeferred`). The copy is named by the term as written (`spelled`), or by
-`called` when the term is no call of a path. Any other term writes
-`unreminted(…)` (`EvUnreminted`) and throws `Unreminted`, which the firing
-turns into `Stuck` the way it turns `Unjoined`.
-
-A bare symbol, `⟦ λ ⤍ 𝜎k ⟧`, joins too: the `join` of `Lambdas.hs` pairs it
-with the symbol the φ chain of the other branch ends in, and answers a bare
-fresh symbol, dropping the methods. A `join` line only matches (#1921), and
-every one pairs three ways (#1936): alike terms, a term with a decorator of it
-(`goDecorated` of `joined`, #1815), and a bare symbol with a term whose chain
-ends in no symbol, such as one stopping at a call of an object of the world,
-if that term holds exactly one symbol (`goSole` of `joined`, #1817): the
-answer is a copy of that term with the symbol replaced by a fresh one, and
-nothing outside the two branches is read. An entry naming the `lenient` key,
-which once asked for the last two, is refused with a word.
-
-An `upcast` block holds exactly two plain lines, `𝑛3: 𝑛1` and `𝑛4: 𝑛2`, read
-as one `Upcasted` line of `Lambdas.hs` that reads both metas and binds both
-(`bindings`, so `ordered` and `once` treat the block as one unit), and refused
-with one line or more than two (#1914, #1921). `cast` of `Evaluate.hs` takes
-the two terms as a pair and casts the smaller into the shape of the larger:
-today that means exactly one bare symbol and another term whose every symbol
-a path reaches through the attributes of formations and the arguments of
-copies of objects of the world (`upcasted` of `Lambdas.hs`, which refuses a
-bare shape). It writes the cast as `upcast(…)` (`EvUpcast`), binds it under
-the line that read the bare symbol and the other term as it is, and writes
-both bindings as `EvSymbolize`. In any other case both terms are bound as
-they are. A `join` compares only the φ chain of two formations (#1293), so a
-cast into a formation pairs nothing else, and an entry spells such a copy as
-its call with a `rewrite` line first.
+An entry ends in an `𝑛` or in a `fork` block (`Ending` of `Lambdas.hs`, #1938),
+never both, and a forking entry holds nothing beside `dataize`. The
+block names the condition under `on`, a bytes meta of `dataize`, and the two
+sides under `left` and `right`, paths from `$`. A fork never joins its sides
+into one term: `forked` of `Evaluate.hs` asks `decide` of `Forks.hs` for the
+side, keyed by the value the condition came down to, the symbol or the bytes.
+An undecided condition takes the left side and queues the route to the right
+one as pending, and a decided one takes its side and opens nothing. The firing
+writes `forked(…)` (`EvForked`) with the condition and the side, morphs the
+side where it stands in the universe through `insideUniverse`, so the protocol
+sites it as `Φ.a🌵N`, defers it the way a `defer` line would (`postponing`)
+and answers it (`EvTaken`). `explored` of `Forks.hs` runs the command once per
+route, first with none and then every pending route in the order they were
+queued, until nothing is pending or `--max-paths` (`_maxPaths` of
+`CLI/Types.hs`) is spent, and the command prints a result per path. The text
+protocol opens a `𝔻(…):` or `𝕄(…):` heading per path and the markup a
+`<path>` element, and the metas, symbols and names keep counting across the
+paths. The memo of `plausible` keeps every answer beside the decisions met
+since its firing began (`marked` and `since` of `Forks.hs`), and `recalled`
+and `remembered` of `Morph.hs` hand it out only where `agreed` says the path
+has decided them all the same way, writing them into the path with `noted`,
+so a path never takes an answer another path made under another decision.
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
@@ -227,26 +201,15 @@ code in φ, whatever its φ reads: it reduces every argument other than φ and �
 with no entry of the file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it binds a
 fresh symbol and writes `deferred(…)` (`EvDeferred`), naming the call the copy
 stands for by the object of the world it was made of, the way the record of
-0.0.153 did (#1892); any other term is bound as it is. An `unfold` line,
-`𝑛3: 𝑛1` (`Unfolded` of `Lambdas.hs`, `unfolded` of `Evaluate.hs`, #1885),
-morphs the φ of a term that is a formation with no λ whose φ reads ξ, fires
-what it comes to through 𝔼 the way an `evaluate` line does, and binds the
-answer; any other term is bound as it is, and the mapping with `defer` it took
-before #1933 is refused. It fires through `fire`, as an `evaluate` line does,
-so the step budget and `--acyclic` bound it, and a term it enters gets a fresh
-symbol once `--acyclic` refuses the firing its φ comes to: `fire` asks
-`admitting` of `Morph.hs` and hands a refusal to the function it is given,
-`refused` for an `evaluate` line, which loses the whole firing, and `severed`
-for an `unfold` line, which writes the symbol and the call on the `looped(…)`
-line (`EvLooped`, #1895). Before either line is written, `argued` of
-`Evaluate.hs` works out every argument of the call that is no bare symbol: it
-morphs the argument in the copy, at a site
-such as `𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluate`
-line does, and writes every step to the protocol, so the markup names the
-argument by the object an application made of it, such as `𝑛·77·3`. An
-argument whose morph or firing gets stuck, is cut or runs out of steps keeps
-the call as written, and the markup names it by the meta a record gave it
-earlier, or by an expression meta such as `𝑒1` (#1916, #1924).
+0.0.153 did (#1892); any other term is bound as it is. Before the line is
+written, `argued` of `Evaluate.hs` works out every argument of the call that
+is no bare symbol: it morphs the argument in the copy, at a site such as
+`𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluate` line
+does, and writes every step to the protocol, so the markup names the argument
+by the object an application made of it, such as `𝑛·77·3`. An argument whose
+morph or firing gets stuck, is cut or runs out of steps keeps the call as
+written, and the markup names it by the meta a record gave it earlier, or by
+an expression meta such as `𝑒1` (#1916, #1924).
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
@@ -265,8 +228,8 @@ firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment o
 line is a judgment applied to a term — the intent the value beside it came
 from: the judgment that asked for a firing and the site it was fired at
 (`_site` of `ReduceContext`), and the one that reduced an operand and the term
-it was reduced from. A line no judgment made — a `symbolize` or a `join` one —
-names a meta of the entry instead. The extension of the file picks the format:
+it was reduced from. A line no judgment made — a `forked` one — names the side
+as the entry spells it. The extension of the file picks the format:
 `.xml` gets markup (`Nesting` and `saveEvalXml`), anything else the indented
 text. Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
@@ -364,15 +327,10 @@ names it. A cut is a line too, `looped(…)`
 (`EvLooped`), written by `enter` where the refused frame would have opened,
 carrying the formation its ancestor entered (#1434) and naming the mode that
 cut it.
-Five records say why a firing gave no answer (#1524): `stuck(…)` closes a
-firing that got stuck, `unjoined(…)` closes in its place one whose `join` line
-could not pair its branches, carrying both, `unreminted(…)` one whose `remint`
-found no symbol for a term, carrying it, `stall(…)` stands under one the
-memo answered with a kept stall, and `starved(…)` is written by `deeper` where
-the step budget runs out, with the site it stood at rather than its term
-(#1531). `both` of `paired` in `Evaluate.hs` writes `unjoined(…)` and throws
-`Unjoined`, which the firing it stands in turns back into `Stuck` once it has
-kept the stall, so `--partial` parks it as before (#1900).
+Three records say why a firing gave no answer (#1524): `stuck(…)` closes a
+firing that got stuck, `stall(…)` stands under one the memo answered with a
+kept stall, and `starved(…)` is written by `deeper` where the step budget runs
+out, with the site it stood at rather than its term (#1531).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the

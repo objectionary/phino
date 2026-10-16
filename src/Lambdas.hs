@@ -7,33 +7,27 @@
 -- SPDX-License-Identifier: MIT
 
 module Lambdas
-  ( Lambda (..)
+  ( Ending (..)
+  , Lambda (..)
   , LambdaException (..)
   , Lambdas
   , Line (..)
   , Meta (..)
   , emptyLambdas
-  , joined
   , matched
-  , message
   , minted
   , readLambdas
-  , stayed
-  , symbolized
   , taken
-  , thrown
-  , upcasted
   )
 where
 
 import AST
-import Control.Applicative ((<|>))
 import Control.Exception (Exception, throwIO)
-import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object, String), withObject, (.!=), (.:), (.:?))
+import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:?))
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Char (isDigit)
-import Data.List (find, nub, sortOn)
+import Data.List (find, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe)
@@ -50,7 +44,6 @@ import Text.Printf (printf)
 import Text.Regex.PCRE (matchTest)
 import Text.Regex.PCRE.ByteString (Regex, compUTF8, compile, execBlank)
 import Yaml (referenceless)
-import qualified Yaml as Y
 
 data Meta = Meta
   { _spelling :: Text
@@ -60,20 +53,19 @@ data Meta = Meta
 data Line
   = Evaluated Meta Meta
   | Deferred Meta Meta
-  | Unfolded Meta Meta
-  | Rewritten Meta Meta [Y.Rule]
-  | Stayed Meta Meta
-  | Symbolized Meta Meta
-  | Upcasted Meta Meta Meta Meta
-  | Paired Meta Meta Meta
+
+-- How an entry ends: answering with a term, or forking on a datum of
+-- 'dataize' into the two sides a path picks between.
+data Ending
+  = Answering Expression
+  | Forking Meta Expression Expression
 
 data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
   , _lines :: [Line]
-  , _terminators :: [Text]
-  , _answer :: Expression
+  , _ending :: Ending
   }
 
 newtype Lambdas = Lambdas [(Regex, Lambda)]
@@ -89,17 +81,14 @@ instance Show LambdaException where
 instance FromJSON Lambda where
   parseJSON = withObject "Lambda" $ \entry -> do
     key <- entry .:? "λ" >>= maybe (fail "The entry has no 'λ' key") pure
-    answer <- entry .:? "𝑛" >>= maybe (fail "The entry has no '𝑛' key") pure
     unknown (T.unpack key) entry
     dataized <- operands key bytesMeta entry "dataize"
+    ending <- concluded (T.unpack key) dataized entry
     morphed <- operands key expressionMeta entry "morph"
     lambda <-
       Lambda key dataized morphed
-        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed))
-        <*> entry .:? "terminators" .!= []
-        <*> pure answer
-    sigmas (T.unpack key) lambda._answer
-    dataless (T.unpack key) lambda._answer
+        <$> (written entry >>= ordered (T.unpack key) (map (_name . fst) morphed))
+        <*> pure ending
     once (T.unpack key) lambda
     mapM_ (metaless (T.unpack key) "dataize") lambda._dataized
     mapM_ (metaless (T.unpack key) "morph") lambda._morphed
@@ -109,11 +98,42 @@ instance FromJSON Lambda where
       unknown :: String -> Object -> Yaml.Parser ()
       unknown key entry = case filter (`notElem` known) (map Key.toText (KeyMap.keys entry)) of
         [] -> pure ()
-        "lenient" : _ -> fail (printf "The key 'lenient' of λ function '%s' is gone, while every 'join' line joins the way a lenient one did" key)
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "evaluate", "defer", "unfold", "rewrite", "stay", "symbolize", "upcast", "join", "terminators", "𝑛"]
+          known = ["λ", "dataize", "morph", "evaluate", "defer", "fork", "𝑛"]
+      concluded :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
+      concluded key dataized entry = do
+        answer <- entry .:? "𝑛"
+        block <- entry .:? "fork"
+        case (answer, block) of
+          (Nothing, Nothing) -> fail (printf "The entry of λ function '%s' has neither an '𝑛' key nor a 'fork' block" key)
+          (Just _, Just _) -> fail (printf "The entry of λ function '%s' has both an '𝑛' key and a 'fork' block, while a fork answers the side it takes" key)
+          (Just term, Nothing) -> Answering term <$ sigmas key term <* dataless key term
+          (Nothing, Just fork) -> mapM_ alone ["morph", "evaluate", "defer"] >> forking key dataized fork
+        where
+          alone :: Key -> Yaml.Parser ()
+          alone name
+            | KeyMap.member name entry = fail (printf "The entry of λ function '%s' has a 'fork' block beside '%s', while a fork takes nothing but 'dataize'" key (Key.toString name))
+            | otherwise = pure ()
+      forking :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
+      forking key dataized block = do
+        case filter (`notElem` ["on", "left", "right"]) (map Key.toText (KeyMap.keys block)) of
+          [] -> pure ()
+          name : _ -> fail (printf "The key '%s' of the 'fork' block of λ function '%s' is none of its keys: on, left, right" (T.unpack name) key)
+        on <- required "on" >>= condition
+        Forking on <$> (required "left" >>= side "left") <*> (required "right" >>= side "right")
+        where
+          required :: FromJSON value => Key -> Yaml.Parser value
+          required name = block .:? name >>= maybe (fail (printf "The 'fork' block of λ function '%s' has no '%s' key" key (Key.toString name))) pure
+          condition :: Text -> Yaml.Parser Meta
+          condition spelling = case parseBytes (T.unpack spelling) of
+            Right (BtMeta name) | name `elem` map (_name . fst) dataized -> pure (Meta spelling name)
+            _ -> fail (printf "The 'on' of the 'fork' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize', such as '𝛿1'" key (T.unpack spelling))
+          side :: String -> Expression -> Yaml.Parser Expression
+          side name term = case metas term of
+            [] -> pure term
+            meta : _ -> fail (printf "The side '%s' of the 'fork' block of λ function '%s' reads the meta '%s', while only a path from '$' can be reduced there" name key (T.unpack meta))
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
       operands key kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Expression)
@@ -131,117 +151,18 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
-      written :: String -> Object -> Yaml.Parser [Line]
-      written key entry =
-        concat
-          <$> sequence
-            [ links Evaluated entry "evaluate"
-            , links Deferred entry "defer"
-            , unfolds key entry
-            , rewrites key entry
-            , links Stayed entry "stay"
-            , links Symbolized entry "symbolize"
-            , casts key entry
-            , pairs key entry
-            ]
+      written :: Object -> Yaml.Parser [Line]
+      written entry = (++) <$> links Evaluated entry "evaluate" <*> links Deferred entry "defer"
       links :: (Meta -> Meta -> Line) -> Object -> Key -> Yaml.Parser [Line]
       links kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Text)
         mapM (\(meta, source) -> kind <$> expressionMeta meta <*> expressionMeta source) (numbered mapping)
-      unfolds :: String -> Object -> Yaml.Parser [Line]
-      unfolds key entry = do
-        mapping <- entry .:? "unfold" .!= (Map.empty :: Map Text Value)
-        mapM line (numbered mapping)
-        where
-          line :: (Text, Value) -> Yaml.Parser Line
-          line (meta, String source) = Unfolded <$> expressionMeta meta <*> expressionMeta source
-          line (meta, _) =
-            fail
-              ( printf
-                  "The line '%s' of 'unfold' of λ function '%s' names no meta, such as '𝑛2: 𝑛1', while a 'defer' block now defers a copy"
-                  (T.unpack meta)
-                  key
-              )
-      casts :: String -> Object -> Yaml.Parser [Line]
-      casts key entry = do
-        mapping <- entry .:? "upcast" .!= (Map.empty :: Map Text Value)
-        case numbered mapping of
-          [] -> pure []
-          [(one, first), (two, second)] -> (: []) <$> (Upcasted <$> expressionMeta one <*> plain one first <*> expressionMeta two <*> plain two second)
-          lines' ->
-            fail
-              ( printf
-                  "The 'upcast' block of λ function '%s' holds %d %s, while it casts one pair and takes exactly two"
-                  key
-                  (length lines')
-                  (if length lines' == 1 then "line" else "lines" :: String)
-              )
-        where
-          plain :: Text -> Value -> Yaml.Parser Meta
-          plain _ (String source) = expressionMeta source
-          plain meta _ =
-            fail
-              ( printf
-                  "The line '%s' of 'upcast' of λ function '%s' names no meta, such as '𝑛3: 𝑛1', while the block itself finds which of its two terms to cast"
-                  (T.unpack meta)
-                  key
-              )
-      pairs :: String -> Object -> Yaml.Parser [Line]
-      pairs key entry = do
-        mapping <- entry .:? "join" .!= (Map.empty :: Map Text [Text])
-        mapM joins (numbered mapping)
-        where
-          joins :: (Text, [Text]) -> Yaml.Parser Line
-          joins (meta, [left, right]) = Paired <$> expressionMeta meta <*> expressionMeta left <*> expressionMeta right
-          joins (meta, _) =
-            fail
-              ( printf
-                  "The operand '%s' of λ function '%s' must join exactly two metas, such as '[𝑛1, 𝑛2]'"
-                  (T.unpack meta)
-                  key
-              )
-      rewrites :: String -> Object -> Yaml.Parser [Line]
-      rewrites key entry = do
-        mapping <- entry .:? "rewrite" .!= (Map.empty :: Map Text Object)
-        mapM line (numbered mapping)
-        where
-          line :: (Text, Object) -> Yaml.Parser Line
-          line (meta, body) = do
-            named <- expressionMeta meta
-            source <- body .: "of" >>= expressionMeta
-            listed <- body .: "rules"
-            Rewritten named source <$> mapM rule listed
-          rule :: Object -> Yaml.Parser Y.Rule
-          rule body = do
-            result <- body .: "result"
-            symbolless result
-            parsed <- parseJSON (Object body)
-            bound parsed
-            pure parsed
-          symbolless :: Expression -> Yaml.Parser ()
-          symbolless result
-            | null (symbols result) && null [kind | Slot kind _ <- slots result, kind == "S"] = pure ()
-            | otherwise = fail (printf "A rule of the 'rewrite' block of λ function '%s' writes a symbol 𝜎 into its result" key)
-          bound :: Y.Rule -> Yaml.Parser ()
-          bound parsed = case filter (`notElem` known) (metas parsed.result) of
-            [] -> pure ()
-            meta : _ ->
-              fail
-                ( printf
-                    "The rule '%s' of the 'rewrite' block of λ function '%s' reads the meta '%s' it never binds"
-                    parsed.name
-                    key
-                    (T.unpack meta)
-                )
-            where
-              known :: [Text]
-              known = metas parsed.pattern ++ concatMap (metas . (.meta)) (concat parsed.where_)
       ordered :: String -> [Text] -> [Line] -> Yaml.Parser [Line]
-      ordered key reduced waiting = mapM_ bound (concatMap sources waiting) >> go reduced waiting
+      ordered key reduced waiting = mapM_ (bound . source) waiting >> go reduced waiting
         where
           bound :: Meta -> Yaml.Parser ()
           bound meta
-            | meta._name `elem` reduced ++ map _name (concatMap bindings waiting) = pure ()
+            | meta._name `elem` reduced ++ map (_name . binding) waiting = pure ()
             | otherwise =
                 fail
                   ( printf
@@ -251,8 +172,8 @@ instance FromJSON Lambda where
                   )
           go :: [Text] -> [Line] -> Yaml.Parser [Line]
           go _ [] = pure []
-          go known pending@(first : _) = case break (all ((`elem` known) . _name) . sources) pending of
-            (before, line : after) -> (line :) <$> go (map _name (bindings line) ++ known) (before ++ after)
+          go known pending@(first : _) = case break ((`elem` known) . _name . source) pending of
+            (before, line : after) -> (line :) <$> go ((binding line)._name : known) (before ++ after)
             (_, []) ->
               fail
                 ( printf
@@ -266,28 +187,13 @@ instance FromJSON Lambda where
                 | meta._name `elem` seen = meta
                 | otherwise = goCircle (meta._name : seen) (fromMaybe meta (listToMaybe (feeding meta)))
               feeding :: Meta -> [Meta]
-              feeding meta = [source | line <- pending, meta._name `elem` map _name (bindings line), source <- sources line, source._name `notElem` known]
-          sources :: Line -> [Meta]
-          sources (Evaluated _ source) = [source]
-          sources (Deferred _ source) = [source]
-          sources (Unfolded _ source) = [source]
-          sources (Rewritten _ source _) = [source]
-          sources (Stayed _ source) = [source]
-          sources (Symbolized _ source) = [source]
-          sources (Upcasted _ first _ second) = [first, second]
-          sources (Paired _ left right) = [left, right]
+              feeding meta = [source line | line <- pending, meta._name == (binding line)._name, (source line)._name `notElem` known]
+          source :: Line -> Meta
+          source (Evaluated _ meta) = meta
+          source (Deferred _ meta) = meta
       binding :: Line -> Meta
       binding (Evaluated meta _) = meta
       binding (Deferred meta _) = meta
-      binding (Unfolded meta _) = meta
-      binding (Rewritten meta _ _) = meta
-      binding (Stayed meta _) = meta
-      binding (Symbolized meta _) = meta
-      binding (Upcasted meta _ _ _) = meta
-      binding (Paired meta _ _) = meta
-      bindings :: Line -> [Meta]
-      bindings (Upcasted one _ two _) = [one, two]
-      bindings line = [binding line]
       sigmas :: String -> Expression -> Yaml.Parser ()
       sigmas key answer = case ([kind | Slot kind _ <- slots answer, kind /= "S"], symbols answer) of
         ([], []) -> pure ()
@@ -299,8 +205,7 @@ instance FromJSON Lambda where
         Just meta -> fail (printf "The meta '%s' of λ function '%s' is bound by more than one line, while each meta may be bound once" (T.unpack meta._spelling) key)
         where
           bound :: [Meta]
-          bound =
-            map fst lambda._morphed ++ concatMap bindings lambda._lines
+          bound = map fst lambda._morphed ++ map binding lambda._lines
           twice :: [Text] -> [Meta] -> Maybe Meta
           twice _ [] = Nothing
           twice seen (meta : rest)
@@ -319,9 +224,11 @@ instance FromJSON Lambda where
                 (T.unpack name)
             )
       answered :: String -> Lambda -> Yaml.Parser ()
-      answered key lambda = case filter (`notElem` ("S" : known)) (metas lambda._answer) of
-        [] -> pure ()
-        name : _ -> fail (printf "The '𝑛' of λ function '%s' reads the meta '%s' that no block binds" key (T.unpack name))
+      answered key lambda = case lambda._ending of
+        Forking{} -> pure ()
+        Answering term -> case filter (`notElem` ("S" : known)) (metas term) of
+          [] -> pure ()
+          name : _ -> fail (printf "The '𝑛' of λ function '%s' reads the meta '%s' that no block binds" key (T.unpack name))
         where
           known :: [Text]
           known =
@@ -373,7 +280,6 @@ readLambdas path = do
   mapM_ (unique entries) entries
   registered <- mapM keyed entries
   overlaps path registered
-  mapM_ (unanswered registered) entries
   logDebug (printf "Loaded %d λ function(s) from '%s'" (length entries) path)
   pure (Lambdas registered)
   where
@@ -390,16 +296,6 @@ readLambdas path = do
     unreadable :: Text -> (a, String) -> IO b
     unreadable key (_, failure) =
       throwIO (BrokenLambdas path (printf "the key '%s' is not a regular expression: %s" (T.unpack key) failure))
-    unanswered :: [(Regex, Lambda)] -> Lambda -> IO ()
-    unanswered registered entry = case [(name, other) | name <- entry._terminators, Just other <- [matched (Lambdas registered) name]] of
-      [] -> pure ()
-      (name, other) : _ ->
-        throwIO
-          ( BrokenLambdas
-              path
-              (printf "the terminator '%s' of the key '%s' is answered by the key '%s'" (T.unpack name) (T.unpack entry._key) (T.unpack other._key))
-          )
-
     overlaps :: FilePath -> [(Regex, Lambda)] -> IO ()
     overlaps _ [_] = pure ()
     overlaps file registered = mapM (spoken . snd) registered >>= check
@@ -427,259 +323,11 @@ readLambdas path = do
 matched :: Lambdas -> Text -> Maybe Lambda
 matched (Lambdas entries) func = snd <$> find (\(key, _) -> matchTest key (encodeUtf8 func)) entries
 
-thrown :: [Text] -> Expression -> Bool
-thrown names (ExApplication expr _) = thrown names expr
-thrown names (ExFormation bds) = any (`elem` [BiLambda (Function name) | name <- names]) bds
-thrown _ _ = False
-
-message :: Expression -> Maybe Expression
-message (ExApplication _ (ArTau (AtLabel "message") body)) = Just body
-message (ExApplication expr _) = message expr
-message (ExFormation bds) = listToMaybe [body | BiTau (AtLabel "message") body <- bds]
-message _ = Nothing
-
 minted :: Expression -> Int -> ([(Slot, Function)], Int)
 minted answer spent = (zip fresh [FnSymbol idx | idx <- [spent + 1 ..]], spent + length fresh)
   where
     fresh :: [Slot]
     fresh = [slot | slot@(Slot kind _) <- slots answer, kind == "S"]
-
-stayed :: Expression -> Expression
-stayed = goExpr
-  where
-    goExpr :: Expression -> Expression
-    goExpr (ExFormation bds) = ExFormation (map goBinding bds)
-    goExpr (ExApplication expr arg) = case (goExpr expr, arg) of
-      (target, ArTau AtRho _) | dispatched target -> target
-      (target, _) -> ExApplication target (goArgument arg)
-    goExpr (ExDispatch expr attr) = ExDispatch (goExpr expr) attr
-    goExpr (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx (goExpr expr)
-    goExpr (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx (goExpr expr)
-    goExpr expr = expr
-    goBinding :: Binding -> Binding
-    goBinding (BiTau attr expr) = BiTau attr (goExpr expr)
-    goBinding bd = bd
-    goArgument :: Argument -> Argument
-    goArgument (ArTau attr expr) = ArTau attr (goExpr expr)
-    goArgument (ArAlpha alpha expr) = ArAlpha alpha (goExpr expr)
-    dispatched :: Expression -> Bool
-    dispatched (ExDispatch _ _) = True
-    dispatched (ExApplication expr _) = dispatched expr
-    dispatched _ = False
-
-type Minting = (Int, [(Int, Bytes)])
-
-symbolized :: Expression -> Int -> (Expression, [(Int, Bytes)], Int)
-symbolized term spent = case goExpr term (spent, []) of
-  (masked, (spent', known)) -> (masked, reverse known, spent')
-  where
-    goExpr :: Expression -> Minting -> (Expression, Minting)
-    goExpr (ExFormation bds) minting =
-      let (bds', minting') = goBindings bds minting
-       in (ExFormation bds', minting')
-    goExpr (ExApplication expr arg) minting =
-      let (expr', minting') = goExpr expr minting
-          (arg', minting'') = goArgument arg minting'
-       in (ExApplication expr' arg', minting'')
-    goExpr (ExDispatch expr attr) minting =
-      let (expr', minting') = goExpr expr minting
-       in (ExDispatch expr' attr, minting')
-    goExpr (ExPhiMeet prefix idx expr) minting =
-      let (expr', minting') = goExpr expr minting
-       in (ExPhiMeet prefix idx expr', minting')
-    goExpr (ExPhiAgain prefix idx expr) minting =
-      let (expr', minting') = goExpr expr minting
-       in (ExPhiAgain prefix idx expr', minting')
-    goExpr expr minting = (expr, minting)
-    goBindings :: [Binding] -> Minting -> ([Binding], Minting)
-    goBindings [] minting = ([], minting)
-    goBindings (bd : rest) minting =
-      let (bd', minting') = goBinding bd minting
-          (rest', minting'') = goBindings rest minting'
-       in (bd' : rest', minting'')
-    goBinding :: Binding -> Minting -> (Binding, Minting)
-    goBinding (BiDelta bts) (spent', known) =
-      (BiLambda (FnSymbol fresh), (fresh, (fresh, bts) : known))
-      where
-        fresh :: Int
-        fresh = spent' + 1
-    goBinding (BiTau AtPhi expr) minting =
-      let (expr', minting') = goExpr expr minting
-       in (BiTau AtPhi expr', minting')
-    goBinding bd minting = (bd, minting)
-    goArgument :: Argument -> Minting -> (Argument, Minting)
-    goArgument (ArTau attr expr) minting =
-      let (expr', minting') = goExpr expr minting
-       in (ArTau attr expr', minting')
-    goArgument (ArAlpha alpha expr) minting =
-      let (expr', minting') = goExpr expr minting
-       in (ArAlpha alpha expr', minting')
-
-type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-
-joined :: Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
-joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
-  where
-    taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
-    taking (term, (spent', _, made)) = (term, reverse made, spent')
-    goExpr :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
-    goExpr one two joining = goAlike one two joining <|> goSole one two joining <|> goDecorated one two joining
-    goAlike :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
-    goAlike one@(ExFormation _) two@(ExFormation _) joining
-      | bare one /= bare two = do
-          mine <- ending one
-          theirs <- ending two
-          (bd, joining') <- goBinding mine theirs joining
-          pure (ExFormation [bd], joining')
-    goAlike (ExFormation one) (ExFormation two) joining = do
-      (bds, joining') <- goBindings one two joining
-      pure (ExFormation bds, joining')
-    goAlike (ExApplication one arg) (ExApplication two arg') joining = do
-      (expr, joining') <- goExpr one two joining
-      (applied, joining'') <- goArgument arg arg' joining'
-      pure (ExApplication expr applied, joining'')
-    goAlike (ExDispatch one attr) (ExDispatch two attr') joining
-      | attr == attr' = do
-          (expr, joining') <- goExpr one two joining
-          pure (ExDispatch expr attr, joining')
-    goAlike (ExPhiMeet prefix idx one) (ExPhiMeet prefix' idx' two) joining
-      | prefix == prefix' && idx == idx' = do
-          (expr, joining') <- goExpr one two joining
-          pure (ExPhiMeet prefix idx expr, joining')
-    goAlike (ExPhiAgain prefix idx one) (ExPhiAgain prefix' idx' two) joining
-      | prefix == prefix' && idx == idx' = do
-          (expr, joining') <- goExpr one two joining
-          pure (ExPhiAgain prefix idx expr, joining')
-    goAlike one two joining
-      | one == two = Just (one, joining)
-      | otherwise = Nothing
-    goSole :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
-    goSole (ExFormation [BiLambda (FnSymbol mine)]) two joining
-      | [theirs] <- nub (symbols two) = Just (renamed theirs two (picked (mine, theirs) joining))
-    goSole one (ExFormation [BiLambda (FnSymbol theirs)]) joining
-      | [mine] <- nub (symbols one) = Just (renamed mine one (picked (mine, theirs) joining))
-    goSole _ _ _ = Nothing
-    renamed :: Int -> Expression -> (Int, Joining) -> (Expression, Joining)
-    renamed old term (fresh, joining) = (lifted (old - 1) (fresh - old) term, joining)
-    goDecorated :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
-    goDecorated one two joining
-      | bare one || bare two = Nothing
-      | depth one < depth two = peeled (goExpr one) two
-      | depth two < depth one = peeled (`goExpr` two) one
-      | otherwise = Nothing
-      where
-        peeled :: (Expression -> Joining -> Maybe (Expression, Joining)) -> Expression -> Maybe (Expression, Joining)
-        peeled pairing decorator = do
-          inner <- decorated decorator
-          (expr, joining') <- pairing inner joining
-          pure (ExFormation [BiTau AtPhi expr], joining')
-    goBindings :: [Binding] -> [Binding] -> Joining -> Maybe ([Binding], Joining)
-    goBindings [] [] joining = Just ([], joining)
-    goBindings (one : rest) (two : rest') joining = do
-      (bd, joining') <- goBinding one two joining
-      (bds, joining'') <- goBindings rest rest' joining'
-      pure (bd : bds, joining'')
-    goBindings _ _ _ = Nothing
-    goBinding :: Binding -> Binding -> Joining -> Maybe (Binding, Joining)
-    goBinding (BiLambda (FnSymbol one)) (BiLambda (FnSymbol two)) joining
-      | one /= two = case picked (one, two) joining of
-          (fresh, joining') -> Just (BiLambda (FnSymbol fresh), joining')
-    goBinding (BiTau AtPhi one) (BiTau AtPhi two) joining = do
-      (expr, joining') <- goExpr one two joining
-      pure (BiTau AtPhi expr, joining')
-    goBinding bd@(BiTau attr _) (BiTau attr' _) joining
-      | attr == attr' = Just (bd, joining)
-    goBinding one two joining
-      | one == two = Just (one, joining)
-      | otherwise = Nothing
-    bare :: Expression -> Bool
-    bare (ExFormation [BiLambda (FnSymbol _)]) = True
-    bare _ = False
-    ending :: Expression -> Maybe Binding
-    ending (ExFormation [bd@(BiLambda (FnSymbol _))]) = Just bd
-    ending term = decorated term >>= ending
-    decorated :: Expression -> Maybe Expression
-    decorated (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds]
-    decorated _ = Nothing
-    depth :: Expression -> Int
-    depth term = maybe 0 (succ . depth) (decorated term)
-    goArgument :: Argument -> Argument -> Joining -> Maybe (Argument, Joining)
-    goArgument (ArTau attr one) (ArTau attr' two) joining
-      | attr == attr' = do
-          (expr, joining') <- goExpr one two joining
-          pure (ArTau attr expr, joining')
-    goArgument (ArAlpha alpha one) (ArAlpha alpha' two) joining
-      | alpha == alpha' = do
-          (expr, joining') <- goExpr one two joining
-          pure (ArAlpha alpha expr, joining')
-    goArgument one two joining
-      | one == two = Just (one, joining)
-      | otherwise = Nothing
-    picked :: (Int, Int) -> Joining -> (Int, Joining)
-    picked pair joining@(spent', names, made)
-      | Just name <- Map.lookup pair names = (name, joining)
-      | otherwise = (fresh, (fresh, Map.insert pair fresh names, (fresh, pair) : made))
-      where
-        fresh :: Int
-        fresh = spent' + 1
-
-upcasted :: Expression -> Expression -> Int -> Maybe (Int, Expression, [(Int, [Attribute])], Int)
-upcasted (ExFormation [BiLambda (FnSymbol _)]) (ExFormation [BiLambda (FnSymbol _)]) _ = Nothing
-upcasted (ExFormation [BiLambda (FnSymbol bare)]) shape spent = do
-  paths@(_ : _) <- goReached [] shape
-  let fresh = [spent + 1 .. spent + length paths]
-  pure (bare, swapped fresh shape, zip fresh (map snd paths), spent + length paths)
-  where
-    goReached :: [Attribute] -> Expression -> Maybe [(Int, [Attribute])]
-    goReached _ term
-      | null (symbols term) = Just []
-    goReached path (ExFormation bds) = concat <$> mapM goReachedBinding bds
-      where
-        goReachedBinding :: Binding -> Maybe [(Int, [Attribute])]
-        goReachedBinding (BiLambda (FnSymbol idx)) = Just [(idx, path)]
-        goReachedBinding (BiTau attr expr) = goReached (path ++ [attr]) expr
-        goReachedBinding _ = Just []
-    goReached path (ExApplication expr (ArTau attr arg))
-      | copied expr = (++) <$> goReached path expr <*> goReached (path ++ [attr]) arg
-      where
-        copied :: Expression -> Bool
-        copied (ExApplication target _) = copied target
-        copied target = global target
-        global :: Expression -> Bool
-        global ExRoot = True
-        global (ExDispatch target _) = global target
-        global _ = False
-    goReached _ _ = Nothing
-    swapped :: [Int] -> Expression -> Expression
-    swapped fresh term = fst (goSwapped term fresh)
-      where
-        goSwapped :: Expression -> [Int] -> (Expression, [Int])
-        goSwapped (ExFormation bds) rest =
-          let (bds', rest') = goSwappedBindings bds rest
-           in (ExFormation bds', rest')
-        goSwapped (ExApplication expr arg) rest =
-          let (expr', rest') = goSwapped expr rest
-              (arg', rest'') = goSwappedArgument arg rest'
-           in (ExApplication expr' arg', rest'')
-        goSwapped expr rest = (expr, rest)
-        goSwappedBindings :: [Binding] -> [Int] -> ([Binding], [Int])
-        goSwappedBindings [] rest = ([], rest)
-        goSwappedBindings (bd : bds) rest =
-          let (bd', rest') = goSwappedBinding bd rest
-              (bds', rest'') = goSwappedBindings bds rest'
-           in (bd' : bds', rest'')
-        goSwappedBinding :: Binding -> [Int] -> (Binding, [Int])
-        goSwappedBinding (BiLambda (FnSymbol _)) (idx : rest) = (BiLambda (FnSymbol idx), rest)
-        goSwappedBinding (BiTau attr expr) rest =
-          let (expr', rest') = goSwapped expr rest
-           in (BiTau attr expr', rest')
-        goSwappedBinding bd rest = (bd, rest)
-        goSwappedArgument :: Argument -> [Int] -> (Argument, [Int])
-        goSwappedArgument (ArTau attr expr) rest =
-          let (expr', rest') = goSwapped expr rest
-           in (ArTau attr expr', rest')
-        goSwappedArgument arg rest = (arg, rest)
-upcasted _ _ _ = Nothing
 
 taken :: Expression -> Int
 taken program = maximum (0 : symbols program)
