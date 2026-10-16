@@ -4,9 +4,9 @@
 # yamllint disable rule:line-length
 # The λ functions the accumulator cases of the benchmark fire over
 # 'benchmark/accum.phi', the loop of #1453. Every entry answers symbolically,
-# 'gt' with a fork the 'L_fork' entry joins, so the loop never learns where it
-# stops and '--acyclic=plausible' is what cuts it, after the same twenty-six
-# firings however many methods 'number' declares.
+# 'gt' with a fork whose 'L_fork' entry takes the left side on the first path,
+# so the loop never learns where it stops and '--acyclic=plausible' is what
+# cuts it, after the same firings however many methods 'number' declares.
 - λ: L_bytes_size
   dataize:
     𝛿1: $.ρ
@@ -29,15 +29,10 @@
 - λ: L_fork
   dataize:
     𝛿1: $.φ
-  morph:
-    𝑛1: $.left
-    𝑛2: $.right
-  symbolize:
-    𝑛3: 𝑛1
-    𝑛4: 𝑛2
-  join:
-    𝑛5: [𝑛3, 𝑛4]
-  𝑛: 𝑛5
+  fork:
+    on: 𝛿1
+    left: $.left
+    right: $.right
 - λ: L_entry
   dataize:
     𝛿1: $.n

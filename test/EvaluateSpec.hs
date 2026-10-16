@@ -13,14 +13,16 @@ import CLI.Helpers (started)
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON (parseJSON), camelTo2, defaultOptions, fieldLabelModifier, genericParseJSON)
+import Data.IORef (newIORef)
 import Data.List (find, isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Yaml qualified as Decode
-import Deps (Acyclic, Evaluation (EvRun), Judgment (Morphing), Term (TeExpression), certainty)
+import Deps (Acyclic, Evaluation (EvRun), Judgment (Morphing), Side (..), Term (TeExpression), certainty, sided)
 import Encoding (Encoding (UNICODE))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, recorded, recorded', withLambdas, withLambdasOf)
+import Forks (routed)
 import GHC.Generics (Generic)
 import Lambdas (readLambdas)
 import Lining (LineFormat (SINGLELINE))
@@ -47,6 +49,7 @@ data SymbolPack = SymbolPack
   , result :: Maybe String
   , fails :: Maybe String
   , hideRho :: Maybe Bool
+  , route :: Maybe [String]
   }
   deriving (Generic, Show)
 
@@ -66,6 +69,7 @@ testSymbols pth = do
       let mode = named <$> acyclic
       cells <- memoized mode
       tally <- tallied firings
+      forks <- routed (maybe [] (map chosen) route) =<< newIORef []
       base <- defaultReduceContext loc
       let ctx =
             base
@@ -77,6 +81,7 @@ testSymbols pth = do
               , _symbolic = known
               , _saveEval = record
               , _opened = Just (1, Morphing, loc)
+              , _forks = forks
               }
       record (EvRun Morphing (T.pack (printExpression loc)))
       started expr ctx
@@ -92,6 +97,8 @@ testSymbols pth = do
   where
     named :: String -> Acyclic
     named mode = fromMaybe (error ("The pack names an unknown mode of acyclic: " ++ mode)) (find ((== mode) . certainty) [minBound .. maxBound])
+    chosen :: String -> Side
+    chosen word = fromMaybe (error ("The pack names an unknown side of a fork: " ++ word)) (find ((== word) . sided) [LeftSide, RightSide])
     spelled :: Bool -> Expression -> String
     spelled hidden term =
       (if hidden then printExpressionHidingRho' else printExpression') term (SWEET, UNICODE, SINGLELINE, defaultMargin)

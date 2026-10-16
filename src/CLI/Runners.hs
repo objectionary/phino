@@ -13,7 +13,7 @@ import CLI.Types
 import CLI.Validators
 import Condition (parseConditionThrows)
 import Control.Exception
-import Control.Monad (unless, when)
+import Control.Monad (forM_, unless, when)
 import Data.Foldable (traverse_)
 import Data.IORef (newIORef)
 import Data.List (intercalate)
@@ -29,6 +29,7 @@ import Engine (Engine (..), building, current, stepOf)
 import Evaluate (evaluation)
 import Files (overwrite)
 import qualified Filter as F
+import Forks (explored)
 import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules, explainRules)
 import Logger
 import Margin (defaultMargin)
@@ -182,18 +183,16 @@ runDataize OptsDataize{..} = do
   minted <- newIORef 0
   memo <- memoized _acyclic
   linked <- engine
-  (outcome, chain, _) <-
-    withEvalFunc
-      _protocol
-      printCtx
-      ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
-          (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
-          started universe aiming
-          dataize universe emptyState aiming
-      )
-  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (\residue -> F.include' residue included >>= (`F.exclude'` excluded)) outcome >>= putStrLn)
+  outcomes <-
+    withEvalFunc _protocol printCtx $ \record ->
+      explored _maxPaths $ \forks -> do
+        let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo forks 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
+        (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
+        started universe aiming
+        dataize universe emptyState aiming
+  forM_ outcomes $ \(outcome, chain, _) -> do
+    when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
+    unless _quiet (printOutcome printCtx (\residue -> F.include' residue included >>= (`F.exclude'` excluded)) outcome >>= putStrLn)
   where
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
@@ -264,25 +263,23 @@ runMorph OptsMorph{..} = do
   minted <- newIORef 0
   memo <- memoized _acyclic
   linked <- engine
-  (morphed, chain, _) <-
-    withEvalFunc
-      _protocol
-      printCtx
-      ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
-          (universe, aiming) <- aimed printCtx Morphing _inside expr ctx
-          started universe aiming
-          morph universe emptyState aiming
-      )
-  printed <-
-    if _quiet
-      then pure Nothing
-      else do
-        answer <- F.include' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) included >>= (`F.exclude'` excluded)
-        validateXmirTopLevel _outputFormat answer
-        Just <$> printAnswer printCtx answer
-  when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
-  mapM_ putStrLn printed
+  outcomes <-
+    withEvalFunc _protocol printCtx $ \record ->
+      explored _maxPaths $ \forks -> do
+        let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo forks 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
+        (universe, aiming) <- aimed printCtx Morphing _inside expr ctx
+        started universe aiming
+        morph universe emptyState aiming
+  forM_ outcomes $ \(morphed, chain, _) -> do
+    printed <-
+      if _quiet
+        then pure Nothing
+        else do
+          answer <- F.include' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) included >>= (`F.exclude'` excluded)
+          validateXmirTopLevel _outputFormat answer
+          Just <$> printAnswer printCtx answer
+    when _sequence (include chain >>= exclude >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
+    mapM_ putStrLn printed
   where
     lastMaybe :: [a] -> Maybe a
     lastMaybe [] = Nothing

@@ -39,15 +39,15 @@
     𝛿1: $.ρ
   𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 
-# A branch is where a 'morph' operand earns its place: the condition comes
-# down through 𝔻, both branches reach a normal form through 𝕄, and the answer
-# is one of them. This one answers the first, which is what an entry naming a
-# meta it bound does; an entry whose answer is to stand for either branch joins
-# the two of them in a 'join' block first and answers the meta that makes.
+# A fork is where a run splits: the condition comes down through 𝔻 and
+# answers a symbol nobody has decided, so the entry takes the left side on
+# the first path and leaves the right side to another path, where it takes
+# that one. Only the side a path takes reaches a normal form through 𝕄, and
+# that normal form is the answer of the firing.
 - λ: L_fork
   dataize:
     𝛿1: $.ρ
-  morph:
-    𝑛1: $.then
-    𝑛2: $.else
-  𝑛: 𝑛1
+  fork:
+    on: 𝛿1
+    left: $.then
+    right: $.else

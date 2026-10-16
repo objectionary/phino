@@ -10,13 +10,13 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer, Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, boxed, charged, counted, deeper, emptyState, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, boxed, charged, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, catch, evaluate, throwIO, try)
-import Control.Monad (when)
+import Control.Monad (filterM, when)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -26,6 +26,7 @@ import Data.Maybe (isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Engine (Engine (..))
+import Forks (Decision, Forks, agreed, noted)
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
 import Lambdas (Lambdas)
@@ -64,9 +65,15 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IORef Int) (IORef Int)
+data Memo = Memo (IORef (Store (Int, [Decision], Kept))) (IORef (Map.Map Firing [([Decision], Answer)])) (IORef Int) (IORef Int)
 
-type Answer = (Expression, Expression)
+data Answer
+  = Answer Expression Expression
+  | Chosen Decision Expression Expression
+
+ended :: Answer -> Expression
+ended (Answer _ normal) = normal
+ended (Chosen _ _ normal) = normal
 
 data Firing = Firing T.Text [Either Int Bytes] [Expression]
   deriving (Eq, Ord)
@@ -89,6 +96,7 @@ data ReduceContext = ReduceContext
   , _minted :: IORef Int
   , _deadline :: Maybe Deadline
   , _memo :: Maybe Memo
+  , _forks :: Forks
   , _nesting :: Int
   , _opened :: Maybe (Int, Judgment, Expression)
   , _depthSensitive :: Bool
@@ -118,8 +126,6 @@ data ReduceException
   | OutOfTime Int
   | Stuck T.Text
   | StuckAt T.Text (NonEmpty Rewritten) State
-  | Unjoined T.Text
-  | Unreminted T.Text
   | OutOfStepsAt Budget (NonEmpty Rewritten) State
   | Looping Expression
   | LoopingAt Expression (NonEmpty Rewritten) State
@@ -139,8 +145,6 @@ instance Show ReduceException where
     printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
-  show (Unjoined func) = printf "The λ function '%s' could not join its two branches" (T.unpack func)
-  show (Unreminted func) = printf "The λ function '%s' could not remint a term as a symbol" (T.unpack func)
   show (Looping term) = printf "Reduction entered a formation it is already inside: %s" (printExpression term)
   show (LoopingAt term _ _) = show (Looping term)
   show (Undataizable ExTermination _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
@@ -196,13 +200,15 @@ memoized :: Maybe Acyclic -> IO (Maybe Memo)
 memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0)
 memoized _ = pure Nothing
 
-recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
-recalled Nothing _ _ = pure Nothing
-recalled (Just (Memo store _ answers _)) form spent = do
+recalled :: Maybe Memo -> Forks -> Expression -> Int -> IO (Maybe Kept)
+recalled Nothing _ _ _ = pure Nothing
+recalled (Just (Memo store _ answers _)) forks form spent = do
   kept <- readIORef store
   count <- readIORef answers
-  let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
-  pure (find answered live <|> listToMaybe live)
+  live <- filterM (agreed forks . fst) [(deps, known) | (term, (stamp, deps, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
+  let taken = find (answered . snd) live <|> listToMaybe live
+  mapM_ (noted forks . fst) taken
+  pure (snd <$> taken)
   where
     current :: Int -> Int -> Kept -> Bool
     current count stamp (Stalled _ least) = stamp == count && spent >= least
@@ -219,19 +225,23 @@ starved :: Maybe Memo -> IO Int
 starved Nothing = pure 0
 starved (Just (Memo _ _ _ exhausted)) = readIORef exhausted
 
-retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
-retained Nothing _ _ _ = pure ()
-retained (Just (Memo store _ _ _)) form stamp kept =
-  modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
+retained :: Maybe Memo -> Expression -> Int -> [Decision] -> Kept -> IO ()
+retained Nothing _ _ _ _ = pure ()
+retained (Just (Memo store _ _ _)) form stamp deps kept =
+  modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, deps, kept))])
 
-remembered :: Maybe Memo -> Firing -> IO (Maybe Answer)
-remembered Nothing _ = pure Nothing
-remembered (Just (Memo _ firings _ _)) firing = Map.lookup firing <$> readIORef firings
+remembered :: Maybe Memo -> Forks -> Firing -> IO (Maybe Answer)
+remembered Nothing _ _ = pure Nothing
+remembered (Just (Memo _ firings _ _)) forks firing = do
+  known <- Map.findWithDefault [] firing <$> readIORef firings
+  taken <- listToMaybe <$> filterM (agreed forks . fst) known
+  mapM_ (noted forks . fst) taken
+  pure (snd <$> taken)
 
-remember :: Maybe Memo -> Firing -> Answer -> IO ()
-remember Nothing _ _ = pure ()
-remember (Just (Memo _ firings answers _)) firing answer = do
-  modifyIORef' firings (Map.insert firing answer)
+remember :: Maybe Memo -> Firing -> [Decision] -> Answer -> IO ()
+remember Nothing _ _ _ = pure ()
+remember (Just (Memo _ firings answers _)) firing deps answer = do
+  modifyIORef' firings (Map.insertWith (++) firing [(deps, answer)])
   modifyIORef' answers (+ 1)
 
 parking :: NonEmpty Rewritten -> State -> IO a -> IO a
@@ -263,7 +273,7 @@ enter form ctx = admitted form ctx >>= either (refused form ctx) pure
 
 refused :: Expression -> ReduceContext -> (Acyclic, Expression) -> IO a
 refused form ctx (mode, before) = do
-  ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site Nothing)
+  ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
   throwIO (Looping form)
 
 admitted :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) ReduceContext)

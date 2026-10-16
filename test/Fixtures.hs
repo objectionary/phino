@@ -16,6 +16,7 @@ module Fixtures
   , readUtf8
   , recorded
   , recorded'
+  , recordedWhole
   , recordedXml
   , withLambdas
   , withLambdasOf
@@ -42,6 +43,7 @@ import Dataize (reduction)
 import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
 import Engine (Engine, building, yaml)
 import Evaluate (evaluation)
+import Forks (routed)
 import GHC.Clock (getMonotonicTime)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Lining (LineFormat (MULTILINE))
@@ -55,7 +57,8 @@ import XMIR (defaultXmirContext)
 defaultReduceContext :: Expression -> IO ReduceContext
 defaultReduceContext loc = do
   minted <- newIORef 0
-  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+  forks <- routed [] =<< newIORef []
+  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing forks 1 Nothing False True False Nothing 0 Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
 
 linked :: Engine
 linked = fromMaybe yaml compiled
@@ -122,6 +125,13 @@ recordedXml action =
     written <- readProtocol path
     pure (answer, written)
 
+recordedWhole :: (SaveEvalFunc -> IO a) -> IO (a, String)
+recordedWhole action =
+  withTemp "phino-protocol-.xml" BS.empty $ \path -> do
+    answer <- withEvalFunc (Just path) (printing False) action
+    written <- readUtf8 path
+    pure (answer, written)
+
 printing :: Bool -> PrintContext
 printing hidden =
   PrintCtx
@@ -185,9 +195,11 @@ withoutTotals text
 withoutWrapper :: String -> String
 withoutWrapper text = case lines text of
   (decl : "<protocol>" : rest)
-    | Just kept <- withoutRunTotals rest -> unlines (decl : map dedented kept)
+    | Just kept <- withoutRunTotals rest -> unlines (decl : map dedented (filter (not . pathing) kept))
   _ -> text
   where
+    pathing :: String -> Bool
+    pathing line = line `elem` ["  <path>", "  </path>"]
     withoutRunTotals :: [String] -> Maybe [String]
     withoutRunTotals rest = case reverse rest of
       (closing : fps : firings : msec : kept)
@@ -198,7 +210,7 @@ withoutWrapper text = case lines text of
             Just (reverse kept)
       _ -> Nothing
     dedented :: String -> String
-    dedented line = fromMaybe line (stripPrefix "  " line)
+    dedented line = fromMaybe line (stripPrefix "    " line)
 
 withTemp :: String -> BS.ByteString -> (FilePath -> IO a) -> IO a
 withTemp template content action = do

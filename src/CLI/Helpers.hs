@@ -139,7 +139,7 @@ lambdasOf (Just file) = do
   ensuredFile file >>= readLambdas
 
 started :: Expression -> ReduceContext -> IO ()
-started expr ctx = writeIORef ctx._minted (taken expr)
+started expr ctx = modifyIORef' ctx._minted (max (taken expr))
 
 heading :: SaveEvalFunc -> PrintContext -> Judgment -> Expression -> IO ()
 heading record ctx judgment locator =

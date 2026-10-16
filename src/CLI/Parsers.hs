@@ -116,6 +116,14 @@ optMaxSeconds =
         (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, unlimited unless given")
     )
 
+optMaxPaths :: Parser (Maybe Int)
+optMaxPaths =
+  optional
+    ( option
+        (boundedIntOption >>= validateIntOption (> 0) "--max-paths must be positive")
+        (long "max-paths" <> metavar "PATHS" <> help "Maximum number of paths a run may take at the forks it meets, unlimited unless given")
+    )
+
 optMargin :: Parser Int
 optMargin =
   option
@@ -257,15 +265,10 @@ optSymbolic =
             <> help
               "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
-              \it reduces to a normal form under \"morph\", the terms it rewrites by rules of its own under \
-              \\"rewrite\", the copies one of whose arguments reads to a bare symbol it answers with a fresh \
-              \symbol under \"defer\", the terms whose φ it fires the way \"evaluate\" does under \"unfold\", \
-              \answering a fresh symbol for one whose firing a cut refuses, the terms of those it stands the data of into \
-              \unknowns under \"symbolize\", the pair of terms whose smaller it casts into the shape of the \
-              \larger under \"upcast\", in two lines binding the two results, the pairs of branches it joins \
-              \into one term under \"join\", the λ functions whose objects \
-              \a join takes for a branch that raises under \"terminators\", and answering with the term under \
-              \\"𝑛\""
+              \it reduces to a normal form under \"morph\", the terms it fires through 𝔼 under \"evaluate\", \
+              \the copies one of whose arguments reads to a bare symbol it answers with a fresh symbol under \
+              \\"defer\", and answering with the term under \"𝑛\", or forking under \"fork\" on a datum of \
+              \\"dataize\" into the two sides a path of the run picks between"
         )
     )
 
@@ -418,6 +421,7 @@ dataizeParser =
             <*> optMaxSteps
             <*> optMaxFirings
             <*> optMaxSeconds
+            <*> optMaxPaths
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -468,6 +472,7 @@ morphParser =
             <*> optMaxSteps
             <*> optMaxFirings
             <*> optMaxSeconds
+            <*> optMaxPaths
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength

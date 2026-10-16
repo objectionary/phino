@@ -64,6 +64,7 @@ library
     Evaluate
     Files
     Filter
+    Forks
     Functions
     Inference
     Lambdas
