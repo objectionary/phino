@@ -1,0 +1,327 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE OverloadedRecordDot #-}</span><span>
+</span><span id="line-2"></span><span class="hs-pragma">{-# LANGUAGE ScopedTypeVariables #-}</span><span>
+</span><span id="line-3"></span><span class="hs-pragma">{-# LANGUAGE TupleSections #-}</span><span>
+</span><span id="line-4"></span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- SPDX-License-Identifier: MIT</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Forks</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Forks.html#Decision"><span class="hs-identifier">Decision</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier">Forks</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#agreed"><span class="hs-identifier">agreed</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#decide"><span class="hs-identifier">decide</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#explored"><span class="hs-identifier">explored</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#marked"><span class="hs-identifier">marked</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#noted"><span class="hs-identifier">noted</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#routed"><span class="hs-identifier">routed</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#since"><span class="hs-identifier">since</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-9"></span><span>
+</span><span id="line-10"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="AST.html"><span class="hs-identifier">AST</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier">Bytes</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-11"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.IORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">IORef</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">atomicModifyIORef'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">modifyIORef'</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">newIORef</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">readIORef</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">writeIORef</span></span><span class="hs-special">)</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Deps.html"><span class="hs-identifier">Deps</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier">Side</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">type</span><span> </span><span id="Decision"><span class="annot"><a href="Forks.html#Decision"><span class="hs-identifier hs-var">Decision</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span class="hs-keyword">data</span><span> </span><span id="Forks"><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-var">Forks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Forks"><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-var">Forks</span></a></span></span><span>
+</span><span id="line-19"></span><span>  </span><span class="hs-special">{</span><span> </span><span id="_route"><span class="annot"><span class="annottext">Forks -&gt; IORef ([Side], [Side])
+</span><a href="Forks.html#_route"><span class="hs-identifier hs-var hs-var">_route</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-20"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="_decided"><span class="annot"><span class="annottext">Forks -&gt; IORef (Map (Either Int Bytes) Side)
+</span><a href="Forks.html#_decided"><span class="hs-identifier hs-var hs-var">_decided</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-21"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="_met"><span class="annot"><span class="annottext">Forks -&gt; IORef [Decision]
+</span><a href="Forks.html#_met"><span class="hs-identifier hs-var hs-var">_met</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Forks.html#Decision"><span class="hs-identifier hs-type">Decision</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-22"></span><span>  </span><span class="hs-special">,</span><span> </span><span id="_pending"><span class="annot"><span class="annottext">Forks -&gt; IORef [[Side]]
+</span><a href="Forks.html#_pending"><span class="hs-identifier hs-var hs-var">_pending</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span class="annot"><a href="Forks.html#routed"><span class="hs-identifier hs-type">routed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-type">Forks</span></a></span><span>
+</span><span id="line-26"></span><span id="routed"><span class="annot"><span class="annottext">routed :: [Side] -&gt; IORef [[Side]] -&gt; IO Forks
+</span><a href="Forks.html#routed"><span class="hs-identifier hs-var hs-var">routed</span></a></span></span><span> </span><span id="local-6989586621679667315"><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667315"><span class="hs-identifier hs-var">route</span></a></span></span><span> </span><span id="local-6989586621679667316"><span class="annot"><span class="annottext">IORef [[Side]]
+</span><a href="#local-6989586621679667316"><span class="hs-identifier hs-var">pending</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef ([Side], [Side])
+-&gt; IORef (Map (Either Int Bytes) Side)
+-&gt; IORef [Decision]
+-&gt; IORef [[Side]]
+-&gt; Forks
+</span><a href="Forks.html#Forks"><span class="hs-identifier hs-var">Forks</span></a></span><span> </span><span class="annot"><span class="annottext">(IORef ([Side], [Side])
+ -&gt; IORef (Map (Either Int Bytes) Side)
+ -&gt; IORef [Decision]
+ -&gt; IORef [[Side]]
+ -&gt; Forks)
+-&gt; IO (IORef ([Side], [Side]))
+-&gt; IO
+     (IORef (Map (Either Int Bytes) Side)
+      -&gt; IORef [Decision] -&gt; IORef [[Side]] -&gt; Forks)
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">([Side], [Side]) -&gt; IO (IORef ([Side], [Side]))
+forall a. a -&gt; IO (IORef a)
+</span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667315"><span class="hs-identifier hs-var">route</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IO
+  (IORef (Map (Either Int Bytes) Side)
+   -&gt; IORef [Decision] -&gt; IORef [[Side]] -&gt; Forks)
+-&gt; IO (IORef (Map (Either Int Bytes) Side))
+-&gt; IO (IORef [Decision] -&gt; IORef [[Side]] -&gt; Forks)
+forall a b. IO (a -&gt; b) -&gt; IO a -&gt; IO b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">Map (Either Int Bytes) Side
+-&gt; IO (IORef (Map (Either Int Bytes) Side))
+forall a. a -&gt; IO (IORef a)
+</span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="annot"><span class="annottext">Map (Either Int Bytes) Side
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span> </span><span class="annot"><span class="annottext">IO (IORef [Decision] -&gt; IORef [[Side]] -&gt; Forks)
+-&gt; IO (IORef [Decision]) -&gt; IO (IORef [[Side]] -&gt; Forks)
+forall a b. IO (a -&gt; b) -&gt; IO a -&gt; IO b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">[Decision] -&gt; IO (IORef [Decision])
+forall a. a -&gt; IO (IORef a)
+</span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">IO (IORef [[Side]] -&gt; Forks) -&gt; IO (IORef [[Side]]) -&gt; IO Forks
+forall a b. IO (a -&gt; b) -&gt; IO a -&gt; IO b
+forall (f :: * -&gt; *) a b. Applicative f =&gt; f (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;*&gt;</span></span><span> </span><span class="annot"><span class="annottext">IORef [[Side]] -&gt; IO (IORef [[Side]])
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">IORef [[Side]]
+</span><a href="#local-6989586621679667316"><span class="hs-identifier hs-var">pending</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span class="annot"><a href="Forks.html#decide"><span class="hs-identifier hs-type">decide</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-type">Forks</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="annot"><a href="AST.html#Bytes"><span class="hs-identifier hs-type">Bytes</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span>
+</span><span id="line-29"></span><span id="decide"><span class="annot"><span class="annottext">decide :: Forks -&gt; Either Int Bytes -&gt; IO Side
+</span><a href="Forks.html#decide"><span class="hs-identifier hs-var hs-var">decide</span></a></span></span><span> </span><span id="local-6989586621679667319"><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667319"><span class="hs-identifier hs-var">forks</span></a></span></span><span> </span><span id="local-6989586621679667320"><span class="annot"><span class="annottext">Either Int Bytes
+</span><a href="#local-6989586621679667320"><span class="hs-identifier hs-var">condition</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-30"></span><span>  </span><span id="local-6989586621679667321"><span class="annot"><span class="annottext">Map (Either Int Bytes) Side
+</span><a href="#local-6989586621679667321"><span class="hs-identifier hs-var">decided</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef (Map (Either Int Bytes) Side)
+-&gt; IO (Map (Either Int Bytes) Side)
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667319"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_decided</span><span>
+</span><span id="line-31"></span><span>  </span><span id="local-6989586621679667322"><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667322"><span class="hs-identifier hs-var">side</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IO Side -&gt; (Side -&gt; IO Side) -&gt; Maybe Side -&gt; IO Side
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">IO Side
+</span><a href="#local-6989586621679667324"><span class="hs-identifier hs-var">undecided</span></a></span><span> </span><span class="annot"><span class="annottext">Side -&gt; IO Side
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Either Int Bytes -&gt; Map (Either Int Bytes) Side -&gt; Maybe Side
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">Either Int Bytes
+</span><a href="#local-6989586621679667320"><span class="hs-identifier hs-var">condition</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Either Int Bytes) Side
+</span><a href="#local-6989586621679667321"><span class="hs-identifier hs-var">decided</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-32"></span><span>  </span><span class="annot"><span class="annottext">IORef (Map (Either Int Bytes) Side)
+-&gt; (Map (Either Int Bytes) Side -&gt; Map (Either Int Bytes) Side)
+-&gt; IO ()
+forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
+</span><span class="hs-identifier hs-var">modifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667319"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_decided</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Either Int Bytes
+-&gt; Side
+-&gt; Map (Either Int Bytes) Side
+-&gt; Map (Either Int Bytes) Side
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">Either Int Bytes
+</span><a href="#local-6989586621679667320"><span class="hs-identifier hs-var">condition</span></a></span><span> </span><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667322"><span class="hs-identifier hs-var">side</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>  </span><span class="annot"><span class="annottext">IORef [Decision] -&gt; ([Decision] -&gt; [Decision]) -&gt; IO ()
+forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
+</span><span class="hs-identifier hs-var">modifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667319"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_met</span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><span class="annottext">Either Int Bytes
+</span><a href="#local-6989586621679667320"><span class="hs-identifier hs-var">condition</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667322"><span class="hs-identifier hs-var">side</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Decision -&gt; [Decision] -&gt; [Decision]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="hs-special">)</span><span>
+</span><span id="line-34"></span><span>  </span><span class="annot"><span class="annottext">Side -&gt; IO Side
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667322"><span class="hs-identifier hs-var">side</span></a></span><span>
+</span><span id="line-35"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="#local-6989586621679667324"><span class="hs-identifier hs-type">undecided</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span id="local-6989586621679667324"><span class="annot"><span class="annottext">undecided :: IO Side
+</span><a href="#local-6989586621679667324"><span class="hs-identifier hs-var hs-var">undecided</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-38"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679667327"><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667327"><span class="hs-identifier hs-var">ahead</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679667328"><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667328"><span class="hs-identifier hs-var">behind</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef ([Side], [Side]) -&gt; IO ([Side], [Side])
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667319"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_route</span><span>
+</span><span id="line-39"></span><span>      </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667327"><span class="hs-identifier hs-var">ahead</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-40"></span><span>        </span><span id="local-6989586621679667329"><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667329"><span class="hs-identifier hs-var">side</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679667330"><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667330"><span class="hs-identifier hs-var">more</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667329"><span class="hs-identifier hs-var">side</span></a></span><span> </span><span class="annot"><span class="annottext">Side -&gt; IO () -&gt; IO Side
+forall a b. a -&gt; IO b -&gt; IO a
+forall (f :: * -&gt; *) a b. Functor f =&gt; a -&gt; f b -&gt; f a
+</span><span class="hs-operator hs-var">&lt;$</span></span><span> </span><span class="annot"><span class="annottext">IORef ([Side], [Side]) -&gt; ([Side], [Side]) -&gt; IO ()
+forall a. IORef a -&gt; a -&gt; IO ()
+</span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667319"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_route</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667330"><span class="hs-identifier hs-var">more</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667329"><span class="hs-identifier hs-var">side</span></a></span><span> </span><span class="annot"><span class="annottext">Side -&gt; [Side] -&gt; [Side]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667328"><span class="hs-identifier hs-var">behind</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-41"></span><span>        </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-42"></span><span>          </span><span class="annot"><span class="annottext">IORef ([Side], [Side]) -&gt; ([Side], [Side]) -&gt; IO ()
+forall a. IORef a -&gt; a -&gt; IO ()
+</span><span class="hs-identifier hs-var">writeIORef</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667319"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_route</span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Side
+</span><a href="Deps.html#LeftSide"><span class="hs-identifier hs-var">LeftSide</span></a></span><span> </span><span class="annot"><span class="annottext">Side -&gt; [Side] -&gt; [Side]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667328"><span class="hs-identifier hs-var">behind</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>          </span><span class="annot"><span class="annottext">IORef [[Side]] -&gt; ([[Side]] -&gt; [[Side]]) -&gt; IO ()
+forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
+</span><span class="hs-identifier hs-var">modifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667319"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_pending</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Side] -&gt; [Side]
+forall a. [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Side
+</span><a href="Deps.html#RightSide"><span class="hs-identifier hs-var">RightSide</span></a></span><span> </span><span class="annot"><span class="annottext">Side -&gt; [Side] -&gt; [Side]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667328"><span class="hs-identifier hs-var">behind</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Side] -&gt; [[Side]] -&gt; [[Side]]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span>          </span><span class="annot"><span class="annottext">Side -&gt; IO Side
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="annot"><span class="annottext">Side
+</span><a href="Deps.html#LeftSide"><span class="hs-identifier hs-var">LeftSide</span></a></span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><a href="Forks.html#marked"><span class="hs-identifier hs-type">marked</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-type">Forks</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-47"></span><span id="marked"><span class="annot"><span class="annottext">marked :: Forks -&gt; IO Int
+</span><a href="Forks.html#marked"><span class="hs-identifier hs-var hs-var">marked</span></a></span></span><span> </span><span id="local-6989586621679667335"><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667335"><span class="hs-identifier hs-var">forks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Decision] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">([Decision] -&gt; Int) -&gt; IO [Decision] -&gt; IO Int
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">IORef [Decision] -&gt; IO [Decision]
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667335"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_met</span><span>
+</span><span id="line-48"></span><span>
+</span><span id="line-49"></span><span class="annot"><a href="Forks.html#since"><span class="hs-identifier hs-type">since</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-type">Forks</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Forks.html#Decision"><span class="hs-identifier hs-type">Decision</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-50"></span><span id="since"><span class="annot"><span class="annottext">since :: Forks -&gt; Int -&gt; IO [Decision]
+</span><a href="Forks.html#since"><span class="hs-identifier hs-var hs-var">since</span></a></span></span><span> </span><span id="local-6989586621679667337"><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667337"><span class="hs-identifier hs-var">forks</span></a></span></span><span> </span><span id="local-6989586621679667338"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679667338"><span class="hs-identifier hs-var">mark</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679667339"><span class="annot"><span class="annottext">[Decision]
+</span><a href="#local-6989586621679667339"><span class="hs-identifier hs-var">met</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Int -&gt; [Decision] -&gt; [Decision]
+forall a. Int -&gt; [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">take</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Decision] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Decision]
+</span><a href="#local-6989586621679667339"><span class="hs-identifier hs-var">met</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-glyph hs-var">-</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679667338"><span class="hs-identifier hs-var">mark</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Decision]
+</span><a href="#local-6989586621679667339"><span class="hs-identifier hs-var">met</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([Decision] -&gt; [Decision]) -&gt; IO [Decision] -&gt; IO [Decision]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">IORef [Decision] -&gt; IO [Decision]
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667337"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_met</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><a href="Forks.html#agreed"><span class="hs-identifier hs-type">agreed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-type">Forks</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Forks.html#Decision"><span class="hs-identifier hs-type">Decision</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span><span>
+</span><span id="line-53"></span><span id="agreed"><span class="annot"><span class="annottext">agreed :: Forks -&gt; [Decision] -&gt; IO Bool
+</span><a href="Forks.html#agreed"><span class="hs-identifier hs-var hs-var">agreed</span></a></span></span><span> </span><span id="local-6989586621679667341"><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667341"><span class="hs-identifier hs-var">forks</span></a></span></span><span> </span><span id="local-6989586621679667342"><span class="annot"><span class="annottext">[Decision]
+</span><a href="#local-6989586621679667342"><span class="hs-identifier hs-var">deps</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679667343"><span class="annot"><span class="annottext">Map (Either Int Bytes) Side
+</span><a href="#local-6989586621679667343"><span class="hs-identifier hs-var">decided</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Decision -&gt; Bool) -&gt; [Decision] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">all</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679667345"><span class="annot"><span class="annottext">Either Int Bytes
+</span><a href="#local-6989586621679667345"><span class="hs-identifier hs-var">condition</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679667346"><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667346"><span class="hs-identifier hs-var">side</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Either Int Bytes -&gt; Map (Either Int Bytes) Side -&gt; Maybe Side
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">Either Int Bytes
+</span><a href="#local-6989586621679667345"><span class="hs-identifier hs-var">condition</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Either Int Bytes) Side
+</span><a href="#local-6989586621679667343"><span class="hs-identifier hs-var">decided</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Side -&gt; Maybe Side -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Side -&gt; Maybe Side
+forall a. a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Side
+</span><a href="#local-6989586621679667346"><span class="hs-identifier hs-var">side</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Decision]
+</span><a href="#local-6989586621679667342"><span class="hs-identifier hs-var">deps</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Map (Either Int Bytes) Side -&gt; Bool)
+-&gt; IO (Map (Either Int Bytes) Side) -&gt; IO Bool
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">IORef (Map (Either Int Bytes) Side)
+-&gt; IO (Map (Either Int Bytes) Side)
+forall a. IORef a -&gt; IO a
+</span><span class="hs-identifier hs-var">readIORef</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667341"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_decided</span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="annot"><a href="Forks.html#noted"><span class="hs-identifier hs-type">noted</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-type">Forks</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Forks.html#Decision"><span class="hs-identifier hs-type">Decision</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span id="noted"><span class="annot"><span class="annottext">noted :: Forks -&gt; [Decision] -&gt; IO ()
+</span><a href="Forks.html#noted"><span class="hs-identifier hs-var hs-var">noted</span></a></span></span><span> </span><span id="local-6989586621679667347"><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667347"><span class="hs-identifier hs-var">forks</span></a></span></span><span> </span><span id="local-6989586621679667348"><span class="annot"><span class="annottext">[Decision]
+</span><a href="#local-6989586621679667348"><span class="hs-identifier hs-var">deps</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">IORef [Decision] -&gt; ([Decision] -&gt; [Decision]) -&gt; IO ()
+forall a. IORef a -&gt; (a -&gt; a) -&gt; IO ()
+</span><span class="hs-identifier hs-var">modifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">Forks
+</span><a href="#local-6989586621679667347"><span class="hs-identifier hs-var">forks</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_met</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Decision]
+</span><a href="#local-6989586621679667348"><span class="hs-identifier hs-var">deps</span></a></span><span> </span><span class="annot"><span class="annottext">[Decision] -&gt; [Decision] -&gt; [Decision]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="annot"><a href="Forks.html#explored"><span class="hs-identifier hs-type">explored</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-keyword">forall</span><span> </span><span id="local-6989586621679667236"><span class="annot"><a href="#local-6989586621679667236"><span class="hs-identifier hs-type">answer</span></a></span></span><span class="hs-operator">.</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Forks.html#Forks"><span class="hs-identifier hs-type">Forks</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="annot"><a href="#local-6989586621679667236"><span class="hs-identifier hs-type">answer</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679667236"><span class="hs-identifier hs-type">answer</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-59"></span><span id="explored"><span class="annot"><span class="annottext">explored :: forall answer. Maybe Int -&gt; (Forks -&gt; IO answer) -&gt; IO [answer]
+</span><a href="Forks.html#explored"><span class="hs-identifier hs-var hs-var">explored</span></a></span></span><span> </span><span id="local-6989586621679667359"><span class="annot"><span class="annottext">Maybe Int
+</span><a href="#local-6989586621679667359"><span class="hs-identifier hs-var">cap</span></a></span></span><span> </span><span id="local-6989586621679667360"><span class="annot"><span class="annottext">Forks -&gt; IO answer
+</span><a href="#local-6989586621679667360"><span class="hs-identifier hs-var">action</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[[Side]] -&gt; IO (IORef [[Side]])
+forall a. a -&gt; IO (IORef a)
+</span><span class="hs-identifier hs-var">newIORef</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">IO (IORef [[Side]])
+-&gt; (IORef [[Side]] -&gt; IO [answer]) -&gt; IO [answer]
+forall a b. IO a -&gt; (a -&gt; IO b) -&gt; IO b
+forall (m :: * -&gt; *) a b. Monad m =&gt; m a -&gt; (a -&gt; m b) -&gt; m b
+</span><span class="hs-operator hs-var">&gt;&gt;=</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [[Side]] -&gt; IORef [[Side]] -&gt; IO [answer]
+</span><a href="#local-6989586621679667361"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">0</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">]</span><span>
+</span><span id="line-60"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><a href="#local-6989586621679667361"><span class="hs-identifier hs-type">go</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IORef</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">[</span><span class="annot"><a href="Deps.html#Side"><span class="hs-identifier hs-type">Side</span></a></span><span class="hs-special">]</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">IO</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679667236"><span class="hs-identifier hs-type">answer</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-62"></span><span>    </span><span id="local-6989586621679667361"><span class="annot"><span class="annottext">go :: Int -&gt; [[Side]] -&gt; IORef [[Side]] -&gt; IO [answer]
+</span><a href="#local-6989586621679667361"><span class="hs-identifier hs-var hs-var">go</span></a></span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="annot"><span class="annottext">IORef [[Side]]
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[answer] -&gt; IO [answer]
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-63"></span><span>    </span><span class="annot"><a href="#local-6989586621679667361"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span id="local-6989586621679667362"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679667362"><span class="hs-identifier hs-var">count</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679667363"><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667363"><span class="hs-identifier hs-var">route</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679667364"><span class="annot"><span class="annottext">[[Side]]
+</span><a href="#local-6989586621679667364"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679667365"><span class="annot"><span class="annottext">IORef [[Side]]
+</span><a href="#local-6989586621679667365"><span class="hs-identifier hs-var">pending</span></a></span></span><span>
+</span><span id="line-64"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool -&gt; (Int -&gt; Bool) -&gt; Maybe Int -&gt; Bool
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679667362"><span class="hs-identifier hs-var">count</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+forall a. Ord a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">&gt;=</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe Int
+</span><a href="#local-6989586621679667359"><span class="hs-identifier hs-var">cap</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[answer] -&gt; IO [answer]
+forall a. a -&gt; IO a
+forall (f :: * -&gt; *) a. Applicative f =&gt; a -&gt; f a
+</span><span class="hs-identifier hs-var">pure</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span>
+</span><span id="line-65"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-66"></span><span>          </span><span id="local-6989586621679667366"><span class="annot"><span class="annottext">answer
+</span><a href="#local-6989586621679667366"><span class="hs-identifier hs-var">answer</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Forks -&gt; IO answer
+</span><a href="#local-6989586621679667360"><span class="hs-identifier hs-var">action</span></a></span><span> </span><span class="annot"><span class="annottext">(Forks -&gt; IO answer) -&gt; IO Forks -&gt; IO answer
+forall (m :: * -&gt; *) a b. Monad m =&gt; (a -&gt; m b) -&gt; m a -&gt; m b
+</span><span class="hs-operator hs-var">=&lt;&lt;</span></span><span> </span><span class="annot"><span class="annottext">[Side] -&gt; IORef [[Side]] -&gt; IO Forks
+</span><a href="Forks.html#routed"><span class="hs-identifier hs-var">routed</span></a></span><span> </span><span class="annot"><span class="annottext">[Side]
+</span><a href="#local-6989586621679667363"><span class="hs-identifier hs-var">route</span></a></span><span> </span><span class="annot"><span class="annottext">IORef [[Side]]
+</span><a href="#local-6989586621679667365"><span class="hs-identifier hs-var">pending</span></a></span><span>
+</span><span id="line-67"></span><span>          </span><span id="local-6989586621679667368"><span class="annot"><span class="annottext">[[Side]]
+</span><a href="#local-6989586621679667368"><span class="hs-identifier hs-var">opened</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">IORef [[Side]] -&gt; ([[Side]] -&gt; ([[Side]], [[Side]])) -&gt; IO [[Side]]
+forall a b. IORef a -&gt; (a -&gt; (a, b)) -&gt; IO b
+</span><span class="hs-identifier hs-var">atomicModifyIORef'</span></span><span> </span><span class="annot"><span class="annottext">IORef [[Side]]
+</span><a href="#local-6989586621679667365"><span class="hs-identifier hs-var">pending</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span class="hs-special">)</span><span>
+</span><span id="line-68"></span><span>          </span><span class="hs-special">(</span><span class="annot"><span class="annottext">answer
+</span><a href="#local-6989586621679667366"><span class="hs-identifier hs-var">answer</span></a></span><span> </span><span class="annot"><span class="annottext">answer -&gt; [answer] -&gt; [answer]
+forall a. a -&gt; [a] -&gt; [a]
+</span><span class="hs-glyph hs-var">:</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">([answer] -&gt; [answer]) -&gt; IO [answer] -&gt; IO [answer]
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-operator hs-var">&lt;$&gt;</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; [[Side]] -&gt; IORef [[Side]] -&gt; IO [answer]
+</span><a href="#local-6989586621679667361"><span class="hs-identifier hs-var">go</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679667362"><span class="hs-identifier hs-var">count</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Int
+forall a. Num a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">+</span></span><span> </span><span class="annot"><span class="annottext">Int
+</span><span class="hs-number">1</span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[[Side]]
+</span><a href="#local-6989586621679667364"><span class="hs-identifier hs-var">rest</span></a></span><span> </span><span class="annot"><span class="annottext">[[Side]] -&gt; [[Side]] -&gt; [[Side]]
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">[[Side]] -&gt; [[Side]]
+forall a. [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[[Side]]
+</span><a href="#local-6989586621679667368"><span class="hs-identifier hs-var">opened</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">IORef [[Side]]
+</span><a href="#local-6989586621679667365"><span class="hs-identifier hs-var">pending</span></a></span><span>
+</span><span id="line-69"></span></pre></body></html>
