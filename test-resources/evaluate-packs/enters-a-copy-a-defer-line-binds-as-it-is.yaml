@@ -2,21 +2,24 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# An 'unfold' line that says 'defer: true' defers only a copy one of whose
-# arguments reads to a bare symbol (#1892, #1921). Here 'Φ.items.tail' reads
-# to an object that knows its 'next', so the line enters the copy (#1885): it
-# morphs its φ and fires what it comes to, and the 'join' line pairs two
-# symbols. No 'deferred' line is written and no symbol is minted for the copy.
+# A 'defer' line defers only a copy one of whose arguments reads to a bare
+# symbol (#1892, #1933). Here 'Φ.items.tail' reads to an object that knows its
+# 'next', so the line binds the copy as it is, and the 'unfold' line after it
+# enters the copy (#1885): it morphs its φ and fires what it comes to, and the
+# 'join' line pairs two symbols. No 'deferred' line is written and no symbol
+# is minted for the copy.
 symbolic: |
   - λ: L_fork
     morph:
       𝑛1: $.a
       𝑛2: $.b
+    defer:
+      𝑛3: 𝑛2
     unfold:
-      𝑛3: {of: 𝑛2, defer: true}
+      𝑛4: 𝑛3
     join:
-      𝑛4: [𝑛1, 𝑛3]
-    𝑛: ⟦ φ ↦ 𝑛4 ⟧
+      𝑛5: [𝑛1, 𝑛4]
+    𝑛: ⟦ φ ↦ 𝑛5 ⟧
 location: 'Q.y'
 input: '⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ next ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧ ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧.φ ⟧'
 result: '𝜎3:λ'
@@ -27,9 +30,10 @@ protocol: |
       𝕄(Φ.a🌵1):
         𝑛·1·1 := Φ.step( tup ↦ Φ.items.tail )
       𝑛2·1 := 𝑛·1·1  # 𝕄(ξ.b)
-      𝑛3·1 := 𝜎1:λ:φ  # 𝕄(𝑛2.φ)
-      𝑛3·1 := 𝑛3·1  # 𝔼(𝑛2)
+      𝑛3·1 := 𝑛·1·1  # 𝑛2
+      𝑛4·1 := 𝜎1:λ:φ  # 𝕄(𝑛3.φ)
+      𝑛4·1 := 𝑛4·1  # 𝔼(𝑛3)
       𝔻(𝜎3:λ) ∈ { 𝔻(𝜎2:λ), 𝔻(𝜎1:λ) }
-      𝑛4·1 := 𝜎3:λ  # [𝑛1, 𝑛3]
+      𝑛5·1 := 𝜎3:λ  # [𝑛1, 𝑛4]
       𝑛·1·2 := 𝜎3:λ:φ  # 𝑛
       𝑛·1·3 := 𝜎3:λ:φ  # 𝕄(𝑛·1·2)

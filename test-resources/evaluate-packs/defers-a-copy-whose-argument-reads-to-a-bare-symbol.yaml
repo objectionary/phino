@@ -5,18 +5,17 @@
 # The loop of #1729 without the walk of --deep: the branch 'b' of the fork is
 # the copy 'step( tup ↦ Φ.items.tail )', and 'Φ.items.tail' reads to the bare
 # symbol '𝜎1', an object nobody knows. Unfolding the copy would morph its φ,
-# which asks '𝜎1' for 'next' and gets stuck. An 'unfold' line that says
-# 'defer: true' does not enter such a copy: it answers it with a fresh
-# symbol, writes a 'deferred' line naming the call the copy stands for, and
-# the 'join' line pairs that symbol with the one the other branch holds
-# (#1892, #1921).
+# which asks '𝜎1' for 'next' and gets stuck. A 'defer' line does not enter
+# such a copy: it answers it with a fresh symbol, writes a 'deferred' line
+# naming the call the copy stands for, and the 'join' line pairs that symbol
+# with the one the other branch holds (#1892, #1933).
 symbolic: |
   - λ: L_fork
     morph:
       𝑛1: $.a
       𝑛2: $.b
-    unfold:
-      𝑛3: {of: 𝑛2, defer: true}
+    defer:
+      𝑛3: 𝑛2
     join:
       𝑛4: [𝑛1, 𝑛3]
     𝑛: ⟦ φ ↦ 𝑛4 ⟧

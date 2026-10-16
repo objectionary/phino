@@ -5,17 +5,16 @@
 # The cut of #1895 over a recursion whose argument changes every round: the
 # copy 'rec( n ↦ Φ.inc( … ) )' is cut by '--acyclic=plausible', and its
 # argument is a call of 'L_inc' nothing has fired yet. Before it writes the
-# 'looped' line, an 'unfold' line that says 'defer: true' morphs that argument
-# at '𝑛2.n' and fires what it comes to, so the protocol shows the object
-# 'Φ.num' the argument stands for, and the markup names it in the call of the
-# cut (#1916, #1921).
+# 'looped' line, the 'unfold' line morphs that argument at '𝑛2.n' and fires
+# what it comes to, so the protocol shows the object 'Φ.num' the argument
+# stands for, and the markup names it in the call of the cut (#1916, #1933).
 symbolic: |
   - λ: L_fork
     morph:
       𝑛1: $.a
       𝑛2: $.b
     unfold:
-      𝑛3: {of: 𝑛2, defer: true}
+      𝑛3: 𝑛2
     join:
       𝑛4: [𝑛1, 𝑛3]
     𝑛: ⟦ φ ↦ 𝑛4 ⟧

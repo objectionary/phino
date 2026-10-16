@@ -59,7 +59,8 @@ data Meta = Meta
 
 data Line
   = Evaluated Meta Meta
-  | Unfolded Meta Meta Bool
+  | Deferred Meta Meta
+  | Unfolded Meta Meta
   | Rewritten Meta Meta [Y.Rule]
   | Stayed Meta Meta
   | Symbolized Meta Meta
@@ -114,7 +115,7 @@ instance FromJSON Lambda where
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "evaluate", "unfold", "rewrite", "stay", "symbolize", "upcast", "join", "lenient", "terminators", "𝑛"]
+          known = ["λ", "dataize", "morph", "evaluate", "defer", "unfold", "rewrite", "stay", "symbolize", "upcast", "join", "lenient", "terminators", "𝑛"]
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
       operands key kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Expression)
@@ -135,7 +136,7 @@ instance FromJSON Lambda where
       lenient :: String -> Object -> Yaml.Parser Bool
       lenient key entry = entry .:? "lenient" >>= maybe (pure False) (\names -> True <$ mapM_ (option key) (names :: [Text]))
       option :: String -> Text -> Yaml.Parser ()
-      option key "defer" = fail (printf "The option 'defer' of 'lenient' of λ function '%s' is gone, while an 'unfold' line saying 'defer: true' does its work" key)
+      option key "defer" = fail (printf "The option 'defer' of 'lenient' of λ function '%s' is gone, while a 'defer' block does its work" key)
       option key "upcast" = fail (printf "The option 'upcast' of 'lenient' of λ function '%s' is gone, while an 'upcast' block does its work" key)
       option key name = fail (printf "The option '%s' of 'lenient' of λ function '%s' is unknown, while the list takes no option" (T.unpack name) key)
       written :: String -> Object -> Yaml.Parser [Line]
@@ -143,6 +144,7 @@ instance FromJSON Lambda where
         concat
           <$> sequence
             [ links Evaluated entry "evaluate"
+            , links Deferred entry "defer"
             , unfolds key entry
             , rewrites key entry
             , links Stayed entry "stay"
@@ -160,12 +162,11 @@ instance FromJSON Lambda where
         mapM line (numbered mapping)
         where
           line :: (Text, Value) -> Yaml.Parser Line
-          line (meta, String source) = Unfolded <$> expressionMeta meta <*> expressionMeta source <*> pure False
-          line (meta, Object body) = Unfolded <$> expressionMeta meta <*> (body .: "of" >>= expressionMeta) <*> body .:? "defer" .!= False
+          line (meta, String source) = Unfolded <$> expressionMeta meta <*> expressionMeta source
           line (meta, _) =
             fail
               ( printf
-                  "The line '%s' of 'unfold' of λ function '%s' names neither a meta nor a mapping with 'of', such as '𝑛2: 𝑛1' or '𝑛2: {of: 𝑛1, defer: true}'"
+                  "The line '%s' of 'unfold' of λ function '%s' names no meta, such as '𝑛2: 𝑛1', while a 'defer' block now defers a copy"
                   (T.unpack meta)
                   key
               )
@@ -276,7 +277,8 @@ instance FromJSON Lambda where
               feeding meta = [source | line <- pending, meta._name `elem` map _name (bindings line), source <- sources line, source._name `notElem` known]
           sources :: Line -> [Meta]
           sources (Evaluated _ source) = [source]
-          sources (Unfolded _ source _) = [source]
+          sources (Deferred _ source) = [source]
+          sources (Unfolded _ source) = [source]
           sources (Rewritten _ source _) = [source]
           sources (Stayed _ source) = [source]
           sources (Symbolized _ source) = [source]
@@ -284,7 +286,8 @@ instance FromJSON Lambda where
           sources (Paired _ left right) = [left, right]
       binding :: Line -> Meta
       binding (Evaluated meta _) = meta
-      binding (Unfolded meta _ _) = meta
+      binding (Deferred meta _) = meta
+      binding (Unfolded meta _) = meta
       binding (Rewritten meta _ _) = meta
       binding (Stayed meta _) = meta
       binding (Symbolized meta _) = meta

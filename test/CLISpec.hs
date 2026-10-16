@@ -2978,9 +2978,12 @@ spec = do
               ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--sweet", "--hide-rho", "--flat"]
               ["⟦ if(left, right) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎3:λ ⟧, φ ↦ if( FF-:Δ, 00-:Δ ) ⟧"]
 
-    describe "a deferring unfold" $ do
-      let deferring = T.pack "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  unfold:\n    𝑛3: {of: 𝑛2, defer: true}\n  join:\n    𝑛4: [𝑛1, 𝑛3]\n  𝑛: ⟦ φ ↦ 𝑛4 ⟧\n"
-          counting = deferring <> T.pack "- λ: L_inc\n  dataize:\n    𝛿1: $.x\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
+    describe "a copy a 'defer' line defers or a cut stops" $ do
+      let forking :: String -> T.Text
+          forking block = T.pack ("- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  " ++ block ++ ":\n    𝑛3: 𝑛2\n  join:\n    𝑛4: [𝑛1, 𝑛3]\n  𝑛: ⟦ φ ↦ 𝑛4 ⟧\n")
+          deferring = forking "defer"
+          unfolding = forking "unfold"
+          counting = T.pack "- λ: L_inc\n  dataize:\n    𝛿1: $.x\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
           recordedWith :: T.Text -> [String] -> String -> IO [String]
           recordedWith entries options program =
             withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -3025,23 +3028,23 @@ spec = do
         records `shouldContain` ["    <formed meta=\"𝑛·1·5\"><attr name=\"x\">𝜎1</attr><attr name=\"φ\">x.next</attr></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"𝑛·1·5\"/>"]
 
       it "writes the copy a cut stopped to the XML protocol with its symbol and the call of the object it was made of" $ do
-        records <- deferred ["--acyclic=proven"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
+        records <- recordedWith unfolding ["--acyclic=proven"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( ξ.n ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
         records `shouldContain` ["    <looped symbol=\"𝜎3\" by=\"evaluate\" match=\"proven\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝑛·0·1</attr></with></looped>"]
 
       it "names an argument of a copy a cut stopped by the object its morph answered" $ do
-        records <- recordedWith counting ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.inc( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
+        records <- recordedWith (unfolding <> counting) ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.inc( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
         filter (isInfixOf "<looped") records `shouldBe` ["    <looped symbol=\"𝜎4\" by=\"evaluate\" match=\"plausible\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝑛·2·3</attr></with></looped>"]
 
       it "fires the argument of a copy a cut stopped before it writes the cut" $ do
-        records <- recordedWith counting ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.inc( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
+        records <- recordedWith (unfolding <> counting) ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.inc( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
         takeWhile (not . isInfixOf "<looped") records `shouldContain` ["    <evaluate λ=\"L_inc\" by=\"evaluate\" at=\"𝑛2.n\">"]
 
       it "names an argument of a copy a cut stopped whose firing gets stuck by the application it stands for" $ do
-        records <- recordedWith deferring ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, dec(x) ↦ ⟦ λ ⤍ L_dec ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.dec( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
+        records <- recordedWith unfolding ["--acyclic=plausible"] "⟦ fork(a, b) ↦ ⟦ λ ⤍ L_fork ⟧, dec(x) ↦ ⟦ λ ⤍ L_dec ⟧, rec(n) ↦ ⟦ φ ↦ Φ.fork( ⟦ λ ⤍ 𝜎1 ⟧, Φ.rec( Φ.dec( ξ.n ) ) ) ⟧, y ↦ Φ.rec( ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).φ.φ ⟧"
         filter (isInfixOf "<looped") records `shouldBe` ["    <looped symbol=\"𝜎3\" by=\"evaluate\" match=\"plausible\" at=\"𝑛2\" of=\"Φ.rec\"><with><attr name=\"n\">𝑛·0·4</attr></with></looped>"]
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
-        records <- recordedWith counting [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧.φ ⟧"
+        records <- recordedWith (deferring <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧.φ ⟧"
         filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·2·3</attr></with></deferred>"]
 
     describe "--acyclic=plausible" $ do

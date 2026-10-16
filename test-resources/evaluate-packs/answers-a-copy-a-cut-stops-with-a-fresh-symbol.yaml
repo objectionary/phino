@@ -6,17 +6,16 @@
 # the copy 'rec( n ↦ ⟦ φ ↦ 𝜎2 ⟧ )', whose argument reads to no bare symbol, so
 # an 'unfold' line enters it, morphs its φ to the same fork and fires it.
 # '--acyclic=proven' refuses that firing, since the run is already inside the
-# fork. A line that says 'defer: true' answers the copy with a fresh symbol
-# there and writes it on the 'looped' line, and the 'join' line pairs it with
-# the symbol the other branch holds, instead of losing the whole entry (#1895,
-# #1921).
+# fork. The line answers the copy with a fresh symbol there and writes it on
+# the 'looped' line, and the 'join' line pairs it with the symbol the other
+# branch holds, instead of losing the whole entry (#1895, #1933).
 symbolic: |
   - λ: L_fork
     morph:
       𝑛1: $.a
       𝑛2: $.b
     unfold:
-      𝑛3: {of: 𝑛2, defer: true}
+      𝑛3: 𝑛2
     join:
       𝑛4: [𝑛1, 𝑛3]
     𝑛: ⟦ φ ↦ 𝑛4 ⟧

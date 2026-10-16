@@ -258,9 +258,9 @@ optSymbolic =
               "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
               \it reduces to a normal form under \"morph\", the terms it rewrites by rules of its own under \
-              \\"rewrite\", the terms whose φ it fires the way \"evaluate\" does under \"unfold\", where \
-              \\"defer: true\" has a copy one of whose arguments reads to a bare symbol, or a copy whose firing \
-              \a cut refuses, answer a fresh symbol instead, the terms of those it stands the data of into \
+              \\"rewrite\", the copies one of whose arguments reads to a bare symbol it answers with a fresh \
+              \symbol under \"defer\", the terms whose φ it fires the way \"evaluate\" does under \"unfold\", \
+              \answering a fresh symbol for one whose firing a cut refuses, the terms of those it stands the data of into \
               \unknowns under \"symbolize\", the pair of terms whose smaller it casts into the shape of the \
               \larger under \"upcast\", in two lines binding the two results, the pairs of branches it joins \
               \into one term under \"join\", whether a join takes a term and a formation whose φ is that term for one under \
