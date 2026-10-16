@@ -54,8 +54,6 @@ data Line
   = Evaluated Meta Meta
   | Deferred Meta Meta
 
--- How an entry ends: answering with a term, or forking on a datum of
--- 'dataize' into the two sides a path picks between.
 data Ending
   = Answering Expression
   | Forking Meta Expression Expression

@@ -15,10 +15,6 @@ import Deps (Side (..))
 
 type Decision = (Either Int Bytes, Side)
 
--- The decisions of one path of a run: the sides it was told to take at the
--- forks it meets, the sides it has taken by the condition it took them on,
--- the decisions it has met in the order it met them, and the routes of the
--- paths it has opened for the sides it did not take.
 data Forks = Forks
   { _route :: IORef ([Side], [Side])
   , _decided :: IORef (Map (Either Int Bytes) Side)
