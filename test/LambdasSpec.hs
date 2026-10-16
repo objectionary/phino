@@ -335,7 +335,7 @@ spec = do
       , ("an 'upcast' line reading a meta the entry never bound", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("a meta bound by 'unfold' and again by 'upcast'", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n  upcast:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_fork' is bound by more than one line")
       , ("an 'upcast' block reading a meta it binds itself", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  upcast:\n    𝑛2: 𝑛1\n    𝑛3: 𝑛2\n  𝑛: 𝑛2\n", "reads the meta it binds")
-      , ("a misspelled 'join' block", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  jion:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "The key 'jion' of λ function 'L_fork' is none of the keys an entry reads")
+      , ("a misspelled 'join' block", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  joinn:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "The key 'joinn' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a 'defer' key saying a flag instead of holding lines", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  defer: true\n  𝑛: 𝑛3\n", "defer: parsing")
       , ("a misspelled 'dataize' block", "- λ: L_pair\n  datize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The key 'datize' of λ function 'L_pair' is none of the keys an entry reads")
       , ("a 'terminators' key which is no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: L_throw\n  𝑛: 𝑛1\n", "expected Array")

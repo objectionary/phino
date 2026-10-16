@@ -154,7 +154,7 @@ those of the two blocks below among them.
 
 An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`,
 `unfold`, `rewrite`, `stay`, `symbolize`, `upcast`, `join`, `terminators` and
-`𝑛`, and any other key, such as a misspelled `jion`, refuses the whole file,
+`𝑛`, and any other key, such as a misspelled `joinn`, refuses the whole file,
 so a typo never drops a block without a word. The key `lenient` refuses it
 too, with a word of its own, since every `join` line now joins the way a
 lenient one did.
