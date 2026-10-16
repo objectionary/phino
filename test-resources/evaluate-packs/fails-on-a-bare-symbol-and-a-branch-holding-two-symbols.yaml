@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# A lenient join answers a copy of the branch a bare symbol stands against only
+# A join answers a copy of the branch a bare symbol stands against only
 # when that branch holds exactly one symbol (#1817), since only then is it
 # clear which symbol the bare one pairs with. Here the call of 'Φ.bool' holds
 # two, '𝜎2' and '𝜎3', so the join is refused and the firing gets stuck.
@@ -13,7 +13,6 @@ symbolic: |
       𝑛2: $.b
     join:
       𝑛3: [𝑛1, 𝑛2]
-    lenient: []
     𝑛: 𝑛3
 location: 'Q.y'
 input: |

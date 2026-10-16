@@ -72,7 +72,6 @@ data Lambda = Lambda
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
   , _lines :: [Line]
-  , _lenient :: Bool
   , _terminators :: [Text]
   , _answer :: Expression
   }
@@ -97,7 +96,6 @@ instance FromJSON Lambda where
     lambda <-
       Lambda key dataized morphed
         <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed))
-        <*> lenient (T.unpack key) entry
         <*> entry .:? "terminators" .!= []
         <*> pure answer
     sigmas (T.unpack key) lambda._answer
@@ -106,16 +104,16 @@ instance FromJSON Lambda where
     mapM_ (metaless (T.unpack key) "dataize") lambda._dataized
     mapM_ (metaless (T.unpack key) "morph") lambda._morphed
     answered (T.unpack key) lambda
-    lonely (T.unpack key) lambda
     pure lambda
     where
       unknown :: String -> Object -> Yaml.Parser ()
       unknown key entry = case filter (`notElem` known) (map Key.toText (KeyMap.keys entry)) of
         [] -> pure ()
+        "lenient" : _ -> fail (printf "The key 'lenient' of λ function '%s' is gone, while every 'join' line joins the way a lenient one did" key)
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "evaluate", "defer", "unfold", "rewrite", "stay", "symbolize", "upcast", "join", "lenient", "terminators", "𝑛"]
+          known = ["λ", "dataize", "morph", "evaluate", "defer", "unfold", "rewrite", "stay", "symbolize", "upcast", "join", "terminators", "𝑛"]
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
       operands key kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Expression)
@@ -133,12 +131,6 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
-      lenient :: String -> Object -> Yaml.Parser Bool
-      lenient key entry = entry .:? "lenient" >>= maybe (pure False) (\names -> True <$ mapM_ (option key) (names :: [Text]))
-      option :: String -> Text -> Yaml.Parser ()
-      option key "defer" = fail (printf "The option 'defer' of 'lenient' of λ function '%s' is gone, while a 'defer' block does its work" key)
-      option key "upcast" = fail (printf "The option 'upcast' of 'lenient' of λ function '%s' is gone, while an 'upcast' block does its work" key)
-      option key name = fail (printf "The option '%s' of 'lenient' of λ function '%s' is unknown, while the list takes no option" (T.unpack name) key)
       written :: String -> Object -> Yaml.Parser [Line]
       written key entry =
         concat
@@ -336,10 +328,6 @@ instance FromJSON Lambda where
             map (_name . fst) lambda._dataized
               ++ map (_name . fst) lambda._morphed
               ++ map (_name . binding) lambda._lines
-      lonely :: String -> Lambda -> Yaml.Parser ()
-      lonely key lambda
-        | lambda._lenient && null [meta | Paired meta _ _ <- lambda._lines] = fail (printf "The λ function '%s' is lenient but has no 'join' line to be lenient in" key)
-        | otherwise = pure ()
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
@@ -529,8 +517,8 @@ symbolized term spent = case goExpr term (spent, []) of
 
 type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 
-joined :: Bool -> Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
-joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty, [])
+joined :: Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
+joined left right spent = taking <$> goExpr left right (spent, Map.empty, [])
   where
     taking :: (Expression, Joining) -> (Expression, [(Int, (Int, Int))], Int)
     taking (term, (spent', _, made)) = (term, reverse made, spent')
@@ -567,17 +555,17 @@ joined lenient left right spent = taking <$> goExpr left right (spent, Map.empty
       | otherwise = Nothing
     goSole :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
     goSole (ExFormation [BiLambda (FnSymbol mine)]) two joining
-      | lenient, [theirs] <- nub (symbols two) = Just (renamed theirs two (picked (mine, theirs) joining))
+      | [theirs] <- nub (symbols two) = Just (renamed theirs two (picked (mine, theirs) joining))
     goSole one (ExFormation [BiLambda (FnSymbol theirs)]) joining
-      | lenient, [mine] <- nub (symbols one) = Just (renamed mine one (picked (mine, theirs) joining))
+      | [mine] <- nub (symbols one) = Just (renamed mine one (picked (mine, theirs) joining))
     goSole _ _ _ = Nothing
     renamed :: Int -> Expression -> (Int, Joining) -> (Expression, Joining)
     renamed old term (fresh, joining) = (lifted (old - 1) (fresh - old) term, joining)
     goDecorated :: Expression -> Expression -> Joining -> Maybe (Expression, Joining)
     goDecorated one two joining
       | bare one || bare two = Nothing
-      | lenient && depth one < depth two = peeled (goExpr one) two
-      | lenient && depth two < depth one = peeled (`goExpr` two) one
+      | depth one < depth two = peeled (goExpr one) two
+      | depth two < depth one = peeled (`goExpr` two) one
       | otherwise = Nothing
       where
         peeled :: (Expression -> Joining -> Maybe (Expression, Joining)) -> Expression -> Maybe (Expression, Joining)

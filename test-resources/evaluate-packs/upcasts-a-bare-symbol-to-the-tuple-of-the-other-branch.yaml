@@ -3,7 +3,7 @@
 ---
 # yamllint disable rule:line-length
 # The fork of 'bytes.array' from #1914: one branch is a bare symbol, the other
-# a tuple holding three symbols, so a lenient join cannot tell which of them
+# a tuple holding three symbols, so a join cannot tell which of them
 # the bare one pairs with. A 'rewrite' line spells the tuple as the call
 # 'Φ.tuple( … )' it was made of, and the 'upcast' block takes '𝜎1' and that
 # call as one pair. It casts the smaller of the two, the bare '𝜎1', into a

@@ -4,7 +4,7 @@
 # yamllint disable rule:line-length
 # The fork of 'bool.and' from #1817: one branch is a bare symbol, the other a
 # call of 'Φ.bool', whose φ is code and not a formation, so its φ chain ends in
-# no symbol. The call holds one symbol, '𝜎2', so a lenient join answers a copy
+# no symbol. The call holds one symbol, '𝜎2', so the join answers a copy
 # of the call with '𝜎2' replaced by a fresh '𝜎3', which stands for either
 # '𝜎1' or '𝜎2'. The join reads nothing outside the two branches.
 symbolic: |
@@ -14,7 +14,6 @@ symbolic: |
       𝑛2: $.b
     join:
       𝑛3: [𝑛1, 𝑛2]
-    lenient: []
     𝑛: 𝑛3
 location: 'Q.y'
 input: |

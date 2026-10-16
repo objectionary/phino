@@ -197,14 +197,14 @@ turns into `Stuck` the way it turns `Unjoined`.
 
 A bare symbol, `⟦ λ ⤍ 𝜎k ⟧`, joins too: the `join` of `Lambdas.hs` pairs it
 with the symbol the φ chain of the other branch ends in, and answers a bare
-fresh symbol, dropping the methods. A `join` line only matches (#1921): an
-entry naming a `lenient` list is lenient, `_lenient` of `Lambdas.hs` is a
-`Bool`, and the list takes no option, refusing `defer` and `upcast` with a
-pointer to the blocks that took their work and any other name as unknown.
-Under it a chain ending in no symbol, such as one stopping at a call of an
-object of the world, still joins if the other branch holds exactly one symbol
-(`goSole` of `joined`, #1817): the answer is a copy of that branch with the
-symbol replaced by a fresh one, and nothing outside the two branches is read.
+fresh symbol, dropping the methods. A `join` line only matches (#1921), and
+every one pairs three ways (#1936): alike terms, a term with a decorator of it
+(`goDecorated` of `joined`, #1815), and a bare symbol with a term whose chain
+ends in no symbol, such as one stopping at a call of an object of the world,
+if that term holds exactly one symbol (`goSole` of `joined`, #1817): the
+answer is a copy of that term with the symbol replaced by a fresh one, and
+nothing outside the two branches is read. An entry naming the `lenient` key,
+which once asked for the last two, is refused with a word.
 
 An `upcast` block holds exactly two plain lines, `𝑛3: 𝑛1` and `𝑛4: 𝑛2`, read
 as one `Upcasted` line of `Lambdas.hs` that reads both metas and binds both

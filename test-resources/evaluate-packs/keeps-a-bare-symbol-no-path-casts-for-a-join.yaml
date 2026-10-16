@@ -5,9 +5,8 @@
 # An 'upcast' block casts the bare symbol of its pair only when a path reaches
 # every symbol of the other term (#1921). The one symbol of the branch 'b' sits
 # under the dispatch '.not', which no path walks into, so both lines bind their
-# terms as they are and nothing is written for the cast. The 'join' line of the
-# lenient entry then pairs the bare symbol with that one symbol, the way a
-# lenient join always did (#1817).
+# terms as they are and nothing is written for the cast. The 'join' line then
+# pairs the bare symbol with that one symbol (#1817).
 symbolic: |
   - λ: L_fork
     morph:
@@ -18,7 +17,6 @@ symbolic: |
       𝑛4: 𝑛2
     join:
       𝑛5: [𝑛3, 𝑛4]
-    lenient: []
     𝑛: 𝑛5
 location: 'Q.y'
 input: |
