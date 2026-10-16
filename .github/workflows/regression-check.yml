@@ -58,6 +58,9 @@ jobs:
           cp benchmark/tmp/native.phi /tmp/native.phi
           cp benchmark/tmp/Native.xmir /tmp/Native.xmir
           cp "$(cabal list-bin bench --enable-benchmarks)" /tmp/bench-base
+          mkdir -p /tmp/base/benchmark/tmp
+          cp benchmark/*.phi benchmark/*.yaml /tmp/base/benchmark/
+          cp /tmp/native.phi /tmp/Native.xmir /tmp/base/benchmark/tmp/
       - name: Build bench at PR head
         run: |
           set -e
@@ -76,9 +79,9 @@ jobs:
             echo "round $round of $BENCH_ROUNDS"
             if [ $((round % 2)) -eq 0 ]; then
               /tmp/bench-head >> /tmp/head.out
-              /tmp/bench-base >> /tmp/base.out
+              (cd /tmp/base && /tmp/bench-base) >> /tmp/base.out
             else
-              /tmp/bench-base >> /tmp/base.out
+              (cd /tmp/base && /tmp/bench-base) >> /tmp/base.out
               /tmp/bench-head >> /tmp/head.out
             fi
           done
