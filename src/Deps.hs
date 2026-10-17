@@ -129,7 +129,8 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvForked Int (Either Int Bytes) Side Expression
-  | EvTaken Int Expression Expression
+  | EvJoined Int (Either Int Bytes) Int (Int, Int)
+  | EvTaken Int [Expression] Expression
   | EvWorld Expression
 
 type SaveEvalFunc = Evaluation -> IO ()
@@ -178,6 +179,7 @@ tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 tier (EvForked depth _ _ _) = depth
+tier (EvJoined depth _ _ _) = depth
 tier (EvTaken depth _ _) = depth
 tier EvWorld{} = maxBound
 
@@ -388,13 +390,16 @@ saveEval handle cursor printed printed' report = do
       cond <- spelt condition
       line <- commented' (printf "forked(%s) := %s" cond (sided side)) chosen
       pure (protocol, Just (indented depth line))
-    written (EvTaken depth chosen term) protocol = do
+    written (EvJoined depth condition symbol (left, right)) protocol = do
+      cond <- spelt condition
+      pure (protocol, Just (indented depth (printf "joined(%s) := %s ? %s : %s" (printFunction (FnSymbol symbol)) cond (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
+    written (EvTaken depth sides term) protocol = do
       let (index, counted) = numbered protocol
           naming :: String
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- valued counted naming term
-      line <- commented (printf "%s := %s" naming value) Morphing chosen
-      pure (protocol', Just (indented depth line))
+      remarks <- mapM (fmap (printf "%s(%s)" (letter Morphing)) . salted) sides
+      pure (protocol', Just (indented depth (remarked (printf "%s := %s" naming value) remarks)))
     written EvWorld{} protocol = pure (protocol, Nothing)
     spelt :: Either Int Bytes -> IO String
     spelt (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
@@ -573,6 +578,13 @@ saveEvalXml handle cursor printed report = do
       where
         forked :: String -> String
         forked = printf "<forked side=\"%s\">%s</forked>" (sided side)
+    elements (EvJoined depth condition symbol (left, right)) nesting =
+      placed depth nesting $ case condition of
+        Left symbol' -> pure (joined (sigma symbol'))
+        Right bytes -> joined . escapeXMLText <$> lift (printed (ExBytes bytes))
+      where
+        joined :: String -> String
+        joined = printf "<joined symbol=\"%s\" left=\"%s\" right=\"%s\">%s</joined>" (sigma symbol) (sigma left) (sigma right)
     elements (EvTaken depth _ term) nesting =
       placed depth nesting $ do
         body <- leaf depth term

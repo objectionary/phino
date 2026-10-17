@@ -19,7 +19,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), Side (..), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Forks (decide, marked, since)
+import Forks (decide, joined, marked, since)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, insideUniverse, isLambda, lambda, morph, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
@@ -104,7 +104,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       caller._saveEval (EvAnswer depth normal)
     shown depth (Chosen (condition, side) chosen normal) = do
       caller._saveEval (EvForked depth condition side chosen)
-      caller._saveEval (EvTaken depth chosen normal)
+      caller._saveEval (EvTaken depth [chosen] normal)
+    shown depth (Joined condition made (left, right) normal) = do
+      mapM_ (\(fresh, pair) -> caller._saveEval (EvJoined depth condition fresh pair)) made
+      caller._saveEval (EvTaken depth [left, right] normal)
     kept :: Bool -> ReduceException -> Maybe Kept
     kept _ (Looping term) = Just (Looped term)
     kept _ (LoopingAt term _ _) = Just (Looped term)
@@ -289,16 +292,34 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     forked :: ReduceContext -> Maybe (Either Int Bytes) -> Expression -> Expression -> State -> IO (Answer, State)
     forked _ Nothing _ _ _ = throwIO (userError (printf "The fork of λ function '%s' is on a meta no operand of 'dataize' bound" (T.unpack func)))
     forked ctx (Just condition) left right state' = do
-      side <- decide ctx._forks condition
-      let chosen = case side of
-            LeftSide -> left
-            RightSide -> right
-      ctx._saveEval (EvForked ctx._nesting condition side chosen)
-      (universe, aiming) <- (\placed -> insideUniverse placed univ ctx) =<< operand chosen
-      (normal, _, state'') <- morph universe state' aiming
-      answer <- fromMaybe normal <$> postponing ctx state'' aiming._locator normal
-      ctx._saveEval (EvTaken ctx._nesting chosen answer)
-      pure (Chosen (condition, side) chosen answer, state'')
+      (one, state'') <- reached ctx left state'
+      (two, state''') <- reached ctx right state''
+      spent <- readIORef ctx._minted
+      case sequence [one, two] of
+        Right [mine, theirs] | Just (term, made, spent') <- joined mine theirs spent -> do
+          writeIORef ctx._minted spent'
+          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting condition fresh pair)) made
+          ctx._saveEval (EvTaken ctx._nesting [left, right] term)
+          pure (Joined condition made (left, right) term, state''')
+        _ -> do
+          side <- decide ctx._forks condition
+          let (chosen, outcome) = case side of
+                LeftSide -> (left, one)
+                RightSide -> (right, two)
+          ctx._saveEval (EvForked ctx._nesting condition side chosen)
+          answer <- either throwIO pure outcome
+          ctx._saveEval (EvTaken ctx._nesting [chosen] answer)
+          pure (Chosen (condition, side) chosen answer, state''')
+    reached :: ReduceContext -> Expression -> State -> IO (Either ReduceException Expression, State)
+    reached ctx side state' = do
+      outcome <- try $ do
+        (universe, aiming) <- (\placed -> insideUniverse placed univ ctx) =<< operand side
+        (normal, _, state'') <- morph universe state' aiming
+        (,state'') . fromMaybe normal <$> postponing ctx state'' aiming._locator normal
+      case outcome of
+        Right (answer, state'') -> pure (Right answer, state'')
+        Left (OutOfTime cap) -> throwIO (OutOfTime cap)
+        Left failure -> pure (Left failure, state')
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'
