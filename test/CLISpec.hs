@@ -2545,6 +2545,15 @@ spec = do
           records <- readProtocol path
           filter (== "𝔻(Φ.y):") (lines records) `shouldBe` ["𝔻(Φ.y):", "𝔻(Φ.y):"]
 
+      it "fires on every path what an earlier path fired under plausible" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (fork <> T.pack "- λ: L_cond\n  dataize:\n    𝛿1: $.v\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \file ->
+            withStdin "⟦ cond ↦ ⟦ v ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_cond ⟧, y ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧" $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.y", "--acyclic=plausible", "--protocol=" ++ path, "--quiet"] []
+          records <- readProtocol path
+          filter (isInfixOf "𝔻(ξ.v)") (lines records) `shouldSatisfy` ((== 2) . length)
+
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $

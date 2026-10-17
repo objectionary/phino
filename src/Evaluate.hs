@@ -19,7 +19,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), Side (..), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Forks (decide, joined, marked, since)
+import Forks (decide, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, insideUniverse, isLambda, lambda, morph, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
@@ -58,7 +58,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
-    known <- recalled caller._memo caller._forks form caller._steps._spent
+    known <- recalled caller._memo form caller._steps._spent
     maybe (made entry) told known
   where
     made :: Lambda -> IO (Expression, State)
@@ -66,31 +66,28 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       charged caller
       stamp <- counted caller._memo
       exhausted <- starved caller._memo
-      mark <- marked caller._forks
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       let ctx = caller{_nesting = caller._nesting + 1}
       outcome <- try $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
         (bound', morphed, normals) <- foldM (through ctx) (bound, dataized, []) entry._morphed
         firing <- Firing func (reverse conditions) . (reverse normals ++) <$> sides entry._ending
-        known <- remembered caller._memo caller._forks firing
-        maybe (worked ctx entry mark firing bound' morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
-      deps <- since caller._forks mark
+        known <- remembered caller._memo firing
+        maybe (worked ctx entry firing bound' morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
       case outcome of
         Right (answer, state') -> do
-          retained caller._memo form stamp deps (Answered answer)
+          retained caller._memo form stamp (Answered answer)
           pure (ended answer, state')
         Left failure -> do
           exhausted' <- starved caller._memo
-          mapM_ (retained caller._memo form stamp deps) (kept (exhausted' /= exhausted) failure)
+          mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) failure)
           mapM_ (caller._saveEval . EvStuckOn (caller._nesting + 1)) (stranded failure)
           throwIO failure
-    worked :: ReduceContext -> Lambda -> Int -> Firing -> Subst -> State -> IO (Answer, State)
-    worked ctx entry mark firing@(Firing _ operands _) bound state' = do
+    worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
+    worked ctx entry firing@(Firing _ operands _) bound state' = do
       (lined, state'') <- foldM (line ctx) (bound, state') entry._lines
       (answer, state''') <- concluded ctx entry operands lined state''
-      deps <- since caller._forks mark
-      remember caller._memo firing deps answer
+      remember caller._memo firing answer
       pure (answer, state''')
     sides :: Ending -> IO [Expression]
     sides (Answering _) = pure []

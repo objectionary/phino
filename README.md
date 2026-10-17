@@ -321,11 +321,10 @@ condition the list already names takes the side it names, writes the same
 `forked(…)` line and opens no path, so a program forking twice on one
 condition runs two paths and not four. A decision is kept by the value the
 condition came down to and not by the firing that made it, so two forks on one
-symbol are one decision too. The memo of `--acyclic=plausible` keeps the answer
-of a firing beside the decisions it was made under, and hands it to a later
-firing only on a path where every one of them is decided the same way, so the
-part of the program before the first fork is fired once and shared by every
-path.
+symbol are one decision too. Every path is a run from the start, and nothing
+one path worked out is reused by another: the memo of `--acyclic=plausible` is
+made anew for every path, so a firing an earlier path made is made again on a
+later one, and the protocol of that path writes every line of it.
 
 A side may raise. EO raises with an object, a copy of
 `⟦ message ↦ ∅, λ ⤍ L_throw ⟧`, whose λ function the file leaves out on

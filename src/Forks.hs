@@ -5,7 +5,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Forks (Decision, Forks, agreed, decide, explored, joined, marked, noted, routed, since) where
+module Forks (Decision, Forks, decide, explored, joined, routed) where
 
 import AST (Argument (..), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet), Function (FnSymbol))
 import Data.Bifunctor (first)
@@ -21,19 +21,17 @@ type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 data Forks = Forks
   { _route :: IORef ([Side], [Side])
   , _decided :: IORef (Map (Either Int Bytes) Side)
-  , _met :: IORef [Decision]
   , _pending :: IORef [[Side]]
   }
 
 routed :: [Side] -> IORef [[Side]] -> IO Forks
-routed route pending = Forks <$> newIORef (route, []) <*> newIORef Map.empty <*> newIORef [] <*> pure pending
+routed route pending = Forks <$> newIORef (route, []) <*> newIORef Map.empty <*> pure pending
 
 decide :: Forks -> Either Int Bytes -> IO Side
 decide forks condition = do
   decided <- readIORef forks._decided
   side <- maybe undecided pure (Map.lookup condition decided)
   modifyIORef' forks._decided (Map.insert condition side)
-  modifyIORef' forks._met ((condition, side) :)
   pure side
   where
     undecided :: IO Side
@@ -45,18 +43,6 @@ decide forks condition = do
           writeIORef forks._route ([], LeftSide : behind)
           modifyIORef' forks._pending (reverse (RightSide : behind) :)
           pure LeftSide
-
-marked :: Forks -> IO Int
-marked forks = length <$> readIORef forks._met
-
-since :: Forks -> Int -> IO [Decision]
-since forks mark = (\met -> take (length met - mark) met) <$> readIORef forks._met
-
-agreed :: Forks -> [Decision] -> IO Bool
-agreed forks deps = (\decided -> all (\(condition, side) -> Map.lookup condition decided == Just side) deps) <$> readIORef forks._decided
-
-noted :: Forks -> [Decision] -> IO ()
-noted forks deps = modifyIORef' forks._met (deps ++)
 
 explored :: forall answer. Maybe Int -> (Forks -> IO answer) -> IO [answer]
 explored cap action = newIORef [] >>= go 0 [[]]

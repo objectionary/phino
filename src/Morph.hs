@@ -16,7 +16,7 @@ import AST
 import Builder (buildExpressionThrows, nameIn)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, catch, evaluate, throwIO, try)
-import Control.Monad (filterM, when)
+import Control.Monad (when)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -26,7 +26,7 @@ import Data.Maybe (isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Engine (Engine (..))
-import Forks (Decision, Forks, agreed, noted)
+import Forks (Decision, Forks)
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
 import Lambdas (Lambdas)
@@ -65,7 +65,7 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, [Decision], Kept))) (IORef (Map.Map Firing [([Decision], Answer)])) (IORef Int) (IORef Int)
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IORef Int) (IORef Int)
 
 data Answer
   = Answer Expression Expression
@@ -202,15 +202,13 @@ memoized :: Maybe Acyclic -> IO (Maybe Memo)
 memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0)
 memoized _ = pure Nothing
 
-recalled :: Maybe Memo -> Forks -> Expression -> Int -> IO (Maybe Kept)
-recalled Nothing _ _ _ = pure Nothing
-recalled (Just (Memo store _ answers _)) forks form spent = do
+recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
+recalled Nothing _ _ = pure Nothing
+recalled (Just (Memo store _ answers _)) form spent = do
   kept <- readIORef store
   count <- readIORef answers
-  live <- filterM (agreed forks . fst) [(deps, known) | (term, (stamp, deps, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
-  let taken = find (answered . snd) live <|> listToMaybe live
-  mapM_ (noted forks . fst) taken
-  pure (snd <$> taken)
+  let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
+  pure (find answered live <|> listToMaybe live)
   where
     current :: Int -> Int -> Kept -> Bool
     current count stamp (Stalled _ least) = stamp == count && spent >= least
@@ -227,23 +225,19 @@ starved :: Maybe Memo -> IO Int
 starved Nothing = pure 0
 starved (Just (Memo _ _ _ exhausted)) = readIORef exhausted
 
-retained :: Maybe Memo -> Expression -> Int -> [Decision] -> Kept -> IO ()
-retained Nothing _ _ _ _ = pure ()
-retained (Just (Memo store _ _ _)) form stamp deps kept =
-  modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, deps, kept))])
+retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
+retained Nothing _ _ _ = pure ()
+retained (Just (Memo store _ _ _)) form stamp kept =
+  modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
 
-remembered :: Maybe Memo -> Forks -> Firing -> IO (Maybe Answer)
-remembered Nothing _ _ = pure Nothing
-remembered (Just (Memo _ firings _ _)) forks firing = do
-  known <- Map.findWithDefault [] firing <$> readIORef firings
-  taken <- listToMaybe <$> filterM (agreed forks . fst) known
-  mapM_ (noted forks . fst) taken
-  pure (snd <$> taken)
+remembered :: Maybe Memo -> Firing -> IO (Maybe Answer)
+remembered Nothing _ = pure Nothing
+remembered (Just (Memo _ firings _ _)) firing = Map.lookup firing <$> readIORef firings
 
-remember :: Maybe Memo -> Firing -> [Decision] -> Answer -> IO ()
-remember Nothing _ _ _ = pure ()
-remember (Just (Memo _ firings answers _)) firing deps answer = do
-  modifyIORef' firings (Map.insertWith (++) firing [(deps, answer)])
+remember :: Maybe Memo -> Firing -> Answer -> IO ()
+remember Nothing _ _ = pure ()
+remember (Just (Memo _ firings answers _)) firing answer = do
+  modifyIORef' firings (Map.insert firing answer)
   modifyIORef' answers (+ 1)
 
 parking :: NonEmpty Rewritten -> State -> IO a -> IO a
