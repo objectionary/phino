@@ -195,11 +195,10 @@ queued, until nothing is pending or `--max-paths` (`_maxPaths` of
 `CLI/Types.hs`) is spent, and the command prints a result per path. The text
 protocol opens a `𝔻(…):` or `𝕄(…):` heading per path and the markup a
 `<path>` element, and the metas, symbols and names keep counting across the
-paths. The memo of `plausible` keeps every answer beside the decisions met
-since its firing began (`marked` and `since` of `Forks.hs`), and `recalled`
-and `remembered` of `Morph.hs` hand it out only where `agreed` says the path
-has decided them all the same way, writing them into the path with `noted`,
-so a path never takes an answer another path made under another decision.
+paths. Beyond that every path is a run from the start: the runners make the
+memo of `plausible` inside `explored`, once per path, so a path never takes an
+answer another path made, and the protocol of every path holds every line of
+its own firings (#1958).
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
