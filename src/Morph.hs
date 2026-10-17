@@ -329,7 +329,7 @@ morph' start univ state entry = go start univ state entry
   where
     go :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
     go (expr, seq) univ state caller = do
-      ctx <- opening Morphing =<< deeper =<< entering expr =<< universed univ caller{_judgment = Morphing}
+      ctx <- opening Morphing =<< deeper =<< entering expr =<< parking seq state (universed univ caller{_judgment = Morphing})
       parking seq state $ do
         reached <- inferred expr univ state ctx ctx._engine._morphing
         case reached of
@@ -343,16 +343,22 @@ morph' start univ state entry = go start univ state entry
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do
-  ctx <- opening Morphing =<< universed universe caller
   expr <- locatedExpression _locator universe
-  result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
-  case result of
-    Right ((morphed, seq), state') -> pure (morphed, reverse (NE.toList seq), state')
-    Left (StuckAt func seq parked) | _partial -> residue seq parked{_stuck = Just func}
-    Left (OutOfStepsAt _ seq parked) | _partial -> residue seq parked
-    Left (LoopingAt _ seq parked) -> residue seq parked
+  prepared <- try (universed universe caller)
+  case prepared of
+    Left (OutOfSteps _) | _partial -> pure (expr, [(universe, Nothing)], state)
     Left failure -> throwIO (failure :: ReduceException)
+    Right univCtx -> reduced expr =<< opening Morphing univCtx
   where
+    reduced :: Expression -> ReduceContext -> IO (Expression, [Rewritten], State)
+    reduced expr ctx = do
+      result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
+      case result of
+        Right ((morphed, seq), state') -> pure (morphed, reverse (NE.toList seq), state')
+        Left (StuckAt func seq parked) | _partial -> residue seq parked{_stuck = Just func}
+        Left (OutOfStepsAt _ seq parked) | _partial -> residue seq parked
+        Left (LoopingAt _ seq parked) -> residue seq parked
+        Left failure -> throwIO (failure :: ReduceException)
     residue :: NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
     residue seq parked = do
       expr <- locatedExpression _locator (fst (NE.head seq))
