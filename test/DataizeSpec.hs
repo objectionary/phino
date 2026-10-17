@@ -34,6 +34,7 @@ import Parser (Form (MONOFORM), parseBytes, parseExpressionThrows, parseExpressi
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
 import System.FilePath (makeRelative)
+import Tau (seedTaus)
 import Test.Hspec
 import Yaml qualified
 
@@ -73,6 +74,7 @@ testDataize known pth = do
 partially :: Lambdas -> String -> IO ((Outcome, [Rewritten]), String)
 partially known src = do
   expr <- parseExpressionThrows (primitives src)
+  seedTaus expr
   recorded $ \record -> do
     base <- defaultReduceContext ExRoot
     let ctx = (withLambdas known base){_partial = True, _saveEval = record}
@@ -224,14 +226,14 @@ spec = do
           , "      𝑛·0·1 := 2"
           , "      𝑛·0·2 := 𝑛·0·1.times( x ↦ 3 )"
           , "      𝔼(L_number_times):"
-          , "        𝔻(Φ.a🌵17):"
-          , "          𝕄(Φ.a🌵17):"
+          , "        𝔻(Φ.a🌵0):"
+          , "          𝕄(Φ.a🌵0):"
           , "            𝑛·1·1 := 2"
           , "            𝑛·1·2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
           , "          𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0"
           , "        𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
-          , "        𝔻(Φ.a🌵18):"
-          , "          𝕄(Φ.a🌵18):"
+          , "        𝔻(Φ.a🌵1):"
+          , "          𝕄(Φ.a🌵1):"
           , "            𝑛·1·3 := 3"
           , "            𝑛·1·4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
           , "          𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
