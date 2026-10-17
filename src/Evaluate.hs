@@ -72,7 +72,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       outcome <- try $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
         (bound', morphed, normals) <- foldM (through ctx) (bound, dataized, []) entry._morphed
-        let firing = Firing func (reverse conditions) (reverse normals)
+        firing <- Firing func (reverse conditions) . (reverse normals ++) <$> sides entry._ending
         known <- remembered caller._memo caller._forks firing
         maybe (worked ctx entry mark firing bound' morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
       deps <- since caller._forks mark
@@ -92,6 +92,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       deps <- since caller._forks mark
       remember caller._memo firing deps answer
       pure (answer, state''')
+    sides :: Ending -> IO [Expression]
+    sides (Answering _) = pure []
+    sides (Forking _ left right) = traverse operand [left, right]
     line :: ReduceContext -> (Subst, State) -> Line -> IO (Subst, State)
     line ctx held (Evaluated meta source) = evaluated ctx held meta source
     line ctx (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' bound meta source

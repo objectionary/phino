@@ -364,7 +364,10 @@ forms its operands came down to (`Firing`, `remembered` and `remember` in
 another formation, such as one whose operand reads another object holding the
 same datum, brings its operands down, finds the firing answered and takes
 that answer, minting nothing, so one value never gets two names (#1661). A
-symbol is kept as the symbol it is, not as the datum every symbol
+fork answers from its sides too, so its key carries both sides as its
+formation places them (`sides` of `Evaluate.hs`), and a second fork on a
+condition the first one decided takes its own side, not the first one's
+(#1940). A symbol is kept as the symbol it is, not as the datum every symbol
 manufactures, so two firings over two symbols stay two. Such a firing is
 charged to `--max-firings` like one made, since the tally charges a firing as
 it starts bringing its operands down, the only place a recursion widening
