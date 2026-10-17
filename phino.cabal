@@ -172,6 +172,7 @@ test-suite spec
     EvaluateSpec
     FilesSpec
     FilterSpec
+    ForksSpec
     Fixtures
     FunctionsSpec
     InferenceSpec

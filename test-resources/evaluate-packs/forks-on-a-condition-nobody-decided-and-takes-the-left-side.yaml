@@ -3,11 +3,12 @@
 ---
 # yamllint disable rule:line-length
 # A fork is where a run splits: the condition comes down through 𝔻 and
-# answers a symbol nobody has decided, so the entry takes the left side,
-# writes the decision to the protocol and leaves the right side to another
-# path (#1938). Only the side it took reaches a normal form through 𝕄, a
-# call of 'plus' nobody has fired, and the dispatch of φ that ends the
-# program fires that call; the right side is never reduced on this path.
+# answers a symbol nobody has decided (#1938). The fork brings both sides
+# to a normal form through 𝕄 first, each a call of 'plus' nobody has fired
+# (#1954); the calls add other numbers, so no join makes one term of them,
+# and the entry takes the left side, writes the decision to the protocol
+# and leaves the right side to another path. The dispatch of φ that ends
+# the program fires the call of the left side.
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -63,20 +64,23 @@ protocol: |
         𝕄(Φ.a🌵2):
           𝑛·2·1 := Φ.bool( φ ↦ 𝜎1:λ )
       𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      forked(𝔻(𝜎1:λ)) := left  # ξ.then
       𝕄(Φ.a🌵3):
         𝑛·2·2 := 1
         𝑛·2·3 := 𝑛·2·2.plus( x ↦ 2 )
-      𝑛·2·4 := 𝑛·2·3  # 𝕄(ξ.then)
+      𝕄(Φ.a🌵4):
+        𝑛·2·4 := 3
+        𝑛·2·5 := 𝑛·2·4.plus( x ↦ 4 )
+      forked(𝔻(𝜎1:λ)) := left  # ξ.then
+      𝑛·2·6 := 𝑛·2·3  # 𝕄(ξ.then)
     𝔼(L_number_plus):
-      𝔻(Φ.a🌵4):
-        𝕄(Φ.a🌵4):
+      𝔻(Φ.a🌵5):
+        𝕄(Φ.a🌵5):
           𝑛·3·1 := 1
           𝑛·3·2 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
         𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
       𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵5):
-        𝕄(Φ.a🌵5):
+      𝔻(Φ.a🌵6):
+        𝕄(Φ.a🌵6):
           𝑛·3·3 := 2
           𝑛·3·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
         𝛿·3·2 := 40-00-00-00-00-00-00-00  # 2.0

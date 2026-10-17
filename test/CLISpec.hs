@@ -2100,7 +2100,7 @@ spec = do
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n") $ \forks ->
-              withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
+              withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
                 testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
             lines records
@@ -2109,7 +2109,7 @@ spec = do
                          , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
                          , "    <dataize meta=\"𝛿1·1\">𝜎1</dataize>"
                          , "    <forked side=\"left\">𝜎1</forked>"
-                         , "    <formed meta=\"𝑛·1·1\"><attr name=\"φ\">𝜎2</attr></formed>"
+                         , "    <formed meta=\"𝑛·1·1\"><attr name=\"φ\">01-</attr></formed>"
                          , "    <answer meta=\"𝑛·1·2\">𝑛·1·1</answer>"
                          , "  </evaluate>"
                          , "</morph>"
@@ -2117,8 +2117,27 @@ spec = do
                          , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
                          , "    <dataize meta=\"𝛿1·2\">𝜎1</dataize>"
                          , "    <forked side=\"right\">𝜎1</forked>"
-                         , "    <formed meta=\"𝑛·2·1\"><attr name=\"φ\">𝜎3</attr></formed>"
+                         , "    <formed meta=\"𝑛·2·1\"><attr name=\"φ\">02-</attr></formed>"
                          , "    <answer meta=\"𝑛·2·2\">𝑛·2·1</answer>"
+                         , "  </evaluate>"
+                         , "</morph>"
+                         ]
+
+        it "writes the symbol a join minted for two sides that differ only in their symbols as an element of its own" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n") $ \forks ->
+              withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
+                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            records <- readProtocol path
+            lines records
+              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         , "<morph at=\"Φ.y\">"
+                         , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
+                         , "    <dataize meta=\"𝛿1·1\">𝜎1</dataize>"
+                         , "    <joined symbol=\"𝜎4\" left=\"𝜎2\" right=\"𝜎3\">𝜎1</joined>"
+                         , "    <formed meta=\"𝑛·1·1\"><attr name=\"φ\">𝜎4</attr></formed>"
+                         , "    <answer meta=\"𝑛·1·2\">𝑛·1·1</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2483,6 +2502,18 @@ spec = do
       it "dataizes the left side first and the right side on another path" $ do
         printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
         lines printed `shouldBe` ["01-", "02-"]
+
+      it "dataizes two sides that come to the same term on one path" $ do
+        printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 07- ⟧, b ↦ ⟦ Δ ⤍ 07- ⟧, λ ⤍ L_fork ⟧ ⟧"
+        lines printed `shouldBe` ["07-"]
+
+      it "dataizes two sides that differ only in their symbols on one path" $ do
+        printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧"
+        length (lines printed) `shouldBe` 1
+
+      it "dataizes the side it takes when the other side gets stuck" $ do
+        printed <- forked ["--max-paths=1"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 05- ⟧, b ↦ ⟦ λ ⤍ L_none ⟧.x, λ ⤍ L_fork ⟧ ⟧"
+        lines printed `shouldBe` ["05-"]
 
       it "runs no more paths than --max-paths allows" $ do
         printed <- forked ["--max-paths=1"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
@@ -2899,39 +2930,43 @@ spec = do
                      , "<dataize at=\"Φ.y\">"
                      , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
                      , "    <dataize meta=\"𝛿1·1\">𝜎2</dataize>"
+                     , "    <morph at=\"Φ.a🌵2\">"
+                     , "      <applied meta=\"𝑛·1·1\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.step\"><attr name=\"tup\">Φ.items.tail</attr></applied>"
+                     , "    </morph>"
+                     , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"
                      , "    <forked side=\"left\">𝜎2</forked>"
-                     , "    <answer meta=\"𝑛·1·1\">01-</answer>"
+                     , "    <answer meta=\"𝑛·1·2\">01-</answer>"
                      , "  </evaluate>"
                      , "  <delta meta=\"𝛿·0·1\">01-</delta>"
                      , "</dataize>"
                      , "<dataize at=\"Φ.y\">"
                      , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
                      , "    <dataize meta=\"𝛿1·2\">𝜎2</dataize>"
-                     , "    <forked side=\"right\">𝜎2</forked>"
-                     , "    <morph at=\"Φ.a🌵3\">"
-                     , "      <applied meta=\"𝑛·2·1\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.step\"><attr name=\"tup\">Φ.items.tail</attr></applied>"
+                     , "    <morph at=\"Φ.a🌵5\">"
+                     , "      <applied meta=\"𝑛·2·1\" by=\"morph\" at=\"Φ.a🌵5\" of=\"Φ.step\"><attr name=\"tup\">Φ.items.tail</attr></applied>"
                      , "    </morph>"
-                     , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"Φ.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"
-                     , "    <answer meta=\"𝑛·2·2\">𝜎3</answer>"
+                     , "    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵5.φ\" of=\"Φ.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"
+                     , "    <forked side=\"right\">𝜎2</forked>"
+                     , "    <answer meta=\"𝑛·2·2\">𝜎4</answer>"
                      , "  </evaluate>"
                      , "</dataize>"
                      ]
 
       it "names the object a deferred copy was made of through the formation its ρ holds" $ do
         records <- deferred [] "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.joined( items ↦ Φ.items.tail ).φ, λ ⤍ L_fork ⟧ ⟧"
-        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"]
+        records `shouldContain` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵5.φ\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"]
 
       it "names an argument of a deferred copy that is no bare symbol by the element that formed it" $ do
         records <- deferred [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ ⟦ z ↦ Φ ⟧ ), λ ⤍ L_fork ⟧ ⟧"
-        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·2·2</attr></with></deferred>"]
+        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·1·2</attr></with></deferred>"]
 
       it "names a deferred copy of a formation the world does not declare by the element that formed it" $ do
         records <- deferred [] "⟦ wrap(v) ↦ ⟦⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.wrap( v ↦ ⟦ inner(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.inner( x ↦ Φ.items.tail ), λ ⤍ L_fork ⟧ ⟧"
-        records `shouldContain` ["    <formed meta=\"𝑛·2·5\"><attr name=\"x\">𝜎1</attr><attr name=\"φ\">x.next</attr></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"𝑛·2·5\"/>"]
+        records `shouldContain` ["    <formed meta=\"𝑛·1·5\"><attr name=\"x\">𝜎1</attr><attr name=\"φ\">x.next</attr></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"𝑛·1·5\"/>"]
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
         records <- recordedWith (forking <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
-        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵3.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·3·3</attr></with></deferred>"]
+        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·2·3</attr></with></deferred>", "    <deferred symbol=\"𝜎6\" by=\"morph\" at=\"Φ.a🌵6.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·4·3</attr></with></deferred>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"

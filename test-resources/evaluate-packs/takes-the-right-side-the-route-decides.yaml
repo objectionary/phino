@@ -3,10 +3,11 @@
 ---
 # yamllint disable rule:line-length
 # A path carries the decisions of the forks it is to meet, one per fork, and
-# a fork the list reaches takes the side the list says (#1938). This path
-# was told to take the right side, so the fork reduces 'else' alone, writes
-# that side to the protocol and leaves 'then' untouched; nothing is left
-# pending, since the path it came from already took the other side.
+# a fork the list reaches takes the side the list says (#1938). Both sides
+# come to a normal form through 𝕄 before the fork decides (#1954), and they
+# differ, so this path, told to take the right side, writes that side to the
+# protocol and answers what 'else' came to; nothing is left pending, since
+# the path it came from already took the other side.
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -63,20 +64,23 @@ protocol: |
         𝕄(Φ.a🌵2):
           𝑛·2·1 := Φ.bool( φ ↦ 𝜎1:λ )
       𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      forked(𝔻(𝜎1:λ)) := right  # ξ.else
       𝕄(Φ.a🌵3):
-        𝑛·2·2 := 3
-        𝑛·2·3 := 𝑛·2·2.plus( x ↦ 4 )
-      𝑛·2·4 := 𝑛·2·3  # 𝕄(ξ.else)
+        𝑛·2·2 := 1
+        𝑛·2·3 := 𝑛·2·2.plus( x ↦ 2 )
+      𝕄(Φ.a🌵4):
+        𝑛·2·4 := 3
+        𝑛·2·5 := 𝑛·2·4.plus( x ↦ 4 )
+      forked(𝔻(𝜎1:λ)) := right  # ξ.else
+      𝑛·2·6 := 𝑛·2·5  # 𝕄(ξ.else)
     𝔼(L_number_plus):
-      𝔻(Φ.a🌵4):
-        𝕄(Φ.a🌵4):
+      𝔻(Φ.a🌵5):
+        𝕄(Φ.a🌵5):
           𝑛·3·1 := 3
           𝑛·3·2 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )
         𝛿·3·1 := 40-08-00-00-00-00-00-00  # 3.0
       𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵5):
-        𝕄(Φ.a🌵5):
+      𝔻(Φ.a🌵6):
+        𝕄(Φ.a🌵6):
           𝑛·3·3 := 4
           𝑛·3·4 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )
         𝛿·3·2 := 40-10-00-00-00-00-00-00  # 4.0

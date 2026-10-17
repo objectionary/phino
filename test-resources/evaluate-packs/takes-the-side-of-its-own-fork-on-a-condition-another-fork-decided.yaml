@@ -6,7 +6,7 @@
 # own side (#1940). The memo of 'plausible' keeps the answer of a firing by
 # the λ name and the operands it came down to, and a fork reads its sides as
 # well as its condition, so the second fork, deciding the condition the first
-# one decided, reduces its own 'then' and answers 70 instead of the 7 of the
+# one decided, reduces its own sides and answers 70 instead of the 7 of the
 # first fork.
 symbolic: |
   - λ: L_number_gt
@@ -71,15 +71,17 @@ protocol: |
             𝕄(Φ.a🌵3):
               𝑛·3·1 := Φ.bool( φ ↦ 𝜎1:λ )
           𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-          forked(𝔻(𝜎1:λ)) := left  # ξ.then
           𝕄(Φ.a🌵4):
             𝑛·3·2 := 7
-          𝑛·3·3 := 𝑛·3·2  # 𝕄(ξ.then)
+          𝕄(Φ.a🌵5):
+            𝑛·3·3 := 8
+          forked(𝔻(𝜎1:λ)) := left  # ξ.then
+          𝑛·3·4 := 𝑛·3·2  # 𝕄(ξ.then)
         𝕄(Φ.a🌵0):
           𝑛·1·5 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )
         𝛿·1·1 := 40-1C-00-00-00-00-00-00  # 7.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
-      𝕄(Φ.a🌵5):
+      𝕄(Φ.a🌵6):
         𝑛·1·6 := Φ.number( φ ↦ 𝑛·2·2 )
         𝑛·1·7 := 𝑛·1·6.gt( x ↦ 𝑛·2·3 )
         𝔼(L_number_gt):
@@ -89,14 +91,16 @@ protocol: |
         𝑛·1·9 := 𝑛·1·8( else ↦ 80 )
       𝑛1·1 := 𝑛·1·9  # 𝕄(ξ.y)
       𝔼(L_fork):  # 𝔼(𝑛1)
-        𝔻(Φ.a🌵6):
-          𝕄(Φ.a🌵6):
+        𝔻(Φ.a🌵7):
+          𝕄(Φ.a🌵7):
             𝑛·5·1 := Φ.bool( φ ↦ 𝜎1:λ )
         𝛿1·5 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-        forked(𝔻(𝜎1:λ)) := left  # ξ.then
-        𝕄(Φ.a🌵7):
+        𝕄(Φ.a🌵8):
           𝑛·5·2 := 70
-        𝑛·5·3 := 𝑛·5·2  # 𝕄(ξ.then)
+        𝕄(Φ.a🌵9):
+          𝑛·5·3 := 80
+        forked(𝔻(𝜎1:λ)) := left  # ξ.then
+        𝑛·5·4 := 𝑛·5·2  # 𝕄(ξ.then)
       𝑛2·1 := 𝑛·5·2  # 𝔼(𝑛1)
       𝑛·1·10 := 𝑛·5·2  # 𝑛
       𝑛·1·11 := 𝑛·5·2  # 𝕄(𝑛·1·10)

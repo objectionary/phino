@@ -175,15 +175,21 @@ using the same `insideUniverse` trick the `--inside` option exposes.
 An entry ends in an `𝑛` or in a `fork` block (`Ending` of `Lambdas.hs`, #1938),
 never both, and a forking entry holds nothing beside `dataize`. The
 block names the condition under `on`, a bytes meta of `dataize`, and the two
-sides under `left` and `right`, paths from `$`. A fork never joins its sides
-into one term: `forked` of `Evaluate.hs` asks `decide` of `Forks.hs` for the
-side, keyed by the value the condition came down to, the symbol or the bytes.
-An undecided condition takes the left side and queues the route to the right
-one as pending, and a decided one takes its side and opens nothing. The firing
-writes `forked(…)` (`EvForked`) with the condition and the side, morphs the
-side where it stands in the universe through `insideUniverse`, so the protocol
-sites it as `Φ.a🌵N`, defers it the way a `defer` line would (`postponing`)
-and answers it (`EvTaken`). `explored` of `Forks.hs` runs the command once per
+sides under `left` and `right`, paths from `$`. `forked` of `Evaluate.hs`
+first brings both sides down (`reached`): it morphs each where it stands in
+the universe through `insideUniverse`, so the protocol sites it as `Φ.a🌵N`,
+and defers it the way a `defer` line would (`postponing`). Two sides that are
+the same, or differ only in the symbols at their leaves, are one term:
+`joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the firing
+writes `joined(…)` (`EvJoined`) per fresh symbol and answers the joined term
+(`Joined` of `Answer`) with no decision, so the run splits nothing (#1954).
+Any other two sides, or a side whose morph threw, make `forked` ask `decide`
+of `Forks.hs` for the side, keyed by the value the condition came down to,
+the symbol or the bytes. An undecided condition takes the left side and
+queues the route to the right one as pending, and a decided one takes its
+side and opens nothing. The firing writes `forked(…)` (`EvForked`) with the
+condition and the side, and answers that side (`EvTaken`), or rethrows what
+its morph threw. `explored` of `Forks.hs` runs the command once per
 route, first with none and then every pending route in the order they were
 queued, until nothing is pending or `--max-paths` (`_maxPaths` of
 `CLI/Types.hs`) is spent, and the command prints a result per path. The text

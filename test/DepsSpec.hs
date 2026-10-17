@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvForked, EvLooped, EvRun, EvStarted, EvStuck, EvStuckOn, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), Side (LeftSide, RightSide), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvForked, EvJoined, EvLooped, EvRun, EvStarted, EvStuck, EvStuckOn, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), Side (LeftSide, RightSide), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -203,8 +203,17 @@ spec = do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Right (BtOne "0D")) RightSide (ExDispatch ExXi (AtLabel "else"))])
       last (lines written) `shouldBe` "    forked(0D-) := right  # ξ.else"
     it "writes the side a fork came to as the answer of its firing" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 (ExDispatch ExXi (AtLabel "then")) (ExFormation [BiLambda (FnSymbol 3)])])
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then)"
+    it "writes the term both sides of a fork came to beside both of them" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then"), ExDispatch ExXi (AtLabel "else")] (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then), 𝕄(ξ.else)"
+    it "writes the symbol a join minted beside the symbol of its condition and the two it stands for" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left 7) 12 (5, 9)])
+      last (lines written) `shouldBe` "    joined(𝜎12) := 𝔻(𝜎7:λ) ? 𝜎5 : 𝜎9"
+    it "writes the symbol a join minted beside the datum of its condition" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
+      last (lines written) `shouldBe` "    joined(𝜎14) := 0D- ? 𝜎3 : 𝜎8"
     it "opens a heading of its own for every run of the protocol" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C"), EvRun Morphing "Φ", EvDelta 1 (BtOne "0D")])
       lines written `shouldBe` ["𝕄(Φ):", "  𝛿·0·1 := 0C-", "𝕄(Φ):", "  𝛿·0·2 := 0D-"]
@@ -321,8 +330,14 @@ spec = do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Right (BtOne "0D")) RightSide (ExDispatch ExXi (AtLabel "else"))])
       lines written `shouldContain` ["    <forked side=\"right\">0D-</forked>"]
     it "writes the side a fork came to as the answer of its firing in the markup" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 (ExDispatch ExXi (AtLabel "then")) (ExFormation [BiLambda (FnSymbol 3)])])
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
       lines written `shouldContain` ["    <answer meta=\"𝑛·1·1\">𝜎3</answer>"]
+    it "writes the symbol a join minted as an element naming the two it stands for" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left 7) 12 (5, 9)])
+      lines written `shouldContain` ["    <joined symbol=\"𝜎12\" left=\"𝜎5\" right=\"𝜎9\">𝜎7</joined>"]
+    it "writes the symbol a join minted as an element holding the datum of its condition" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
+      lines written `shouldContain` ["    <joined symbol=\"𝜎14\" left=\"𝜎3\" right=\"𝜎8\">0D-</joined>"]
     it "wraps every run of the protocol in a path element" $ do
       (_, written) <- recordedWhole (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C"), EvRun Morphing "Φ", EvDelta 1 (BtOne "0D")])
       filter (isInfixOf "path>") (lines written) `shouldBe` ["  <path>", "  </path>", "  <path>", "  </path>"]
