@@ -813,7 +813,7 @@ right in a firing, it is commented with them instead, `starved(3)  # 饾敾(桅.a馃
     stuck(L_outer)
 ```
 
-The markup spells them `<stuck 位="L_outer"/>`, `<stall 位="L_outer"/>` and
+The markup spells them `<stuck 位="L_outer"/>`, `<stalled 位="L_outer"/>` and
 `<starved limit="3" by="dataize" at="桅.a馃尩2"/>`.
 
 `timeout(5)` is where `--max-seconds=5` ran out, placed and commented the same
