@@ -557,7 +557,7 @@ saveEvalXml handle cursor printed report = do
     elements (EvStuck depth key judgment self) nesting =
       placed depth nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
     elements (EvStall depth key) nesting =
-      placed depth nesting (pure (printf "<stall λ=\"%s\"/>" (quoted key)))
+      placed depth nesting (pure (printf "<stalled λ=\"%s\"/>" (quoted key)))
     elements (EvStuckOn depth key) nesting =
       placed depth nesting (pure (printf "<stuck λ=\"%s\"/>" (quoted key)))
     elements (EvStarved depth limit judgment site) nesting =

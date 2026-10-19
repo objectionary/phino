@@ -1837,7 +1837,7 @@ spec = do
             withStdin "⟦ p ↦ ⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧, y ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧, λ ⤍ L_pair ⟧.φ ⟧" $
               testCLISucceeded ["morph", "--symbolic=" ++ outer, "--locator=Q.p", "--partial", "--acyclic=plausible", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          lines records `shouldContain` ["        <stall λ=\"L_none\"/>"]
+          lines records `shouldContain` ["        <stalled λ=\"L_none\"/>"]
 
       it "writes a stuck firing to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
