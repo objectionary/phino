@@ -178,7 +178,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         term <- change kept
         ctx._saveEval
           ( if term == kept
-              then EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) term
+              then EvBound ctx._nesting meta._spelling (ExMeta source._name) term
               else EvReshaped ctx._nesting meta._spelling block (ExMeta source._name) term
           )
         (,thrown) <$> bind meta (MvExpression term) bound
@@ -253,7 +253,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       bind meta (MvExpression answer) bound
       where
         kept :: Expression -> IO Expression
-        kept term = term <$ ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) term)
+        kept term = term <$ ctx._saveEval (EvBound ctx._nesting meta._spelling (ExMeta source._name) term)
     postponing :: ReduceContext -> State -> Expression -> Expression -> IO (Maybe Expression)
     postponing ctx state' site (ExFormation bds)
       | copied bds = do
