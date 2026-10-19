@@ -5,7 +5,7 @@
 
 module DepsSpec where
 
-import AST (Argument (ArTau), Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiTau, BiVoid), Bytes (BtMany, BtOne), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExXi), Function (FnSymbol, Function))
+import AST (Argument (ArTau), Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiTau, BiVoid), Bytes (BtMany, BtOne), Expression (ExApplication, ExBytes, ExDispatch, ExFormation, ExRoot, ExTermination, ExXi), Function (FnSymbol, Function))
 import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
@@ -220,22 +220,31 @@ spec = do
   describe "saveEvalXml" $ do
     it "writes an application as an element naming its head and holding its argument" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ.w", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) (ExDispatch ExRoot (AtLabel "w"))])
-      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ.w\" of=\"Φ.ёж\"><attr name=\"q\">Φ.ю</attr></applied>"]
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ.w\" of=\"Φ.ёж\"><ref name=\"q\">Φ.ю</ref></applied>"]
     it "spells an argument an earlier application made by its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))))) (ExFormation [BiTau (AtLabel "w") (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))))]) ExRoot])
-      lines written `shouldContain` ["  <applied meta=\"𝑛·0·2\" by=\"morph\" at=\"Φ\" of=\"Φ.жук\"><attr name=\"w\">𝑛·0·1</attr></applied>"]
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·2\" by=\"morph\" at=\"Φ\" of=\"Φ.жук\"><meta name=\"w\">𝑛·0·1</meta></applied>"]
     it "spells an argument that is a bare symbol as that symbol" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "цапля")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 7)]))) (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)])]) ExRoot])
-      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ\" of=\"Φ.цапля\"><attr name=\"φ\">𝜎7</attr></applied>"]
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ\" of=\"Φ.цапля\"><symbol name=\"φ\">𝜎7</symbol></applied>"]
     it "spells a datum an application holds with no tag" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "байты")) (ArTau AtPhi (ExFormation [BiDelta (BtOne "0C")]))) (ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "0C")])]) ExRoot])
-      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ\" of=\"Φ.байты\"><attr name=\"φ\">0C-</attr></applied>"]
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ\" of=\"Φ.байты\"><datum name=\"φ\">0C-</datum></applied>"]
+    it "spells bytes an application holds as a datum" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щука")) (ArTau (AtLabel "ё") (ExBytes (BtMany ["7E", "A1"])))) (ExFormation [BiTau (AtLabel "ё") (ExBytes (BtMany ["7E", "A1"]))]) ExRoot])
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ\" of=\"Φ.щука\"><datum name=\"ё\">7E-A1</datum></applied>"]
+    it "writes an argument that is a termination as an empty element of its own" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёрш")) (ArTau (AtLabel "ц") ExTermination)) (ExFormation [BiTau (AtLabel "ц") ExTermination]) ExRoot])
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ\" of=\"Φ.ёрш\"><bottom name=\"ц\"/></applied>"]
+    it "spells an argument dispatched from a named application as a reference, not a meta" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жаба")) (ArTau (AtLabel "у") (ExDispatch (ExApplication (ExDispatch ExRoot (AtLabel "ил")) (ArTau (AtLabel "в") (ExFormation [BiLambda (FnSymbol 6)]))) (AtLabel "дно")))) (ExFormation []) ExRoot])
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·2\" by=\"morph\" at=\"Φ\" of=\"Φ.жаба\"><ref name=\"у\">𝑛·0·1.дно</ref></applied>"]
     it "names an argument that is an application by an element of its own" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "цапля")) (ArTau AtPhi (ExApplication (ExDispatch ExRoot (AtLabel "байты")) (ArTau AtPhi (ExFormation [BiDelta (BtOne "0C")]))))) (ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "0C")])]) ExRoot])
-      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.байты\"><attr name=\"φ\">0C-</attr></applied>"]
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.байты\"><datum name=\"φ\">0C-</datum></applied>"]
     it "writes an application of two arguments nothing reduced as one element" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvAnswer 1 (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "а") (ExFormation [BiLambda (FnSymbol 1)]))) (ArTau (AtLabel "б") (ExFormation [BiLambda (FnSymbol 2)])))])
-      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.ёж\"><attr name=\"а\">𝜎1</attr><attr name=\"б\">𝜎2</attr></applied>"]
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.ёж\"><symbol name=\"а\">𝜎1</symbol><symbol name=\"б\">𝜎2</symbol></applied>"]
     it "writes an answer as the name of the term it holds" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvAnswer 1 (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "а") (ExFormation [BiLambda (FnSymbol 1)]))) (ArTau (AtLabel "б") (ExFormation [BiLambda (FnSymbol 2)])))])
       lines written `shouldContain` ["  <answer meta=\"𝑛·0·2\">𝑛·0·1</answer>"]
@@ -247,25 +256,25 @@ spec = do
       lines written `shouldContain` ["    <answer meta=\"𝑛·1·3\">𝑛·1·2</answer>"]
     it "writes a formation no object of the world made as an element holding its bindings" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvAnswer 1 (ExFormation [BiLambda (Function "L_вилка"), BiVoid (AtLabel "лево"), BiTau AtPhi (ExFormation [BiLambda (FnSymbol 5)])])])
-      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" λ=\"L_вилка\"><void name=\"лево\"/><attr name=\"φ\">𝜎5</attr></formed>"]
+      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" λ=\"L_вилка\"><void name=\"лево\"/><symbol name=\"φ\">𝜎5</symbol></formed>"]
     it "names a formation that copies an object of the world by the object and the attributes it binds" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "ёж") (ExFormation [BiVoid (AtLabel "q"), BiTau (AtLabel "w") ExRoot])]), EvAnswer 1 (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)]), BiTau (AtLabel "w") ExRoot])])
-      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" of=\"Φ.ёж\"><attr name=\"q\">𝜎3</attr></formed>"]
+      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" of=\"Φ.ёж\"><symbol name=\"q\">𝜎3</symbol></formed>"]
     it "names a formation that replaced an attribute of an object of the world by the object and that attribute" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "ёж") (ExFormation [BiVoid (AtLabel "q"), BiTau AtPhi (ExDispatch ExXi (AtLabel "q")), BiTau (AtLabel "w") ExRoot])]), EvAnswer 1 (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)]), BiTau AtPhi (ExFormation [BiLambda (FnSymbol 5)]), BiTau (AtLabel "w") ExRoot])])
-      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" of=\"Φ.ёж\"><attr name=\"q\">𝜎3</attr><attr name=\"φ\">𝜎5</attr></formed>"]
+      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" of=\"Φ.ёж\"><symbol name=\"q\">𝜎3</symbol><symbol name=\"φ\">𝜎5</symbol></formed>"]
     it "writes a formation that keeps no binding of an object of the world as a formation of its own" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "ёж") (ExFormation [BiVoid AtPhi])]), EvAnswer 1 (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 8)])])])
-      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\"><attr name=\"φ\">𝜎8</attr></formed>"]
+      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\"><symbol name=\"φ\">𝜎8</symbol></formed>"]
     it "spells a formation that is an object of the world by its path" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "ёж") (ExFormation [BiVoid (AtLabel "q"), BiTau (AtLabel "w") ExRoot])]), EvAnswer 1 (ExFormation [BiVoid (AtLabel "q"), BiTau (AtLabel "w") ExRoot])])
       lines written `shouldContain` ["  <answer meta=\"𝑛·0·1\">Φ.ёж</answer>"]
     it "names a formation that copies an object nested in the world by its path" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "лес") (ExFormation [BiTau (AtLabel "ёж") (ExFormation [BiVoid (AtLabel "q"), BiLambda (Function "L_ёж")])])]), EvAnswer 1 (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 7)]), BiLambda (Function "L_ёж")])])
-      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" of=\"Φ.лес.ёж\"><attr name=\"q\">𝜎7</attr></formed>"]
+      lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" of=\"Φ.лес.ёж\"><symbol name=\"q\">𝜎7</symbol></formed>"]
     it "names a method of a copy by the copy it is dispatched from" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "ёж") (ExFormation [BiVoid (AtLabel "q"), BiTau (AtLabel "м") (ExFormation [BiVoid AtRho, BiVoid (AtLabel "z")])])]), EvAnswer 1 (ExFormation [BiTau AtRho (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 3)]))), BiTau (AtLabel "z") (ExFormation [BiLambda (FnSymbol 4)])])])
-      lines written `shouldContain` ["  <formed meta=\"𝑛·0·2\" of=\"𝑛·0·1.м\"><attr name=\"z\">𝜎4</attr></formed>"]
+      lines written `shouldContain` ["  <formed meta=\"𝑛·0·2\" of=\"𝑛·0·1.м\"><symbol name=\"z\">𝜎4</symbol></formed>"]
     it "writes nothing for the world it is told" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "ёж") (ExFormation [])])])
       filter (isInfixOf "ёж") (lines written) `shouldBe` []
@@ -289,13 +298,13 @@ spec = do
       filter (isInfixOf "morph") (lines written) `shouldBe` []
     it "names the site of a block that is an application by an element written before the block" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ж")) (ArTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 1)]))), EvDelta 2 (BtOne "0C")])
-      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.ж\"><attr name=\"q\">𝜎1</attr></applied>", "  <morph at=\"𝑛·0·1\">"]
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.ж\"><symbol name=\"q\">𝜎1</symbol></applied>", "  <morph at=\"𝑛·0·1\">"]
     it "names nothing for the site of a block nothing stands in" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ж")) (ArTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 1)]))), EvDelta 1 (BtOne "0C")])
       filter (isInfixOf "applied") (lines written) `shouldBe` []
     it "names the site of a firing that is an application by an element written before the firing" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ж")) (ArTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 1)])))])
-      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.ж\"><attr name=\"q\">𝜎1</attr></applied>", "  <evaluate λ=\"L_ж\" by=\"morph\" at=\"𝑛·0·1\">"]
+      lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.ж\"><symbol name=\"q\">𝜎1</symbol></applied>", "  <evaluate λ=\"L_ж\" by=\"morph\" at=\"𝑛·0·1\">"]
     it "writes one element for two blocks of one judgment at one site in a row" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
       length (filter (isInfixOf "<morph") (lines written)) `shouldBe` 1
@@ -307,13 +316,13 @@ spec = do
       lines written `shouldContain` ["    <morph at=\"𝑛·1·1\">"]
     it "writes a deferred copy as an element naming its object and the symbols of its arguments" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)]), BiTau AtPhi (ExDispatch (ExDispatch ExXi (AtLabel "щ")) (AtLabel "й"))]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)])))) ExRoot])
-      lines written `shouldContain` ["  <deferred symbol=\"𝜎9\" by=\"morph\" at=\"Φ\" of=\"Φ.ёж\"><with><attr name=\"щ\">𝜎4</attr></with></deferred>"]
+      lines written `shouldContain` ["  <deferred symbol=\"𝜎9\" by=\"morph\" at=\"Φ\" of=\"Φ.ёж\"><with><symbol name=\"щ\">𝜎4</symbol></with></deferred>"]
     it "writes a deferred copy that names no call as an element naming the copy" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)])]) Nothing ExRoot])
       lines written `shouldContain` ["  <deferred symbol=\"𝜎9\" by=\"morph\" at=\"Φ\" of=\"𝑛·0·1\"/>"]
     it "names an argument of a copy nothing worked out by an expression meta" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation []) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExApplication (ExDispatch ExRoot (AtLabel "ю")) (ArTau (AtLabel "ж") (ExFormation [BiLambda (FnSymbol 2)])))))) ExRoot])
-      lines written `shouldSatisfy` any (isInfixOf "<attr name=\"щ\">𝑒1</attr>")
+      lines written `shouldSatisfy` any (isInfixOf "<meta name=\"щ\">𝑒1</meta>")
     it "names one argument nothing worked out by one expression meta in two elements" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation []) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExApplication (ExDispatch ExRoot (AtLabel "ю")) (ArTau (AtLabel "ж") (ExFormation [BiLambda (FnSymbol 2)])))))) ExRoot, EvDeferred 1 10 Morphing (ExFormation []) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёрш")) (ArTau (AtLabel "ц") (ExApplication (ExDispatch ExRoot (AtLabel "ю")) (ArTau (AtLabel "ж") (ExFormation [BiLambda (FnSymbol 2)])))))) ExRoot])
       length (filter (isInfixOf ">𝑒1<") (lines written)) `shouldBe` 2
@@ -322,7 +331,7 @@ spec = do
       lines written `shouldContain` ["  <looped by=\"morph\" match=\"proven\" at=\"Φ\" of=\"𝑛·0·1\"/>"]
     it "names an argument of a deferred copy by the application that made it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "кулик")) (ArTau (AtLabel "ш") ExRoot)) (ExFormation [BiTau (AtLabel "ш") ExRoot]) ExRoot, EvDeferred 1 31 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiTau (AtLabel "ш") ExRoot]), BiTau AtPhi (ExDispatch ExXi (AtLabel "щ"))]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExFormation [BiTau (AtLabel "ш") ExRoot])))) ExRoot])
-      lines written `shouldContain` ["  <deferred symbol=\"𝜎31\" by=\"morph\" at=\"Φ\" of=\"Φ.ёж\"><with><attr name=\"щ\">𝑛·0·1</attr></with></deferred>"]
+      lines written `shouldContain` ["  <deferred symbol=\"𝜎31\" by=\"morph\" at=\"Φ\" of=\"Φ.ёж\"><with><meta name=\"щ\">𝑛·0·1</meta></with></deferred>"]
     it "writes the side a fork took as an element naming the symbol of its condition" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Left 7) LeftSide (ExDispatch ExXi (AtLabel "then"))])
       lines written `shouldContain` ["    <forked side=\"left\">𝜎7</forked>"]
