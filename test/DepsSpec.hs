@@ -269,13 +269,13 @@ spec = do
       lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" of=\"Φ.ёж\"><symbol name=\"а\">𝜎1</symbol><symbol name=\"б\">𝜎2</symbol></applied>"]
     it "writes an answer as the name of the term it holds" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvAnswer 1 (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "а") (ExFormation [BiLambda (FnSymbol 1)]))) (ArTau (AtLabel "б") (ExFormation [BiLambda (FnSymbol 2)])))])
-      lines written `shouldContain` ["  <answer meta=\"𝑛·0·2\">𝑛·0·1</answer>"]
+      lines written `shouldContain` ["  <answered meta=\"𝑛·0·2\">𝑛·0·1</answered>"]
     it "writes a term a firing built as the name of the term" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvBuilt 1 (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "а") (ExFormation [BiLambda (FnSymbol 1)])))])
       lines written `shouldContain` ["  <built meta=\"𝑛·0·2\">𝑛·0·1</built>"]
     it "spells an object an application made by its name in a later element" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ы" Morphing ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvAnswer 2 (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))])])
-      lines written `shouldContain` ["    <answer meta=\"𝑛·1·3\">𝑛·1·2</answer>"]
+      lines written `shouldContain` ["    <answered meta=\"𝑛·1·3\">𝑛·1·2</answered>"]
     it "writes a formation no object of the world made as an element holding its bindings" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvAnswer 1 (ExFormation [BiLambda (Function "L_вилка"), BiVoid (AtLabel "лево"), BiTau AtPhi (ExFormation [BiLambda (FnSymbol 5)])])])
       lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" λ=\"L_вилка\"><void name=\"лево\"/><symbol name=\"φ\">𝜎5</symbol></formed>"]
@@ -290,7 +290,7 @@ spec = do
       lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\"><symbol name=\"φ\">𝜎8</symbol></formed>"]
     it "spells a formation that is an object of the world by its path" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "ёж") (ExFormation [BiVoid (AtLabel "q"), BiTau (AtLabel "w") ExRoot])]), EvAnswer 1 (ExFormation [BiVoid (AtLabel "q"), BiTau (AtLabel "w") ExRoot])])
-      lines written `shouldContain` ["  <answer meta=\"𝑛·0·1\">Φ.ёж</answer>"]
+      lines written `shouldContain` ["  <answered meta=\"𝑛·0·1\">Φ.ёж</answered>"]
     it "names a formation that copies an object nested in the world by its path" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvWorld (ExFormation [BiTau (AtLabel "лес") (ExFormation [BiTau (AtLabel "ёж") (ExFormation [BiVoid (AtLabel "q"), BiLambda (Function "L_ёж")])])]), EvAnswer 1 (ExFormation [BiTau (AtLabel "q") (ExFormation [BiLambda (FnSymbol 7)]), BiLambda (Function "L_ёж")])])
       lines written `shouldContain` ["  <formed meta=\"𝑛·0·1\" of=\"Φ.лес.ёж\"><symbol name=\"q\">𝜎7</symbol></formed>"]
@@ -378,7 +378,7 @@ spec = do
       lines written `shouldContain` ["    <forked side=\"right\">0D-</forked>"]
     it "writes the side a fork came to as the answer of its firing in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
-      lines written `shouldContain` ["    <answer meta=\"𝑛·1·1\">𝜎3</answer>"]
+      lines written `shouldContain` ["    <answered meta=\"𝑛·1·1\">𝜎3</answered>"]
     it "writes the symbol a join minted as an element naming the two it stands for" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left 7) 12 (5, 9)])
       lines written `shouldContain` ["    <joined symbol=\"𝜎12\" left=\"𝜎5\" right=\"𝜎9\">𝜎7</joined>"]
