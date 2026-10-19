@@ -70,6 +70,7 @@ dataize' (expr, seq) univ state caller = do
     unknown _ = Nothing
     manufactured :: Int -> ReduceContext -> IO (Dataized, State)
     manufactured idx ctx = do
+      ctx._saveEval (EvManufactured ctx._nesting idx)
       seq' <- leadsTo seq (Dataization, "symbol") (ExBytes datum) ctx
       pure ((datum, NE.toList seq'), state{_manufactured = Just idx})
 

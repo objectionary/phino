@@ -354,7 +354,9 @@ it keeps its comment. The morphing of an answer is named after the answer
 (`resited`), as `𝕄(𝑛·1·5):`. The datum `delta` finds closes a `𝔻` block as
 `𝛿·1·1 := …` (`EvDelta`), commented with the double eight bytes hold (`ieee`,
 the `number` of `<delta>` in the markup), and the operand line right after
-names it. A cut is a line too, `looped(…)`
+names it. The symbol a `𝔻` comes down to closes the block in the markup alone,
+as `<manufactured>` (`EvManufactured`, #1962), counted with the data, and the
+`<bind>` right after names it the same way. A cut is a line too, `looped(…)`
 (`EvLooped`), written by `enter` where the refused frame would have opened,
 carrying the formation its ancestor entered (#1434) and naming the mode that
 cut it.
