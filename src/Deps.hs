@@ -569,7 +569,7 @@ saveEvalXml handle cursor printed report = do
     elements (EvDelta depth bytes) nesting = do
       datum <- printed (ExBytes bytes)
       let (naming, nesting') = stored (Right bytes) nesting
-      placed depth nesting' (pure (printf "<delta meta=\"%s\"%s>%s</delta>" (escapeXML naming) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum)))
+      placed depth nesting' (pure (printf "<dataized meta=\"%s\"%s>%s</dataized>" (escapeXML naming) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum)))
     elements (EvManufactured depth symbol) nesting = placed depth nesting' (pure (printf "<manufactured meta=\"%s\">%s</manufactured>" (escapeXML naming) (sigma symbol)))
       where
         (naming, nesting') = stored (Left symbol) nesting

@@ -1559,7 +1559,7 @@ spec = do
           lines records `shouldContain` ["  <unanswered λ=\"L_weit\" by=\"dataize\">Φ.t</unanswered>"]
       forM_
         [ ("textXXXXXX.txt", "      𝛿·1·1 := 01-02-..(8b)..-0B-0C")
-        , ("XMLXXXXXX.xml", "      <delta meta=\"𝛿·1·1\">01-02-..(8b)..-0B-0C</delta>")
+        , ("XMLXXXXXX.xml", "      <dataized meta=\"𝛿·1·1\">01-02-..(8b)..-0B-0C</dataized>")
         ]
         ( \(template, line) ->
             it ("cuts a long datum a firing came down to under --abridged-data, as " ++ line) $
@@ -1573,7 +1573,7 @@ spec = do
         )
       forM_
         [ ("textXXXXXX.txt", "      𝛿·1·1 := 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46")
-        , ("XMLXXXXXX.xml", "      <delta meta=\"𝛿·1·1\">30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46</delta>")
+        , ("XMLXXXXXX.xml", "      <dataized meta=\"𝛿·1·1\">30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46</dataized>")
         ]
         ( \(template, line) ->
             it ("keeps a long datum a firing came down to whole without --abridged-data, as " ++ line) $
@@ -1941,7 +1941,7 @@ spec = do
                          , "        <applied meta=\"𝑛·1·1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·1</meta></applied>"
                          , "        <applied meta=\"𝑛·1·2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><datum name=\"φ\">40-14-00-00-00-00-00-00</datum></applied>"
                          , "      </morph>"
-                         , "      <delta meta=\"𝛿·1·1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
+                         , "      <dataized meta=\"𝛿·1·1\" number=\"5.0\">40-14-00-00-00-00-00-00</dataized>"
                          , "    </dataize>"
                          , "    <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"
                          , "    <dataize at=\"Φ.a🌵1\">"
@@ -1949,7 +1949,7 @@ spec = do
                          , "        <applied meta=\"𝑛·1·3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·3</meta></applied>"
                          , "        <applied meta=\"𝑛·1·4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><datum name=\"φ\">40-18-00-00-00-00-00-00</datum></applied>"
                          , "      </morph>"
-                         , "      <delta meta=\"𝛿·1·2\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
+                         , "      <dataized meta=\"𝛿·1·2\" number=\"6.0\">40-18-00-00-00-00-00-00</dataized>"
                          , "    </dataize>"
                          , "    <bound meta=\"𝛿2·1\">𝛿·1·2</bound>"
                          , "    <minted symbol=\"𝜎1\">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>"
@@ -1975,7 +1975,7 @@ spec = do
                          , "<protocol>"
                          , "  <path>"
                          , "    <dataize at=\"Φ\">"
-                         , "      <delta meta=\"𝛿·0·1\">01-</delta>"
+                         , "      <dataized meta=\"𝛿·0·1\">01-</dataized>"
                          ]
 
         it "closes the '<protocol>' root with its msec" $
@@ -2010,7 +2010,7 @@ spec = do
             records <- readProtocol path
             filter (\line -> not (any (`isInfixOf` line) ["<applied ", "<morph ", "</morph>"])) (lines records)
               `shouldContain` [ "    <dataize at=\"Φ.a🌵0\">"
-                              , "      <delta meta=\"𝛿·1·1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
+                              , "      <dataized meta=\"𝛿·1·1\" number=\"5.0\">40-14-00-00-00-00-00-00</dataized>"
                               , "    </dataize>"
                               ]
 
@@ -2023,7 +2023,7 @@ spec = do
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<dataize at=\"Φ\">"
-                         , "  <delta meta=\"𝛿·0·1\">01-</delta>"
+                         , "  <dataized meta=\"𝛿·0·1\">01-</dataized>"
                          , "</dataize>"
                          ]
 
@@ -2048,7 +2048,7 @@ spec = do
                          , "          <applied meta=\"𝑛·1·1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·1</meta></applied>"
                          , "          <applied meta=\"𝑛·1·2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><datum name=\"φ\">40-14-00-00-00-00-00-00</datum></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿·1·1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
+                         , "        <dataized meta=\"𝛿·1·1\" number=\"5.0\">40-14-00-00-00-00-00-00</dataized>"
                          , "      </dataize>"
                          , "      <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"
                          , "      <dataize at=\"Φ.a🌵1\">"
@@ -2056,7 +2056,7 @@ spec = do
                          , "          <applied meta=\"𝑛·1·3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·3</meta></applied>"
                          , "          <applied meta=\"𝑛·1·4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><datum name=\"φ\">40-18-00-00-00-00-00-00</datum></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿·1·2\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
+                         , "        <dataized meta=\"𝛿·1·2\" number=\"6.0\">40-18-00-00-00-00-00-00</dataized>"
                          , "      </dataize>"
                          , "      <bound meta=\"𝛿2·1\">𝛿·1·2</bound>"
                          , "      <minted symbol=\"𝜎1\">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>"
@@ -2084,7 +2084,7 @@ spec = do
                          , "        <applied meta=\"𝑛·2·2\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·6</meta></applied>"
                          , "        <applied meta=\"𝑛·2·3\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.bytes\"><datum name=\"φ\">40-1C-00-00-00-00-00-00</datum></applied>"
                          , "      </morph>"
-                         , "      <delta meta=\"𝛿·2·2\" number=\"7.0\">40-1C-00-00-00-00-00-00</delta>"
+                         , "      <dataized meta=\"𝛿·2·2\" number=\"7.0\">40-1C-00-00-00-00-00-00</dataized>"
                          , "    </dataize>"
                          , "    <bound meta=\"𝛿2·2\">𝛿·2·2</bound>"
                          , "    <minted symbol=\"𝜎2\">𝜎1 40-1C-00-00-00-00-00-00</minted>"
@@ -2215,7 +2215,7 @@ spec = do
                          , "        <applied meta=\"𝑛·1·1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·1</meta></applied>"
                          , "        <applied meta=\"𝑛·1·2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><datum name=\"φ\">40-14-00-00-00-00-00-00</datum></applied>"
                          , "      </morph>"
-                         , "      <delta meta=\"𝛿·1·1\" number=\"5.0\">40-14-00-00-00-00-00-00</delta>"
+                         , "      <dataized meta=\"𝛿·1·1\" number=\"5.0\">40-14-00-00-00-00-00-00</dataized>"
                          , "    </dataize>"
                          , "    <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"
                          , "    <dataize at=\"Φ.a🌵1\">"
@@ -2229,7 +2229,7 @@ spec = do
                          , "            <applied meta=\"𝑛·2·1\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·3</meta></applied>"
                          , "            <applied meta=\"𝑛·2·2\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.bytes\"><datum name=\"φ\">40-18-00-00-00-00-00-00</datum></applied>"
                          , "          </morph>"
-                         , "          <delta meta=\"𝛿·2·1\" number=\"6.0\">40-18-00-00-00-00-00-00</delta>"
+                         , "          <dataized meta=\"𝛿·2·1\" number=\"6.0\">40-18-00-00-00-00-00-00</dataized>"
                          , "        </dataize>"
                          , "        <bound meta=\"𝛿1·2\">𝛿·2·1</bound>"
                          , "        <dataize at=\"Φ.a🌵3\">"
@@ -2237,7 +2237,7 @@ spec = do
                          , "            <applied meta=\"𝑛·2·3\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·5</meta></applied>"
                          , "            <applied meta=\"𝑛·2·4\" by=\"morph\" at=\"Φ.a🌵3\" of=\"Φ.bytes\"><datum name=\"φ\">40-1C-00-00-00-00-00-00</datum></applied>"
                          , "          </morph>"
-                         , "          <delta meta=\"𝛿·2·2\" number=\"7.0\">40-1C-00-00-00-00-00-00</delta>"
+                         , "          <dataized meta=\"𝛿·2·2\" number=\"7.0\">40-1C-00-00-00-00-00-00</dataized>"
                          , "        </dataize>"
                          , "        <bound meta=\"𝛿2·2\">𝛿·2·2</bound>"
                          , "        <minted symbol=\"𝜎1\">40-18-00-00-00-00-00-00 40-1C-00-00-00-00-00-00</minted>"
@@ -2284,7 +2284,7 @@ spec = do
                          , "          <applied meta=\"𝑛·1·1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·1</meta></applied>"
                          , "          <applied meta=\"𝑛·1·2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><datum name=\"φ\">40-00-00-00-00-00-00-00</datum></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿·1·1\" number=\"2.0\">40-00-00-00-00-00-00-00</delta>"
+                         , "        <dataized meta=\"𝛿·1·1\" number=\"2.0\">40-00-00-00-00-00-00-00</dataized>"
                          , "      </dataize>"
                          , "      <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"
                          , "      <dataize at=\"Φ.a🌵1\">"
@@ -2292,7 +2292,7 @@ spec = do
                          , "          <applied meta=\"𝑛·1·3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·3</meta></applied>"
                          , "          <applied meta=\"𝑛·1·4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><datum name=\"φ\">40-08-00-00-00-00-00-00</datum></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿·1·2\" number=\"3.0\">40-08-00-00-00-00-00-00</delta>"
+                         , "        <dataized meta=\"𝛿·1·2\" number=\"3.0\">40-08-00-00-00-00-00-00</dataized>"
                          , "      </dataize>"
                          , "      <bound meta=\"𝛿2·1\">𝛿·1·2</bound>"
                          , "      <minted symbol=\"𝜎1\">40-00-00-00-00-00-00-00 40-08-00-00-00-00-00-00</minted>"
@@ -2343,7 +2343,7 @@ spec = do
                          , "          <applied meta=\"𝑛·1·1\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·1</meta></applied>"
                          , "          <applied meta=\"𝑛·1·2\" by=\"morph\" at=\"Φ.a🌵0\" of=\"Φ.bytes\"><datum name=\"φ\">40-00-00-00-00-00-00-00</datum></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿·1·1\" number=\"2.0\">40-00-00-00-00-00-00-00</delta>"
+                         , "        <dataized meta=\"𝛿·1·1\" number=\"2.0\">40-00-00-00-00-00-00-00</dataized>"
                          , "      </dataize>"
                          , "      <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"
                          , "      <dataize at=\"Φ.a🌵1\">"
@@ -2351,7 +2351,7 @@ spec = do
                          , "          <applied meta=\"𝑛·1·3\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.number\"><meta name=\"φ\">𝑛·0·3</meta></applied>"
                          , "          <applied meta=\"𝑛·1·4\" by=\"morph\" at=\"Φ.a🌵1\" of=\"Φ.bytes\"><datum name=\"φ\">40-08-00-00-00-00-00-00</datum></applied>"
                          , "        </morph>"
-                         , "        <delta meta=\"𝛿·1·2\" number=\"3.0\">40-08-00-00-00-00-00-00</delta>"
+                         , "        <dataized meta=\"𝛿·1·2\" number=\"3.0\">40-08-00-00-00-00-00-00</dataized>"
                          , "      </dataize>"
                          , "      <bound meta=\"𝛿2·1\">𝛿·1·2</bound>"
                          , "      <minted symbol=\"𝜎1\">40-00-00-00-00-00-00-00 40-08-00-00-00-00-00-00</minted>"
@@ -2604,7 +2604,7 @@ spec = do
                        , "    <dataize at=\"Φ.a🌵0\">"
                        , "      <evaluate λ=\"L_cond\" by=\"dataize\" at=\"Φ.a🌵0\">"
                        , "        <dataize at=\"Φ.a🌵1\">"
-                       , "          <delta meta=\"𝛿·2·1\">01-</delta>"
+                       , "          <dataized meta=\"𝛿·2·1\">01-</dataized>"
                        , "        </dataize>"
                        , "        <bound meta=\"𝛿1·2\">𝛿·2·1</bound>"
                        , "        <minted symbol=\"𝜎1\">01-</minted>"
@@ -2617,14 +2617,14 @@ spec = do
                        , "    <forked side=\"left\">𝜎1</forked>"
                        , "    <answered meta=\"𝑛·1·1\">01-</answered>"
                        , "  </evaluate>"
-                       , "  <delta meta=\"𝛿·0·1\">01-</delta>"
+                       , "  <dataized meta=\"𝛿·0·1\">01-</dataized>"
                        , "</dataize>"
                        , "<dataize at=\"Φ.y\">"
                        , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
                        , "    <forked side=\"right\">𝜎1</forked>"
                        , "    <answered meta=\"𝑛·1·2\">02-</answered>"
                        , "  </evaluate>"
-                       , "  <delta meta=\"𝛿·0·2\">02-</delta>"
+                       , "  <dataized meta=\"𝛿·0·2\">02-</dataized>"
                        , "</dataize>"
                        ]
 
@@ -3023,7 +3023,7 @@ spec = do
                      , "    <forked side=\"left\">𝜎2</forked>"
                      , "    <answered meta=\"𝑛·1·2\">01-</answered>"
                      , "  </evaluate>"
-                     , "  <delta meta=\"𝛿·0·1\">01-</delta>"
+                     , "  <dataized meta=\"𝛿·0·1\">01-</dataized>"
                      , "</dataize>"
                      , "<dataize at=\"Φ.y\">"
                      , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
