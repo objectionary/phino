@@ -123,6 +123,7 @@ data Evaluation
   | EvData Int T.Text Expression (Either Int Bytes)
   | EvTerm Int T.Text Judgment Expression Expression
   | EvSymbolize Int T.Text Expression Expression
+  | EvStayed Int T.Text Expression Expression
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
   | EvApplied Int Judgment Expression Expression Expression
@@ -175,6 +176,7 @@ tier (EvSpent depth _ _ _) = depth
 tier (EvData depth _ _ _) = depth
 tier (EvTerm depth _ _ _ _) = depth
 tier (EvSymbolize depth _ _ _) = depth
+tier (EvStayed depth _ _ _) = depth
 tier (EvMinted depth _ _) = depth
 tier (EvDeferred depth _ _ _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
@@ -363,6 +365,11 @@ saveEval handle cursor printed printed' report = do
       (protocol', value) <- valued protocol naming term
       line <- commented' (printf "%s := %s" naming value) source
       pure (protocol', Just (indented depth line))
+    written (EvStayed depth spelling source term) protocol = do
+      let naming = labelled protocol spelling
+      (protocol', value) <- valued protocol naming term
+      line <- printf "%s := %s  # stay(%s)" naming value <$> salted source
+      pure (protocol', Just (indented depth line))
     written EvMinted{} protocol = pure (protocol, Nothing)
     written (EvDeferred depth symbol judgment copy call site) protocol = do
       form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call
@@ -400,7 +407,7 @@ saveEval handle cursor printed printed' report = do
           naming :: String
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- valued counted naming term
-      remarks <- mapM (fmap (printf "%s(%s)" (letter Morphing)) . salted) sides
+      remarks <- mapM sourced sides
       pure (protocol', Just (indented depth (remarked (printf "%s := %s" naming value) remarks)))
     written EvWorld{} protocol = pure (protocol, Nothing)
     spelt :: Either Int Bytes -> IO String
@@ -420,6 +427,9 @@ saveEval handle cursor printed printed' report = do
     commented line judgment operand = printf "%s  # %s(%s)" line (letter judgment) <$> salted operand
     commented' :: String -> Expression -> IO String
     commented' line source = printf "%s  # %s" line <$> salted source
+    sourced :: Expression -> IO String
+    sourced side@(ExMeta _) = salted side
+    sourced side = printf "%s(%s)" (letter Morphing) <$> salted side
     outer :: Int -> Protocol -> Protocol
     outer depth protocol = protocol{_open = dropWhile ((>= depth) . fst) protocol._open, _answered = dropWhile (\(level, _, _) -> level > depth) protocol._answered}
     labelled :: Protocol -> T.Text -> String
@@ -563,6 +573,7 @@ saveEvalXml handle cursor printed report = do
         bound = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling))
     elements (EvTerm depth spelling _ _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvSymbolize depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
+    elements (EvStayed depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvMinted depth symbol operands) nesting = do
       spelledOperands <- mapM spelled' operands
       placed depth nesting (pure (minted spelledOperands))

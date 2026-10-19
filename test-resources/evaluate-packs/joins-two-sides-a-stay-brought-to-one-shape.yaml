@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The left side reads the ρ of a copy, the way 'as-number' of EO reads its
+# 'data', so 𝕄 brings it to a number whose bytes carry the copy as an extra
+# '( ρ ↦ ⟦ … ⟧ )' tail. The right side is a number made of no object and has
+# no such tail. Both are numbers made of one symbol, yet the tail made the
+# fork split the run (#1967). A 'stay' line drops every ρ applied to a
+# dispatch, which 'stay' or 'skip' of normalization drops anyway once the
+# dispatch comes to a formation, so the two sides differ in their symbols
+# alone. The fork takes the metas the 'stay' lines bound as they are, joins
+# them into one term with a fresh symbol and does not split the run.
+# The protocol comments the line of '𝑛3', which dropped a tail, with
+# 'stay(𝑛1)', and the line of '𝑛4', which dropped nothing, with '𝑛2' alone.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    stay:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    fork:
+      on: 𝛿1
+      left: 𝑛3
+      right: 𝑛4
+location: 'Q.y'
+hide-rho: false
+input: '⟦ number ↦ ⟦ φ ↦ ∅ ⟧, bytes ↦ ⟦ φ ↦ ∅ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎3 ⟧, a ↦ ⟦ φ ↦ Φ.number( φ ↦ ⟦ ρ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ), x ↦ ∅ ⟧.ρ ) ⟧, b ↦ ⟦ φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: 'Φ.bytes( φ ↦ 𝜎4:λ ):φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎3:λ)  # 𝔻(ξ.c)
+      𝑛1·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ, ρ ↦ ⟦ ρ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), x ↦ ∅ ⟧ ) ):φ  # 𝕄(ξ.a)
+      𝑛2·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2:λ ) ):φ  # 𝕄(ξ.b)
+      𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
+      𝑛4·1 := 𝑛2·1  # 𝑛2
+      joined(𝜎4) := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
+      𝑛·1·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # 𝑛3, 𝑛4
+    𝑛·0·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) )

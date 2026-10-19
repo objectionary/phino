@@ -161,10 +161,15 @@ under `evaluate`, each firing through 𝔼 the term a `morph` meta or an earlier
 line is bound to and binding a meta of its own to the answer (`evaluated` of
 `Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
 formation with no λ and ⊥ as they are, and never fires its answer again, so
-another call takes another line. The lines of `evaluate` and `defer` are one
-list, `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas
-each line reads, keeping the order of the blocks where no meta decides, and
-refuses a line reading what nothing binds or what it binds itself (#1903). No
+another call takes another line. A `stay` line binds its meta to the term
+another meta is bound to with every `( ρ ↦ … )` applied to a dispatch dropped
+(`stayed` of `Lambdas.hs`, #1967), which `stay` or `skip` of normalization
+drops anyway; a line that dropped one writes `# stay(𝑛1)` to the text protocol
+(`EvStayed`) and the markup binds it as any other. The lines of `evaluate`,
+`defer` and `stay` are one list, `_lines` of `Lambda`, which `ordered` of
+`Lambdas.hs` sorts by the metas each line reads, keeping the order of the
+blocks where no meta decides, and refuses a line reading what nothing binds or
+what it binds itself (#1903). No
 two keys may match one λ name, whether or not either
 spells it: `Language.hs` reads each key as an automaton and looks for a name
 both accept, refusing a key beyond a regular language, such as a back
@@ -173,12 +178,17 @@ which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
 An entry ends in an `𝑛` or in a `fork` block (`Ending` of `Lambdas.hs`, #1938),
-never both, and a forking entry holds nothing beside `dataize`. The
-block names the condition under `on`, a bytes meta of `dataize`, and the two
-sides under `left` and `right`, paths from `$`. `forked` of `Evaluate.hs`
-first brings both sides down (`reached`): it morphs each where it stands in
-the universe through `insideUniverse`, so the protocol sites it as `Φ.a🌵N`,
-and defers it the way a `defer` line would (`postponing`). Two sides that are
+never both, and a forking entry holds nothing beside `dataize`, `morph` and
+`stay`. The block names the condition under `on`, a bytes meta of `dataize`,
+and the two sides under `left` and `right`, each a path from `$` or a meta
+`morph` or `stay` binds. `forked` of `Evaluate.hs` first brings both sides
+down (`reached`): it morphs a path where it stands in the universe through
+`insideUniverse`, so the protocol sites it as `Φ.a🌵N`, and defers it the way
+a `defer` line would (`postponing`), while it takes a meta as it is bound. In
+a forking entry a `morph` operand that throws binds nothing and keeps the
+failure by its meta (`Held` of `Evaluate.hs`), a `stay` line reading that meta
+keeps it by its own, and only the path taking a side reading it rethrows it.
+Two sides that are
 the same, or differ only in the symbols at their leaves, are one term:
 `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the firing
 writes `joined(…)` (`EvJoined`) per fresh symbol and answers the joined term

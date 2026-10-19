@@ -152,9 +152,9 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 `--max-steps` work on it unchanged. It may name any meta the entry bound,
 those of the two blocks below among them.
 
-An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`, `fork`
-and `𝑛`, and any other key, such as a misspelled `forkk`, refuses the whole
-file, so a typo never drops a block without a word.
+An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`, `stay`,
+`fork` and `𝑛`, and any other key, such as a misspelled `forkk`, refuses the
+whole file, so a typo never drops a block without a word.
 
 ### Firing what an operand came to
 
@@ -262,15 +262,19 @@ sides turn out to be one.
 
 `on` names a bytes meta the `dataize` block bound, the condition, and `left`
 and `right` are paths from `$`, read against the formation being fired the way
-an operand is. An entry with a `fork` block has no `𝑛`, since the side it takes
-is what it answers with, and no block beside `dataize`: an entry forks or it
-computes, never both. A block missing one of the three keys, holding another,
-or naming under `on` anything but a meta of `dataize` is refused when the file
-is read, and so is a side spelled with a meta.
+an operand is, or metas the `morph` block or a `stay` line bound, as described
+below. An entry with a `fork` block has no `𝑛`, since the side it takes is what
+it answers with, and no block beside `dataize`, `morph` and `stay`: an entry
+forks or it computes, never both. A block missing one of the three keys,
+holding another, or naming under `on` anything but a meta of `dataize` is
+refused when the file is read, and so is a side reading a meta inside a term,
+such as `𝑛1.x`, or naming a meta neither `morph` nor `stay` binds.
 
 Before it decides anything, a fork morphs both of its sides, each where it
 stands in the universe, under a block of its own, `𝕄(Φ.a🌵3):` for the left
-side and `𝕄(Φ.a🌵4):` for the right one. When the two come to the same term,
+side and `𝕄(Φ.a🌵4):` for the right one. A side that is a meta was morphed
+already, by the `morph` block, so the fork takes the term the meta is bound to
+as it is and morphs nothing again. When the two come to the same term,
 nothing depends on the condition: the fork decides nothing, opens no path and
 answers that term, and the line binding it is commented with both sides,
 `𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left), 𝕄(ξ.right)`. When the two differ in their
@@ -299,11 +303,16 @@ forked(𝔻(𝜎2:λ)) := left  # ξ.left
 The condition is spelled by what the `dataize` operand came down to, `𝔻(𝜎2:λ)`
 for a symbol and the bytes for a datum, and the comment is the side as the
 entry wrote it, with `$` read as `ξ`. The line binding the answer is commented
-with the side it took, `𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left)`. What the side fires
-stands beside the fork and not inside it, since the fork answered the side
-rather than reduced it. A side whose morph gets stuck or is cut cannot be
-compared with the other one, so the fork splits the run, and only the path
-taking that side gets stuck.
+with the side it took, `𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left)`, or with the meta alone,
+`# 𝑛3`, where the side is a meta, since the fork morphed nothing there. What
+the side fires stands beside the fork and not inside it, since the fork
+answered the side rather than reduced it. A side whose morph gets stuck or is
+cut cannot be compared with the other one, so the fork splits the run, and
+only the path taking that side gets stuck. A side that is a meta keeps this
+rule: in an entry that forks, an operand of `morph` that gets stuck or is cut
+binds its meta to nothing and throws nothing yet, a `stay` line reading that
+meta binds nothing either, and only the path taking the side that reads it
+gets stuck.
 
 Once the first path ends, the second one goes on from the fork with the right
 side, in the state the run was in at the fork: what came before the fork is
@@ -366,12 +375,66 @@ Without `--partial` the command fails there, with
 `No entry of --symbolic answers the λ function 'L_throw'`, the way one run
 does.
 
+### Dropping the ρ of a dispatch
+
+There is a sixth block, `stay`, and it reduces nothing. Each line of it takes
+the term another meta of the entry is bound to and binds an expression meta of
+its own to that term with every `( ρ ↦ … )` dropped that is applied to a
+dispatch:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.then
+    𝑛2: $.else
+  stay:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  fork:
+    on: 𝛿1
+    left: 𝑛3
+    right: 𝑛4
+```
+
+The right-hand side of a line names a meta bound by `morph` or by another line
+of the entry, and nothing else. Every position of the term is walked, the
+methods and the `ρ` of a formation among them, and `𝑒.𝜏( ρ ↦ 𝑒2 )` becomes
+`𝑒.𝜏`. So does a dispatch heading a chain of applications that bind no `ρ`:
+`𝑒.𝜏( φ ↦ 𝑒3 )( ρ ↦ 𝑒2 )` becomes `𝑒.𝜏( φ ↦ 𝑒3 )`. A `ρ` applied to anything
+else, such as a formation, stays.
+
+Dropping it changes no value. The `dot` rule answers a dispatch as
+`𝑛1( ρ ↦ ⟦…⟧ )`, and then `copy` fills a void `ρ` of the body, `stay` keeps a
+bound one and `skip` drops it where the body declares none. So once `𝑒.𝜏`
+comes to a formation, a later `( ρ ↦ 𝑒2 )` meets a `ρ` that is bound or not
+there, and `stay` or `skip` drops it. The block only drops it earlier, before
+the dispatch is reduced.
+
+This is how a fork brings two numbers to one shape. In EO `bytes.as-number`
+reads its `data` as `ρ`, so a branch computed through it comes to
+`Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1 )( ρ ↦ ⟦ … ⟧ ) )`, with the copy hung on the
+bytes as their `ρ`, while a branch made of no object comes to
+`Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2 ) )`. The fork compares the two as written,
+finds a shape apart, and splits the run; after `stay` they differ in their
+symbols alone, and the fork joins them. The protocol writes each line of the
+block. A line that dropped a `ρ` is commented `stay(…)` with the meta it took,
+so a reader sees that the term changed and what changed it, while a line that
+dropped nothing is commented with the meta alone:
+
+```text
+𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
+𝑛4·1 := 𝑛2·1  # 𝑛2
+joined(𝜎4) := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
+```
+
 ### The order of the lines
 
-The lines of `evaluate` and `defer` run in the order of the metas they read,
-not in the order of their blocks. A line runs once every meta it reads is
-bound, so this entry fires what `x` came to and then fires the answer, one
-more call, although the line doing so stands first:
+The lines of `evaluate`, `defer` and `stay` run in the order of the metas they
+read, not in the order of their blocks. A line runs once every meta it reads is
+bound, so this entry fires what `x` came to and then fires the answer, one more
+call, although the line doing so stands first:
 
 ```yaml
 - λ: L_twice
