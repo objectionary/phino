@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvForked, EvJoined, EvLooped, EvRun, EvStarted, EvStuck, EvStuckOn, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), Side (LeftSide, RightSide), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
-import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
+import Fixtures (readUtf8, recorded, recorded', recordedWhole, recordedWhole', recordedXml, recordedXml')
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
 import System.Directory
@@ -385,6 +385,92 @@ spec = do
       content <- readUtf8 path
       lines content `shouldSatisfy` elem "firings(5)"
 
+  describe "rewindEval" $ do
+    it "reopens the blocks the mark stood in before the first line after the rewind" $ do
+      (_, written) <- recorded' False $ \record rewind -> do
+        record (EvRun Dataization "Φ.ёж")
+        record (EvFiring 1 "L_ж" Dataization (ExDispatch ExRoot (AtLabel "ёж")))
+        restore <- rewind
+        record (EvDelta 2 (BtOne "1A"))
+        restore
+        record (EvDelta 2 (BtOne "2B"))
+      lines written `shouldBe` ["𝔻(Φ.ёж):", "  𝔼(L_ж):", "    𝛿·1·1 := 1A-", "𝔻(Φ.ёж):", "  𝔼(L_ж):", "    𝛿·1·2 := 2B-"]
+    it "writes nothing at the rewind before a line follows it" $ do
+      (_, written) <- recorded' False $ \record rewind -> do
+        record (EvRun Dataization "Φ.щ")
+        record (EvFiring 1 "L_щ" Dataization (ExDispatch ExRoot (AtLabel "щ")))
+        restore <- rewind
+        record (EvDelta 2 (BtOne "3C"))
+        restore
+      lines written `shouldBe` ["𝔻(Φ.щ):", "  𝔼(L_щ):", "    𝛿·1·1 := 3C-"]
+    it "reopens no block the mark stood in that the first line after the rewind leaves" $ do
+      (_, written) <- recorded' False $ \record rewind -> do
+        record (EvRun Dataization "Φ.ю")
+        record (EvFiring 1 "L_ю" Dataization (ExDispatch ExRoot (AtLabel "ю")))
+        record (EvFiring 2 "L_я" Dataization (ExDispatch ExRoot (AtLabel "я")))
+        record (EvDelta 3 (BtOne "4D"))
+        restore <- rewind
+        record (EvDelta 2 (BtOne "5E"))
+        restore
+        record (EvDelta 2 (BtOne "6F"))
+      drop 5 (lines written) `shouldBe` ["𝔻(Φ.ю):", "  𝔼(L_ю):", "    𝛿·1·2 := 6F-"]
+    it "spells an object the rewound path named in full after the rewind" $ do
+      (_, written) <- recorded' False $ \record rewind -> do
+        record (EvRun Morphing "Φ.ёж")
+        restore <- rewind
+        record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot)
+        restore
+        record (EvTerm 1 "𝑛1" Morphing (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]))
+      last (lines written) `shouldBe` "  𝑛1·0 := ⟦⟧:q  # 𝕄(ξ.z)"
+
+  describe "rewindEvalXml" $ do
+    it "reopens the elements the mark stood in before the first element after the rewind" $ do
+      (_, written) <- recordedXml' $ \record rewind -> do
+        record (EvRun Dataization "Φ.ёж")
+        record (EvFiring 1 "L_ж" Dataization (ExDispatch ExRoot (AtLabel "ёж")))
+        restore <- rewind
+        record (EvDelta 2 (BtOne "1A"))
+        restore
+        record (EvDelta 2 (BtOne "2B"))
+      lines written
+        `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                   , "<dataize at=\"Φ.ёж\">"
+                   , "  <evaluate λ=\"L_ж\" by=\"dataize\" at=\"Φ.ёж\">"
+                   , "    <delta meta=\"𝛿·1·1\">1A-</delta>"
+                   , "  </evaluate>"
+                   , "</dataize>"
+                   , "<dataize at=\"Φ.ёж\">"
+                   , "  <evaluate λ=\"L_ж\" by=\"dataize\" at=\"Φ.ёж\">"
+                   , "    <delta meta=\"𝛿·1·2\">2B-</delta>"
+                   , "  </evaluate>"
+                   , "</dataize>"
+                   ]
+    it "reopens no element the mark stood in that the first element after the rewind closes" $ do
+      (_, written) <- recordedXml' $ \record rewind -> do
+        record (EvRun Dataization "Φ.ю")
+        record (EvFiring 1 "L_ю" Dataization (ExDispatch ExRoot (AtLabel "ю")))
+        record (EvFiring 2 "L_я" Dataization (ExDispatch ExRoot (AtLabel "я")))
+        record (EvDelta 3 (BtOne "4D"))
+        restore <- rewind
+        record (EvDelta 2 (BtOne "5E"))
+        restore
+        record (EvDelta 2 (BtOne "6F"))
+      drop 9 (lines written)
+        `shouldBe` [ "<dataize at=\"Φ.ю\">"
+                   , "  <evaluate λ=\"L_ю\" by=\"dataize\" at=\"Φ.ю\">"
+                   , "    <delta meta=\"𝛿·1·2\">6F-</delta>"
+                   , "  </evaluate>"
+                   , "</dataize>"
+                   ]
+    it "closes the path it rewinds from before the path it reopens" $ do
+      (_, written) <- recordedWhole' $ \record rewind -> do
+        record (EvRun Dataization "Φ.щ")
+        restore <- rewind
+        record (EvDelta 1 (BtOne "3C"))
+        restore
+        record (EvDelta 1 (BtOne "4D"))
+      filter (isInfixOf "path>") (lines written) `shouldBe` ["  <path>", "  </path>", "  <path>", "  </path>"]
+
   describe "endEvalXml" $ do
     it "writes nothing once a run that never opened the protocol closes" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
@@ -398,7 +484,7 @@ spec = do
     it "closes every element still open before it writes any total" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_fires = 3, _closing = [(1, "evaluate"), (0, "morph"), (-1, "path"), (-2, "protocol")]}
+      cursor <- newIORef emptyNesting{_fires = 3, _closing = [(1, "evaluate", "<evaluate>", True), (0, "morph", "<morph>", True), (-1, "path", "<path>", True), (-2, "protocol", "<protocol>", True)]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path
@@ -407,7 +493,7 @@ spec = do
     it "names the firings of the run it closes" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_fires = 3, _closing = [(0, "morph"), (-1, "path"), (-2, "protocol")]}
+      cursor <- newIORef emptyNesting{_fires = 3, _closing = [(0, "morph", "<morph>", True), (-1, "path", "<path>", True), (-2, "protocol", "<protocol>", True)]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path
@@ -416,7 +502,7 @@ spec = do
     it "closes the document with '</protocol>' once every total is written" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol")]}
+      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol", "<protocol>", True)]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path
@@ -425,7 +511,7 @@ spec = do
     it "writes the msec before the firings it closes with" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol")]}
+      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol", "<protocol>", True)]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path
@@ -434,7 +520,7 @@ spec = do
     it "writes the fps after the firings it closes with" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol")]}
+      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol", "<protocol>", True)]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path

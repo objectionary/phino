@@ -6,11 +6,41 @@
 module ForksSpec (spec) where
 
 import AST
-import Forks (joined)
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Data.IORef (modifyIORef', newIORef, readIORef, writeIORef)
+import Deps (Side (..), dontRewindEval)
+import Forks (decide, explored, joined, straight)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 
 spec :: Spec
-spec =
+spec = do
+  describe "explored" $ do
+    it "runs what comes before a fork once for both of its paths" $ do
+      count <- newIORef (0 :: Int)
+      _ <- explored Nothing dontRewindEval (\forks -> modifyIORef' count (+ 1) >> decide forks (pure (pure ())) (Left 7))
+      readIORef count `shouldReturn` 1
+    it "takes the left side on the first path and the right side on the second" $
+      explored Nothing dontRewindEval (\forks -> decide forks (pure (pure ())) (Right (BtOne "1F"))) `shouldReturn` [LeftSide, RightSide]
+    it "opens no second path once --max-paths is spent" $
+      explored (Just 1) dontRewindEval (\forks -> decide forks (pure (pure ())) (Left 3)) `shouldReturn` [LeftSide]
+    it "takes the side a path took for a condition it meets again" $
+      explored Nothing dontRewindEval (\forks -> (,) <$> decide forks (pure (pure ())) (Left 5) <*> decide forks (pure (pure ())) (Left 5)) `shouldReturn` [(LeftSide, LeftSide), (RightSide, RightSide)]
+    it "takes the paths in the order their forks opened them" $
+      explored Nothing dontRewindEval (\forks -> (,) <$> decide forks (pure (pure ())) (Left 2) <*> decide forks (pure (pure ())) (Left 9))
+        `shouldReturn` [(LeftSide, LeftSide), (RightSide, LeftSide), (LeftSide, RightSide), (RightSide, RightSide)]
+    it "goes on with the second path from what the fork marked" $ do
+      cell <- newIORef (11 :: Int)
+      explored Nothing dontRewindEval (\forks -> decide forks (writeIORef cell <$> readIORef cell) (Left 4) >> readIORef cell <* writeIORef cell 23)
+        `shouldReturn` [11, 11]
+    it "rewinds the protocol to the fork before the second path goes on" $ do
+      trail <- newIORef []
+      _ <- explored Nothing (pure (modifyIORef' trail ("rewound" :))) (\forks -> decide forks (pure (pure ())) (Left 6) >>= \side -> modifyIORef' trail (show side :))
+      reverse <$> readIORef trail `shouldReturn` ["LeftSide", "rewound", "RightSide"]
+
+  describe "straight" $
+    it "takes the left side of a fork and opens no other path" $ do
+      forks <- straight
+      decide forks (pure (pure ())) (Left 8) `shouldReturn` LeftSide
+
   describe "joined" $ do
     let application :: [Int] -> Expression
         application idxs = ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "x") (ExFormation (map (\idx -> BiTau (AtLabel "k") (ExFormation [BiLambda (FnSymbol idx)])) idxs)))

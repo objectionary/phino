@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# A path carries the decisions of the forks it is to meet, one per fork, and
-# a fork the list reaches takes the side the list says (#1938). Both sides
-# come to a normal form through 𝕄 before the fork decides (#1954), and they
-# differ, so this path, told to take the right side, writes that side to the
-# protocol and answers what 'else' came to; nothing is left pending, since
-# the path it came from already took the other side.
+# A fork on a condition nobody decided splits the run where it stands
+# (#1938, #1960). Both sides come to a normal form through 𝕄 before the fork
+# decides (#1954), and they differ, so the first path takes 'then' and the
+# second one goes on from the fork with 'else', in the state the run was in
+# at the fork. What came before the fork is written once; the second path
+# opens with the blocks the fork stood in, names the side its prefix
+# morphed, and answers what 'else' came to with a symbol of its own.
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -27,7 +28,7 @@ symbolic: |
       left: $.then
       right: $.else
 location: 'Q.@'
-route: [right]
+paths: 2
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     bool(φ) ↦ ⟦ if ↦ ⟦ ρ ↦ ∅, then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧ ⟧,
@@ -35,7 +36,7 @@ input: >
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).φ ⟧
-result: '𝜎2:λ'
+result: '𝜎3:λ'
 protocol: |
   𝕄(Φ.φ):
     𝑛·0·1 := 5
@@ -70,22 +71,43 @@ protocol: |
       𝕄(Φ.a🌵4):
         𝑛·2·4 := 3
         𝑛·2·5 := 𝑛·2·4.plus( x ↦ 4 )
-      forked(𝔻(𝜎1:λ)) := right  # ξ.else
-      𝑛·2·6 := 𝑛·2·5  # 𝕄(ξ.else)
+      forked(𝔻(𝜎1:λ)) := left  # ξ.then
+      𝑛·2·6 := 𝑛·2·3  # 𝕄(ξ.then)
     𝔼(L_number_plus):
       𝔻(Φ.a🌵5):
         𝕄(Φ.a🌵5):
-          𝑛·3·1 := 3
-          𝑛·3·2 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )
-        𝛿·3·1 := 40-08-00-00-00-00-00-00  # 3.0
+          𝑛·3·1 := 1
+          𝑛·3·2 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+        𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
       𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵6):
         𝕄(Φ.a🌵6):
-          𝑛·3·3 := 4
-          𝑛·3·4 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )
-        𝛿·3·2 := 40-10-00-00-00-00-00-00  # 4.0
+          𝑛·3·3 := 2
+          𝑛·3·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
+        𝛿·3·2 := 40-00-00-00-00-00-00-00  # 2.0
       𝛿2·3 := 𝛿·3·2  # 𝔻(ξ.x)
       𝑛·3·5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
       𝕄(𝑛·3·5):
         𝑛·3·6 := Φ.number( φ ↦ 𝜎2:λ )
       𝑛·3·7 := 𝑛·3·6  # 𝕄(𝑛·3·5)
+  𝕄(Φ.φ):
+    𝔼(L_fork):
+      forked(𝔻(𝜎1:λ)) := right  # ξ.else
+      𝑛·2·7 := 𝑛·2·5  # 𝕄(ξ.else)
+    𝔼(L_number_plus):
+      𝔻(Φ.a🌵7):
+        𝕄(Φ.a🌵7):
+          𝑛·4·1 := 3
+          𝑛·4·2 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )
+        𝛿·4·1 := 40-08-00-00-00-00-00-00  # 3.0
+      𝛿1·4 := 𝛿·4·1  # 𝔻(ξ.ρ)
+      𝔻(Φ.a🌵8):
+        𝕄(Φ.a🌵8):
+          𝑛·4·3 := 4
+          𝑛·4·4 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )
+        𝛿·4·2 := 40-10-00-00-00-00-00-00  # 4.0
+      𝛿2·4 := 𝛿·4·2  # 𝔻(ξ.x)
+      𝑛·4·5 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
+      𝕄(𝑛·4·5):
+        𝑛·4·6 := Φ.number( φ ↦ 𝜎3:λ )
+      𝑛·4·7 := 𝑛·4·6  # 𝕄(𝑛·4·5)

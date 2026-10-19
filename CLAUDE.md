@@ -185,20 +185,26 @@ writes `joined(…)` (`EvJoined`) per fresh symbol and answers the joined term
 (`Joined` of `Answer`) with no decision, so the run splits nothing (#1954).
 Any other two sides, or a side whose morph threw, make `forked` ask `decide`
 of `Forks.hs` for the side, keyed by the value the condition came down to,
-the symbol or the bytes. An undecided condition takes the left side and
-queues the route to the right one as pending, and a decided one takes its
-side and opens nothing. The firing writes `forked(…)` (`EvForked`) with the
-condition and the side, and answers that side (`EvTaken`), or rethrows what
-its morph threw. `explored` of `Forks.hs` runs the command once per
-route, first with none and then every pending route in the order they were
-queued, until nothing is pending or `--max-paths` (`_maxPaths` of
-`CLI/Types.hs`) is spent, and the command prints a result per path. The text
-protocol opens a `𝔻(…):` or `𝕄(…):` heading per path and the markup a
-`<path>` element, and the metas, symbols and names keep counting across the
-paths. Beyond that every path is a run from the start: the runners make the
-memo of `plausible` inside `explored`, once per path, so a path never takes an
-answer another path made, and the protocol of every path holds every line of
-its own firings (#1958).
+the symbol or the bytes. A decided condition takes its side and opens
+nothing. An undecided one splits the run where it stands (#1960): `decide`
+captures the rest of the path, up to the prompt `explored` set, as a delimited
+continuation of GHC (`control0#`), goes on with the left side at once, and
+queues the same continuation with the right side. Before it does, it marks
+what the right side must find as it was at the fork: the decisions, the memo
+of `plausible` (`snapshot` of `Morph.hs`), and the protocol (`RewindEvalFunc`
+of `Deps.hs`, made by `rewindEval` and `rewindEvalXml`), which writes the
+blocks the fork stood in again before the first line of the new path. The
+metas, symbols and names keep counting across the paths, and the tally of
+`--max-firings` is shared by all of them, so what came before the fork is done
+and written once and a path never takes an answer another path made after it
+(#1958). Once `--max-paths` (`_maxPaths` of `CLI/Types.hs`) paths are open, an
+undecided condition takes the left side and captures nothing, so a run with
+one path pays nothing for it. The firing writes `forked(…)` (`EvForked`) with
+the condition and the side, and answers that side (`EvTaken`), or rethrows
+what its morph threw. `explored` of `Forks.hs` runs the queued paths in the
+order their forks opened them, and the command prints a result per path. The
+text protocol opens a `𝔻(…):` or `𝕄(…):` heading per path and the markup a
+`<path>` element.
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and

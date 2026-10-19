@@ -2115,10 +2115,9 @@ spec = do
                          , "</morph>"
                          , "<morph at=\"Φ.y\">"
                          , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <dataize meta=\"𝛿1·2\">𝜎1</dataize>"
                          , "    <forked side=\"right\">𝜎1</forked>"
-                         , "    <formed meta=\"𝑛·2·1\"><attr name=\"φ\">02-</attr></formed>"
-                         , "    <answer meta=\"𝑛·2·2\">𝑛·2·1</answer>"
+                         , "    <formed meta=\"𝑛·1·3\"><attr name=\"φ\">02-</attr></formed>"
+                         , "    <answer meta=\"𝑛·1·4\">𝑛·1·3</answer>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2545,14 +2544,77 @@ spec = do
           records <- readProtocol path
           filter (== "𝔻(Φ.y):") (lines records) `shouldBe` ["𝔻(Φ.y):", "𝔻(Φ.y):"]
 
-      it "fires on every path what an earlier path fired under plausible" $
-        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          withLambdasOf (fork <> T.pack "- λ: L_cond\n  dataize:\n    𝛿1: $.v\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \file ->
-            withStdin "⟦ cond ↦ ⟦ v ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_cond ⟧, y ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧" $
-              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.y", "--acyclic=plausible", "--protocol=" ++ path, "--quiet"] []
-          records <- readProtocol path
-          filter (isInfixOf "𝔻(ξ.v)") (lines records) `shouldSatisfy` ((== 2) . length)
+      describe "over a condition a firing before it minted" $ do
+        let recordedIn :: String -> [String] -> IO String
+            recordedIn template options =
+              withTempFile template $ \(path, stream) -> do
+                hClose stream
+                withLambdasOf (fork <> T.pack "- λ: L_cond\n  dataize:\n    𝛿1: $.v\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \file ->
+                  withStdin "⟦ cond ↦ ⟦ v ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_cond ⟧, y ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧" $
+                    testCLISucceeded (["dataize", "--symbolic=" ++ file, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) []
+                readProtocol path
+        it "fires what comes before the fork once for both of its paths" $ do
+          records <- recordedIn "protocolXXXXXX.txt" ["--acyclic=plausible"]
+          filter (isInfixOf "𝔻(ξ.v)") (lines records) `shouldSatisfy` ((== 1) . length)
+
+        it "forks both of its paths on the one symbol the run minted before the fork" $ do
+          records <- recordedIn "protocolXXXXXX.txt" []
+          filter (isInfixOf "forked(") (lines records) `shouldBe` ["    forked(𝔻(𝜎1:λ)) := left  # ξ.a", "    forked(𝔻(𝜎1:λ)) := right  # ξ.b"]
+
+        it "opens the second path of the text protocol at the fork, under the headings the fork stood in" $ do
+          records <- recordedIn "protocolXXXXXX.txt" []
+          lines records
+            `shouldBe` [ "𝔻(Φ.y):"
+                       , "  𝔼(L_fork):"
+                       , "    𝔻(Φ.a🌵0):"
+                       , "      𝔼(L_cond):"
+                       , "        𝔻(Φ.a🌵1):"
+                       , "          𝛿·2·1 := 01-"
+                       , "        𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.v)"
+                       , "        𝑛·2·1 := 𝜎1:λ  # 𝑛"
+                       , "        𝑛·2·2 := 𝜎1:λ  # 𝕄(𝑛·2·1)"
+                       , "    𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)"
+                       , "    forked(𝔻(𝜎1:λ)) := left  # ξ.a"
+                       , "    𝑛·1·1 := 01-:Δ  # 𝕄(ξ.a)"
+                       , "  𝛿·0·1 := 01-"
+                       , "𝔻(Φ.y):"
+                       , "  𝔼(L_fork):"
+                       , "    forked(𝔻(𝜎1:λ)) := right  # ξ.b"
+                       , "    𝑛·1·2 := 02-:Δ  # 𝕄(ξ.b)"
+                       , "  𝛿·0·2 := 02-"
+                       ]
+
+        it "opens the second path of the XML protocol at the fork, inside the elements the fork stood in" $ do
+          records <- recordedIn "protocolXXXXXX.xml" []
+          lines records
+            `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                       , "<dataize at=\"Φ.y\">"
+                       , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
+                       , "    <dataize at=\"Φ.a🌵0\">"
+                       , "      <evaluate λ=\"L_cond\" by=\"dataize\" at=\"Φ.a🌵0\">"
+                       , "        <dataize at=\"Φ.a🌵1\">"
+                       , "          <delta meta=\"𝛿·2·1\">01-</delta>"
+                       , "        </dataize>"
+                       , "        <bind meta=\"𝛿1·2\">𝛿·2·1</bind>"
+                       , "        <minted symbol=\"𝜎1\">01-</minted>"
+                       , "        <built meta=\"𝑛·2·1\">𝜎1</built>"
+                       , "        <answer meta=\"𝑛·2·2\">𝜎1</answer>"
+                       , "      </evaluate>"
+                       , "    </dataize>"
+                       , "    <dataize meta=\"𝛿1·1\">𝜎1</dataize>"
+                       , "    <forked side=\"left\">𝜎1</forked>"
+                       , "    <answer meta=\"𝑛·1·1\">01-</answer>"
+                       , "  </evaluate>"
+                       , "  <delta meta=\"𝛿·0·1\">01-</delta>"
+                       , "</dataize>"
+                       , "<dataize at=\"Φ.y\">"
+                       , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
+                       , "    <forked side=\"right\">𝜎1</forked>"
+                       , "    <answer meta=\"𝑛·1·2\">02-</answer>"
+                       , "  </evaluate>"
+                       , "  <delta meta=\"𝛿·0·2\">02-</delta>"
+                       , "</dataize>"
+                       ]
 
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
@@ -2950,20 +3012,15 @@ spec = do
                      , "</dataize>"
                      , "<dataize at=\"Φ.y\">"
                      , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
-                     , "    <dataize meta=\"𝛿1·2\">𝜎2</dataize>"
-                     , "    <morph at=\"Φ.a🌵5\">"
-                     , "      <applied meta=\"𝑛·2·1\" by=\"morph\" at=\"Φ.a🌵5\" of=\"Φ.step\"><attr name=\"tup\">Φ.items.tail</attr></applied>"
-                     , "    </morph>"
-                     , "    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵5.φ\" of=\"Φ.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"
                      , "    <forked side=\"right\">𝜎2</forked>"
-                     , "    <answer meta=\"𝑛·2·2\">𝜎4</answer>"
+                     , "    <answer meta=\"𝑛·1·3\">𝜎3</answer>"
                      , "  </evaluate>"
                      , "</dataize>"
                      ]
 
       it "names the object a deferred copy was made of through the formation its ρ holds" $ do
         records <- deferred [] "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.joined( items ↦ Φ.items.tail ).φ, λ ⤍ L_fork ⟧ ⟧"
-        records `shouldContain` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵5.φ\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"]
+        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.joined.step\"><with><attr name=\"tup\">𝜎1</attr></with></deferred>"]
 
       it "names an argument of a deferred copy that is no bare symbol by the element that formed it" $ do
         records <- deferred [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ ⟦ z ↦ Φ ⟧ ), λ ⤍ L_fork ⟧ ⟧"
@@ -2975,7 +3032,7 @@ spec = do
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
         records <- recordedWith (forking <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
-        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·2·3</attr></with></deferred>", "    <deferred symbol=\"𝜎6\" by=\"morph\" at=\"Φ.a🌵6.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·4·3</attr></with></deferred>"]
+        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.box\"><with><attr name=\"x\">𝜎1</attr><attr name=\"w\">𝑛·2·3</attr></with></deferred>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"

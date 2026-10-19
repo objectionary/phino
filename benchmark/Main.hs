@@ -16,7 +16,7 @@ import Data.String (fromString)
 import Data.Time.Clock
 import Dataize (reduction)
 import Deps (Acyclic (Plausible, Proven), Judgment (Morphing), dontSaveEval, dontSaveMade, dontSaveStep)
-import Forks (Forks, routed)
+import Forks (Forks, straight)
 import Encoding (Encoding (UNICODE))
 import Engine (Engine (_matching, _normal), building, stepOf, yaml)
 import Evaluate (evaluation)
@@ -196,7 +196,7 @@ main = do
     symbolic acyclic universe lambdas locator = do
       seedTaus universe
       memo <- memoized (Just acyclic)
-      forks <- routed [] =<< newIORef []
+      forks <- straight
       minted <- newIORef 0
       let ctx = symbolicCtx acyclic memo forks minted lambdas locator
       started universe ctx

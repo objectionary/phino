@@ -183,8 +183,8 @@ runDataize OptsDataize{..} = do
   minted <- newIORef 0
   linked <- engine
   outcomes <-
-    withEvalFunc _protocol printCtx $ \record ->
-      explored _maxPaths $ \forks -> do
+    withEvalFunc _protocol printCtx $ \record rewind ->
+      explored _maxPaths rewind $ \forks -> do
         memo <- memoized _acyclic
         let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo forks 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
         (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
@@ -263,8 +263,8 @@ runMorph OptsMorph{..} = do
   minted <- newIORef 0
   linked <- engine
   outcomes <-
-    withEvalFunc _protocol printCtx $ \record ->
-      explored _maxPaths $ \forks -> do
+    withEvalFunc _protocol printCtx $ \record rewind ->
+      explored _maxPaths rewind $ \forks -> do
         memo <- memoized _acyclic
         let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo forks 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
         (universe, aiming) <- aimed printCtx Morphing _inside expr ctx

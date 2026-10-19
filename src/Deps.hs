@@ -15,7 +15,7 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State.Strict (StateT, get, modify, put, runStateT)
 import Data.Bifunctor (bimap, first, second)
 import Data.Either (lefts, rights)
-import Data.IORef (IORef, readIORef, writeIORef)
+import Data.IORef (IORef, modifyIORef', readIORef, writeIORef)
 import Data.List (intercalate, sortOn)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
@@ -135,6 +135,8 @@ data Evaluation
 
 type SaveEvalFunc = Evaluation -> IO ()
 
+type RewindEvalFunc = IO (IO ())
+
 resited :: Expression -> Expression -> Evaluation -> Evaluation
 resited from to = record
   where
@@ -220,7 +222,7 @@ data Protocol = Protocol
   , _built :: Map.Map Int Int
   , _deltas :: Map.Map Int Int
   , _found :: Maybe (Bytes, String)
-  , _blocks :: [(Int, Maybe String, Bool)]
+  , _blocks :: [(Int, Maybe String, String, Bool)]
   , _answered :: [(Int, Expression, String)]
   }
 
@@ -230,7 +232,7 @@ emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty Map.
 data Nesting = Nesting
   { _fires :: Int
   , _openedAt :: [(Int, Int)]
-  , _closing :: [(Int, String)]
+  , _closing :: [(Int, String, String, Bool)]
   , _objects :: Named Expression
   , _numbered :: Map.Map Int Int
   , _datums :: Map.Map Int Int
@@ -260,12 +262,12 @@ saveEval handle cursor printed printed' report = do
     beside :: Evaluation -> Protocol -> Protocol
     beside EvStarted{} protocol = protocol
     beside EvMinted{} protocol = protocol
-    beside report' protocol = protocol{_blocks = dropWhile (\(level, _, _) -> level >= tier report') protocol._blocks}
+    beside report' protocol = protocol{_blocks = dropWhile (\(level, _, _, _) -> level >= tier report') protocol._blocks}
     headed :: (Protocol, Maybe String) -> (Protocol, [String])
     headed (protocol, Nothing) = (protocol, [])
     headed (protocol, Just line) =
-      ( protocol{_blocks = [(level, heading, True) | (level, heading, _) <- protocol._blocks]}
-      , [indented level (heading ++ ":") | (level, Just heading, False) <- reverse protocol._blocks] ++ lines line
+      ( protocol{_blocks = [(level, heading, opening, True) | (level, heading, opening, _) <- protocol._blocks]}
+      , [opening | (_, _, opening, False) <- reverse protocol._blocks] ++ lines line
       )
     render :: Expression -> IO String
     render term = do
@@ -282,7 +284,7 @@ saveEval handle cursor printed printed' report = do
       pure [said | innermost protocol /= Just said]
     innermost :: Protocol -> Maybe String
     innermost protocol = case protocol._blocks of
-      (_, heading, _) : _ -> heading
+      (_, heading, _, _) : _ -> heading
       [] -> Nothing
     remarked :: String -> [String] -> String
     remarked line [] = line
@@ -297,19 +299,19 @@ saveEval handle cursor printed printed' report = do
       logDebug (printf "Saved one line of the protocol: %s" (dropWhile (== ' ') line))
     written :: Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written (EvRun judgment locator) protocol =
-      pure (protocol{_begun = True, _blocks = [(0, Just heading, True)]}, Just (heading ++ ":"))
+      pure (protocol{_begun = True, _blocks = [(0, Just heading, heading ++ ":", True)]}, Just (heading ++ ":"))
       where
         heading :: String
         heading = printf "%s(%s)" (letter judgment) (T.unpack locator)
     written (EvFiring depth key judgment site) protocol = do
-      remarks <- context protocol judgment site
+      opening <- indented depth . remarked (printf "𝔼(%s):" (T.unpack key)) <$> context protocol judgment site
       pure
         ( protocol
             { _fired = firings
             , _open = (depth, firings) : protocol._open
-            , _blocks = (depth, Nothing, True) : protocol._blocks
+            , _blocks = (depth, Nothing, opening, True) : protocol._blocks
             }
-        , Just (indented depth (remarked (printf "𝔼(%s):" (T.unpack key)) remarks))
+        , Just opening
         )
       where
         firings :: Int
@@ -317,10 +319,10 @@ saveEval handle cursor printed printed' report = do
     written (EvStarted depth judgment site) protocol = do
       locator <- located protocol site
       let heading = printf "%s(%s)" (letter judgment) locator
-          inner = dropWhile (\(level, _, _) -> level > depth) protocol._blocks
+          inner = dropWhile (\(level, _, _, _) -> level > depth) protocol._blocks
       pure $ case inner of
-        (level, Just heading', _) : _ | level == depth && heading' == heading -> (protocol{_blocks = inner}, Nothing)
-        _ -> (protocol{_blocks = (depth, Just heading, False) : dropWhile (\(level, _, _) -> level >= depth) inner}, Nothing)
+        (level, Just heading', _, _) : _ | level == depth && heading' == heading -> (protocol{_blocks = inner}, Nothing)
+        _ -> (protocol{_blocks = (depth, Just heading, indented depth (heading ++ ":"), False) : dropWhile (\(level, _, _, _) -> level >= depth) inner}, Nothing)
     written (EvDelta depth bytes) protocol = do
       datum <- render (ExBytes bytes)
       let index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
@@ -440,6 +442,18 @@ endEval handle cursor began = do
     hPutStrLn handle (printf "firings(%d)" protocol._fired)
     hPutStrLn handle (printf "fps(%d)" (perSecond protocol._fired taken))
 
+rewindEval :: IORef Protocol -> RewindEvalFunc
+rewindEval cursor = do
+  marked <- readIORef cursor
+  pure $
+    modifyIORef' cursor $ \protocol ->
+      marked
+        { _fired = protocol._fired
+        , _counted = protocol._counted
+        , _deltas = protocol._deltas
+        , _blocks = [(level, heading, opening, False) | (level, heading, opening, _) <- marked._blocks]
+        }
+
 milliseconds :: Double -> Double -> Int
 milliseconds began now = round ((now - began) * 1000)
 
@@ -448,12 +462,19 @@ perSecond firings taken = round (fromIntegral firings * 1000 / fromIntegral (max
 
 saveEvalXml :: Handle -> IORef Nesting -> (Expression -> IO String) -> SaveEvalFunc
 saveEvalXml handle cursor printed report = do
-  written <- atomicModify cursor (flushed . beside report . outer (tier report) >=> opened')
+  written <- atomicModify cursor (flushed . beside report . outer (tier report) >=> opened' >=> reopened)
   mapM_ (hPutStrLn handle) written
   logDebug (printf "Saved %d line(s) of the XML protocol" (length written))
   where
     opened' :: (Nesting, [String]) -> IO (Nesting, [String])
     opened' (nesting, openings) = bimap (forgotten report) (openings ++) <$> elements report nesting
+    reopened :: (Nesting, [String]) -> IO (Nesting, [String])
+    reopened (nesting, []) = pure (nesting, [])
+    reopened (nesting, lines') =
+      pure
+        ( nesting{_closing = [(level, element, opening, True) | (level, element, opening, _) <- nesting._closing]}
+        , [opening | (_, _, opening, False) <- reverse nesting._closing] ++ lines'
+        )
     beside :: Evaluation -> Nesting -> Nesting
     beside EvStarted{} nesting = nesting
     beside report' nesting = nesting{_heads = dropWhile ((>= tier report') . fst) nesting._heads, _pending = dropWhile (\(level, _, _) -> level >= tier report') nesting._pending}
@@ -464,7 +485,7 @@ saveEvalXml handle cursor printed report = do
     pended :: (Nesting, [String]) -> (Int, Judgment, Expression) -> IO (Nesting, [String])
     pended (nesting, openings) (level, judgment, site) = do
       (nesting', lines') <- staged level nesting (printf "<%s at=\"%s\">" (opened judgment) . escapeXML <$> located level site)
-      pure (nesting'{_closing = (level, opened judgment) : nesting'._closing}, openings ++ lines')
+      pure (nesting'{_closing = (level, opened judgment, last lines', True) : nesting'._closing}, openings ++ lines')
     silent :: Evaluation -> Bool
     silent EvStarted{} = True
     silent EvWorld{} = True
@@ -484,17 +505,21 @@ saveEvalXml handle cursor printed report = do
     elements :: Evaluation -> Nesting -> IO (Nesting, [String])
     elements (EvRun judgment locator) nesting =
       pure
-        ( nesting{_closing = (0, opened judgment) : (-1, "path") : (if null nesting._closing then [(-2, "protocol")] else kept)}
+        ( nesting{_closing = (0, opened judgment, run, True) : (-1, "path", path, True) : (if null nesting._closing then [(-2, "protocol", "<protocol>", True)] else kept)}
         , ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>" | null nesting._closing]
             ++ ["<protocol>" | null nesting._closing]
             ++ closers
-            ++ [indentedXml (-1) "<path>", indentedXml 0 (printf "<%s at=\"%s\">" (opened judgment) (quoted locator))]
+            ++ [path, run]
         )
       where
         (kept, closers) = closed (-1) nesting._closing
+        path :: String
+        path = indentedXml (-1) "<path>"
+        run :: String
+        run = indentedXml 0 (printf "<%s at=\"%s\">" (opened judgment) (quoted locator))
     elements (EvFiring depth key judgment site) nesting = do
       (fired, lines') <- placed depth nesting (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) . escapeXML <$> located depth site)
-      pure (fired{_fires = fired._fires + 1, _openedAt = (depth, fired._fires + 1) : fired._openedAt, _closing = (depth, "evaluate") : fired._closing}, lines')
+      pure (fired{_fires = fired._fires + 1, _openedAt = (depth, fired._fires + 1) : fired._openedAt, _closing = (depth, "evaluate", last lines', True) : fired._closing}, lines')
     elements (EvStarted depth judgment site) nesting =
       pure $ case inner of
         (level, opening) : _ | level == depth && opening == (judgment, site) -> (nesting{_heads = inner, _pending = pending}, [])
@@ -808,10 +833,26 @@ endEvalXml handle cursor began = do
     hPutStrLn handle "</protocol>"
   writeIORef cursor nesting{_closing = []}
 
-closed :: Int -> [(Int, String)] -> ([(Int, String)], [String])
-closed depth open = (kept, [indentedXml level (printf "</%s>" element) | (level, element) <- shut])
+rewindEvalXml :: Handle -> IORef Nesting -> RewindEvalFunc
+rewindEvalXml handle cursor = do
+  marked <- readIORef cursor
+  pure $ do
+    nesting <- readIORef cursor
+    mapM_ (hPutStrLn handle) (snd (closed (-1) nesting._closing))
+    writeIORef
+      cursor
+      marked
+        { _fires = nesting._fires
+        , _numbered = nesting._numbered
+        , _datums = nesting._datums
+        , _opaque = nesting._opaque
+        , _closing = [(level, element, opening, level < -1) | (level, element, opening, _) <- marked._closing]
+        }
+
+closed :: Int -> [(Int, String, String, Bool)] -> ([(Int, String, String, Bool)], [String])
+closed depth open = (kept, [indentedXml level (printf "</%s>" element) | (level, element, _, True) <- shut])
   where
-    (shut, kept) = span ((>= depth) . fst) open
+    (shut, kept) = span (\(level, _, _, _) -> level >= depth) open
 
 indented :: Int -> String -> String
 indented depth line = replicate (2 * depth) ' ' ++ line
@@ -841,6 +882,9 @@ alias firing index = ExMeta (T.pack (printf "n·%d·%d" firing index))
 
 dontSaveEval :: SaveEvalFunc
 dontSaveEval _ = pure ()
+
+dontRewindEval :: RewindEvalFunc
+dontRewindEval = pure (pure ())
 
 data Progress = Progress
   { _began :: Double

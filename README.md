@@ -287,10 +287,10 @@ joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
 A pair met twice gets the same fresh symbol both times. Only sides that differ
 in anything else, a datum, a λ name or the shape of a term, split the run.
 
-A run carries a list of decisions, one per condition it has met, empty when
-the run starts. When a firing reaches a fork whose condition nobody decided
-and whose sides differ, the run takes the left side, says so in the protocol
-and marks the right side pending:
+A run keeps a decision per condition it has met, none when the run starts.
+When a firing reaches a fork whose condition nobody decided and whose sides
+differ, the run splits there into two paths. The first path takes the left
+side and says so in the protocol:
 
 ```text
 forked(𝔻(𝜎2:λ)) := left  # ξ.left
@@ -305,11 +305,13 @@ rather than reduced it. A side whose morph gets stuck or is cut cannot be
 compared with the other one, so the fork splits the run, and only the path
 taking that side gets stuck.
 
-Once the run ends, `phino` runs the program again for every pending list of
-decisions, taking the sides the list names and forking anew where it meets a
-condition the list says nothing about, until nothing is pending. Every run is
-a path, and every path prints a result of its own, one line each, in the order
-the paths were opened. A path that gets stuck or is cut is parked by
+Once the first path ends, the second one goes on from the fork with the right
+side, in the state the run was in at the fork: what came before the fork is
+done once for both paths, and nothing the first path did after the fork is
+seen by the second. A path that meets another fork nobody decided splits
+again, and the paths run in the order their forks opened them. Every path
+prints a result of its own, one line each, in that order. A path that gets
+stuck or is cut is parked by
 `--partial` the way one run is, and fails the command without it. The
 `--max-paths` option bounds how many paths the command runs, and there is no
 limit unless it is given: a program forking inside a recursion opens a path
@@ -317,14 +319,14 @@ per round, so `--max-paths=8` ends such a run after eight paths, whatever else
 bounds it. The option is refused with zero.
 
 A condition decided once on a path is decided for that path: a fork on a
-condition the list already names takes the side it names, writes the same
+condition the path already decided takes the same side, writes the same
 `forked(…)` line and opens no path, so a program forking twice on one
 condition runs two paths and not four. A decision is kept by the value the
 condition came down to and not by the firing that made it, so two forks on one
-symbol are one decision too. Every path is a run from the start, and nothing
-one path worked out is reused by another: the memo of `--acyclic=plausible` is
-made anew for every path, so a firing an earlier path made is made again on a
-later one, and the protocol of that path writes every line of it.
+symbol are one decision too. The second path goes on with the memo of
+`--acyclic=plausible` as it was at the fork, so a firing the first path made
+after the fork is made again on the second, and the protocol of that path
+writes every line of it, while a firing made before the fork is made once.
 
 A side may raise. EO raises with an object, a copy of
 `⟦ message ↦ ∅, λ ⤍ L_throw ⟧`, whose λ function the file leaves out on
@@ -826,65 +828,38 @@ $ cat fork.txt
     𝑛·5·6 := 𝑛·5·5  # 𝕄(𝑛·5·4)
 𝔻(Φ.demo.a):
   𝕄(Φ.demo.a):
-    𝑛·0·7 := Φ.foo( x ↦ 𝑛·4·1 )
-    𝑛·0·8 := Φ.number( φ ↦ 𝜎1:λ )
-    𝑛·0·9 := 𝑛·0·8.gt( x ↦ 𝑛·1·2 )
-    𝔼(L_gt):
+    𝔼(L_fork):
+      forked(𝔻(𝜎2:λ)) := right  # ξ.else
+      𝑛·2·6 := 𝑛·2·4  # 𝕄(ξ.else)
+    𝔼(L_plus):
       𝔻(Φ.a🌵11):
         𝕄(Φ.a🌵11):
           𝑛·6·1 := Φ.number( φ ↦ 𝜎1:λ )
       𝛿1·6 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵12):
         𝕄(Φ.a🌵12):
-          𝑛·6·2 := Φ.number( φ ↦ 𝑛·1·3 )
-          𝑛·6·3 := Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ )
-        𝛿·6·1 := 00-00-00-00-00-00-00-00  # 0.0
-      𝛿2·6 := 𝛿·6·1  # 𝔻(ξ.x)
-      𝑛·6·4 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎6:λ ⟧ )  # 𝑛
-      𝕄(𝑛·6·4):
-        𝑛·6·5 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎6:λ ⟧ )
-      𝑛·6·6 := 𝑛·6·5  # 𝕄(𝑛·6·4)
-    𝑛·0·10 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎6:λ ⟧( then ↦ 𝑛·6·1.plus( 𝑛·6·1.plus( 𝑛·4·2 ) ) )
-    𝑛·0·11 := 𝑛·0·10( else ↦ 𝑛·6·1.plus( 𝑛·6·1 ) )
-    𝔼(L_fork):
-      𝛿1·7 := 𝔻(𝜎6:λ)  # 𝔻(ξ.φ)
-      𝕄(Φ.a🌵14):
-        𝑛·7·1 := Φ.number( φ ↦ 𝜎1:λ )
-        𝑛·7·2 := 𝑛·7·1.plus( x ↦ 𝑛·7·1.plus( 𝑛·4·2 ) )
-      𝕄(Φ.a🌵15):
-        𝑛·7·3 := Φ.number( φ ↦ 𝜎1:λ )
-        𝑛·7·4 := 𝑛·7·3.plus( x ↦ 𝑛·7·3 )
-      forked(𝔻(𝜎6:λ)) := right  # ξ.else
-      𝑛·7·5 := 𝑛·7·4  # 𝕄(ξ.else)
-    𝔼(L_plus):
-      𝔻(Φ.a🌵16):
-        𝕄(Φ.a🌵16):
-          𝑛·8·1 := Φ.number( φ ↦ 𝜎1:λ )
-      𝛿1·8 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵17):
-        𝕄(Φ.a🌵17):
-          𝑛·8·2 := Φ.number( φ ↦ 𝜎1:λ )
-      𝛿2·8 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-      𝑛·8·3 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
-      𝕄(𝑛·8·3):
-        𝑛·8·4 := Φ.number( φ ↦ 𝜎7:λ )
-      𝑛·8·5 := 𝑛·8·4  # 𝕄(𝑛·8·3)
-    𝑛·0·12 := 𝑛·8·4.plus( x ↦ 𝑛·5·2 )
+          𝑛·6·2 := Φ.number( φ ↦ 𝜎1:λ )
+      𝛿2·6 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+      𝑛·6·3 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
+      𝕄(𝑛·6·3):
+        𝑛·6·4 := Φ.number( φ ↦ 𝜎6:λ )
+      𝑛·6·5 := 𝑛·6·4  # 𝕄(𝑛·6·3)
+    𝑛·0·7 := 𝑛·6·4.plus( x ↦ 5 )
   𝔼(L_plus):
-    𝔻(Φ.a🌵18):
-      𝕄(Φ.a🌵18):
-        𝑛·9·1 := Φ.number( φ ↦ 𝜎7:λ )
-    𝛿1·9 := 𝔻(𝜎7:λ)  # 𝔻(ξ.ρ)
-    𝔻(Φ.a🌵19):
-      𝕄(Φ.a🌵19):
-        𝑛·9·2 := Φ.number( φ ↦ 𝑛·5·3 )
-        𝑛·9·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-      𝛿·9·1 := 40-14-00-00-00-00-00-00  # 5.0
-    𝛿2·9 := 𝛿·9·1  # 𝔻(ξ.x)
-    𝑛·9·4 := Φ.number( φ ↦ 𝜎8:λ )  # 𝑛
-    𝕄(𝑛·9·4):
-      𝑛·9·5 := Φ.number( φ ↦ 𝜎8:λ )
-    𝑛·9·6 := 𝑛·9·5  # 𝕄(𝑛·9·4)
+    𝔻(Φ.a🌵13):
+      𝕄(Φ.a🌵13):
+        𝑛·7·1 := Φ.number( φ ↦ 𝜎6:λ )
+    𝛿1·7 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
+    𝔻(Φ.a🌵14):
+      𝕄(Φ.a🌵14):
+        𝑛·7·2 := 5
+        𝑛·7·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+      𝛿·7·1 := 40-14-00-00-00-00-00-00  # 5.0
+    𝛿2·7 := 𝛿·7·1  # 𝔻(ξ.x)
+    𝑛·7·4 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
+    𝕄(𝑛·7·4):
+      𝑛·7·5 := Φ.number( φ ↦ 𝜎7:λ )
+    𝑛·7·6 := 𝑛·7·5  # 𝕄(𝑛·7·4)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -896,18 +871,18 @@ decided `x.gt( 0 )`, the first path takes `then` and says so on its
 `forked(…)` line. `𝜎3` is minted by the `plus( 1 )` inside the branch and consumed
 by the `plus` around it as `𝔻(𝜎3:λ)`, and `𝜎4` is what the branch came to,
 which the `plus( 5 )` standing after the fork reads as `𝔻(𝜎4:λ)`. The second
-heading, `𝔻(Φ.demo.a):`, opens the second path, which runs the program again
-under the decision the first one left pending: it reaches the same fork, over
-a fresh `𝜎6`, takes `else` and reads `𝔻(𝜎7:λ)` after it. A reader who knows
+heading, `𝔻(Φ.demo.a):`, opens the second path, which starts at the fork and
+not at the top of the program: it reopens the blocks the fork stood in, takes
+`else` over the same `𝜎2`, and reads `𝔻(𝜎6:λ)` after it. A reader who knows
 the entry knows that `𝛿1` is what decides between the two paths and that the
 first of them belongs to `then`. Nothing is assigned to a `𝜎`, it being the
 name of a λ function, so the decision stands on a line of its own, commented
 with the side as the entry spells it.
 
-The metas and the symbols keep counting across the paths, and a name given on
-the first path names the same term on the second, which is why the second
-opens with `𝑛·0·7 := Φ.foo( x ↦ 𝑛·4·1 )`: the argument is the very object the
-first path named `𝑛·4·1`. Were the fork to join two branches this different
+The metas and the symbols keep counting across the paths, and a name given
+before the fork names the same term on both paths, which is why the second
+answers `𝑛·2·6 := 𝑛·2·4`: the branch it takes is the very term the fork morphed
+before it decided. Were the fork to join two branches this different
 into one term, `foo` would read as a program that computes a condition,
 computes both branches and then makes up a value neither of them has.
 
@@ -979,7 +954,9 @@ The root is `<protocol>`, holding a `<path>` per path the command ran, one
 when nothing forks, and the run of a path stands inside its element, named
 after the judgment it ran — `<dataize>` for a 𝔻, `<morph>` for a 𝕄 — with `at`
 naming the term it was aimed at, which is what the text format opens with as
-`𝔻(Φ)`, once per path. After the paths the root holds `<msec>`, `<firings>`
+`𝔻(Φ)`, once per path. A path after the first starts at the fork that opened
+it, inside the elements the fork stood in, which it opens again. After the
+paths the root holds `<msec>`, `<firings>`
 and `<fps>`: how long the command took, how many λ functions it fired, and how
 many it fired per second. The text format ends with the same three as
 `msec(…)`, `firings(…)` and `fps(…)`.
@@ -1345,9 +1322,10 @@ $ phino morph --symbolic=split.yaml --locator=Q.x --max-firings=64 split.phi
 A fork of `--symbolic` whose sides differ opens a path per side, and a program
 forking inside a recursion opens a path per round, so a command may run more
 paths than its caller can wait for. The `--max-paths` option bounds how many
-paths the command runs: once that many have ended, the sides still pending are
-never run and the command prints the results it has. There is no limit unless
-the option is given, and the option is refused with zero.
+paths the command runs: once that many are open, a fork nobody decided takes
+its left side and opens no path, and the command prints the results it has.
+There is no limit unless the option is given, and the option is refused with
+zero.
 
 Both budgets count work, so a run inside both of them may still take longer
 than its caller can wait, and a caller that kills it gets a protocol nobody
