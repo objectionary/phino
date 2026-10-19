@@ -1064,7 +1064,7 @@ $ cat atoms.xml
         <morph at="𝑛·1·6">
           <applied meta="𝑛·1·7" by="morph" at="𝑛·1·6" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
         </morph>
-        <answer meta="𝑛·1·8">𝑛·1·7</answer>
+        <answered meta="𝑛·1·8">𝑛·1·7</answered>
       </evaluate>
       <manufactured meta="𝛿·0·1">𝜎1</manufactured>
     </dataize>
@@ -1112,7 +1112,7 @@ standing for it, `𝜎2` where the text format writes the formation `𝜎2:λ`. 
 the text format writes the whole line as `𝛿1·2 := 𝔻(𝜎2:λ)`. The name of the
 element is what tells a manufactured datum from data, the way `𝔻(…)` does in
 the text format, so a reader never looks at the text to tell the two apart.
-`<answer>` holds the name of the term the firing answered with, named the same
+`<answered>` holds the name of the term the firing answered with, named the same
 way by its own `meta`, and `<built>` before it holds the name of the term the
 entry wrote, the one 𝕄 made that answer of: two elements rather than two
 attributes of one, for the same reason `<manufactured>` is no `<delta>`.
@@ -1120,7 +1120,7 @@ attributes of one, for the same reason `<manufactured>` is no `<delta>`.
 `<applied meta="𝑛·1·7" by="morph" at="𝑛·1·6" of="Φ.number">` is an object an
 application made, which the text format writes as `𝑛·1·6 := …` in the block
 `𝕄(𝑛·1·5):`: `meta` names the object, counted with the `<built>` and the
-`<answer>` of the firing it stands in, `by` and `at` name the judgment that
+`<answered>` of the firing it stands in, `by` and `at` name the judgment that
 normalized and the site it stood at, and `of` names the object applied. The
 argument stands in an element named after the kind of its value, here a
 `<symbol>`, with `name` naming the attribute it fills and the text holding the
@@ -1128,9 +1128,9 @@ value. An application nothing reduced gets an `<applied>` too, with no `by`
 and no `at`, right before the element that holds it:
 `<applied meta="𝑛·0·1" of="Φ.bytes">` is `Φ.bytes( 40-14-… )`, the argument of
 the `Φ.number` that `𝑛·0·2` applies. A later element holding an object holds
-its name instead, so `<answer meta="𝑛·1·8">𝑛·1·7</answer>` says the firing
-answered with it and `<morph at="𝑛·1·6">` that 𝕄 got into what the entry
-built.
+its name instead, so `<answered meta="𝑛·1·8">𝑛·1·7</answered>` says the
+firing answered with it and `<morph at="𝑛·1·6">` that 𝕄 got into what the
+entry built.
 
 The markup is for a program, which never has to parse a term of 𝜑-calculus to
 read it. Every value the markup holds, in an attribute or as the text of an
@@ -1165,7 +1165,7 @@ the text format writes as `forked(𝔻(𝜎2:λ)) := left`: the side stands in
 `side` and the condition is the text, the symbol or the datum the operand came
 down to. It takes no `meta`, since the decision binds nothing, and the two
 `<morph>` elements before it are the sides being morphed where they stand in
-the universe; the `<answer>` of the firing follows it. The path the other side
+the universe; the `<answered>` of the firing follows it. The path the other side
 opens is the next `<path>` of the root, which starts the run over and writes
 the same element with `side="right"`. A fork that joins its two sides writes
 `<joined symbol="𝜎5" left="𝜎3" right="𝜎4">𝜎2</joined>` instead, one element
@@ -1248,7 +1248,7 @@ $ cat atoms.xml
           <morph at="𝑛·1·6">
             <applied meta="𝑛·1·7" by="morph" at="𝑛·1·6" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
           </morph>
-          <answer meta="𝑛·1·8">𝑛·1·7</answer>
+          <answered meta="𝑛·1·8">𝑛·1·7</answered>
         </evaluate>
       </morph>
       <unanswered λ="L_number_nope" by="dataize">𝑛·1·7.nope</unanswered>
