@@ -107,12 +107,16 @@ instance FromJSON Comparable where
   parseJSON (Number num)
     | isInteger num && ((round num :: Integer) < toInteger (minBound :: Int) || (round num :: Integer) > toInteger (maxBound :: Int)) =
         fail (printf "The literal %s does not fit into Int" (show num))
-  parseJSON v =
-    asum
+  parseJSON v@(Number _) = CmpNum <$> parseJSON v
+  parseJSON v@(Object _) = CmpNum <$> parseJSON v
+  parseJSON v@(String _) =
+    foldr1
+      (<|>)
       [ CmpAttr <$> parseJSON v
       , CmpNum <$> parseJSON v
       , CmpExpr <$> parseJSON v
       ]
+  parseJSON _ = fail "An argument of 'eq' or 'gt' is a number, an attribute, an expression, or an object of 'length' or 'domain'"
 
 instance FromJSON Condition where
   parseJSON = withObject "Condition" parseCondition
@@ -173,13 +177,15 @@ parseCondition v = do
     several val = parseJSON val <|> (pure <$> parseJSON val)
 
 instance FromJSON ExtraArgument where
-  parseJSON v =
-    asum
+  parseJSON v@(String _) =
+    foldr1
+      (<|>)
       [ ArgAttribute <$> parseJSON v
       , ArgBinding <$> parseJSON v
-      , ArgExpression <$> parseJSON v
       , ArgBytes <$> parseJSON v
+      , ArgExpression <$> parseJSON v
       ]
+  parseJSON _ = fail "An argument of a 'where' function is a string holding an attribute, a binding, bytes or an expression"
 
 instance FromJSON Extra where
   parseJSON =
