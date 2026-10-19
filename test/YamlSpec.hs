@@ -273,6 +273,22 @@ spec = do
       ]
       (\(desc, yaml, message) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` failsWith message))
 
+  describe "tells why an argument of a condition does not parse" $
+    forM_
+      [ ("bytes missing a dash in 'eq'", "eq: ['𝑒1', '⟦ Δ ⤍ 01 ⟧']", "expecting '-'")
+      , ("bytes missing a dash in 'gt'", "gt: ['⟦ Δ ⤍ 7F ⟧', 3]", "expecting '-'")
+      , ("a list in 'gt'", "gt: [[1], 2]", "is a number, an attribute, an expression, or an object of 'length' or 'domain'")
+      , ("a boolean in 'eq'", "eq: [true, 'x']", "is a number, an attribute, an expression, or an object of 'length' or 'domain'")
+      ]
+      (\(desc, yaml, message) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` failsWith message))
+
+  describe "tells why an argument of a 'where' function does not parse" $
+    forM_
+      [ ("bytes missing a dash", "args: ['⟦ Δ ⤍ 0C ⟧']", "expecting '-'")
+      , ("a number", "args: [42]", "is a string holding an attribute, a binding, bytes or an expression")
+      ]
+      (\(desc, args, message) -> it desc ((decodeYaml' ("name: w\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒2 ⟧'\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    " ++ args) :: Either Yaml.ParseException Rule) `shouldSatisfy` failsWith message))
+
   describe "rejects a malformed premise" $
     forM_
       [ ("fails when neither 'n-result' nor 'd-result' is present", "morph: [𝑛, 𝑒]")
