@@ -1066,6 +1066,7 @@ $ cat atoms.xml
         </morph>
         <answer meta="𝑛·1·8">𝑛·1·7</answer>
       </evaluate>
+      <manufactured meta="𝛿·0·1">𝜎1</manufactured>
     </dataize>
   </path>
 </protocol>
@@ -1102,18 +1103,19 @@ format writes as the comment of its line.
 `<bind>` is one meta the firing bound, `meta` naming it the same way the text
 format names it, counter and all, and the element holding the value it took:
 the name of the term where the operand was reduced with 𝕄, the datum itself
-where a `dataize` operand came down to data. `<dataize>` inside a firing is the
-other thing a `dataize` operand may come to, the datum manufactured for an
-unknown, and holds the symbol of that unknown rather than the 42 standing for
-it, `𝜎2` where the text format writes the formation `𝜎2:λ`. It carries `meta`
-where the run carries `at`, the same difference the text format draws between
-`𝔻(Φ)` at the top and `𝛿1·2 := 𝔻(…)` in a block. The name of the element is
-what tells a manufactured datum from data, the way `𝔻(…)` does in the text
-format, so nothing has to be read off the presence of an attribute. `<answer>`
-holds the name of the term the firing answered with, named the same way by its
-own `meta`, and `<built>` before it holds the name of the term the entry wrote,
-the one 𝕄 made that answer of: two elements rather than two attributes of one,
-for the same reason `<dataize>` is no `<bind>`.
+where a `dataize` operand came down to data. `<manufactured>` is the other
+thing a dataization may come to, the datum manufactured for an unknown. It
+closes the `<dataize>` element the way `<delta>` does, `meta` naming it with
+the same counter, and holds the symbol of that unknown rather than the 42
+standing for it, `𝜎2` where the text format writes the formation `𝜎2:λ`. The
+`<bind>` after the element holds that name, as it does after a `<delta>`, while
+the text format writes the whole line as `𝛿1·2 := 𝔻(𝜎2:λ)`. The name of the
+element is what tells a manufactured datum from data, the way `𝔻(…)` does in
+the text format, so a reader never looks at the text to tell the two apart.
+`<answer>` holds the name of the term the firing answered with, named the same
+way by its own `meta`, and `<built>` before it holds the name of the term the
+entry wrote, the one 𝕄 made that answer of: two elements rather than two
+attributes of one, for the same reason `<manufactured>` is no `<delta>`.
 
 `<applied meta="𝑛·1·7" by="morph" at="𝑛·1·6" of="Φ.number">` is an object an
 application made, which the text format writes as `𝑛·1·6 := …` in the block
@@ -1187,8 +1189,8 @@ its own line spells it — the bytes for a datum, `𝜎1` for a symbol — and
 separated by a space. With the `λ` of the block the element reads as the fact
 `𝔻(𝜎1:λ) == L_number_plus(40-14-…, 40-18-…)`, and a firing of an entry with
 no `dataize` line writes `<minted symbol="𝜎1"/>`. The symbol is also the edge
-a reader joins on: a later `<dataize meta="𝛿1·5">𝜎2</dataize>` names the
-symbol the firing that wrote `<minted symbol="𝜎2">` handed out. A firing
+a reader joins on: a later `<manufactured meta="𝛿·5·1">𝜎2</manufactured>` names
+the symbol the firing that wrote `<minted symbol="𝜎2">` handed out. A firing
 minting two symbols writes two elements and one minting none writes none,
 which no attribute on the answer could say: a term may carry several symbols,
 or carry one where the value it stands for is not a symbol at all. In the fork
