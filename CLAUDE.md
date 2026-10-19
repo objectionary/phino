@@ -353,7 +353,7 @@ repeats the innermost block; a firing is a block with no heading, so a line in
 it keeps its comment. The morphing of an answer is named after the answer
 (`resited`), as `𝕄(𝑛·1·5):`. The datum `delta` finds closes a `𝔻` block as
 `𝛿·1·1 := …` (`EvDelta`), commented with the double eight bytes hold (`ieee`,
-the `number` of `<delta>` in the markup), and the operand line right after
+the `number` of `<dataized>` in the markup), and the operand line right after
 names it. The symbol a `𝔻` comes down to closes the block in the markup alone,
 as `<manufactured>` (`EvManufactured`, #1962), counted with the data, and the
 `<bound>` right after names it the same way. A cut is a line too, `looped(…)`

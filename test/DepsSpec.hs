@@ -302,10 +302,10 @@ spec = do
       filter (isInfixOf "ёж") (lines written) `shouldBe` []
     it "writes the datum the delta rule found as an element with its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvDelta 1 (BtMany ["0C", "D4"])])
-      lines written `shouldContain` ["  <delta meta=\"𝛿·0·1\">0C-D4</delta>"]
-    it "writes the double a datum of eight bytes holds as the number of its delta element" $ do
+      lines written `shouldContain` ["  <dataized meta=\"𝛿·0·1\">0C-D4</dataized>"]
+    it "writes the double a datum of eight bytes holds as the number of its dataized element" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvDelta 1 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
-      lines written `shouldContain` ["  <delta meta=\"𝛿·0·1\" number=\"-3.14\">C0-09-1E-B8-51-EB-85-1F</delta>"]
+      lines written `shouldContain` ["  <dataized meta=\"𝛿·0·1\" number=\"-3.14\">C0-09-1E-B8-51-EB-85-1F</dataized>"]
     it "spells the datum of an operand by the name the delta rule just gave it in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       lines written `shouldContain` ["    <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"]
@@ -348,7 +348,7 @@ spec = do
       length (filter (isInfixOf "<morph") (lines written)) `shouldBe` 1
     it "closes a block element before the element that follows beside it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvDelta 1 (BtOne "0D")])
-      lines written `shouldContain` ["  </morph>", "  <delta meta=\"𝛿·0·1\">0D-</delta>"]
+      lines written `shouldContain` ["  </morph>", "  <dataized meta=\"𝛿·0·1\">0D-</dataized>"]
     it "names the element over an answer by the element that built it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
       lines written `shouldContain` ["    <morph at=\"𝑛·1·1\">"]
@@ -489,12 +489,12 @@ spec = do
         `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                    , "<dataize at=\"Φ.ёж\">"
                    , "  <evaluate λ=\"L_ж\" by=\"dataize\" at=\"Φ.ёж\">"
-                   , "    <delta meta=\"𝛿·1·1\">1A-</delta>"
+                   , "    <dataized meta=\"𝛿·1·1\">1A-</dataized>"
                    , "  </evaluate>"
                    , "</dataize>"
                    , "<dataize at=\"Φ.ёж\">"
                    , "  <evaluate λ=\"L_ж\" by=\"dataize\" at=\"Φ.ёж\">"
-                   , "    <delta meta=\"𝛿·1·2\">2B-</delta>"
+                   , "    <dataized meta=\"𝛿·1·2\">2B-</dataized>"
                    , "  </evaluate>"
                    , "</dataize>"
                    ]
@@ -511,7 +511,7 @@ spec = do
       drop 9 (lines written)
         `shouldBe` [ "<dataize at=\"Φ.ю\">"
                    , "  <evaluate λ=\"L_ю\" by=\"dataize\" at=\"Φ.ю\">"
-                   , "    <delta meta=\"𝛿·1·2\">6F-</delta>"
+                   , "    <dataized meta=\"𝛿·1·2\">6F-</dataized>"
                    , "  </evaluate>"
                    , "</dataize>"
                    ]

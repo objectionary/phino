@@ -1047,7 +1047,7 @@ $ cat atoms.xml
             <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta name="φ">𝑛·0·1</meta></applied>
             <applied meta="𝑛·1·2" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
           </morph>
-          <delta meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</delta>
+          <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
         </dataize>
         <bound meta="𝛿1·1">𝛿·1·1</bound>
         <dataize at="Φ.a🌵1">
@@ -1055,7 +1055,7 @@ $ cat atoms.xml
             <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵1" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
             <applied meta="𝑛·1·4" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
           </morph>
-          <delta meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</delta>
+          <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
         </dataize>
         <bound meta="𝛿2·1">𝛿·1·2</bound>
         <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
@@ -1096,26 +1096,26 @@ at a new site, which the text format writes as `𝔻(Φ.a🌵0):` or `𝕄(Φ.a�
 and `at` names that site. Whatever the judgment does is written inside the
 element, so it closes where the text format drops back to the indentation it
 opened at, and like the text line it counts nothing and names no meta.
-`<delta>` is the datum the `delta` rule found, `meta` naming it the way the
-text format does, and the `<bound>` after the element holds that name in place
-of the data. A datum of eight bytes also carries `number`, the double the text
-format writes as the comment of its line.
+`<dataized>` closes the `<dataize>` element with the datum the `delta` rule
+found, `meta` naming it the way the text format does, and the `<bound>` after
+the element holds that name in place of the data. A datum of eight bytes also
+carries `number`, the double the text format writes as the comment of its line.
 `<bound>` is one meta the firing bound, `meta` naming it the same way the text
 format names it, counter and all, and the element holding the value it took:
 the name of the term where the operand was reduced with 𝕄, the datum itself
 where a `dataize` operand came down to data. `<manufactured>` is the other
 thing a dataization may come to, the datum manufactured for an unknown. It
-closes the `<dataize>` element the way `<delta>` does, `meta` naming it with
+closes the `<dataize>` element the way `<dataized>` does, `meta` naming it with
 the same counter, and holds the symbol of that unknown rather than the 42
 standing for it, `𝜎2` where the text format writes the formation `𝜎2:λ`. The
-`<bound>` after the element holds that name, as it does after a `<delta>`, while
-the text format writes the whole line as `𝛿1·2 := 𝔻(𝜎2:λ)`. The name of the
-element is what tells a manufactured datum from data, the way `𝔻(…)` does in
-the text format, so a reader never looks at the text to tell the two apart.
+`<bound>` after the element holds that name, as it does after a `<dataized>`,
+while the text format writes the whole line as `𝛿1·2 := 𝔻(𝜎2:λ)`. The name of
+the element is what tells a manufactured datum from data, the way `𝔻(…)` does
+in the text format, so a reader never looks at the text to tell the two apart.
 `<answered>` holds the name of the term the firing answered with, named the same
 way by its own `meta`, and `<built>` before it holds the name of the term the
 entry wrote, the one 𝕄 made that answer of: two elements rather than two
-attributes of one, for the same reason `<manufactured>` is no `<delta>`.
+attributes of one, for the same reason `<manufactured>` is no `<dataized>`.
 
 `<applied meta="𝑛·1·7" by="morph" at="𝑛·1·6" of="Φ.number">` is an object an
 application made, which the text format writes as `𝑛·1·6 := …` in the block
@@ -1177,8 +1177,9 @@ two it stands for in `left` and `right`, and the condition is the text.
 one symbol a `symbolize` line minted, which the text format writes as
 `symbolized(𝜎4) := 3F-F0-00-00-00-00-00-00  # 1.0`: the fresh symbol stands in
 `symbol` and the datum it stands for is the text, with the double of eight
-bytes in `number`, as in `<delta>`. The elements stand ahead of the `<bound>` of
-the line, and the markup binds the meta of that line as it binds any other.
+bytes in `number`, as in `<dataized>`. The elements stand ahead of the
+`<bound>` of the line, and the markup binds the meta of that line as it binds
+any other.
 
 `<minted symbol="𝜎1">40-14-… 40-18-…</minted>` is one symbol the firing
 minted, one element per bare `𝜎` the entry wrote its answer with, standing
@@ -1231,7 +1232,7 @@ $ cat atoms.xml
               <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta name="φ">𝑛·0·1</meta></applied>
               <applied meta="𝑛·1·2" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
             </morph>
-            <delta meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</delta>
+            <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
           </dataize>
           <bound meta="𝛿1·1">𝛿·1·1</bound>
           <dataize at="Φ.a🌵1">
@@ -1239,7 +1240,7 @@ $ cat atoms.xml
               <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵1" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
               <applied meta="𝑛·1·4" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
             </morph>
-            <delta meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</delta>
+            <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
           </dataize>
           <bound meta="𝛿2·1">𝛿·1·2</bound>
           <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
