@@ -580,7 +580,7 @@ saveEvalXml handle cursor printed report = do
         (Nothing, Right bytes) -> bound . escapeXMLText <$> lift (printed (ExBytes bytes))
       where
         bound :: String -> String
-        bound = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling))
+        bound = printf "<bound meta=\"%s\">%s</bound>" (escapeXML (labelled nesting spelling))
     elements (EvTerm depth spelling _ _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvBound depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvReshaped depth spelling _ _ term) nesting = placed depth nesting (bind depth nesting spelling term)
@@ -680,7 +680,7 @@ saveEvalXml handle cursor printed report = do
       (nesting, _) <- get
       maybe (leaf depth site) pure (listToMaybe [naming | (_, built, naming) <- nesting._sources, built == site])
     bind :: Int -> Nesting -> T.Text -> Expression -> Naming String
-    bind depth nesting spelling term = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling)) . escapeXMLText <$> leaf depth term
+    bind depth nesting spelling term = printf "<bound meta=\"%s\">%s</bound>" (escapeXML (labelled nesting spelling)) . escapeXMLText <$> leaf depth term
     leaf :: Int -> Expression -> Naming String
     leaf depth term = titled depth term >>= lift . spelled
     titled :: Int -> Expression -> Naming Expression

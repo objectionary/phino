@@ -308,11 +308,14 @@ spec = do
       lines written `shouldContain` ["  <delta meta=\"𝛿·0·1\" number=\"-3.14\">C0-09-1E-B8-51-EB-85-1F</delta>"]
     it "spells the datum of an operand by the name the delta rule just gave it in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
-      lines written `shouldContain` ["    <bind meta=\"𝛿1·1\">𝛿·1·1</bind>"]
+      lines written `shouldContain` ["    <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"]
     it "binds the term a stay line dropped a ρ from in the markup as it binds a term passed through" $ do
       (_, stayed) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvReshaped 2 "𝑛3" "stay" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
       (_, passed) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvBound 2 "𝑛3" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
       stayed `shouldBe` passed
+    it "writes the term a line bound as a bound element in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvBound 2 "𝑛3" (ExMeta "n1") (ExDispatch ExRoot (AtLabel "щ"))])
+      lines written `shouldContain` ["    <bound meta=\"𝑛3·1\">Φ.щ</bound>"]
     it "writes the symbol a dataization came down to as an element with its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvManufactured 1 12])
       lines written `shouldContain` ["  <manufactured meta=\"𝛿·0·1\">𝜎12</manufactured>"]
@@ -321,10 +324,10 @@ spec = do
       lines written `shouldContain` ["      <manufactured meta=\"𝛿·1·2\">𝜎32</manufactured>"]
     it "spells the symbol of an operand by the name the dataization just gave it in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvManufactured 3 32, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
-      lines written `shouldContain` ["    <bind meta=\"𝛿1·1\">𝛿·1·1</bind>"]
+      lines written `shouldContain` ["    <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"]
     it "spells the symbol of an operand in full in the markup when the element before it named another symbol" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvManufactured 3 31, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
-      lines written `shouldContain` ["    <bind meta=\"𝛿1·1\">𝜎32</bind>"]
+      lines written `shouldContain` ["    <bound meta=\"𝛿1·1\">𝜎32</bound>"]
     it "writes a block as an element once an element stands in it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
       lines written `shouldContain` ["  <morph at=\"Φ.w\">"]
