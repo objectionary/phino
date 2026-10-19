@@ -123,6 +123,7 @@ data Evaluation
   | EvData Int T.Text Expression (Either Int Bytes)
   | EvTerm Int T.Text Judgment Expression Expression
   | EvSymbolize Int T.Text Expression Expression
+  | EvStayed Int T.Text Expression Expression
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
   | EvApplied Int Judgment Expression Expression Expression
@@ -175,6 +176,7 @@ tier (EvSpent depth _ _ _) = depth
 tier (EvData depth _ _ _) = depth
 tier (EvTerm depth _ _ _ _) = depth
 tier (EvSymbolize depth _ _ _) = depth
+tier (EvStayed depth _ _ _) = depth
 tier (EvMinted depth _ _) = depth
 tier (EvDeferred depth _ _ _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
@@ -362,6 +364,11 @@ saveEval handle cursor printed printed' report = do
       let naming = labelled protocol spelling
       (protocol', value) <- valued protocol naming term
       line <- commented' (printf "%s := %s" naming value) source
+      pure (protocol', Just (indented depth line))
+    written (EvStayed depth spelling source term) protocol = do
+      let naming = labelled protocol spelling
+      (protocol', value) <- valued protocol naming term
+      line <- printf "%s := %s  # stay(%s)" naming value <$> salted source
       pure (protocol', Just (indented depth line))
     written EvMinted{} protocol = pure (protocol, Nothing)
     written (EvDeferred depth symbol judgment copy call site) protocol = do
@@ -566,6 +573,7 @@ saveEvalXml handle cursor printed report = do
         bound = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling))
     elements (EvTerm depth spelling _ _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvSymbolize depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
+    elements (EvStayed depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvMinted depth symbol operands) nesting = do
       spelledOperands <- mapM spelled' operands
       placed depth nesting (pure (minted spelledOperands))

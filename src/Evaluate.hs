@@ -173,8 +173,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     trimmed ctx (bound, thrown) meta source = case Map.lookup source._name thrown of
       Just failure -> pure (bound, Map.insert meta._name failure thrown)
       Nothing -> do
-        term <- stayed <$> buildExpressionThrows (ExMeta source._name) bound
-        ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) term)
+        kept <- buildExpressionThrows (ExMeta source._name) bound
+        let term = stayed kept
+        ctx._saveEval ((if term == kept then EvSymbolize else EvStayed) ctx._nesting meta._spelling (ExMeta source._name) term)
         (,thrown) <$> bind meta (MvExpression term) bound
     evaluated :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     evaluated ctx (bound, state') meta source = do

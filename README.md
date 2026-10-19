@@ -419,10 +419,12 @@ bytes as their `ρ`, while a branch made of no object comes to
 `Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2 ) )`. The fork compares the two as written,
 finds a shape apart, and splits the run; after `stay` they differ in their
 symbols alone, and the fork joins them. The protocol writes each line of the
-block commented with the meta it took:
+block. A line that dropped a `ρ` is commented `stay(…)` with the meta it took,
+so a reader sees that the term changed and what changed it, while a line that
+dropped nothing is commented with the meta alone:
 
 ```text
-𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # 𝑛1
+𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
 𝑛4·1 := 𝑛2·1  # 𝑛2
 joined(𝜎4) := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
 ```

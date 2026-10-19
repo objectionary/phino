@@ -11,6 +11,8 @@
 # dispatch comes to a formation, so the two sides differ in their symbols
 # alone. The fork takes the metas the 'stay' lines bound as they are, joins
 # them into one term with a fresh symbol and does not split the run.
+# The protocol comments the line of '𝑛3', which dropped a tail, with
+# 'stay(𝑛1)', and the line of '𝑛4', which dropped nothing, with '𝑛2' alone.
 symbolic: |
   - λ: L_fork
     dataize:
@@ -35,7 +37,7 @@ protocol: |
       𝛿1·1 := 𝔻(𝜎3:λ)  # 𝔻(ξ.c)
       𝑛1·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ, ρ ↦ ⟦ ρ ↦ Φ.bytes( φ ↦ 𝜎1:λ ), x ↦ ∅ ⟧ ) ):φ  # 𝕄(ξ.a)
       𝑛2·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2:λ ) ):φ  # 𝕄(ξ.b)
-      𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # 𝑛1
+      𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
       𝑛4·1 := 𝑛2·1  # 𝑛2
       joined(𝜎4) := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
       𝑛·1·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # 𝑛3, 𝑛4

@@ -164,10 +164,12 @@ formation with no λ and ⊥ as they are, and never fires its answer again, so
 another call takes another line. A `stay` line binds its meta to the term
 another meta is bound to with every `( ρ ↦ … )` applied to a dispatch dropped
 (`stayed` of `Lambdas.hs`, #1967), which `stay` or `skip` of normalization
-drops anyway. The lines of `evaluate`, `defer` and `stay` are one
-list, `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas
-each line reads, keeping the order of the blocks where no meta decides, and
-refuses a line reading what nothing binds or what it binds itself (#1903). No
+drops anyway; a line that dropped one writes `# stay(𝑛1)` to the text protocol
+(`EvStayed`) and the markup binds it as any other. The lines of `evaluate`,
+`defer` and `stay` are one list, `_lines` of `Lambda`, which `ordered` of
+`Lambdas.hs` sorts by the metas each line reads, keeping the order of the
+blocks where no meta decides, and refuses a line reading what nothing binds or
+what it binds itself (#1903). No
 two keys may match one λ name, whether or not either
 spells it: `Language.hs` reads each key as an automaton and looks for a name
 both accept, refusing a key beyond a regular language, such as a back
