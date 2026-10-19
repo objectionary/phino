@@ -619,7 +619,7 @@ saveEvalXml handle cursor printed report = do
       placed depth nesting $ do
         body <- leaf depth term
         (naming, _) <- counted
-        pure (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))
+        pure (printf "<answered meta=\"%s\">%s</answered>" (escapeXML naming) (escapeXMLText body))
     elements (EvForked depth condition side _) nesting =
       placed depth nesting $ case condition of
         Left symbol -> pure (forked (sigma symbol))
@@ -638,7 +638,7 @@ saveEvalXml handle cursor printed report = do
       placed depth nesting $ do
         body <- leaf depth term
         (naming, _) <- counted
-        pure (printf "<answer meta=\"%s\">%s</answer>" (escapeXML naming) (escapeXMLText body))
+        pure (printf "<answered meta=\"%s\">%s</answered>" (escapeXML naming) (escapeXMLText body))
     elements (EvWorld world) nesting = pure (known world nesting, [])
     outer :: Int -> Nesting -> Nesting
     outer depth nesting = nesting{_openedAt = dropWhile ((>= depth) . fst) nesting._openedAt, _sources = dropWhile (\(level, _, _) -> level > depth) nesting._sources}
