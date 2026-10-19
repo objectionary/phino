@@ -267,9 +267,10 @@ optSymbolic =
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
               \it reduces to a normal form under \"morph\", the terms it fires through 𝔼 under \"evaluate\", \
               \the copies one of whose arguments reads to a bare symbol it answers with a fresh symbol under \
-              \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", and answering \
-              \with the term under \"𝑛\", or forking under \"fork\" on a datum of \"dataize\" into the two \
-              \sides a path of the run picks between"
+              \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", the terms \
+              \it keeps with every datum along their φ turned into a fresh symbol under \"symbolize\", and \
+              \answering with the term under \"𝑛\", or forking under \"fork\" on a datum of \"dataize\" into \
+              \the two sides a path of the run picks between"
         )
     )
 

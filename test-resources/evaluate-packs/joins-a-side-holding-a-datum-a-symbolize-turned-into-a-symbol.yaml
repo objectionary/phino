@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The left side is a number written as a literal, so 𝕄 brings it to a number
+# whose bytes hold a datum. The right side is a number some firing computed,
+# so its bytes hold a symbol. Both are numbers of one shape and differ in the
+# value alone, yet a datum against a symbol made the fork split the run
+# (#1968). A 'symbolize' line turns every datum along the φ chain of a term
+# into a fresh symbol, so '𝑛3' holds 𝜎4 where '𝑛1' held the datum, and the
+# protocol writes that 𝜎4 stands for that datum. The line of '𝑛4', whose term
+# holds no datum, is commented with '𝑛2' alone. The fork takes the metas the
+# 'symbolize' lines bound, joins 𝜎4 with 𝜎2 into one fresh symbol 𝜎5 and does
+# not split the run.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    fork:
+      on: 𝛿1
+      left: 𝑛3
+      right: 𝑛4
+location: 'Q.y'
+input: '⟦ number ↦ ⟦ φ ↦ ∅ ⟧, bytes ↦ ⟦ φ ↦ ∅ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎3 ⟧, a ↦ ⟦ φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) ) ⟧, b ↦ ⟦ φ ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: 'Φ.bytes( φ ↦ 𝜎5:λ ):φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎3:λ)  # 𝔻(ξ.c)
+      𝑛1·1 := 1:φ  # 𝕄(ξ.a)
+      𝑛2·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2:λ ) ):φ  # 𝕄(ξ.b)
+      symbolized(𝜎4) := 3F-F0-00-00-00-00-00-00  # 1.0
+      𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # symbolize(𝑛1)
+      𝑛4·1 := 𝑛2·1  # 𝑛2
+      joined(𝜎5) := 𝔻(𝜎3:λ) ? 𝜎4 : 𝜎2
+      𝑛·1·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎5:λ ) ):φ  # 𝑛3, 𝑛4
+    𝑛·0·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎5:λ ) )

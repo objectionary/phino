@@ -153,8 +153,8 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 those of the two blocks below among them.
 
 An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`, `stay`,
-`fork` and `𝑛`, and any other key, such as a misspelled `forkk`, refuses the
-whole file, so a typo never drops a block without a word.
+`symbolize`, `fork` and `𝑛`, and any other key, such as a misspelled `forkk`,
+refuses the whole file, so a typo never drops a block without a word.
 
 ### Firing what an operand came to
 
@@ -262,13 +262,14 @@ sides turn out to be one.
 
 `on` names a bytes meta the `dataize` block bound, the condition, and `left`
 and `right` are paths from `$`, read against the formation being fired the way
-an operand is, or metas the `morph` block or a `stay` line bound, as described
-below. An entry with a `fork` block has no `𝑛`, since the side it takes is what
-it answers with, and no block beside `dataize`, `morph` and `stay`: an entry
-forks or it computes, never both. A block missing one of the three keys,
-holding another, or naming under `on` anything but a meta of `dataize` is
-refused when the file is read, and so is a side reading a meta inside a term,
-such as `𝑛1.x`, or naming a meta neither `morph` nor `stay` binds.
+an operand is, or metas the `morph` block or a `stay` or `symbolize` line
+bound, as described below. An entry with a `fork` block has no `𝑛`, since the
+side it takes is what it answers with, and no block beside `dataize`, `morph`,
+`stay` and `symbolize`: an entry forks or it computes, never both. A block
+missing one of the three keys, holding another, or naming under `on` anything
+but a meta of `dataize` is refused when the file is read, and so is a side
+reading a meta inside a term, such as `𝑛1.x`, or naming a meta that none of
+`morph`, `stay` and `symbolize` binds.
 
 Before it decides anything, a fork morphs both of its sides, each where it
 stands in the universe, under a block of its own, `𝕄(Φ.a🌵3):` for the left
@@ -289,7 +290,9 @@ joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
 ```
 
 A pair met twice gets the same fresh symbol both times. Only sides that differ
-in anything else, a datum, a λ name or the shape of a term, split the run.
+in anything else, a datum, a λ name or the shape of a term, split the run, and
+so does a side holding a datum where the other holds a symbol, unless a
+`symbolize` line turned that datum into a symbol first, as described below.
 
 A run keeps a decision per condition it has met, none when the run starts.
 When a firing reaches a fork whose condition nobody decided and whose sides
@@ -310,9 +313,9 @@ answered the side rather than reduced it. A side whose morph gets stuck or is
 cut cannot be compared with the other one, so the fork splits the run, and
 only the path taking that side gets stuck. A side that is a meta keeps this
 rule: in an entry that forks, an operand of `morph` that gets stuck or is cut
-binds its meta to nothing and throws nothing yet, a `stay` line reading that
-meta binds nothing either, and only the path taking the side that reads it
-gets stuck.
+binds its meta to nothing and throws nothing yet, a `stay` or `symbolize` line
+reading that meta binds nothing either, and only the path taking the side that
+reads it gets stuck.
 
 Once the first path ends, the second one goes on from the fork with the right
 side, in the state the run was in at the fork: what came before the fork is
@@ -429,12 +432,69 @@ dropped nothing is commented with the meta alone:
 joined(𝜎4) := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
 ```
 
+### Standing a symbol for a datum
+
+There is a seventh block, `symbolize`, and it reduces nothing either. Each line
+of it takes the term another meta of the entry is bound to and binds an
+expression meta of its own to that term with every datum along its `φ` turned
+into a fresh symbol:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.then
+    𝑛2: $.else
+  symbolize:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  fork:
+    on: 𝛿1
+    left: 𝑛3
+    right: 𝑛4
+```
+
+The right-hand side of a line names a meta bound by `morph` or by another line
+of the entry, and nothing else. Only the `φ` chain of the term is walked, the
+path along which a term reaches the value it stands for: the `φ` of a
+formation, the `φ` an application binds, and the head of an application that
+binds anything else. A `Δ ⤍ 𝑏` met there becomes `λ ⤍ 𝜎4`, a symbol minted
+fresh, the way a bare `𝜎` of an answer is. A datum anywhere else, under a `ρ`,
+in a method or in an argument other than `φ`, stays, since it says nothing
+about the value of the term.
+
+This is how a fork joins a literal with a value some firing computed. In EO
+`x.gt( 0 ).if( 1, x )` has one side that is the literal `1`, a number whose
+bytes hold the datum `3F-F0-…`, and another side that is a number whose bytes
+hold a symbol. The two are numbers of one shape and differ in the value alone,
+yet a datum against a symbol is no pair of symbols, so the fork splits the run.
+After `symbolize` both sides hold a symbol where the value stands, and the fork
+joins them. The protocol writes every symbol the block minted with the datum
+it stands for, so a reader of the joined term can tell that `𝜎4` was `1` on
+the left path. A line that turned a datum into a symbol is commented
+`symbolize(…)` with the meta it took, while a line whose term held no datum is
+commented with the meta alone:
+
+```text
+symbolized(𝜎4) := 3F-F0-00-00-00-00-00-00  # 1.0
+𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # symbolize(𝑛1)
+𝑛4·1 := 𝑛2·1  # 𝑛2
+joined(𝜎5) := 𝔻(𝜎3:λ) ? 𝜎4 : 𝜎2
+```
+
+A line sees its own side alone, so a datum both sides share becomes two
+symbols and then one joined symbol, and the path loses that datum. A file that
+wants to keep it leaves the block out, and an entry without `symbolize` writes
+the same protocol it wrote before. The two blocks chain: a side may go through
+a `stay` line first and through a `symbolize` line after it.
+
 ### The order of the lines
 
-The lines of `evaluate`, `defer` and `stay` run in the order of the metas they
-read, not in the order of their blocks. A line runs once every meta it reads is
-bound, so this entry fires what `x` came to and then fires the answer, one more
-call, although the line doing so stands first:
+The lines of `evaluate`, `defer`, `stay` and `symbolize` run in the order of the
+metas they read, not in the order of their blocks. A line runs once every meta
+it reads is bound, so this entry fires what `x` came to and then fires the
+answer, one more call, although the line doing so stands first:
 
 ```yaml
 - λ: L_twice
@@ -1110,6 +1170,13 @@ the same element with `side="right"`. A fork that joins its two sides writes
 per fresh symbol, which the text format writes as
 `joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`: the fresh symbol stands in `symbol`, the
 two it stands for in `left` and `right`, and the condition is the text.
+
+`<symbolized symbol="𝜎4" number="1.0">3F-F0-00-00-00-00-00-00</symbolized>` is
+one symbol a `symbolize` line minted, which the text format writes as
+`symbolized(𝜎4) := 3F-F0-00-00-00-00-00-00  # 1.0`: the fresh symbol stands in
+`symbol` and the datum it stands for is the text, with the double of eight
+bytes in `number`, as in `<delta>`. The elements stand ahead of the `<bind>` of
+the line, and the markup binds the meta of that line as it binds any other.
 
 `<minted symbol="𝜎1">40-14-… 40-18-…</minted>` is one symbol the firing
 minted, one element per bare `𝜎` the entry wrote its answer with, standing

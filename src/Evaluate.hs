@@ -22,7 +22,7 @@ import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), Side (..), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
 import Forks (decide, joined)
-import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, stayed)
+import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, stayed, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, insideUniverse, isLambda, lambda, morph, morphing, normalized, opening, recalled, remember, remembered, retained, settled, snapshot, starved, unparked)
 import Printer (printFunction)
@@ -102,7 +102,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     line :: ReduceContext -> (Held, State) -> Line -> IO (Held, State)
     line ctx ((bound, thrown), state') (Evaluated meta source) = first (,thrown) <$> evaluated ctx (bound, state') meta source
     line ctx ((bound, thrown), state') (Deferred meta source) = (,state') . (,thrown) <$> deferred ctx state' bound meta source
-    line ctx (held, state') (Stayed meta source) = (,state') <$> trimmed ctx held meta source
+    line ctx (held, state') (Stayed meta source) = (,state') <$> reshaped ctx "stay" (pure . stayed) held meta source
+    line ctx (held, state') (Symbolized meta source) = (,state') <$> reshaped ctx "symbolize" (masked ctx) held meta source
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
@@ -169,14 +170,24 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       case outcome of
         Left (OutOfTime cap) -> throwIO (OutOfTime cap)
         _ -> pure outcome
-    trimmed :: ReduceContext -> Held -> Meta -> Meta -> IO Held
-    trimmed ctx (bound, thrown) meta source = case Map.lookup source._name thrown of
+    reshaped :: ReduceContext -> T.Text -> (Expression -> IO Expression) -> Held -> Meta -> Meta -> IO Held
+    reshaped ctx block change (bound, thrown) meta source = case Map.lookup source._name thrown of
       Just failure -> pure (bound, Map.insert meta._name failure thrown)
       Nothing -> do
         kept <- buildExpressionThrows (ExMeta source._name) bound
-        let term = stayed kept
-        ctx._saveEval ((if term == kept then EvSymbolize else EvStayed) ctx._nesting meta._spelling (ExMeta source._name) term)
+        term <- change kept
+        ctx._saveEval
+          ( if term == kept
+              then EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) term
+              else EvReshaped ctx._nesting meta._spelling block (ExMeta source._name) term
+          )
         (,thrown) <$> bind meta (MvExpression term) bound
+    masked :: ReduceContext -> Expression -> IO Expression
+    masked ctx term = do
+      (stood, known, spent) <- symbolized term <$> readIORef ctx._minted
+      writeIORef ctx._minted spent
+      mapM_ (\(fresh, bytes) -> ctx._saveEval (EvSymbolized ctx._nesting fresh bytes)) known
+      pure stood
     evaluated :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     evaluated ctx (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
