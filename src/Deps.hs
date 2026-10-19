@@ -122,7 +122,7 @@ data Evaluation
   | EvSpent Int Int Judgment Expression
   | EvData Int T.Text Expression (Either Int Bytes)
   | EvTerm Int T.Text Judgment Expression Expression
-  | EvSymbolize Int T.Text Expression Expression
+  | EvBound Int T.Text Expression Expression
   | EvReshaped Int T.Text T.Text Expression Expression
   | EvSymbolized Int Int Bytes
   | EvMinted Int Int [Either Int Bytes]
@@ -176,7 +176,7 @@ tier (EvTimeout depth _ _ _) = depth
 tier (EvSpent depth _ _ _) = depth
 tier (EvData depth _ _ _) = depth
 tier (EvTerm depth _ _ _ _) = depth
-tier (EvSymbolize depth _ _ _) = depth
+tier (EvBound depth _ _ _) = depth
 tier (EvReshaped depth _ _ _ _) = depth
 tier (EvSymbolized depth _ _) = depth
 tier (EvMinted depth _ _) = depth
@@ -362,7 +362,7 @@ saveEval handle cursor printed printed' report = do
       (protocol', value) <- valued protocol naming term
       line <- commented (printf "%s := %s" naming value) judgment operand
       pure (protocol', Just (indented depth line))
-    written (EvSymbolize depth spelling source term) protocol = do
+    written (EvBound depth spelling source term) protocol = do
       let naming = labelled protocol spelling
       (protocol', value) <- valued protocol naming term
       line <- commented' (printf "%s := %s" naming value) source
@@ -577,7 +577,7 @@ saveEvalXml handle cursor printed report = do
         bound :: String -> String
         bound = printf "<bind meta=\"%s\">%s</bind>" (escapeXML (labelled nesting spelling))
     elements (EvTerm depth spelling _ _ term) nesting = placed depth nesting (bind depth nesting spelling term)
-    elements (EvSymbolize depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
+    elements (EvBound depth spelling _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvReshaped depth spelling _ _ term) nesting = placed depth nesting (bind depth nesting spelling term)
     elements (EvSymbolized depth symbol bytes) nesting = do
       datum <- printed (ExBytes bytes)
