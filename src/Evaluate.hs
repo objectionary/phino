@@ -12,19 +12,23 @@ import AST
 import Builder (buildExpressionThrows)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
+import Data.Bifunctor (first)
 import Data.IORef (atomicModifyIORef', readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), Side (..), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
 import Forks (decide, joined)
-import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted)
+import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, stayed)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, insideUniverse, isLambda, lambda, morph, morphing, normalized, opening, recalled, remember, remembered, retained, settled, snapshot, starved, unparked)
 import Printer (printFunction)
 import Text.Printf (printf)
+
+type Held = (Subst, Map.Map T.Text ReduceException)
 
 evaluation :: ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
 evaluation ctx state form univ = case form of
@@ -70,10 +74,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       let ctx = caller{_nesting = caller._nesting + 1}
       outcome <- try $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-        (bound', morphed, normals) <- foldM (through ctx) (bound, dataized, []) entry._morphed
+        (held, morphed, normals) <- foldM (through ctx entry._ending) ((bound, Map.empty), dataized, []) entry._morphed
         firing <- Firing func (reverse conditions) . (reverse normals ++) <$> sides entry._ending
         known <- remembered caller._memo firing
-        maybe (worked ctx entry firing bound' morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
+        maybe (worked ctx entry firing held morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
       case outcome of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
@@ -83,18 +87,22 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) failure)
           mapM_ (caller._saveEval . EvStuckOn (caller._nesting + 1)) (stranded failure)
           throwIO failure
-    worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
-    worked ctx entry firing@(Firing _ operands _) bound state' = do
-      (lined, state'') <- foldM (line ctx) (bound, state') entry._lines
+    worked :: ReduceContext -> Lambda -> Firing -> Held -> State -> IO (Answer, State)
+    worked ctx entry firing@(Firing _ operands _) held state' = do
+      (lined, state'') <- foldM (line ctx) (held, state') entry._lines
       (answer, state''') <- concluded ctx entry operands lined state''
       remember caller._memo firing answer
       pure (answer, state''')
     sides :: Ending -> IO [Expression]
     sides (Answering _) = pure []
-    sides (Forking _ left right) = traverse operand [left, right]
-    line :: ReduceContext -> (Subst, State) -> Line -> IO (Subst, State)
-    line ctx held (Evaluated meta source) = evaluated ctx held meta source
-    line ctx (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' bound meta source
+    sides (Forking _ left right) = traverse keyed [left, right]
+    keyed :: Expression -> IO Expression
+    keyed side@(ExMeta _) = pure side
+    keyed side = operand side
+    line :: ReduceContext -> (Held, State) -> Line -> IO (Held, State)
+    line ctx ((bound, thrown), state') (Evaluated meta source) = first (,thrown) <$> evaluated ctx (bound, state') meta source
+    line ctx ((bound, thrown), state') (Deferred meta source) = (,state') . (,thrown) <$> deferred ctx state' bound meta source
+    line ctx (held, state') (Stayed meta source) = (,state') <$> trimmed ctx held meta source
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
@@ -142,13 +150,32 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           ctx._saveEval (EvData ctx._nesting meta._spelling term datum)
           bound' <- bind meta (MvBytes bytes) bound
           pure (bound', state'', datum : conditions)
-    through :: ReduceContext -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
-    through ctx (bound, state', normals) (meta, term) = do
+    through :: ReduceContext -> Ending -> (Held, State, [Expression]) -> (Meta, Expression) -> IO (Held, State, [Expression])
+    through ctx ending ((bound, thrown), state', normals) (meta, term) = do
       placed <- operand term
-      (normal, state'') <- morphing univ ctx placed state'
-      ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing term normal)
-      bound' <- bind meta (MvExpression normal) bound
-      pure (bound', state'', normal : normals)
+      outcome <- attempted ending (morphing univ ctx placed state')
+      case outcome of
+        Right (normal, state'') -> do
+          ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing term normal)
+          bound' <- bind meta (MvExpression normal) bound
+          pure ((bound', thrown), state'', normal : normals)
+        Left failure -> pure ((bound, Map.insert meta._name failure thrown), state', placed : normals)
+    attempted :: Ending -> IO answer -> IO (Either ReduceException answer)
+    attempted (Answering _) action = Right <$> action
+    attempted Forking{} action = survived action
+    survived :: IO answer -> IO (Either ReduceException answer)
+    survived action = do
+      outcome <- try action
+      case outcome of
+        Left (OutOfTime cap) -> throwIO (OutOfTime cap)
+        _ -> pure outcome
+    trimmed :: ReduceContext -> Held -> Meta -> Meta -> IO Held
+    trimmed ctx (bound, thrown) meta source = case Map.lookup source._name thrown of
+      Just failure -> pure (bound, Map.insert meta._name failure thrown)
+      Nothing -> do
+        term <- stayed <$> buildExpressionThrows (ExMeta source._name) bound
+        ctx._saveEval (EvSymbolize ctx._nesting meta._spelling (ExMeta source._name) term)
+        (,thrown) <$> bind meta (MvExpression term) bound
     evaluated :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     evaluated ctx (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
@@ -271,10 +298,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           fromMaybe body <$> figured ctx state' (ExDispatch site attr) placed
     coined :: IO Int
     coined = atomicModifyIORef' caller._minted (\count -> (succ count, succ count))
-    concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
-    concluded ctx entry operands bound state' = case entry._ending of
+    concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Held -> State -> IO (Answer, State)
+    concluded ctx entry operands held@(bound, _) state' = case entry._ending of
       Answering template -> answered ctx template operands bound state'
-      Forking on left right -> forked ctx (lookup on._name (zip (map (_name . fst) entry._dataized) operands)) left right state'
+      Forking on left right -> forked ctx held (lookup on._name (zip (map (_name . fst) entry._dataized) operands)) left right state'
     answered :: ReduceContext -> Expression -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     answered ctx template operands bound state' = do
       (fresh, spent) <- minted template <$> readIORef ctx._minted
@@ -286,11 +313,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (normal, state'') <- settled built univ state' =<< opening Morphing ctx{_saveEval = ctx._saveEval . resited ctx._site built}
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (Answer built normal, state'')
-    forked :: ReduceContext -> Maybe (Either Int Bytes) -> Expression -> Expression -> State -> IO (Answer, State)
-    forked _ Nothing _ _ _ = throwIO (userError (printf "The fork of λ function '%s' is on a meta no operand of 'dataize' bound" (T.unpack func)))
-    forked ctx (Just condition) left right state' = do
-      (one, state'') <- reached ctx left state'
-      (two, state''') <- reached ctx right state''
+    forked :: ReduceContext -> Held -> Maybe (Either Int Bytes) -> Expression -> Expression -> State -> IO (Answer, State)
+    forked _ _ Nothing _ _ _ = throwIO (userError (printf "The fork of λ function '%s' is on a meta no operand of 'dataize' bound" (T.unpack func)))
+    forked ctx held (Just condition) left right state' = do
+      (one, state'') <- reached ctx held left state'
+      (two, state''') <- reached ctx held right state''
       spent <- readIORef ctx._minted
       case sequence [one, two] of
         Right [mine, theirs] | Just (term, made, spent') <- joined mine theirs spent -> do
@@ -307,15 +334,16 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           answer <- either throwIO pure outcome
           ctx._saveEval (EvTaken ctx._nesting [chosen] answer)
           pure (Chosen (condition, side) chosen answer, state''')
-    reached :: ReduceContext -> Expression -> State -> IO (Either ReduceException Expression, State)
-    reached ctx side state' = do
-      outcome <- try $ do
+    reached :: ReduceContext -> Held -> Expression -> State -> IO (Either ReduceException Expression, State)
+    reached _ (bound, thrown) (ExMeta name) state' =
+      (,state') <$> maybe (Right <$> buildExpressionThrows (ExMeta name) bound) (pure . Left) (Map.lookup name thrown)
+    reached ctx _ side state' = do
+      outcome <- survived $ do
         (universe, aiming) <- (\placed -> insideUniverse placed univ ctx) =<< operand side
         (normal, _, state'') <- morph universe state' aiming
         (,state'') . fromMaybe normal <$> postponing ctx state'' aiming._locator normal
       case outcome of
         Right (answer, state'') -> pure (Right answer, state'')
-        Left (OutOfTime cap) -> throwIO (OutOfTime cap)
         Left failure -> pure (Left failure, state')
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of

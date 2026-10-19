@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The 'morph' of '$.a' gets stuck on 'L_none', which no entry answers, and
+# the fork keeps the failure for the meta '𝑛1' instead of throwing at once
+# (#1967). Only one path may run, so the fork takes the left side, which is
+# that meta, and only then rethrows what its morph threw.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    fork:
+      on: 𝛿1
+      left: 𝑛1
+      right: 𝑛2
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ L_none ⟧.x, b ↦ ⟦ Δ ⤍ 05- ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_none'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝕄(Φ.a🌵1):
+        unanswered(L_none)  # 𝕄(L_none:λ)
+      𝑛2·1 := 05-:Δ  # 𝕄(ξ.b)
+      forked(𝔻(𝜎1:λ)) := left  # 𝑛1
+      stuck(L_none)

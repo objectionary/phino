@@ -5,7 +5,7 @@
 
 module DepsSpec where
 
-import AST (Argument (ArTau), Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiTau, BiVoid), Bytes (BtMany, BtOne), Expression (ExApplication, ExBytes, ExDispatch, ExFormation, ExRoot, ExTermination, ExXi), Function (FnSymbol, Function))
+import AST (Argument (ArTau), Attribute (AtLabel, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiTau, BiVoid), Bytes (BtMany, BtOne), Expression (ExApplication, ExBytes, ExDispatch, ExFormation, ExMeta, ExRoot, ExTermination, ExXi), Function (FnSymbol, Function))
 import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
@@ -208,6 +208,12 @@ spec = do
     it "writes the term both sides of a fork came to beside both of them" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then"), ExDispatch ExXi (AtLabel "else")] (ExFormation [BiLambda (FnSymbol 3)])])
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then), 𝕄(ξ.else)"
+    it "writes the side a fork read from a meta beside that meta alone" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExMeta "n3"] (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝑛3"
+    it "writes the term a path and a meta of a fork came to beside the morph of the one and the other alone" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then"), ExMeta "n4"] (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then), 𝑛4"
     it "writes the symbol a join minted beside the symbol of its condition and the two it stands for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left 7) 12 (5, 9)])
       last (lines written) `shouldBe` "    joined(𝜎12) := 𝔻(𝜎7:λ) ? 𝜎5 : 𝜎9"

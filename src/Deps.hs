@@ -400,7 +400,7 @@ saveEval handle cursor printed printed' report = do
           naming :: String
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- valued counted naming term
-      remarks <- mapM (fmap (printf "%s(%s)" (letter Morphing)) . salted) sides
+      remarks <- mapM sourced sides
       pure (protocol', Just (indented depth (remarked (printf "%s := %s" naming value) remarks)))
     written EvWorld{} protocol = pure (protocol, Nothing)
     spelt :: Either Int Bytes -> IO String
@@ -420,6 +420,9 @@ saveEval handle cursor printed printed' report = do
     commented line judgment operand = printf "%s  # %s(%s)" line (letter judgment) <$> salted operand
     commented' :: String -> Expression -> IO String
     commented' line source = printf "%s  # %s" line <$> salted source
+    sourced :: Expression -> IO String
+    sourced side@(ExMeta _) = salted side
+    sourced side = printf "%s(%s)" (letter Morphing) <$> salted side
     outer :: Int -> Protocol -> Protocol
     outer depth protocol = protocol{_open = dropWhile ((>= depth) . fst) protocol._open, _answered = dropWhile (\(level, _, _) -> level > depth) protocol._answered}
     labelled :: Protocol -> T.Text -> String
