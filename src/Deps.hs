@@ -113,6 +113,7 @@ data Evaluation
   | EvFiring Int T.Text Judgment Expression
   | EvStarted Int Judgment Expression
   | EvDelta Int Bytes
+  | EvManufactured Int Int
   | EvLooped Int Judgment Acyclic Expression Expression
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
@@ -167,6 +168,7 @@ tier EvRun{} = 0
 tier (EvFiring depth _ _ _) = depth
 tier (EvStarted depth _ _) = depth
 tier (EvDelta depth _) = depth
+tier (EvManufactured depth _) = depth
 tier (EvLooped depth _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
@@ -225,7 +227,7 @@ data Protocol = Protocol
   , _counted :: Map.Map Int Int
   , _built :: Map.Map Int Int
   , _deltas :: Map.Map Int Int
-  , _found :: Maybe (Bytes, String)
+  , _found :: Maybe (Either Int Bytes, String)
   , _blocks :: [(Int, Maybe String, String, Bool)]
   , _answered :: [(Int, Expression, String)]
   }
@@ -240,7 +242,7 @@ data Nesting = Nesting
   , _objects :: Named Expression
   , _numbered :: Map.Map Int Int
   , _datums :: Map.Map Int Int
-  , _held :: Maybe (Bytes, String)
+  , _held :: Maybe (Either Int Bytes, String)
   , _heads :: [(Int, (Judgment, Expression))]
   , _pending :: [(Int, Judgment, Expression)]
   , _sources :: [(Int, Expression, String)]
@@ -332,7 +334,8 @@ saveEval handle cursor printed printed' report = do
       let index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
           naming :: String
           naming = printf "%s·%d" (labelled protocol sigil) index
-      pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (bytes, naming)}, Just (indented depth (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
+      pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (Right bytes, naming)}, Just (indented depth (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
+    written EvManufactured{} protocol = pure (protocol, Nothing)
     written (EvLooped depth judgment mode self site) protocol = do
       form <- render self
       remarks <- context protocol judgment site
@@ -507,6 +510,7 @@ saveEvalXml handle cursor printed report = do
     silent _ = False
     forgotten :: Evaluation -> Nesting -> Nesting
     forgotten EvDelta{} nesting = nesting
+    forgotten EvManufactured{} nesting = nesting
     forgotten EvWorld{} nesting = nesting
     forgotten _ nesting = nesting{_held = Nothing}
     staged :: Int -> Nesting -> Naming String -> IO (Nesting, [String])
@@ -564,14 +568,15 @@ saveEvalXml handle cursor printed report = do
       placed depth nesting (printf "<spent limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
     elements (EvDelta depth bytes) nesting = do
       datum <- printed (ExBytes bytes)
-      let index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._datums)
-          naming :: String
-          naming = printf "%s·%d" (labelled nesting sigil) index
-      placed depth nesting{_datums = Map.insert (opener nesting) index nesting._datums, _held = Just (bytes, naming)} (pure (printf "<delta meta=\"%s\"%s>%s</delta>" (escapeXML naming) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum)))
+      let (naming, nesting') = stored (Right bytes) nesting
+      placed depth nesting' (pure (printf "<delta meta=\"%s\"%s>%s</delta>" (escapeXML naming) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum)))
+    elements (EvManufactured depth symbol) nesting = placed depth nesting' (pure (printf "<manufactured meta=\"%s\">%s</manufactured>" (escapeXML naming) (sigma symbol)))
+      where
+        (naming, nesting') = stored (Left symbol) nesting
     elements (EvData depth spelling _ value) nesting =
       placed depth nesting $ case (found value nesting._held, value) of
         (Just naming, _) -> pure (bound (escapeXMLText naming))
-        (Nothing, Left symbol) -> pure (printf "<dataize meta=\"%s\">%s</dataize>" (escapeXML (labelled nesting spelling)) (sigma symbol))
+        (Nothing, Left symbol) -> pure (bound (sigma symbol))
         (Nothing, Right bytes) -> bound . escapeXMLText <$> lift (printed (ExBytes bytes))
       where
         bound :: String -> String
@@ -639,6 +644,13 @@ saveEvalXml handle cursor printed report = do
     outer depth nesting = nesting{_openedAt = dropWhile ((>= depth) . fst) nesting._openedAt, _sources = dropWhile (\(level, _, _) -> level > depth) nesting._sources}
     labelled :: Nesting -> T.Text -> String
     labelled nesting spelling = printf "%s·%d" (T.unpack spelling) (opener nesting)
+    stored :: Either Int Bytes -> Nesting -> (String, Nesting)
+    stored value nesting = (naming, nesting{_datums = Map.insert (opener nesting) index nesting._datums, _held = Just (value, naming)})
+      where
+        index :: Int
+        index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._datums)
+        naming :: String
+        naming = printf "%s·%d" (labelled nesting sigil) index
     opener :: Nesting -> Int
     opener nesting = maybe 0 snd (listToMaybe nesting._openedAt)
     numbered :: Nesting -> (Int, Nesting)
@@ -901,9 +913,9 @@ answer = "𝑛"
 sigil :: T.Text
 sigil = "𝛿"
 
-found :: Either Int Bytes -> Maybe (Bytes, String) -> Maybe String
-found (Right bytes) (Just (held, naming))
-  | bytes == held = Just naming
+found :: Either Int Bytes -> Maybe (Either Int Bytes, String) -> Maybe String
+found value (Just (held, naming))
+  | value == held = Just naming
 found _ _ = Nothing
 
 alias :: Int -> Int -> Expression
