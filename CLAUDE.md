@@ -262,9 +262,12 @@ object of the same call, by that name wherever a later line holds it whole.
 The line itself goes through `abbreviatedInside`, which names the head and
 each argument and never the call as a whole, so an application made again is
 spelled out again (#1756). The
-markup writes the head in `of` and the argument in an `<attr>`, both by name.
-Under `--inside` the universe is normalized before the heading, so `aimed` of
-`CLI/Helpers.hs` holds those records back and writes them after it.
+markup writes the head in `of` and the argument by name in an element named
+after the kind of its value, `<symbol>`, `<datum>`, `<meta>`, `<ref>` for a
+path or an empty `<bottom>` for ⊥ (`attributed` of `saveEvalXml`), and so does
+every binding of `<formed>` and `<with>` (#1961). Under `--inside` the
+universe is normalized before the heading, so `aimed` of `CLI/Helpers.hs`
+holds those records back and writes them after it.
 
 The markup is read by programs and never writes a term (#1924): every value is
 a symbol, a datum, a meta, a path off `Φ`, `ξ`, `ρ` or a meta, a name, or `⊥`.

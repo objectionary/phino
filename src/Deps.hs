@@ -681,7 +681,7 @@ saveEvalXml handle cursor printed report = do
       pure path
     cloned depth term (origin, bound) = do
       path <- leaf depth origin
-      given <- mapM (\(attr, value) -> attributed (printAttribute attr) <$> leaf depth value) bound
+      given <- mapM (\(attr, value) -> titled depth value >>= lift . attributed (printAttribute attr)) bound
       recorded term (\naming -> printf "<formed meta=\"%s\" of=\"%s\">%s</formed>" naming (escapeXML path) (concat given))
     anonymous :: Int -> Expression -> [Binding] -> Naming Expression
     anonymous depth term bds = do
@@ -690,16 +690,26 @@ saveEvalXml handle cursor printed report = do
           inner = concat (rights parts)
       recorded term (\naming -> if null inner then printf "<formed meta=\"%s\"%s/>" naming marks else printf "<formed meta=\"%s\"%s>%s</formed>" naming marks inner)
     part :: Int -> Binding -> Naming (Either String String)
-    part depth (BiTau attr value) = Right . attributed (printAttribute attr) <$> leaf depth value
+    part depth (BiTau attr value) = Right <$> (titled depth value >>= lift . attributed (printAttribute attr))
     part _ (BiVoid attr) = pure (Right (printf "<void name=\"%s\"/>" (escapeXML (printAttribute attr))))
     part _ (BiLambda func) = pure (Left (printf " λ=\"%s\"" (escapeXML (printFunction func))))
     part _ (BiDelta bytes) = Left . printf " Δ=\"%s\"" . escapeXML <$> lift (printed (ExBytes bytes))
     part _ _ = pure (Right "")
     argument :: Int -> Argument -> Naming String
-    argument depth (ArTau attr value) = attributed (printAttribute attr) <$> leaf depth value
-    argument depth (ArAlpha alpha value) = attributed (printAlpha alpha) <$> leaf depth value
-    attributed :: String -> String -> String
-    attributed name value = printf "<attr name=\"%s\">%s</attr>" (escapeXML name) (escapeXMLText value)
+    argument depth (ArTau attr value) = titled depth value >>= lift . attributed (printAttribute attr)
+    argument depth (ArAlpha alpha value) = titled depth value >>= lift . attributed (printAlpha alpha)
+    attributed :: String -> Expression -> IO String
+    attributed name ExTermination = pure (printf "<bottom name=\"%s\"/>" (escapeXML name))
+    attributed name value = tagged (kind value) . escapeXMLText <$> spelled value
+      where
+        tagged :: String -> String -> String
+        tagged tag text = printf "<%s name=\"%s\">%s</%s>" tag (escapeXML name) text tag
+    kind :: Expression -> String
+    kind (ExFormation [BiLambda (FnSymbol _)]) = "symbol"
+    kind (ExFormation [BiDelta _]) = "datum"
+    kind (ExBytes _) = "datum"
+    kind (ExMeta _) = "meta"
+    kind _ = "ref"
     chained :: Named Expression -> Expression -> (Expression, [Argument])
     chained objects (ExApplication inner arg) = case inner of
       ExApplication _ _ | Nothing <- namedLookup inner objects -> second (++ [arg]) (chained objects inner)
@@ -726,14 +736,14 @@ saveEvalXml handle cursor printed report = do
     invoked (ExApplication term (ArTau attr value)) = second (++ [(attr, value)]) (invoked term)
     invoked term = (term, [])
     passed :: (Attribute, Expression) -> Naming String
-    passed (attr, value) = attributed (printAttribute attr) <$> valued value
-    valued :: Expression -> Naming String
+    passed (attr, value) = valued value >>= lift . attributed (printAttribute attr)
+    valued :: Expression -> Naming Expression
     valued value = do
       (nesting, _) <- get
       case (namedLookup value nesting._objects, symbolic value) of
-        (Just aliased, _) -> lift (spelled aliased)
-        (Nothing, Just symbol) -> pure (sigma symbol)
-        (Nothing, Nothing) -> opaque value >>= lift . spelled
+        (Just aliased, _) -> pure aliased
+        (Nothing, Just symbol) -> pure (standing symbol)
+        (Nothing, Nothing) -> opaque value
     symbolic :: Expression -> Maybe Int
     symbolic (ExFormation [BiLambda (FnSymbol idx)]) = Just idx
     symbolic (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds] >>= symbolic
