@@ -18,12 +18,14 @@ module Lambdas
   , minted
   , readLambdas
   , stayed
+  , symbolized
   , taken
   )
 where
 
 import AST
 import Control.Exception (Exception, throwIO)
+import Control.Monad.Trans.State.Strict (State, runState, state)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:?))
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
@@ -55,6 +57,7 @@ data Line
   = Evaluated Meta Meta
   | Deferred Meta Meta
   | Stayed Meta Meta
+  | Symbolized Meta Meta
 
 data Ending
   = Answering Expression
@@ -101,7 +104,7 @@ instance FromJSON Lambda where
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "fork", "𝑛"]
+          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "symbolize", "fork", "𝑛"]
       concluded :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       concluded key dataized entry = do
         answer <- entry .:? "𝑛"
@@ -114,7 +117,7 @@ instance FromJSON Lambda where
         where
           alone :: Key -> Yaml.Parser ()
           alone name
-            | KeyMap.member name entry = fail (printf "The entry of λ function '%s' has a 'fork' block beside '%s', while a fork takes nothing but 'dataize', 'morph' and 'stay'" key (Key.toString name))
+            | KeyMap.member name entry = fail (printf "The entry of λ function '%s' has a 'fork' block beside '%s', while a fork takes nothing but 'dataize', 'morph', 'stay' and 'symbolize'" key (Key.toString name))
             | otherwise = pure ()
       forking :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       forking key dataized block = do
@@ -153,7 +156,7 @@ instance FromJSON Lambda where
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
       written :: Object -> Yaml.Parser [Line]
-      written entry = concat <$> sequence [links Evaluated entry "evaluate", links Deferred entry "defer", links Stayed entry "stay"]
+      written entry = concat <$> sequence [links Evaluated entry "evaluate", links Deferred entry "defer", links Stayed entry "stay", links Symbolized entry "symbolize"]
       links :: (Meta -> Meta -> Line) -> Object -> Key -> Yaml.Parser [Line]
       links kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Text)
@@ -193,10 +196,12 @@ instance FromJSON Lambda where
           source (Evaluated _ meta) = meta
           source (Deferred _ meta) = meta
           source (Stayed _ meta) = meta
+          source (Symbolized _ meta) = meta
       binding :: Line -> Meta
       binding (Evaluated meta _) = meta
       binding (Deferred meta _) = meta
       binding (Stayed meta _) = meta
+      binding (Symbolized meta _) = meta
       sigmas :: String -> Expression -> Yaml.Parser ()
       sigmas key answer = case ([kind | Slot kind _ <- slots answer, kind /= "S"], symbols answer) of
         ([], []) -> pure ()
@@ -240,7 +245,7 @@ instance FromJSON Lambda where
           sided :: String -> Expression -> Yaml.Parser ()
           sided name side = case filter (`notElem` reduced) (metas side) of
             [] -> pure ()
-            meta : _ -> fail (printf "The side '%s' of the 'fork' block of λ function '%s' reads the meta '%s' that neither 'morph' nor 'stay' binds" name key (T.unpack meta))
+            meta : _ -> fail (printf "The side '%s' of the 'fork' block of λ function '%s' reads the meta '%s' that none of 'morph', 'stay' and 'symbolize' binds" name key (T.unpack meta))
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
@@ -360,3 +365,21 @@ stayed = goExpr
     dispatched (ExDispatch _ _) = True
     dispatched (ExApplication expr _) = dispatched expr
     dispatched _ = False
+
+type Minting = (Int, [(Int, Bytes)])
+
+symbolized :: Expression -> Int -> (Expression, [(Int, Bytes)], Int)
+symbolized term spent = case runState (goExpr term) (spent, []) of
+  (masked, (spent', known)) -> (masked, reverse known, spent')
+  where
+    goExpr :: Expression -> State Minting Expression
+    goExpr (ExFormation bds) = ExFormation <$> mapM goBinding bds
+    goExpr (ExApplication expr (ArTau AtPhi arg)) = ExApplication expr . ArTau AtPhi <$> goExpr arg
+    goExpr (ExApplication expr arg) = (`ExApplication` arg) <$> goExpr expr
+    goExpr (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goExpr expr
+    goExpr (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goExpr expr
+    goExpr expr = pure expr
+    goBinding :: Binding -> State Minting Binding
+    goBinding (BiDelta bts) = state (\(count, known) -> (BiLambda (FnSymbol (succ count)), (succ count, (succ count, bts) : known)))
+    goBinding (BiTau AtPhi expr) = BiTau AtPhi <$> goExpr expr
+    goBinding bd = pure bd
