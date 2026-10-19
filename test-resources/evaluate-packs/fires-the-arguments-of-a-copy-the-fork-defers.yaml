@@ -7,7 +7,9 @@
 # 'L_inc'. Before it writes the 'deferred' line, the fork morphs 'w' at the
 # place the side took in the universe, 'Φ.a🌵3.w', and fires what it comes
 # to, so the line names the object 'Φ.num' the argument stands for, instead
-# of the call as the code spells it (#1916, #1933, #1938).
+# of the call as the code spells it (#1916, #1933, #1938). All of it is
+# written once, before the fork, and the second path, which takes the right
+# side, answers the symbol the deferral minted (#1960).
 symbolic: |
   - λ: L_inc
     dataize:
@@ -21,9 +23,9 @@ symbolic: |
       left: $.a
       right: $.b
 location: 'Q.y'
-route: [right]
-input: '⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ x ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ Φ.num, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧, λ ⤍ L_inc ⟧.φ ⟧'
-result: '𝜎5:λ'
+paths: 2
+input: '⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ x ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧, λ ⤍ L_inc ⟧.φ ⟧'
+result: '𝜎6:λ'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_inc):
@@ -44,10 +46,22 @@ protocol: |
               𝑛·3·2 := Φ.num( φ ↦ 𝜎3:λ )
             𝑛·3·3 := 𝑛·3·2  # 𝕄(𝑛·3·1)
           deferred(𝜎4) := Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·3·2 )  # 𝕄(Φ.a🌵3.φ)
-          forked(𝔻(𝜎2:λ)) := right  # ξ.b
-          𝑛·2·4 := 𝜎4:λ  # 𝕄(ξ.b)
-      𝛿1·1 := 𝔻(𝜎4:λ)  # 𝔻(ξ.x)
+          forked(𝔻(𝜎2:λ)) := left  # ξ.a
+          𝑛·2·4 := 01-:Δ  # 𝕄(ξ.a)
+        𝛿·1·1 := 01-
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
       𝑛·1·1 := Φ.num( φ ↦ 𝜎5:λ )  # 𝑛
       𝕄(𝑛·1·1):
         𝑛·1·2 := Φ.num( φ ↦ 𝜎5:λ )
       𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)
+  𝕄(Φ.y):
+    𝔼(L_inc):
+      𝔻(Φ.a🌵0):
+        𝔼(L_fork):
+          forked(𝔻(𝜎2:λ)) := right  # ξ.b
+          𝑛·2·5 := 𝜎4:λ  # 𝕄(ξ.b)
+      𝛿1·1 := 𝔻(𝜎4:λ)  # 𝔻(ξ.x)
+      𝑛·1·4 := Φ.num( φ ↦ 𝜎6:λ )  # 𝑛
+      𝕄(𝑛·1·4):
+        𝑛·1·5 := Φ.num( φ ↦ 𝜎6:λ )
+      𝑛·1·6 := 𝑛·1·5  # 𝕄(𝑛·1·4)

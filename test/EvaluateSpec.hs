@@ -13,16 +13,15 @@ import CLI.Helpers (started)
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON (parseJSON), camelTo2, defaultOptions, fieldLabelModifier, genericParseJSON)
-import Data.IORef (newIORef)
 import Data.List (find, isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Yaml qualified as Decode
-import Deps (Acyclic, Evaluation (EvRun), Judgment (Morphing), Side (..), Term (TeExpression), certainty, sided)
+import Deps (Acyclic, Evaluation (EvRun), Judgment (Morphing), Term (TeExpression), certainty)
 import Encoding (Encoding (UNICODE))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, recorded, recorded', withLambdas, withLambdasOf)
-import Forks (routed)
+import Forks (explored)
 import GHC.Generics (Generic)
 import Lambdas (readLambdas)
 import Lining (LineFormat (SINGLELINE))
@@ -49,7 +48,7 @@ data SymbolPack = SymbolPack
   , result :: Maybe String
   , fails :: Maybe String
   , hideRho :: Maybe Bool
-  , route :: Maybe [String]
+  , paths :: Maybe Int
   }
   deriving (Generic, Show)
 
@@ -65,31 +64,33 @@ testSymbols pth = do
   let hidden = hideRho /= Just False
   withLambdasOf (T.pack symbolic) $ \file -> do
     known <- readLambdas file
-    (_, written) <- recorded' hidden $ \record -> do
+    (_, written) <- recorded' hidden $ \record rewind -> do
       let mode = named <$> acyclic
       cells <- memoized mode
       tally <- tallied firings
-      forks <- routed (maybe [] (map chosen) route) =<< newIORef []
       base <- defaultReduceContext loc
-      let ctx =
-            base
-              { _partial = partial == Just True
-              , _acyclic = mode
-              , _memo = cells
-              , _steps = Steps (fromMaybe 250 steps) 0
-              , _tally = tally
-              , _symbolic = known
-              , _saveEval = record
-              , _opened = Just (1, Morphing, loc)
-              , _forks = forks
-              }
       record (EvRun Morphing (T.pack (printExpression loc)))
-      started expr ctx
+      let walked =
+            explored (Just (fromMaybe 1 paths)) rewind $ \forks -> do
+              let ctx =
+                    base
+                      { _partial = partial == Just True
+                      , _acyclic = mode
+                      , _memo = cells
+                      , _steps = Steps (fromMaybe 250 steps) 0
+                      , _tally = tally
+                      , _symbolic = known
+                      , _saveEval = record
+                      , _opened = Just (1, Morphing, loc)
+                      , _forks = forks
+                      }
+              started expr ctx
+              morph expr emptyState ctx
       case fails of
         Just message ->
-          morph expr emptyState ctx `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
+          walked `shouldThrow` (\err -> message `isInfixOf` show (err :: SomeException))
         Nothing -> do
-          (morphed, _, _) <- morph expr emptyState ctx
+          morphed <- (\(term, _, _) -> term) . last <$> walked
           forM_ result $ \res -> do
             expected <- parseExpressionThrows' MONOFORM res
             spelled hidden morphed `shouldBe` spelled False expected
@@ -97,8 +98,6 @@ testSymbols pth = do
   where
     named :: String -> Acyclic
     named mode = fromMaybe (error ("The pack names an unknown mode of acyclic: " ++ mode)) (find ((== mode) . certainty) [minBound .. maxBound])
-    chosen :: String -> Side
-    chosen word = fromMaybe (error ("The pack names an unknown side of a fork: " ++ word)) (find ((== word) . sided) [LeftSide, RightSide])
     spelled :: Bool -> Expression -> String
     spelled hidden term =
       (if hidden then printExpressionHidingRho' else printExpression') term (SWEET, UNICODE, SINGLELINE, defaultMargin)

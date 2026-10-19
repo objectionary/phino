@@ -1,60 +1,85 @@
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE UnboxedTuples #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Forks (Decision, Forks, decide, explored, joined, routed) where
+module Forks (Decision, Forks, decide, explored, joined, straight) where
 
 import AST (Argument (..), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet), Function (FnSymbol))
+import Control.Monad (unless)
 import Data.Bifunctor (first)
 import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import Deps (Side (..))
+import Deps (RewindEvalFunc, Side (..), dontRewindEval)
+import GHC.Exts (PromptTag#, control0#, newPromptTag#, prompt#)
+import GHC.IO (IO (..))
 
 type Decision = (Either Int Bytes, Side)
 
 type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 
+data Tag = Tag (PromptTag# ())
+
 data Forks = Forks
-  { _route :: IORef ([Side], [Side])
+  { _tag :: Tag
   , _decided :: IORef (Map (Either Int Bytes) Side)
-  , _pending :: IORef [[Side]]
+  , _pending :: IORef [IO ()]
+  , _room :: IORef (Maybe Int)
+  , _rewind :: RewindEvalFunc
   }
 
-routed :: [Side] -> IORef [[Side]] -> IO Forks
-routed route pending = Forks <$> newIORef (route, []) <*> newIORef Map.empty <*> pure pending
+straight :: IO Forks
+straight = opened (Just 1) dontRewindEval
 
-decide :: Forks -> Either Int Bytes -> IO Side
-decide forks condition = do
+decide :: Forks -> IO (IO ()) -> Either Int Bytes -> IO Side
+decide forks marked condition = do
   decided <- readIORef forks._decided
-  side <- maybe undecided pure (Map.lookup condition decided)
-  modifyIORef' forks._decided (Map.insert condition side)
-  pure side
+  maybe (undecided decided) pure (Map.lookup condition decided)
   where
-    undecided :: IO Side
-    undecided = do
-      (ahead, behind) <- readIORef forks._route
-      case ahead of
-        side : more -> side <$ writeIORef forks._route (more, side : behind)
-        [] -> do
-          writeIORef forks._route ([], LeftSide : behind)
-          modifyIORef' forks._pending (reverse (RightSide : behind) :)
-          pure LeftSide
+    undecided :: Map (Either Int Bytes) Side -> IO Side
+    undecided decided = do
+      room <- readIORef forks._room
+      if room == Just 0
+        then taken decided LeftSide
+        else do
+          writeIORef forks._room (pred <$> room)
+          captured forks._tag $ \resumed -> do
+            restored <- marked
+            rewound <- forks._rewind
+            modifyIORef' forks._pending (resumed (restored >> rewound >> taken decided RightSide) :)
+            prompted forks._tag (resumed (taken decided LeftSide))
+    taken :: Map (Either Int Bytes) Side -> Side -> IO Side
+    taken decided side = side <$ writeIORef forks._decided (Map.insert condition side decided)
 
-explored :: forall answer. Maybe Int -> (Forks -> IO answer) -> IO [answer]
-explored cap action = newIORef [] >>= go 0 [[]]
+explored :: forall answer. Maybe Int -> RewindEvalFunc -> (Forks -> IO answer) -> IO [answer]
+explored cap rewind action = do
+  forks <- opened cap rewind
+  answers <- newIORef []
+  prompted forks._tag (action forks >>= \answer -> modifyIORef' answers (answer :))
+  go forks
+  reverse <$> readIORef answers
   where
-    go :: Int -> [[Side]] -> IORef [[Side]] -> IO [answer]
-    go _ [] _ = pure []
-    go count (route : rest) pending
-      | maybe False (count >=) cap = pure []
-      | otherwise = do
-          answer <- action =<< routed route pending
-          opened <- atomicModifyIORef' pending ([],)
-          (answer :) <$> go (count + 1) (rest ++ reverse opened) pending
+    go :: Forks -> IO ()
+    go forks = do
+      queued <- atomicModifyIORef' forks._pending ([],)
+      unless (null queued) (mapM_ (prompted forks._tag) (reverse queued) >> go forks)
+
+opened :: Maybe Int -> RewindEvalFunc -> IO Forks
+opened cap rewind = Forks <$> tagged <*> newIORef Map.empty <*> newIORef [] <*> newIORef (pred <$> cap) <*> pure rewind
+  where
+    tagged :: IO Tag
+    tagged = IO (\world -> case newPromptTag# world of (# world', tag #) -> (# world', Tag tag #))
+
+prompted :: Tag -> IO () -> IO ()
+prompted (Tag tag) (IO body) = IO (prompt# tag body)
+
+captured :: Tag -> ((IO Side -> IO ()) -> IO ()) -> IO Side
+captured (Tag tag) handler = IO (control0# tag (\resume -> case handler (\(IO side) -> IO (resume side)) of IO body -> body))
 
 joined :: Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
 joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, spent')) <$> goExpr left right (spent, Map.empty, [])

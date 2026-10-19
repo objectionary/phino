@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# A path whose side raises ends in the throw (#1938): the fork takes the
-# side the route says, that side is ⊥, and the dispatch of φ that ends the
-# program comes to ⊥ too. Nothing is joined with the other side and no
-# record says the path raised; the term it ends in says so.
+# A path whose side raises ends in the throw (#1938): the second path goes
+# on from the fork with the right side, that side is ⊥, and the dispatch of
+# φ that ends the program comes to ⊥ too (#1960). Nothing is joined with the
+# other side and no record says the path raised; the term it ends in says so.
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -20,7 +20,7 @@ symbolic: |
       left: $.then
       right: $.else
 location: 'Q.@'
-route: [right]
+paths: 2
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     bool(φ) ↦ ⟦ if ↦ ⟦ ρ ↦ ∅, then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧ ⟧,
@@ -57,5 +57,10 @@ protocol: |
       𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
       𝕄(Φ.a🌵3):
         𝑛·2·2 := 1
+      forked(𝔻(𝜎1:λ)) := left  # ξ.then
+      𝑛·2·3 := 𝑛·2·2  # 𝕄(ξ.then)
+    𝑛·0·5 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+  𝕄(Φ.φ):
+    𝔼(L_fork):
       forked(𝔻(𝜎1:λ)) := right  # ξ.else
-      𝑛·2·3 := ⊥  # 𝕄(ξ.else)
+      𝑛·2·4 := ⊥  # 𝕄(ξ.else)
