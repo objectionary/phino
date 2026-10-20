@@ -1972,18 +1972,17 @@ spec = do
                          , "</dataize>"
                          ]
 
-        it "nests the judgment inside a '<path>' of the '<protocol>' root" $
+        it "nests the judgment right inside the '<protocol>' root" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            take 5 (lines records)
+            take 4 (lines records)
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<protocol>"
-                         , "  <path>"
-                         , "    <dataize at=\"Φ\">"
-                         , "      <dataized meta=\"𝛿·0·1\">01-</dataized>"
+                         , "  <dataize at=\"Φ\">"
+                         , "    <dataized meta=\"𝛿·0·1\">01-</dataized>"
                          ]
 
         it "closes the '<protocol>' root with its msec" $
@@ -1992,7 +1991,7 @@ spec = do
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            (lines records !! 7) `shouldSatisfy` isPrefixOf "  <msec>"
+            (lines records !! 5) `shouldSatisfy` isPrefixOf "  <msec>"
 
         it "closes the '<protocol>' root with its firings" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2008,7 +2007,7 @@ spec = do
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            drop 9 (lines records) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
+            drop 7 (lines records) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
 
         it "nests what a φ body dataizes inside the element of the box rule that entered it" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2140,17 +2139,17 @@ spec = do
                          , "      <formed meta=\"𝑛·1·3\"><datum attr=\"φ\">02-</datum></formed>"
                          , "      <morphed meta=\"𝑛·1·4\">𝑛·1·3</morphed>"
                          , "    </morph>"
-                         , "    <forked side=\"left\">𝜎1</forked>"
-                         , "    <answered meta=\"𝑛·1·5\">𝑛·1·1</answered>"
+                         , "    <forked on=\"𝜎1\">"
+                         , "      <left>"
+                         , "        <answered meta=\"𝑛·1·5\">𝑛·1·1</answered>"
+                         , "        <morphed meta=\"𝑛·0·1\">01-</morphed>"
+                         , "      </left>"
+                         , "      <right>"
+                         , "        <answered meta=\"𝑛·1·6\">𝑛·1·3</answered>"
+                         , "        <morphed meta=\"𝑛·0·2\">02-</morphed>"
+                         , "      </right>"
+                         , "    </forked>"
                          , "  </evaluate>"
-                         , "  <morphed meta=\"𝑛·0·1\">01-</morphed>"
-                         , "</morph>"
-                         , "<morph at=\"Φ.y\">"
-                         , "  <evaluate λ=\"L_fork\" by=\"morph\" at=\"Φ.y\">"
-                         , "    <forked side=\"right\">𝜎1</forked>"
-                         , "    <answered meta=\"𝑛·1·6\">𝑛·1·3</answered>"
-                         , "  </evaluate>"
-                         , "  <morphed meta=\"𝑛·0·2\">02-</morphed>"
                          , "</morph>"
                          ]
 
@@ -2616,21 +2615,42 @@ spec = do
 
       it "forks again on another condition met on a path" $ do
         printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧, b ↦ ⟦ Δ ⤍ 03- ⟧, λ ⤍ L_fork ⟧ ⟧"
-        lines printed `shouldBe` ["01-", "03-", "02-"]
+        lines printed `shouldBe` ["01-", "02-", "03-"]
 
-      it "writes one path element per path to the XML protocol" $
+      it "writes both sides of a fork inside one fork element of the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
           _ <- forked ["--protocol=" ++ path, "--quiet"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
-          records <- readUtf8 path
-          filter (isInfixOf "path>") (lines records) `shouldBe` ["  <path>", "  </path>", "  <path>", "  </path>"]
+          records <- readProtocol path
+          filter (\line -> any (`isInfixOf` line) ["forked", "left>", "right>", "path>"]) (lines records)
+            `shouldBe` ["    <forked on=\"𝜎1\">", "      <left>", "      </left>", "      <right>", "      </right>", "    </forked>"]
 
-      it "writes every path to the text protocol under a heading of its own" $
+      it "nests the fork a side of a fork met inside the side of the fork it stands in" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          _ <- forked ["--protocol=" ++ path, "--quiet"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧, b ↦ ⟦ Δ ⤍ 03- ⟧, λ ⤍ L_fork ⟧ ⟧"
+          records <- readProtocol path
+          filter (\line -> any (`isInfixOf` line) ["forked", "left>", "right>"]) (lines records)
+            `shouldBe` [ "    <forked on=\"𝜎1\">"
+                       , "      <left>"
+                       , "          <forked on=\"𝜎2\">"
+                       , "            <left>"
+                       , "            </left>"
+                       , "            <right>"
+                       , "            </right>"
+                       , "          </forked>"
+                       , "      </left>"
+                       , "      <right>"
+                       , "      </right>"
+                       , "    </forked>"
+                       ]
+
+      it "writes both sides of a fork to the text protocol under one heading" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           _ <- forked ["--protocol=" ++ path, "--quiet"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
           records <- readProtocol path
-          filter (== "𝔻(Φ.y):") (lines records) `shouldBe` ["𝔻(Φ.y):", "𝔻(Φ.y):"]
+          filter (== "𝔻(Φ.y):") (lines records) `shouldBe` ["𝔻(Φ.y):"]
 
       describe "over a condition a firing before it minted" $ do
         let recordedIn :: String -> [String] -> IO String
@@ -2645,11 +2665,11 @@ spec = do
           records <- recordedIn "protocolXXXXXX.txt" ["--acyclic=plausible"]
           filter (isInfixOf "𝔻(ξ.v)") (lines records) `shouldSatisfy` ((== 1) . length)
 
-        it "forks both of its paths on the one symbol the run minted before the fork" $ do
+        it "forks both of its sides on the one symbol the run minted before the fork" $ do
           records <- recordedIn "protocolXXXXXX.txt" []
-          filter (isInfixOf "forked(") (lines records) `shouldBe` ["    forked(𝔻(𝜎1:λ)) := left  # ξ.a", "    forked(𝔻(𝜎1:λ)) := right  # ξ.b"]
+          filter (isInfixOf "forked(") (lines records) `shouldBe` ["    forked(𝔻(𝜎1:λ)):"]
 
-        it "opens the second path of the text protocol at the fork, under the headings the fork stood in" $ do
+        it "writes the right side of the text protocol beside the left side, inside the fork" $ do
           records <- recordedIn "protocolXXXXXX.txt" []
           lines records
             `shouldBe` [ "𝔻(Φ.y):"
@@ -2662,17 +2682,16 @@ spec = do
                        , "        𝑛·2·1 := 𝜎1:λ  # 𝑛"
                        , "        𝑛·2·2 := 𝜎1:λ  # 𝕄(𝑛·2·1)"
                        , "    𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)"
-                       , "    forked(𝔻(𝜎1:λ)) := left  # ξ.a"
-                       , "    𝑛·1·1 := 01-:Δ  # 𝕄(ξ.a)"
-                       , "  𝛿·0·1 := 01-"
-                       , "𝔻(Φ.y):"
-                       , "  𝔼(L_fork):"
-                       , "    forked(𝔻(𝜎1:λ)) := right  # ξ.b"
-                       , "    𝑛·1·2 := 02-:Δ  # 𝕄(ξ.b)"
-                       , "  𝛿·0·2 := 02-"
+                       , "    forked(𝔻(𝜎1:λ)):"
+                       , "      left:  # ξ.a"
+                       , "        𝑛·1·1 := 01-:Δ  # 𝕄(ξ.a)"
+                       , "        𝛿·0·1 := 01-"
+                       , "      right:  # ξ.b"
+                       , "        𝑛·1·2 := 02-:Δ  # 𝕄(ξ.b)"
+                       , "        𝛿·0·2 := 02-"
                        ]
 
-        it "opens the second path of the XML protocol at the fork, inside the elements the fork stood in" $ do
+        it "writes the right side of the XML protocol beside the left side, inside the fork" $ do
           records <- recordedIn "protocolXXXXXX.xml" []
           lines records
             `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -2703,17 +2722,17 @@ spec = do
                        , "    <morph at=\"Φ.a🌵3\">"
                        , "      <morphed meta=\"𝑛·1·3\">02-</morphed>"
                        , "    </morph>"
-                       , "    <forked side=\"left\">𝜎1</forked>"
-                       , "    <answered meta=\"𝑛·1·4\">01-</answered>"
+                       , "    <forked on=\"𝜎1\">"
+                       , "      <left>"
+                       , "        <answered meta=\"𝑛·1·4\">01-</answered>"
+                       , "        <dataized meta=\"𝛿·0·1\">01-</dataized>"
+                       , "      </left>"
+                       , "      <right>"
+                       , "        <answered meta=\"𝑛·1·5\">02-</answered>"
+                       , "        <dataized meta=\"𝛿·0·2\">02-</dataized>"
+                       , "      </right>"
+                       , "    </forked>"
                        , "  </evaluate>"
-                       , "  <dataized meta=\"𝛿·0·1\">01-</dataized>"
-                       , "</dataize>"
-                       , "<dataize at=\"Φ.y\">"
-                       , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
-                       , "    <forked side=\"right\">𝜎1</forked>"
-                       , "    <answered meta=\"𝑛·1·5\">02-</answered>"
-                       , "  </evaluate>"
-                       , "  <dataized meta=\"𝛿·0·2\">02-</dataized>"
                        , "</dataize>"
                        ]
 
@@ -3116,17 +3135,17 @@ spec = do
                      , "    <bound meta=\"𝑛2·1\">𝑛·1·2</bound>"
                      , "    <bound meta=\"𝑛3·1\">01-</bound>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol attr=\"tup\">𝜎1</symbol></with></deferred>"
-                     , "    <forked side=\"left\">𝜎2</forked>"
-                     , "    <answered meta=\"𝑛·1·4\">01-</answered>"
+                     , "    <forked on=\"𝜎2\">"
+                     , "      <left>"
+                     , "        <answered meta=\"𝑛·1·4\">01-</answered>"
+                     , "        <dataized meta=\"𝛿·0·1\">01-</dataized>"
+                     , "      </left>"
+                     , "      <right>"
+                     , "        <answered meta=\"𝑛·1·5\">𝜎3</answered>"
+                     , "        <manufactured meta=\"𝛿·0·2\">𝜎3</manufactured>"
+                     , "      </right>"
+                     , "    </forked>"
                      , "  </evaluate>"
-                     , "  <dataized meta=\"𝛿·0·1\">01-</dataized>"
-                     , "</dataize>"
-                     , "<dataize at=\"Φ.y\">"
-                     , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
-                     , "    <forked side=\"right\">𝜎2</forked>"
-                     , "    <answered meta=\"𝑛·1·5\">𝜎3</answered>"
-                     , "  </evaluate>"
-                     , "  <manufactured meta=\"𝛿·0·2\">𝜎3</manufactured>"
                      , "</dataize>"
                      ]
 

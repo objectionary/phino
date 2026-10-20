@@ -5,9 +5,9 @@
 # The sides of a fork may be metas 'morph' bound (#1967). The fork takes
 # them as they are and morphs nothing again. They differ in a datum, so the
 # run splits: the first path takes '𝑛1', the second goes on from the fork
-# with '𝑛2'. The 'forked' lines name the meta each path took, and so does
-# the line binding the answer, with no judgment around it, since the fork
-# reduced nothing there.
+# with '𝑛2'. The 'left' and 'right' blocks of the 'forked' one name the meta
+# each path took, and so does the line binding the answer, with no judgment
+# around it, since the fork reduced nothing there.
 symbolic: |
   - λ: L_fork
     dataize:
@@ -29,9 +29,8 @@ protocol: |
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
       𝑛1·1 := 01-:Δ:φ  # 𝕄(ξ.a)
       𝑛2·1 := 02-:Δ:φ  # 𝕄(ξ.b)
-      forked(𝔻(𝜎1:λ)) := left  # 𝑛1
-      𝑛·1·1 := 01-:Δ:φ  # 𝑛1
-  𝕄(Φ.y):
-    𝔼(L_fork):
-      forked(𝔻(𝜎1:λ)) := right  # 𝑛2
-      𝑛·1·2 := 02-:Δ:φ  # 𝑛2
+      forked(𝔻(𝜎1:λ)):
+        left:  # 𝑛1
+          𝑛·1·1 := 01-:Δ:φ  # 𝑛1
+        right:  # 𝑛2
+          𝑛·1·2 := 02-:Δ:φ  # 𝑛2

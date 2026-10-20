@@ -203,26 +203,36 @@ writes `joined(…)` (`EvJoined`) per fresh symbol and answers the joined term
 (`Joined` of `Answer`) with no decision, so the run splits nothing (#1954).
 Any other two sides, or a side whose morph threw, make `forked` ask `decide`
 of `Forks.hs` for the side, keyed by the value the condition came down to,
-the symbol or the bytes. A decided condition takes its side and opens
-nothing. An undecided one splits the run where it stands (#1960): `decide`
-captures the rest of the path, up to the prompt `explored` set, as a delimited
-continuation of GHC (`control0#`), goes on with the left side at once, and
-queues the same continuation with the right side. Before it does, it marks
-what the right side must find as it was at the fork: the decisions, the memo
-of `plausible` (`snapshot` of `Morph.hs`), and the protocol (`RewindEvalFunc`
-of `Deps.hs`, made by `rewindEval` and `rewindEvalXml`), which writes the
-blocks the fork stood in again before the first line of the new path. The
-metas, symbols and names keep counting across the paths, and the tally of
-`--max-firings` is shared by all of them, so what came before the fork is done
-and written once and a path never takes an answer another path made after it
-(#1958). Once `--max-paths` (`_maxPaths` of `CLI/Types.hs`) paths are open, an
-undecided condition takes the left side and captures nothing, so a run with
-one path pays nothing for it. The firing writes `forked(…)` (`EvForked`) with
-the condition and the side, and answers that side (`EvTaken`), or rethrows
-what its morph threw. `explored` of `Forks.hs` runs the queued paths in the
-order their forks opened them, and the command prints a result per path. The
-text protocol opens a `𝔻(…):` or `𝕄(…):` heading per path and the markup a
-`<path>` element.
+the symbol or the bytes. A decided condition takes its side (`Taken` of
+`Turn`) and opens nothing. An undecided one splits the run where it stands
+(#1960): `decide` writes the split (`EvSplit`), captures the rest of the path,
+up to the prompt `explored` set, as a delimited continuation of GHC
+(`control0#`), and resumes it twice (`Split` of `Turn`), with the left side
+and, once every path under it ended, with the right one, so the paths run
+depth first. Before it does, it marks what the right side must find as it was
+at the fork: the decisions, the memo of `plausible` (`snapshot` of
+`Morph.hs`), and the protocol (`RewindEvalFunc` of `Deps.hs`, made by
+`rewindEval` and `rewindEvalXml`), which hands the writer back as it was at
+the fork with its counters kept, closing first the elements the left side
+left open. The metas, symbols and names keep counting across the paths, and
+the tally of `--max-firings` is shared by all of them, so what came before the
+fork is done and written once and a path never takes an answer another path
+made after it (#1958). Once `--max-paths` (`_maxPaths` of `CLI/Types.hs`)
+paths are open, an undecided condition takes the left side and captures
+nothing, so a run with one path pays nothing for it. A taken side writes
+`forked(…) := left` (`EvForked`), the markup `<forked side="left">`, and a
+side of a split opens a block under the split (`EvSide`), `left:` or `right:`
+under `forked(…):`, the markup `<left>` or `<right>` under
+`<forked on="…">`; the firing answers that side (`EvTaken`), or rethrows what
+its morph threw. A side holds what its path did after the fork, to the end of
+the run, at the fork and not after the run that opened it (#1989). A record
+keeps its tier, and both writers lay it out by floors (`floored` of
+`Deps.hs`, `_floors` of `Protocol`, `_storeys` of `Nesting`): a split and a
+side push a floor, and a record under a floor stands below it by how far its
+tier is from the shallowest tier the floor has met. `explored` of `Forks.hs`
+runs the action once and collects the answer of every path in that order, and
+the command prints a result per path. The markup holds the run under
+`<protocol>` with no element per path.
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and

@@ -296,20 +296,26 @@ so does a side holding a datum where the other holds a symbol, unless a
 
 A run keeps a decision per condition it has met, none when the run starts.
 When a firing reaches a fork whose condition nobody decided and whose sides
-differ, the run splits there into two paths. The first path takes the left
-side and says so in the protocol:
+differ, the run diverges there into two paths, and the protocol writes the
+split where it happens, with a block per side under it:
 
 ```text
-forked(𝔻(𝜎2:λ)) := left  # ξ.left
+forked(𝔻(𝜎2:λ)):
+  left:  # ξ.left
+    …
+  right:  # ξ.right
+    …
 ```
 
 The condition is spelled by what the `dataize` operand came down to, `𝔻(𝜎2:λ)`
-for a symbol and the bytes for a datum, and the comment is the side as the
-entry wrote it, with `$` read as `ξ`. The line binding the answer is commented
-with the side it took, `𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left)`, or with the meta alone,
-`# 𝑛3`, where the side is a meta, since the fork morphed nothing there. What
-the side fires stands beside the fork and not inside it, since the fork
-answered the side rather than reduced it. A side whose morph gets stuck or is
+for a symbol and the bytes for a datum, and the comment of a side is the side
+as the entry wrote it, with `$` read as `ξ`. The first line of a side binds
+the answer and is commented with the side it took,
+`𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left)`, or with the meta alone, `# 𝑛3`, where the side
+is a meta, since the fork morphed nothing there. Each block holds what its
+path does after the fork, to the end of the run: what the side fires, since
+the fork answered the side rather than reduced it, and everything the program
+does with that answer afterwards. A side whose morph gets stuck or is
 cut cannot be compared with the other one, so the fork splits the run, and
 only the path taking that side gets stuck. A side that is a meta keeps this
 rule: in an entry that forks, an operand of `morph` that gets stuck or is cut
@@ -317,28 +323,31 @@ binds its meta to nothing and throws nothing yet, a `stay` or `symbolize` line
 reading that meta binds nothing either, and only the path taking the side that
 reads it gets stuck.
 
-Once the first path ends, the second one goes on from the fork with the right
-side, in the state the run was in at the fork: what came before the fork is
-done once for both paths, and nothing the first path did after the fork is
-seen by the second. A path that meets another fork nobody decided splits
-again, and the paths run in the order their forks opened them. Every path
-prints a result of its own, one line each, in that order. A path that gets
-stuck or is cut is parked by
+Once the left path ends, the right one goes on from the fork, in the state the
+run was in at the fork: what came before the fork is done and written once for
+both paths, and nothing the left path did after the fork is seen by the right
+one. A path that meets another fork nobody decided splits again where it
+stands, so the blocks of that fork nest inside the side that met it, and the
+paths run depth first: every path under the `left:` block before the first
+path under the `right:` one. Every path prints a result of its own, one line
+each, in that order. A path that gets stuck or is cut is parked by
 `--partial` the way one run is, and fails the command without it. The
 `--max-paths` option bounds how many paths the command runs, and there is no
 limit unless it is given: a program forking inside a recursion opens a path
 per round, so `--max-paths=8` ends such a run after eight paths, whatever else
-bounds it. The option is refused with zero.
+bounds it. Once that many paths are open, a fork nobody decided takes the left
+side as a decided one does. The option is refused with zero.
 
 A condition decided once on a path is decided for that path: a fork on a
-condition the path already decided takes the same side, writes the same
-`forked(…)` line and opens no path, so a program forking twice on one
+condition the path already decided takes the same side, opens no block and no
+path, and says so on a line of its own,
+`forked(𝔻(𝜎2:λ)) := left  # ξ.left`, so a program forking twice on one
 condition runs two paths and not four. A decision is kept by the value the
 condition came down to and not by the firing that made it, so two forks on one
-symbol are one decision too. The second path goes on with the memo of
-`--acyclic=plausible` as it was at the fork, so a firing the first path made
-after the fork is made again on the second, and the protocol of that path
-writes every line of it, while a firing made before the fork is made once.
+symbol are one decision too. The right path goes on with the memo of
+`--acyclic=plausible` as it was at the fork, so a firing the left path made
+after the fork is made again on the right one, and the `right:` block writes
+every line of it, while a firing made before the fork is made once.
 
 A side may raise. EO raises with an object, a copy of
 `⟦ message ↦ ∅, λ ⤍ L_throw ⟧`, whose λ function the file leaves out on
@@ -373,7 +382,8 @@ $ phino dataize --symbolic=raise.yaml --locator=Q.demo.a --partial \
 ```
 
 The first path takes `then` and comes down to the bytes of 7, the second takes
-`else` and parks on the throw, so its protocol ends in `unanswered(L_throw)`.
+`else` and parks on the throw, so the `right:` block of the protocol ends in
+`unanswered(L_throw)`.
 Without `--partial` the command fails there, with
 `No entry of --symbolic answers the λ function 'L_throw'`, the way one run
 does.
@@ -726,11 +736,13 @@ manufactured rather than read out of the program. A `𝜎` is the name of a λ
 function and no term of its own, so 𝔻 is applied to the formation carrying it
 and never to the name alone.
 
-A `fork` block writes the side it took, `forked(𝔻(𝜎2:λ)) := left  # ξ.left`,
-or the symbols it joined, `joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`, and the first
-line is a decision and no assignment: nothing is bound to the
-condition, which stays the unknown it was, and a reader of the protocol takes
-the line as the assumption every line after it stands under. The comment is
+A `fork` block writes the split it made, `forked(𝔻(𝜎2:λ)):` with a `left:`
+and a `right:` block under it, the side it took on a condition already
+decided, `forked(𝔻(𝜎2:λ)) := left  # ξ.left`, or the symbols it joined,
+`joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`. A side is a decision and no assignment:
+nothing is bound to the condition, which stays the unknown it was, and a
+reader of the protocol takes a side as the assumption every line inside it
+stands under. The comment of a side is
 the side as the entry spells it, with no judgment around it: picking a side is
 the file's own operation and nothing of the calculus runs there, so the line
 names a term of the entry where every other comment names a judgment. A
@@ -935,87 +947,85 @@ $ cat fork.txt
       𝕄(Φ.a🌵4):
         𝑛·2·3 := Φ.number( φ ↦ 𝜎1:λ )
         𝑛·2·4 := 𝑛·2·3.plus( x ↦ 𝑛·2·3 )
-      forked(𝔻(𝜎2:λ)) := left  # ξ.then
-      𝑛·2·5 := 𝑛·2·2  # 𝕄(ξ.then)
-    𝔼(L_plus):
-      𝔻(Φ.a🌵5):
-        𝕄(Φ.a🌵5):
-          𝑛·3·1 := Φ.number( φ ↦ 𝜎1:λ )
-      𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵6):
-        𝕄(Φ.a🌵6):
-          𝑛·3·2 := Φ.number( φ ↦ 𝜎1:λ )
-          𝑛·3·3 := 𝑛·3·2.plus( x ↦ 1 )
-        𝔼(L_plus):
-          𝔻(Φ.a🌵7):
-            𝕄(Φ.a🌵7):
-              𝑛·4·1 := Φ.number( φ ↦ 𝜎1:λ )
-          𝛿1·4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-          𝔻(Φ.a🌵8):
-            𝕄(Φ.a🌵8):
-              𝑛·4·2 := 1
-              𝑛·4·3 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
-            𝛿·4·1 := 3F-F0-00-00-00-00-00-00  # 1.0
-          𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)
-          𝑛·4·4 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
-          𝕄(𝑛·4·4):
-            𝑛·4·5 := Φ.number( φ ↦ 𝜎3:λ )
-          𝑛·4·6 := 𝑛·4·5  # 𝕄(𝑛·4·4)
-      𝛿2·3 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-      𝑛·3·4 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
-      𝕄(𝑛·3·4):
-        𝑛·3·5 := Φ.number( φ ↦ 𝜎4:λ )
-      𝑛·3·6 := 𝑛·3·5  # 𝕄(𝑛·3·4)
-    𝑛·0·6 := 𝑛·3·5.plus( x ↦ 5 )
-  𝔼(L_plus):
-    𝔻(Φ.a🌵9):
-      𝕄(Φ.a🌵9):
-        𝑛·5·1 := Φ.number( φ ↦ 𝜎4:λ )
-    𝛿1·5 := 𝔻(𝜎4:λ)  # 𝔻(ξ.ρ)
-    𝔻(Φ.a🌵10):
-      𝕄(Φ.a🌵10):
-        𝑛·5·2 := 5
-        𝑛·5·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-      𝛿·5·1 := 40-14-00-00-00-00-00-00  # 5.0
-    𝛿2·5 := 𝛿·5·1  # 𝔻(ξ.x)
-    𝑛·5·4 := Φ.number( φ ↦ 𝜎5:λ )  # 𝑛
-    𝕄(𝑛·5·4):
-      𝑛·5·5 := Φ.number( φ ↦ 𝜎5:λ )
-    𝑛·5·6 := 𝑛·5·5  # 𝕄(𝑛·5·4)
-𝔻(Φ.demo.a):
-  𝕄(Φ.demo.a):
-    𝔼(L_fork):
-      forked(𝔻(𝜎2:λ)) := right  # ξ.else
-      𝑛·2·6 := 𝑛·2·4  # 𝕄(ξ.else)
-    𝔼(L_plus):
-      𝔻(Φ.a🌵11):
-        𝕄(Φ.a🌵11):
-          𝑛·6·1 := Φ.number( φ ↦ 𝜎1:λ )
-      𝛿1·6 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵12):
-        𝕄(Φ.a🌵12):
-          𝑛·6·2 := Φ.number( φ ↦ 𝜎1:λ )
-      𝛿2·6 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-      𝑛·6·3 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
-      𝕄(𝑛·6·3):
-        𝑛·6·4 := Φ.number( φ ↦ 𝜎6:λ )
-      𝑛·6·5 := 𝑛·6·4  # 𝕄(𝑛·6·3)
-    𝑛·0·7 := 𝑛·6·4.plus( x ↦ 5 )
-  𝔼(L_plus):
-    𝔻(Φ.a🌵13):
-      𝕄(Φ.a🌵13):
-        𝑛·7·1 := Φ.number( φ ↦ 𝜎6:λ )
-    𝛿1·7 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
-    𝔻(Φ.a🌵14):
-      𝕄(Φ.a🌵14):
-        𝑛·7·2 := 5
-        𝑛·7·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-      𝛿·7·1 := 40-14-00-00-00-00-00-00  # 5.0
-    𝛿2·7 := 𝛿·7·1  # 𝔻(ξ.x)
-    𝑛·7·4 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
-    𝕄(𝑛·7·4):
-      𝑛·7·5 := Φ.number( φ ↦ 𝜎7:λ )
-    𝑛·7·6 := 𝑛·7·5  # 𝕄(𝑛·7·4)
+      forked(𝔻(𝜎2:λ)):
+        left:  # ξ.then
+          𝑛·2·5 := 𝑛·2·2  # 𝕄(ξ.then)
+          𝔼(L_plus):  # 𝕄(Φ.demo.a)
+            𝔻(Φ.a🌵5):
+              𝕄(Φ.a🌵5):
+                𝑛·3·1 := Φ.number( φ ↦ 𝜎1:λ )
+            𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+            𝔻(Φ.a🌵6):
+              𝕄(Φ.a🌵6):
+                𝑛·3·2 := Φ.number( φ ↦ 𝜎1:λ )
+                𝑛·3·3 := 𝑛·3·2.plus( x ↦ 1 )
+              𝔼(L_plus):
+                𝔻(Φ.a🌵7):
+                  𝕄(Φ.a🌵7):
+                    𝑛·4·1 := Φ.number( φ ↦ 𝜎1:λ )
+                𝛿1·4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+                𝔻(Φ.a🌵8):
+                  𝕄(Φ.a🌵8):
+                    𝑛·4·2 := 1
+                    𝑛·4·3 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+                  𝛿·4·1 := 3F-F0-00-00-00-00-00-00  # 1.0
+                𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)
+                𝑛·4·4 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
+                𝕄(𝑛·4·4):
+                  𝑛·4·5 := Φ.number( φ ↦ 𝜎3:λ )
+                𝑛·4·6 := 𝑛·4·5  # 𝕄(𝑛·4·4)
+            𝛿2·3 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
+            𝑛·3·4 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
+            𝕄(𝑛·3·4):
+              𝑛·3·5 := Φ.number( φ ↦ 𝜎4:λ )
+            𝑛·3·6 := 𝑛·3·5  # 𝕄(𝑛·3·4)
+          𝑛·0·6 := 𝑛·3·5.plus( x ↦ 5 )  # 𝕄(Φ.demo.a)
+          𝔼(L_plus):  # 𝔻(Φ.demo.a)
+            𝔻(Φ.a🌵9):
+              𝕄(Φ.a🌵9):
+                𝑛·5·1 := Φ.number( φ ↦ 𝜎4:λ )
+            𝛿1·5 := 𝔻(𝜎4:λ)  # 𝔻(ξ.ρ)
+            𝔻(Φ.a🌵10):
+              𝕄(Φ.a🌵10):
+                𝑛·5·2 := 5
+                𝑛·5·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+              𝛿·5·1 := 40-14-00-00-00-00-00-00  # 5.0
+            𝛿2·5 := 𝛿·5·1  # 𝔻(ξ.x)
+            𝑛·5·4 := Φ.number( φ ↦ 𝜎5:λ )  # 𝑛
+            𝕄(𝑛·5·4):
+              𝑛·5·5 := Φ.number( φ ↦ 𝜎5:λ )
+            𝑛·5·6 := 𝑛·5·5  # 𝕄(𝑛·5·4)
+        right:  # ξ.else
+          𝑛·2·6 := 𝑛·2·4  # 𝕄(ξ.else)
+          𝔼(L_plus):  # 𝕄(Φ.demo.a)
+            𝔻(Φ.a🌵11):
+              𝕄(Φ.a🌵11):
+                𝑛·6·1 := Φ.number( φ ↦ 𝜎1:λ )
+            𝛿1·6 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+            𝔻(Φ.a🌵12):
+              𝕄(Φ.a🌵12):
+                𝑛·6·2 := Φ.number( φ ↦ 𝜎1:λ )
+            𝛿2·6 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+            𝑛·6·3 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
+            𝕄(𝑛·6·3):
+              𝑛·6·4 := Φ.number( φ ↦ 𝜎6:λ )
+            𝑛·6·5 := 𝑛·6·4  # 𝕄(𝑛·6·3)
+          𝑛·0·7 := 𝑛·6·4.plus( x ↦ 5 )  # 𝕄(Φ.demo.a)
+          𝔼(L_plus):  # 𝔻(Φ.demo.a)
+            𝔻(Φ.a🌵13):
+              𝕄(Φ.a🌵13):
+                𝑛·7·1 := Φ.number( φ ↦ 𝜎6:λ )
+            𝛿1·7 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
+            𝔻(Φ.a🌵14):
+              𝕄(Φ.a🌵14):
+                𝑛·7·2 := 5
+                𝑛·7·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+              𝛿·7·1 := 40-14-00-00-00-00-00-00  # 5.0
+            𝛿2·7 := 𝛿·7·1  # 𝔻(ξ.x)
+            𝑛·7·4 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
+            𝕄(𝑛·7·4):
+              𝑛·7·5 := Φ.number( φ ↦ 𝜎7:λ )
+            𝑛·7·6 := 𝑛·7·5  # 𝕄(𝑛·7·4)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1023,17 +1033,19 @@ $ cat fork.txt
 `𝜎2` is minted by the first firing and consumed by the fork, which forks on
 it: the fork morphs both branches where they stand in the universe,
 `𝕄(Φ.a🌵3):` and `𝕄(Φ.a🌵4):`, finds that they differ, and since nobody
-decided `x.gt( 0 )`, the first path takes `then` and says so on its
-`forked(…)` line. `𝜎3` is minted by the `plus( 1 )` inside the branch and consumed
-by the `plus` around it as `𝔻(𝜎3:λ)`, and `𝜎4` is what the branch came to,
-which the `plus( 5 )` standing after the fork reads as `𝔻(𝜎4:λ)`. The second
-heading, `𝔻(Φ.demo.a):`, opens the second path, which starts at the fork and
-not at the top of the program: it reopens the blocks the fork stood in, takes
-`else` over the same `𝜎2`, and reads `𝔻(𝜎6:λ)` after it. A reader who knows
-the entry knows that `𝛿1` is what decides between the two paths and that the
-first of them belongs to `then`. Nothing is assigned to a `𝜎`, it being the
-name of a λ function, so the decision stands on a line of its own, commented
-with the side as the entry spells it.
+decided `x.gt( 0 )`, the run diverges right there, on the `forked(…):` line.
+That line holds a block per side, `left:` and `right:`, each commented with
+the side as the entry spells it, and each block holds the whole rest of the
+run on its path, down to the last firing of the outer `𝔻`. `𝜎3` is minted by
+the `plus( 1 )` inside the branch and consumed by the `plus` around it as
+`𝔻(𝜎3:λ)`, and `𝜎4` is what the branch came to, which the `plus( 5 )`
+standing after the fork reads as `𝔻(𝜎4:λ)`. The `right:` block goes on from
+the fork and not from the top of the program: it takes `else` over the same
+`𝜎2`, and reads `𝔻(𝜎6:λ)` after it. A reader who knows the entry knows that
+`𝛿1` is what decides between the two blocks and that the first of them
+belongs to `then`. Nothing is assigned to a `𝜎`, it being the name of a λ
+function, so the decision stands on a line of its own, with the two sides
+under it.
 
 The metas and the symbols keep counting across the paths, and a name given
 before the fork names the same term on both paths, which is why the second
@@ -1046,8 +1058,11 @@ A firing that happened while an operand of another was being reduced stands one
 level deeper, under the firing that asked for it. The `plus( 1 )` of `then` is
 fired while the outer `plus` brings its `x` down, so it stands inside that
 firing. The branch the fork takes reaches it as a call 𝕄 left unfired, and is
-fired beside the fork, in the block of the judgment that fired the fork,
-`𝕄(Φ.demo.a):`, since the fork answered the branch rather than reduced it.
+fired inside the side, since the fork answered the branch rather than reduced
+it. A side opens no heading of a judgment, so a line in it keeps the comment
+of the judgment that made it: `𝔼(L_plus):  # 𝕄(Φ.demo.a)` is the firing the
+morph of `Φ.demo.a` asked for once the fork answered, and
+`𝔼(L_plus):  # 𝔻(Φ.demo.a)` is the one the outer `𝔻` asked for after it.
 
 ### The protocol as XML
 
@@ -1065,61 +1080,58 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol>
-  <path>
-    <dataize at="Φ">
-      <morph at="Φ">
-        <applied meta="𝑛·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
-        <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
-        <applied meta="𝑛·0·3" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
-        <applied meta="𝑛·0·4" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
-        <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta attr="x">𝑛·0·4</meta></applied>
-        <morphed meta="𝑛·0·6">𝑛·0·5</morphed>
-      </morph>
-      <evaluate λ="L_number_plus" by="dataize" at="Φ">
-        <dataize at="Φ.a🌵0">
-          <morph at="Φ.a🌵0">
-            <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
-            <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
-            <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
-            <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
-          </morph>
-          <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
-        </dataize>
-        <bound meta="𝛿1·1">𝛿·1·1</bound>
-        <dataize at="Φ.a🌵1">
-          <morph at="Φ.a🌵1">
-            <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
-            <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
-            <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
-            <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
-          </morph>
-          <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
-        </dataize>
-        <bound meta="𝛿2·1">𝛿·1·2</bound>
-        <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-        <applied meta="𝑛·1·9" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
-        <built meta="𝑛·1·10">𝑛·1·9</built>
-        <morph at="𝑛·1·10">
-          <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
-          <morphed meta="𝑛·1·12">𝑛·1·11</morphed>
+  <dataize at="Φ">
+    <morph at="Φ">
+      <applied meta="𝑛·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
+      <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
+      <applied meta="𝑛·0·3" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
+      <applied meta="𝑛·0·4" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
+      <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta attr="x">𝑛·0·4</meta></applied>
+      <morphed meta="𝑛·0·6">𝑛·0·5</morphed>
+    </morph>
+    <evaluate λ="L_number_plus" by="dataize" at="Φ">
+      <dataize at="Φ.a🌵0">
+        <morph at="Φ.a🌵0">
+          <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
+          <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
+          <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
+          <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
         </morph>
-        <answered meta="𝑛·1·13">𝑛·1·11</answered>
-      </evaluate>
-      <manufactured meta="𝛿·0·1">𝜎1</manufactured>
-    </dataize>
-  </path>
+        <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
+      </dataize>
+      <bound meta="𝛿1·1">𝛿·1·1</bound>
+      <dataize at="Φ.a🌵1">
+        <morph at="Φ.a🌵1">
+          <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
+          <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
+          <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
+          <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
+        </morph>
+        <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
+      </dataize>
+      <bound meta="𝛿2·1">𝛿·1·2</bound>
+      <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
+      <applied meta="𝑛·1·9" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
+      <built meta="𝑛·1·10">𝑛·1·9</built>
+      <morph at="𝑛·1·10">
+        <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
+        <morphed meta="𝑛·1·12">𝑛·1·11</morphed>
+      </morph>
+      <answered meta="𝑛·1·13">𝑛·1·11</answered>
+    </evaluate>
+    <manufactured meta="𝛿·0·1">𝜎1</manufactured>
+  </dataize>
 </protocol>
 ```
 
 <!-- markdownlint-enable MD013 -->
 
-The root is `<protocol>`, holding a `<path>` per path the command ran, one
-when nothing forks, and the run of a path stands inside its element, named
-after the judgment it ran — `<dataize>` for a 𝔻, `<morph>` for a 𝕄 — with `at`
-naming the term it was aimed at, which is what the text format opens with as
-`𝔻(Φ)`, once per path. A path after the first starts at the fork that opened
-it, inside the elements the fork stood in, which it opens again. After the
-paths the root holds `<msec>`, `<firings>`
+The root is `<protocol>`, holding the run in one element, named after the
+judgment it ran — `<dataize>` for a 𝔻, `<morph>` for a 𝕄 — with `at` naming
+the term it was aimed at, which is what the text format opens with as
+`𝔻(Φ)`. A fork that splits the run writes every path inside that one
+element, at the fork that opened it, as described below. After the run the
+root holds `<msec>`, `<firings>`
 and `<fps>`: how long the command took, how many λ functions it fired, and how
 many it fired per second. The text format ends with the same three as
 `msec(…)`, `firings(…)` and `fps(…)`.
@@ -1211,14 +1223,18 @@ Since the markup names terms the text format writes out, the two count their
 metas each on their own: `𝑛·1·11` of the markup above is `𝑛·1·6` of the
 text.
 
-`<forked side="left">𝜎2</forked>` is the decision a `fork` block made, which
-the text format writes as `forked(𝔻(𝜎2:λ)) := left`: the side stands in
-`side` and the condition is the text, the symbol or the datum the operand came
-down to. It takes no `meta`, since the decision binds nothing, and the two
-`<morph>` elements before it are the sides being morphed where they stand in
-the universe; the `<answered>` of the firing follows it. The path the other side
-opens is the next `<path>` of the root, which starts the run over and writes
-the same element with `side="right"`. A fork that joins its two sides writes
+`<forked on="𝜎2">` is a fork that split the run, which the text format writes
+as `forked(𝔻(𝜎2:λ)):`. The condition stands in `on`, the symbol or the datum
+the operand came down to, and the two `<morph>` elements before it are the
+sides being morphed where they stand in the universe. The element holds a
+`<left>` and a `<right>`, one per side, and each of them holds what its path
+did after the fork, to the end of the run: the `<answered>` of the firing
+first, then everything the program did with that answer. A fork met inside a
+side writes its own `<forked>` inside that side. `<forked side="left">𝜎2</forked>`
+is a fork on a condition the path had decided already, which the text format
+writes as `forked(𝔻(𝜎2:λ)) := left`: the side stands in `side` and the
+condition is the text. Neither element takes a `meta`, since a decision binds
+nothing. A fork that joins its two sides writes
 `<joined symbol="𝜎5" left="𝜎3" right="𝜎4">𝜎2</joined>` instead, one element
 per fresh symbol, which the text format writes as
 `joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`: the fresh symbol stands in `symbol`, the
@@ -1269,49 +1285,47 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.xml --quiet \
 $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol>
-  <path>
-    <dataize at="Φ">
-      <morph at="Φ">
-        <applied meta="𝑛·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
-        <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
-        <applied meta="𝑛·0·3" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
-        <applied meta="𝑛·0·4" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
-        <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta attr="x">𝑛·0·4</meta></applied>
-        <evaluate λ="L_number_plus" by="morph" at="Φ">
-          <dataize at="Φ.a🌵0">
-            <morph at="Φ.a🌵0">
-              <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
-              <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
-              <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
-              <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
-            </morph>
-            <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
-          </dataize>
-          <bound meta="𝛿1·1">𝛿·1·1</bound>
-          <dataize at="Φ.a🌵1">
-            <morph at="Φ.a🌵1">
-              <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
-              <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
-              <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
-              <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
-            </morph>
-            <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
-          </dataize>
-          <bound meta="𝛿2·1">𝛿·1·2</bound>
-          <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-          <applied meta="𝑛·1·9" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
-          <built meta="𝑛·1·10">𝑛·1·9</built>
-          <morph at="𝑛·1·10">
-            <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
-            <morphed meta="𝑛·1·12">𝑛·1·11</morphed>
+  <dataize at="Φ">
+    <morph at="Φ">
+      <applied meta="𝑛·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
+      <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
+      <applied meta="𝑛·0·3" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
+      <applied meta="𝑛·0·4" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
+      <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta attr="x">𝑛·0·4</meta></applied>
+      <evaluate λ="L_number_plus" by="morph" at="Φ">
+        <dataize at="Φ.a🌵0">
+          <morph at="Φ.a🌵0">
+            <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
+            <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
+            <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
+            <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
           </morph>
-          <answered meta="𝑛·1·13">𝑛·1·11</answered>
-        </evaluate>
-        <morphed meta="𝑛·0·6">𝑛·1·11.nope</morphed>
-      </morph>
-      <unanswered λ="L_number_nope" by="dataize">𝑛·1·11.nope</unanswered>
-    </dataize>
-  </path>
+          <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
+        </dataize>
+        <bound meta="𝛿1·1">𝛿·1·1</bound>
+        <dataize at="Φ.a🌵1">
+          <morph at="Φ.a🌵1">
+            <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
+            <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
+            <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
+            <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
+          </morph>
+          <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
+        </dataize>
+        <bound meta="𝛿2·1">𝛿·1·2</bound>
+        <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
+        <applied meta="𝑛·1·9" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
+        <built meta="𝑛·1·10">𝑛·1·9</built>
+        <morph at="𝑛·1·10">
+          <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
+          <morphed meta="𝑛·1·12">𝑛·1·11</morphed>
+        </morph>
+        <answered meta="𝑛·1·13">𝑛·1·11</answered>
+      </evaluate>
+      <morphed meta="𝑛·0·6">𝑛·1·11.nope</morphed>
+    </morph>
+    <unanswered λ="L_number_nope" by="dataize">𝑛·1·11.nope</unanswered>
+  </dataize>
 </protocol>
 ```
 
@@ -1761,8 +1775,7 @@ $ phino morph --acyclic=plausible --partial --sweet --hide-rho --flat \
 Φ.if( c ↦ Φ.zero( x ↦ 𝜎1:λ ), left ↦ Φ.box( v ↦ 00-:Δ ), right ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎1:λ ), acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ Φ.box( v ↦ 00-:Δ ) ) ).φ ).φ
 $ grep looped facta.txt
       looped(𝑛·0·5)  # plausible
-      looped(𝑛·0·10)  # plausible
-  looped(𝑛·0·10)  # plausible
+        looped(𝑛·0·5)  # 𝕄(Φ.x), plausible
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1774,11 +1787,12 @@ one, as it stands or somewhere below a wrapper it gained. Any symbol stands for
 any other, and nothing is looked for under a `ρ`, which holds the object a term
 came from rather than a term it grew into. The first `if` morphs both of its
 sides before it decides, and its `right` holds a second `if`, which holds the
-first under one more `pair` and one more `dec`, so that morph is cut on both
-paths, and its `looped(…)` line says `plausible`. The first path takes the
-`left` and answers the accumulator. The second takes the `right`, which comes
-back as the term the cut left, the path meets the same `if` once more and is
-cut again, and `--partial` parks it. A call
+first under one more `pair` and one more `dec`, so that morph is cut once,
+before the fork, for both paths, and its `looped(…)` line says `plausible`.
+The first path takes the `left` and answers the accumulator. The second takes
+the `right`, which comes back as the term the cut left, the path meets the
+same `if` once more and is cut again inside the `right:` block, and
+`--partial` parks it. A call
 nested in its own operand, such as a sum of sums, is never
 cut, since the inner call is smaller than the outer one and cannot hold it.
 The mode is not sound, though: a recursion whose argument grows on its way to
