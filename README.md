@@ -210,7 +210,7 @@ line binds its meta to a fresh symbol and writes what the symbol stands for:
 ```
 
 ```text
-deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛1.φ)
+deferred 𝜎3 := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛1.φ)
 ```
 
 The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
@@ -286,7 +286,7 @@ the condition holds and the right one where it does not, and the run goes on
 with the joined term on the path it is on:
 
 ```text
-joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
+joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
 ```
 
 A pair met twice gets the same fresh symbol both times. Only sides that differ
@@ -300,7 +300,7 @@ differ, the run diverges there into two paths, and the protocol writes the
 split where it happens, with a block per side under it:
 
 ```text
-forked(𝔻(𝜎2:λ)):
+forked 𝔻(𝜎2:λ):
   left:  # ξ.left
     …
   right:  # ξ.right
@@ -341,7 +341,7 @@ side as a decided one does. The option is refused with zero.
 A condition decided once on a path is decided for that path: a fork on a
 condition the path already decided takes the same side, opens no block and no
 path, and says so on a line of its own,
-`forked(𝔻(𝜎2:λ)) := left  # ξ.left`, so a program forking twice on one
+`forked 𝔻(𝜎2:λ) := left  # ξ.left`, so a program forking twice on one
 condition runs two paths and not four. A decision is kept by the value the
 condition came down to and not by the firing that made it, so two forks on one
 symbol are one decision too. The right path goes on with the memo of
@@ -383,7 +383,7 @@ $ phino dataize --symbolic=raise.yaml --locator=Q.demo.a --partial \
 
 The first path takes `then` and comes down to the bytes of 7, the second takes
 `else` and parks on the throw, so the `right:` block of the protocol ends in
-`unanswered(L_throw)`.
+`unanswered L_throw`.
 Without `--partial` the command fails there, with
 `No entry of --symbolic answers the λ function 'L_throw'`, the way one run
 does.
@@ -439,7 +439,7 @@ dropped nothing is commented with the meta alone:
 ```text
 𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
 𝑛4·1 := 𝑛2·1  # 𝑛2
-joined(𝜎4) := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
+joined 𝜎4 := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
 ```
 
 ### Standing a symbol for a datum
@@ -487,10 +487,10 @@ the left path. A line that turned a datum into a symbol is commented
 commented with the meta alone:
 
 ```text
-symbolized(𝜎4) := 3F-F0-00-00-00-00-00-00  # 1.0
+symbolized 𝜎4 := 3F-F0-00-00-00-00-00-00  # 1.0
 𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # symbolize(𝑛1)
 𝑛4·1 := 𝑛2·1  # 𝑛2
-joined(𝜎5) := 𝔻(𝜎3:λ) ? 𝜎4 : 𝜎2
+joined 𝜎5 := 𝔻(𝜎3:λ) ? 𝜎4 : 𝜎2
 ```
 
 A line sees its own side alone, so a datum both sides share becomes two
@@ -526,7 +526,7 @@ two sides of one shape still join:
 ```
 
 A `defer` line here works as it does in an entry that computes: it answers a
-copy over a bare symbol with a fresh symbol, writes the `deferred(…)` line
+copy over a bare symbol with a fresh symbol, writes the `deferred …` line
 sited at the meta it read, such as `# 𝕄(𝑛6.φ)`, and binds any other term as
 it stands. Like a `stay` or `symbolize` line, it binds nothing and throws
 nothing when the `morph` of the meta it reads got stuck or was cut, and only
@@ -570,7 +570,7 @@ a λ name stands. In a term, `𝜎1` is a concrete symbol: a λ function nothing
 answers, which is what makes the value the term carries unknown. Firing it is
 therefore the same question as firing a λ name the `--symbolic` file does not
 carry, and gets the same answer: 𝔼 stops there, the protocol records the site as
-`unanswered(𝜎1)`, and `--partial` leaves the term where it stands. Dispatching
+`unanswered 𝜎1`, and `--partial` leaves the term where it stands. Dispatching
 an attribute off a symbol — `⟦ λ ⤍ 𝜎1 ⟧.plus( 5 )` — therefore taints its own
 binding and nothing else; what stands beside it still computes. In an answer, a
 bare `𝜎` asks for a fresh one, minted as the firing happens and numbered by the
@@ -736,10 +736,10 @@ manufactured rather than read out of the program. A `𝜎` is the name of a λ
 function and no term of its own, so 𝔻 is applied to the formation carrying it
 and never to the name alone.
 
-A `fork` block writes the split it made, `forked(𝔻(𝜎2:λ)):` with a `left:`
+A `fork` block writes the split it made, `forked 𝔻(𝜎2:λ):` with a `left:`
 and a `right:` block under it, the side it took on a condition already
-decided, `forked(𝔻(𝜎2:λ)) := left  # ξ.left`, or the symbols it joined,
-`joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`. A side is a decision and no assignment:
+decided, `forked 𝔻(𝜎2:λ) := left  # ξ.left`, or the symbols it joined,
+`joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`. A side is a decision and no assignment:
 nothing is bound to the condition, which stays the unknown it was, and a
 reader of the protocol takes a side as the assumption every line inside it
 stands under. The comment of a side is
@@ -759,7 +759,7 @@ inner call is fired inside the `𝕄(Φ):` block, while 𝕄 reduces the head of
 outer dispatch, and the outer one right in `𝔻(Φ):`, because 𝔻 asked for the
 data. A line standing right in a firing has no block of its own around it, so
 a line there that a judgment wrote at a site no block names, such as
-`starved(…)` below, carries that judgment and site as its comment. The site
+`starved …` below, carries that judgment and site as its comment. The site
 itself is where in the program the firing
 belongs: the term the run was aimed at, so `Φ` for a run that was aimed at
 nothing in particular. An operand of a firing is reduced bound to a synthetic
@@ -781,7 +781,7 @@ that meta, spelled the way the calculus reads it — `$` is read as `ξ` — so 
 reader never has to open the `--symbolic` file beside the protocol and match
 every line by λ name and meta number.
 
-`unanswered(…)` is a λ name no entry answers, standing where the block of its
+`unanswered …` is a λ name no entry answers, standing where the block of its
 firing would have stood. Nothing fired, so nothing opens under it. The line is
 commented with the judgment that asked and the formation it was asking about,
 `𝕄(L_none:λ)`, which no block names, the way an operand line is commented
@@ -822,7 +822,7 @@ $ cat atoms.txt
       𝕄(𝑛·1·5):
         𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )
       𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
-  unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)
+  unanswered L_number_nope  # 𝔻(L_number_nope:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -832,42 +832,42 @@ residue instead of failing: what `phino` could not decide is a property of the
 program and not of the option that decides what to do about it.
 
 Three more lines say why a firing gave no answer.
-`stuck(L_outer)` is the last line of a firing that got stuck, naming the λ
-function it got stuck on, which is seldom the one `unanswered(…)` names: that
+`stuck L_outer` is the last line of a firing that got stuck, naming the λ
+function it got stuck on, which is seldom the one `unanswered …` names: that
 one is written where it was asked for, and this one closes every firing the
 failure passed on its way out.
-`stall(L_outer)` stands under a firing that `--acyclic=plausible` answered
+`stall L_outer` stands under a firing that `--acyclic=plausible` answered
 with the stall an earlier firing of the same formation kept, so a told stall
 never reads as a fresh firing that wrote nothing.
-`starved(3)` is where `--max-steps=3` ran out, whether or not `--partial` goes
+`starved 3` is where `--max-steps=3` ran out, whether or not `--partial` goes
 on to park it. It stands in the block of the judgment and the site the
 reduction stood at, and where the budget ran out before that block could open,
-right in a firing, it is commented with them instead, `starved(3)  # 𝔻(Φ.a🌵2)`:
+right in a firing, it is commented with them instead, `starved 3  # 𝔻(Φ.a🌵2)`:
 
 ```text
 𝕄(Φ.x):
   𝕄(Φ.x.arg):
     𝔼(L_outer):
       𝔻(Φ.a🌵0):
-        starved(3)
-      stuck(L_outer)
+        starved 3
+      stuck L_outer
   𝔼(L_outer):
     𝔻(Φ.a🌵1):
       𝔼(L_outer):
-        starved(3)  # 𝔻(Φ.a🌵2)
-    stuck(L_outer)
+        starved 3  # 𝔻(Φ.a🌵2)
+    stuck L_outer
 ```
 
 The markup spells them `<stuck λ="L_outer"/>`, `<stalled λ="L_outer"/>` and
 `<starved limit="3" by="dataize" at="Φ.a🌵2"/>`.
 
-`timeout(5)` is where `--max-seconds=5` ran out, placed and commented the same
+`timeout 5` is where `--max-seconds=5` ran out, placed and commented the same
 way and written at the first step the deadline refused.
 The run ends there, with or without `--partial`, so it is always the last line
 of the protocol.
 The markup spells it `<timeout limit="5" by="morph" at="…"/>`.
 
-`spent(3)` is where `--max-firings=3` ran out, placed and commented the same
+`spent 3` is where `--max-firings=3` ran out, placed and commented the same
 way and written where the firing it refused would have started.
 The markup spells it `<spent limit="3" by="dataize" at="…"/>`.
 
@@ -947,7 +947,7 @@ $ cat fork.txt
       𝕄(Φ.a🌵4):
         𝑛·2·3 := Φ.number( φ ↦ 𝜎1:λ )
         𝑛·2·4 := 𝑛·2·3.plus( x ↦ 𝑛·2·3 )
-      forked(𝔻(𝜎2:λ)):
+      forked 𝔻(𝜎2:λ):
         left:  # ξ.then
           𝑛·2·5 := 𝑛·2·2  # 𝕄(ξ.then)
           𝔼(L_plus):  # 𝕄(Φ.demo.a)
@@ -1033,7 +1033,7 @@ $ cat fork.txt
 `𝜎2` is minted by the first firing and consumed by the fork, which forks on
 it: the fork morphs both branches where they stand in the universe,
 `𝕄(Φ.a🌵3):` and `𝕄(Φ.a🌵4):`, finds that they differ, and since nobody
-decided `x.gt( 0 )`, the run diverges right there, on the `forked(…):` line.
+decided `x.gt( 0 )`, the run diverges right there, on the `forked …:` line.
 That line holds a block per side, `left:` and `right:`, each commented with
 the side as the entry spells it, and each block holds the whole rest of the
 run on its path, down to the last firing of the outer `𝔻`. `𝜎3` is minted by
@@ -1134,7 +1134,7 @@ element, at the fork that opened it, as described below. After the run the
 root holds `<msec>`, `<firings>`
 and `<fps>`: how long the command took, how many λ functions it fired, and how
 many it fired per second. The text format ends with the same three as
-`msec(…)`, `firings(…)` and `fps(…)`.
+`msec …`, `firings …` and `fps …`.
 The examples here leave them out, since the time differs from run to run.
 `<evaluate>` is one firing of 𝔼, `λ` naming the entry that answered it, `by`
 naming the judgment that asked for the firing — the same word the run is named
@@ -1224,7 +1224,7 @@ metas each on their own: `𝑛·1·11` of the markup above is `𝑛·1·6` of th
 text.
 
 `<forked on="𝜎2">` is a fork that split the run, which the text format writes
-as `forked(𝔻(𝜎2:λ)):`. The condition stands in `on`, the symbol or the datum
+as `forked 𝔻(𝜎2:λ):`. The condition stands in `on`, the symbol or the datum
 the operand came down to, and the two `<morph>` elements before it are the
 sides being morphed where they stand in the universe. The element holds a
 `<left>` and a `<right>`, one per side, and each of them holds what its path
@@ -1232,17 +1232,17 @@ did after the fork, to the end of the run: the `<answered>` of the firing
 first, then everything the program did with that answer. A fork met inside a
 side writes its own `<forked>` inside that side. `<forked side="left">𝜎2</forked>`
 is a fork on a condition the path had decided already, which the text format
-writes as `forked(𝔻(𝜎2:λ)) := left`: the side stands in `side` and the
+writes as `forked 𝔻(𝜎2:λ) := left`: the side stands in `side` and the
 condition is the text. Neither element takes a `meta`, since a decision binds
 nothing. A fork that joins its two sides writes
 `<joined symbol="𝜎5" left="𝜎3" right="𝜎4">𝜎2</joined>` instead, one element
 per fresh symbol, which the text format writes as
-`joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`: the fresh symbol stands in `symbol`, the
+`joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`: the fresh symbol stands in `symbol`, the
 two it stands for in `left` and `right`, and the condition is the text.
 
 `<symbolized symbol="𝜎4" number="1.0">3F-F0-00-00-00-00-00-00</symbolized>` is
 one symbol a `symbolize` line minted, which the text format writes as
-`symbolized(𝜎4) := 3F-F0-00-00-00-00-00-00  # 1.0`: the fresh symbol stands in
+`symbolized 𝜎4 := 3F-F0-00-00-00-00-00-00  # 1.0`: the fresh symbol stands in
 `symbol` and the datum it stands for is the text, with the double of eight
 bytes in `number`, as in `<dataized>`. The elements stand ahead of the
 `<bound>` of the line, and the markup binds the meta of that line as it binds
@@ -1437,7 +1437,7 @@ it was reduced — the symbol it came to sits in the hidden `ρ` of the residual
 program — while `as-bool` names a λ function no entry answers, so it stays in
 place as a normal-form subterm. A stuck site opens no block in the
 `--protocol` file, since nothing fired there, and stands in it as
-`unanswered(…)`:
+`unanswered …`:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -1482,7 +1482,7 @@ $ cat atoms.txt
       𝕄(𝑛·2·4):
         𝑛·2·5 := Φ.number( φ ↦ 𝜎2:λ )
       𝑛·2·6 := 𝑛·2·5  # 𝕄(𝑛·2·4)
-  unanswered(L_number_as_bool)  # 𝔻(L_number_as_bool:λ)
+  unanswered L_number_as_bool  # 𝔻(L_number_as_bool:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1494,7 +1494,7 @@ residual program, for the next iteration.
 An operand of a firing that reaches the terminator `⊥`, or a term no
 dataization rule matches, such as a formation whose `φ` is a void nothing
 filled, never comes down to data either, and `--partial` parks that firing
-the same way, writing the dead end into the protocol as `unanswered(⊥)` with the
+the same way, writing the dead end into the protocol as `unanswered ⊥` with the
 term that could not be dataized beside it. Dataization aimed at `⊥` itself still
 fails, with or without `--partial`, since there is no firing to park.
 
@@ -1553,7 +1553,7 @@ $ phino morph --symbolic=split.yaml --locator=Q.x --partial --max-seconds=5 \
     --protocol=split.txt --sweet --flat split.phi
 [ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=5
 $ grep -o 'timeout.*' split.txt
-timeout(5)
+timeout 5
 ```
 
 ## Morph
@@ -1708,13 +1708,13 @@ $ cat down.txt
     𝕄(𝑛·1·1):
       𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
     𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)
-  looped(𝑛·0·1)  # proven
+  looped 𝑛·0·1  # proven
 ```
 
 The first round fires `down` with `x ↦ 𝜎1` and answers it with `x ↦ 𝜎2`, and
 the `φ` dispatched off that answer would fire it again: the formation the first
 round entered, `𝜎2` standing where `𝜎1` stood, so the firing is cut before it
-opens. The cut is the `looped(…)` line, standing where the block of the cut
+opens. The cut is the `looped …` line, standing where the block of the cut
 firing would have stood: the block it stands in names the judgment the frame
 belonged to and the site it was cut at, and the comment names the mode that
 cut it. What it carries is the formation the frame above entered, named by the
@@ -1774,8 +1774,8 @@ $ phino morph --acyclic=plausible --partial --sweet --hide-rho --flat \
 00-:Δ
 Φ.if( c ↦ Φ.zero( x ↦ 𝜎1:λ ), left ↦ Φ.box( v ↦ 00-:Δ ), right ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎1:λ ), acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ Φ.box( v ↦ 00-:Δ ) ) ).φ ).φ
 $ grep looped facta.txt
-      looped(𝑛·0·5)  # plausible
-        looped(𝑛·0·5)  # 𝕄(Φ.x), plausible
+      looped 𝑛·0·5  # plausible
+        looped 𝑛·0·5  # 𝕄(Φ.x), plausible
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1788,7 +1788,7 @@ any other, and nothing is looked for under a `ρ`, which holds the object a term
 came from rather than a term it grew into. The first `if` morphs both of its
 sides before it decides, and its `right` holds a second `if`, which holds the
 first under one more `pair` and one more `dec`, so that morph is cut once,
-before the fork, for both paths, and its `looped(…)` line says `plausible`.
+before the fork, for both paths, and its `looped …` line says `plausible`.
 The first path takes the `left` and answers the accumulator. The second takes
 the `right`, which comes back as the term the cut left, the path meets the
 same `if` once more and is cut again inside the `right:` block, and
