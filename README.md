@@ -1073,31 +1073,37 @@ $ cat atoms.xml
         <applied meta="𝑛·0·3" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
         <applied meta="𝑛·0·4" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
         <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta name="x">𝑛·0·4</meta></applied>
+        <morphed meta="𝑛·0·6">𝑛·0·5</morphed>
       </morph>
       <evaluate λ="L_number_plus" by="dataize" at="Φ">
         <dataize at="Φ.a🌵0">
           <morph at="Φ.a🌵0">
             <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta name="φ">𝑛·0·1</meta></applied>
-            <applied meta="𝑛·1·2" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
+            <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
+            <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
+            <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
           </morph>
           <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
         </dataize>
         <bound meta="𝛿1·1">𝛿·1·1</bound>
         <dataize at="Φ.a🌵1">
           <morph at="Φ.a🌵1">
-            <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵1" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
-            <applied meta="𝑛·1·4" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
+            <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
+            <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
+            <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
+            <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
           </morph>
           <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
         </dataize>
         <bound meta="𝛿2·1">𝛿·1·2</bound>
         <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-        <applied meta="𝑛·1·5" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
-        <built meta="𝑛·1·6">𝑛·1·5</built>
-        <morph at="𝑛·1·6">
-          <applied meta="𝑛·1·7" by="morph" at="𝑛·1·6" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+        <applied meta="𝑛·1·9" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+        <built meta="𝑛·1·10">𝑛·1·9</built>
+        <morph at="𝑛·1·10">
+          <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+          <morphed meta="𝑛·1·12">𝑛·1·11</morphed>
         </morph>
-        <answered meta="𝑛·1·8">𝑛·1·7</answered>
+        <answered meta="𝑛·1·13">𝑛·1·11</answered>
       </evaluate>
       <manufactured meta="𝛿·0·1">𝜎1</manufactured>
     </dataize>
@@ -1149,20 +1155,31 @@ in the text format, so a reader never looks at the text to tell the two apart.
 way by its own `meta`, and `<built>` before it holds the name of the term the
 entry wrote, the one 𝕄 made that answer of: two elements rather than two
 attributes of one, for the same reason `<manufactured>` is no `<dataized>`.
+`<morphed>` closes the `<morph>` element with the name of the term the 𝕄 came
+to, named the same way by its own `meta`, so
+`<morphed meta="𝑛·1·12">𝑛·1·11</morphed>` says the 𝕄 at `𝑛·1·10` came to the
+object `𝑛·1·11`. Only the 𝕄 that opened the element writes one: an operand a
+rule of 𝕄 morphs on its way stands inside the same element and closes nothing,
+and a 𝕄 that was parked or cut came to nothing and writes none. Two runs of 𝕄
+at one site stand in one element, the way the text format merges two blocks of
+one heading, and each closes with its own `<morphed>`, so the last one is what
+the element came to: inside `<morph at="Φ.a🌵0">` the first run came to the
+`Φ.number` of `𝑛·1·1` and the second to the `Φ.bytes` of `𝑛·1·3`, which holds
+the datum. The text format writes no line for it.
 
-`<applied meta="𝑛·1·7" by="morph" at="𝑛·1·6" of="Φ.number">` is an object an
-application made, which the text format writes as `𝑛·1·6 := …` in the block
-`𝕄(𝑛·1·5):`: `meta` names the object, counted with the `<built>` and the
-`<answered>` of the firing it stands in, `by` and `at` name the judgment that
-normalized and the site it stood at, and `of` names the object applied. The
-argument stands in an element named after the kind of its value, here a
-`<symbol>`, with `name` naming the attribute it fills and the text holding the
-value. An application nothing reduced gets an `<applied>` too, with no `by`
-and no `at`, right before the element that holds it:
+`<applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number">` is an object
+an application made, which the text format writes as `𝑛·1·6 := …` in the block
+`𝕄(𝑛·1·5):`: `meta` names the object, counted with the `<built>`, the
+`<morphed>` and the `<answered>` of the firing it stands in, `by` and `at`
+name the judgment that normalized and the site it stood at, and `of` names the
+object applied. The argument stands in an element named after the kind of its
+value, here a `<symbol>`, with `name` naming the attribute it fills and the
+text holding the value. An application nothing reduced gets an `<applied>`
+too, with no `by` and no `at`, right before the element that holds it:
 `<applied meta="𝑛·0·1" of="Φ.bytes">` is `Φ.bytes( 40-14-… )`, the argument of
 the `Φ.number` that `𝑛·0·2` applies. A later element holding an object holds
-its name instead, so `<answered meta="𝑛·1·8">𝑛·1·7</answered>` says the
-firing answered with it and `<morph at="𝑛·1·6">` that 𝕄 got into what the
+its name instead, so `<answered meta="𝑛·1·13">𝑛·1·11</answered>` says the
+firing answered with it and `<morph at="𝑛·1·10">` that 𝕄 got into what the
 entry built.
 
 The markup is for a program, which never has to parse a term of 𝜑-calculus to
@@ -1191,7 +1208,8 @@ call that nothing worked out, is an expression meta, `𝑒1`: the same term gets
 the same `𝑒` throughout the file and another term gets another, so a reader can
 tell two holes apart, while what the term is stays in the text format alone.
 Since the markup names terms the text format writes out, the two count their
-metas each on their own: `𝑛·1·7` of the markup above is `𝑛·1·6` of the text.
+metas each on their own: `𝑛·1·11` of the markup above is `𝑛·1·6` of the
+text.
 
 `<forked side="left">𝜎2</forked>` is the decision a `fork` block made, which
 the text format writes as `forked(𝔻(𝜎2:λ)) := left`: the side stands in
@@ -1234,7 +1252,7 @@ since it answers a side of the program and mints nothing.
 
 A λ name no entry answers is `<unanswered λ="…">`, standing where its
 `<evaluate>` would have stood with the name of the formation 𝔼 was fired
-against as its text, such as `𝑛·1·7.nope` below, and the judgment that asked
+against as its text, such as `𝑛·1·11.nope` below, and the judgment that asked
 in its `by` attribute, where the text format writes the letter of it. A firing
 that happened while an operand of another was being reduced is an `<evaluate>`
 inside the one that asked, which is what the deeper indentation means in the
@@ -1263,29 +1281,35 @@ $ cat atoms.xml
           <dataize at="Φ.a🌵0">
             <morph at="Φ.a🌵0">
               <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta name="φ">𝑛·0·1</meta></applied>
-              <applied meta="𝑛·1·2" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
+              <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
+              <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
+              <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
             </morph>
             <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
           </dataize>
           <bound meta="𝛿1·1">𝛿·1·1</bound>
           <dataize at="Φ.a🌵1">
             <morph at="Φ.a🌵1">
-              <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵1" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
-              <applied meta="𝑛·1·4" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
+              <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
+              <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
+              <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
+              <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
             </morph>
             <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
           </dataize>
           <bound meta="𝛿2·1">𝛿·1·2</bound>
           <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-          <applied meta="𝑛·1·5" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
-          <built meta="𝑛·1·6">𝑛·1·5</built>
-          <morph at="𝑛·1·6">
-            <applied meta="𝑛·1·7" by="morph" at="𝑛·1·6" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+          <applied meta="𝑛·1·9" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+          <built meta="𝑛·1·10">𝑛·1·9</built>
+          <morph at="𝑛·1·10">
+            <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+            <morphed meta="𝑛·1·12">𝑛·1·11</morphed>
           </morph>
-          <answered meta="𝑛·1·8">𝑛·1·7</answered>
+          <answered meta="𝑛·1·13">𝑛·1·11</answered>
         </evaluate>
+        <morphed meta="𝑛·0·6">𝑛·1·11.nope</morphed>
       </morph>
-      <unanswered λ="L_number_nope" by="dataize">𝑛·1·7.nope</unanswered>
+      <unanswered λ="L_number_nope" by="dataize">𝑛·1·11.nope</unanswered>
     </dataize>
   </path>
 </protocol>

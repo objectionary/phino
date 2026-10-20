@@ -357,10 +357,14 @@ it keeps its comment. The morphing of an answer is named after the answer
 the `number` of `<dataized>` in the markup), and the operand line right after
 names it. The symbol a `𝔻` comes down to closes the block in the markup alone,
 as `<manufactured>` (`EvManufactured`, #1962), counted with the data, and the
-`<bound>` right after names it the same way. A cut is a line too, `looped(…)`
-(`EvLooped`), written by `enter` where the refused frame would have opened,
-carrying the formation its ancestor entered (#1434) and naming the mode that
-cut it.
+`<bound>` right after names it the same way. The term a `𝕄` came to closes
+its block in the markup alone too, as `<morphed>` (`EvMorphed`, #1984), counted
+with the metas of `<answered>`. Only the chain that opened the block writes it:
+`detached` runs a premise of a rule of 𝕄 through `morph''` told it owns
+nothing, since it stands in the block of the rule. A cut is a line too,
+`looped(…)` (`EvLooped`), written by `enter` where the refused frame would have
+opened, carrying the formation its ancestor entered (#1434) and naming the mode
+that cut it.
 Three records say why a firing gave no answer (#1524): `stuck(…)` closes a
 firing that got stuck, `stall(…)` stands under one the memo answered with a
 kept stall, and `starved(…)` is written by `deeper` where the step budget runs

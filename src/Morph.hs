@@ -330,7 +330,10 @@ isLambda (BiLambda _) = True
 isLambda _ = False
 
 morph' :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
-morph' start univ state entry = go start univ state entry
+morph' = morph'' True
+
+morph'' :: Bool -> Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
+morph'' owner start univ state entry = go start univ state entry
   where
     go :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
     go (expr, seq) univ state caller = do
@@ -339,6 +342,7 @@ morph' start univ state entry = go start univ state entry
         reached <- inferred expr univ state ctx ctx._engine._morphing
         case reached of
           Just (In.Answered step built, state') -> do
+            when owner (ctx._saveEval (EvMorphed ctx._nesting built))
             seq' <- leadsTo seq step built ctx
             pure ((built, seq'), state')
           Just (In.Onward way built world, state') -> do
@@ -484,5 +488,5 @@ _morph _ _ _ _ = throwIO (userError "Function morph() requires exactly 1 express
 
 detached :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 detached expr univ state ctx = unparked $ do
-  ((morphed, _), state') <- morph' (expr, (univ, Nothing) :| []) univ state ctx
+  ((morphed, _), state') <- morph'' (ctx._judgment /= Morphing) (expr, (univ, Nothing) :| []) univ state ctx
   pure (morphed, state')

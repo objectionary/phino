@@ -20,7 +20,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe)
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (Acyclic (..), Evaluation (EvWorld), Judgment (..), State, Term (TeExpression))
+import Deps (Acyclic (..), Evaluation (EvMorphed, EvWorld), Judgment (..), State, Term (TeExpression))
 import Engine (Engine (_normal))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives)
@@ -110,6 +110,24 @@ spec = do
       _ <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
       records <- readIORef told
       [world | EvWorld world <- records] `shouldBe` [expr]
+
+    it "tells the protocol the term it came to as its last record" $ do
+      expr <- parseExpressionThrows "[[ wz -> [[ kq -> [[ D> 1F- ]] ]], y -> Q.wz.kq ]]"
+      loc <- parseExpressionThrows "Q.y"
+      told <- newIORef []
+      ctx <- defaultReduceContext loc
+      (morphed, _, _) <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
+      records <- readIORef told
+      [term | EvMorphed _ term <- take 1 records] `shouldBe` [morphed]
+
+    it "tells the protocol nothing of the premises it morphed inside its own block" $ do
+      expr <- parseExpressionThrows "[[ ox -> [[ ty -> [[ gu -> [[ D> 2A- ]] ]] ]], y -> Q.ox.ty.gu ]]"
+      loc <- parseExpressionThrows "Q.y"
+      told <- newIORef []
+      ctx <- defaultReduceContext loc
+      _ <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
+      records <- readIORef told
+      length [term | EvMorphed _ term <- records] `shouldBe` 1
 
   describe "morph'" $
     test'
