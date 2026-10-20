@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The whole pipeline of #1982: the sides of the fork go through 'morph',
+# 'stay', 'symbolize' and 'defer', one line per step. The right side is the
+# copy 'step( tup ↦ Φ.items.tail )', and 'Φ.items.tail' reads to the bare
+# symbol '𝜎1', an object nobody knows. The 'stay' and 'symbolize' lines leave
+# the copy as it is, and the 'defer' line answers it with a fresh symbol and
+# writes a 'deferred' line naming the call the copy stands for, so the path
+# never gets stuck inside the unknown. The left side is the datum '01-', which
+# the 'symbolize' line turns into a symbol, so the two sides differ in their
+# symbols alone, and the fork joins them instead of splitting the run.
+symbolic: |
+  - λ: L_use
+    dataize:
+      𝛿1: $.x
+    𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    stay:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    symbolize:
+      𝑛5: 𝑛3
+      𝑛6: 𝑛4
+    defer:
+      𝑛7: 𝑛5
+      𝑛8: 𝑛6
+    fork:
+      on: 𝛿1
+      left: 𝑛7
+      right: 𝑛8
+location: 'Q.y'
+paths: 2
+input: '⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, num(φ) ↦ ⟦⟧, y ↦ ⟦ x ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧, λ ⤍ L_use ⟧.φ ⟧'
+result: '𝜎6:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_use):
+      𝔻(Φ.a🌵0):
+        𝔼(L_fork):
+          𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
+          𝑛1·2 := 01-:Δ  # 𝕄(ξ.a)
+          𝕄(Φ.a🌵3):
+            𝑛·2·1 := Φ.step( tup ↦ Φ.items.tail )
+          𝑛2·2 := 𝑛·2·1  # 𝕄(ξ.b)
+          𝑛3·2 := 01-:Δ  # 𝑛1
+          𝑛4·2 := 𝑛·2·1  # 𝑛2
+          symbolized(𝜎3) := 01-
+          𝑛5·2 := 𝜎3:λ  # symbolize(𝑛3)
+          𝑛7·2 := 𝑛5·2  # 𝑛5
+          𝑛6·2 := 𝑛·2·1  # 𝑛4
+          deferred(𝜎4) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛6.φ)
+          joined(𝜎5) := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
+          𝑛·2·2 := 𝜎5:λ  # 𝑛7, 𝑛8
+      𝛿1·1 := 𝔻(𝜎5:λ)  # 𝔻(ξ.x)
+      𝑛·1·1 := Φ.num( φ ↦ 𝜎6:λ )  # 𝑛
+      𝕄(𝑛·1·1):
+        𝑛·1·2 := Φ.num( φ ↦ 𝜎6:λ )
+      𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)

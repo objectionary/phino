@@ -113,11 +113,11 @@ instance FromJSON Lambda where
           (Nothing, Nothing) -> fail (printf "The entry of λ function '%s' has neither an '𝑛' key nor a 'fork' block" key)
           (Just _, Just _) -> fail (printf "The entry of λ function '%s' has both an '𝑛' key and a 'fork' block, while a fork answers the side it takes" key)
           (Just term, Nothing) -> Answering term <$ sigmas key term <* dataless key term
-          (Nothing, Just fork) -> mapM_ alone ["evaluate", "defer"] >> forking key dataized fork
+          (Nothing, Just fork) -> alone "evaluate" >> forking key dataized fork
         where
           alone :: Key -> Yaml.Parser ()
           alone name
-            | KeyMap.member name entry = fail (printf "The entry of λ function '%s' has a 'fork' block beside '%s', while a fork takes nothing but 'dataize', 'morph', 'stay' and 'symbolize'" key (Key.toString name))
+            | KeyMap.member name entry = fail (printf "The entry of λ function '%s' has a 'fork' block beside '%s', while a fork takes nothing but 'dataize', 'morph', 'stay', 'symbolize' and 'defer'" key (Key.toString name))
             | otherwise = pure ()
       forking :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       forking key dataized block = do
@@ -245,7 +245,7 @@ instance FromJSON Lambda where
           sided :: String -> Expression -> Yaml.Parser ()
           sided name side = case filter (`notElem` reduced) (metas side) of
             [] -> pure ()
-            meta : _ -> fail (printf "The side '%s' of the 'fork' block of λ function '%s' reads the meta '%s' that none of 'morph', 'stay' and 'symbolize' binds" name key (T.unpack meta))
+            meta : _ -> fail (printf "The side '%s' of the 'fork' block of λ function '%s' reads the meta '%s' that none of 'morph', 'stay', 'symbolize' and 'defer' binds" name key (T.unpack meta))
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)

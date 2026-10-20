@@ -101,9 +101,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     keyed side = operand side
     line :: ReduceContext -> (Held, State) -> Line -> IO (Held, State)
     line ctx ((bound, thrown), state') (Evaluated meta source) = first (,thrown) <$> evaluated ctx (bound, state') meta source
-    line ctx ((bound, thrown), state') (Deferred meta source) = (,state') . (,thrown) <$> deferred ctx state' bound meta source
-    line ctx (held, state') (Stayed meta source) = (,state') <$> reshaped ctx "stay" (pure . stayed) held meta source
-    line ctx (held, state') (Symbolized meta source) = (,state') <$> reshaped ctx "symbolize" (masked ctx) held meta source
+    line ctx (held, state') (Deferred meta source) = (,state') <$> carried held meta source (deferred ctx state' meta source)
+    line ctx (held, state') (Stayed meta source) = (,state') <$> carried held meta source (reshaped ctx "stay" (pure . stayed) meta source)
+    line ctx (held, state') (Symbolized meta source) = (,state') <$> carried held meta source (reshaped ctx "symbolize" (masked ctx) meta source)
+    carried :: Held -> Meta -> Meta -> (Subst -> IO Subst) -> IO Held
+    carried (bound, thrown) meta source step = case Map.lookup source._name thrown of
+      Just failure -> pure (bound, Map.insert meta._name failure thrown)
+      Nothing -> (,thrown) <$> step bound
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
@@ -170,18 +174,16 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       case outcome of
         Left (OutOfTime cap) -> throwIO (OutOfTime cap)
         _ -> pure outcome
-    reshaped :: ReduceContext -> T.Text -> (Expression -> IO Expression) -> Held -> Meta -> Meta -> IO Held
-    reshaped ctx block change (bound, thrown) meta source = case Map.lookup source._name thrown of
-      Just failure -> pure (bound, Map.insert meta._name failure thrown)
-      Nothing -> do
-        kept <- buildExpressionThrows (ExMeta source._name) bound
-        term <- change kept
-        ctx._saveEval
-          ( if term == kept
-              then EvBound ctx._nesting meta._spelling (ExMeta source._name) term
-              else EvReshaped ctx._nesting meta._spelling block (ExMeta source._name) term
-          )
-        (,thrown) <$> bind meta (MvExpression term) bound
+    reshaped :: ReduceContext -> T.Text -> (Expression -> IO Expression) -> Meta -> Meta -> Subst -> IO Subst
+    reshaped ctx block change meta source bound = do
+      kept <- buildExpressionThrows (ExMeta source._name) bound
+      term <- change kept
+      ctx._saveEval
+        ( if term == kept
+            then EvBound ctx._nesting meta._spelling (ExMeta source._name) term
+            else EvReshaped ctx._nesting meta._spelling block (ExMeta source._name) term
+        )
+      bind meta (MvExpression term) bound
     masked :: ReduceContext -> Expression -> IO Expression
     masked ctx term = do
       (stood, known, spent) <- symbolized term <$> readIORef ctx._minted
@@ -246,8 +248,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     erased (ExApplication target _) = erased target
     erased (ExDispatch target attr) = ExDispatch (erased target) attr
     erased other = other
-    deferred :: ReduceContext -> State -> Subst -> Meta -> Meta -> IO Subst
-    deferred ctx state' bound meta source = do
+    deferred :: ReduceContext -> State -> Meta -> Meta -> Subst -> IO Subst
+    deferred ctx state' meta source bound = do
       term <- buildExpressionThrows (ExMeta source._name) bound
       answer <- postponing ctx state' (ExMeta source._name) term >>= maybe (kept term) pure
       bind meta (MvExpression answer) bound
@@ -353,7 +355,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       outcome <- survived $ do
         (universe, aiming) <- (\placed -> insideUniverse placed univ ctx) =<< operand side
         (normal, _, state'') <- morph universe state' aiming
-        (,state'') . fromMaybe normal <$> postponing ctx state'' aiming._locator normal
+        pure (normal, state'')
       case outcome of
         Right (answer, state'') -> pure (Right answer, state'')
         Left failure -> pure (Left failure, state')

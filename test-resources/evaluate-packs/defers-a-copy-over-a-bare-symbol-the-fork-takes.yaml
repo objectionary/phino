@@ -5,13 +5,14 @@
 # The loop of #1729 without the walk of --deep: the right side of the fork
 # is the copy 'step( tup ↦ Φ.items.tail )', and 'Φ.items.tail' reads to the
 # bare symbol '𝜎1', an object nobody knows. Entering the copy would morph its
-# φ, which asks '𝜎1' for 'next' and gets stuck. A path defers such a copy
-# wherever it meets one (#1892, #1933, #1938): the fork answers it with a
-# fresh symbol and writes a 'deferred' line naming the call the copy stands
-# for. The fork is fired by 𝔻, as the operand of 'L_use', which is how the
-# answer of a fork reaches an atom in EO. The deferral is written once,
-# before the fork, and the second path, which takes the right side, answers
-# the symbol it minted (#1960).
+# φ, which asks '𝜎1' for 'next' and gets stuck. A 'defer' line of the fork
+# reads the meta the side was morphed to and answers such a copy with a fresh
+# symbol, writing a 'deferred' line naming the call the copy stands for
+# (#1892, #1933, #1982). The fork itself defers nothing and takes the meta
+# the line bound. The fork is fired by 𝔻, as the operand of 'L_use', which
+# is how the answer of a fork reaches an atom in EO. The deferral is written
+# once, before the fork, and the second path, which takes the right side,
+# answers the symbol it minted (#1960).
 symbolic: |
   - λ: L_use
     dataize:
@@ -20,10 +21,16 @@ symbolic: |
   - λ: L_fork
     dataize:
       𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    defer:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
     fork:
       on: 𝛿1
-      left: $.a
-      right: $.b
+      left: 𝑛3
+      right: 𝑛4
 location: 'Q.y'
 paths: 2
 input: '⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, num(φ) ↦ ⟦⟧, y ↦ ⟦ x ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧, λ ⤍ L_use ⟧.φ ⟧'
@@ -34,11 +41,14 @@ protocol: |
       𝔻(Φ.a🌵0):
         𝔼(L_fork):
           𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
+          𝑛1·2 := 01-:Δ  # 𝕄(ξ.a)
           𝕄(Φ.a🌵3):
             𝑛·2·1 := Φ.step( tup ↦ Φ.items.tail )
-          deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(Φ.a🌵3.φ)
-          forked(𝔻(𝜎2:λ)) := left  # ξ.a
-          𝑛·2·2 := 01-:Δ  # 𝕄(ξ.a)
+          𝑛2·2 := 𝑛·2·1  # 𝕄(ξ.b)
+          𝑛3·2 := 01-:Δ  # 𝑛1
+          deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
+          forked(𝔻(𝜎2:λ)) := left  # 𝑛3
+          𝑛·2·2 := 01-:Δ  # 𝑛3
         𝛿·1·1 := 01-
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
       𝑛·1·1 := Φ.num( φ ↦ 𝜎4:λ )  # 𝑛
@@ -49,8 +59,8 @@ protocol: |
     𝔼(L_use):
       𝔻(Φ.a🌵0):
         𝔼(L_fork):
-          forked(𝔻(𝜎2:λ)) := right  # ξ.b
-          𝑛·2·3 := 𝜎3:λ  # 𝕄(ξ.b)
+          forked(𝔻(𝜎2:λ)) := right  # 𝑛4
+          𝑛·2·3 := 𝜎3:λ  # 𝑛4
       𝛿1·1 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
       𝑛·1·4 := Φ.num( φ ↦ 𝜎5:λ )  # 𝑛
       𝕄(𝑛·1·4):

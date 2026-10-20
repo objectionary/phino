@@ -184,17 +184,18 @@ using the same `insideUniverse` trick the `--inside` option exposes.
 
 An entry ends in an `𝑛` or in a `fork` block (`Ending` of `Lambdas.hs`, #1938),
 never both, and a forking entry holds nothing beside `dataize`, `morph`,
-`stay` and `symbolize`. The block names the condition under `on`, a bytes meta
-of `dataize`, and the two sides under `left` and `right`, each a path from `$`
-or a meta `morph`, `stay` or `symbolize` binds. `forked` of `Evaluate.hs`
-first brings both sides down (`reached`): it morphs a path where it stands in
-the universe through `insideUniverse`, so the protocol sites it as `Φ.a🌵N`,
-and defers it the way a `defer` line would (`postponing`), while it takes a
-meta as it is bound. In
+`stay`, `symbolize` and `defer`. The block names the condition under `on`, a
+bytes meta of `dataize`, and the two sides under `left` and `right`, each a
+path from `$` or a meta `morph`, `stay`, `symbolize` or `defer` binds.
+`forked` of `Evaluate.hs` first brings both sides down (`reached`): it morphs
+a path where it stands in the universe through `insideUniverse`, so the
+protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The fork
+defers nothing by itself: an entry that wants a side deferred says so with a
+`defer` line, which works as in an entry that computes (#1982). In
 a forking entry a `morph` operand that throws binds nothing and keeps the
-failure by its meta (`Held` of `Evaluate.hs`), a `stay` or `symbolize` line
-reading that meta keeps it by its own, and only the path taking a side reading
-it rethrows it.
+failure by its meta (`Held` of `Evaluate.hs`), a `stay`, `symbolize` or
+`defer` line reading that meta keeps it by its own (`carried`), and only the
+path taking a side reading it rethrows it.
 Two sides that are
 the same, or differ only in the symbols at their leaves, are one term:
 `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the firing
