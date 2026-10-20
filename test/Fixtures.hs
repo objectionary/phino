@@ -17,7 +17,6 @@ module Fixtures
   , recorded
   , recorded'
   , recordedWhole
-  , recordedWhole'
   , recordedXml
   , recordedXml'
   , withLambdas
@@ -131,12 +130,9 @@ recordedXml' action =
     pure (answer, written)
 
 recordedWhole :: (SaveEvalFunc -> IO a) -> IO (a, String)
-recordedWhole action = recordedWhole' (const . action)
-
-recordedWhole' :: (SaveEvalFunc -> RewindEvalFunc -> IO a) -> IO (a, String)
-recordedWhole' action =
+recordedWhole action =
   withTemp "phino-protocol-.xml" BS.empty $ \path -> do
-    answer <- withEvalFunc (Just path) (printing False) action
+    answer <- withEvalFunc (Just path) (printing False) (const . action)
     written <- readUtf8 path
     pure (answer, written)
 
@@ -203,11 +199,9 @@ withoutTotals text
 withoutWrapper :: String -> String
 withoutWrapper text = case lines text of
   (decl : "<protocol>" : rest)
-    | Just kept <- withoutRunTotals rest -> unlines (decl : map dedented (filter (not . pathing) kept))
+    | Just kept <- withoutRunTotals rest -> unlines (decl : map dedented kept)
   _ -> text
   where
-    pathing :: String -> Bool
-    pathing line = line `elem` ["  <path>", "  </path>"]
     withoutRunTotals :: [String] -> Maybe [String]
     withoutRunTotals rest = case reverse rest of
       (closing : fps : firings : msec : kept)
@@ -218,7 +212,7 @@ withoutWrapper text = case lines text of
             Just (reverse kept)
       _ -> Nothing
     dedented :: String -> String
-    dedented line = fromMaybe line (stripPrefix "    " line)
+    dedented line = fromMaybe line (stripPrefix "  " line)
 
 withTemp :: String -> BS.ByteString -> (FilePath -> IO a) -> IO a
 withTemp template content action = do

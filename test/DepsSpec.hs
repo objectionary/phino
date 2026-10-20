@@ -11,8 +11,8 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvForked, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), Side (LeftSide, RightSide), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
-import Fixtures (readUtf8, recorded, recorded', recordedWhole, recordedWhole', recordedXml, recordedXml')
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvForked, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvSide, EvSplit, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), Side (LeftSide, RightSide), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Fixtures (readUtf8, recorded, recorded', recordedWhole, recordedXml, recordedXml')
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
 import System.Directory
@@ -210,6 +210,24 @@ spec = do
     it "writes the side a fork took beside the datum of its condition" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Right (BtOne "0D")) RightSide (ExDispatch ExXi (AtLabel "else"))])
       last (lines written) `shouldBe` "    forked(0D-) := right  # ξ.else"
+    it "writes the fork a run split at as a block heading beside the symbol of its condition" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7)])
+      last (lines written) `shouldBe` "    forked(𝔻(𝜎7:λ)):"
+    it "writes the fork a run split at as a block heading beside the datum of its condition" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Right (BtOne "0D"))])
+      last (lines written) `shouldBe` "    forked(0D-):"
+    it "writes the side a split took as a block inside the block of its fork" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then"))])
+      last (lines written) `shouldBe` "      left:  # ξ.then"
+    it "writes the answer of a split inside the side it took" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "        𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then)"
+    it "writes a line of the block the fork stood in inside the side the split took" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvDelta 1 (BtOne "0C")])
+      last (lines written) `shouldBe` "        𝛿·0·1 := 0C-"
+    it "nests a firing made after the fork inside the side the split took" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvFiring 1 "L_ш" Dataization ExRoot, EvDelta 2 (BtOne "0E")])
+      drop 4 (lines written) `shouldBe` ["        𝔼(L_ш):  # 𝔻(Φ)", "          𝛿·2·1 := 0E-"]
     it "writes the side a fork came to as the answer of its firing" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then)"
@@ -389,6 +407,21 @@ spec = do
     it "writes the side a fork took as an element holding the datum of its condition" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Right (BtOne "0D")) RightSide (ExDispatch ExXi (AtLabel "else"))])
       lines written `shouldContain` ["    <forked side=\"right\">0D-</forked>"]
+    it "writes the fork a run split at as an element naming the symbol of its condition" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7)])
+      lines written `shouldContain` ["    <forked on=\"𝜎7\">"]
+    it "writes the fork a run split at as an element naming the datum of its condition" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Right (BtOne "0D"))])
+      lines written `shouldContain` ["    <forked on=\"0D-\">"]
+    it "writes the side a split took as an element inside the element of its fork" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7), EvSide 2 RightSide (ExDispatch ExXi (AtLabel "else"))])
+      lines written `shouldContain` ["      <right>"]
+    it "writes an element of the block the fork stood in inside the side the split took" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvDelta 1 (BtOne "0C")])
+      lines written `shouldContain` ["        <dataized meta=\"𝛿·0·1\">0C-</dataized>"]
+    it "closes the side a split took and its fork after the elements the flow wrote in it" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvDelta 1 (BtOne "0C")])
+      drop 6 (lines written) `shouldBe` ["      </left>", "    </forked>", "  </evaluate>", "</dataize>"]
     it "writes the side a fork came to as the answer of its firing in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
       lines written `shouldContain` ["    <answered meta=\"𝑛·1·1\">𝜎3</answered>"]
@@ -404,12 +437,12 @@ spec = do
     it "writes the double eight bytes hold as the number of the element of the symbol a symbolize line minted" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
       lines written `shouldContain` ["    <symbolized symbol=\"𝜎6\" number=\"-3.14\">C0-09-1E-B8-51-EB-85-1F</symbolized>"]
-    it "wraps every run of the protocol in a path element" $ do
-      (_, written) <- recordedWhole (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C"), EvRun Morphing "Φ", EvDelta 1 (BtOne "0D")])
-      filter (isInfixOf "path>") (lines written) `shouldBe` ["  <path>", "  </path>", "  <path>", "  </path>"]
-    it "indents the elements of a run inside its path" $ do
+    it "wraps the run in no path element" $ do
       (_, written) <- recordedWhole (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C")])
-      filter (isInfixOf "morph") (lines written) `shouldBe` ["    <morph at=\"Φ\">", "    </morph>"]
+      filter (isInfixOf "path>") (lines written) `shouldBe` []
+    it "indents the elements of a run inside the root" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C")])
+      filter (isInfixOf "morph") (lines written) `shouldBe` ["  <morph at=\"Φ\">", "  </morph>"]
     it "writes a firing no entry answered as an element naming the term it got stuck on" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvStuck 2 "L_щ" Morphing (ExFormation [BiLambda (FnSymbol 120)])])
       lines written `shouldContain` ["    <unanswered λ=\"L_щ\" by=\"morph\">𝜎120</unanswered>"]
@@ -452,7 +485,7 @@ spec = do
       lines content `shouldSatisfy` elem "firings(5)"
 
   describe "rewindEval" $ do
-    it "reopens the blocks the mark stood in before the first line after the rewind" $ do
+    it "goes on after the rewind inside the blocks the mark stood in, opening none of them again" $ do
       (_, written) <- recorded' False $ \record rewind -> do
         record (EvRun Dataization "Φ.ёж")
         record (EvFiring 1 "L_ж" Dataization (ExDispatch ExRoot (AtLabel "ёж")))
@@ -460,7 +493,7 @@ spec = do
         record (EvDelta 2 (BtOne "1A"))
         restore
         record (EvDelta 2 (BtOne "2B"))
-      lines written `shouldBe` ["𝔻(Φ.ёж):", "  𝔼(L_ж):", "    𝛿·1·1 := 1A-", "𝔻(Φ.ёж):", "  𝔼(L_ж):", "    𝛿·1·2 := 2B-"]
+      lines written `shouldBe` ["𝔻(Φ.ёж):", "  𝔼(L_ж):", "    𝛿·1·1 := 1A-", "    𝛿·1·2 := 2B-"]
     it "writes nothing at the rewind before a line follows it" $ do
       (_, written) <- recorded' False $ \record rewind -> do
         record (EvRun Dataization "Φ.щ")
@@ -469,18 +502,19 @@ spec = do
         record (EvDelta 2 (BtOne "3C"))
         restore
       lines written `shouldBe` ["𝔻(Φ.щ):", "  𝔼(L_щ):", "    𝛿·1·1 := 3C-"]
-    it "reopens no block the mark stood in that the first line after the rewind leaves" $ do
+    it "writes the right side of a split beside its left side inside the block of the fork" $ do
       (_, written) <- recorded' False $ \record rewind -> do
         record (EvRun Dataization "Φ.ю")
         record (EvFiring 1 "L_ю" Dataization (ExDispatch ExRoot (AtLabel "ю")))
-        record (EvFiring 2 "L_я" Dataization (ExDispatch ExRoot (AtLabel "я")))
-        record (EvDelta 3 (BtOne "4D"))
+        record (EvSplit 2 (Left 4))
         restore <- rewind
-        record (EvDelta 2 (BtOne "5E"))
+        record (EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "a")))
+        record (EvDelta 1 (BtOne "4D"))
         restore
-        record (EvDelta 2 (BtOne "6F"))
-      drop 5 (lines written) `shouldBe` ["𝔻(Φ.ю):", "  𝔼(L_ю):", "    𝛿·1·2 := 6F-"]
-    it "spells an object the rewound path named in full after the rewind" $ do
+        record (EvSide 2 RightSide (ExDispatch ExXi (AtLabel "b")))
+        record (EvDelta 1 (BtOne "5E"))
+      lines written `shouldBe` ["𝔻(Φ.ю):", "  𝔼(L_ю):", "    forked(𝔻(𝜎4:λ)):", "      left:  # ξ.a", "        𝛿·0·1 := 4D-", "      right:  # ξ.b", "        𝛿·0·2 := 5E-"]
+    it "spells an object the rewound side named in full after the rewind" $ do
       (_, written) <- recorded' False $ \record rewind -> do
         record (EvRun Morphing "Φ.ёж")
         restore <- rewind
@@ -490,52 +524,52 @@ spec = do
       last (lines written) `shouldBe` "  𝑛1·0 := ⟦⟧:q  # 𝕄(ξ.z)"
 
   describe "rewindEvalXml" $ do
-    it "reopens the elements the mark stood in before the first element after the rewind" $ do
+    it "closes the elements opened since the mark at the rewind and opens none of those the mark stood in" $ do
       (_, written) <- recordedXml' $ \record rewind -> do
         record (EvRun Dataization "Φ.ёж")
         record (EvFiring 1 "L_ж" Dataization (ExDispatch ExRoot (AtLabel "ёж")))
         restore <- rewind
-        record (EvDelta 2 (BtOne "1A"))
+        record (EvFiring 2 "L_я" Dataization (ExDispatch ExRoot (AtLabel "я")))
+        record (EvDelta 3 (BtOne "1A"))
         restore
         record (EvDelta 2 (BtOne "2B"))
       lines written
         `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                    , "<dataize at=\"Φ.ёж\">"
                    , "  <evaluate λ=\"L_ж\" by=\"dataize\" at=\"Φ.ёж\">"
-                   , "    <dataized meta=\"𝛿·1·1\">1A-</dataized>"
-                   , "  </evaluate>"
-                   , "</dataize>"
-                   , "<dataize at=\"Φ.ёж\">"
-                   , "  <evaluate λ=\"L_ж\" by=\"dataize\" at=\"Φ.ёж\">"
-                   , "    <dataized meta=\"𝛿·1·2\">2B-</dataized>"
+                   , "    <evaluate λ=\"L_я\" by=\"dataize\" at=\"Φ.я\">"
+                   , "      <dataized meta=\"𝛿·2·1\">1A-</dataized>"
+                   , "    </evaluate>"
+                   , "    <dataized meta=\"𝛿·1·1\">2B-</dataized>"
                    , "  </evaluate>"
                    , "</dataize>"
                    ]
-    it "reopens no element the mark stood in that the first element after the rewind closes" $ do
+    it "writes the right side of a split beside its left side inside the element of the fork" $ do
       (_, written) <- recordedXml' $ \record rewind -> do
         record (EvRun Dataization "Φ.ю")
         record (EvFiring 1 "L_ю" Dataization (ExDispatch ExRoot (AtLabel "ю")))
-        record (EvFiring 2 "L_я" Dataization (ExDispatch ExRoot (AtLabel "я")))
-        record (EvDelta 3 (BtOne "4D"))
+        record (EvSplit 2 (Left 4))
         restore <- rewind
-        record (EvDelta 2 (BtOne "5E"))
+        record (EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "a")))
+        record (EvDelta 1 (BtOne "4D"))
         restore
-        record (EvDelta 2 (BtOne "6F"))
-      drop 9 (lines written)
-        `shouldBe` [ "<dataize at=\"Φ.ю\">"
+        record (EvSide 2 RightSide (ExDispatch ExXi (AtLabel "b")))
+        record (EvDelta 1 (BtOne "5E"))
+      lines written
+        `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                   , "<dataize at=\"Φ.ю\">"
                    , "  <evaluate λ=\"L_ю\" by=\"dataize\" at=\"Φ.ю\">"
-                   , "    <dataized meta=\"𝛿·1·2\">6F-</dataized>"
+                   , "    <forked on=\"𝜎4\">"
+                   , "      <left>"
+                   , "        <dataized meta=\"𝛿·0·1\">4D-</dataized>"
+                   , "      </left>"
+                   , "      <right>"
+                   , "        <dataized meta=\"𝛿·0·2\">5E-</dataized>"
+                   , "      </right>"
+                   , "    </forked>"
                    , "  </evaluate>"
                    , "</dataize>"
                    ]
-    it "closes the path it rewinds from before the path it reopens" $ do
-      (_, written) <- recordedWhole' $ \record rewind -> do
-        record (EvRun Dataization "Φ.щ")
-        restore <- rewind
-        record (EvDelta 1 (BtOne "3C"))
-        restore
-        record (EvDelta 1 (BtOne "4D"))
-      filter (isInfixOf "path>") (lines written) `shouldBe` ["  <path>", "  </path>", "  <path>", "  </path>"]
 
   describe "endEvalXml" $ do
     it "writes nothing once a run that never opened the protocol closes" $ withScratchDir $ \dir -> do
@@ -550,16 +584,16 @@ spec = do
     it "closes every element still open before it writes any total" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_fires = 3, _closing = [(1, "evaluate", "<evaluate>", True), (0, "morph", "<morph>", True), (-1, "path", "<path>", True), (-2, "protocol", "<protocol>", True)]}
+      cursor <- newIORef emptyNesting{_fires = 3, _closing = [(1, "evaluate"), (0, "morph"), (-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path
-      take 2 (lines content) `shouldBe` ["      </evaluate>", "    </morph>"]
+      take 2 (lines content) `shouldBe` ["    </evaluate>", "  </morph>"]
 
     it "names the firings of the run it closes" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_fires = 3, _closing = [(0, "morph", "<morph>", True), (-1, "path", "<path>", True), (-2, "protocol", "<protocol>", True)]}
+      cursor <- newIORef emptyNesting{_fires = 3, _closing = [(0, "morph"), (-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path
@@ -568,7 +602,7 @@ spec = do
     it "closes the document with '</protocol>' once every total is written" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol", "<protocol>", True)]}
+      cursor <- newIORef emptyNesting{_closing = [(-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path
@@ -577,7 +611,7 @@ spec = do
     it "writes the msec before the firings it closes with" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol", "<protocol>", True)]}
+      cursor <- newIORef emptyNesting{_closing = [(-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path
@@ -586,7 +620,7 @@ spec = do
     it "writes the fps after the firings it closes with" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.xml"
       createDirectoryIfMissing True dir
-      cursor <- newIORef emptyNesting{_closing = [(-2, "protocol", "<protocol>", True)]}
+      cursor <- newIORef emptyNesting{_closing = [(-1, "protocol")]}
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEvalXml handle cursor began)
       content <- readUtf8 path

@@ -21,7 +21,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), Side (..), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Forks (decide, joined)
+import Forks (Turn (..), decide, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, stayed, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, insideUniverse, isLambda, lambda, morph, morphing, normalized, opening, recalled, remember, remembered, retained, settled, snapshot, starved, unparked)
@@ -340,11 +340,14 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           ctx._saveEval (EvTaken ctx._nesting [left, right] term)
           pure (Joined condition made (left, right) term, state''')
         _ -> do
-          side <- decide ctx._forks (snapshot ctx._memo) condition
-          let (chosen, outcome) = case side of
+          turn <- decide ctx._forks (snapshot ctx._memo) (ctx._saveEval (EvSplit ctx._nesting condition)) condition
+          let (side, record) = case turn of
+                Taken taken -> (taken, EvForked ctx._nesting condition taken)
+                Split taken -> (taken, EvSide ctx._nesting taken)
+              (chosen, outcome) = case side of
                 LeftSide -> (left, one)
                 RightSide -> (right, two)
-          ctx._saveEval (EvForked ctx._nesting condition side chosen)
+          ctx._saveEval (record chosen)
           answer <- either throwIO pure outcome
           ctx._saveEval (EvTaken ctx._nesting [chosen] answer)
           pure (Chosen (condition, side) chosen answer, state''')

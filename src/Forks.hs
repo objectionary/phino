@@ -1,18 +1,15 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedRecordDot #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE UnboxedTuples #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Forks (Decision, Forks, decide, explored, joined, straight) where
+module Forks (Decision, Forks, Turn (..), decide, explored, joined, straight) where
 
 import AST (Argument (..), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet), Function (FnSymbol))
-import Control.Monad (unless)
 import Data.Bifunctor (first)
-import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Deps (RewindEvalFunc, Side (..), dontRewindEval)
@@ -25,10 +22,12 @@ type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 
 data Tag = Tag (PromptTag# ())
 
+data Turn = Taken Side | Split Side
+  deriving (Eq, Show)
+
 data Forks = Forks
   { _tag :: Tag
   , _decided :: IORef (Map (Either Int Bytes) Side)
-  , _pending :: IORef [IO ()]
   , _room :: IORef (Maybe Int)
   , _rewind :: RewindEvalFunc
   }
@@ -36,41 +35,36 @@ data Forks = Forks
 straight :: IO Forks
 straight = opened (Just 1) dontRewindEval
 
-decide :: Forks -> IO (IO ()) -> Either Int Bytes -> IO Side
-decide forks marked condition = do
+decide :: Forks -> IO (IO ()) -> IO () -> Either Int Bytes -> IO Turn
+decide forks marked split condition = do
   decided <- readIORef forks._decided
-  maybe (undecided decided) pure (Map.lookup condition decided)
+  maybe (undecided decided) (pure . Taken) (Map.lookup condition decided)
   where
-    undecided :: Map (Either Int Bytes) Side -> IO Side
+    undecided :: Map (Either Int Bytes) Side -> IO Turn
     undecided decided = do
       room <- readIORef forks._room
       if room == Just 0
-        then taken decided LeftSide
+        then Taken <$> taken decided LeftSide
         else do
           writeIORef forks._room (pred <$> room)
+          split
           captured forks._tag $ \resumed -> do
             restored <- marked
             rewound <- forks._rewind
-            modifyIORef' forks._pending (resumed (restored >> rewound >> taken decided RightSide) :)
-            prompted forks._tag (resumed (taken decided LeftSide))
+            prompted forks._tag (resumed (Split <$> taken decided LeftSide))
+            restored >> rewound >> prompted forks._tag (resumed (Split <$> taken decided RightSide))
     taken :: Map (Either Int Bytes) Side -> Side -> IO Side
     taken decided side = side <$ writeIORef forks._decided (Map.insert condition side decided)
 
-explored :: forall answer. Maybe Int -> RewindEvalFunc -> (Forks -> IO answer) -> IO [answer]
+explored :: Maybe Int -> RewindEvalFunc -> (Forks -> IO answer) -> IO [answer]
 explored cap rewind action = do
   forks <- opened cap rewind
   answers <- newIORef []
   prompted forks._tag (action forks >>= \answer -> modifyIORef' answers (answer :))
-  go forks
   reverse <$> readIORef answers
-  where
-    go :: Forks -> IO ()
-    go forks = do
-      queued <- atomicModifyIORef' forks._pending ([],)
-      unless (null queued) (mapM_ (prompted forks._tag) (reverse queued) >> go forks)
 
 opened :: Maybe Int -> RewindEvalFunc -> IO Forks
-opened cap rewind = Forks <$> tagged <*> newIORef Map.empty <*> newIORef [] <*> newIORef (pred <$> cap) <*> pure rewind
+opened cap rewind = Forks <$> tagged <*> newIORef Map.empty <*> newIORef (pred <$> cap) <*> pure rewind
   where
     tagged :: IO Tag
     tagged = IO (\world -> case newPromptTag# world of (# world', tag #) -> (# world', Tag tag #))
@@ -78,8 +72,8 @@ opened cap rewind = Forks <$> tagged <*> newIORef Map.empty <*> newIORef [] <*> 
 prompted :: Tag -> IO () -> IO ()
 prompted (Tag tag) (IO body) = IO (prompt# tag body)
 
-captured :: Tag -> ((IO Side -> IO ()) -> IO ()) -> IO Side
-captured (Tag tag) handler = IO (control0# tag (\resume -> case handler (\(IO side) -> IO (resume side)) of IO body -> body))
+captured :: Tag -> ((IO turn -> IO ()) -> IO ()) -> IO turn
+captured (Tag tag) handler = IO (control0# tag (\resume -> case handler (\(IO turn) -> IO (resume turn)) of IO body -> body))
 
 joined :: Expression -> Expression -> Int -> Maybe (Expression, [(Int, (Int, Int))], Int)
 joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, spent')) <$> goExpr left right (spent, Map.empty, [])
