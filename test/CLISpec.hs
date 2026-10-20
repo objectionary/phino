@@ -2993,8 +2993,8 @@ spec = do
             ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
 
-    describe "a copy the side a fork takes comes to" $ do
-      let forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n"
+    describe "a copy a 'defer' line of a fork defers" $ do
+      let forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  fork:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n"
           counting = T.pack "- λ: L_inc\n  dataize:\n    𝛿1: $.x\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
           recordedWith :: T.Text -> [String] -> String -> IO [String]
           recordedWith entries options program =
@@ -3016,10 +3016,13 @@ spec = do
                      , "      <manufactured meta=\"𝛿·1·1\">𝜎2</manufactured>"
                      , "    </dataize>"
                      , "    <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"
+                     , "    <bound meta=\"𝑛1·1\">01-</bound>"
                      , "    <morph at=\"Φ.a🌵2\">"
                      , "      <applied meta=\"𝑛·1·1\" by=\"morph\" at=\"Φ.a🌵2\" of=\"Φ.step\"><ref name=\"tup\">Φ.items.tail</ref></applied>"
                      , "    </morph>"
-                     , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.step\"><with><symbol name=\"tup\">𝜎1</symbol></with></deferred>"
+                     , "    <bound meta=\"𝑛2·1\">𝑛·1·1</bound>"
+                     , "    <bound meta=\"𝑛3·1\">01-</bound>"
+                     , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol name=\"tup\">𝜎1</symbol></with></deferred>"
                      , "    <forked side=\"left\">𝜎2</forked>"
                      , "    <answered meta=\"𝑛·1·2\">01-</answered>"
                      , "  </evaluate>"
@@ -3036,19 +3039,19 @@ spec = do
 
       it "names the object a deferred copy was made of through the formation its ρ holds" $ do
         records <- deferred [] "⟦ joined(items) ↦ ⟦ φ ↦ step( tup ↦ items ), step(ρ, tup) ↦ ⟦ φ ↦ tup.next ⟧ ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.joined( items ↦ Φ.items.tail ).φ, λ ⤍ L_fork ⟧ ⟧"
-        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.joined.step\"><with><symbol name=\"tup\">𝜎1</symbol></with></deferred>"]
+        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.joined.step\"><with><symbol name=\"tup\">𝜎1</symbol></with></deferred>"]
 
       it "names an argument of a deferred copy that is no bare symbol by the element that formed it" $ do
         records <- deferred [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ ⟦ z ↦ Φ ⟧ ), λ ⤍ L_fork ⟧ ⟧"
-        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.box\"><with><symbol name=\"x\">𝜎1</symbol><meta name=\"w\">𝑛·1·2</meta></with></deferred>"]
+        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol name=\"x\">𝜎1</symbol><meta name=\"w\">𝑛·1·2</meta></with></deferred>"]
 
       it "names a deferred copy of a formation the world does not declare by the element that formed it" $ do
         records <- deferred [] "⟦ wrap(v) ↦ ⟦⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.wrap( v ↦ ⟦ inner(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.inner( x ↦ Φ.items.tail ), λ ⤍ L_fork ⟧ ⟧"
-        records `shouldContain` ["    <formed meta=\"𝑛·1·5\"><symbol name=\"x\">𝜎1</symbol><ref name=\"φ\">x.next</ref></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"𝑛·1·5\"/>"]
+        records `shouldContain` ["    <formed meta=\"𝑛·1·5\"><symbol name=\"x\">𝜎1</symbol><ref name=\"φ\">x.next</ref></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"𝑛·1·5\"/>"]
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
         records <- recordedWith (forking <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
-        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"Φ.a🌵2.φ\" of=\"Φ.box\"><with><symbol name=\"x\">𝜎1</symbol><meta name=\"w\">𝑛·2·3</meta></with></deferred>"]
+        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol name=\"x\">𝜎1</symbol><meta name=\"w\">𝑛·2·3</meta></with></deferred>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"

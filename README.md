@@ -234,11 +234,11 @@ markup by the meta of the element that named it earlier, such as the
 `<applied>` of the call, or by an expression meta, such as `𝑒1`, when none
 did.
 
-Each side of a `fork` block, described below, is deferred the same way once
-it is morphed, so a path whose branch is such a copy ends in a fresh symbol
-rather than getting stuck inside the unknown. The line is sited where the side
-stands in the universe, `deferred(𝜎3) := …  # 𝕄(Φ.a🌵2.φ)`, and its arguments
-are worked out under `𝕄(Φ.a🌵2.w):`.
+A `fork` block, described below, defers nothing by itself. An entry that
+forks defers a side with a `defer` line of its own, reading the meta the side
+was morphed to, so a path whose branch is such a copy ends in a fresh symbol
+rather than getting stuck inside the unknown. A side written as a path from
+`$` is morphed and taken as it comes, a copy over a bare symbol included.
 
 ### Forking on a condition nobody decided
 
@@ -262,14 +262,14 @@ sides turn out to be one.
 
 `on` names a bytes meta the `dataize` block bound, the condition, and `left`
 and `right` are paths from `$`, read against the formation being fired the way
-an operand is, or metas the `morph` block or a `stay` or `symbolize` line
-bound, as described below. An entry with a `fork` block has no `𝑛`, since the
-side it takes is what it answers with, and no block beside `dataize`, `morph`,
-`stay` and `symbolize`: an entry forks or it computes, never both. A block
-missing one of the three keys, holding another, or naming under `on` anything
-but a meta of `dataize` is refused when the file is read, and so is a side
-reading a meta inside a term, such as `𝑛1.x`, or naming a meta that none of
-`morph`, `stay` and `symbolize` binds.
+an operand is, or metas the `morph` block or a `stay`, `symbolize` or `defer`
+line bound, as described below. An entry with a `fork` block has no `𝑛`,
+since the side it takes is what it answers with, and no block beside
+`dataize`, `morph`, `stay`, `symbolize` and `defer`: an entry forks or it
+computes, never both. A block missing one of the three keys, holding another,
+or naming under `on` anything but a meta of `dataize` is refused when the file
+is read, and so is a side reading a meta inside a term, such as `𝑛1.x`, or
+naming a meta that none of `morph`, `stay`, `symbolize` and `defer` binds.
 
 Before it decides anything, a fork morphs both of its sides, each where it
 stands in the universe, under a block of its own, `𝕄(Φ.a🌵3):` for the left
@@ -486,8 +486,41 @@ joined(𝜎5) := 𝔻(𝜎3:λ) ? 𝜎4 : 𝜎2
 A line sees its own side alone, so a datum both sides share becomes two
 symbols and then one joined symbol, and the path loses that datum. A file that
 wants to keep it leaves the block out, and an entry without `symbolize` writes
-the same protocol it wrote before. The two blocks chain: a side may go through
-a `stay` line first and through a `symbolize` line after it.
+the same protocol it wrote before.
+
+The blocks chain, and an entry that forks reads as a pipeline, every step of
+it on its own line. A side may go through a `stay` line, then a `symbolize`
+line, then a `defer` line, so that a copy over a bare symbol is deferred and
+two sides of one shape still join:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.then
+    𝑛2: $.else
+  stay:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  symbolize:
+    𝑛5: 𝑛3
+    𝑛6: 𝑛4
+  defer:
+    𝑛7: 𝑛5
+    𝑛8: 𝑛6
+  fork:
+    on: 𝛿1
+    left: 𝑛7
+    right: 𝑛8
+```
+
+A `defer` line here works as it does in an entry that computes: it answers a
+copy over a bare symbol with a fresh symbol, writes the `deferred(…)` line
+sited at the meta it read, such as `# 𝕄(𝑛6.φ)`, and binds any other term as
+it stands. Like a `stay` or `symbolize` line, it binds nothing and throws
+nothing when the `morph` of the meta it reads got stuck or was cut, and only
+the path taking that side gets stuck.
 
 ### The order of the lines
 
