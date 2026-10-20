@@ -36,12 +36,12 @@ protocol: |
         𝔼(L_outer):
           𝔻(Φ.a🌵1):
             𝔼(L_outer):
-              starved(4)  # 𝔻(Φ.a🌵2)
-          stuck(L_outer)
+              starved 4  # 𝔻(Φ.a🌵2)
+          stuck L_outer
       𝑛1·1 := ⟦ λ ⤍ L_outer, arg ↦ ⟦ λ ⤍ L_outer, arg ↦ ⟦ λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧.φ  # 𝕄(ξ.x)
       𝕄(Φ.a🌵3):
         𝔼(L_outer):
-          stall(L_outer)
+          stall L_outer
       𝑛2·1 := ⟦ λ ⤍ L_outer, arg ↦ ⟦ λ ⤍ L_outer, arg ↦ ⟦ λ ⤍ L_outer, arg ↦ L_none:λ ⟧ ⟧ ⟧.φ  # 𝕄(ξ.y)
       𝑛·1·1 := 𝜎1:λ:φ  # 𝑛
       𝑛·1·2 := 𝜎1:λ:φ  # 𝕄(𝑛·1·1)

@@ -28,8 +28,8 @@ protocol: |
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
       𝕄(Φ.a🌵1):
-        unanswered(L_none)  # 𝕄(L_none:λ)
+        unanswered L_none  # 𝕄(L_none:λ)
       𝑛2·1 := 05-:Δ  # 𝕄(ξ.b)
       𝑛4·1 := 05-:Δ  # 𝑛2
-      forked(𝔻(𝜎1:λ)) := left  # 𝑛3
-      stuck(L_none)
+      forked 𝔻(𝜎1:λ) := left  # 𝑛3
+      stuck L_none

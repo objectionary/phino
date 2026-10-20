@@ -18,4 +18,4 @@ input: '⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( 5 ) ⟧'
 result: '𝜎1:λ.plus( 5 )'
 protocol: |
   𝕄(Φ.a):
-    unanswered(𝜎1)  # 𝕄(𝜎1:λ)
+    unanswered 𝜎1  # 𝕄(𝜎1:λ)

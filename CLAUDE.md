@@ -167,7 +167,7 @@ another meta is bound to with every `( ρ ↦ … )` applied to a dispatch dropp
 drops anyway. A `symbolize` line binds its meta to the term another meta is
 bound to with every datum along its φ chain, the path `denoted` of `AST.hs`
 walks, turned into a fresh symbol (`symbolized` of `Lambdas.hs`, #1968), and
-writes `symbolized(𝜎4) := …` (`EvSymbolized`) per symbol it minted with the
+writes `symbolized 𝜎4 := …` (`EvSymbolized`) per symbol it minted with the
 datum it stands for. A line of either that changed its term writes
 `# stay(𝑛1)` or `# symbolize(𝑛1)` to the text protocol (`EvReshaped`), and the
 markup binds it as any other. The lines of `evaluate`, `defer`, `stay` and
@@ -199,7 +199,7 @@ path taking a side reading it rethrows it.
 Two sides that are
 the same, or differ only in the symbols at their leaves, are one term:
 `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the firing
-writes `joined(…)` (`EvJoined`) per fresh symbol and answers the joined term
+writes `joined …` (`EvJoined`) per fresh symbol and answers the joined term
 (`Joined` of `Answer`) with no decision, so the run splits nothing (#1954).
 Any other two sides, or a side whose morph threw, make `forked` ask `decide`
 of `Forks.hs` for the side, keyed by the value the condition came down to,
@@ -220,9 +220,9 @@ fork is done and written once and a path never takes an answer another path
 made after it (#1958). Once `--max-paths` (`_maxPaths` of `CLI/Types.hs`)
 paths are open, an undecided condition takes the left side and captures
 nothing, so a run with one path pays nothing for it. A taken side writes
-`forked(…) := left` (`EvForked`), the markup `<forked side="left">`, and a
+`forked … := left` (`EvForked`), the markup `<forked side="left">`, and a
 side of a split opens a block under the split (`EvSide`), `left:` or `right:`
-under `forked(…):`, the markup `<left>` or `<right>` under
+under `forked …:`, the markup `<left>` or `<right>` under
 `<forked on="…">`; the firing answers that side (`EvTaken`), or rethrows what
 its morph threw. A side holds what its path did after the fork, to the end of
 the run, at the fork and not after the run that opened it (#1989). A record
@@ -238,7 +238,7 @@ A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
 code in φ, whatever its φ reads: it reduces every argument other than φ and ρ
 with no entry of the file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it binds a
-fresh symbol and writes `deferred(…)` (`EvDeferred`), naming the call the copy
+fresh symbol and writes `deferred …` (`EvDeferred`), naming the call the copy
 stands for by the object of the world it was made of, the way the record of
 0.0.153 did (#1892); any other term is bound as it is. Before the line is
 written, `argued` of `Evaluate.hs` works out every argument of the call that
@@ -259,7 +259,7 @@ there would hand out again the symbols its protocol records already spell
 carries. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
-parks on, and the protocol records it as `unanswered(name)` either way. What
+parks on, and the protocol records it as `unanswered name` either way. What
 fired is written as a tree by `--protocol`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
 the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a
@@ -372,12 +372,12 @@ its block in the markup alone too, as `<morphed>` (`EvMorphed`, #1984), counted
 with the metas of `<answered>`. Only the chain that opened the block writes it:
 `detached` runs a premise of a rule of 𝕄 through `morph''` told it owns
 nothing, since it stands in the block of the rule. A cut is a line too,
-`looped(…)` (`EvLooped`), written by `enter` where the refused frame would have
+`looped …` (`EvLooped`), written by `enter` where the refused frame would have
 opened, carrying the formation its ancestor entered (#1434) and naming the mode
 that cut it.
-Three records say why a firing gave no answer (#1524): `stuck(…)` closes a
-firing that got stuck, `stall(…)` stands under one the memo answered with a
-kept stall, and `starved(…)` is written by `deeper` where the step budget runs
+Three records say why a firing gave no answer (#1524): `stuck …` closes a
+firing that got stuck, `stall …` stands under one the memo answered with a
+kept stall, and `starved …` is written by `deeper` where the step budget runs
 out, with the site it stood at rather than its term (#1531).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
@@ -392,7 +392,7 @@ by `charged` at every firing, since a run may spend its time rewriting terms
 that fire nothing (#1619), and by `enter` while it compares formations, since
 under `plausible` one comparison by `within` may outlast the whole run, so a
 timer cuts that comparison where it stands (#1622). The first step, firing or
-comparison after the deadline writes `timeout(…)` (`EvTimeout`) and throws
+comparison after the deadline writes `timeout …` (`EvTimeout`) and throws
 `OutOfTime`, which no frame parks, so the run fails with or without
 `--partial` and a caller that cannot wait gets a closed protocol ending in the
 timeout instead of killing the process (#1607).

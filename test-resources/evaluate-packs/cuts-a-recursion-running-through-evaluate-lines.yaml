@@ -25,4 +25,4 @@ protocol: |
   𝕄(Φ.app):
     𝔼(L_loop):
       𝑛1·1 := ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝕄(ξ.next)
-      looped(⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧)  # 𝔼(𝑛1), proven
+      looped ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝔼(𝑛1), proven

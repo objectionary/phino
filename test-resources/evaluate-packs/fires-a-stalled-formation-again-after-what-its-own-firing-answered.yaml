@@ -45,8 +45,8 @@ protocol: |
             𝛿·2·1 := 01-
           𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.first)
           𝔻(Φ.a🌵2):
-            unanswered(L_none)  # 𝔻(L_none:λ)
-          stuck(L_none)
+            unanswered L_none  # 𝔻(L_none:λ)
+          stuck L_none
       𝑛1·1 := ⟦ first ↦ Φ.s, second ↦ L_none:λ, λ ⤍ L_outer ⟧.φ  # 𝕄(ξ.x)
       𝕄(Φ.a🌵3):
         𝔼(L_outer):
@@ -57,8 +57,8 @@ protocol: |
             𝛿·4·1 := 01-
           𝛿1·4 := 𝛿·4·1  # 𝔻(ξ.first)
           𝔻(Φ.a🌵5):
-            unanswered(L_none)  # 𝔻(L_none:λ)
-          stuck(L_none)
+            unanswered L_none  # 𝔻(L_none:λ)
+          stuck L_none
       𝑛2·1 := ⟦ first ↦ Φ.s, second ↦ L_none:λ, λ ⤍ L_outer ⟧.φ  # 𝕄(ξ.y)
       𝑛·1·1 := 𝜎1:λ:φ  # 𝑛
       𝑛·1·2 := 𝜎1:λ:φ  # 𝕄(𝑛·1·1)

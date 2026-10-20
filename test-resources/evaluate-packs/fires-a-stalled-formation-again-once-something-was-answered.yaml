@@ -49,9 +49,9 @@ protocol: |
           𝔻(Φ.a🌵1):
             𝔼(L_f):
               𝔻(Φ.a🌵2):
-                looped(Φ.f:φ)  # plausible
-              stuck(L_f)
-          stuck(L_f)
+                looped Φ.f:φ  # plausible
+              stuck L_f
+          stuck L_f
       𝑛1·1 := ⟦ λ ⤍ L_f, arg ↦ Φ.s ⟧.φ  # 𝕄(ξ.x)
       𝑛2·1 := L_g:λ  # 𝕄(ξ.g)
       𝑛3·1 := ⟦ λ ⤍ L_f, arg ↦ Φ.big ⟧  # 𝕄(ξ.f)

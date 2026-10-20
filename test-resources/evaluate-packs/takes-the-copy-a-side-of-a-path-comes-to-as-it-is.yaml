@@ -33,7 +33,7 @@ protocol: |
           𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
           𝕄(Φ.a🌵3):
             𝑛·2·1 := Φ.step( tup ↦ Φ.items.tail )
-          forked(𝔻(𝜎2:λ)):
+          forked 𝔻(𝜎2:λ):
             left:  # ξ.a
               𝑛·2·2 := 01-:Δ  # 𝕄(ξ.a)
               𝛿·1·1 := 01-
@@ -45,5 +45,5 @@ protocol: |
             right:  # ξ.b
               𝑛·2·3 := 𝑛·2·1  # 𝕄(ξ.b)
               𝕄(Φ.a🌵0):
-                unanswered(𝜎1)  # 𝕄(𝜎1:λ)
-              stuck(𝜎1)
+                unanswered 𝜎1  # 𝕄(𝜎1:λ)
+              stuck 𝜎1

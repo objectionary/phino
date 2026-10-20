@@ -30,7 +30,7 @@ protocol: |
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
       𝑛1·1 := 05-:Δ:φ  # 𝕄(ξ.a)
       𝕄(Φ.a🌵2):
-        unanswered(L_none)  # 𝕄(L_none:λ)
+        unanswered L_none  # 𝕄(L_none:λ)
       𝑛3·1 := 05-:Δ:φ  # 𝑛1
-      forked(𝔻(𝜎1:λ)) := left  # 𝑛3
+      forked 𝔻(𝜎1:λ) := left  # 𝑛3
       𝑛·1·1 := 05-:Δ:φ  # 𝑛3

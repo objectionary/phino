@@ -20,5 +20,5 @@ protocol: |
     𝔼(L_pair):
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
-          unanswered(L_none)  # 𝕄(L_none:λ)
-      stuck(L_none)
+          unanswered L_none  # 𝕄(L_none:λ)
+      stuck L_none

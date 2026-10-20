@@ -46,8 +46,8 @@ protocol: |
             𝑛·2·1 := Φ.step( tup ↦ Φ.items.tail )
           𝑛2·2 := 𝑛·2·1  # 𝕄(ξ.b)
           𝑛3·2 := 01-:Δ  # 𝑛1
-          deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
-          forked(𝔻(𝜎2:λ)):
+          deferred 𝜎3 := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛2.φ)
+          forked 𝔻(𝜎2:λ):
             left:  # 𝑛3
               𝑛·2·2 := 01-:Δ  # 𝑛3
               𝛿·1·1 := 01-

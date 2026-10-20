@@ -72,7 +72,7 @@ protocol: |
       𝕄(Φ.a🌵4):
         𝑛·2·4 := 3
         𝑛·2·5 := 𝑛·2·4.plus( x ↦ 4 )
-      forked(𝔻(𝜎1:λ)):
+      forked 𝔻(𝜎1:λ):
         left:  # ξ.then
           𝑛·2·6 := 𝑛·2·3  # 𝕄(ξ.then)
           𝔼(L_number_plus):  # 𝕄(Φ.φ)
