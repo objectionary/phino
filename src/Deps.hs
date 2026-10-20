@@ -723,7 +723,7 @@ saveEvalXml handle cursor printed report = do
       recorded term (\naming -> if null inner then printf "<formed meta=\"%s\"%s/>" naming marks else printf "<formed meta=\"%s\"%s>%s</formed>" naming marks inner)
     part :: Int -> Binding -> Naming (Either String String)
     part depth (BiTau attr value) = Right <$> (titled depth value >>= lift . attributed (printAttribute attr))
-    part _ (BiVoid attr) = pure (Right (printf "<void name=\"%s\"/>" (escapeXML (printAttribute attr))))
+    part _ (BiVoid attr) = pure (Right (printf "<void attr=\"%s\"/>" (escapeXML (printAttribute attr))))
     part _ (BiLambda func) = pure (Left (printf " λ=\"%s\"" (escapeXML (printFunction func))))
     part _ (BiDelta bytes) = Left . printf " Δ=\"%s\"" . escapeXML <$> lift (printed (ExBytes bytes))
     part _ _ = pure (Right "")
@@ -731,11 +731,11 @@ saveEvalXml handle cursor printed report = do
     argument depth (ArTau attr value) = titled depth value >>= lift . attributed (printAttribute attr)
     argument depth (ArAlpha alpha value) = titled depth value >>= lift . attributed (printAlpha alpha)
     attributed :: String -> Expression -> IO String
-    attributed name ExTermination = pure (printf "<bottom name=\"%s\"/>" (escapeXML name))
+    attributed name ExTermination = pure (printf "<bottom attr=\"%s\"/>" (escapeXML name))
     attributed name value = tagged (kind value) . escapeXMLText <$> spelled value
       where
         tagged :: String -> String -> String
-        tagged tag text = printf "<%s name=\"%s\">%s</%s>" tag (escapeXML name) text tag
+        tagged tag text = printf "<%s attr=\"%s\">%s</%s>" tag (escapeXML name) text tag
     kind :: Expression -> String
     kind (ExFormation [BiLambda (FnSymbol _)]) = "symbol"
     kind (ExFormation [BiDelta _]) = "datum"

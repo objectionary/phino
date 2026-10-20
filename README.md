@@ -214,7 +214,7 @@ deferred(𝜎3) := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛1.φ)
 ```
 
 The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
-`<with>` element with a `<symbol name="tup">𝜎1</symbol>` per argument. When
+`<with>` element with a `<symbol attr="tup">𝜎1</symbol>` per argument. When
 the world declares no object the copy was made of, `of` names the `<formed>`
 element that spells the copy out, and there is no `<with>`. Any other term,
 a copy whose arguments read to no bare symbol among them, is bound as it
@@ -227,7 +227,7 @@ worked out before the line is written. The entry morphs it in the copy, fires
 what that comes to, the way an `evaluate` line does, and writes every step to
 the protocol under `𝕄(𝑛1.w):`. The line then names the object the firing
 answered, `Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·2 )`, and so does the markup,
-`<meta name="w">𝑛·2·3</meta>`, with a meta of its own count. A reader follows
+`<meta attr="w">𝑛·2·3</meta>`, with a meta of its own count. A reader follows
 the meta to the application that made the object. An argument whose morph gets
 stuck, is cut or runs out of steps is written as the code spells it, and in the
 markup by the meta of the element that named it earlier, such as the
@@ -1068,19 +1068,19 @@ $ cat atoms.xml
   <path>
     <dataize at="Φ">
       <morph at="Φ">
-        <applied meta="𝑛·0·1" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
-        <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta name="φ">𝑛·0·1</meta></applied>
-        <applied meta="𝑛·0·3" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
-        <applied meta="𝑛·0·4" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
-        <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta name="x">𝑛·0·4</meta></applied>
+        <applied meta="𝑛·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
+        <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
+        <applied meta="𝑛·0·3" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
+        <applied meta="𝑛·0·4" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
+        <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta attr="x">𝑛·0·4</meta></applied>
         <morphed meta="𝑛·0·6">𝑛·0·5</morphed>
       </morph>
       <evaluate λ="L_number_plus" by="dataize" at="Φ">
         <dataize at="Φ.a🌵0">
           <morph at="Φ.a🌵0">
-            <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta name="φ">𝑛·0·1</meta></applied>
+            <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
             <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
-            <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
+            <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
             <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
           </morph>
           <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
@@ -1088,19 +1088,19 @@ $ cat atoms.xml
         <bound meta="𝛿1·1">𝛿·1·1</bound>
         <dataize at="Φ.a🌵1">
           <morph at="Φ.a🌵1">
-            <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
+            <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
             <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
-            <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
+            <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
             <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
           </morph>
           <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
         </dataize>
         <bound meta="𝛿2·1">𝛿·1·2</bound>
         <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-        <applied meta="𝑛·1·9" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+        <applied meta="𝑛·1·9" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
         <built meta="𝑛·1·10">𝑛·1·9</built>
         <morph at="𝑛·1·10">
-          <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+          <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
           <morphed meta="𝑛·1·12">𝑛·1·11</morphed>
         </morph>
         <answered meta="𝑛·1·13">𝑛·1·11</answered>
@@ -1190,17 +1190,17 @@ attribute names off `Φ`, `ξ`, `ρ` or a meta, such as `𝑛·0·2.plus`, a nam
 as `tail` or `L_fork`, or `⊥`. Inside `<applied>`, `<formed>` and `<with>`, the
 element holding a value is named after its kind, so a reader never looks at the
 text to tell a symbol from a meta: `<symbol>`, `<datum>`, `<meta>`, `<ref>` for
-a path, and the empty `<bottom name="x"/>` for `⊥`. A term of any other kind is
+a path, and the empty `<bottom attr="x"/>` for `⊥`. A term of any other kind is
 named by an element of its own, written before the first element that holds
 it, and is its meta from then on: an application by an `<applied>`, and a
 formation by a `<formed>`. A formation that copies an object of the world,
 binding its `φ` to `𝜎196`, is
-`<formed meta="𝑛·3·9" of="Φ.string"><symbol name="φ">𝜎196</symbol>`: `of`
+`<formed meta="𝑛·3·9" of="Φ.string"><symbol attr="φ">𝜎196</symbol>`: `of`
 names the object by its path, and every element inside is an attribute the
 copy binds to a value other than the one the object has. A copy that binds
 nothing new is named by its path alone. A formation that copies no object of
 the world has no `of` and holds all its bindings: an element for each bound
-attribute, named after the kind of its value, a `<void name="x"/>` for each
+attribute, named after the kind of its value, a `<void attr="x"/>` for each
 void one, and its `λ` or `Δ`, if it has one, as an attribute of the element,
 such as `<formed meta="𝑛·1·1" λ="L_fork">`. A term
 the markup can name in none of these ways, such as an argument of a deferred
@@ -1272,17 +1272,17 @@ $ cat atoms.xml
   <path>
     <dataize at="Φ">
       <morph at="Φ">
-        <applied meta="𝑛·0·1" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
-        <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta name="φ">𝑛·0·1</meta></applied>
-        <applied meta="𝑛·0·3" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
-        <applied meta="𝑛·0·4" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
-        <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta name="x">𝑛·0·4</meta></applied>
+        <applied meta="𝑛·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
+        <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
+        <applied meta="𝑛·0·3" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
+        <applied meta="𝑛·0·4" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
+        <applied meta="𝑛·0·5" by="morph" at="Φ" of="𝑛·0·2.plus"><meta attr="x">𝑛·0·4</meta></applied>
         <evaluate λ="L_number_plus" by="morph" at="Φ">
           <dataize at="Φ.a🌵0">
             <morph at="Φ.a🌵0">
-              <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta name="φ">𝑛·0·1</meta></applied>
+              <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
               <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
-              <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum name="φ">40-14-00-00-00-00-00-00</datum></applied>
+              <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
               <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
             </morph>
             <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
@@ -1290,19 +1290,19 @@ $ cat atoms.xml
           <bound meta="𝛿1·1">𝛿·1·1</bound>
           <dataize at="Φ.a🌵1">
             <morph at="Φ.a🌵1">
-              <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta name="φ">𝑛·0·3</meta></applied>
+              <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
               <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
-              <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum name="φ">40-18-00-00-00-00-00-00</datum></applied>
+              <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
               <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
             </morph>
             <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
           </dataize>
           <bound meta="𝛿2·1">𝛿·1·2</bound>
           <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-          <applied meta="𝑛·1·9" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+          <applied meta="𝑛·1·9" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
           <built meta="𝑛·1·10">𝑛·1·9</built>
           <morph at="𝑛·1·10">
-            <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol name="φ">𝜎1</symbol></applied>
+            <applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
             <morphed meta="𝑛·1·12">𝑛·1·11</morphed>
           </morph>
           <answered meta="𝑛·1·13">𝑛·1·11</answered>
