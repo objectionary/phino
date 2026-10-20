@@ -131,6 +131,7 @@ data Evaluation
   | EvApplied Int Judgment Expression Expression Expression
   | EvBuilt Int Expression
   | EvAnswer Int Expression
+  | EvMorphed Int Expression
   | EvForked Int (Either Int Bytes) Side Expression
   | EvJoined Int (Either Int Bytes) Int (Int, Int)
   | EvTaken Int [Expression] Expression
@@ -186,6 +187,7 @@ tier (EvDeferred depth _ _ _ _ _) = depth
 tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
+tier (EvMorphed depth _) = depth
 tier (EvForked depth _ _ _) = depth
 tier (EvJoined depth _ _ _) = depth
 tier (EvTaken depth _ _) = depth
@@ -403,6 +405,7 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" stem index
       (protocol', value) <- valued counted naming term
       pure (protocol', Just (indented depth (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
+    written EvMorphed{} protocol = pure (protocol, Nothing)
     written (EvForked depth condition side chosen) protocol = do
       cond <- spelt condition
       line <- commented' (printf "forked(%s) := %s" cond (sided side)) chosen
@@ -615,11 +618,8 @@ saveEvalXml handle cursor printed report = do
         (naming, _) <- counted
         modify (first (\nesting' -> nesting'{_sources = (depth, term, naming) : nesting'._sources}))
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
-    elements (EvAnswer depth term) nesting =
-      placed depth nesting $ do
-        body <- leaf depth term
-        (naming, _) <- counted
-        pure (printf "<answered meta=\"%s\">%s</answered>" (escapeXML naming) (escapeXMLText body))
+    elements (EvAnswer depth term) nesting = placed depth nesting (concluded "answered" depth term)
+    elements (EvMorphed depth term) nesting = placed depth nesting (concluded "morphed" depth term)
     elements (EvForked depth condition side _) nesting =
       placed depth nesting $ case condition of
         Left symbol -> pure (forked (sigma symbol))
@@ -634,11 +634,7 @@ saveEvalXml handle cursor printed report = do
       where
         joined :: String -> String
         joined = printf "<joined symbol=\"%s\" left=\"%s\" right=\"%s\">%s</joined>" (sigma symbol) (sigma left) (sigma right)
-    elements (EvTaken depth _ term) nesting =
-      placed depth nesting $ do
-        body <- leaf depth term
-        (naming, _) <- counted
-        pure (printf "<answered meta=\"%s\">%s</answered>" (escapeXML naming) (escapeXMLText body))
+    elements (EvTaken depth _ term) nesting = placed depth nesting (concluded "answered" depth term)
     elements (EvWorld world) nesting = pure (known world nesting, [])
     outer :: Int -> Nesting -> Nesting
     outer depth nesting = nesting{_openedAt = dropWhile ((>= depth) . fst) nesting._openedAt, _sources = dropWhile (\(level, _, _) -> level > depth) nesting._sources}
@@ -679,6 +675,11 @@ saveEvalXml handle cursor printed report = do
     located depth site = do
       (nesting, _) <- get
       maybe (leaf depth site) pure (listToMaybe [naming | (_, built, naming) <- nesting._sources, built == site])
+    concluded :: String -> Int -> Expression -> Naming String
+    concluded tag depth term = do
+      body <- leaf depth term
+      (naming, _) <- counted
+      pure (printf "<%s meta=\"%s\">%s</%s>" tag (escapeXML naming) (escapeXMLText body) tag)
     bind :: Int -> Nesting -> T.Text -> Expression -> Naming String
     bind depth nesting spelling term = printf "<bound meta=\"%s\">%s</bound>" (escapeXML (labelled nesting spelling)) . escapeXMLText <$> leaf depth term
     leaf :: Int -> Expression -> Naming String

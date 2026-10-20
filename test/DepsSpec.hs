@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvForked, EvJoined, EvLooped, EvManufactured, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), Side (LeftSide, RightSide), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvForked, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), Side (LeftSide, RightSide), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recorded', recordedWhole, recordedWhole', recordedXml, recordedXml')
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -161,6 +161,10 @@ spec = do
       (_, manufactured) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvManufactured 3 32, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
       (_, plain) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
       manufactured `shouldBe` plain
+    it "writes no line for the term a morphing came to" $ do
+      (_, morphed) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук")), EvMorphed 2 (ExDispatch ExRoot (AtLabel "щука"))])
+      (_, plain) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук"))])
+      morphed `shouldBe` plain
     it "spells the datum of an operand in full when the line before it found no datum" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvFiring 2 "L_з" Dataization ExRoot, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       last (lines written) `shouldBe` "    𝛿1·1 := 7F-  # 𝔻(ξ.щ)"
@@ -316,6 +320,15 @@ spec = do
     it "writes the term a line bound as a bound element in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvBound 2 "𝑛3" (ExMeta "n1") (ExDispatch ExRoot (AtLabel "щ"))])
       lines written `shouldContain` ["    <bound meta=\"𝑛3·1\">Φ.щ</bound>"]
+    it "writes the term a morphing came to as an element with its name" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvMorphed 1 (ExDispatch ExRoot (AtLabel "щука"))])
+      lines written `shouldContain` ["  <morphed meta=\"𝑛·0·1\">Φ.щука</morphed>"]
+    it "writes a morphing that came to a termination as an element holding it" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvMorphed 1 ExTermination])
+      lines written `shouldContain` ["  <morphed meta=\"𝑛·0·1\">⊥</morphed>"]
+    it "closes a morph element with the term the morphing came to" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук")), EvMorphed 2 (ExDispatch ExRoot (AtLabel "ёрш")), EvDelta 1 (BtOne "0D")])
+      lines written `shouldContain` ["    <morphed meta=\"𝑛·0·1\">Φ.ёрш</morphed>", "  </morph>"]
     it "writes the symbol a dataization came down to as an element with its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvManufactured 1 12])
       lines written `shouldContain` ["  <manufactured meta=\"𝛿·0·1\">𝜎12</manufactured>"]
