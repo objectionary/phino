@@ -20,5 +20,5 @@ protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝑛1·1 := L_none:λ  # 𝕄(ξ.a)
-      unanswered(L_none)  # 𝔼(L_none:λ)
-      stuck(L_none)
+      unanswered L_none  # 𝔼(L_none:λ)
+      stuck L_none

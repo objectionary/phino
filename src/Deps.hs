@@ -351,23 +351,23 @@ saveEval handle cursor printed printed' report = do
     written at (EvLooped _ judgment mode self site) protocol = do
       form <- render self
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "looped(%s)" form) (remarks ++ [certainty mode]))))
+      pure (protocol, Just (indented at (remarked (printf "looped %s" form) (remarks ++ [certainty mode]))))
     written at (EvStuck _ key judgment self) protocol = do
       form <- render self
-      pure (protocol, Just (indented at (printf "unanswered(%s)  # %s(%s)" (T.unpack key) (letter judgment) form)))
+      pure (protocol, Just (indented at (printf "unanswered %s  # %s(%s)" (T.unpack key) (letter judgment) form)))
     written at (EvStall _ key) protocol =
-      pure (protocol, Just (indented at (printf "stall(%s)" (T.unpack key))))
+      pure (protocol, Just (indented at (printf "stall %s" (T.unpack key))))
     written at (EvStuckOn _ key) protocol =
-      pure (protocol, Just (indented at (printf "stuck(%s)" (T.unpack key))))
+      pure (protocol, Just (indented at (printf "stuck %s" (T.unpack key))))
     written at (EvStarved _ limit judgment site) protocol = do
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "starved(%d)" limit) remarks)))
+      pure (protocol, Just (indented at (remarked (printf "starved %d" limit) remarks)))
     written at (EvTimeout _ limit judgment site) protocol = do
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "timeout(%d)" limit) remarks)))
+      pure (protocol, Just (indented at (remarked (printf "timeout %d" limit) remarks)))
     written at (EvSpent _ limit judgment site) protocol = do
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "spent(%d)" limit) remarks)))
+      pure (protocol, Just (indented at (remarked (printf "spent %d" limit) remarks)))
     written at (EvData _ spelling operand value) protocol = do
       datum <- maybe (spelt value) pure (found value protocol._found)
       line <- commented (printf "%s := %s" (labelled protocol spelling) datum) Dataization operand
@@ -389,12 +389,12 @@ saveEval handle cursor printed printed' report = do
       pure (protocol', Just (indented at line))
     written at (EvSymbolized _ symbol bytes) protocol = do
       datum <- render (ExBytes bytes)
-      pure (protocol, Just (indented at (remarked (printf "symbolized(%s) := %s" (printFunction (FnSymbol symbol)) datum) (maybe [] pure (ieee bytes)))))
+      pure (protocol, Just (indented at (remarked (printf "symbolized %s := %s" (printFunction (FnSymbol symbol)) datum) (maybe [] pure (ieee bytes)))))
     written _ EvMinted{} protocol = pure (protocol, Nothing)
     written at (EvDeferred _ symbol judgment copy call site) protocol = do
       form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "deferred(%s) := %s" (printFunction (FnSymbol symbol)) form) remarks)))
+      pure (protocol, Just (indented at (remarked (printf "deferred %s := %s" (printFunction (FnSymbol symbol)) form) remarks)))
     written at (EvApplied _ judgment call object site) protocol = do
       let (index, counted) = numbered protocol
           aliased :: Expression
@@ -418,11 +418,11 @@ saveEval handle cursor printed printed' report = do
     written _ EvMorphed{} protocol = pure (protocol, Nothing)
     written at (EvForked _ condition side chosen) protocol = do
       cond <- spelt condition
-      line <- commented' (printf "forked(%s) := %s" cond (sided side)) chosen
+      line <- commented' (printf "forked %s := %s" cond (sided side)) chosen
       pure (protocol, Just (indented at line))
     written at (EvJoined _ condition symbol (left, right)) protocol = do
       cond <- spelt condition
-      pure (protocol, Just (indented at (printf "joined(%s) := %s ? %s : %s" (printFunction (FnSymbol symbol)) cond (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
+      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) cond (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
     written at (EvTaken _ sides term) protocol = do
       let (index, counted) = numbered protocol
           naming :: String
@@ -431,7 +431,7 @@ saveEval handle cursor printed printed' report = do
       remarks <- mapM sourced sides
       pure (protocol', Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
     written at (EvSplit depth condition) protocol = do
-      line <- indented at . printf "forked(%s):" <$> spelt condition
+      line <- indented at . printf "forked %s:" <$> spelt condition
       pure (raised depth at line protocol, Just line)
     written at (EvSide depth side chosen) protocol = do
       line <- indented at <$> commented' (printf "%s:" (sided side)) chosen
@@ -477,9 +477,9 @@ endEval handle cursor began = do
   when protocol._begun $ do
     now <- getMonotonicTime
     let taken = milliseconds began now
-    hPutStrLn handle (printf "msec(%d)" taken)
-    hPutStrLn handle (printf "firings(%d)" protocol._fired)
-    hPutStrLn handle (printf "fps(%d)" (perSecond protocol._fired taken))
+    hPutStrLn handle (printf "msec %d" taken)
+    hPutStrLn handle (printf "firings %d" protocol._fired)
+    hPutStrLn handle (printf "fps %d" (perSecond protocol._fired taken))
 
 rewindEval :: IORef Protocol -> RewindEvalFunc
 rewindEval cursor = do

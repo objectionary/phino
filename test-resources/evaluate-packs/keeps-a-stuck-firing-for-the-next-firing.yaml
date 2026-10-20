@@ -34,12 +34,12 @@ protocol: |
       𝕄(Φ.a🌵0):
         𝔼(L_outer):
           𝔻(Φ.a🌵1):
-            unanswered(L_none)  # 𝔻(L_none:λ)
-          stuck(L_none)
+            unanswered L_none  # 𝔻(L_none:λ)
+          stuck L_none
       𝑛1·1 := ⟦ arg ↦ L_none:λ, λ ⤍ L_outer ⟧.φ  # 𝕄(ξ.x)
       𝕄(Φ.a🌵2):
         𝔼(L_outer):
-          stall(L_none)
+          stall L_none
       𝑛2·1 := ⟦ arg ↦ L_none:λ, λ ⤍ L_outer ⟧.φ  # 𝕄(ξ.y)
       𝑛·1·1 := 𝜎1:λ:φ  # 𝑛
       𝑛·1·2 := 𝜎1:λ:φ  # 𝕄(𝑛·1·1)

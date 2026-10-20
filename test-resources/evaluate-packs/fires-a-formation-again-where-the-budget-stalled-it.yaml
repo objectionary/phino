@@ -52,9 +52,9 @@ protocol: |
             𝔼(L_outer):
               𝔻(Φ.a🌵2):
                 𝕄(Φ.a🌵2):
-                  starved(12)
-              stuck(L_outer)
-          stuck(L_outer)
+                  starved 12
+              stuck L_outer
+          stuck L_outer
       𝑛1·1 := ⟦ w ↦ Φ.p, λ ⤍ L_wrap ⟧.φ  # 𝕄(ξ.x)
       𝑛2·1 := ⟦ arg ↦ Φ.c, λ ⤍ L_outer ⟧  # 𝕄(ξ.f)
       𝔼(L_outer):  # 𝔼(𝑛2)

@@ -194,28 +194,28 @@ spec = do
       length (filter (== "  𝕄(Φ.w):") (lines written)) `shouldBe` 2
     it "keeps the mode of a cut made at the site of its block" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvLooped 1 Morphing Proven (ExFormation []) ExRoot])
-      last (lines written) `shouldBe` "  looped(⟦⟧)  # proven"
+      last (lines written) `shouldBe` "  looped ⟦⟧  # proven"
     it "names the block over an answer by the line that built it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
       lines written `shouldContain` ["    𝕄(𝑛·1·1):"]
     it "writes a deferred copy as the call of the object it was made of" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)]), BiTau AtPhi (ExDispatch (ExDispatch ExXi (AtLabel "щ")) (AtLabel "й"))]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)])))) ExRoot])
-      last (lines written) `shouldBe` "  deferred(𝜎9) := Φ.ёж( щ ↦ 𝜎4:λ )"
+      last (lines written) `shouldBe` "  deferred 𝜎9 := Φ.ёж( щ ↦ 𝜎4:λ )"
     it "writes a deferred copy as it stands when no object of the world made it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)]), BiTau AtPhi (ExDispatch (ExDispatch ExXi (AtLabel "щ")) (AtLabel "й"))]) Nothing ExRoot])
-      last (lines written) `shouldBe` "  deferred(𝜎9) := ⟦ щ ↦ 𝜎4:λ, φ ↦ щ.й ⟧"
+      last (lines written) `shouldBe` "  deferred 𝜎9 := ⟦ щ ↦ 𝜎4:λ, φ ↦ щ.й ⟧"
     it "writes the side a fork took beside the symbol of its condition" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Left 7) LeftSide (ExDispatch ExXi (AtLabel "then"))])
-      last (lines written) `shouldBe` "    forked(𝔻(𝜎7:λ)) := left  # ξ.then"
+      last (lines written) `shouldBe` "    forked 𝔻(𝜎7:λ) := left  # ξ.then"
     it "writes the side a fork took beside the datum of its condition" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Right (BtOne "0D")) RightSide (ExDispatch ExXi (AtLabel "else"))])
-      last (lines written) `shouldBe` "    forked(0D-) := right  # ξ.else"
+      last (lines written) `shouldBe` "    forked 0D- := right  # ξ.else"
     it "writes the fork a run split at as a block heading beside the symbol of its condition" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7)])
-      last (lines written) `shouldBe` "    forked(𝔻(𝜎7:λ)):"
+      last (lines written) `shouldBe` "    forked 𝔻(𝜎7:λ):"
     it "writes the fork a run split at as a block heading beside the datum of its condition" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Right (BtOne "0D"))])
-      last (lines written) `shouldBe` "    forked(0D-):"
+      last (lines written) `shouldBe` "    forked 0D-:"
     it "writes the side a split took as a block inside the block of its fork" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then"))])
       last (lines written) `shouldBe` "      left:  # ξ.then"
@@ -248,16 +248,16 @@ spec = do
       last (lines written) `shouldBe` "    𝑛4·1 := 𝜎6:λ  # symbolize(𝑛2)"
     it "writes the symbol a symbolize line minted beside the datum it stands for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtOne "4A")])
-      last (lines written) `shouldBe` "    symbolized(𝜎6) := 4A-"
+      last (lines written) `shouldBe` "    symbolized 𝜎6 := 4A-"
     it "writes the double eight bytes hold beside the symbol a symbolize line minted for them" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
-      last (lines written) `shouldBe` "    symbolized(𝜎6) := C0-09-1E-B8-51-EB-85-1F  # -3.14"
+      last (lines written) `shouldBe` "    symbolized 𝜎6 := C0-09-1E-B8-51-EB-85-1F  # -3.14"
     it "writes the symbol a join minted beside the symbol of its condition and the two it stands for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left 7) 12 (5, 9)])
-      last (lines written) `shouldBe` "    joined(𝜎12) := 𝔻(𝜎7:λ) ? 𝜎5 : 𝜎9"
+      last (lines written) `shouldBe` "    joined 𝜎12 := 𝔻(𝜎7:λ) ? 𝜎5 : 𝜎9"
     it "writes the symbol a join minted beside the datum of its condition" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
-      last (lines written) `shouldBe` "    joined(𝜎14) := 0D- ? 𝜎3 : 𝜎8"
+      last (lines written) `shouldBe` "    joined 𝜎14 := 0D- ? 𝜎3 : 𝜎8"
     it "opens a heading of its own for every run of the protocol" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C"), EvRun Morphing "Φ", EvDelta 1 (BtOne "0D")])
       lines written `shouldBe` ["𝕄(Φ):", "  𝛿·0·1 := 0C-", "𝕄(Φ):", "  𝛿·0·2 := 0D-"]
@@ -473,7 +473,7 @@ spec = do
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEval handle cursor began)
       content <- readUtf8 path
-      map (takeWhile (/= '(')) (lines content) `shouldBe` ["msec", "firings", "fps"]
+      map (takeWhile (/= ' ')) (lines content) `shouldBe` ["msec", "firings", "fps"]
 
     it "names the firings of the run it closes" $ withScratchDir $ \dir -> do
       let path = dir </> "protocol.txt"
@@ -482,7 +482,7 @@ spec = do
       began <- getMonotonicTime
       withFile path WriteMode (\handle -> endEval handle cursor began)
       content <- readUtf8 path
-      lines content `shouldSatisfy` elem "firings(5)"
+      lines content `shouldSatisfy` elem "firings 5"
 
   describe "rewindEval" $ do
     it "goes on after the rewind inside the blocks the mark stood in, opening none of them again" $ do
@@ -513,7 +513,7 @@ spec = do
         restore
         record (EvSide 2 RightSide (ExDispatch ExXi (AtLabel "b")))
         record (EvDelta 1 (BtOne "5E"))
-      lines written `shouldBe` ["𝔻(Φ.ю):", "  𝔼(L_ю):", "    forked(𝔻(𝜎4:λ)):", "      left:  # ξ.a", "        𝛿·0·1 := 4D-", "      right:  # ξ.b", "        𝛿·0·2 := 5E-"]
+      lines written `shouldBe` ["𝔻(Φ.ю):", "  𝔼(L_ю):", "    forked 𝔻(𝜎4:λ):", "      left:  # ξ.a", "        𝛿·0·1 := 4D-", "      right:  # ξ.b", "        𝛿·0·2 := 5E-"]
     it "spells an object the rewound side named in full after the rewind" $ do
       (_, written) <- recorded' False $ \record rewind -> do
         record (EvRun Morphing "Φ.ёж")

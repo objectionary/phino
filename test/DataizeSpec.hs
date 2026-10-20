@@ -242,12 +242,12 @@ spec = do
           , "        𝕄(𝑛·1·5):"
           , "          𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )"
           , "        𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
-          , "    unanswered(L_number_nope)  # 𝔻(⟦ ρ ↦ 𝑛·1·6, λ ⤍ L_number_nope ⟧)"
+          , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·6, λ ⤍ L_number_nope ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
       outcome `shouldBe` Residual placeholder
-      protocol `shouldBe` "  𝔻(Φ):\n    unanswered(Sym_arg_0)  # 𝔻(Sym_arg_0:λ)\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    unanswered Sym_arg_0  # 𝔻(Sym_arg_0:λ)\n"
       map fst chain `shouldEndWith` [placeholder]
     it "closes a dataization with the datum the delta rule found" $ do
       (_, protocol) <- partially known "[[ @ -> [[ D> 01-02 ]] ]]"
@@ -263,7 +263,7 @@ spec = do
       case outcome of
         Residual (ExFormation bds) -> bds `shouldContain` [BiLambda (Function "L_number_plus")]
         other -> expectationFailure ("expected a residual formation, got " ++ show other)
-      protocol `shouldSatisfy` isInfixOf "unanswered(⊥)  # 𝔻(⊥)"
+      protocol `shouldSatisfy` isInfixOf "unanswered ⊥  # 𝔻(⊥)"
 
   describe "ReduceContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
     let boxed = "[[ @ -> [[ D> 00- ]] ]]"

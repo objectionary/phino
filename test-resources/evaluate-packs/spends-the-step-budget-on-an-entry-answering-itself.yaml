@@ -33,4 +33,4 @@ protocol: |
     𝔼(L_loop):
       𝑛·6·1 := L_loop:λ  # 𝑛
       𝕄(𝑛·6·1):
-        starved(6)
+        starved 6

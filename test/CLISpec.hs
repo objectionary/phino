@@ -1409,7 +1409,7 @@ spec = do
                        , "  𝕄(Φ.t):"
                        , "    𝑛·0·1 := Φ.cyc( x ↦ ⟦⟧ )"
                        , "    𝑛·0·2 := Φ.cyc( x ↦ ⟦⟧ )"
-                       , "  looped(𝑛·0·2)  # proven"
+                       , "  looped 𝑛·0·2  # proven"
                        ]
 
       it "writes the cut to the XML protocol with the formation in an element of its own" $
@@ -1442,7 +1442,7 @@ spec = do
               ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readProtocol path
-          lines records `shouldContain` ["  looped(𝑛·0·2)  # plausible"]
+          lines records `shouldContain` ["  looped 𝑛·0·2  # plausible"]
 
       it "refuses the flag without a mode" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
@@ -1551,7 +1551,7 @@ spec = do
           withStdin stuck $
             testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
-          lines records `shouldContain` ["  unanswered(L_weit)  # 𝔻(⟦ λ ⤍ L_weit, +4 ⟧)"]
+          lines records `shouldContain` ["  unanswered L_weit  # 𝔻(⟦ λ ⤍ L_weit, +4 ⟧)"]
       it "names a long formation in the XML protocol by its path rather than folding it" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
@@ -1593,14 +1593,14 @@ spec = do
           withStdin stuck $
             testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--protocol=" ++ path, "--abridged=64", "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
-          lines records `shouldContain` ["  unanswered(L_weit)  # 𝔻(⟦ λ ⤍ L_weit, +4 ⟧)"]
+          lines records `shouldContain` ["  unanswered L_weit  # 𝔻(⟦ λ ⤍ L_weit, +4 ⟧)"]
       it "keeps a formation whole under a width it fits in" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin stuck $
             testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--protocol=" ++ path, "--abridged=200", "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
-          lines records `shouldContain` ["  unanswered(L_weit)  # 𝔻(⟦ λ ⤍ L_weit, anfang ↦ schluss, mitte ↦ anfang, schluss ↦ mitte, rand ↦ schluss ⟧)"]
+          lines records `shouldContain` ["  unanswered L_weit  # 𝔻(⟦ λ ⤍ L_weit, anfang ↦ schluss, mitte ↦ anfang, schluss ↦ mitte, rand ↦ schluss ⟧)"]
       it "refuses a width that is not a number" $
         withStdin wide $
           testCLIFailed ["dataize", "--locator=Q.t", "--protocol=breit.txt", "--abridged=breit"] ["cannot parse value `breit'"]
@@ -1638,7 +1638,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
           records <- readUtf8 path
-          (lines records !! (length (lines records) - 3)) `shouldSatisfy` isPrefixOf "msec("
+          (lines records !! (length (lines records) - 3)) `shouldSatisfy` isPrefixOf "msec "
 
       it "closes the protocol with the firings it counted" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1646,7 +1646,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
           records <- readUtf8 path
-          lines records `shouldContain` ["firings(1)"]
+          lines records `shouldContain` ["firings 1"]
 
       it "closes the protocol with its fps on the last line" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1654,7 +1654,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
           records <- readUtf8 path
-          last (lines records) `shouldSatisfy` isPrefixOf "fps("
+          last (lines records) `shouldSatisfy` isPrefixOf "fps "
 
       it "closes the protocol with zero firings when the run fires nothing" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1662,7 +1662,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
           records <- readUtf8 path
-          lines records `shouldContain` ["firings(0)"]
+          lines records `shouldContain` ["firings 0"]
 
       it "writes one line per operand and one per answer of a firing" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1860,7 +1860,7 @@ spec = do
           lines records `shouldContain` ["      <starved limit=\"3\" by=\"dataize\" at=\"Φ.a🌵0\"/>"]
 
       forM_
-        [("XMLXXXXXX.xml", "<spent limit=\"5\" by="), ("textXXXXXX.txt", "  spent(5)")]
+        [("XMLXXXXXX.xml", "<spent limit=\"5\" by="), ("textXXXXXX.txt", "  spent 5")]
         ( \(template, record) ->
             it ("writes a spent firing budget to the protocol as " ++ record) $
               withTempFile template $ \(path, stream) -> do
@@ -1902,7 +1902,7 @@ spec = do
                        , "      𝕄(𝑛·1·5):"
                        , "        𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "      𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
-                       , "  unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
+                       , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "truncates the lines left over from the previous run" $
@@ -2521,7 +2521,7 @@ spec = do
                        , "      𝕄(𝑛·1·5):"
                        , "        𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "      𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
-                       , "  unanswered(L_number_nope)  # 𝔻(L_number_nope:λ)"
+                       , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
 
       it "still prints bytes when nothing gets stuck" $
@@ -2667,7 +2667,7 @@ spec = do
 
         it "forks both of its sides on the one symbol the run minted before the fork" $ do
           records <- recordedIn "protocolXXXXXX.txt" []
-          filter (isInfixOf "forked(") (lines records) `shouldBe` ["    forked(𝔻(𝜎1:λ)):"]
+          filter (isInfixOf "forked ") (lines records) `shouldBe` ["    forked 𝔻(𝜎1:λ):"]
 
         it "writes the right side of the text protocol beside the left side, inside the fork" $ do
           records <- recordedIn "protocolXXXXXX.txt" []
@@ -2682,7 +2682,7 @@ spec = do
                        , "        𝑛·2·1 := 𝜎1:λ  # 𝑛"
                        , "        𝑛·2·2 := 𝜎1:λ  # 𝕄(𝑛·2·1)"
                        , "    𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)"
-                       , "    forked(𝔻(𝜎1:λ)):"
+                       , "    forked 𝔻(𝜎1:λ):"
                        , "      left:  # ξ.a"
                        , "        𝑛·1·1 := 01-:Δ  # 𝕄(ξ.a)"
                        , "        𝛿·0·1 := 01-"
@@ -3057,7 +3057,7 @@ spec = do
                     (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--protocol=" ++ path, "--quiet"] ++ opts)
                     ["--max-seconds=1"]
               records <- readProtocol path
-              dropWhile (== ' ') (last (lines records)) `shouldBe` "timeout(1)"
+              dropWhile (== ' ') (last (lines records)) `shouldBe` "timeout 1"
 
       it "writes the timeout once to the XML protocol" $
         ladder $ \table ->

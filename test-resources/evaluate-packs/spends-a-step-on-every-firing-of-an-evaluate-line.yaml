@@ -26,4 +26,4 @@ protocol: |
       𝑛1·1 := ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝕄(ξ.next)
       𝔼(L_loop):  # 𝔼(𝑛1)
         𝕄(Φ.a🌵1):
-          starved(6)
+          starved 6

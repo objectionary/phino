@@ -55,8 +55,8 @@ protocol: |
         𝑛·1·3 := Φ.block( buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )
         𝑛·1·4 := Φ.dataized( target ↦ ⊥ )
         𝔼(L_dataized):
-          unanswered(⊥)  # 𝔻(⊥)
-          stuck(⊥)
+          unanswered ⊥  # 𝔻(⊥)
+          stuck ⊥
       𝑛1·1 := 𝑛·1·4.as-bytes  # 𝕄(ξ.v.φ)
       𝑛·1·5 := Φ.l🌵.root( 𝑛·1·4.as-bytes )  # 𝑛
       𝕄(𝑛·1·5):
@@ -67,6 +67,6 @@ protocol: |
         𝕄(Φ.a🌵3):
           𝑛·3·1 := Φ.dataized( target ↦ ⊥ )
           𝔼(L_dataized):
-            unanswered(⊥)  # 𝔻(⊥)
-            stuck(⊥)
-      stuck(⊥)
+            unanswered ⊥  # 𝔻(⊥)
+            stuck ⊥
+      stuck ⊥

@@ -188,9 +188,9 @@ readProtocol path = sansTotals <$> readUtf8 path
 withoutTotals :: String -> String
 withoutTotals text
   | [msec, firings, fps] <- drop (length ls - 3) ls
-  , "msec(" `isPrefixOf` msec
-  , "firings(" `isPrefixOf` firings
-  , "fps(" `isPrefixOf` fps =
+  , "msec " `isPrefixOf` msec
+  , "firings " `isPrefixOf` firings
+  , "fps " `isPrefixOf` fps =
       unlines (take (length ls - 3) ls)
   | otherwise = text
   where
