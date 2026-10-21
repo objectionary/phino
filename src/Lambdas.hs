@@ -393,6 +393,8 @@ stayed = goExpr
 
 unboxed :: Expression -> Expression
 unboxed (ExFormation [BiTau AtPhi expr]) = expr
+unboxed (ExFormation [BiTau AtPhi expr, bd]) | attributeFromBinding bd == Just AtRho = expr
+unboxed (ExFormation [bd, BiTau AtPhi expr]) | attributeFromBinding bd == Just AtRho = expr
 unboxed expr = expr
 
 rewritten :: RuleContext -> [Y.Rule] -> Expression -> IO Expression

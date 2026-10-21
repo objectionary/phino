@@ -510,8 +510,8 @@ and binds any other term as it stands.
 
 There is an eighth block, `unbox`, and it reduces nothing either. Each line of
 it takes the term another meta of the entry is bound to and, when that term is
-a formation whose only binding is `φ ↦ 𝑒`, binds an expression meta of its own
-to `𝑒`, and to the term as it is otherwise:
+a formation binding `φ ↦ 𝑒` and nothing else but a `ρ`, void or bound, binds
+an expression meta of its own to `𝑒`, and to the term as it is otherwise:
 
 ```yaml
 - λ: L_fork
@@ -535,7 +535,7 @@ to `𝑒`, and to the term as it is otherwise:
 The right-hand side of a line names a meta bound by `morph` or by another line
 of the entry, and nothing else. A line takes off one formation and no more, so
 `⟦ φ ↦ ⟦ φ ↦ 𝑒 ⟧ ⟧` becomes `⟦ φ ↦ 𝑒 ⟧`. A formation binding anything beside
-`φ`, such as a `ρ` or a method, stays, and so does a formation whose `φ` is
+`φ` and a `ρ`, such as a method, stays, and so does a formation whose `φ` is
 void, and a term that is no formation. What the line takes out it binds as it
 is, without morphing it, so an application standing there stays an
 application.
@@ -546,11 +546,14 @@ and the entry of `L_bytes_eq` answers its bool the same way, so after the
 `evaluate` lines one side may be a bool inside a formation binding nothing but
 `φ`, while the other side is a bool alone. The join compares the two as
 written, finds a shape apart, and gets stuck; after `unbox` both are bools.
-The step drops what the formation adds to the object, since `⟦ φ ↦ 𝑒 ⟧` has a
-`ρ` and a scope of its own that `𝑒` has not, and a file that needs them leaves
-the block out. A line that took a term out writes an `unboxed` record in
-place of the line binding its meta, commented with the meta it read, while a
-line that changed nothing writes the plain line of a meta bound to another:
+A copy that 𝕄 makes of a global object binds a `ρ` beside `φ` as well, so the
+`false` of `bool.not` comes as `⟦ ρ ↦ Φ, φ ↦ Φ.bool( … ) ⟧`, and the line
+takes the bool out of it the same way. The step drops what the formation adds
+to the object, since the formation has a `ρ` and a scope of its own that `𝑒`
+has not, and a file that needs them leaves the block out. A line that took a
+term out writes an `unboxed` record in place of the line binding its meta,
+commented with the meta it read, while a line that changed nothing writes the
+plain line of a meta bound to another:
 
 ```text
 unboxed 𝑛5·1 := ⟦ φ ↦ 𝜎3:λ, not ↦ ⟦⟧ ⟧  # 𝑛3
