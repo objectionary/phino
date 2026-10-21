@@ -21,10 +21,10 @@ make compiled      # phino compile + the whole suite on the compiled rules
 make hlint         # hlint src app test
 make fourmolu      # --mode check src app test (2-space indent, leading commas)
 make ruff          # ruff check + ruff format --check over the whole tree
-make coverage      # cabal test --enable-coverage + hpc-codecov (threshold 65%)
+make coverage      # cabal test --enable-coverage + hpc-codecov (threshold 80%)
 make bench         # prepare resources + cabal bench --enable-benchmarks
 make binary        # build stripped release binary into dist-release/phino[.exe]
-make all           # coverage + hlint + fourmolu
+make all           # test + hlint + fourmolu + ruff
 ```
 
 Run a single test by matching against describe/it text or the module name
