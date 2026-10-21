@@ -124,7 +124,7 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvMorphed Int Expression
-  | EvJoined Int (Either Int Bytes) Int (Int, Int)
+  | EvJoined Int T.Text Int (Int, Int)
   | EvDiverged Int (Expression, Expression) (Expression, Expression)
   | EvTaken Int [Expression] Expression
   | EvWorld Expression
@@ -402,9 +402,8 @@ saveEval handle cursor printed printed' report = do
       (protocol', value) <- valued counted naming term
       pure (protocol', Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
     written _ EvMorphed{} protocol = pure (protocol, Nothing)
-    written at (EvJoined _ condition symbol (left, right)) protocol = do
-      cond <- spelt condition
-      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) cond (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
+    written at (EvJoined _ spelling symbol (left, right)) protocol =
+      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) (labelled protocol spelling) (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
     written at (EvDiverged _ left right) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -603,13 +602,8 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
     elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
-    elements at (EvJoined _ condition symbol (left, right)) nesting =
-      placed at nesting $ case condition of
-        Left symbol' -> pure (joined (sigma symbol'))
-        Right bytes -> joined . escapeXMLText <$> lift (printed (ExBytes bytes))
-      where
-        joined :: String -> String
-        joined = printf "<joined symbol=\"%s\" left=\"%s\" right=\"%s\">%s</joined>" (sigma symbol) (sigma left) (sigma right)
+    elements at (EvJoined _ spelling symbol (left, right)) nesting =
+      placed at nesting (pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML (labelled nesting spelling)) (sigma left) (sigma right)))
     elements at (EvDiverged depth left right) nesting =
       placed at nesting (printf "<diverged left=\"%s\" right=\"%s\"/>" . escapeXML <$> sided left <*> (escapeXML <$> sided right))
       where

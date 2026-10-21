@@ -231,12 +231,9 @@ spec = do
     it "writes the double eight bytes hold beside the symbol a symbolize line minted for them" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
       last (lines written) `shouldBe` "    symbolized 𝜎6 := C0-09-1E-B8-51-EB-85-1F  # -3.14"
-    it "writes the symbol a join minted beside the symbol of its condition and the two it stands for" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left 7) 12 (5, 9)])
-      last (lines written) `shouldBe` "    joined 𝜎12 := 𝔻(𝜎7:λ) ? 𝜎5 : 𝜎9"
-    it "writes the symbol a join minted beside the datum of its condition" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
-      last (lines written) `shouldBe` "    joined 𝜎14 := 0D- ? 𝜎3 : 𝜎8"
+    it "writes the symbol a join minted beside the meta its condition was bound to and the two it stands for" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 "𝛿3" 12 (5, 9)])
+      last (lines written) `shouldBe` "    joined 𝜎12 := 𝛿3·1 ? 𝜎5 : 𝜎9"
     it "writes two sides a join could not join by the applications that made them" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExFormation []))) (ExFormation [BiTau (AtLabel "w") (ExFormation [])]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExFormation [])])])
       last (lines written) `shouldBe` "    diverged 𝑛·1·1 vs 𝑛·1·2"
@@ -395,12 +392,9 @@ spec = do
     it "writes the term a join came to as the answer of its firing in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
       lines written `shouldContain` ["    <answered meta=\"𝑛·1·1\">𝜎3</answered>"]
-    it "writes the symbol a join minted as an element naming the two it stands for" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left 7) 12 (5, 9)])
-      lines written `shouldContain` ["    <joined symbol=\"𝜎12\" left=\"𝜎5\" right=\"𝜎9\">𝜎7</joined>"]
-    it "writes the symbol a join minted as an element holding the datum of its condition" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
-      lines written `shouldContain` ["    <joined symbol=\"𝜎14\" left=\"𝜎3\" right=\"𝜎8\">0D-</joined>"]
+    it "writes the symbol a join minted as an element naming the meta its condition was bound to and the two it stands for" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 "𝛿3" 12 (5, 9)])
+      lines written `shouldContain` ["    <joined symbol=\"𝜎12\" on=\"𝛿3·1\" left=\"𝜎5\" right=\"𝜎9\"/>"]
     it "writes two sides a join could not join as an element naming both" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))])])
       lines written `shouldContain` ["    <diverged left=\"𝑛·1·1\" right=\"𝑛·1·2\"/>"]

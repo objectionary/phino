@@ -37,5 +37,5 @@ protocol: |
       symbolized 𝜎3 := FF-
       𝑛3·1 := ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ 𝜎3:λ:φ ) ⟧  # symbolize(𝑛1)
       𝑛4·1 := ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ 𝜎2:λ:φ ) ⟧  # 𝑛2
-      joined 𝜎4 := 𝔻(𝜎1:λ) ? 𝜎3 : 𝜎2
+      joined 𝜎4 := 𝛿1·1 ? 𝜎3 : 𝜎2
       𝑛·1·1 := ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ 𝜎4:λ:φ ) ⟧  # 𝑛3, 𝑛4

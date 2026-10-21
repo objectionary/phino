@@ -107,9 +107,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
       caller._saveEval (EvAnswer depth normal)
-    shown depth (Joined condition made (left, right) normal) = do
-      mapM_ (\(fresh, pair) -> caller._saveEval (EvJoined depth condition fresh pair)) made
-      caller._saveEval (EvTaken depth [left, right] normal)
+    shown depth (Joined (left, right) normal) = caller._saveEval (EvTaken depth [left, right] normal)
     kept :: Bool -> ReduceException -> Maybe Kept
     kept _ (Looping term) = Just (Looped term)
     kept _ (LoopingAt term _ _) = Just (Looped term)
@@ -302,7 +300,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     concluded ctx entry operands bound state' = case entry._ending of
       Answering template -> answered ctx template operands bound state'
-      Joining on left right -> merged ctx bound (lookup on._name (zip (map (_name . fst) entry._dataized) operands)) left right state'
+      Joining on left right -> merged ctx bound on left right state'
     answered :: ReduceContext -> Expression -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     answered ctx template operands bound state' = do
       (fresh, spent) <- minted template <$> readIORef ctx._minted
@@ -314,18 +312,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (normal, state'') <- settled built univ state' =<< opening Morphing ctx{_saveEval = ctx._saveEval . resited ctx._site built}
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (Answer built normal, state'')
-    merged :: ReduceContext -> Subst -> Maybe (Either Int Bytes) -> Expression -> Expression -> State -> IO (Answer, State)
-    merged _ _ Nothing _ _ _ = throwIO (userError (printf "The join of λ function '%s' is on a meta no operand of 'dataize' bound" (T.unpack func)))
-    merged ctx bound (Just condition) left right state' = do
+    merged :: ReduceContext -> Subst -> Meta -> Expression -> Expression -> State -> IO (Answer, State)
+    merged ctx bound on left right state' = do
       (one, state'') <- reached ctx bound left state'
       (two, state''') <- reached ctx bound right state''
       spent <- readIORef ctx._minted
       case joined one two spent of
         Just (term, made, spent') -> do
           writeIORef ctx._minted spent'
-          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting condition fresh pair)) made
+          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting on._spelling fresh pair)) made
           ctx._saveEval (EvTaken ctx._nesting [left, right] term)
-          pure (Joined condition made (left, right) term, state''')
+          pure (Joined (left, right) term, state''')
         Nothing -> do
           ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two))
           throwIO (Diverged func)

@@ -2167,7 +2167,7 @@ spec = do
                          , "      <formed meta=\"𝑛·1·3\"><symbol attr=\"φ\">𝜎3</symbol></formed>"
                          , "      <morphed meta=\"𝑛·1·4\">𝑛·1·3</morphed>"
                          , "    </morph>"
-                         , "    <joined symbol=\"𝜎4\" left=\"𝜎2\" right=\"𝜎3\">𝜎1</joined>"
+                         , "    <joined symbol=\"𝜎4\" on=\"𝛿1·1\" left=\"𝜎2\" right=\"𝜎3\"/>"
                          , "    <formed meta=\"𝑛·1·5\"><symbol attr=\"φ\">𝜎4</symbol></formed>"
                          , "    <answered meta=\"𝑛·1·6\">𝑛·1·5</answered>"
                          , "  </evaluate>"
