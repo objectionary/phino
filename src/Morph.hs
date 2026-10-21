@@ -454,8 +454,10 @@ settled term univ state ctx = do
 morphing :: Expression -> ReduceContext -> Expression -> State -> IO (Expression, State)
 morphing univ ctx expr state = do
   (universe, aiming) <- insideUniverse expr univ ctx
-  (morphed, _, state') <- morph universe state aiming
-  pure (morphed, state')
+  normal <- locatedExpression aiming._locator universe
+  unparked $ do
+    ((morphed, _), state') <- morph' (normal, (universe, Nothing) :| []) universe state =<< opening Morphing =<< universed universe aiming
+    pure (morphed, state')
 
 execBuildTerm :: Expression -> ReduceContext -> BuildTermFunc
 execBuildTerm _ ctx "evaluate" = evaluated ctx

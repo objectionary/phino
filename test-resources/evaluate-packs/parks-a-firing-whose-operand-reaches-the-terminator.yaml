@@ -6,10 +6,10 @@
 # the 'dataize' operand 'ρ.data.size' of 'L_dataized' reaches the terminator ⊥.
 # Under '_partial' that parks the firing the way an operand parked on a λ
 # function no entry answers does, rather than ending the run: the protocol
-# writes 'unanswered(⊥)' with the term 𝔻 could not dataize, the 'morph' operand
-# of 'L_entry' hands back the residue it parked on, and the dispatch of 'φ' off
-# the answer fires 'L_root', whose own operand dies the same way, so the run
-# parks there (#1401).
+# writes 'unanswered(⊥)' with the term 𝔻 could not dataize (#1401). The
+# firing of 'L_dataized' stands in the 'morph' operand of 'L_entry', which
+# gets stuck right there and is parked as a whole, instead of handing on the
+# residue its operand parked on (#2014).
 symbolic: |
   - λ: L_dataized
     dataize:
@@ -20,11 +20,7 @@ symbolic: |
       𝛿1: $.n
     morph:
       𝑛1: $.v.φ
-    𝑛: Φ.l🌵.root( 𝑛1 )
-  - λ: L_root
-    dataize:
-      𝛿1: $.v
-    𝑛: ⟦ ⟧
+    𝑛: 𝑛1
 location: 'Q.l🌵.e1'
 partial: true
 input: >
@@ -35,11 +31,10 @@ input: >
     block ↦ ⟦ data ↦ ∅, buffer ↦ ∅, read ↦ ⟦ φ ↦ Φ.dataized( target ↦ ξ.ρ.data.size ).as-bytes ⟧ ⟧,
     l🌵 ↦ ⟦
       mark ↦ ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧,
-      root ↦ ⟦ v ↦ ∅, λ ⤍ L_root ⟧,
       e1 ↦ Φ.l🌵.mark( n ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) ) )( v ↦ Φ.block( buffer ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ).read ).φ
     ⟧
   ⟧
-result: '⟦ v ↦ Φ.dataized( target ↦ ⊥ ).as-bytes, λ ⤍ L_root ⟧.φ'
+result: '⟦ n ↦ 1, v ↦ Φ.block( buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ).read, λ ⤍ L_entry ⟧.φ'
 protocol: |
   𝕄(Φ.l🌵.e1):
     𝑛·0·1 := ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧( n ↦ 1 )
@@ -57,16 +52,4 @@ protocol: |
         𝔼(L_dataized):
           unanswered ⊥  # 𝔻(⊥)
           stuck ⊥
-      𝑛1·1 := 𝑛·1·4.as-bytes  # 𝕄(ξ.v.φ)
-      𝑛·1·5 := Φ.l🌵.root( 𝑛·1·4.as-bytes )  # 𝑛
-      𝕄(𝑛·1·5):
-        𝑛·1·6 := ⟦ v ↦ ∅, λ ⤍ L_root ⟧( v ↦ 𝑛·1·4.as-bytes )
-      𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
-    𝔼(L_root):
-      𝔻(Φ.a🌵3):
-        𝕄(Φ.a🌵3):
-          𝑛·3·1 := Φ.dataized( target ↦ ⊥ )
-          𝔼(L_dataized):
-            unanswered ⊥  # 𝔻(⊥)
-            stuck ⊥
       stuck ⊥
