@@ -43,6 +43,12 @@ spec = do
         (decodeYaml' "name: foo\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\nresult: '𝑒1'\nunexpected: true" :: Either Yaml.ParseException Rule)
         `shouldBe` True
 
+    it "rejects unknown keys of a where step" $
+      failsWith
+        "Unknown key"
+        (decodeYaml' "name: foo\npattern: '⟦ 𝜏1 ↦ 𝑒1, 𝐵1 ⟧'\nresult: '⟦ 𝜏1 ↦ 𝑒2, 𝐵1 ⟧'\nwhere:\n  - meta: 𝑒2\n    function: contextualize\n    arg: ['𝑒1', '⟦ 𝐵1 ⟧']" :: Either Yaml.ParseException Rule)
+        `shouldBe` True
+
   describe "parses yaml rule" $ do
     let resources = "test-resources/yaml-packs"
     packs <- runIO (allPathsIn resources)

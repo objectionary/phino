@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: where-step-key
+pattern: '⟦ a ↦ ⟦ 𝐵1 ⟧, b ↦ ⟦ 𝐵2 ⟧ ⟧'
+result: '⟦ c ↦ ⟦ 𝐵3 ⟧ ⟧'
+where:
+  - meta: 𝐵3
+    function: join
+    arg:
+      - 𝐵1
+      - 𝐵2
