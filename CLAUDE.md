@@ -173,8 +173,13 @@ walks, turned into a fresh symbol (`symbolized` of `Lambdas.hs`, #1968), and
 writes `symbolized 𝜎4 := …` (`EvSymbolized`) per symbol it minted with the
 datum it stands for. A line of either that changed its term writes
 `# stay(𝑛1)` or `# symbolize(𝑛1)` to the text protocol (`EvReshaped`), and the
-markup binds it as any other. The lines of `evaluate`, `defer`, `stay` and
-`symbolize` are one list, `_lines` of `Lambda`, which `ordered` of
+markup binds it as any other. An `unbox` line binds its meta to what a
+formation binding nothing but φ holds, taking off one formation and morphing
+nothing (`unboxed` of `Lambdas.hs`, #2000), and to any other term as it is;
+a line that took one off writes `unboxed 𝑛4·1 := …` and
+`<unboxed meta="𝑛4·1" of="𝑛2·1">` (`EvUnboxed`) in place of its binding. The
+lines of `evaluate`, `defer`, `stay`, `unbox` and `symbolize` are one list,
+`_lines` of `Lambda`, which `ordered` of
 `Lambdas.hs` sorts by the metas each line reads, keeping the order of the
 blocks where no meta decides, and refuses a line reading what nothing binds or
 what it binds itself (#1903). No
@@ -189,7 +194,7 @@ An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
 among them (#1999). The block names the condition under `on`, a bytes meta of
 `dataize`, and the two sides under `left` and `right`, each a path from `$` or
-a meta `morph`, `evaluate`, `stay`, `symbolize` or `defer` binds.
+a meta `morph`, `evaluate`, `stay`, `unbox`, `symbolize` or `defer` binds.
 `merged` of `Evaluate.hs` first brings both sides down (`reached`): it morphs
 a path where it stands in the universe through `insideUniverse`, so the
 protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The join

@@ -20,7 +20,7 @@ import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
 import Forks (joined)
-import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, stayed, symbolized)
+import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, stayed, symbolized, unboxed)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, insideUniverse, isLambda, lambda, morph, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
@@ -98,8 +98,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     line :: ReduceContext -> Ending -> (Subst, State) -> Line -> IO (Subst, State)
     line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
     line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
-    line ctx _ (bound, state') (Stayed meta source) = (,state') <$> reshaped ctx "stay" (pure . stayed) meta source bound
-    line ctx _ (bound, state') (Symbolized meta source) = (,state') <$> reshaped ctx "symbolize" (masked ctx) meta source bound
+    line ctx _ (bound, state') (Stayed meta source) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "stay") (pure . stayed) meta source bound
+    line ctx _ (bound, state') (Unboxed meta source) = (,state') <$> reshaped ctx (EvUnboxed ctx._nesting meta._spelling) (pure . unboxed) meta source bound
+    line ctx _ (bound, state') (Symbolized meta source) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "symbolize") (masked ctx) meta source bound
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
@@ -154,14 +155,14 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'', normal : normals)
-    reshaped :: ReduceContext -> T.Text -> (Expression -> IO Expression) -> Meta -> Meta -> Subst -> IO Subst
-    reshaped ctx block change meta source bound = do
+    reshaped :: ReduceContext -> (Expression -> Expression -> Evaluation) -> (Expression -> IO Expression) -> Meta -> Meta -> Subst -> IO Subst
+    reshaped ctx record change meta source bound = do
       kept <- buildExpressionThrows (ExMeta source._name) bound
       term <- change kept
       ctx._saveEval
         ( if term == kept
             then EvBound ctx._nesting meta._spelling (ExMeta source._name) term
-            else EvReshaped ctx._nesting meta._spelling block (ExMeta source._name) term
+            else record (ExMeta source._name) term
         )
       bind meta (MvExpression term) bound
     masked :: ReduceContext -> Expression -> IO Expression
