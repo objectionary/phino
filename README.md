@@ -178,7 +178,10 @@ of the entry, and nothing else. A formation with a λ function is fired by the
 entry its λ name matches, the way 𝕄 fires it, and the line binds its meta to
 the normal form of the answer. A formation with no λ function is no call and
 stays as it is, and so does `⊥`. A λ name no entry answers gets stuck, as it
-does anywhere else, and `--partial` parks it. An answer is not fired again,
+does anywhere else, and `--partial` parks it. Any other term, such as the term
+a branch was parked at under `--partial`, gets an entry stuck when it computes
+an `𝑛`, while an entry that joins passes the term on as it is, since a join
+compares whatever its sides come to. An answer is not fired again,
 even when it is one more call: firing it takes one more line, so how many
 calls an entry makes is written in its file and not guessed by `phino`. Each
 firing of a line is one step deeper, the way a frame of 𝕄 or 𝔻 is, so a
@@ -262,14 +265,14 @@ not join.
 
 `on` names a bytes meta the `dataize` block bound, the condition, and `left`
 and `right` are paths from `$`, read against the formation being fired the way
-an operand is, or metas the `morph` block or a `stay`, `symbolize` or `defer`
-line bound, as described below. An entry with a `join` block has no `𝑛`,
-since the term it joins is what it answers with, and no block beside
-`dataize`, `morph`, `stay`, `symbolize` and `defer`: an entry joins or it
-computes, never both. A block missing one of the three keys, holding another,
-or naming under `on` anything but a meta of `dataize` is refused when the file
-is read, and so is a side reading a meta inside a term, such as `𝑛1.x`, or
-naming a meta that none of `morph`, `stay`, `symbolize` and `defer` binds.
+an operand is, or metas the `morph` block or an `evaluate`, `stay`,
+`symbolize` or `defer` line bound, as described below. An entry with a `join`
+block has no `𝑛`, since the term it joins is what it answers with: an entry
+joins or it computes, never both. A block missing one of the three keys,
+holding another, or naming under `on` anything but a meta of `dataize` is
+refused when the file is read, and so is a side reading a meta inside a term,
+such as `𝑛1.x`, or naming a meta that none of `morph`, `evaluate`, `stay`,
+`symbolize` and `defer` binds.
 
 A join morphs both of its sides first, each where it stands in the universe,
 under a block of its own, `𝕄(Φ.a🌵3):` for the left side and `𝕄(Φ.a🌵4):` for
@@ -303,9 +306,10 @@ diverged 𝑛·2·3 vs 𝑛·2·5
 ```
 
 A side is named by the line that bound it: the line its morph wrote, or the
-line of `morph`, `stay`, `symbolize` or `defer` whose meta it reads, such as
-`𝑛1·1`. A side that is a bare symbol is written as that symbol, and a side no
-line named, such as a datum its morph left as it was, as the term it is. Past
+line of `morph`, `evaluate`, `stay`, `symbolize` or `defer` whose meta it
+reads, such as `𝑛1·1`. A side that is a bare symbol is written as that
+symbol, and a side no line named, such as a datum its morph left as it was, as
+the term it is. Past
 that line the firing gets stuck the way a λ function no entry answers does:
 `--partial` parks the site the entry was fired at, and without it the command
 fails with `No entry of --symbolic answers the λ function 'L_fork'`. A side
@@ -460,9 +464,10 @@ file that wants to keep it leaves the block out, and an entry without
 `symbolize` writes the same protocol it wrote before.
 
 The blocks chain, and an entry that joins reads as a pipeline, every step of
-it on its own line. A side may go through a `stay` line, then a `symbolize`
-line, then a `defer` line, so that a copy over a bare symbol is deferred and
-two sides of one shape still join:
+it on its own line. A side may go through a `stay` line, then an `evaluate`
+line, then a `symbolize` line, then a `defer` line, so that a call 𝕄 left
+unfired is fired, a copy over a bare symbol is deferred, and two sides of one
+shape still join:
 
 ```yaml
 - λ: L_fork
@@ -474,22 +479,31 @@ two sides of one shape still join:
   stay:
     𝑛3: 𝑛1
     𝑛4: 𝑛2
-  symbolize:
+  evaluate:
     𝑛5: 𝑛3
     𝑛6: 𝑛4
-  defer:
+  symbolize:
     𝑛7: 𝑛5
     𝑛8: 𝑛6
+  defer:
+    𝑛9: 𝑛7
+    𝑛10: 𝑛8
   join:
     on: 𝛿1
-    left: 𝑛7
-    right: 𝑛8
+    left: 𝑛9
+    right: 𝑛10
 ```
 
-A `defer` line here works as it does in an entry that computes: it answers a
-copy over a bare symbol with a fresh symbol, writes the `deferred …` line
-sited at the meta it read, such as `# 𝕄(𝑛6.φ)`, and binds any other term as
-it stands.
+An `evaluate` line here works as it does in an entry that computes, except
+that it passes on a term that is no formation instead of getting stuck. In EO
+`bool.and` is `flag.if( FF-.eq( x ), false )`, so one side morphs down to the
+`eq` of bytes with its λ function unfired, which could never join with the
+bool on the other side. The line fires it, and the side comes to a bool too,
+while the other side is a bool already, a formation with no λ function, and
+its line leaves it as it is. A `defer` line here works as it does in an entry
+that computes too: it answers a copy over a bare symbol with a fresh symbol,
+writes the `deferred …` line sited at the meta it read, such as `# 𝕄(𝑛8.φ)`,
+and binds any other term as it stands.
 
 ### The order of the lines
 
