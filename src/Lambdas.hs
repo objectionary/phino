@@ -17,6 +17,7 @@ module Lambdas
   , matched
   , minted
   , readLambdas
+  , rewritten
   , stayed
   , symbolized
   , taken
@@ -25,6 +26,7 @@ module Lambdas
 where
 
 import AST
+import Builder (buildExpressionThrows)
 import Control.Exception (Exception, throwIO)
 import Control.Monad.Trans.State.Strict (State, runState, state)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:?))
@@ -41,13 +43,16 @@ import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Yaml as Yaml
 import Language (Language, language, shared)
 import Logger (logDebug)
+import Matcher (substEmpty)
 import Metas (Metas (metas))
 import Parser (parseBytes, parseExpression)
+import Rule (RuleContext, matchExpressionWithRule')
 import Slots (Slots (slots))
 import Text.Printf (printf)
 import Text.Regex.PCRE (matchTest)
 import Text.Regex.PCRE.ByteString (Regex, compUTF8, compile, execBlank)
 import Yaml (referenceless)
+import qualified Yaml as Y
 
 data Meta = Meta
   { _spelling :: Text
@@ -59,6 +64,7 @@ data Line
   | Deferred Meta Meta
   | Stayed Meta Meta
   | Unboxed Meta Meta
+  | Rewritten Meta Meta [Y.Rule]
   | Symbolized Meta Meta
 
 data Ending
@@ -92,7 +98,7 @@ instance FromJSON Lambda where
     morphed <- operands key expressionMeta entry "morph"
     lambda <-
       Lambda key dataized morphed
-        <$> (written entry >>= ordered (T.unpack key) (map (_name . fst) morphed))
+        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed))
         <*> pure ending
     once (T.unpack key) lambda
     mapM_ (metaless (T.unpack key) "dataize") lambda._dataized
@@ -106,7 +112,7 @@ instance FromJSON Lambda where
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "unbox", "symbolize", "join", "𝑛"]
+          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "unbox", "rewrite", "symbolize", "join", "𝑛"]
       concluded :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       concluded key dataized entry = do
         answer <- entry .:? "𝑛"
@@ -152,12 +158,30 @@ instance FromJSON Lambda where
       bytesMeta meta = case parseBytes (T.unpack meta) of
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
-      written :: Object -> Yaml.Parser [Line]
-      written entry = concat <$> sequence [links Evaluated entry "evaluate", links Deferred entry "defer", links Stayed entry "stay", links Unboxed entry "unbox", links Symbolized entry "symbolize"]
+      written :: String -> Object -> Yaml.Parser [Line]
+      written key entry = concat <$> sequence [links Evaluated entry "evaluate", links Deferred entry "defer", links Stayed entry "stay", links Unboxed entry "unbox", rewrites key entry, links Symbolized entry "symbolize"]
       links :: (Meta -> Meta -> Line) -> Object -> Key -> Yaml.Parser [Line]
       links kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Text)
         mapM (\(meta, source) -> kind <$> expressionMeta meta <*> expressionMeta source) (numbered mapping)
+      rewrites :: String -> Object -> Yaml.Parser [Line]
+      rewrites key entry = do
+        mapping <- entry .:? "rewrite" .!= (Map.empty :: Map Text Object)
+        mapM line (numbered mapping)
+        where
+          line :: (Text, Object) -> Yaml.Parser Line
+          line (meta, body) = do
+            case filter (`notElem` ["of", "rules"]) (map Key.toText (KeyMap.keys body)) of
+              [] -> pure ()
+              name : _ -> fail (printf "The key '%s' of the line '%s' of the 'rewrite' block of λ function '%s' is none of its keys: of, rules" (T.unpack name) (T.unpack meta) key)
+            Rewritten <$> expressionMeta meta <*> (required "of" >>= expressionMeta) <*> (required "rules" >>= mapM symbolless)
+            where
+              required :: FromJSON value => Key -> Yaml.Parser value
+              required name = body .:? name >>= maybe (fail (printf "The line '%s' of the 'rewrite' block of λ function '%s' has no '%s' key" (T.unpack meta) key (Key.toString name))) pure
+          symbolless :: Y.Rule -> Yaml.Parser Y.Rule
+          symbolless rule = case symbols rule.result of
+            [] -> pure rule
+            idx : _ -> fail (printf "The rule '%s' of the 'rewrite' block of λ function '%s' writes the symbol '𝜎%d' into its result, while only a firing mints a symbol" rule.name key idx)
       ordered :: String -> [Text] -> [Line] -> Yaml.Parser [Line]
       ordered key reduced waiting = mapM_ (bound . source) waiting >> go reduced waiting
         where
@@ -194,12 +218,14 @@ instance FromJSON Lambda where
           source (Deferred _ meta) = meta
           source (Stayed _ meta) = meta
           source (Unboxed _ meta) = meta
+          source (Rewritten _ meta _) = meta
           source (Symbolized _ meta) = meta
       binding :: Line -> Meta
       binding (Evaluated meta _) = meta
       binding (Deferred meta _) = meta
       binding (Stayed meta _) = meta
       binding (Unboxed meta _) = meta
+      binding (Rewritten meta _ _) = meta
       binding (Symbolized meta _) = meta
       sigmas :: String -> Expression -> Yaml.Parser ()
       sigmas key answer = case ([kind | Slot kind _ <- slots answer, kind /= "S"], symbols answer) of
@@ -244,7 +270,7 @@ instance FromJSON Lambda where
           sided :: String -> Expression -> Yaml.Parser ()
           sided name side = case filter (`notElem` reduced) (metas side) of
             [] -> pure ()
-            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'evaluate', 'stay', 'unbox', 'symbolize' and 'defer' binds" name key (T.unpack meta))
+            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'evaluate', 'stay', 'unbox', 'rewrite', 'symbolize' and 'defer' binds" name key (T.unpack meta))
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
@@ -368,6 +394,32 @@ stayed = goExpr
 unboxed :: Expression -> Expression
 unboxed (ExFormation [BiTau AtPhi expr]) = expr
 unboxed expr = expr
+
+rewritten :: RuleContext -> [Y.Rule] -> Expression -> IO Expression
+rewritten ctx rules = goExpr
+  where
+    goExpr :: Expression -> IO Expression
+    goExpr expr = goRules expr rules
+    goRules :: Expression -> [Y.Rule] -> IO Expression
+    goRules expr [] = goInside expr
+    goRules expr (rule : rest) = do
+      substs <- matchExpressionWithRule' [substEmpty] expr rule ctx
+      case substs of
+        subst : _ -> buildExpressionThrows rule.result subst
+        [] -> goRules expr rest
+    goInside :: Expression -> IO Expression
+    goInside (ExFormation bds) = ExFormation <$> mapM goBinding bds
+    goInside (ExApplication expr arg) = ExApplication <$> goExpr expr <*> goArgument arg
+    goInside (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr expr
+    goInside (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goExpr expr
+    goInside (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goExpr expr
+    goInside expr = pure expr
+    goBinding :: Binding -> IO Binding
+    goBinding (BiTau attr expr) = BiTau attr <$> goExpr expr
+    goBinding bd = pure bd
+    goArgument :: Argument -> IO Argument
+    goArgument (ArTau attr expr) = ArTau attr <$> goExpr expr
+    goArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr expr
 
 type Minting = (Int, [(Int, Bytes)])
 

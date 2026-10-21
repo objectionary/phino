@@ -153,8 +153,9 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 those of the two blocks below among them.
 
 An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`, `stay`,
-`unbox`, `symbolize`, `join` and `𝑛`, and any other key, such as a misspelled
-`joinn`, refuses the whole file, so a typo never drops a block without a word.
+`unbox`, `rewrite`, `symbolize`, `join` and `𝑛`, and any other key, such as a
+misspelled `joinn`, refuses the whole file, so a typo never drops a block
+without a word.
 
 ### Firing what an operand came to
 
@@ -266,13 +267,13 @@ not join.
 `on` names a bytes meta the `dataize` block bound, the condition, and `left`
 and `right` are paths from `$`, read against the formation being fired the way
 an operand is, or metas the `morph` block or an `evaluate`, `stay`, `unbox`,
-`symbolize` or `defer` line bound, as described below. An entry with a `join`
-block has no `𝑛`, since the term it joins is what it answers with: an entry
-joins or it computes, never both. A block missing one of the three keys,
-holding another, or naming under `on` anything but a meta of `dataize` is
-refused when the file is read, and so is a side reading a meta inside a term,
-such as `𝑛1.x`, or naming a meta that none of `morph`, `evaluate`, `stay`,
-`unbox`, `symbolize` and `defer` binds.
+`rewrite`, `symbolize` or `defer` line bound, as described below. An entry
+with a `join` block has no `𝑛`, since the term it joins is what it answers
+with: an entry joins or it computes, never both. A block missing one of the
+three keys, holding another, or naming under `on` anything but a meta of
+`dataize` is refused when the file is read, and so is a side reading a meta
+inside a term, such as `𝑛1.x`, or naming a meta that none of `morph`,
+`evaluate`, `stay`, `unbox`, `rewrite`, `symbolize` and `defer` binds.
 
 A join morphs both of its sides first, each where it stands in the universe,
 under a block of its own, `𝕄(Φ.a🌵3):` for the left side and `𝕄(Φ.a🌵4):` for
@@ -306,10 +307,10 @@ diverged 𝑛·2·3 vs 𝑛·2·5
 ```
 
 A side is named by the line that bound it: the line its morph wrote, or the
-line of `morph`, `evaluate`, `stay`, `unbox`, `symbolize` or `defer` whose meta
-it reads, such as `𝑛1·1`. A side that is a bare symbol is written as that
-symbol, and a side no line named, such as a datum its morph left as it was, as
-the term it is. Past
+line of `morph`, `evaluate`, `stay`, `unbox`, `rewrite`, `symbolize` or
+`defer` whose meta it reads, such as `𝑛1·1`. A side that is a bare symbol is
+written as that symbol, and a side no line named, such as a datum its morph
+left as it was, as the term it is. Past
 that line the firing gets stuck the way a λ function no entry answers does:
 `--partial` parks the site the entry was fired at, and without it the command
 fails with `No entry of --symbolic answers the λ function 'L_fork'`. A side
@@ -560,12 +561,73 @@ joined 𝜎4 := 𝔻(𝜎1:λ) ? 𝜎3 : 𝜎2
 The markup writes the record as `<unboxed meta="𝑛5·1" of="𝑛3·1">`, as
 described below.
 
+### Rewriting a term with rules
+
+There is a ninth block, `rewrite`, and it reduces nothing either. Each line of
+it takes the term another meta of the entry is bound to, named under `of`,
+applies the rules listed under `rules`, spelled with the `pattern`, `result`,
+`when`, `where` and meta variables a rule file uses, and binds an expression
+meta of its own to the outcome:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.c
+  morph:
+    𝑛1: $.a
+    𝑛2: $.b
+  rewrite:
+    𝑛3:
+      of: 𝑛1
+      rules: &bool
+        - name: true-literal
+          pattern: Φ.true
+          result: Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )
+        - name: false-literal
+          pattern: Φ.false
+          result: Φ.bool( if ↦ ⟦ Δ ⤍ 00- ⟧ )
+    𝑛4:
+      of: 𝑛2
+      rules: *bool
+  join:
+    on: 𝛿1
+    left: 𝑛3
+    right: 𝑛4
+```
+
+The meta under `of` is one bound by `morph` or by another line of the entry,
+and nothing else. A line reads no key but `of` and `rules`, and two lines may
+share their rules through a YAML anchor, as above. A rule is tried at every
+position of the term, the outermost first. The first rule whose pattern
+matches a position rewrites it, and a rewritten position is not walked into
+again, so a rule whose result carries its own pattern never loops. Nothing is
+normalized afterwards: a rewrite is a substitution the entry vouches for and
+not a reduction, exactly as an answer is. A rule writing a symbol such as `𝜎4`
+into its result, or reading a meta its pattern never binds, is refused when the
+file is read, since only a firing mints a symbol.
+
+This is how a join compares a literal with a bool a computation answered. In
+EO the literal `Φ.true` stands where the other side holds `Φ.bool( … )`, the
+same value in another shape, and the join gets stuck on the two as written.
+After `rewrite` both sides are bools. A line that changed its term is
+commented with the block and the meta it read, while a line that changed
+nothing writes the plain line of a meta bound to another:
+
+```text
+𝑛3·1 := ⟦ φ ↦ 𝜎2:λ, kq ↦ Φ.bool( if ↦ 01-:Δ ) ⟧  # rewrite(𝑛1)
+𝑛4·1 := 𝑛2·1  # 𝑛2
+joined 𝜎4 := 𝔻(𝜎1:λ) ? 𝜎2 : 𝜎3
+```
+
+The markup writes both lines as a plain `<bound>`.
+
 ### The order of the lines
 
-The lines of `evaluate`, `defer`, `stay`, `unbox` and `symbolize` run in the
-order of the metas they read, not in the order of their blocks. A line runs
-once every meta it reads is bound, so this entry fires what `x` came to and
-then fires the answer, one more call, although the line doing so stands first:
+The lines of `evaluate`, `defer`, `stay`, `unbox`, `rewrite` and `symbolize`
+run in the order of the metas they read, not in the order of their blocks. A
+line runs once every meta it reads is bound, so this entry fires what `x` came
+to and then fires the answer, one more call, although the line doing so stands
+first:
 
 ```yaml
 - λ: L_twice

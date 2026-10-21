@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The left side holds the literal 'Φ.true', the way 'bool.not' of EO comes
+# down, while the right side holds the bool a computation answers, a 'Φ.bool'
+# applied to its datum. The two are shapes apart, so the join could never make
+# one term of them (#2005). A 'rewrite' line rewrites 'Φ.true' wherever it
+# stands in the left side into the shape of the right one, and leaves the right
+# side as it is, since none of its rules matches anything there. The two sides
+# then differ in their symbols alone, and the join makes one term of them.
+# The protocol writes the line of '𝑛3', which a rule changed, commented with
+# the block and the meta it read, and the line of '𝑛4', which changed nothing,
+# as the plain line of a meta bound to what another meta holds.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    rewrite:
+      𝑛3:
+        of: 𝑛1
+        rules: &bool
+          - name: true-literal
+            pattern: Φ.true
+            result: Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )
+          - name: false-literal
+            pattern: Φ.false
+            result: Φ.bool( if ↦ ⟦ Δ ⤍ 00- ⟧ )
+      𝑛4:
+        of: 𝑛2
+        rules: *bool
+    join:
+      on: 𝛿1
+      left: 𝑛3
+      right: 𝑛4
+location: 'Q.y'
+hide-rho: false
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, kq ↦ Φ.true ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, kq ↦ Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝑛1·1 := ⟦ φ ↦ 𝜎2:λ, kq ↦ Φ.true ⟧  # 𝕄(ξ.a)
+      𝑛2·1 := ⟦ φ ↦ 𝜎3:λ, kq ↦ Φ.bool( if ↦ 01-:Δ ) ⟧  # 𝕄(ξ.b)
+      𝑛3·1 := ⟦ φ ↦ 𝜎2:λ, kq ↦ Φ.bool( if ↦ 01-:Δ ) ⟧  # rewrite(𝑛1)
+      𝑛4·1 := 𝑛2·1  # 𝑛2
+      joined 𝜎4 := 𝔻(𝜎1:λ) ? 𝜎2 : 𝜎3
+      𝑛·1·1 := ⟦ φ ↦ 𝜎4:λ, kq ↦ Φ.bool( if ↦ 01-:Δ ) ⟧  # 𝑛3, 𝑛4
