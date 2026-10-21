@@ -288,13 +288,13 @@ standing at the same place gets a fresh symbol, which a line of its own says
 is the left one where the condition holds and the right one where it does not:
 
 ```text
-joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
+joined 𝜎5 := 𝛿1·2 ? 𝜎3 : 𝜎4
 ```
 
-The condition is spelled by what the `dataize` operand came down to,
-`𝔻(𝜎2:λ)` for a symbol and the bytes for a datum. A pair met twice gets the
-same fresh symbol both times. Nothing is bound to the condition, which stays
-the unknown it was.
+The condition is named by the meta its `dataize` operand bound, `𝛿1·2`,
+since the join reads the datum that line holds and runs no 𝔻 of its own. A
+pair met twice gets the same fresh symbol both times. Nothing is bound to the
+condition, which stays the unknown it was.
 
 Two sides that differ in anything else, a datum, a λ name or the shape of a
 term, do not join, and neither do a side holding a datum and a side holding a
@@ -405,7 +405,7 @@ a line that dropped nothing is commented with the meta alone:
 ```text
 𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
 𝑛4·1 := 𝑛2·1  # 𝑛2
-joined 𝜎4 := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
+joined 𝜎4 := 𝛿1·1 ? 𝜎1 : 𝜎2
 ```
 
 ### Standing a symbol for a datum
@@ -456,7 +456,7 @@ term held no datum is commented with the meta alone:
 symbolized 𝜎4 := 3F-F0-00-00-00-00-00-00  # 1.0
 𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # symbolize(𝑛1)
 𝑛4·1 := 𝑛2·1  # 𝑛2
-joined 𝜎5 := 𝔻(𝜎3:λ) ? 𝜎4 : 𝜎2
+joined 𝜎5 := 𝛿1·1 ? 𝜎4 : 𝜎2
 ```
 
 A line sees its own side alone, so a datum both sides share becomes two
@@ -558,7 +558,7 @@ plain line of a meta bound to another:
 ```text
 unboxed 𝑛5·1 := ⟦ φ ↦ 𝜎3:λ, not ↦ ⟦⟧ ⟧  # 𝑛3
 𝑛6·1 := 𝑛4·1  # 𝑛4
-joined 𝜎4 := 𝔻(𝜎1:λ) ? 𝜎3 : 𝜎2
+joined 𝜎4 := 𝛿1·1 ? 𝜎3 : 𝜎2
 ```
 
 The markup writes the record as `<unboxed meta="𝑛5·1" of="𝑛3·1">`, as
@@ -619,7 +619,7 @@ nothing writes the plain line of a meta bound to another:
 ```text
 𝑛3·1 := ⟦ φ ↦ 𝜎2:λ, kq ↦ Φ.bool( if ↦ 01-:Δ ) ⟧  # rewrite(𝑛1)
 𝑛4·1 := 𝑛2·1  # 𝑛2
-joined 𝜎4 := 𝔻(𝜎1:λ) ? 𝜎2 : 𝜎3
+joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
 ```
 
 The markup writes both lines as a plain `<bound>`.
@@ -830,10 +830,10 @@ function and no term of its own, so 𝔻 is applied to the formation carrying it
 and never to the name alone.
 
 A `join` block writes every symbol it minted,
-`joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`, and nothing is bound to the condition,
-which stays the unknown it was. A comment carries the letter of a judgment
-exactly where a judgment made the value and the block around the line does
-not already say so.
+`joined 𝜎5 := 𝛿1·2 ? 𝜎3 : 𝜎4`, naming the condition by the meta of its
+operand line, and nothing is bound to the condition, which stays the unknown
+it was. A comment carries the letter of a judgment exactly where a judgment
+made the value and the block around the line does not already say so.
 
 The site of a firing is a locator, and the block a firing stands in names it,
 under the letter of the judgment that asked for the firing: 𝔼 is fired by the
@@ -1067,7 +1067,7 @@ $ cat fork.txt
             𝑛·4·5 := Φ.number( φ ↦ 𝜎4:λ )
           𝑛·4·6 := 𝑛·4·5  # 𝕄(𝑛·4·4)
         𝑛·2·6 := 𝑛·4·5.plus( x ↦ 𝑛·4·1 )
-      joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
+      joined 𝜎5 := 𝛿1·2 ? 𝜎3 : 𝜎4
       𝑛·2·7 := ⟦ x ↦ 𝑛·4·1, λ ⤍ L_plus ⟧  # 𝕄(ξ.then), 𝕄(ξ.else)
     𝔼(L_plus):
       𝔻(Φ.a🌵9):
@@ -1107,12 +1107,12 @@ both branches where they stand in the universe, `𝕄(Φ.a🌵3):` and
 `𝕄(Φ.a🌵6):`, and each morph fires the `plus` its branch starts with. `𝜎3` is
 minted by the `plus( 1 )` of `then` and `𝜎4` by the `plus( 2 )` of `else`, and
 nothing else tells the two branches apart, so the join mints `𝜎5` and writes,
-on the `joined …` line, that `𝜎5` is `𝜎3` where `𝜎2` holds and `𝜎4` where it
-does not. A reader who knows the entry knows that `𝛿1` is the condition and
-that `𝜎3` belongs to `then`. Nothing is assigned to a `𝜎`, it being the name
-of a λ function, so the decision nobody made stands on a line of its own. The
-`plus` both branches end in reads the joined symbol as `𝔻(𝜎5:λ)`, and the
-`plus( 5 )` after it reads `𝔻(𝜎6:λ)`.
+on the `joined …` line, that `𝜎5` is `𝜎3` where `𝛿1·2` holds and `𝜎4`
+where it does not, `𝛿1·2` being the operand line that brought `𝜎2` down. A
+reader who knows the entry knows that `𝜎3` belongs to `then`. Nothing is
+assigned to a `𝜎`, it being the name of a λ function, so the decision nobody
+made stands on a line of its own. The `plus` both branches end in reads the
+joined symbol as `𝔻(𝜎5:λ)`, and the `plus( 5 )` after it reads `𝔻(𝜎6:λ)`.
 
 Two branches that differ in more than their symbols do not join. Had `else`
 been `ξ.x.plus( 2 )`, its morph would come to `𝑛·2·4.plus( x ↦ 2 )`, holding
@@ -1287,15 +1287,15 @@ Since the markup names terms the text format writes out, the two count their
 metas each on their own: `𝑛·1·11` of the markup above is `𝑛·1·6` of the
 text.
 
-A join writes `<joined symbol="𝜎5" left="𝜎3" right="𝜎4">𝜎2</joined>`, one
-element per fresh symbol, which the text format writes as
-`joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`: the fresh symbol stands in `symbol`, the
-two it stands for in `left` and `right`, and the condition is the text. The
-two `<morph>` elements before it are the sides being morphed where they stand
-in the universe. Two sides that do not join write
-`<diverged left="𝑛·2·3" right="𝑛·2·6"/>` in its place, which the text format
-writes as `diverged 𝑛·2·3 vs 𝑛·2·5`, naming each side the way the markup names
-any other value.
+A join writes `<joined symbol="𝜎5" on="𝛿1·2" left="𝜎3" right="𝜎4"/>`,
+one element per fresh symbol, which the text format writes as
+`joined 𝜎5 := 𝛿1·2 ? 𝜎3 : 𝜎4`: the fresh symbol stands in `symbol`, the
+meta of the condition in `on`, named the way `<bound>` names it, and the two
+it stands for in `left` and `right`. The two `<morph>` elements before it are
+the sides being morphed where they stand in the universe. Two sides that do
+not join write `<diverged left="𝑛·2·3" right="𝑛·2·6"/>` in its place, which
+the text format writes as `diverged 𝑛·2·3 vs 𝑛·2·5`, naming each side the way
+the markup names any other value.
 
 `<symbolized symbol="𝜎4" number="1.0">3F-F0-00-00-00-00-00-00</symbolized>` is
 one symbol a `symbolize` line minted, which the text format writes as
@@ -1900,7 +1900,10 @@ of `L_number_plus`, two for `a` and one for `b`, since it records where 𝔼 was
 asked and what it answered there; the one for `b` carries the answer lines of
 the outer one for `a` and no operand line, since nothing was reduced for it,
 and it is not charged to `--max-firings`, which counts the firings the run
-made. The formation is compared with everything it carries, `ρ` included, so
+made. A join answered that way writes no `joined` line, since no line of its
+own binds the condition and the first firing already said what every symbol
+it minted stands for.
+The formation is compared with everything it carries, `ρ` included, so
 a firing on another object is another firing, yet it may take the same answer
 all the same: the run keeps every answer by the λ name and what the operands
 came down to as well, and a firing whose operands come down to the data, the

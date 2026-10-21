@@ -68,11 +68,11 @@ data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IO
 
 data Answer
   = Answer Expression Expression
-  | Joined (Either Int Bytes) [(Int, (Int, Int))] (Expression, Expression) Expression
+  | Joined (Expression, Expression) Expression
 
 ended :: Answer -> Expression
 ended (Answer _ normal) = normal
-ended (Joined _ _ _ normal) = normal
+ended (Joined _ normal) = normal
 
 data Firing = Firing T.Text [Either Int Bytes] [Expression]
   deriving (Eq, Ord)
