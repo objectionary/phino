@@ -182,57 +182,26 @@ reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
-An entry ends in an `𝑛` or in a `fork` block (`Ending` of `Lambdas.hs`, #1938),
-never both, and a forking entry holds nothing beside `dataize`, `morph`,
-`stay`, `symbolize` and `defer`. The block names the condition under `on`, a
-bytes meta of `dataize`, and the two sides under `left` and `right`, each a
-path from `$` or a meta `morph`, `stay`, `symbolize` or `defer` binds.
-`forked` of `Evaluate.hs` first brings both sides down (`reached`): it morphs
+An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
+never both, and a joining entry holds nothing beside `dataize`, `morph`,
+`stay`, `symbolize` and `defer` (#1938). The block names the condition under
+`on`, a bytes meta of `dataize`, and the two sides under `left` and `right`,
+each a path from `$` or a meta `morph`, `stay`, `symbolize` or `defer` binds.
+`merged` of `Evaluate.hs` first brings both sides down (`reached`): it morphs
 a path where it stands in the universe through `insideUniverse`, so the
-protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The fork
+protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The join
 defers nothing by itself: an entry that wants a side deferred says so with a
-`defer` line, which works as in an entry that computes (#1982). In
-a forking entry a `morph` operand that throws binds nothing and keeps the
-failure by its meta (`Held` of `Evaluate.hs`), a `stay`, `symbolize` or
-`defer` line reading that meta keeps it by its own (`carried`), and only the
-path taking a side reading it rethrows it.
-Two sides that are
-the same, or differ only in the symbols at their leaves, are one term:
-`joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the firing
-writes `joined …` (`EvJoined`) per fresh symbol and answers the joined term
-(`Joined` of `Answer`) with no decision, so the run splits nothing (#1954).
-Any other two sides, or a side whose morph threw, make `forked` ask `decide`
-of `Forks.hs` for the side, keyed by the value the condition came down to,
-the symbol or the bytes. A decided condition takes its side (`Taken` of
-`Turn`) and opens nothing. An undecided one splits the run where it stands
-(#1960): `decide` writes the split (`EvSplit`), captures the rest of the path,
-up to the prompt `explored` set, as a delimited continuation of GHC
-(`control0#`), and resumes it twice (`Split` of `Turn`), with the left side
-and, once every path under it ended, with the right one, so the paths run
-depth first. Before it does, it marks what the right side must find as it was
-at the fork: the decisions, the memo of `plausible` (`snapshot` of
-`Morph.hs`), and the protocol (`RewindEvalFunc` of `Deps.hs`, made by
-`rewindEval` and `rewindEvalXml`), which hands the writer back as it was at
-the fork with its counters kept, closing first the elements the left side
-left open. The metas, symbols and names keep counting across the paths, and
-the tally of `--max-firings` is shared by all of them, so what came before the
-fork is done and written once and a path never takes an answer another path
-made after it (#1958). Once `--max-paths` (`_maxPaths` of `CLI/Types.hs`)
-paths are open, an undecided condition takes the left side and captures
-nothing, so a run with one path pays nothing for it. A taken side writes
-`forked … := left` (`EvForked`), the markup `<forked side="left">`, and a
-side of a split opens a block under the split (`EvSide`), `left:` or `right:`
-under `forked …:`, the markup `<left>` or `<right>` under
-`<forked on="…">`; the firing answers that side (`EvTaken`), or rethrows what
-its morph threw. A side holds what its path did after the fork, to the end of
-the run, at the fork and not after the run that opened it (#1989). A record
-keeps its tier, and both writers lay it out by floors (`floored` of
-`Deps.hs`, `_floors` of `Protocol`, `_storeys` of `Nesting`): a split and a
-side push a floor, and a record under a floor stands below it by how far its
-tier is from the shallowest tier the floor has met. `explored` of `Forks.hs`
-runs the action once and collects the answer of every path in that order, and
-the command prints a result per path. The markup holds the run under
-`<protocol>` with no element per path.
+`defer` line, which works as in an entry that computes (#1982). Two sides
+that are the same, or differ only in the symbols at their leaves, are one
+term: `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the
+firing writes `joined …` (`EvJoined`) per fresh symbol and answers the joined
+term (`Joined` of `Answer`, written by `EvTaken`) with no decision (#1954).
+Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
+naming each side by the line that bound it, and throw `Diverged`, which the
+firing rethrows as `Stuck`, so `--partial` parks it and the firings around
+it write `stuck` as for a λ function no entry answers. A side or an operand
+whose morph throws fails the firing with what it threw, so a run never
+splits and prints one result (#1996).
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
@@ -267,8 +236,7 @@ firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment o
 line is a judgment applied to a term — the intent the value beside it came
 from: the judgment that asked for a firing and the site it was fired at
 (`_site` of `ReduceContext`), and the one that reduced an operand and the term
-it was reduced from. A line no judgment made — a `forked` one — names the side
-as the entry spells it. The extension of the file picks the format:
+it was reduced from. The extension of the file picks the format:
 `.xml` gets markup (`Nesting` and `saveEvalXml`), anything else the indented
 text. Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
@@ -376,7 +344,8 @@ nothing, since it stands in the block of the rule. A cut is a line too,
 opened, carrying the formation its ancestor entered (#1434) and naming the mode
 that cut it.
 Three records say why a firing gave no answer (#1524): `stuck …` closes a
-firing that got stuck, `stall …` stands under one the memo answered with a
+firing that got stuck, other than a join that could not join, which
+`diverged …` closes, `stall …` stands under one the memo answered with a
 kept stall, and `starved …` is written by `deeper` where the step budget runs
 out, with the site it stood at rather than its term (#1531).
 
@@ -412,9 +381,9 @@ forms its operands came down to (`Firing`, `remembered` and `remember` in
 another formation, such as one whose operand reads another object holding the
 same datum, brings its operands down, finds the firing answered and takes
 that answer, minting nothing, so one value never gets two names (#1661). A
-fork answers from its sides too, so its key carries both sides as its
-formation places them (`sides` of `Evaluate.hs`), and a second fork on a
-condition the first one decided takes its own side, not the first one's
+join answers from its sides too, so its key carries both sides as its
+formation places them (`sides` of `Evaluate.hs`), and a second join on a
+condition the first one read answers its own sides, not the first one's
 (#1940). A symbol is kept as the symbol it is, not as the datum every symbol
 manufactures, so two firings over two symbols stay two. Such a firing is
 charged to `--max-firings` like one made, since the tally charges a firing as

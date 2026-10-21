@@ -1337,7 +1337,7 @@ spec = do
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
 
     it "names every block of a --symbolic entry in its help" $
-      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"evaluate\"", "\"defer\"", "\"stay\"", "\"symbolize\"", "\"fork\""]
+      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"evaluate\"", "\"defer\"", "\"stay\"", "\"symbolize\"", "\"join\""]
 
     it "dataizes simple expression" $
       withStdin "[[ D> 01- ]]" $
@@ -2116,12 +2116,12 @@ spec = do
                          , "</dataize>"
                          ]
 
-        it "writes the side a fork took and the side it came to as elements of its own" $
+        it "writes a firing whose two sides do not join as diverged, naming both sides" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n") $ \forks ->
+            withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n") $ \joins ->
               withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ Δ ⤍ 02- ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+                testCLIFailed ["morph", "--symbolic=" ++ joins, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ["No entry of --symbolic answers the λ function 'L_fork'"]
             records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -2139,16 +2139,7 @@ spec = do
                          , "      <formed meta=\"𝑛·1·3\"><datum attr=\"φ\">02-</datum></formed>"
                          , "      <morphed meta=\"𝑛·1·4\">𝑛·1·3</morphed>"
                          , "    </morph>"
-                         , "    <forked on=\"𝜎1\">"
-                         , "      <left>"
-                         , "        <answered meta=\"𝑛·1·5\">𝑛·1·1</answered>"
-                         , "        <morphed meta=\"𝑛·0·1\">01-</morphed>"
-                         , "      </left>"
-                         , "      <right>"
-                         , "        <answered meta=\"𝑛·1·6\">𝑛·1·3</answered>"
-                         , "        <morphed meta=\"𝑛·0·2\">02-</morphed>"
-                         , "      </right>"
-                         , "    </forked>"
+                         , "    <diverged left=\"𝑛·1·1\" right=\"𝑛·1·3\"/>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2156,9 +2147,9 @@ spec = do
         it "writes the symbol a join minted for two sides that differ only in their symbols as an element of its own" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n") $ \forks ->
+            withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n") $ \joins ->
               withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧" $
-                testCLISucceeded ["morph", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+                testCLISucceeded ["morph", "--symbolic=" ++ joins, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -2578,163 +2569,30 @@ spec = do
           withStdin sum' $
             testCLIFailed ["dataize", "--symbolic=" ++ path] ["cannot be read"]
 
-    describe "a fork on a condition nobody decided" $ do
-      let fork = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n"
-          forked :: [String] -> String -> IO String
-          forked options program =
-            withLambdasOf fork $ \forks ->
+    describe "a join on a condition nobody decided" $ do
+      let joining = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n"
+          dataized :: String -> IO String
+          dataized program =
+            withLambdasOf joining $ \joins ->
               withStdin program $
-                fst <$> withStdout (runCLI (["dataize", "--symbolic=" ++ forks, "--locator=Q.y"] ++ options))
-      it "dataizes the left side first and the right side on another path" $ do
-        printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
-        lines printed `shouldBe` ["01-", "02-"]
+                fst <$> withStdout (runCLI ["dataize", "--symbolic=" ++ joins, "--locator=Q.y"])
+      it "gets stuck on two sides that do not join, instead of splitting the run" $
+        withLambdasOf joining $ \joins ->
+          withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧" $
+            testCLIFailed ["dataize", "--symbolic=" ++ joins, "--locator=Q.y"] ["No entry of --symbolic answers the λ function 'L_fork'"]
 
-      it "dataizes two sides that come to the same term on one path" $ do
-        printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 07- ⟧, b ↦ ⟦ Δ ⤍ 07- ⟧, λ ⤍ L_fork ⟧ ⟧"
+      it "gets stuck on a side whose morph got stuck" $
+        withLambdasOf joining $ \joins ->
+          withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 05- ⟧, b ↦ ⟦ λ ⤍ L_none ⟧.x, λ ⤍ L_fork ⟧ ⟧" $
+            testCLIFailed ["dataize", "--symbolic=" ++ joins, "--locator=Q.y"] ["No entry of --symbolic answers the λ function 'L_none'"]
+
+      it "dataizes two sides that come to the same term" $ do
+        printed <- dataized "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 07- ⟧, b ↦ ⟦ Δ ⤍ 07- ⟧, λ ⤍ L_fork ⟧ ⟧"
         lines printed `shouldBe` ["07-"]
 
-      it "dataizes two sides that differ only in their symbols on one path" $ do
-        printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧"
+      it "dataizes two sides that differ only in their symbols" $ do
+        printed <- dataized "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧, λ ⤍ L_fork ⟧ ⟧"
         length (lines printed) `shouldBe` 1
-
-      it "dataizes the side it takes when the other side gets stuck" $ do
-        printed <- forked ["--max-paths=1"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 05- ⟧, b ↦ ⟦ λ ⤍ L_none ⟧.x, λ ⤍ L_fork ⟧ ⟧"
-        lines printed `shouldBe` ["05-"]
-
-      it "runs no more paths than --max-paths allows" $ do
-        printed <- forked ["--max-paths=1"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
-        lines printed `shouldBe` ["01-"]
-
-      it "fails with non-positive --max-paths" $
-        withStdin "[[ D> 01- ]]" $
-          testCLIFailed ["dataize", "--max-paths=0"] ["--max-paths must be positive"]
-
-      it "takes the side a path already decided on for the same condition and opens no new path" $ do
-        printed <- forked [] "⟦ cond ↦ ⟦ λ ⤍ 𝜎1 ⟧, y ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧, b ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ Δ ⤍ 03- ⟧, b ↦ ⟦ Δ ⤍ 04- ⟧, λ ⤍ L_fork ⟧, λ ⤍ L_fork ⟧ ⟧"
-        lines printed `shouldBe` ["01-", "04-"]
-
-      it "forks again on another condition met on a path" $ do
-        printed <- forked [] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧, b ↦ ⟦ Δ ⤍ 03- ⟧, λ ⤍ L_fork ⟧ ⟧"
-        lines printed `shouldBe` ["01-", "02-", "03-"]
-
-      it "writes both sides of a fork inside one fork element of the XML protocol" $
-        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-          hClose stream
-          _ <- forked ["--protocol=" ++ path, "--quiet"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
-          records <- readProtocol path
-          filter (\line -> any (`isInfixOf` line) ["forked", "left>", "right>", "path>"]) (lines records)
-            `shouldBe` ["    <forked on=\"𝜎1\">", "      <left>", "      </left>", "      <right>", "      </right>", "    </forked>"]
-
-      it "nests the fork a side of a fork met inside the side of the fork it stands in" $
-        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-          hClose stream
-          _ <- forked ["--protocol=" ++ path, "--quiet"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧, b ↦ ⟦ Δ ⤍ 03- ⟧, λ ⤍ L_fork ⟧ ⟧"
-          records <- readProtocol path
-          filter (\line -> any (`isInfixOf` line) ["forked", "left>", "right>"]) (lines records)
-            `shouldBe` [ "    <forked on=\"𝜎1\">"
-                       , "      <left>"
-                       , "          <forked on=\"𝜎2\">"
-                       , "            <left>"
-                       , "            </left>"
-                       , "            <right>"
-                       , "            </right>"
-                       , "          </forked>"
-                       , "      </left>"
-                       , "      <right>"
-                       , "      </right>"
-                       , "    </forked>"
-                       ]
-
-      it "writes both sides of a fork to the text protocol under one heading" $
-        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
-          hClose stream
-          _ <- forked ["--protocol=" ++ path, "--quiet"] "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧"
-          records <- readProtocol path
-          filter (== "𝔻(Φ.y):") (lines records) `shouldBe` ["𝔻(Φ.y):"]
-
-      describe "over a condition a firing before it minted" $ do
-        let recordedIn :: String -> [String] -> IO String
-            recordedIn template options =
-              withTempFile template $ \(path, stream) -> do
-                hClose stream
-                withLambdasOf (fork <> T.pack "- λ: L_cond\n  dataize:\n    𝛿1: $.v\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \file ->
-                  withStdin "⟦ cond ↦ ⟦ v ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_cond ⟧, y ↦ ⟦ c ↦ Φ.cond, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧ ⟧" $
-                    testCLISucceeded (["dataize", "--symbolic=" ++ file, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) []
-                readProtocol path
-        it "fires what comes before the fork once for both of its paths" $ do
-          records <- recordedIn "protocolXXXXXX.txt" ["--acyclic=plausible"]
-          filter (isInfixOf "𝔻(ξ.v)") (lines records) `shouldSatisfy` ((== 1) . length)
-
-        it "forks both of its sides on the one symbol the run minted before the fork" $ do
-          records <- recordedIn "protocolXXXXXX.txt" []
-          filter (isInfixOf "forked ") (lines records) `shouldBe` ["    forked 𝔻(𝜎1:λ):"]
-
-        it "writes the right side of the text protocol beside the left side, inside the fork" $ do
-          records <- recordedIn "protocolXXXXXX.txt" []
-          lines records
-            `shouldBe` [ "𝔻(Φ.y):"
-                       , "  𝔼(L_fork):"
-                       , "    𝔻(Φ.a🌵0):"
-                       , "      𝔼(L_cond):"
-                       , "        𝔻(Φ.a🌵1):"
-                       , "          𝛿·2·1 := 01-"
-                       , "        𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.v)"
-                       , "        𝑛·2·1 := 𝜎1:λ  # 𝑛"
-                       , "        𝑛·2·2 := 𝜎1:λ  # 𝕄(𝑛·2·1)"
-                       , "    𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)"
-                       , "    forked 𝔻(𝜎1:λ):"
-                       , "      left:  # ξ.a"
-                       , "        𝑛·1·1 := 01-:Δ  # 𝕄(ξ.a)"
-                       , "        𝛿·0·1 := 01-"
-                       , "      right:  # ξ.b"
-                       , "        𝑛·1·2 := 02-:Δ  # 𝕄(ξ.b)"
-                       , "        𝛿·0·2 := 02-"
-                       ]
-
-        it "writes the right side of the XML protocol beside the left side, inside the fork" $ do
-          records <- recordedIn "protocolXXXXXX.xml" []
-          lines records
-            `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                       , "<dataize at=\"Φ.y\">"
-                       , "  <evaluate λ=\"L_fork\" by=\"dataize\" at=\"Φ.y\">"
-                       , "    <dataize at=\"Φ.a🌵0\">"
-                       , "      <morph at=\"Φ.a🌵0\">"
-                       , "        <morphed meta=\"𝑛·1·1\">Φ.cond</morphed>"
-                       , "      </morph>"
-                       , "      <evaluate λ=\"L_cond\" by=\"dataize\" at=\"Φ.a🌵0\">"
-                       , "        <dataize at=\"Φ.a🌵1\">"
-                       , "          <dataized meta=\"𝛿·2·1\">01-</dataized>"
-                       , "        </dataize>"
-                       , "        <bound meta=\"𝛿1·2\">𝛿·2·1</bound>"
-                       , "        <minted symbol=\"𝜎1\">01-</minted>"
-                       , "        <built meta=\"𝑛·2·1\">𝜎1</built>"
-                       , "        <morph at=\"𝑛·2·1\">"
-                       , "          <morphed meta=\"𝑛·2·2\">𝜎1</morphed>"
-                       , "        </morph>"
-                       , "        <answered meta=\"𝑛·2·3\">𝜎1</answered>"
-                       , "      </evaluate>"
-                       , "      <manufactured meta=\"𝛿·1·1\">𝜎1</manufactured>"
-                       , "    </dataize>"
-                       , "    <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"
-                       , "    <morph at=\"Φ.a🌵2\">"
-                       , "      <morphed meta=\"𝑛·1·2\">01-</morphed>"
-                       , "    </morph>"
-                       , "    <morph at=\"Φ.a🌵3\">"
-                       , "      <morphed meta=\"𝑛·1·3\">02-</morphed>"
-                       , "    </morph>"
-                       , "    <forked on=\"𝜎1\">"
-                       , "      <left>"
-                       , "        <answered meta=\"𝑛·1·4\">01-</answered>"
-                       , "        <dataized meta=\"𝛿·0·1\">01-</dataized>"
-                       , "      </left>"
-                       , "      <right>"
-                       , "        <answered meta=\"𝑛·1·5\">02-</answered>"
-                       , "        <dataized meta=\"𝛿·0·2\">02-</dataized>"
-                       , "      </right>"
-                       , "    </forked>"
-                       , "  </evaluate>"
-                       , "</dataize>"
-                       ]
 
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
@@ -3101,19 +2959,19 @@ spec = do
             ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
             ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
 
-    describe "a copy a 'defer' line of a fork defers" $ do
-      let forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  fork:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n"
+    describe "a copy a 'defer' line of a join defers" $ do
+      let joining = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n"
           counting = T.pack "- λ: L_inc\n  dataize:\n    𝛿1: $.x\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
           recordedWith :: T.Text -> [String] -> String -> IO [String]
           recordedWith entries options program =
             withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
               hClose stream
-              withLambdasOf entries $ \forks ->
+              withLambdasOf entries $ \joins ->
                 withStdin program $
-                  testCLISucceeded (["dataize", "--symbolic=" ++ forks, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) []
+                  testCLIFailed (["dataize", "--symbolic=" ++ joins, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) ["No entry of --symbolic answers the λ function 'L_fork'"]
               lines <$> readProtocol path
           deferred :: [String] -> String -> IO [String]
-          deferred = recordedWith forking
+          deferred = recordedWith joining
       it "writes the copy it deferred to the XML protocol as a call of the object it was made of" $ do
         records <- deferred [] "⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧ ⟧"
         records
@@ -3135,16 +2993,7 @@ spec = do
                      , "    <bound meta=\"𝑛2·1\">𝑛·1·2</bound>"
                      , "    <bound meta=\"𝑛3·1\">01-</bound>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol attr=\"tup\">𝜎1</symbol></with></deferred>"
-                     , "    <forked on=\"𝜎2\">"
-                     , "      <left>"
-                     , "        <answered meta=\"𝑛·1·4\">01-</answered>"
-                     , "        <dataized meta=\"𝛿·0·1\">01-</dataized>"
-                     , "      </left>"
-                     , "      <right>"
-                     , "        <answered meta=\"𝑛·1·5\">𝜎3</answered>"
-                     , "        <manufactured meta=\"𝛿·0·2\">𝜎3</manufactured>"
-                     , "      </right>"
-                     , "    </forked>"
+                     , "    <diverged left=\"𝑛3·1\" right=\"𝜎3\"/>"
                      , "  </evaluate>"
                      , "</dataize>"
                      ]
@@ -3162,7 +3011,7 @@ spec = do
         records `shouldContain` ["    <formed meta=\"𝑛·1·7\"><symbol attr=\"x\">𝜎1</symbol><ref attr=\"φ\">x.next</ref></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"𝑛·1·7\"/>"]
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
-        records <- recordedWith (forking <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
+        records <- recordedWith (joining <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
         filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·2·3</meta></with></deferred>"]
 
     describe "--acyclic=plausible" $ do

@@ -18,7 +18,6 @@ module Fixtures
   , recorded'
   , recordedWhole
   , recordedXml
-  , recordedXml'
   , withLambdas
   , withLambdasOf
   , withTemp
@@ -41,10 +40,9 @@ import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Dataize (reduction)
-import Deps (Judgment (..), RewindEvalFunc, SaveEvalFunc, dontSaveEval, dontSaveStep)
+import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
 import Engine (Engine, building, yaml)
 import Evaluate (evaluation)
-import Forks (straight)
 import GHC.Clock (getMonotonicTime)
 import Lambdas (Lambdas, emptyLambdas, readLambdas)
 import Lining (LineFormat (MULTILINE))
@@ -58,8 +56,7 @@ import XMIR (defaultXmirContext)
 defaultReduceContext :: Expression -> IO ReduceContext
 defaultReduceContext loc = do
   minted <- newIORef 0
-  forks <- straight
-  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing forks 1 Nothing False True False Nothing 0 Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
 
 linked :: Engine
 linked = fromMaybe yaml compiled
@@ -110,9 +107,9 @@ primitives src =
     ]
 
 recorded :: (SaveEvalFunc -> IO a) -> IO (a, String)
-recorded action = recorded' False (const . action)
+recorded = recorded' False
 
-recorded' :: Bool -> (SaveEvalFunc -> RewindEvalFunc -> IO a) -> IO (a, String)
+recorded' :: Bool -> (SaveEvalFunc -> IO a) -> IO (a, String)
 recorded' hidden action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
     answer <- withEvalFunc (Just path) (printing hidden) action
@@ -120,10 +117,7 @@ recorded' hidden action =
     pure (answer, written)
 
 recordedXml :: (SaveEvalFunc -> IO a) -> IO (a, String)
-recordedXml action = recordedXml' (const . action)
-
-recordedXml' :: (SaveEvalFunc -> RewindEvalFunc -> IO a) -> IO (a, String)
-recordedXml' action =
+recordedXml action =
   withTemp "phino-protocol-.xml" BS.empty $ \path -> do
     answer <- withEvalFunc (Just path) (printing False) action
     written <- readProtocol path
@@ -132,7 +126,7 @@ recordedXml' action =
 recordedWhole :: (SaveEvalFunc -> IO a) -> IO (a, String)
 recordedWhole action =
   withTemp "phino-protocol-.xml" BS.empty $ \path -> do
-    answer <- withEvalFunc (Just path) (printing False) (const . action)
+    answer <- withEvalFunc (Just path) (printing False) action
     written <- readUtf8 path
     pure (answer, written)
 

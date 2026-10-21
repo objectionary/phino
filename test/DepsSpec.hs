@@ -11,8 +11,8 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvForked, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvSide, EvSplit, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), Side (LeftSide, RightSide), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
-import Fixtures (readUtf8, recorded, recorded', recordedWhole, recordedXml, recordedXml')
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvDiverged, EvFiring, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
 import System.Directory
@@ -204,40 +204,16 @@ spec = do
     it "writes a deferred copy as it stands when no object of the world made it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)]), BiTau AtPhi (ExDispatch (ExDispatch ExXi (AtLabel "щ")) (AtLabel "й"))]) Nothing ExRoot])
       last (lines written) `shouldBe` "  deferred 𝜎9 := ⟦ щ ↦ 𝜎4:λ, φ ↦ щ.й ⟧"
-    it "writes the side a fork took beside the symbol of its condition" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Left 7) LeftSide (ExDispatch ExXi (AtLabel "then"))])
-      last (lines written) `shouldBe` "    forked 𝔻(𝜎7:λ) := left  # ξ.then"
-    it "writes the side a fork took beside the datum of its condition" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Right (BtOne "0D")) RightSide (ExDispatch ExXi (AtLabel "else"))])
-      last (lines written) `shouldBe` "    forked 0D- := right  # ξ.else"
-    it "writes the fork a run split at as a block heading beside the symbol of its condition" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7)])
-      last (lines written) `shouldBe` "    forked 𝔻(𝜎7:λ):"
-    it "writes the fork a run split at as a block heading beside the datum of its condition" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Right (BtOne "0D"))])
-      last (lines written) `shouldBe` "    forked 0D-:"
-    it "writes the side a split took as a block inside the block of its fork" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then"))])
-      last (lines written) `shouldBe` "      left:  # ξ.then"
-    it "writes the answer of a split inside the side it took" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
-      last (lines written) `shouldBe` "        𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then)"
-    it "writes a line of the block the fork stood in inside the side the split took" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvDelta 1 (BtOne "0C")])
-      last (lines written) `shouldBe` "        𝛿·0·1 := 0C-"
-    it "nests a firing made after the fork inside the side the split took" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvFiring 1 "L_ш" Dataization ExRoot, EvDelta 2 (BtOne "0E")])
-      drop 4 (lines written) `shouldBe` ["        𝔼(L_ш):  # 𝔻(Φ)", "          𝛿·2·1 := 0E-"]
-    it "writes the side a fork came to as the answer of its firing" $ do
+    it "writes the term a join came to as the answer of its firing" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then)"
-    it "writes the term both sides of a fork came to beside both of them" $ do
+    it "writes the term both sides of a join came to beside both of them" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then"), ExDispatch ExXi (AtLabel "else")] (ExFormation [BiLambda (FnSymbol 3)])])
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then), 𝕄(ξ.else)"
-    it "writes the side a fork read from a meta beside that meta alone" $ do
+    it "writes the side a join read from a meta beside that meta alone" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExMeta "n3"] (ExFormation [BiLambda (FnSymbol 3)])])
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝑛3"
-    it "writes the term a path and a meta of a fork came to beside the morph of the one and the other alone" $ do
+    it "writes the term a path and a meta of a join came to beside the morph of the one and the other alone" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then"), ExMeta "n4"] (ExFormation [BiLambda (FnSymbol 3)])])
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then), 𝑛4"
     it "writes the term a stay line dropped a ρ from beside the stay of the meta it read" $ do
@@ -258,6 +234,18 @@ spec = do
     it "writes the symbol a join minted beside the datum of its condition" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
       last (lines written) `shouldBe` "    joined 𝜎14 := 0D- ? 𝜎3 : 𝜎8"
+    it "writes two sides a join could not join by the applications that made them" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExFormation []))) (ExFormation [BiTau (AtLabel "w") (ExFormation [])]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExFormation [])])])
+      last (lines written) `shouldBe` "    diverged 𝑛·1·1 vs 𝑛·1·2"
+    it "writes two sides a join could not join by the metas of the lines that bound them" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTerm 2 "𝑛1" Morphing (ExDispatch ExXi (AtLabel "a")) (ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]), EvTerm 2 "𝑛2" Morphing (ExDispatch ExXi (AtLabel "b")) (ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])]), EvDiverged 2 (ExMeta "n1", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]) (ExMeta "n2", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])])])
+      last (lines written) `shouldBe` "    diverged 𝑛1·1 vs 𝑛2·1"
+    it "writes a side of a join no line named as the term it is" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "a"), ExDispatch ExRoot (AtLabel "ёж")) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука"))])
+      last (lines written) `shouldBe` "    diverged Φ.ёж vs Φ.щука"
+    it "writes a side of a join a defer line bound to a symbol as that symbol" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n7", ExFormation [BiLambda (FnSymbol 4)]) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука"))])
+      last (lines written) `shouldBe` "    diverged 𝜎4:λ vs Φ.щука"
     it "opens a heading of its own for every run of the protocol" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C"), EvRun Morphing "Φ", EvDelta 1 (BtOne "0D")])
       lines written `shouldBe` ["𝕄(Φ):", "  𝛿·0·1 := 0C-", "𝕄(Φ):", "  𝛿·0·2 := 0D-"]
@@ -401,28 +389,7 @@ spec = do
     it "names an argument of a deferred copy by the application that made it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "кулик")) (ArTau (AtLabel "ш") ExRoot)) (ExFormation [BiTau (AtLabel "ш") ExRoot]) ExRoot, EvDeferred 1 31 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiTau (AtLabel "ш") ExRoot]), BiTau AtPhi (ExDispatch ExXi (AtLabel "щ"))]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExFormation [BiTau (AtLabel "ш") ExRoot])))) ExRoot])
       lines written `shouldContain` ["  <deferred symbol=\"𝜎31\" by=\"morph\" at=\"Φ\" of=\"Φ.ёж\"><with><meta attr=\"щ\">𝑛·0·1</meta></with></deferred>"]
-    it "writes the side a fork took as an element naming the symbol of its condition" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Left 7) LeftSide (ExDispatch ExXi (AtLabel "then"))])
-      lines written `shouldContain` ["    <forked side=\"left\">𝜎7</forked>"]
-    it "writes the side a fork took as an element holding the datum of its condition" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvForked 2 (Right (BtOne "0D")) RightSide (ExDispatch ExXi (AtLabel "else"))])
-      lines written `shouldContain` ["    <forked side=\"right\">0D-</forked>"]
-    it "writes the fork a run split at as an element naming the symbol of its condition" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7)])
-      lines written `shouldContain` ["    <forked on=\"𝜎7\">"]
-    it "writes the fork a run split at as an element naming the datum of its condition" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Right (BtOne "0D"))])
-      lines written `shouldContain` ["    <forked on=\"0D-\">"]
-    it "writes the side a split took as an element inside the element of its fork" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSplit 2 (Left 7), EvSide 2 RightSide (ExDispatch ExXi (AtLabel "else"))])
-      lines written `shouldContain` ["      <right>"]
-    it "writes an element of the block the fork stood in inside the side the split took" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvDelta 1 (BtOne "0C")])
-      lines written `shouldContain` ["        <dataized meta=\"𝛿·0·1\">0C-</dataized>"]
-    it "closes the side a split took and its fork after the elements the flow wrote in it" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvSplit 2 (Left 7), EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "then")), EvDelta 1 (BtOne "0C")])
-      drop 6 (lines written) `shouldBe` ["      </left>", "    </forked>", "  </evaluate>", "</dataize>"]
-    it "writes the side a fork came to as the answer of its firing in the markup" $ do
+    it "writes the term a join came to as the answer of its firing in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
       lines written `shouldContain` ["    <answered meta=\"𝑛·1·1\">𝜎3</answered>"]
     it "writes the symbol a join minted as an element naming the two it stands for" $ do
@@ -431,6 +398,15 @@ spec = do
     it "writes the symbol a join minted as an element holding the datum of its condition" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
       lines written `shouldContain` ["    <joined symbol=\"𝜎14\" left=\"𝜎3\" right=\"𝜎8\">0D-</joined>"]
+    it "writes two sides a join could not join as an element naming both" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))])])
+      lines written `shouldContain` ["    <diverged left=\"𝑛·1·1\" right=\"𝑛·1·2\"/>"]
+    it "writes a side of a join that is a path as that path in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "a"), ExDispatch ExRoot (AtLabel "ёж")) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука"))])
+      lines written `shouldContain` ["    <diverged left=\"Φ.ёж\" right=\"Φ.щука\"/>"]
+    it "writes a side of a join read from a meta by the meta of its line in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n3", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]) (ExMeta "n4", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])])])
+      lines written `shouldContain` ["    <diverged left=\"𝑛3·1\" right=\"𝑛4·1\"/>"]
     it "writes the symbol a symbolize line minted as an element holding the datum it stands for" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtOne "4A")])
       lines written `shouldContain` ["    <symbolized symbol=\"𝜎6\">4A-</symbolized>"]
@@ -483,93 +459,6 @@ spec = do
       withFile path WriteMode (\handle -> endEval handle cursor began)
       content <- readUtf8 path
       lines content `shouldSatisfy` elem "firings 5"
-
-  describe "rewindEval" $ do
-    it "goes on after the rewind inside the blocks the mark stood in, opening none of them again" $ do
-      (_, written) <- recorded' False $ \record rewind -> do
-        record (EvRun Dataization "Φ.ёж")
-        record (EvFiring 1 "L_ж" Dataization (ExDispatch ExRoot (AtLabel "ёж")))
-        restore <- rewind
-        record (EvDelta 2 (BtOne "1A"))
-        restore
-        record (EvDelta 2 (BtOne "2B"))
-      lines written `shouldBe` ["𝔻(Φ.ёж):", "  𝔼(L_ж):", "    𝛿·1·1 := 1A-", "    𝛿·1·2 := 2B-"]
-    it "writes nothing at the rewind before a line follows it" $ do
-      (_, written) <- recorded' False $ \record rewind -> do
-        record (EvRun Dataization "Φ.щ")
-        record (EvFiring 1 "L_щ" Dataization (ExDispatch ExRoot (AtLabel "щ")))
-        restore <- rewind
-        record (EvDelta 2 (BtOne "3C"))
-        restore
-      lines written `shouldBe` ["𝔻(Φ.щ):", "  𝔼(L_щ):", "    𝛿·1·1 := 3C-"]
-    it "writes the right side of a split beside its left side inside the block of the fork" $ do
-      (_, written) <- recorded' False $ \record rewind -> do
-        record (EvRun Dataization "Φ.ю")
-        record (EvFiring 1 "L_ю" Dataization (ExDispatch ExRoot (AtLabel "ю")))
-        record (EvSplit 2 (Left 4))
-        restore <- rewind
-        record (EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "a")))
-        record (EvDelta 1 (BtOne "4D"))
-        restore
-        record (EvSide 2 RightSide (ExDispatch ExXi (AtLabel "b")))
-        record (EvDelta 1 (BtOne "5E"))
-      lines written `shouldBe` ["𝔻(Φ.ю):", "  𝔼(L_ю):", "    forked 𝔻(𝜎4:λ):", "      left:  # ξ.a", "        𝛿·0·1 := 4D-", "      right:  # ξ.b", "        𝛿·0·2 := 5E-"]
-    it "spells an object the rewound side named in full after the rewind" $ do
-      (_, written) <- recorded' False $ \record rewind -> do
-        record (EvRun Morphing "Φ.ёж")
-        restore <- rewind
-        record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot)
-        restore
-        record (EvTerm 1 "𝑛1" Morphing (ExDispatch ExXi (AtLabel "z")) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]))
-      last (lines written) `shouldBe` "  𝑛1·0 := ⟦⟧:q  # 𝕄(ξ.z)"
-
-  describe "rewindEvalXml" $ do
-    it "closes the elements opened since the mark at the rewind and opens none of those the mark stood in" $ do
-      (_, written) <- recordedXml' $ \record rewind -> do
-        record (EvRun Dataization "Φ.ёж")
-        record (EvFiring 1 "L_ж" Dataization (ExDispatch ExRoot (AtLabel "ёж")))
-        restore <- rewind
-        record (EvFiring 2 "L_я" Dataization (ExDispatch ExRoot (AtLabel "я")))
-        record (EvDelta 3 (BtOne "1A"))
-        restore
-        record (EvDelta 2 (BtOne "2B"))
-      lines written
-        `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                   , "<dataize at=\"Φ.ёж\">"
-                   , "  <evaluate λ=\"L_ж\" by=\"dataize\" at=\"Φ.ёж\">"
-                   , "    <evaluate λ=\"L_я\" by=\"dataize\" at=\"Φ.я\">"
-                   , "      <dataized meta=\"𝛿·2·1\">1A-</dataized>"
-                   , "    </evaluate>"
-                   , "    <dataized meta=\"𝛿·1·1\">2B-</dataized>"
-                   , "  </evaluate>"
-                   , "</dataize>"
-                   ]
-    it "writes the right side of a split beside its left side inside the element of the fork" $ do
-      (_, written) <- recordedXml' $ \record rewind -> do
-        record (EvRun Dataization "Φ.ю")
-        record (EvFiring 1 "L_ю" Dataization (ExDispatch ExRoot (AtLabel "ю")))
-        record (EvSplit 2 (Left 4))
-        restore <- rewind
-        record (EvSide 2 LeftSide (ExDispatch ExXi (AtLabel "a")))
-        record (EvDelta 1 (BtOne "4D"))
-        restore
-        record (EvSide 2 RightSide (ExDispatch ExXi (AtLabel "b")))
-        record (EvDelta 1 (BtOne "5E"))
-      lines written
-        `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                   , "<dataize at=\"Φ.ю\">"
-                   , "  <evaluate λ=\"L_ю\" by=\"dataize\" at=\"Φ.ю\">"
-                   , "    <forked on=\"𝜎4\">"
-                   , "      <left>"
-                   , "        <dataized meta=\"𝛿·0·1\">4D-</dataized>"
-                   , "      </left>"
-                   , "      <right>"
-                   , "        <dataized meta=\"𝛿·0·2\">5E-</dataized>"
-                   , "      </right>"
-                   , "    </forked>"
-                   , "  </evaluate>"
-                   , "</dataize>"
-                   ]
 
   describe "endEvalXml" $ do
     it "writes nothing once a run that never opened the protocol closes" $ withScratchDir $ \dir -> do

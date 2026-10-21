@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# A fork whose two sides come to the same normal form through 𝕄 has
-# nothing to decide (#1954): it writes no 'forked' line, leaves no other
-# path pending and answers that one term, commented with both sides it
-# came from.
+# A join whose two sides come to the same normal form through 𝕄 has
+# nothing to join (#1954): it mints no symbol and answers that one term,
+# commented with both sides it came from.
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -20,7 +19,7 @@ symbolic: |
   - λ: L_fork
     dataize:
       𝛿1: $.ρ
-    fork:
+    join:
       on: 𝛿1
       left: $.then
       right: $.else

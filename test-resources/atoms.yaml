@@ -19,7 +19,7 @@
   𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 
 # Comparing two numbers answers a bool nobody has decided, which is what the
-# fork below then branches on.
+# join below then branches on.
 - λ: L_number_gt
   dataize:
     𝛿1: $.ρ
@@ -39,15 +39,15 @@
     𝛿1: $.ρ
   𝑛: Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 
-# A fork is where a run splits: the condition comes down through 𝔻 and
-# answers a symbol nobody has decided, so the entry takes the left side on
-# the first path and leaves the right side to another path, where it takes
-# that one. Only the side a path takes reaches a normal form through 𝕄, and
-# that normal form is the answer of the firing.
+# A join is how a branch answers when nobody has decided its condition: the
+# condition comes down through 𝔻 and answers a symbol, both sides reach a
+# normal form through 𝕄, and the answer of the firing is the term the two
+# share, with a fresh symbol wherever they hold two different symbols. Two
+# sides that differ in anything else get the firing stuck.
 - λ: L_fork
   dataize:
     𝛿1: $.ρ
-  fork:
+  join:
     on: 𝛿1
     left: $.then
     right: $.else

@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# A fork brings both of its sides to a normal form through 𝕄 before it
-# decides anything (#1954). Each side here is a call of 'plus' over the
-# answer of another 'plus', which 𝕄 fires: 𝜎2 on the left, 𝜎3 on the
-# right, and nothing else tells the two sides apart. So the fork never
-# splits the run: it mints 𝜎4, writes that 𝜎4 is 𝜎2 when the condition
-# holds and 𝜎3 when it does not, and answers the joined call, whose ρ
-# holds 𝜎4, on the one path it is on; the last 'plus' reads 𝜎4.
+# A join brings both of its sides to a normal form through 𝕄 first (#1954).
+# Each side here is a call of 'plus' over the answer of another 'plus', which
+# 𝕄 fires: 𝜎2 on the left, 𝜎3 on the right, and nothing else tells the two
+# sides apart. So the join mints 𝜎4, writes that 𝜎4 is 𝜎2 when the condition
+# holds and 𝜎3 when it does not, and answers the joined call, whose ρ holds
+# 𝜎4; the last 'plus' reads 𝜎4.
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -23,7 +22,7 @@ symbolic: |
   - λ: L_fork
     dataize:
       𝛿1: $.ρ
-    fork:
+    join:
       on: 𝛿1
       left: $.then
       right: $.else

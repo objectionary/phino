@@ -61,7 +61,7 @@ data Line
 
 data Ending
   = Answering Expression
-  | Forking Meta Expression Expression
+  | Joining Meta Expression Expression
 
 data Lambda = Lambda
   { _key :: Text
@@ -104,40 +104,40 @@ instance FromJSON Lambda where
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "symbolize", "fork", "𝑛"]
+          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "symbolize", "join", "𝑛"]
       concluded :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       concluded key dataized entry = do
         answer <- entry .:? "𝑛"
-        block <- entry .:? "fork"
+        block <- entry .:? "join"
         case (answer, block) of
-          (Nothing, Nothing) -> fail (printf "The entry of λ function '%s' has neither an '𝑛' key nor a 'fork' block" key)
-          (Just _, Just _) -> fail (printf "The entry of λ function '%s' has both an '𝑛' key and a 'fork' block, while a fork answers the side it takes" key)
+          (Nothing, Nothing) -> fail (printf "The entry of λ function '%s' has neither an '𝑛' key nor a 'join' block" key)
+          (Just _, Just _) -> fail (printf "The entry of λ function '%s' has both an '𝑛' key and a 'join' block, while a join answers the term it joins" key)
           (Just term, Nothing) -> Answering term <$ sigmas key term <* dataless key term
-          (Nothing, Just fork) -> alone "evaluate" >> forking key dataized fork
+          (Nothing, Just joint) -> alone "evaluate" >> joining key dataized joint
         where
           alone :: Key -> Yaml.Parser ()
           alone name
-            | KeyMap.member name entry = fail (printf "The entry of λ function '%s' has a 'fork' block beside '%s', while a fork takes nothing but 'dataize', 'morph', 'stay', 'symbolize' and 'defer'" key (Key.toString name))
+            | KeyMap.member name entry = fail (printf "The entry of λ function '%s' has a 'join' block beside '%s', while a join takes nothing but 'dataize', 'morph', 'stay', 'symbolize' and 'defer'" key (Key.toString name))
             | otherwise = pure ()
-      forking :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
-      forking key dataized block = do
+      joining :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
+      joining key dataized block = do
         case filter (`notElem` ["on", "left", "right"]) (map Key.toText (KeyMap.keys block)) of
           [] -> pure ()
-          name : _ -> fail (printf "The key '%s' of the 'fork' block of λ function '%s' is none of its keys: on, left, right" (T.unpack name) key)
+          name : _ -> fail (printf "The key '%s' of the 'join' block of λ function '%s' is none of its keys: on, left, right" (T.unpack name) key)
         on <- required "on" >>= condition
-        Forking on <$> (required "left" >>= side "left") <*> (required "right" >>= side "right")
+        Joining on <$> (required "left" >>= side "left") <*> (required "right" >>= side "right")
         where
           required :: FromJSON value => Key -> Yaml.Parser value
-          required name = block .:? name >>= maybe (fail (printf "The 'fork' block of λ function '%s' has no '%s' key" key (Key.toString name))) pure
+          required name = block .:? name >>= maybe (fail (printf "The 'join' block of λ function '%s' has no '%s' key" key (Key.toString name))) pure
           condition :: Text -> Yaml.Parser Meta
           condition spelling = case parseBytes (T.unpack spelling) of
             Right (BtMeta name) | name `elem` map (_name . fst) dataized -> pure (Meta spelling name)
-            _ -> fail (printf "The 'on' of the 'fork' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize', such as '𝛿1'" key (T.unpack spelling))
+            _ -> fail (printf "The 'on' of the 'join' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize', such as '𝛿1'" key (T.unpack spelling))
           side :: String -> Expression -> Yaml.Parser Expression
           side _ term@(ExMeta _) = pure term
           side name term = case metas term of
             [] -> pure term
-            meta : _ -> fail (printf "The side '%s' of the 'fork' block of λ function '%s' reads the meta '%s' inside a term, while a side is a path from '$' or a meta alone" name key (T.unpack meta))
+            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' inside a term, while a side is a path from '$' or a meta alone" name key (T.unpack meta))
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
       operands key kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Expression)
@@ -233,7 +233,7 @@ instance FromJSON Lambda where
             )
       answered :: String -> Lambda -> Yaml.Parser ()
       answered key lambda = case lambda._ending of
-        Forking _ left right -> sided "left" left >> sided "right" right
+        Joining _ left right -> sided "left" left >> sided "right" right
         Answering term -> case filter (`notElem` ("S" : known)) (metas term) of
           [] -> pure ()
           name : _ -> fail (printf "The '𝑛' of λ function '%s' reads the meta '%s' that no block binds" key (T.unpack name))
@@ -245,7 +245,7 @@ instance FromJSON Lambda where
           sided :: String -> Expression -> Yaml.Parser ()
           sided name side = case filter (`notElem` reduced) (metas side) of
             [] -> pure ()
-            meta : _ -> fail (printf "The side '%s' of the 'fork' block of λ function '%s' reads the meta '%s' that none of 'morph', 'stay', 'symbolize' and 'defer' binds" name key (T.unpack meta))
+            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'stay', 'symbolize' and 'defer' binds" name key (T.unpack meta))
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)

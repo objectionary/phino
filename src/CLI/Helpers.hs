@@ -24,7 +24,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Yaml as Yaml
-import Deps (Evaluation (EvRun), Judgment, RewindEvalFunc, SaveEvalFunc, SaveStepFunc, dontRewindEval, dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, rewindEval, rewindEvalXml, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
@@ -91,8 +91,8 @@ saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
         saveStep stepsDir ioToExt render step expr
   pure save
 
-withEvalFunc :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> RewindEvalFunc -> IO a) -> IO a
-withEvalFunc target ctx action = withEvalFunc' target ctx (\record rewind -> tracked record >>= (`action` rewind))
+withEvalFunc :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc target ctx action = withEvalFunc' target ctx (tracked >=> action)
   where
     tracked :: SaveEvalFunc -> IO SaveEvalFunc
     tracked record = do
@@ -103,8 +103,8 @@ withEvalFunc target ctx action = withEvalFunc' target ctx (\record rewind -> tra
           pure (progressed cursor 5 (flattened ctx) record)
         else pure record
 
-withEvalFunc' :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> RewindEvalFunc -> IO a) -> IO a
-withEvalFunc' Nothing _ action = action dontSaveEval dontRewindEval
+withEvalFunc' :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc' Nothing _ action = action dontSaveEval
 withEvalFunc' (Just file) ctx action = do
   createDirectoryIfMissing True (takeDirectory file)
   logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as %s" file (if markup then "XML" else "text"))
@@ -117,13 +117,13 @@ withEvalFunc' (Just file) ctx action = do
       cursor <- newIORef emptyNesting
       began <- getMonotonicTime
       bracket opened (\protocol -> endEvalXml protocol cursor began `finally` hClose protocol) $ \protocol ->
-        action (saveEvalXml protocol cursor (flattened ctx)) (rewindEvalXml protocol cursor)
+        action (saveEvalXml protocol cursor (flattened ctx))
     plain :: IO a
     plain = do
       cursor <- newIORef emptyProtocol
       began <- getMonotonicTime
       bracket opened (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
-        action (saveEval protocol cursor (flattened ctx) (salted ctx)) (rewindEval cursor)
+        action (saveEval protocol cursor (flattened ctx) (salted ctx))
     opened :: IO Handle
     opened = do
       protocol <- openFile file WriteMode

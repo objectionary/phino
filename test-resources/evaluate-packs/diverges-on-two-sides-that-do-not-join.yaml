@@ -2,13 +2,12 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# A fork is where a run splits: the condition comes down through 𝔻 and
-# answers a symbol nobody has decided (#1938). The fork brings both sides
-# to a normal form through 𝕄 first, each a call of 'plus' nobody has fired
-# (#1954); the calls add other numbers, so no join makes one term of them,
-# and the entry takes the left side, writes the decision to the protocol
-# and leaves the right side to another path. The dispatch of φ that ends
-# the program fires the call of the left side.
+# A join on a condition nobody decided: the condition comes down through 𝔻
+# and answers a symbol nobody has decided. The join brings both sides to a
+# normal form through 𝕄 first, each a call of 'plus' nobody has fired
+# (#1954). The calls add other numbers, so no join makes one term of them,
+# and the firing writes 'diverged' with the metas of the applications that
+# made the two sides, instead of splitting the run (#1996).
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -23,7 +22,7 @@ symbolic: |
   - λ: L_fork
     dataize:
       𝛿1: $.ρ
-    fork:
+    join:
       on: 𝛿1
       left: $.then
       right: $.else
@@ -35,7 +34,7 @@ input: >
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
     φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).φ ⟧
-result: '𝜎2:λ'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"
 protocol: |
   𝕄(Φ.φ):
     𝑛·0·1 := 5
@@ -70,22 +69,4 @@ protocol: |
       𝕄(Φ.a🌵4):
         𝑛·2·4 := 3
         𝑛·2·5 := 𝑛·2·4.plus( x ↦ 4 )
-      forked 𝔻(𝜎1:λ) := left  # ξ.then
-      𝑛·2·6 := 𝑛·2·3  # 𝕄(ξ.then)
-    𝔼(L_number_plus):
-      𝔻(Φ.a🌵5):
-        𝕄(Φ.a🌵5):
-          𝑛·3·1 := 1
-          𝑛·3·2 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
-        𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
-      𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵6):
-        𝕄(Φ.a🌵6):
-          𝑛·3·3 := 2
-          𝑛·3·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
-        𝛿·3·2 := 40-00-00-00-00-00-00-00  # 2.0
-      𝛿2·3 := 𝛿·3·2  # 𝔻(ξ.x)
-      𝑛·3·5 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
-      𝕄(𝑛·3·5):
-        𝑛·3·6 := Φ.number( φ ↦ 𝜎2:λ )
-      𝑛·3·7 := 𝑛·3·6  # 𝕄(𝑛·3·5)
+      diverged 𝑛·2·3 vs 𝑛·2·5

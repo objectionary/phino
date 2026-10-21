@@ -5,13 +5,12 @@
 # The left side is a number written as a literal, so 𝕄 brings it to a number
 # whose bytes hold a datum. The right side is a number some firing computed,
 # so its bytes hold a symbol. Both are numbers of one shape and differ in the
-# value alone, yet a datum against a symbol made the fork split the run
-# (#1968). A 'symbolize' line turns every datum along the φ chain of a term
-# into a fresh symbol, so '𝑛3' holds 𝜎4 where '𝑛1' held the datum, and the
-# protocol writes that 𝜎4 stands for that datum. The line of '𝑛4', whose term
-# holds no datum, is commented with '𝑛2' alone. The fork takes the metas the
-# 'symbolize' lines bound, joins 𝜎4 with 𝜎2 into one fresh symbol 𝜎5 and does
-# not split the run.
+# value alone, yet no join makes one term of a datum and a symbol (#1968). A
+# 'symbolize' line turns every datum along the φ chain of a term into a fresh
+# symbol, so '𝑛3' holds 𝜎4 where '𝑛1' held the datum, and the protocol writes
+# that 𝜎4 stands for that datum. The line of '𝑛4', whose term holds no datum,
+# is commented with '𝑛2' alone. The join takes the metas the 'symbolize'
+# lines bound and joins 𝜎4 with 𝜎2 into one fresh symbol 𝜎5.
 symbolic: |
   - λ: L_fork
     dataize:
@@ -22,7 +21,7 @@ symbolic: |
     symbolize:
       𝑛3: 𝑛1
       𝑛4: 𝑛2
-    fork:
+    join:
       on: 𝛿1
       left: 𝑛3
       right: 𝑛4

@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# The whole pipeline of #1982: the sides of the fork go through 'morph',
+# The whole pipeline of #1982: the sides of the join go through 'morph',
 # 'stay', 'symbolize' and 'defer', one line per step. The right side is the
 # copy 'step( tup ↦ Φ.items.tail )', and 'Φ.items.tail' reads to the bare
 # symbol '𝜎1', an object nobody knows. The 'stay' and 'symbolize' lines leave
 # the copy as it is, and the 'defer' line answers it with a fresh symbol and
-# writes a 'deferred' line naming the call the copy stands for, so the path
+# writes a 'deferred' line naming the call the copy stands for, so the firing
 # never gets stuck inside the unknown. The left side is the datum '01-', which
 # the 'symbolize' line turns into a symbol, so the two sides differ in their
-# symbols alone, and the fork joins them instead of splitting the run.
+# symbols alone, and the join makes one term of them.
 symbolic: |
   - λ: L_use
     dataize:
@@ -31,12 +31,11 @@ symbolic: |
     defer:
       𝑛7: 𝑛5
       𝑛8: 𝑛6
-    fork:
+    join:
       on: 𝛿1
       left: 𝑛7
       right: 𝑛8
 location: 'Q.y'
-paths: 2
 input: '⟦ step(tup) ↦ ⟦ φ ↦ tup.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, num(φ) ↦ ⟦⟧, y ↦ ⟦ x ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.step( tup ↦ Φ.items.tail ), λ ⤍ L_fork ⟧, λ ⤍ L_use ⟧.φ ⟧'
 result: '𝜎6:λ'
 protocol: |
