@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The 'morph' of '$.a' fires an inner fork whose two sides, two different
+# data, do not join. Under '--partial' the inner firing writes 'diverged' and
+# the outer firing gets stuck right there, so the 'morph' of '$.b' and the
+# outer join never run and the site of the outer fork is parked. Before #2014
+# the outer join compared the unmorphed '$.a' with '$.b' and wrote a second
+# 'diverged' that only echoed the first one.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    join:
+      on: 𝛿1
+      left: 𝑛1
+      right: 𝑛2
+location: 'Q.y'
+partial: true
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧.φ, b ↦ ⟦ Δ ⤍ 05- ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧, λ ⤍ L_fork ⟧.φ, b ↦ ⟦ Δ ⤍ 05- ⟧, λ ⤍ L_fork ⟧.φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝕄(Φ.a🌵1):
+        𝔼(L_fork):
+          𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
+          𝑛1·2 := 01-:Δ  # 𝕄(ξ.a)
+          𝑛2·2 := 02-:Δ  # 𝕄(ξ.b)
+          diverged 𝑛1·2 vs 𝑛2·2
+      stuck L_fork

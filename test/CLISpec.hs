@@ -1832,15 +1832,6 @@ spec = do
                        , "    𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
                        ]
 
-      it "writes a told stall to the XML protocol" $
-        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
-          hClose stream
-          withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_pair\n  morph:\n    𝑛1: $.x.φ\n    𝑛2: $.y.φ\n  𝑛: ⟦⟧\n") $ \outer ->
-            withStdin "⟦ p ↦ ⟦ x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧, y ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧, λ ⤍ L_pair ⟧.φ ⟧" $
-              testCLISucceeded ["morph", "--symbolic=" ++ outer, "--locator=Q.p", "--partial", "--acyclic=plausible", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-          records <- readProtocol path
-          lines records `shouldContain` ["        <stalled λ=\"L_none\"/>"]
-
       it "writes a stuck firing to the XML protocol" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
@@ -2852,7 +2843,7 @@ spec = do
           withStdin split $
             testCLISucceeded
               ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-firings=64", "--partial", "--flat", "--hide-rho", "--sweet"]
-              ["⊥"]
+              ["L_split:λ.foo"]
 
       it "fires no more λ functions than --max-firings allows" $
         splitting $ \table ->

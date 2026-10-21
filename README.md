@@ -146,6 +146,9 @@ form through 𝕄, each binding an expression meta `𝑛1`, `𝑛2`. Both blocks
 terms of the calculus, read against the formation being fired, so `ξ` is that
 formation and `$.x` its `x`, while `Φ` is the universe. Every entry numbers its
 own metas from `𝛿1` and `𝑛1`, and the entry is what tells two `𝛿1` apart.
+An operand whose reduction gets stuck, is cut or runs out of steps gets the
+firing stuck right there: no later block runs, and `--partial` parks the
+firing as a whole instead of handing the operand on as it was written.
 
 The term under `𝑛` is what the firing answers with. `phino` normalizes it
 exactly as it normalizes anything else, so `--protocol`, `--partial` and
@@ -179,10 +182,11 @@ of the entry, and nothing else. A formation with a λ function is fired by the
 entry its λ name matches, the way 𝕄 fires it, and the line binds its meta to
 the normal form of the answer. A formation with no λ function is no call and
 stays as it is, and so does `⊥`. A λ name no entry answers gets stuck, as it
-does anywhere else, and `--partial` parks it. Any other term, such as the term
-a branch was parked at under `--partial`, gets an entry stuck when it computes
-an `𝑛`, while an entry that joins passes the term on as it is, since a join
-compares whatever its sides come to. An answer is not fired again,
+does anywhere else, and `--partial` parks it. Any other term, such as a
+dispatch an `unbox` line, described below, took out of its formation, gets an
+entry stuck when it computes an `𝑛`, while an entry that joins passes the term
+on as it is, since a join compares whatever its sides come to. An answer is
+not fired again,
 even when it is one more call: firing it takes one more line, so how many
 calls an entry makes is written in its file and not guessed by `phino`. Each
 firing of a line is one step deeper, the way a frame of 𝕄 or 𝔻 is, so a
@@ -232,11 +236,9 @@ what that comes to, the way an `evaluate` line does, and writes every step to
 the protocol under `𝕄(𝑛1.w):`. The line then names the object the firing
 answered, `Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·2 )`, and so does the markup,
 `<meta attr="w">𝑛·2·3</meta>`, with a meta of its own count. A reader follows
-the meta to the application that made the object. An argument whose morph gets
-stuck, is cut or runs out of steps is written as the code spells it, and in the
-markup by the meta of the element that named it earlier, such as the
-`<applied>` of the call, or by an expression meta, such as `𝑒1`, when none
-did.
+the meta to the application that made the object. An argument whose morph or
+firing gets stuck, is cut or runs out of steps gets the firing stuck right
+there, as an operand does, and no `deferred` line is written.
 
 A `join` block, described below, defers nothing by itself. An entry that
 joins defers a side with a `defer` line of its own, reading the meta the side
@@ -1575,10 +1577,11 @@ $ phino dataize --max-steps=50 problem.phi
 
 That budget bounds how deep one branch goes, not how much the whole run does.
 An entry that reduces two operands, each firing it again, doubles its work at
-every level and still never gets deep, so no `--max-steps` stops it. The
-`--max-firings` option counts every λ function the run fires and fails the
-run once the count is spent; `--partial` parks it instead, the way it parks a
-spent `--max-steps`. There is no limit unless the option is given:
+every level, so twenty levels stay far inside `--max-steps` and still fire a
+million times. The `--max-firings` option counts every λ function the run
+fires and fails the run once the count is spent; `--partial` parks it instead,
+the way it parks a spent `--max-steps`. There is no limit unless the option is
+given:
 
 ```bash
 $ cat split.yaml
@@ -1602,11 +1605,14 @@ run is about to take, whether it fires a λ function or not, fails it with
 a check of `--acyclic` that is still comparing formations by then.
 `--partial` does not park it, since a run out of time has no site to park and
 nothing left to go on with. The protocol is closed as usual and its last line
-says where the time ran out. There is no limit unless the option is given:
+says where the time ran out. There is no limit unless the option is given.
+Here a step budget of a hundred thousand lets the recursion of `split.phi`
+run longer than five seconds:
 
 ```bash
-$ phino morph --symbolic=split.yaml --locator=Q.x --partial --max-seconds=5 \
-    --protocol=split.txt --sweet --flat split.phi
+$ phino morph --symbolic=split.yaml --locator=Q.x --partial \
+    --max-steps=100000 --max-seconds=5 --protocol=split.txt --sweet --flat \
+    split.phi
 [ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=5
 $ grep -o 'timeout.*' split.txt
 timeout 5
@@ -1830,7 +1836,6 @@ $ phino morph --acyclic=plausible --partial --sweet --hide-rho --flat \
 Φ.if( c ↦ Φ.zero( x ↦ 𝜎1:λ ), left ↦ Φ.box( v ↦ 00-:Δ ), right ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎1:λ ), acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ Φ.box( v ↦ 00-:Δ ) ) ).φ ).φ
 $ grep 'looped\|diverged' facta.txt
       looped 𝑛·0·5  # plausible
-    diverged 𝑛·1·2 vs 𝑛·1·4.φ
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1843,9 +1848,9 @@ any other, and nothing is looked for under a `ρ`, which holds the object a term
 came from rather than a term it grew into. The first `if` morphs both of its
 sides before it joins them, and its `right` holds a second `if`, which holds
 the first under one more `pair` and one more `dec`, so that morph is cut, and
-its `looped …` line says `plausible`. The `left` comes to the accumulator and
-the `right` comes back as the term the cut left, so the two do not join, the
-firing writes `diverged …` with both, and `--partial` parks the `if`. A call
+its `looped …` line says `plausible`. A side cut that way gets the firing of
+the first `if` stuck before it joins anything, so no `diverged …` line is
+written, and the cut parks the `if` where it stands. A call
 nested in its own operand, such as a sum of sums, is never cut, since the
 inner call is smaller than the outer one and cannot hold it.
 The mode is not sound, though: a recursion whose argument grows on its way to

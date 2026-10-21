@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The left side of the join is a path, '$.a', whose morph gets stuck on
+# 'L_none'. Under '--partial' the firing gets stuck right there, so the right
+# side is never morphed and nothing is compared, and the site the fork stands
+# at is parked (#2014).
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+location: 'Q.y'
+partial: true
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ L_none ⟧.x, b ↦ ⟦ Δ ⤍ 05- ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ L_none ⟧.x, b ↦ ⟦ Δ ⤍ 05- ⟧, λ ⤍ L_fork ⟧.φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝕄(Φ.a🌵1):
+        unanswered L_none  # 𝕄(L_none:λ)
+      stuck L_none

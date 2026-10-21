@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A 'defer' line works out every argument of a copy that is no bare symbol
+# before it writes the call. Here the argument 'x' fires 'L_outer', whose
+# operand gets stuck on 'L_none'. Under '--partial' the firing of 'L_pair'
+# gets stuck right there, so no 'deferred' line is written and the site of
+# 'L_pair' is parked. Before #2014 the argument was kept as written and the
+# entry went on as if it were worked out.
+symbolic: |
+  - λ: L_outer
+    dataize:
+      𝛿1: ξ.arg
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_pair
+    morph:
+      𝑛1: $.c
+    defer:
+      𝑛2: 𝑛1
+    𝑛: 𝑛2
+location: 'Q.p'
+partial: true
+input: >
+  ⟦ box ↦ ⟦ s ↦ ∅, x ↦ ∅, φ ↦ ξ.s.next ⟧,
+    p ↦ ⟦
+      c ↦ Φ.box( ⟦ λ ⤍ 𝜎1 ⟧, ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧.φ ),
+      λ ⤍ L_pair ⟧.φ ⟧
+result: '⟦ c ↦ Φ.box( ⟦ λ ⤍ 𝜎1 ⟧, ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧.φ ), λ ⤍ L_pair ⟧.φ'
+protocol: |
+  𝕄(Φ.p):
+    𝔼(L_pair):
+      𝕄(Φ.a🌵0):
+        𝑛·1·1 := Φ.box( s ↦ 𝜎1:λ )
+        𝑛·1·2 := 𝑛·1·1( x ↦ ⟦ arg ↦ L_none:λ, λ ⤍ L_outer ⟧.φ )
+      𝑛1·1 := 𝑛·1·2  # 𝕄(ξ.c)
+      𝕄(𝑛1.x):
+        𝔼(L_outer):
+          𝔻(Φ.a🌵1):
+            unanswered L_none  # 𝔻(L_none:λ)
+          stuck L_none
+      stuck L_none

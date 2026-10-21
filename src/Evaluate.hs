@@ -22,7 +22,7 @@ import Engine (Engine (..))
 import Forks (joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, rewritten, stayed, symbolized, unboxed)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, insideUniverse, isLambda, lambda, morph, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -188,15 +188,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       entered <- deeper =<< enter term ctx{_judgment = Evaluation, _site = site}
       evaluation entered state' term univ
     fire _ _ _ _ = throwIO (Stuck func)
-    figured :: ReduceContext -> State -> Expression -> Expression -> IO (Maybe Expression)
-    figured ctx state' site placed = do
-      outcome <- try $ do
-        (normal, morphed) <- settled placed univ state' =<< opening Morphing ctx{_site = site}
-        fst <$> fire ctx site morphed normal
-      case outcome of
-        Right answer -> pure (Just answer)
-        Left (OutOfTime cap) -> throwIO (OutOfTime cap)
-        Left _ -> pure Nothing
+    figured :: ReduceContext -> State -> Expression -> Expression -> IO Expression
+    figured ctx state' site placed = unparked $ do
+      (normal, morphed) <- settled placed univ state' =<< opening Morphing ctx{_site = site}
+      fst <$> fire ctx site morphed normal
     named :: Attribute -> Binding -> Bool
     named attr (BiTau attr' _) = attr == attr'
     named _ _ = False
@@ -294,7 +289,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         reckoned _ body@(ExFormation [BiLambda (FnSymbol _)]) = pure body
         reckoned attr body = do
           placed <- ctx._engine._contextualize body (ExFormation (filter (not . named attr) bds))
-          fromMaybe body <$> figured ctx state' (ExDispatch site attr) placed
+          figured ctx state' (ExDispatch site attr) placed
     coined :: IO Int
     coined = atomicModifyIORef' caller._minted (\count -> (succ count, succ count))
     concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
@@ -328,10 +323,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           throwIO (Diverged func)
     reached :: ReduceContext -> Subst -> Expression -> State -> IO (Expression, State)
     reached _ bound (ExMeta name) state' = (,state') <$> buildExpressionThrows (ExMeta name) bound
-    reached ctx _ side state' = do
-      (universe, aiming) <- (\placed -> insideUniverse placed univ ctx) =<< operand side
-      (normal, _, state'') <- morph universe state' aiming
-      pure (normal, state'')
+    reached ctx _ side state' = (\placed -> morphing univ ctx placed state') =<< operand side
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'

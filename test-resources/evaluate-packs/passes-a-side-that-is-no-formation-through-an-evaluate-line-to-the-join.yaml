@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The 'unbox' lines take 'Φ.k' and 'Φ.j' out of the formations the two sides
+# morph to, and neither dispatch is a formation. An entry that computes gets
+# stuck on such a term in an 'evaluate' line, but a join compares whatever its
+# sides came to, so an 'evaluate' line of an entry that joins passes the term
+# through as it is (#1999). Here the join gets both, finds them apart, and
+# writes 'diverged', so the site the join stands at is parked.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    unbox:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    evaluate:
+      𝑛5: 𝑛3
+      𝑛6: 𝑛4
+    join:
+      on: 𝛿1
+      left: 𝑛5
+      right: 𝑛6
+location: 'Q.y'
+partial: true
+input: '⟦ k ↦ ⟦⟧, j ↦ ⟦⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.k ⟧, b ↦ ⟦ φ ↦ Φ.j ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.k ⟧, b ↦ ⟦ φ ↦ Φ.j ⟧, λ ⤍ L_fork ⟧.φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝑛1·1 := Φ.k:φ  # 𝕄(ξ.a)
+      𝑛2·1 := Φ.j:φ  # 𝕄(ξ.b)
+      unboxed 𝑛3·1 := Φ.k  # 𝑛1
+      𝑛5·1 := Φ.k  # 𝔼(𝑛3)
+      unboxed 𝑛4·1 := Φ.j  # 𝑛2
+      𝑛6·1 := Φ.j  # 𝔼(𝑛4)
+      diverged 𝑛5·1 vs 𝑛6·1

@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The 'unbox' line takes 'Φ.k' out of the formation 'a' morphs to, and that
+# dispatch is no formation and so nothing 𝔼 can be asked of: the 'evaluate'
+# line gets stuck on the fork itself, and '--partial' parks the site the fork
+# stands at (#1874). A branch parked under '--partial' never comes this far,
+# since its firing gets stuck where its morph does (#2014).
+symbolic: |
+  - λ: L_fork
+    morph:
+      𝑛1: $.a
+    unbox:
+      𝑛2: 𝑛1
+    evaluate:
+      𝑛3: 𝑛2
+    𝑛: 𝑛3
+location: 'Q.y'
+partial: true
+input: '⟦ k ↦ ⟦⟧, y ↦ ⟦ a ↦ ⟦ φ ↦ Φ.k ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ a ↦ ⟦ φ ↦ Φ.k ⟧, λ ⤍ L_fork ⟧.φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝑛1·1 := Φ.k:φ  # 𝕄(ξ.a)
+      unboxed 𝑛2·1 := Φ.k  # 𝑛1
+      stuck L_fork
