@@ -431,12 +431,15 @@ symbolized term spent = case runState (goExpr term) (spent, []) of
   where
     goExpr :: Expression -> State Minting Expression
     goExpr (ExFormation bds) = ExFormation <$> mapM goBinding bds
-    goExpr (ExApplication expr (ArTau AtPhi arg)) = ExApplication expr . ArTau AtPhi <$> goExpr arg
-    goExpr (ExApplication expr arg) = (`ExApplication` arg) <$> goExpr expr
+    goExpr (ExApplication expr arg) = ExApplication <$> goExpr expr <*> goArgument arg
+    goExpr (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr expr
     goExpr (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goExpr expr
     goExpr (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goExpr expr
     goExpr expr = pure expr
     goBinding :: Binding -> State Minting Binding
     goBinding (BiDelta bts) = state (\(count, known) -> (BiLambda (FnSymbol (succ count)), (succ count, (succ count, bts) : known)))
-    goBinding (BiTau AtPhi expr) = BiTau AtPhi <$> goExpr expr
+    goBinding (BiTau attr expr) = BiTau attr <$> goExpr expr
     goBinding bd = pure bd
+    goArgument :: Argument -> State Minting Argument
+    goArgument (ArTau attr expr) = ArTau attr <$> goExpr expr
+    goArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr expr

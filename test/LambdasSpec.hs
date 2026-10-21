@@ -582,17 +582,39 @@ spec = do
       masked <- parseExpressionThrows "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧ ⟧"
       (\(made, _, _) -> made) (symbolized term 4) `shouldBe` masked
 
-    it "keeps the datum a ρ of a formation holds" $ do
+    it "turns the datum a ρ of a formation holds into a fresh symbol" $ do
       term <- parseExpressionThrows "⟦ ρ ↦ ⟦ Δ ⤍ 02- ⟧, q ↦ ∅ ⟧"
-      (\(made, _, _) -> made) (symbolized term 9) `shouldBe` term
+      masked <- parseExpressionThrows "⟦ ρ ↦ ⟦ λ ⤍ 𝜎10 ⟧, q ↦ ∅ ⟧"
+      (\(made, _, _) -> made) (symbolized term 9) `shouldBe` masked
 
-    it "keeps the datum a method of a formation holds" $ do
+    it "turns the datum a method of a formation holds into a fresh symbol" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦⟧, neg ↦ ⟦ Δ ⤍ BF-F0-00-00-00-00-00-00 ⟧ ⟧"
-      (\(made, _, _) -> made) (symbolized term 9) `shouldBe` term
+      masked <- parseExpressionThrows "⟦ φ ↦ ⟦⟧, neg ↦ ⟦ λ ⤍ 𝜎10 ⟧ ⟧"
+      (\(made, _, _) -> made) (symbolized term 9) `shouldBe` masked
 
-    it "keeps the datum an argument other than φ holds" $ do
+    it "turns the datum a named argument other than φ holds into a fresh symbol" $ do
       term <- parseExpressionThrows "Φ.f( q ↦ ⟦ Δ ⤍ 1D- ⟧ )"
-      (\(made, _, _) -> made) (symbolized term 3) `shouldBe` term
+      masked <- parseExpressionThrows "Φ.f( q ↦ ⟦ λ ⤍ 𝜎4 ⟧ )"
+      (\(made, _, _) -> made) (symbolized term 3) `shouldBe` masked
+
+    it "turns the datum a positional argument holds into a fresh symbol" $ do
+      term <- parseExpressionThrows "Φ.vk( α0 ↦ ⟦ Δ ⤍ 5B- ⟧ )"
+      masked <- parseExpressionThrows "Φ.vk( α0 ↦ ⟦ λ ⤍ 𝜎14 ⟧ )"
+      (\(made, _, _) -> made) (symbolized term 13) `shouldBe` masked
+
+    it "walks the target of a dispatch down to the datum" $ do
+      term <- parseExpressionThrows "⟦ Δ ⤍ 6E- ⟧.kx"
+      masked <- parseExpressionThrows "⟦ λ ⤍ 𝜎8 ⟧.kx"
+      (\(made, _, _) -> made) (symbolized term 7) `shouldBe` masked
+
+    it "walks a formation bound to an argument down to the datum it holds in φ" $ do
+      term <- parseExpressionThrows "Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ )"
+      masked <- parseExpressionThrows "Φ.bool( if ↦ ⟦ λ ⤍ L_fork, φ ↦ ⟦ λ ⤍ 𝜎147 ⟧ ⟧ )"
+      (\(made, _, _) -> made) (symbolized term 146) `shouldBe` masked
+
+    it "mints the symbols in the order the term spells its data" $ do
+      term <- parseExpressionThrows "Φ.ws( φ ↦ ⟦ Δ ⤍ 3C- ⟧ )( tz ↦ ⟦ Δ ⤍ 9D- ⟧ )"
+      (\(_, known, _) -> known) (symbolized term 5) `shouldBe` [(6, BtOne "3C"), (7, BtOne "9D")]
 
     it "mints nothing for a term holding no datum" $ do
       term <- parseExpressionThrows "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )"

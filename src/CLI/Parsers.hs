@@ -262,7 +262,7 @@ optSymbolic =
               \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", the terms \
               \it takes out of a formation binding nothing but φ and a ρ under \"unbox\", the terms it rewrites with \
               \rules spelled as in a rule file under \"rewrite\", the terms it keeps with \
-              \every datum along their φ turned into a fresh symbol under \"symbolize\", and \
+              \every datum they hold turned into a fresh symbol under \"symbolize\", and \
               \answering with the term under \"𝑛\", or joining under \"join\" the two sides of a datum of \
               \\"dataize\" into one term, with a fresh symbol where they differ"
         )

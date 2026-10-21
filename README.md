@@ -412,8 +412,8 @@ joined 𝜎4 := 𝔻(𝜎3:λ) ? 𝜎1 : 𝜎2
 
 There is a seventh block, `symbolize`, and it reduces nothing either. Each line
 of it takes the term another meta of the entry is bound to and binds an
-expression meta of its own to that term with every datum along its `φ` turned
-into a fresh symbol:
+expression meta of its own to that term with every datum it holds turned into
+a fresh symbol:
 
 ```yaml
 - λ: L_fork
@@ -432,13 +432,13 @@ into a fresh symbol:
 ```
 
 The right-hand side of a line names a meta bound by `morph` or by another line
-of the entry, and nothing else. Only the `φ` chain of the term is walked, the
-path along which a term reaches the value it stands for: the `φ` of a
-formation, the `φ` an application binds, and the head of an application that
-binds anything else. A `Δ ⤍ 𝑏` met there becomes `λ ⤍ 𝜎4`, a symbol minted
-fresh, the way a bare `𝜎` of an answer is. A datum anywhere else, under a `ρ`,
-in a method or in an argument other than `φ`, stays, since it says nothing
-about the value of the term.
+of the entry, and nothing else. The whole term is walked, the way a `rewrite`
+line walks it: every binding of every formation, `ρ` and methods among them,
+every argument of every application, named or positional, and the target of
+every dispatch. A `Δ ⤍ 𝑏` met anywhere becomes `λ ⤍ 𝜎4`, a symbol minted
+fresh, the way a bare `𝜎` of an answer is. A datum off the `φ` chain counts
+too, since a value may sit there: the bool a `rewrite` line makes of a literal
+holds its datum inside the formation bound to `if`.
 
 This is how a join makes one term of a literal and a value some firing
 computed. In EO `x.gt( 0 ).if( 1, x )` has one side that is the literal `1`, a
