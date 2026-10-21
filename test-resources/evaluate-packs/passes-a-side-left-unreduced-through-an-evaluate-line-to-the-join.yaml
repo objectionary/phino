@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# Under '--partial' a side that got stuck comes back as the term it was
+# parked at, which is no formation. An entry that computes gets stuck on such
+# a term in an 'evaluate' line, but a join compares whatever its sides came
+# to, so an 'evaluate' line of an entry that joins passes the term through as
+# it is (#1999). Here the join gets it, finds it apart from the bool of the
+# left side, and writes 'diverged', so the site the join stands at is parked.
+symbolic: |
+  - λ: L_eq
+    𝑛: Φ.bool( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    evaluate:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      on: 𝛿1
+      left: 𝑛3
+      right: 𝑛4
+location: 'Q.y'
+partial: true
+input: '⟦ bool(φ) ↦ ⟦⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ L_eq ⟧, b ↦ ⟦ λ ⤍ L_none ⟧.x, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ L_eq ⟧, b ↦ ⟦ λ ⤍ L_none ⟧.x, λ ⤍ L_fork ⟧.φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝑛1·1 := L_eq:λ  # 𝕄(ξ.a)
+      𝕄(Φ.a🌵2):
+        unanswered L_none  # 𝕄(L_none:λ)
+      𝑛2·1 := L_none:λ.x  # 𝕄(ξ.b)
+      𝔼(L_eq):  # 𝔼(𝑛1)
+        𝑛·2·1 := Φ.bool( φ ↦ 𝜎2:λ )  # 𝑛
+        𝕄(𝑛·2·1):
+          𝑛·2·2 := Φ.bool( φ ↦ 𝜎2:λ )
+        𝑛·2·3 := 𝑛·2·2  # 𝕄(𝑛·2·1)
+      𝑛3·1 := 𝑛·2·3  # 𝔼(𝑛1)
+      𝑛4·1 := L_none:λ.x  # 𝔼(𝑛2)
+      diverged 𝑛3·1 vs 𝑛4·1
