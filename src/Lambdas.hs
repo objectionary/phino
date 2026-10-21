@@ -32,7 +32,9 @@ import Control.Monad.Trans.State.Strict (State, runState, state)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:?))
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
+import Data.Aeson.Types (JSONPathElement (Key), (<?>))
 import Data.Char (isDigit)
+import Data.Either (partitionEithers)
 import Data.List (find, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -60,7 +62,8 @@ data Meta = Meta
   }
 
 data Line
-  = Evaluated Meta Meta
+  = Morphed Meta Meta
+  | Evaluated Meta Meta
   | Deferred Meta Meta
   | Stayed Meta Meta
   | Unboxed Meta Meta
@@ -95,14 +98,14 @@ instance FromJSON Lambda where
     unknown (T.unpack key) entry
     dataized <- operands key bytesMeta entry "dataize"
     ending <- concluded (T.unpack key) dataized entry
-    morphed <- operands key expressionMeta entry "morph"
+    (morphed, reading) <- partitionEithers <$> reductions key entry
     lambda <-
       Lambda key dataized morphed
-        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed))
+        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed) . (reading ++))
         <*> pure ending
     once (T.unpack key) lambda
-    mapM_ (metaless (T.unpack key) "dataize") lambda._dataized
-    mapM_ (metaless (T.unpack key) "morph") lambda._morphed
+    mapM_ (metaless (T.unpack key) "dataize" "a path from '$'") lambda._dataized
+    mapM_ (metaless (T.unpack key) "morph" "a path from '$' or a meta alone") lambda._morphed
     answered (T.unpack key) lambda
     pure lambda
     where
@@ -150,6 +153,18 @@ instance FromJSON Lambda where
           bound (meta, term) = do
             referenceless (T.unpack key) (T.unpack meta) term
             kind meta >>= \named -> pure (named, term)
+      reductions :: Text -> Object -> Yaml.Parser [Either (Meta, Expression) Line]
+      reductions key entry = do
+        mapping <- entry .:? "morph" .!= (Map.empty :: Map Text Text)
+        mapM reduction (numbered mapping)
+        where
+          reduction :: (Text, Text) -> Yaml.Parser (Either (Meta, Expression) Line)
+          reduction (meta, source) = do
+            named <- expressionMeta meta
+            case parseExpression (T.unpack source) of
+              Right (ExMeta name) -> pure (Right (Morphed named (Meta source name)))
+              Right term -> Left (named, term) <$ referenceless (T.unpack key) (T.unpack meta) term
+              Left failure -> fail failure <?> Key (Key.fromText meta) <?> Key "morph"
       expressionMeta :: Text -> Yaml.Parser Meta
       expressionMeta meta = case parseExpression (T.unpack meta) of
         Right (ExMeta name) -> pure (Meta meta name)
@@ -214,6 +229,7 @@ instance FromJSON Lambda where
               feeding :: Meta -> [Meta]
               feeding meta = [source line | line <- pending, meta._name == (binding line)._name, (source line)._name `notElem` known]
           source :: Line -> Meta
+          source (Morphed _ meta) = meta
           source (Evaluated _ meta) = meta
           source (Deferred _ meta) = meta
           source (Stayed _ meta) = meta
@@ -221,6 +237,7 @@ instance FromJSON Lambda where
           source (Rewritten _ meta _) = meta
           source (Symbolized _ meta) = meta
       binding :: Line -> Meta
+      binding (Morphed meta _) = meta
       binding (Evaluated meta _) = meta
       binding (Deferred meta _) = meta
       binding (Stayed meta _) = meta
@@ -244,17 +261,18 @@ instance FromJSON Lambda where
           twice seen (meta : rest)
             | meta._name `elem` seen = Just meta
             | otherwise = twice (meta._name : seen) rest
-      metaless :: String -> String -> (Meta, Expression) -> Yaml.Parser ()
-      metaless key block (meta, term) = case metas term of
+      metaless :: String -> String -> String -> (Meta, Expression) -> Yaml.Parser ()
+      metaless key block reducible (meta, term) = case metas term of
         [] -> pure ()
         name : _ ->
           fail
             ( printf
-                "The operand '%s' of '%s' of λ function '%s' reads the meta '%s', while only a path from '$' can be reduced there"
+                "The operand '%s' of '%s' of λ function '%s' reads the meta '%s', while only %s can be reduced there"
                 (T.unpack meta._spelling)
                 block
                 key
                 (T.unpack name)
+                reducible
             )
       answered :: String -> Lambda -> Yaml.Parser ()
       answered key lambda = case lambda._ending of

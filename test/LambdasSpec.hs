@@ -38,12 +38,16 @@ order :: Lambdas -> T.Text -> [T.Text]
 order known func = map bound (lined known func)
   where
     bound :: Line -> T.Text
+    bound (Morphed meta _) = _spelling meta
     bound (Evaluated meta _) = _spelling meta
     bound (Deferred meta _) = _spelling meta
     bound (Stayed meta _) = _spelling meta
     bound (Symbolized meta _) = _spelling meta
     bound (Unboxed meta _) = _spelling meta
     bound (Rewritten meta _ _) = _spelling meta
+
+morphs :: Lambdas -> T.Text -> [(T.Text, T.Text)]
+morphs known func = [(_spelling meta, _spelling source) | Morphed meta source <- lined known func]
 
 fired :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 fired known func = [(_spelling meta, _spelling source) | Evaluated meta source <- lined known func]
@@ -128,6 +132,22 @@ spec = do
     it "reads the operands of 'morph' under expression metas" $ do
       known <- lambdasOf "- λ: L_pick\n  morph:\n    𝑛1: $.then\n    𝑛2: $.else\n  𝑛: 𝑛1\n"
       map (_spelling . fst) (maybe [] _morphed (matched known "L_pick")) `shouldBe` ["𝑛1", "𝑛2"]
+
+    it "keeps under 'morph' only the operands reading '$'" $ do
+      known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛3: 𝑛2\n  unbox:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n"
+      map (_spelling . fst) (maybe [] _morphed (matched known "L_hold")) `shouldBe` ["𝑛1"]
+
+    it "reads an operand of 'morph' naming a meta as a line reading that meta" $ do
+      known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛3: 𝑛2\n  unbox:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n"
+      morphs known "L_hold" `shouldBe` [("𝑛3", "𝑛2")]
+
+    it "runs a 'morph' line after the 'rewrite' line binding the meta it reads" $ do
+      known <- lambdasOf ("- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛3: 𝑛2\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n" <> truth <> "  𝑛: 𝑛3\n")
+      order known "L_hold" `shouldBe` ["𝑛2", "𝑛3"]
+
+    it "runs a 'morph' line before an 'evaluate' line no meta orders" $ do
+      known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛4: 𝑛2\n  unbox:\n    𝑛2: 𝑛1\n  evaluate:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n"
+      order known "L_hold" `shouldBe` ["𝑛2", "𝑛4", "𝑛3"]
 
     it "reads the term an operand is reduced from" $ do
       known <- lambdasOf "- λ: L_pair\n  dataize:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
@@ -354,6 +374,10 @@ spec = do
       , ("an answer naming a meta no block binds", "- λ: L_pair\n  dataize:\n    𝛿1: $.ρ\n  𝑛: 𝑛7\n", "reads the meta 'n7' that no block binds")
       , ("an operand of 'dataize' reading a meta", "- λ: L_pair\n  dataize:\n    𝛿1: 𝑛5\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "of 'dataize' of λ function 'L_pair' reads the meta 'n5'")
       , ("an operand of 'morph' reading a meta", "- λ: L_pair\n  morph:\n    𝑛1: $.x.𝜏1\n  𝑛: 𝑛1\n", "of 'morph' of λ function 'L_pair' reads the meta 't1'")
+      , ("an operand of 'morph' reading a meta inside a term", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: 𝑛1.x\n  𝑛: 𝑛2\n", "The operand '𝑛2' of 'morph' of λ function 'L_hold' reads the meta 'n1', while only a path from '$' or a meta alone can be reduced there")
+      , ("an operand of 'morph' naming a meta nothing binds", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: 𝑛5\n  𝑛: 𝑛2\n", "The operand '𝑛5' of λ function 'L_hold' names no meta bound by 'morph' or by any line")
+      , ("an operand of 'morph' which is no term of the calculus", "- λ: L_hold\n  morph:\n    𝑛1: ⟦ λ ⤍\n  𝑛: 𝑛1\n", "Error in $[0].morph.𝑛1: expression:1:6")
+      , ("an operand of 'morph' naming the meta it binds", "- λ: L_hold\n  morph:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The line binding '𝑛1' of λ function 'L_hold' reads the meta it binds")
       , ("a 'defer' line deferring a meta the entry never bound", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  defer:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("a 'defer' line bound to what is no expression meta", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  defer:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
       , ("a meta bound by 'defer' and again by 'evaluate'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  defer:\n    𝑛2: 𝑛1\n  evaluate:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_hold' is bound by more than one line")

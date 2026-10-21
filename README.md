@@ -540,7 +540,7 @@ of the entry, and nothing else. A line takes off one formation and no more, so
 `φ` and a `ρ`, such as a method, stays, and so does a formation whose `φ` is
 void, and a term that is no formation. What the line takes out it binds as it
 is, without morphing it, so an application standing there stays an
-application.
+application, unless an operand of `morph` names the meta, as described below.
 
 This is how a join compares a side that comes inside a formation with a side
 that does not. In EO the `false` of `bool.and` comes as `⟦ φ ↦ Φ.bool( … ) ⟧`,
@@ -626,13 +626,55 @@ joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
 
 The markup writes both lines as a plain `<bound>`.
 
+### Morphing what a line made
+
+An operand of `morph` may name a meta another line binds instead of a path
+from `$`. It reduces the term that meta is bound to through 𝕄, the way an
+operand reading `$` is reduced, and binds a meta of its own to the normal
+form:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.c
+  morph:
+    𝑛1: $.a
+    𝑛2: $.b
+    𝑛4: 𝑛3
+  unbox:
+    𝑛3: 𝑛2
+  join:
+    on: 𝛿1
+    left: 𝑛1
+    right: 𝑛4
+```
+
+Such an operand is a line of the entry, so it runs once the meta it names is
+bound, as described below. It takes the term as the other line bound it and
+does not read it against the formation being fired. An operand reading a meta
+inside a term, such as `𝑛1.x`, is refused when the file is read, and so is
+one naming a meta nothing binds.
+
+This is how a join compares a side that `unbox` or `rewrite` made with a side
+in its normal form. Above, `$.b` comes down to `⟦ φ ↦ Φ.t ⟧`, and `unbox`
+takes out `Φ.t`, a path the join cannot compare with the object on the left.
+The morph of `𝑛3` brings the path down to the object it reads. In EO the same
+happens to the `Φ.bool( … )` a `rewrite` line writes in place of `Φ.false`.
+The protocol comments the line with the morph of the meta it read:
+
+```text
+unboxed 𝑛3·1 := Φ.t  # 𝑛2
+𝑛4·1 := 𝜎3:λ:φ  # 𝕄(𝑛3)
+joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
+```
+
 ### The order of the lines
 
-The lines of `evaluate`, `defer`, `stay`, `unbox`, `rewrite` and `symbolize`
-run in the order of the metas they read, not in the order of their blocks. A
-line runs once every meta it reads is bound, so this entry fires what `x` came
-to and then fires the answer, one more call, although the line doing so stands
-first:
+The lines of `morph`, `evaluate`, `defer`, `stay`, `unbox`, `rewrite` and
+`symbolize` run in the order of the metas they read, not in the order of their
+blocks. A line of `morph` is an operand naming a meta. A line runs once every
+meta it reads is bound, so this entry fires what `x` came to and then fires the
+answer, one more call, although the line doing so stands first:
 
 ```yaml
 - λ: L_twice
@@ -645,12 +687,14 @@ first:
 ```
 
 The line binding `𝑛3` reads `𝑛2`, which the line under it binds, so that line
-runs first. The `dataize` and `morph` blocks read no meta and always run
-before all the others. Where no meta orders two lines, they run in the order
-the list above gives their blocks, and the lines of one block in the order of
-their metas, `𝑛2` before `𝑛10`. A line reading a meta nothing binds is refused
-when the file is read, and so is a line that reads the meta it binds, directly
-or through other lines, since it could never run.
+runs first. The `dataize` block and the operands of `morph` reading `$` read
+no meta and always run before all the others. Where no meta orders two lines,
+they run in the order the list above gives their blocks, so a line of `morph`
+runs right after the line binding the meta it names, and the lines of one
+block run in the order of their metas, `𝑛2` before `𝑛10`. A line reading a
+meta nothing binds is refused when the file is read, and so is a line that
+reads the meta it binds, directly or through other lines, since it could never
+run.
 
 ### Symbols
 

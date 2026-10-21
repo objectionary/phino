@@ -97,6 +97,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     keyed side@(ExMeta _) = pure side
     keyed side = operand side
     line :: ReduceContext -> Ending -> (Subst, State) -> Line -> IO (Subst, State)
+    line ctx _ held (Morphed meta source) = reduced ctx held meta source
     line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
     line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
     line ctx _ (bound, state') (Stayed meta source) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "stay") (pure . stayed) meta source bound
@@ -155,6 +156,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'', normal : normals)
+    reduced :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
+    reduced ctx (bound, state') meta source = do
+      term <- buildExpressionThrows (ExMeta source._name) bound
+      (normal, state'') <- morphing univ ctx term state'
+      ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing (ExMeta source._name) normal)
+      bound' <- bind meta (MvExpression normal) bound
+      pure (bound', state'')
     reshaped :: ReduceContext -> (Expression -> Expression -> Evaluation) -> (Expression -> IO Expression) -> Meta -> Meta -> Subst -> IO Subst
     reshaped ctx record change meta source bound = do
       kept <- buildExpressionThrows (ExMeta source._name) bound

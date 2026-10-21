@@ -185,12 +185,16 @@ with the rules applied (`rewritten` of `Lambdas.hs`, #2005): every position
 is tried, the outermost first, the first rule matching it rewrites it, what
 a rule made is not walked into again, and nothing is normalized. A rule
 writing a symbol such as `𝜎4` into its result is refused, and a line that
-changed its term writes `# rewrite(𝑛1)` (`EvReshaped`) as `stay` does. The
-lines of `evaluate`, `defer`, `stay`, `unbox`, `rewrite` and `symbolize` are
-one list, `_lines` of `Lambda`, which `ordered` of
-`Lambdas.hs` sorts by the metas each line reads, keeping the order of the
-blocks where no meta decides, and refuses a line reading what nothing binds or
-what it binds itself (#1903). No
+changed its term writes `# rewrite(𝑛1)` (`EvReshaped`) as `stay` does. An
+operand of `morph` naming a meta alone, such as `𝑛4: 𝑛3`, is a line too
+(`Morphed` of `Line`, `reduced` of `Evaluate.hs`, #2016): it morphs the term
+the meta is bound to through `morphing`, as it stands and not read against the
+formation fired, and writes `# 𝕄(𝑛3)`, while `_morphed` keeps the operands
+reading `$` alone, which run before every line. The lines of `morph`,
+`evaluate`, `defer`, `stay`, `unbox`, `rewrite` and `symbolize` are one list,
+`_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
+line reads, keeping the order of the blocks where no meta decides, and refuses
+a line reading what nothing binds or what it binds itself (#1903). No
 two keys may match one λ name, whether or not either
 spells it: `Language.hs` reads each key as an automaton and looks for a name
 both accept, refusing a key beyond a regular language, such as a back
@@ -395,8 +399,9 @@ the answer with the symbols the first one minted: it is charged nothing and
 reduces nothing, and it is written to the protocol as a firing at its own
 site carrying that answer and no operand line (#1476). The memo keeps the
 answer by the firing too, the λ name with the data, the symbols and the normal
-forms its operands came down to (`Firing`, `remembered` and `remember` in
-`Morph.hs`), since an entry answers from its operands alone: a firing of
+forms its operands reading `$` came down to (`Firing`, `remembered` and
+`remember` in `Morph.hs`, asked before any line, a `morph` one among them,
+runs), since an entry answers from its operands alone: a firing of
 another formation, such as one whose operand reads another object holding the
 same datum, brings its operands down, finds the firing answered and takes
 that answer, minting nothing, so one value never gets two names (#1661). A
