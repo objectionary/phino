@@ -12,9 +12,12 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
-import Lambdas (Ending (..), Lambda (..), Lambdas, Line (..), Meta (..), emptyLambdas, matched, minted, readLambdas, stayed, symbolized, taken, unboxed)
+import Functions (buildTerm)
+import Lambdas (Ending (..), Lambda (..), Lambdas, Line (..), Meta (..), emptyLambdas, matched, minted, readLambdas, rewritten, stayed, symbolized, taken, unboxed)
 import Parser (parseExpressionThrows)
+import Rule (RuleContext (..), normal)
 import Test.Hspec
+import Yaml qualified as Y
 
 lambdasOf :: T.Text -> IO Lambdas
 lambdasOf text = withLambdasOf text readLambdas
@@ -40,6 +43,7 @@ order known func = map bound (lined known func)
     bound (Stayed meta _) = _spelling meta
     bound (Symbolized meta _) = _spelling meta
     bound (Unboxed meta _) = _spelling meta
+    bound (Rewritten meta _ _) = _spelling meta
 
 fired :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 fired known func = [(_spelling meta, _spelling source) | Evaluated meta source <- lined known func]
@@ -55,6 +59,17 @@ symbolizes known func = [(_spelling meta, _spelling source) | Symbolized meta so
 
 unboxes :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 unboxes known func = [(_spelling meta, _spelling source) | Unboxed meta source <- lined known func]
+
+rewrites :: Lambdas -> T.Text -> [(T.Text, T.Text, Int)]
+rewrites known func = [(_spelling meta, _spelling source, length rules) | Rewritten meta source rules <- lined known func]
+
+truth :: T.Text
+truth = "      rules:\n        - name: true-literal\n          pattern: Φ.true\n          result: Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )\n"
+
+rewrote :: [(String, String)] -> String -> IO Expression
+rewrote rules term = do
+  parsed <- mapM (\(source, target) -> (\from to -> Y.Rule "kq" Nothing Nothing from to Nothing Nothing Nothing) <$> parseExpressionThrows source <*> parseExpressionThrows target) rules
+  parseExpressionThrows term >>= rewritten (RuleContext buildTerm Nothing normal) parsed
 
 answers :: Lambdas -> T.Text -> Maybe Expression
 answers known func = case _ending <$> matched known func of
@@ -266,6 +281,36 @@ spec = do
       known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
       unboxes known "L_hold" `shouldBe` []
 
+    it "reads the lines of 'rewrite' with the metas they read and the count of their rules" $ do
+      known <- lambdasOf ("- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  rewrite:\n    𝑛4:\n      of: 𝑛2\n" <> truth <> "        - name: false-literal\n          pattern: Φ.false\n          result: Φ.bool( if ↦ ⟦ Δ ⤍ 00- ⟧ )\n    𝑛3:\n      of: 𝑛1\n" <> truth <> "  𝑛: 𝑛3\n")
+      rewrites known "L_hold" `shouldBe` [("𝑛3", "𝑛1", 1), ("𝑛4", "𝑛2", 2)]
+
+    it "reads a line of 'rewrite' sharing its rules with another one through a YAML anchor" $ do
+      known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  rewrite:\n    𝑛3:\n      of: 𝑛1\n      rules: &bool\n        - name: true-literal\n          pattern: Φ.true\n          result: Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )\n    𝑛4:\n      of: 𝑛2\n      rules: *bool\n  𝑛: 𝑛3\n"
+      rewrites known "L_hold" `shouldBe` [("𝑛3", "𝑛1", 1), ("𝑛4", "𝑛2", 1)]
+
+    it "runs a 'rewrite' line after the 'evaluate' line binding the meta it reads" $ do
+      known <- lambdasOf ("- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛3:\n      of: 𝑛2\n" <> truth <> "  evaluate:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n")
+      order known "L_hold" `shouldBe` ["𝑛2", "𝑛3"]
+
+    it "runs an 'unbox' line before a 'rewrite' line no meta orders" $ do
+      known <- lambdasOf ("- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  rewrite:\n    𝑛3:\n      of: 𝑛1\n" <> truth <> "  unbox:\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n")
+      order known "L_hold" `shouldBe` ["𝑛4", "𝑛3"]
+
+    it "runs a 'rewrite' line before a 'symbolize' line no meta orders" $ do
+      known <- lambdasOf ("- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛3: 𝑛1\n  rewrite:\n    𝑛4:\n      of: 𝑛2\n" <> truth <> "  𝑛: 𝑛3\n")
+      order known "L_hold" `shouldBe` ["𝑛4", "𝑛3"]
+
+    it "reads a 'join' block whose sides are metas 'rewrite' bound" $ do
+      known <- lambdasOf ("- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  rewrite:\n    𝑛3:\n      of: 𝑛1\n" <> truth <> "    𝑛4:\n      of: 𝑛2\n" <> truth <> "  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n")
+      left <- parseExpressionThrows "𝑛3"
+      right <- parseExpressionThrows "𝑛4"
+      sides known "L_fork" `shouldBe` Just (left, right)
+
+    it "reads an entry naming no 'rewrite' block at all" $ do
+      known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
+      rewrites known "L_hold" `shouldBe` []
+
     it "reads an entry naming no 'defer' block at all" $ do
       known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
       defers known "L_hold" `shouldBe` []
@@ -323,6 +368,18 @@ spec = do
       , ("an 'unbox' line reading a meta the entry never bound", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  unbox:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("an 'unbox' line reading a term instead of a meta", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  unbox:\n    𝑛2: $.a\n  𝑛: 𝑛2\n", "is not an expression meta")
       , ("a meta bound by 'unbox' and again by 'stay'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  unbox:\n    𝑛2: 𝑛1\n  stay:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_hold' is bound by more than one line")
+      , ("a 'rewrite' line reading a meta the entry never bound", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛3:\n      of: 𝑛2\n" <> truth <> "  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
+      , ("a 'rewrite' line bound to what is no expression meta", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝛿1:\n      of: 𝑛1\n" <> truth <> "  𝑛: 𝑛1\n", "is not an expression meta")
+      , ("a 'rewrite' line reading a term instead of a meta", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: $.a\n" <> truth <> "  𝑛: 𝑛2\n", "is not an expression meta")
+      , ("a 'rewrite' line naming no meta it reads", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n" <> truth <> "  𝑛: 𝑛2\n", "The line '𝑛2' of the 'rewrite' block of λ function 'L_hold' has no 'of' key")
+      , ("a 'rewrite' line holding no rules", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n  𝑛: 𝑛2\n", "The line '𝑛2' of the 'rewrite' block of λ function 'L_hold' has no 'rules' key")
+      , ("a 'rewrite' line with a key it does not read", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      once: true\n" <> truth <> "  𝑛: 𝑛2\n", "The key 'once' of the line '𝑛2' of the 'rewrite' block of λ function 'L_hold' is none of its keys: of, rules")
+      , ("a 'rewrite' line naming its meta alone, as a 'stay' line does", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "rewrite.𝑛2: parsing KeyMap failed, expected Object, but encountered String")
+      , ("a rule of 'rewrite' minting a fresh symbol", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: minting\n          pattern: Φ.true\n          result: ⟦ λ ⤍ 𝜎 ⟧\n  𝑛: 𝑛2\n", "anonymous meta '!S' cannot be referenced in 'result' of rule 'minting'")
+      , ("a rule of 'rewrite' writing a symbol nobody minted", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: naming\n          pattern: Φ.true\n          result: ⟦ λ ⤍ 𝜎4 ⟧\n  𝑛: 𝑛2\n", "The rule 'naming' of the 'rewrite' block of λ function 'L_hold' writes the symbol '𝜎4' into its result, while only a firing mints a symbol")
+      , ("a rule of 'rewrite' reading a meta it never binds", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: unbound\n          pattern: ⟦ φ ↦ 𝑒1 ⟧\n          result: ⟦ φ ↦ 𝑒2 ⟧\n  𝑛: 𝑛2\n", "The rule 'unbound' reads the meta 'e2' it never binds")
+      , ("a rule of 'rewrite' with no result", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: empty\n          pattern: Φ.true\n  𝑛: 𝑛2\n", "key \"result\" not found")
+      , ("a meta bound by 'rewrite' and again by 'unbox'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n" <> truth <> "  unbox:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_hold' is bound by more than one line")
       , ("a meta bound by 'morph' and again by 'stay'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_hold' is bound by more than one line")
       , ("a meta bound by 'morph' and again by 'defer'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  defer:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_hold' is bound by more than one line")
       , ("an entry with both an '𝑛' key and a 'join' block", joint <> "  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The entry of λ function 'L_fork' has both an '𝑛' key and a 'join' block, while a join answers the term it joins")
@@ -334,13 +391,12 @@ spec = do
       , ("a 'join' block with no 'right' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n", "The 'join' block of λ function 'L_fork' has no 'right' key")
       , ("a 'join' block with a key it does not read", joint <> "    middle: $.m\n", "The key 'middle' of the 'join' block of λ function 'L_fork' is none of its keys: on, left, right")
       , ("a 'join' block which is no mapping", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join: [𝛿1, $.a, $.b]\n", "join: parsing")
-      , ("a side of a 'join' block naming a meta nothing binds", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: 𝑛1\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' that none of 'morph', 'evaluate', 'stay', 'unbox', 'symbolize' and 'defer' binds")
+      , ("a side of a 'join' block naming a meta nothing binds", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: 𝑛1\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' that none of 'morph', 'evaluate', 'stay', 'unbox', 'rewrite', 'symbolize' and 'defer' binds")
       , ("a side of a 'join' block reading a meta inside a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n  join:\n    on: 𝛿1\n    left: 𝑛1.x\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' inside a term, while a side is a path from '$' or a meta alone")
       , ("a side of a 'join' block which is no term of the calculus", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: ⟦ λ ⤍\n    right: $.b\n", "cannot be read")
       , ("a 'fork' block, which is gone", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n", "The key 'fork' of λ function 'L_fork' is none of the keys an entry reads")
       , ("an 'unfold' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The key 'unfold' of λ function 'L_fork' is none of the keys an entry reads")
       , ("an 'upcast' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n", "The key 'upcast' of λ function 'L_fork' is none of the keys an entry reads")
-      , ("a 'rewrite' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules: []\n  𝑛: 𝑛2\n", "The key 'rewrite' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a 'terminators' key, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: [L_throw]\n  𝑛: 𝑛1\n", "The key 'terminators' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a 'lenient' key, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  lenient: []\n  𝑛: 𝑛1\n", "The key 'lenient' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a misspelled 'dataize' block", "- λ: L_pair\n  datize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The key 'datize' of λ function 'L_pair' is none of the keys an entry reads")
@@ -422,6 +478,52 @@ spec = do
     it "keeps a term which is no formation" $ do
       term <- parseExpressionThrows "Φ.bool( φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ ⟧ )"
       unboxed term `shouldBe` term
+
+  describe "rewritten" $ do
+    it "rewrites the term a rule matches as a whole" $ do
+      made <- rewrote [("Φ.true", "Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )")] "Φ.true"
+      expected <- parseExpressionThrows "Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )"
+      made `shouldBe` expected
+
+    it "rewrites a term a rule matches inside the argument of an application" $ do
+      made <- rewrote [("Φ.true", "Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )")] "Φ.jq( α0 ↦ Φ.true )"
+      expected <- parseExpressionThrows "Φ.jq( α0 ↦ Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ ) )"
+      made `shouldBe` expected
+
+    it "rewrites every place a rule matches inside a formation" $ do
+      made <- rewrote [("Φ.true", "Φ.vw")] "⟦ kq ↦ Φ.true, φ ↦ ⟦ zt ↦ Φ.true ⟧ ⟧"
+      expected <- parseExpressionThrows "⟦ kq ↦ Φ.vw, φ ↦ ⟦ zt ↦ Φ.vw ⟧ ⟧"
+      made `shouldBe` expected
+
+    it "binds the metas of the pattern in the result" $ do
+      made <- rewrote [("Φ.flag( α0 ↦ 𝑒1 )", "Φ.bool( if ↦ 𝑒1 )")] "Φ.flag( α0 ↦ ⟦ λ ⤍ 𝜎6 ⟧ )"
+      expected <- parseExpressionThrows "Φ.bool( if ↦ ⟦ λ ⤍ 𝜎6 ⟧ )"
+      made `shouldBe` expected
+
+    it "takes the first rule matching a term" $ do
+      made <- rewrote [("Φ.true", "Φ.yq"), ("Φ.𝜏1", "Φ.nx")] "Φ.true"
+      expected <- parseExpressionThrows "Φ.yq"
+      made `shouldBe` expected
+
+    it "tries a later rule where an earlier one does not match" $ do
+      made <- rewrote [("Φ.false", "Φ.yq"), ("Φ.true", "Φ.nx")] "Φ.true"
+      expected <- parseExpressionThrows "Φ.nx"
+      made `shouldBe` expected
+
+    it "rewrites the outermost term a rule matches and nothing inside what it made" $ do
+      made <- rewrote [("⟦ φ ↦ 𝑒1 ⟧", "𝑒1")] "⟦ φ ↦ ⟦ φ ↦ ξ.ρ.kq ⟧ ⟧"
+      expected <- parseExpressionThrows "⟦ φ ↦ ξ.ρ.kq ⟧"
+      made `shouldBe` expected
+
+    it "leaves what a rule made as it is, not normalized" $ do
+      made <- rewrote [("Φ.true", "⟦ hv ↦ ⟦⟧ ⟧.hv")] "Φ.true"
+      expected <- parseExpressionThrows "⟦ hv ↦ ⟦⟧ ⟧.hv"
+      made `shouldBe` expected
+
+    it "keeps a term no rule matches" $ do
+      term <- parseExpressionThrows "Φ.false( α0 ↦ ⟦ Δ ⤍ 2E- ⟧ )"
+      made <- rewrote [("Φ.true", "Φ.vw")] "Φ.false( α0 ↦ ⟦ Δ ⤍ 2E- ⟧ )"
+      made `shouldBe` term
 
   describe "symbolized" $ do
     it "turns the datum of a formation into a fresh symbol" $ do

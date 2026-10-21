@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The lines of an entry run in the order of the metas they read, not of their
+# blocks: the 'evaluate' line fires what the 'rewrite' line unwrapped, so the
+# 'rewrite' line runs first, although its block comes later (#1903, #2005).
+# The rule leaves what it made as it is, without normalizing it, and the
+# 'evaluate' line fires it.
+symbolic: |
+  - λ: L_inner
+    𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
+  - λ: L_pick
+    morph:
+      𝑛1: $.x
+    rewrite:
+      𝑛2:
+        of: 𝑛1
+        rules:
+          - name: unwrap
+            pattern: ⟦ φ ↦ 𝑒1 ⟧
+            result: 𝑒1
+    evaluate:
+      𝑛3: 𝑛2
+    𝑛: 𝑛3
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ x ↦ ⟦ φ ↦ ⟦ λ ⤍ L_inner ⟧ ⟧, λ ⤍ L_pick ⟧.φ ⟧'
+result: '𝜎1:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_pick):
+      𝑛1·1 := L_inner:λ:φ  # 𝕄(ξ.x)
+      𝑛2·1 := L_inner:λ  # rewrite(𝑛1)
+      𝔼(L_inner):  # 𝔼(𝑛2)
+        𝑛·2·1 := 𝜎1:λ:φ  # 𝑛
+        𝑛·2·2 := 𝜎1:λ:φ  # 𝕄(𝑛·2·1)
+      𝑛3·1 := 𝑛·2·2  # 𝔼(𝑛2)
+      𝑛·1·1 := 𝑛3·1  # 𝑛
+      𝑛·1·2 := 𝑛3·1  # 𝕄(𝑛·1·1)

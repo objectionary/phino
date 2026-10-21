@@ -1337,7 +1337,7 @@ spec = do
       testCLISucceeded ["dataize", "--help"] ["Dataize the 𝜑-expression"]
 
     it "names every block of a --symbolic entry in its help" $
-      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"evaluate\"", "\"defer\"", "\"stay\"", "\"unbox\"", "\"symbolize\"", "\"join\""]
+      testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"evaluate\"", "\"defer\"", "\"stay\"", "\"unbox\"", "\"rewrite\"", "\"symbolize\"", "\"join\""]
 
     it "dataizes simple expression" $
       withStdin "[[ D> 01- ]]" $
