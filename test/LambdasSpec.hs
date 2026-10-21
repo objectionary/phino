@@ -459,8 +459,36 @@ spec = do
       held <- parseExpressionThrows "⟦ φ ↦ ξ.ρ.kq ⟧"
       unboxed term `shouldBe` held
 
-    it "keeps a formation binding φ beside a ρ" $ do
+    it "takes the term out of a formation binding φ beside a bound ρ" $ do
       term <- parseExpressionThrows "⟦ φ ↦ Φ.bool( α0 ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), ρ ↦ ⟦ w ↦ ∅ ⟧ ⟧"
+      held <- parseExpressionThrows "Φ.bool( α0 ↦ ⟦ λ ⤍ 𝜎3 ⟧ )"
+      unboxed term `shouldBe` held
+
+    it "takes the term out of a formation binding φ beside a void ρ" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ ξ.ρ.ub( α1 ↦ Φ.yk ), ρ ↦ ∅ ⟧"
+      held <- parseExpressionThrows "ξ.ρ.ub( α1 ↦ Φ.yk )"
+      unboxed term `shouldBe` held
+
+    it "takes the term out of a formation binding a ρ before φ" $ do
+      term <- parseExpressionThrows "⟦ ρ ↦ Φ, φ ↦ Φ.bool( if ↦ ⟦ λ ⤍ 𝜎11 ⟧ ) ⟧"
+      held <- parseExpressionThrows "Φ.bool( if ↦ ⟦ λ ⤍ 𝜎11 ⟧ )"
+      unboxed term `shouldBe` held
+
+    it "takes out one formation of two nested ones each binding a ρ" $ do
+      term <- parseExpressionThrows "⟦ ρ ↦ ∅, φ ↦ ⟦ φ ↦ Φ.hv, ρ ↦ Φ ⟧ ⟧"
+      held <- parseExpressionThrows "⟦ φ ↦ Φ.hv, ρ ↦ Φ ⟧"
+      unboxed term `shouldBe` held
+
+    it "keeps a formation binding φ beside a ρ and a method" $ do
+      term <- parseExpressionThrows "⟦ ρ ↦ Φ, φ ↦ Φ.number, dz ↦ ⟦ Δ ⤍ 1F- ⟧ ⟧"
+      unboxed term `shouldBe` term
+
+    it "keeps a formation binding a ρ alone" $ do
+      term <- parseExpressionThrows "⟦ ρ ↦ Φ.bool( α0 ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧"
+      unboxed term `shouldBe` term
+
+    it "keeps a formation whose φ is void beside a ρ" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ ∅, ρ ↦ Φ ⟧"
       unboxed term `shouldBe` term
 
     it "keeps a formation binding φ beside a method" $ do

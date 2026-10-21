@@ -174,7 +174,8 @@ writes `symbolized 𝜎4 := …` (`EvSymbolized`) per symbol it minted with the
 datum it stands for. A line of either that changed its term writes
 `# stay(𝑛1)` or `# symbolize(𝑛1)` to the text protocol (`EvReshaped`), and the
 markup binds it as any other. An `unbox` line binds its meta to what a
-formation binding nothing but φ holds, taking off one formation and morphing
+formation holds in φ when it binds nothing else but a ρ, void or bound, as a
+copy of a global object does (#2007), taking off one formation and morphing
 nothing (`unboxed` of `Lambdas.hs`, #2000), and to any other term as it is;
 a line that took one off writes `unboxed 𝑛4·1 := …` and
 `<unboxed meta="𝑛4·1" of="𝑛2·1">` (`EvUnboxed`) in place of its binding. A
