@@ -15,19 +15,19 @@
 -&gt; Expression
 -&gt; Int
 -&gt; Maybe (Expression, [(Int, (Int, Int))], Int)
-</span><a href="Forks.html#joined"><span class="hs-identifier hs-var hs-var">joined</span></a></span></span><span> </span><span id="local-6989586621679652256"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652256"><span class="hs-identifier hs-var">left</span></a></span></span><span> </span><span id="local-6989586621679652257"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652257"><span class="hs-identifier hs-var">right</span></a></span></span><span> </span><span id="local-6989586621679652258"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652258"><span class="hs-identifier hs-var">spent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679652259"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652259"><span class="hs-identifier hs-var">term</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679652260"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652260"><span class="hs-identifier hs-var">spent'</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Map (Int, Int) Int
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652261"><span class="annot"><span class="annottext">[(Int, (Int, Int))]
-</span><a href="#local-6989586621679652261"><span class="hs-identifier hs-var">made</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652259"><span class="hs-identifier hs-var">term</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[(Int, (Int, Int))] -&gt; [(Int, (Int, Int))]
+</span><a href="Forks.html#joined"><span class="hs-identifier hs-var hs-var">joined</span></a></span></span><span> </span><span id="local-6989586621679652271"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652271"><span class="hs-identifier hs-var">left</span></a></span></span><span> </span><span id="local-6989586621679652272"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652272"><span class="hs-identifier hs-var">right</span></a></span></span><span> </span><span id="local-6989586621679652273"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652273"><span class="hs-identifier hs-var">spent</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span id="local-6989586621679652274"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652274"><span class="hs-identifier hs-var">term</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679652275"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652275"><span class="hs-identifier hs-var">spent'</span></a></span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Map (Int, Int) Int
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652276"><span class="annot"><span class="annottext">[(Int, (Int, Int))]
+</span><a href="#local-6989586621679652276"><span class="hs-identifier hs-var">made</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652274"><span class="hs-identifier hs-var">term</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[(Int, (Int, Int))] -&gt; [(Int, (Int, Int))]
 forall a. [a] -&gt; [a]
 </span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[(Int, (Int, Int))]
-</span><a href="#local-6989586621679652261"><span class="hs-identifier hs-var">made</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652260"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652276"><span class="hs-identifier hs-var">made</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652275"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; (Expression, [(Int, (Int, Int))], Int))
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -38,23 +38,23 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652256"><span class="hs-identifier hs-var">left</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652257"><span class="hs-identifier hs-var">right</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652258"><span class="hs-identifier hs-var">spent</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Map (Int, Int) Int
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652271"><span class="hs-identifier hs-var">left</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652272"><span class="hs-identifier hs-var">right</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652273"><span class="hs-identifier hs-var">spent</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Map (Int, Int) Int
 forall k a. Map k a
 </span><span class="hs-identifier hs-var">Map.empty</span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
 </span><span id="line-15"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-16"></span><span>    </span><span class="annot"><a href="#local-6989586621679652264"><span class="hs-identifier hs-type">goExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-17"></span><span>    </span><span id="local-6989586621679652264"><span class="annot"><span class="annottext">goExpr :: Expression
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="#local-6989586621679652279"><span class="hs-identifier hs-type">goExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-17"></span><span>    </span><span id="local-6989586621679652279"><span class="annot"><span class="annottext">goExpr :: Expression
 -&gt; Expression
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var hs-var">goExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679652266"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679652266"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679652267"><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679652267"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652268"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652268"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Binding] -&gt; Expression)
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var hs-var">goExpr</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679652281"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679652281"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExFormation"><span class="hs-identifier hs-type">ExFormation</span></a></span><span> </span><span id="local-6989586621679652282"><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679652282"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652283"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652283"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Binding] -&gt; Expression)
 -&gt; ([Binding], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a b c. (a -&gt; b) -&gt; (a, c) -&gt; (b, c)
@@ -87,31 +87,31 @@ forall item.
 -&gt; [item]
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe ([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652269"><span class="hs-identifier hs-var">goList</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679652284"><span class="hs-identifier hs-var">goList</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
 -&gt; Binding
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (Binding, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652270"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679652266"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
-</span><a href="#local-6989586621679652267"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652268"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-18"></span><span>    </span><span class="annot"><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679652271"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652271"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652272"><span class="annot"><span class="annottext">Argument
-</span><a href="#local-6989586621679652272"><span class="hs-identifier hs-var">arg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679652273"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652273"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652274"><span class="annot"><span class="annottext">Argument
-</span><a href="#local-6989586621679652274"><span class="hs-identifier hs-var">arg'</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652275"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652275"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-19"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679652276"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652276"><span class="hs-identifier hs-var">target</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652277"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652277"><span class="hs-identifier hs-var">joining'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652285"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679652281"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">[Binding]
+</span><a href="#local-6989586621679652282"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652283"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679652286"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652286"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652287"><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652287"><span class="hs-identifier hs-var">arg</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExApplication"><span class="hs-identifier hs-type">ExApplication</span></a></span><span> </span><span id="local-6989586621679652288"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652288"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652289"><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652289"><span class="hs-identifier hs-var">arg'</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652290"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652290"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-19"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679652291"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652291"><span class="hs-identifier hs-var">target</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652292"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652292"><span class="hs-identifier hs-var">joining'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Expression
 -&gt; Expression
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652271"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652273"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652275"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652286"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652288"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652290"><span class="hs-identifier hs-var">joining</span></a></span><span>
 </span><span id="line-20"></span><span>      </span><span class="annot"><span class="annottext">(Argument -&gt; Expression)
 -&gt; (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -121,7 +121,7 @@ Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; Argument -&gt; Expression
 </span><a href="AST.html#ExApplication"><span class="hs-identifier hs-var">ExApplication</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652276"><span class="hs-identifier hs-var">target</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652291"><span class="hs-identifier hs-var">target</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))])))
 -&gt; Maybe (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; Maybe
@@ -131,21 +131,21 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; Argument
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652278"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
-</span><a href="#local-6989586621679652272"><span class="hs-identifier hs-var">arg</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
-</span><a href="#local-6989586621679652274"><span class="hs-identifier hs-var">arg'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652277"><span class="hs-identifier hs-var">joining'</span></a></span><span>
-</span><span id="line-21"></span><span>    </span><span class="annot"><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679652279"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652280"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652280"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679652281"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652281"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652282"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652282"><span class="hs-identifier hs-var">attr'</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652283"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652283"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
+</span><a href="#local-6989586621679652293"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652287"><span class="hs-identifier hs-var">arg</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652289"><span class="hs-identifier hs-var">arg'</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652292"><span class="hs-identifier hs-var">joining'</span></a></span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679652294"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652294"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652295"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679652295"><span class="hs-identifier hs-var">attr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExDispatch"><span class="hs-identifier hs-type">ExDispatch</span></a></span><span> </span><span id="local-6989586621679652296"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652296"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652297"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679652297"><span class="hs-identifier hs-var">attr'</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652298"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652298"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
 </span><span id="line-22"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652280"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
+</span><a href="#local-6989586621679652295"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652282"><span class="hs-identifier hs-var">attr'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Expression)
+</span><a href="#local-6989586621679652297"><span class="hs-identifier hs-var">attr'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Expression)
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a b c. (a -&gt; b) -&gt; (a, c) -&gt; (b, c)
@@ -154,7 +154,7 @@ Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Expression -&gt; Attribute -&gt; Expression
 </span><a href="AST.html#ExDispatch"><span class="hs-operator hs-var">`ExDispatch`</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652280"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652295"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))])))
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -166,28 +166,28 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652281"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652283"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-23"></span><span>    </span><span class="annot"><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-type">ExPhiMeet</span></a></span><span> </span><span id="local-6989586621679652284"><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652284"><span class="hs-identifier hs-var">prefix</span></a></span></span><span> </span><span id="local-6989586621679652285"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652285"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span id="local-6989586621679652286"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652286"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-type">ExPhiMeet</span></a></span><span> </span><span id="local-6989586621679652287"><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652287"><span class="hs-identifier hs-var">prefix'</span></a></span></span><span> </span><span id="local-6989586621679652288"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652288"><span class="hs-identifier hs-var">idx'</span></a></span></span><span> </span><span id="local-6989586621679652289"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652289"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652290"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652290"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652294"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652296"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652298"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-type">ExPhiMeet</span></a></span><span> </span><span id="local-6989586621679652299"><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621679652299"><span class="hs-identifier hs-var">prefix</span></a></span></span><span> </span><span id="local-6989586621679652300"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652300"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span id="local-6989586621679652301"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652301"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-type">ExPhiMeet</span></a></span><span> </span><span id="local-6989586621679652302"><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621679652302"><span class="hs-identifier hs-var">prefix'</span></a></span></span><span> </span><span id="local-6989586621679652303"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652303"><span class="hs-identifier hs-var">idx'</span></a></span></span><span> </span><span id="local-6989586621679652304"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652304"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652305"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652305"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
 </span><span id="line-24"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652284"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Maybe String -&gt; Bool
+</span><a href="#local-6989586621679652299"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Maybe String -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652287"><span class="hs-identifier hs-var">prefix'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679652302"><span class="hs-identifier hs-var">prefix'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652285"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679652300"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652288"><span class="hs-identifier hs-var">idx'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Expression)
+</span><a href="#local-6989586621679652303"><span class="hs-identifier hs-var">idx'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Expression)
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a b c. (a -&gt; b) -&gt; (a, c) -&gt; (b, c)
@@ -196,8 +196,8 @@ Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe String -&gt; Int -&gt; Expression -&gt; Expression
 </span><a href="AST.html#ExPhiMeet"><span class="hs-identifier hs-var">ExPhiMeet</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652284"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652285"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652299"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652300"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))])))
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -209,28 +209,28 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652286"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652289"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652290"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-25"></span><span>    </span><span class="annot"><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-type">ExPhiAgain</span></a></span><span> </span><span id="local-6989586621679652292"><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652292"><span class="hs-identifier hs-var">prefix</span></a></span></span><span> </span><span id="local-6989586621679652293"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652293"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span id="local-6989586621679652294"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652294"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-type">ExPhiAgain</span></a></span><span> </span><span id="local-6989586621679652295"><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652295"><span class="hs-identifier hs-var">prefix'</span></a></span></span><span> </span><span id="local-6989586621679652296"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652296"><span class="hs-identifier hs-var">idx'</span></a></span></span><span> </span><span id="local-6989586621679652297"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652297"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652298"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652298"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652301"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652304"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652305"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-type">ExPhiAgain</span></a></span><span> </span><span id="local-6989586621679652307"><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621679652307"><span class="hs-identifier hs-var">prefix</span></a></span></span><span> </span><span id="local-6989586621679652308"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652308"><span class="hs-identifier hs-var">idx</span></a></span></span><span> </span><span id="local-6989586621679652309"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652309"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-type">ExPhiAgain</span></a></span><span> </span><span id="local-6989586621679652310"><span class="annot"><span class="annottext">Maybe String
+</span><a href="#local-6989586621679652310"><span class="hs-identifier hs-var">prefix'</span></a></span></span><span> </span><span id="local-6989586621679652311"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652311"><span class="hs-identifier hs-var">idx'</span></a></span></span><span> </span><span id="local-6989586621679652312"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652312"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652313"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652313"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
 </span><span id="line-26"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652292"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Maybe String -&gt; Bool
+</span><a href="#local-6989586621679652307"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String -&gt; Maybe String -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652295"><span class="hs-identifier hs-var">prefix'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
+</span><a href="#local-6989586621679652310"><span class="hs-identifier hs-var">prefix'</span></a></span><span> </span><span class="annot"><span class="annottext">Bool -&gt; Bool -&gt; Bool
 </span><span class="hs-operator hs-var">&amp;&amp;</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652293"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679652308"><span class="hs-identifier hs-var">idx</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652296"><span class="hs-identifier hs-var">idx'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Expression)
+</span><a href="#local-6989586621679652311"><span class="hs-identifier hs-var">idx'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Expression)
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a b c. (a -&gt; b) -&gt; (a, c) -&gt; (b, c)
@@ -239,8 +239,8 @@ Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe String -&gt; Int -&gt; Expression -&gt; Expression
 </span><a href="AST.html#ExPhiAgain"><span class="hs-identifier hs-var">ExPhiAgain</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe String
-</span><a href="#local-6989586621679652292"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652293"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652307"><span class="hs-identifier hs-var">prefix</span></a></span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652308"><span class="hs-identifier hs-var">idx</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))])))
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -252,14 +252,14 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652294"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652297"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652298"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-27"></span><span>    </span><span class="annot"><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span id="local-6989586621679652299"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652299"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652300"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652300"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652301"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652301"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652309"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652312"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652313"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span id="local-6989586621679652314"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652314"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652315"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652315"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652316"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652316"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Expression
 -&gt; Expression
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
@@ -270,26 +270,26 @@ item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652302"><span class="hs-identifier hs-var">same</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652299"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652300"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652301"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-28"></span><span>    </span><span class="annot"><a href="#local-6989586621679652270"><span class="hs-identifier hs-type">goBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-29"></span><span>    </span><span id="local-6989586621679652270"><span class="annot"><span class="annottext">goBinding :: Binding
+</span><a href="#local-6989586621679652317"><span class="hs-identifier hs-var">same</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652314"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652315"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652316"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="#local-6989586621679652285"><span class="hs-identifier hs-type">goBinding</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Binding"><span class="hs-identifier hs-type">Binding</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621679652285"><span class="annot"><span class="annottext">goBinding :: Binding
 -&gt; Binding
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (Binding, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652270"><span class="hs-identifier hs-var hs-var">goBinding</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679652304"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652304"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span id="local-6989586621679652305"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652305"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679652306"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652306"><span class="hs-identifier hs-var">attr'</span></a></span></span><span> </span><span id="local-6989586621679652307"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652307"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652308"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652308"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
+</span><a href="#local-6989586621679652285"><span class="hs-identifier hs-var hs-var">goBinding</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679652319"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679652319"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span id="local-6989586621679652320"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652320"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiTau"><span class="hs-identifier hs-type">BiTau</span></a></span><span> </span><span id="local-6989586621679652321"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679652321"><span class="hs-identifier hs-var">attr'</span></a></span></span><span> </span><span id="local-6989586621679652322"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652322"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652323"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652323"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
 </span><span id="line-30"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652304"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
+</span><a href="#local-6989586621679652319"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652306"><span class="hs-identifier hs-var">attr'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Binding)
+</span><a href="#local-6989586621679652321"><span class="hs-identifier hs-var">attr'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Binding)
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; (Binding, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a b c. (a -&gt; b) -&gt; (a, c) -&gt; (b, c)
@@ -298,7 +298,7 @@ Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; Expression -&gt; Binding
 </span><a href="AST.html#BiTau"><span class="hs-identifier hs-var">BiTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652304"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652319"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; (Binding, (Int, Map (Int, Int) Int, [(Int, (Int, Int))])))
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -309,19 +309,19 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652305"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652307"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652308"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-31"></span><span>    </span><span class="annot"><a href="#local-6989586621679652270"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiLambda"><span class="hs-identifier hs-type">BiLambda</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#FnSymbol"><span class="hs-identifier hs-type">FnSymbol</span></a></span><span> </span><span id="local-6989586621679652310"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652310"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiLambda"><span class="hs-identifier hs-type">BiLambda</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#FnSymbol"><span class="hs-identifier hs-type">FnSymbol</span></a></span><span> </span><span id="local-6989586621679652311"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652311"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652312"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652312"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652320"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652322"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652323"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="#local-6989586621679652285"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiLambda"><span class="hs-identifier hs-type">BiLambda</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#FnSymbol"><span class="hs-identifier hs-type">FnSymbol</span></a></span><span> </span><span id="local-6989586621679652325"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652325"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#BiLambda"><span class="hs-identifier hs-type">BiLambda</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#FnSymbol"><span class="hs-identifier hs-type">FnSymbol</span></a></span><span> </span><span id="local-6989586621679652326"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652326"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652327"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652327"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
 </span><span id="line-32"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652310"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
+</span><a href="#local-6989586621679652325"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Int -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">/=</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652311"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Binding, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652326"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Binding, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; Maybe (Binding, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int -&gt; Binding)
@@ -338,14 +338,14 @@ forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
 </span><a href="AST.html#FnSymbol"><span class="hs-identifier hs-var">FnSymbol</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Int, Int)
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; (Int, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652315"><span class="hs-identifier hs-var">picked</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652310"><span class="hs-identifier hs-var">one</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652311"><span class="hs-identifier hs-var">two</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652312"><span class="hs-identifier hs-var">joining</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-33"></span><span>    </span><span class="annot"><a href="#local-6989586621679652270"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span id="local-6989586621679652316"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679652316"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652317"><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679652317"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652318"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652318"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679652330"><span class="hs-identifier hs-var">picked</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652325"><span class="hs-identifier hs-var">one</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652326"><span class="hs-identifier hs-var">two</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652327"><span class="hs-identifier hs-var">joining</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="#local-6989586621679652285"><span class="hs-identifier hs-var">goBinding</span></a></span><span> </span><span id="local-6989586621679652331"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679652331"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652332"><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679652332"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652333"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652333"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Binding
 -&gt; Binding
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (Binding, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -355,26 +355,26 @@ item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652302"><span class="hs-identifier hs-var">same</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679652316"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
-</span><a href="#local-6989586621679652317"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652318"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-34"></span><span>    </span><span class="annot"><a href="#local-6989586621679652278"><span class="hs-identifier hs-type">goArgument</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-35"></span><span>    </span><span id="local-6989586621679652278"><span class="annot"><span class="annottext">goArgument :: Argument
+</span><a href="#local-6989586621679652317"><span class="hs-identifier hs-var">same</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679652331"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Binding
+</span><a href="#local-6989586621679652332"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652333"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="#local-6989586621679652293"><span class="hs-identifier hs-type">goArgument</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Argument"><span class="hs-identifier hs-type">Argument</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>    </span><span id="local-6989586621679652293"><span class="annot"><span class="annottext">goArgument :: Argument
 -&gt; Argument
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652278"><span class="hs-identifier hs-var hs-var">goArgument</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArTau"><span class="hs-identifier hs-type">ArTau</span></a></span><span> </span><span id="local-6989586621679652320"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652320"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span id="local-6989586621679652321"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652321"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArTau"><span class="hs-identifier hs-type">ArTau</span></a></span><span> </span><span id="local-6989586621679652322"><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652322"><span class="hs-identifier hs-var">attr'</span></a></span></span><span> </span><span id="local-6989586621679652323"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652323"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652324"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652324"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
+</span><a href="#local-6989586621679652293"><span class="hs-identifier hs-var hs-var">goArgument</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArTau"><span class="hs-identifier hs-type">ArTau</span></a></span><span> </span><span id="local-6989586621679652335"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679652335"><span class="hs-identifier hs-var">attr</span></a></span></span><span> </span><span id="local-6989586621679652336"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652336"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArTau"><span class="hs-identifier hs-type">ArTau</span></a></span><span> </span><span id="local-6989586621679652337"><span class="annot"><span class="annottext">Attribute
+</span><a href="#local-6989586621679652337"><span class="hs-identifier hs-var">attr'</span></a></span></span><span> </span><span id="local-6989586621679652338"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652338"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652339"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652339"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
 </span><span id="line-36"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652320"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
+</span><a href="#local-6989586621679652335"><span class="hs-identifier hs-var">attr</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute -&gt; Attribute -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652322"><span class="hs-identifier hs-var">attr'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Argument)
+</span><a href="#local-6989586621679652337"><span class="hs-identifier hs-var">attr'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Argument)
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a b c. (a -&gt; b) -&gt; (a, c) -&gt; (b, c)
@@ -383,7 +383,7 @@ Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attribute -&gt; Expression -&gt; Argument
 </span><a href="AST.html#ArTau"><span class="hs-identifier hs-var">ArTau</span></a></span><span> </span><span class="annot"><span class="annottext">Attribute
-</span><a href="#local-6989586621679652320"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652335"><span class="hs-identifier hs-var">attr</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))])))
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -394,21 +394,21 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652321"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652323"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652324"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-37"></span><span>    </span><span class="annot"><a href="#local-6989586621679652278"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArAlpha"><span class="hs-identifier hs-type">ArAlpha</span></a></span><span> </span><span id="local-6989586621679652326"><span class="annot"><span class="annottext">Alpha
-</span><a href="#local-6989586621679652326"><span class="hs-identifier hs-var">alpha</span></a></span></span><span> </span><span id="local-6989586621679652327"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652327"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArAlpha"><span class="hs-identifier hs-type">ArAlpha</span></a></span><span> </span><span id="local-6989586621679652328"><span class="annot"><span class="annottext">Alpha
-</span><a href="#local-6989586621679652328"><span class="hs-identifier hs-var">alpha'</span></a></span></span><span> </span><span id="local-6989586621679652329"><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652329"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652330"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652330"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652336"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652338"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652339"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="#local-6989586621679652293"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArAlpha"><span class="hs-identifier hs-type">ArAlpha</span></a></span><span> </span><span id="local-6989586621679652341"><span class="annot"><span class="annottext">Alpha
+</span><a href="#local-6989586621679652341"><span class="hs-identifier hs-var">alpha</span></a></span></span><span> </span><span id="local-6989586621679652342"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652342"><span class="hs-identifier hs-var">one</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#ArAlpha"><span class="hs-identifier hs-type">ArAlpha</span></a></span><span> </span><span id="local-6989586621679652343"><span class="annot"><span class="annottext">Alpha
+</span><a href="#local-6989586621679652343"><span class="hs-identifier hs-var">alpha'</span></a></span></span><span> </span><span id="local-6989586621679652344"><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652344"><span class="hs-identifier hs-var">two</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652345"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652345"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
 </span><span id="line-38"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Alpha
-</span><a href="#local-6989586621679652326"><span class="hs-identifier hs-var">alpha</span></a></span><span> </span><span class="annot"><span class="annottext">Alpha -&gt; Alpha -&gt; Bool
+</span><a href="#local-6989586621679652341"><span class="hs-identifier hs-var">alpha</span></a></span><span> </span><span class="annot"><span class="annottext">Alpha -&gt; Alpha -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Alpha
-</span><a href="#local-6989586621679652328"><span class="hs-identifier hs-var">alpha'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Argument)
+</span><a href="#local-6989586621679652343"><span class="hs-identifier hs-var">alpha'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Expression -&gt; Argument)
 -&gt; (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a b c. (a -&gt; b) -&gt; (a, c) -&gt; (b, c)
@@ -417,7 +417,7 @@ Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Alpha -&gt; Expression -&gt; Argument
 </span><a href="AST.html#ArAlpha"><span class="hs-identifier hs-var">ArAlpha</span></a></span><span> </span><span class="annot"><span class="annottext">Alpha
-</span><a href="#local-6989586621679652326"><span class="hs-identifier hs-var">alpha</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652341"><span class="hs-identifier hs-var">alpha</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">((Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))])))
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -428,14 +428,14 @@ forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe
      (Expression, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652264"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652327"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
-</span><a href="#local-6989586621679652329"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652330"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-39"></span><span>    </span><span class="annot"><a href="#local-6989586621679652278"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span id="local-6989586621679652331"><span class="annot"><span class="annottext">Argument
-</span><a href="#local-6989586621679652331"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652332"><span class="annot"><span class="annottext">Argument
-</span><a href="#local-6989586621679652332"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652333"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652333"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652279"><span class="hs-identifier hs-var">goExpr</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652342"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Expression
+</span><a href="#local-6989586621679652344"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652345"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><a href="#local-6989586621679652293"><span class="hs-identifier hs-var">goArgument</span></a></span><span> </span><span id="local-6989586621679652346"><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652346"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652347"><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652347"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652348"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652348"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Argument
 -&gt; Argument
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (Argument, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -445,12 +445,12 @@ item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652302"><span class="hs-identifier hs-var">same</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
-</span><a href="#local-6989586621679652331"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
-</span><a href="#local-6989586621679652332"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652333"><span class="hs-identifier hs-var">joining</span></a></span><span>
-</span><span id="line-40"></span><span>    </span><span id="local-6989586621679652177"><span class="annot"><a href="#local-6989586621679652269"><span class="hs-identifier hs-type">goList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679652177"><span class="hs-identifier hs-type">item</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679652177"><span class="hs-identifier hs-type">item</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679652177"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679652177"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679652177"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679652177"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-41"></span><span>    </span><span id="local-6989586621679652269"><span class="annot"><span class="annottext">goList :: forall item.
+</span><a href="#local-6989586621679652317"><span class="hs-identifier hs-var">same</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652346"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">Argument
+</span><a href="#local-6989586621679652347"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652348"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><span id="line-40"></span><span>    </span><span id="local-6989586621679652192"><span class="annot"><a href="#local-6989586621679652284"><span class="hs-identifier hs-type">goList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679652192"><span class="hs-identifier hs-type">item</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679652192"><span class="hs-identifier hs-type">item</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679652192"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679652192"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679652192"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="annot"><a href="#local-6989586621679652192"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-41"></span><span>    </span><span id="local-6989586621679652284"><span class="annot"><span class="annottext">goList :: forall item.
 (item
  -&gt; item
  -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
@@ -459,36 +459,36 @@ item
 -&gt; [item]
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe ([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652269"><span class="hs-identifier hs-var hs-var">goList</span></a></span></span><span> </span><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652284"><span class="hs-identifier hs-var hs-var">goList</span></a></span></span><span> </span><span class="annot"><span class="annottext">item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span id="local-6989586621679652337"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652337"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span id="local-6989586621679652352"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652352"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; Maybe ([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652337"><span class="hs-identifier hs-var">joining</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-42"></span><span>    </span><span class="annot"><a href="#local-6989586621679652269"><span class="hs-identifier hs-var">goList</span></a></span><span> </span><span id="local-6989586621679652338"><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652352"><span class="hs-identifier hs-var">joining</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="#local-6989586621679652284"><span class="hs-identifier hs-var">goList</span></a></span><span> </span><span id="local-6989586621679652353"><span class="annot"><span class="annottext">item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652338"><span class="hs-identifier hs-var">walk</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679652339"><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652339"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679652340"><span class="annot"><span class="annottext">[item]
-</span><a href="#local-6989586621679652340"><span class="hs-identifier hs-var">ones</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679652341"><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652341"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679652342"><span class="annot"><span class="annottext">[item]
-</span><a href="#local-6989586621679652342"><span class="hs-identifier hs-var">twos</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652343"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652343"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-43"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679652344"><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652344"><span class="hs-identifier hs-var">item</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652345"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652345"><span class="hs-identifier hs-var">joining'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652353"><span class="hs-identifier hs-var">walk</span></a></span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679652354"><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652354"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679652355"><span class="annot"><span class="annottext">[item]
+</span><a href="#local-6989586621679652355"><span class="hs-identifier hs-var">ones</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679652356"><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652356"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679652357"><span class="annot"><span class="annottext">[item]
+</span><a href="#local-6989586621679652357"><span class="hs-identifier hs-var">twos</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679652358"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652358"><span class="hs-identifier hs-var">joining</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-43"></span><span>      </span><span class="hs-special">(</span><span id="local-6989586621679652359"><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652359"><span class="hs-identifier hs-var">item</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652360"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652360"><span class="hs-identifier hs-var">joining'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652338"><span class="hs-identifier hs-var">walk</span></a></span><span> </span><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652339"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652341"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652343"><span class="hs-identifier hs-var">joining</span></a></span><span>
+</span><a href="#local-6989586621679652353"><span class="hs-identifier hs-var">walk</span></a></span><span> </span><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652354"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652356"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652358"><span class="hs-identifier hs-var">joining</span></a></span><span>
 </span><span id="line-44"></span><span>      </span><span class="annot"><span class="annottext">([item] -&gt; [item])
 -&gt; ([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; ([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -497,7 +497,7 @@ forall (p :: * -&gt; * -&gt; *) a b c.
 Bifunctor p =&gt;
 (a -&gt; b) -&gt; p a c -&gt; p b c
 </span><span class="hs-identifier hs-var">first</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652344"><span class="hs-identifier hs-var">item</span></a></span><span> </span><span class="annot"><span class="annottext">item -&gt; [item] -&gt; [item]
+</span><a href="#local-6989586621679652359"><span class="hs-identifier hs-var">item</span></a></span><span> </span><span class="annot"><span class="annottext">item -&gt; [item] -&gt; [item]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
  -&gt; ([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))])))
@@ -521,15 +521,15 @@ forall item.
 -&gt; [item]
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe ([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652269"><span class="hs-identifier hs-var">goList</span></a></span><span> </span><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652284"><span class="hs-identifier hs-var">goList</span></a></span><span> </span><span class="annot"><span class="annottext">item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652338"><span class="hs-identifier hs-var">walk</span></a></span><span> </span><span class="annot"><span class="annottext">[item]
-</span><a href="#local-6989586621679652340"><span class="hs-identifier hs-var">ones</span></a></span><span> </span><span class="annot"><span class="annottext">[item]
-</span><a href="#local-6989586621679652342"><span class="hs-identifier hs-var">twos</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652345"><span class="hs-identifier hs-var">joining'</span></a></span><span>
-</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621679652269"><span class="hs-identifier hs-var">goList</span></a></span><span> </span><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652353"><span class="hs-identifier hs-var">walk</span></a></span><span> </span><span class="annot"><span class="annottext">[item]
+</span><a href="#local-6989586621679652355"><span class="hs-identifier hs-var">ones</span></a></span><span> </span><span class="annot"><span class="annottext">[item]
+</span><a href="#local-6989586621679652357"><span class="hs-identifier hs-var">twos</span></a></span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652360"><span class="hs-identifier hs-var">joining'</span></a></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="#local-6989586621679652284"><span class="hs-identifier hs-var">goList</span></a></span><span> </span><span class="annot"><span class="annottext">item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
@@ -539,69 +539,69 @@ forall item.
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe ([item], (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-46"></span><span>    </span><span id="local-6989586621679652179"><span class="annot"><a href="#local-6989586621679652302"><span class="hs-identifier hs-type">same</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679652179"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679652179"><span class="hs-identifier hs-type">item</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679652179"><span class="hs-identifier hs-type">item</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679652179"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-47"></span><span>    </span><span id="local-6989586621679652302"><span class="annot"><span class="annottext">same :: forall item.
+</span><span id="line-46"></span><span>    </span><span id="local-6989586621679652194"><span class="annot"><a href="#local-6989586621679652317"><span class="hs-identifier hs-type">same</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679652194"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679652194"><span class="hs-identifier hs-type">item</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679652194"><span class="hs-identifier hs-type">item</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679652194"><span class="hs-identifier hs-type">item</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-47"></span><span>    </span><span id="local-6989586621679652317"><span class="annot"><span class="annottext">same :: forall item.
 Eq item =&gt;
 item
 -&gt; item
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652302"><span class="hs-identifier hs-var hs-var">same</span></a></span></span><span> </span><span id="local-6989586621679652348"><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652348"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652349"><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652349"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652350"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652350"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
+</span><a href="#local-6989586621679652317"><span class="hs-identifier hs-var hs-var">same</span></a></span></span><span> </span><span id="local-6989586621679652363"><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652363"><span class="hs-identifier hs-var">one</span></a></span></span><span> </span><span id="local-6989586621679652364"><span class="annot"><span class="annottext">item
+</span><a href="#local-6989586621679652364"><span class="hs-identifier hs-var">two</span></a></span></span><span> </span><span id="local-6989586621679652365"><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652365"><span class="hs-identifier hs-var">joining</span></a></span></span><span>
 </span><span id="line-48"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652348"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">item -&gt; item -&gt; Bool
+</span><a href="#local-6989586621679652363"><span class="hs-identifier hs-var">one</span></a></span><span> </span><span class="annot"><span class="annottext">item -&gt; item -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652349"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
+</span><a href="#local-6989586621679652364"><span class="hs-identifier hs-var">two</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 -&gt; Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">item
-</span><a href="#local-6989586621679652348"><span class="hs-identifier hs-var">one</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652350"><span class="hs-identifier hs-var">joining</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679652363"><span class="hs-identifier hs-var">one</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652365"><span class="hs-identifier hs-var">joining</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-49"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (item, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-50"></span><span>    </span><span class="annot"><a href="#local-6989586621679652315"><span class="hs-identifier hs-type">picked</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-51"></span><span>    </span><span id="local-6989586621679652315"><span class="annot"><span class="annottext">picked :: (Int, Int)
+</span><span id="line-50"></span><span>    </span><span class="annot"><a href="#local-6989586621679652330"><span class="hs-identifier hs-type">picked</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Forks.html#Joining"><span class="hs-identifier hs-type">Joining</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>    </span><span id="local-6989586621679652330"><span class="annot"><span class="annottext">picked :: (Int, Int)
 -&gt; (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 -&gt; (Int, (Int, Map (Int, Int) Int, [(Int, (Int, Int))]))
-</span><a href="#local-6989586621679652315"><span class="hs-identifier hs-var hs-var">picked</span></a></span></span><span> </span><span id="local-6989586621679652351"><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679652351"><span class="hs-identifier hs-var">pair</span></a></span></span><span> </span><span id="local-6989586621679652352"><span class="annot"><span class="annottext">joining :: (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652352"><span class="hs-identifier hs-var">joining</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679652353"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652353"><span class="hs-identifier hs-var">spent'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652354"><span class="annot"><span class="annottext">Map (Int, Int) Int
-</span><a href="#local-6989586621679652354"><span class="hs-identifier hs-var">names</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652355"><span class="annot"><span class="annottext">[(Int, (Int, Int))]
-</span><a href="#local-6989586621679652355"><span class="hs-identifier hs-var">made</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Map (Int, Int) Int -&gt; Maybe Int
+</span><a href="#local-6989586621679652330"><span class="hs-identifier hs-var hs-var">picked</span></a></span></span><span> </span><span id="local-6989586621679652366"><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679652366"><span class="hs-identifier hs-var">pair</span></a></span></span><span> </span><span id="local-6989586621679652367"><span class="annot"><span class="annottext">joining :: (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652367"><span class="hs-identifier hs-var">joining</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span id="local-6989586621679652368"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652368"><span class="hs-identifier hs-var">spent'</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652369"><span class="annot"><span class="annottext">Map (Int, Int) Int
+</span><a href="#local-6989586621679652369"><span class="hs-identifier hs-var">names</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679652370"><span class="annot"><span class="annottext">[(Int, (Int, Int))]
+</span><a href="#local-6989586621679652370"><span class="hs-identifier hs-var">made</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Map (Int, Int) Int -&gt; Maybe Int
 forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679652351"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Int, Int) Int
-</span><a href="#local-6989586621679652354"><span class="hs-identifier hs-var">names</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-52"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679652357"><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652357"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652357"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
-</span><a href="#local-6989586621679652352"><span class="hs-identifier hs-var">joining</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679652366"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="annot"><span class="annottext">Map (Int, Int) Int
+</span><a href="#local-6989586621679652369"><span class="hs-identifier hs-var">names</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-52"></span><span>      </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679652372"><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652372"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int
+</span><a href="#local-6989586621679652372"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+</span><a href="#local-6989586621679652367"><span class="hs-identifier hs-var">joining</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-53"></span><span>      </span><span class="annot"><span class="annottext">Maybe Int
 </span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
 forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652353"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+</span><a href="#local-6989586621679652368"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
 forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652353"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Map (Int, Int) Int -&gt; Map (Int, Int) Int
+</span><a href="#local-6989586621679652368"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; Int -&gt; Map (Int, Int) Int -&gt; Map (Int, Int) Int
 forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679652351"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+</span><a href="#local-6989586621679652366"><span class="hs-identifier hs-var">pair</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
 forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652353"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map (Int, Int) Int
-</span><a href="#local-6989586621679652354"><span class="hs-identifier hs-var">names</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
+</span><a href="#local-6989586621679652368"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map (Int, Int) Int
+</span><a href="#local-6989586621679652369"><span class="hs-identifier hs-var">names</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Int -&gt; Int
 forall a. Enum a =&gt; a -&gt; a
 </span><span class="hs-identifier hs-var">succ</span></span><span> </span><span class="annot"><span class="annottext">Int
-</span><a href="#local-6989586621679652353"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><a href="#local-6989586621679652351"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int, (Int, Int)) -&gt; [(Int, (Int, Int))] -&gt; [(Int, (Int, Int))]
+</span><a href="#local-6989586621679652368"><span class="hs-identifier hs-var">spent'</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int)
+</span><a href="#local-6989586621679652366"><span class="hs-identifier hs-var">pair</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Int, (Int, Int)) -&gt; [(Int, (Int, Int))] -&gt; [(Int, (Int, Int))]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[(Int, (Int, Int))]
-</span><a href="#local-6989586621679652355"><span class="hs-identifier hs-var">made</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679652370"><span class="hs-identifier hs-var">made</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-54"></span></pre></body></html>
