@@ -410,18 +410,12 @@ instance ToCST Expression EXPRESSION where
         Just (label, _) -> label `elem` primitives
         Nothing -> False
       withoutRhosInPrimitives :: Expression -> [Argument] -> ([Argument], [Argument])
-      withoutRhosInPrimitives _ [] = ([], [])
-      withoutRhosInPrimitives obj@(BaseObject label) bds@(rho@(ArTau AtRho _) : rest)
-        | label `elem` primitives =
-            let (bds', rhos) = withoutRhosInPrimitives obj rest
-             in (bds', rho : rhos)
-        | otherwise = (bds, [])
-      withoutRhosInPrimitives obj@(BaseObject label) bds@(bd : rest)
-        | label `elem` primitives =
-            let (bds', rhos) = withoutRhosInPrimitives obj rest
-             in (bd : bds', rhos)
-        | otherwise = (bds, [])
+      withoutRhosInPrimitives (BaseObject label) (datum : rest)
+        | label `elem` primitives = let (rhos, more) = span rho rest in (datum : more, rhos)
       withoutRhosInPrimitives _ bds = (bds, [])
+      rho :: Argument -> Bool
+      rho (ArTau AtRho _) = True
+      rho _ = False
       applicationToPrimitive :: Expression -> Int -> [Argument] -> EXPRESSION
       applicationToPrimitive (DataNumber bts) tabs rhos = case btsToNonFinite bts of
         Just nonfinite -> EX_NONFINITE Φ nonfinite (TAB tabs) rhos
@@ -488,7 +482,9 @@ instance ToCST Binding PAIR where
               (toCST (ExFormation (others ++ rest)) ctx)
     where
       positionless :: Binding -> Bool
-      positionless BiVoid{} = True
+      positionless (BiVoid (AtLabel _)) = True
+      positionless (BiVoid AtPhi) = True
+      positionless (BiVoid AtRho) = True
       positionless BiLambda{} = True
       positionless BiDelta{} = True
       positionless _ = False

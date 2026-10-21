@@ -9,6 +9,7 @@ import AST
 import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
 import Encoding (Encoding (..))
+import Grown (Grown (..))
 import Lining (LineFormat (..))
 import Margin (defaultMargin)
 import Matcher (Meta (Named), MetaValue (..), Subst (Subst))
@@ -16,6 +17,7 @@ import Parser (parseExpression)
 import Printer
 import Sugar (SugarType (..))
 import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldContain, shouldNotContain, shouldSatisfy)
+import Test.Hspec.QuickCheck (prop)
 import Yaml (ExtraArgument (..))
 
 spec :: Spec
@@ -402,6 +404,8 @@ spec = do
       , "⟦ x ↦ Φ.number(Φ.bytes(⟦ Δ ⤍ 7F-F8-00-00-00-00-00-01 ⟧)) ⟧"
       , "⟦ x ↦ Φ.y(⟦ φ ↦ ξ.z ⟧, ⟦ λ ⤍ Fn ⟧) ⟧"
       , "⟦ x ↦ ⟦ λ ⤍ Fn, ρ ↦ ⟦ φ ↦ ξ ⟧ ⟧, y ↦ ∅ ⟧"
+      , "⟦ x ↦ ⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧ ⟧"
+      , "⟦ x ↦ ⟦ a ↦ ∅, 𝜏1 ↦ ∅ ⟧ ⟧"
       , "⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ.x(y ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ ⟧) ⟧"
       ]
       ( \src -> it src $ do
@@ -414,6 +418,18 @@ spec = do
             ( \(encoding, line) ->
                 parseExpression (printExpression' expr (SWEET, encoding, line, 20)) `shouldBe` Right expr
             )
+      )
+
+  describe "printExpression' spells any expression the way the parser reads it back" $
+    forM_
+      [ (sugar, encoding, line)
+      | sugar <- [SWEET, SALTY]
+      , encoding <- [UNICODE, ASCII]
+      , line <- [SINGLELINE, MULTILINE]
+      ]
+      ( \(sugar, encoding, line) ->
+          prop (unwords [show sugar, show encoding, show line]) $ \(Grown expr) ->
+            parseExpression (printExpression' expr (sugar, encoding, line, 20)) `shouldBe` Right expr
       )
 
   describe "printExpression' writes the one-binding sugar in the sweet syntax only" $
@@ -429,6 +445,8 @@ spec = do
       , ("⟦ x ↦ ⟦ φ ↦ ξ.a ⟧.b ⟧", SWEET, UNICODE, "a:φ.b:x")
       , ("⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ a:φ ⟧")
       , ("⟦ x ↦ ξ.a, y ↦ ∅ ⟧", SWEET, UNICODE, "⟦ x ↦ a, y ↦ ∅ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, 𝜏1 ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ∅:𝜏1 ⟧")
+      , ("⟦ x ↦ ⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧:x")
       , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a ⟧")
       , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA ]]")
       ]

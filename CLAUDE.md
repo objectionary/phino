@@ -418,6 +418,14 @@ Most spec files load test cases from `test-resources/*-packs/*.yaml` at
 runtime via `runIO`. Each pack defines `input`/`output`/`rules`/`skip`.
 Test files map 1:1 with source modules (`RewriterSpec.hs` ↔ `Rewriter.hs`).
 
+`PrinterSpec.hs` also states the round trip of the printer and the parser as
+a QuickCheck property over `Grown` of `test/Grown.hs`, a term grown at random
+and shrunk to the smallest one still failing (#2002). The generator grows only
+what the sweet syntax spells back: it applies nothing to ξ or Φ, closes a
+formation with its λ and Δ, since neither takes a position (#1411), and
+applies no ρ straight to a number or string literal, since the sweet syntax
+drops such a ρ (#451).
+
 ### Style
 
 When introducing new function, put it under 'where' scope if it's possible.

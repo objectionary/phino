@@ -665,6 +665,8 @@ spec = do
   describe "full pipeline round trips, SWEET vs SALTY" $ do
     let config :: SugarType -> (SugarType, Encoding, LineFormat, Int)
         config sugar = (sugar, UNICODE, SINGLELINE, defaultMargin)
+        applied :: Argument -> Argument -> Expression
+        applied first = ExApplication (ExApplication (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])) first)
     it
       "a sweet numeric literal expands into Q.number(Q.bytes(...)) when salted"
       $ do
@@ -695,3 +697,11 @@ spec = do
         let meetChain = ExFormation [BiTau (AtLabel "x") (ExPhiMeet Nothing 2 (ExPhiAgain (Just "a") 1 (ExDispatch ExXi (AtLabel "y"))))]
         printExpression' meetChain (config SWEET) `shouldBe` "\\phinoMeet{2}{ \\phinoAgain{a:1} }:x"
         printExpression' meetChain (config SALTY) `shouldBe` "⟦ x ↦ \\phinoMeet{2}{ \\phinoAgain{a:1} } ⟧"
+    it "a ρ applied to a number literal after another argument keeps its place when sweet" $
+      printExpression' (applied (ArTau (AtLabel "x") ExXi) (ArTau AtRho ExTermination)) (config SWEET) `shouldBe` "42( x ↦ ξ, ρ ↦ ⊥ )"
+    it "a ρ applied to a number literal after another argument keeps its place when salted" $
+      printExpression' (applied (ArTau (AtLabel "x") ExXi) (ArTau AtRho ExTermination)) (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) )( x ↦ ξ )( ρ ↦ ⊥ )"
+    it "a ρ applied straight to a number literal is dropped when sweet" $
+      printExpression' (applied (ArTau AtRho ExTermination) (ArTau (AtLabel "x") ExXi)) (config SWEET) `shouldBe` "42( x ↦ ξ )"
+    it "a ρ applied straight to a number literal keeps its place when salted" $
+      printExpression' (applied (ArTau AtRho ExTermination) (ArTau (AtLabel "x") ExXi)) (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) )( ρ ↦ ⊥ )( x ↦ ξ )"
