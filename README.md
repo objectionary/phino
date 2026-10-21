@@ -295,12 +295,22 @@ the unknown it was.
 Two sides that differ in anything else, a datum, a λ name or the shape of a
 term, do not join, and neither do a side holding a datum and a side holding a
 symbol, unless a `symbolize` line turned that datum into a symbol first, as
-described below. Such a firing gets stuck the way a λ function no entry
-answers does: the protocol writes `stuck L_fork`, `--partial` parks the site
-the entry was fired at, and without it the command fails with
-`No entry of --symbolic answers the λ function 'L_fork'`. A side whose morph
-gets stuck or is cut gets the firing stuck at once, the way an operand of
-`morph` does.
+described below. Such a firing closes with a line naming the two sides it
+could not join, the left one first:
+
+```text
+diverged 𝑛·2·3 vs 𝑛·2·5
+```
+
+A side is named by the line that bound it: the line its morph wrote, or the
+line of `morph`, `stay`, `symbolize` or `defer` whose meta it reads, such as
+`𝑛1·1`. A side that is a bare symbol is written as that symbol, and a side no
+line named, such as a datum its morph left as it was, as the term it is. Past
+that line the firing gets stuck the way a λ function no entry answers does:
+`--partial` parks the site the entry was fired at, and without it the command
+fails with `No entry of --symbolic answers the λ function 'L_fork'`. A side
+whose morph gets stuck or is cut gets the firing stuck at once, the way an
+operand of `morph` does.
 
 A side may raise. EO raises with an object, a copy of
 `⟦ message ↦ ∅, λ ⤍ L_throw ⟧`, whose λ function the file leaves out on
@@ -334,8 +344,8 @@ $ phino dataize --symbolic=raise.yaml --locator=Q.demo.a --partial \
 ```
 
 The `then` side comes to the bytes of 7 and the `else` side to the copy of
-`error`, so the protocol ends in `stuck L_fork` and the command prints the
-`if` it parked.
+`error`, so the protocol ends in `diverged 𝑛·2·1 vs 𝑛·2·2` and the command
+prints the `if` it parked.
 Without `--partial` the command fails there, with
 `No entry of --symbolic answers the λ function 'L_fork'`.
 
@@ -777,7 +787,9 @@ Three more lines say why a firing gave no answer.
 `stuck L_outer` is the last line of a firing that got stuck, naming the λ
 function it got stuck on, which is seldom the one `unanswered …` names: that
 one is written where it was asked for, and this one closes every firing the
-failure passed on its way out.
+failure passed on its way out. A join that could not join closes its own
+firing with `diverged …` instead, as described above, and the firings around
+it with `stuck`.
 `stall L_outer` stands under a firing that `--acyclic=plausible` answered
 with the stall an earlier firing of the same formation kept, so a told stall
 never reads as a fresh firing that wrote nothing.
@@ -969,10 +981,12 @@ of a λ function, so the decision nobody made stands on a line of its own. The
 `plus( 5 )` after it reads `𝔻(𝜎6:λ)`.
 
 Two branches that differ in more than their symbols do not join. Had `else`
-been `ξ.x.plus( ξ.x )`, the firing of `L_fork` would end in `stuck L_fork`,
-since one term for both would make `foo` read as a program that computes a
-condition, computes both branches and then makes up a value neither of them
-has.
+been `ξ.x.plus( 2 )`, its morph would come to `𝑛·2·4.plus( x ↦ 2 )`, holding
+a datum where `then` holds a symbol, and the firing of `L_fork` would end in
+`diverged 𝑛·2·3 vs 𝑛·2·5`, naming the two branches by the lines their morphs
+wrote, since one term for both would make `foo` read as a program that
+computes a condition, computes both branches and then makes up a value
+neither of them has.
 
 A firing that happened while an operand of another was being reduced stands one
 level deeper, under the firing that asked for it. The `plus( 1 )` of `then` is
@@ -1144,7 +1158,10 @@ element per fresh symbol, which the text format writes as
 `joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`: the fresh symbol stands in `symbol`, the
 two it stands for in `left` and `right`, and the condition is the text. The
 two `<morph>` elements before it are the sides being morphed where they stand
-in the universe.
+in the universe. Two sides that do not join write
+`<diverged left="𝑛·2·3" right="𝑛·2·6"/>` in its place, which the text format
+writes as `diverged 𝑛·2·3 vs 𝑛·2·5`, naming each side the way the markup names
+any other value.
 
 `<symbolized symbol="𝜎4" number="1.0">3F-F0-00-00-00-00-00-00</symbolized>` is
 one symbol a `symbolize` line minted, which the text format writes as
@@ -1670,9 +1687,9 @@ $ cat facta.yaml
 $ phino morph --acyclic=plausible --partial --sweet --hide-rho --flat \
     --symbolic=facta.yaml --locator='Q.x' --protocol=facta.txt facta.phi
 Φ.if( c ↦ Φ.zero( x ↦ 𝜎1:λ ), left ↦ Φ.box( v ↦ 00-:Δ ), right ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎1:λ ), acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ Φ.box( v ↦ 00-:Δ ) ) ).φ ).φ
-$ grep 'looped\|stuck' facta.txt
+$ grep 'looped\|diverged' facta.txt
       looped 𝑛·0·5  # plausible
-    stuck L_if
+    diverged 𝑛·1·2 vs 𝑛·1·4.φ
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1687,9 +1704,9 @@ sides before it joins them, and its `right` holds a second `if`, which holds
 the first under one more `pair` and one more `dec`, so that morph is cut, and
 its `looped …` line says `plausible`. The `left` comes to the accumulator and
 the `right` comes back as the term the cut left, so the two do not join, the
-firing gets stuck, and `--partial` parks the `if`. A call nested in its own
-operand, such as a sum of sums, is never
-cut, since the inner call is smaller than the outer one and cannot hold it.
+firing writes `diverged …` with both, and `--partial` parks the `if`. A call
+nested in its own operand, such as a sum of sums, is never cut, since the
+inner call is smaller than the outer one and cannot hold it.
 The mode is not sound, though: a recursion whose argument grows on its way to
 stopping is cut too, which is why the line names the mode that made the cut.
 

@@ -80,9 +80,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           pure (ended answer, state')
         Left failure -> do
           exhausted' <- starved caller._memo
-          mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) failure)
+          mapM_ (retained caller._memo form stamp) (kept (exhausted' /= exhausted) (escaped failure))
           mapM_ (caller._saveEval . EvStuckOn (caller._nesting + 1)) (stranded failure)
-          throwIO failure
+          throwIO (escaped failure)
     worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
     worked ctx entry firing@(Firing _ operands _) bound state' = do
       (lined, state'') <- foldM (line ctx) (bound, state') entry._lines
@@ -120,6 +120,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     stranded (Stuck name) = Just name
     stranded (StuckAt name _ _) = Just name
     stranded _ = Nothing
+    escaped :: ReduceException -> ReduceException
+    escaped (Diverged name) = Stuck name
+    escaped failure = failure
     told :: Kept -> IO (Expression, State)
     told (Answered answer) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -316,7 +319,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting condition fresh pair)) made
           ctx._saveEval (EvTaken ctx._nesting [left, right] term)
           pure (Joined condition made (left, right) term, state''')
-        Nothing -> throwIO (Stuck func)
+        Nothing -> do
+          ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two))
+          throwIO (Diverged func)
     reached :: ReduceContext -> Subst -> Expression -> State -> IO (Expression, State)
     reached _ bound (ExMeta name) state' = (,state') <$> buildExpressionThrows (ExMeta name) bound
     reached ctx _ side state' = do

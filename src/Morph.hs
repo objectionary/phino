@@ -125,6 +125,7 @@ data ReduceException
   | Stuck T.Text
   | StuckAt T.Text (NonEmpty Rewritten) State
   | OutOfStepsAt Budget (NonEmpty Rewritten) State
+  | Diverged T.Text
   | Looping Expression
   | LoopingAt Expression (NonEmpty Rewritten) State
   | Undataizable Expression State
@@ -143,6 +144,7 @@ instance Show ReduceException where
     printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
+  show (Diverged func) = printf "The λ function '%s' could not join its two sides" (T.unpack func)
   show (Looping term) = printf "Reduction entered a formation it is already inside: %s" (printExpression term)
   show (LoopingAt term _ _) = show (Looping term)
   show (Undataizable ExTermination _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"

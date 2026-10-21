@@ -196,9 +196,12 @@ that are the same, or differ only in the symbols at their leaves, are one
 term: `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the
 firing writes `joined …` (`EvJoined`) per fresh symbol and answers the joined
 term (`Joined` of `Answer`, written by `EvTaken`) with no decision (#1954).
-Any other two sides get the firing stuck (`Stuck`), which `--partial` parks,
-and a side or an operand whose morph throws fails the firing with what it
-threw, so a run never splits and prints one result (#1996).
+Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
+naming each side by the line that bound it, and throw `Diverged`, which the
+firing rethrows as `Stuck`, so `--partial` parks it and the firings around
+it write `stuck` as for a λ function no entry answers. A side or an operand
+whose morph throws fails the firing with what it threw, so a run never
+splits and prints one result (#1996).
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
@@ -341,7 +344,8 @@ nothing, since it stands in the block of the rule. A cut is a line too,
 opened, carrying the formation its ancestor entered (#1434) and naming the mode
 that cut it.
 Three records say why a firing gave no answer (#1524): `stuck …` closes a
-firing that got stuck, `stall …` stands under one the memo answered with a
+firing that got stuck, other than a join that could not join, which
+`diverged …` closes, `stall …` stands under one the memo answered with a
 kept stall, and `starved …` is written by `deeper` where the step budget runs
 out, with the site it stood at rather than its term (#1531).
 

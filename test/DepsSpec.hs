@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvFiring, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvDiverged, EvFiring, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import GHC.Clock (getMonotonicTime)
 import Logger (LogLevel (DEBUG, ERROR, INFO), setLogConfig)
@@ -234,6 +234,18 @@ spec = do
     it "writes the symbol a join minted beside the datum of its condition" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
       last (lines written) `shouldBe` "    joined 𝜎14 := 0D- ? 𝜎3 : 𝜎8"
+    it "writes two sides a join could not join by the applications that made them" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExFormation []))) (ExFormation [BiTau (AtLabel "w") (ExFormation [])]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExFormation [])])])
+      last (lines written) `shouldBe` "    diverged 𝑛·1·1 vs 𝑛·1·2"
+    it "writes two sides a join could not join by the metas of the lines that bound them" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTerm 2 "𝑛1" Morphing (ExDispatch ExXi (AtLabel "a")) (ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]), EvTerm 2 "𝑛2" Morphing (ExDispatch ExXi (AtLabel "b")) (ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])]), EvDiverged 2 (ExMeta "n1", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]) (ExMeta "n2", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])])])
+      last (lines written) `shouldBe` "    diverged 𝑛1·1 vs 𝑛2·1"
+    it "writes a side of a join no line named as the term it is" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "a"), ExDispatch ExRoot (AtLabel "ёж")) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука"))])
+      last (lines written) `shouldBe` "    diverged Φ.ёж vs Φ.щука"
+    it "writes a side of a join a defer line bound to a symbol as that symbol" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n7", ExFormation [BiLambda (FnSymbol 4)]) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука"))])
+      last (lines written) `shouldBe` "    diverged 𝜎4:λ vs Φ.щука"
     it "opens a heading of its own for every run of the protocol" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C"), EvRun Morphing "Φ", EvDelta 1 (BtOne "0D")])
       lines written `shouldBe` ["𝕄(Φ):", "  𝛿·0·1 := 0C-", "𝕄(Φ):", "  𝛿·0·2 := 0D-"]
@@ -386,6 +398,15 @@ spec = do
     it "writes the symbol a join minted as an element holding the datum of its condition" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (BtOne "0D")) 14 (3, 8)])
       lines written `shouldContain` ["    <joined symbol=\"𝜎14\" left=\"𝜎3\" right=\"𝜎8\">0D-</joined>"]
+    it "writes two sides a join could not join as an element naming both" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))])])
+      lines written `shouldContain` ["    <diverged left=\"𝑛·1·1\" right=\"𝑛·1·2\"/>"]
+    it "writes a side of a join that is a path as that path in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "a"), ExDispatch ExRoot (AtLabel "ёж")) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука"))])
+      lines written `shouldContain` ["    <diverged left=\"Φ.ёж\" right=\"Φ.щука\"/>"]
+    it "writes a side of a join read from a meta by the meta of its line in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n3", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]) (ExMeta "n4", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])])])
+      lines written `shouldContain` ["    <diverged left=\"𝑛3·1\" right=\"𝑛4·1\"/>"]
     it "writes the symbol a symbolize line minted as an element holding the datum it stands for" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtOne "4A")])
       lines written `shouldContain` ["    <symbolized symbol=\"𝜎6\">4A-</symbolized>"]

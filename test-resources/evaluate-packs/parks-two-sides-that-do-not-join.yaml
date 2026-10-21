@@ -3,7 +3,8 @@
 ---
 # yamllint disable rule:line-length
 # The sides differ in a datum, so no join makes one term of them and the
-# firing gets stuck the way a λ function no entry answers does (#1996).
+# firing writes 'diverged' (#1996). No line of the text named either side,
+# since each morphs to itself, so the line writes them as the terms they are.
 # Under '--partial' the site the join stands at is parked instead of failing
 # the run.
 symbolic: |
@@ -22,4 +23,4 @@ protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      stuck L_fork
+      diverged 01-:Δ:φ vs 02-:Δ:φ

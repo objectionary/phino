@@ -2116,7 +2116,7 @@ spec = do
                          , "</dataize>"
                          ]
 
-        it "writes a firing whose two sides do not join as stuck" $
+        it "writes a firing whose two sides do not join as diverged, naming both sides" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
             withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n") $ \joins ->
@@ -2139,7 +2139,7 @@ spec = do
                          , "      <formed meta=\"𝑛·1·3\"><datum attr=\"φ\">02-</datum></formed>"
                          , "      <morphed meta=\"𝑛·1·4\">𝑛·1·3</morphed>"
                          , "    </morph>"
-                         , "    <stuck λ=\"L_fork\"/>"
+                         , "    <diverged left=\"𝑛·1·1\" right=\"𝑛·1·3\"/>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2993,7 +2993,7 @@ spec = do
                      , "    <bound meta=\"𝑛2·1\">𝑛·1·2</bound>"
                      , "    <bound meta=\"𝑛3·1\">01-</bound>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol attr=\"tup\">𝜎1</symbol></with></deferred>"
-                     , "    <stuck λ=\"L_fork\"/>"
+                     , "    <diverged left=\"𝑛3·1\" right=\"𝜎3\"/>"
                      , "  </evaluate>"
                      , "</dataize>"
                      ]

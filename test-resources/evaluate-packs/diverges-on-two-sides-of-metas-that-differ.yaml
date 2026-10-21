@@ -4,8 +4,8 @@
 # yamllint disable rule:line-length
 # The sides of a join may be metas 'morph' bound (#1967). The join takes them
 # as they are and morphs nothing again. They differ in a datum, so no join
-# makes one term of them, and the firing gets stuck instead of splitting the
-# run (#1996).
+# makes one term of them, and the firing writes 'diverged' with the metas of
+# the lines that bound the two sides, instead of splitting the run (#1996).
 symbolic: |
   - λ: L_fork
     dataize:
@@ -26,4 +26,4 @@ protocol: |
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
       𝑛1·1 := 01-:Δ:φ  # 𝕄(ξ.a)
       𝑛2·1 := 02-:Δ:φ  # 𝕄(ξ.b)
-      stuck L_fork
+      diverged 𝑛1·1 vs 𝑛2·1

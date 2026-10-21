@@ -124,6 +124,7 @@ data Evaluation
   | EvAnswer Int Expression
   | EvMorphed Int Expression
   | EvJoined Int (Either Int Bytes) Int (Int, Int)
+  | EvDiverged Int (Expression, Expression) (Expression, Expression)
   | EvTaken Int [Expression] Expression
   | EvWorld Expression
 
@@ -177,6 +178,7 @@ tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
 tier (EvJoined depth _ _ _) = depth
+tier (EvDiverged depth _ _) = depth
 tier (EvTaken depth _ _) = depth
 tier EvWorld{} = maxBound
 
@@ -396,6 +398,10 @@ saveEval handle cursor printed printed' report = do
     written at (EvJoined _ condition symbol (left, right)) protocol = do
       cond <- spelt condition
       pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) cond (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
+    written at (EvDiverged _ left right) protocol = do
+      one <- sided protocol left
+      two <- sided protocol right
+      pure (protocol, Just (indented at (printf "diverged %s vs %s" one two)))
     written at (EvTaken _ sides term) protocol = do
       let (index, counted) = numbered protocol
           naming :: String
@@ -417,6 +423,10 @@ saveEval handle cursor printed printed' report = do
     borrowed protocol term = case namedLookup term protocol._named of
       Nothing -> render term
       Just naming -> pure (T.unpack naming)
+    sided :: Protocol -> (Expression, Expression) -> IO String
+    sided _ (_, term@(ExFormation [BiLambda (FnSymbol _)])) = render term
+    sided protocol (side@(ExMeta _), _) = labelled protocol . T.pack <$> salted side
+    sided protocol (_, term) = borrowed protocol term
     commented :: String -> Judgment -> Expression -> IO String
     commented line judgment operand = printf "%s  # %s(%s)" line (letter judgment) <$> salted operand
     commented' :: String -> Expression -> IO String
@@ -589,6 +599,13 @@ saveEvalXml handle cursor printed report = do
       where
         joined :: String -> String
         joined = printf "<joined symbol=\"%s\" left=\"%s\" right=\"%s\">%s</joined>" (sigma symbol) (sigma left) (sigma right)
+    elements at (EvDiverged depth left right) nesting =
+      placed at nesting (printf "<diverged left=\"%s\" right=\"%s\"/>" . escapeXML <$> sided left <*> (escapeXML <$> sided right))
+      where
+        sided :: (Expression, Expression) -> Naming String
+        sided (_, term@(ExFormation [BiLambda (FnSymbol _)])) = leaf depth term
+        sided (side@(ExMeta _), _) = labelled nesting . T.pack <$> lift (spelled side)
+        sided (_, term) = leaf depth term
     elements at (EvTaken depth _ term) nesting = placed at nesting (concluded "answered" depth term)
     elements _ (EvWorld world) nesting = pure (known world nesting, [])
     outer :: Int -> Nesting -> Nesting
