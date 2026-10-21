@@ -153,8 +153,8 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 those of the two blocks below among them.
 
 An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`, `stay`,
-`symbolize`, `join` and `𝑛`, and any other key, such as a misspelled `joinn`,
-refuses the whole file, so a typo never drops a block without a word.
+`unbox`, `symbolize`, `join` and `𝑛`, and any other key, such as a misspelled
+`joinn`, refuses the whole file, so a typo never drops a block without a word.
 
 ### Firing what an operand came to
 
@@ -265,14 +265,14 @@ not join.
 
 `on` names a bytes meta the `dataize` block bound, the condition, and `left`
 and `right` are paths from `$`, read against the formation being fired the way
-an operand is, or metas the `morph` block or an `evaluate`, `stay`,
+an operand is, or metas the `morph` block or an `evaluate`, `stay`, `unbox`,
 `symbolize` or `defer` line bound, as described below. An entry with a `join`
 block has no `𝑛`, since the term it joins is what it answers with: an entry
 joins or it computes, never both. A block missing one of the three keys,
 holding another, or naming under `on` anything but a meta of `dataize` is
 refused when the file is read, and so is a side reading a meta inside a term,
 such as `𝑛1.x`, or naming a meta that none of `morph`, `evaluate`, `stay`,
-`symbolize` and `defer` binds.
+`unbox`, `symbolize` and `defer` binds.
 
 A join morphs both of its sides first, each where it stands in the universe,
 under a block of its own, `𝕄(Φ.a🌵3):` for the left side and `𝕄(Φ.a🌵4):` for
@@ -306,8 +306,8 @@ diverged 𝑛·2·3 vs 𝑛·2·5
 ```
 
 A side is named by the line that bound it: the line its morph wrote, or the
-line of `morph`, `evaluate`, `stay`, `symbolize` or `defer` whose meta it
-reads, such as `𝑛1·1`. A side that is a bare symbol is written as that
+line of `morph`, `evaluate`, `stay`, `unbox`, `symbolize` or `defer` whose meta
+it reads, such as `𝑛1·1`. A side that is a bare symbol is written as that
 symbol, and a side no line named, such as a datum its morph left as it was, as
 the term it is. Past
 that line the firing gets stuck the way a λ function no entry answers does:
@@ -505,12 +505,67 @@ that computes too: it answers a copy over a bare symbol with a fresh symbol,
 writes the `deferred …` line sited at the meta it read, such as `# 𝕄(𝑛8.φ)`,
 and binds any other term as it stands.
 
+### Taking an object out of its formation
+
+There is an eighth block, `unbox`, and it reduces nothing either. Each line of
+it takes the term another meta of the entry is bound to and, when that term is
+a formation whose only binding is `φ ↦ 𝑒`, binds an expression meta of its own
+to `𝑒`, and to the term as it is otherwise:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.then
+    𝑛2: $.else
+  evaluate:
+    𝑛3: 𝑛1
+    𝑛4: 𝑛2
+  unbox:
+    𝑛5: 𝑛3
+    𝑛6: 𝑛4
+  join:
+    on: 𝛿1
+    left: 𝑛5
+    right: 𝑛6
+```
+
+The right-hand side of a line names a meta bound by `morph` or by another line
+of the entry, and nothing else. A line takes off one formation and no more, so
+`⟦ φ ↦ ⟦ φ ↦ 𝑒 ⟧ ⟧` becomes `⟦ φ ↦ 𝑒 ⟧`. A formation binding anything beside
+`φ`, such as a `ρ` or a method, stays, and so does a formation whose `φ` is
+void, and a term that is no formation. What the line takes out it binds as it
+is, without morphing it, so an application standing there stays an
+application.
+
+This is how a join compares a side that comes inside a formation with a side
+that does not. In EO the `false` of `bool.and` comes as `⟦ φ ↦ Φ.bool( … ) ⟧`,
+and the entry of `L_bytes_eq` answers its bool the same way, so after the
+`evaluate` lines one side may be a bool inside a formation binding nothing but
+`φ`, while the other side is a bool alone. The join compares the two as
+written, finds a shape apart, and gets stuck; after `unbox` both are bools.
+The step drops what the formation adds to the object, since `⟦ φ ↦ 𝑒 ⟧` has a
+`ρ` and a scope of its own that `𝑒` has not, and a file that needs them leaves
+the block out. A line that took a term out writes an `unboxed` record in
+place of the line binding its meta, commented with the meta it read, while a
+line that changed nothing writes the plain line of a meta bound to another:
+
+```text
+unboxed 𝑛5·1 := ⟦ φ ↦ 𝜎3:λ, not ↦ ⟦⟧ ⟧  # 𝑛3
+𝑛6·1 := 𝑛4·1  # 𝑛4
+joined 𝜎4 := 𝔻(𝜎1:λ) ? 𝜎3 : 𝜎2
+```
+
+The markup writes the record as `<unboxed meta="𝑛5·1" of="𝑛3·1">`, as
+described below.
+
 ### The order of the lines
 
-The lines of `evaluate`, `defer`, `stay` and `symbolize` run in the order of the
-metas they read, not in the order of their blocks. A line runs once every meta
-it reads is bound, so this entry fires what `x` came to and then fires the
-answer, one more call, although the line doing so stands first:
+The lines of `evaluate`, `defer`, `stay`, `unbox` and `symbolize` run in the
+order of the metas they read, not in the order of their blocks. A line runs
+once every meta it reads is bound, so this entry fires what `x` came to and
+then fires the answer, one more call, although the line doing so stands first:
 
 ```yaml
 - λ: L_twice
@@ -1184,6 +1239,13 @@ one symbol a `symbolize` line minted, which the text format writes as
 bytes in `number`, as in `<dataized>`. The elements stand ahead of the
 `<bound>` of the line, and the markup binds the meta of that line as it binds
 any other.
+
+`<unboxed meta="𝑛5·1" of="𝑛3·1">𝑛·2·1</unboxed>` is one line of `unbox` that
+took a term out of its formation, which the text format writes as
+`unboxed 𝑛5·1 := …  # 𝑛3`: `meta` names the meta of the line the way
+`<bound>` does, `of` names the meta it read the same way, and the element holds
+the name of the term it took out. It stands in place of the `<bound>` of the
+line, while a line of `unbox` that took nothing out writes a `<bound>`.
 
 `<minted symbol="𝜎1">40-14-… 40-18-…</minted>` is one symbol the firing
 minted, one element per bare `𝜎` the entry wrote its answer with, standing
