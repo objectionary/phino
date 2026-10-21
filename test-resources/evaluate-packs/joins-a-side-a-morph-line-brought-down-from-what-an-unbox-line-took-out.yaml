@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The right side morphs down to a formation holding nothing but a path in φ,
+# and an 'unbox' line takes the path out of it. The path is no normal form, so
+# the join could never make one term of it and the left side, the way the
+# 'Φ.bool( … )' a 'rewrite' line writes into a side of the 'L_fork' of EO is
+# none (#2016). An operand of 'morph' naming the meta the 'unbox' line bound
+# reduces the path to the object it reads, at the point the meta is bound, and
+# the join makes one term of the two objects, which differ in their symbols
+# alone. The protocol writes the line of '𝑛4' right after the line of '𝑛3' it
+# read, commented with the morph of that meta.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+      𝑛4: 𝑛3
+    unbox:
+      𝑛3: 𝑛2
+    join:
+      on: 𝛿1
+      left: 𝑛1
+      right: 𝑛4
+location: 'Q.y'
+hide-rho: false
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, b ↦ ⟦ φ ↦ Φ.t ⟧, λ ⤍ L_fork ⟧.φ, t ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧ ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝑛1·1 := 𝜎2:λ:φ  # 𝕄(ξ.a)
+      𝑛2·1 := Φ.t:φ  # 𝕄(ξ.b)
+      unboxed 𝑛3·1 := Φ.t  # 𝑛2
+      𝑛4·1 := 𝜎3:λ:φ  # 𝕄(𝑛3)
+      joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
+      𝑛·1·1 := 𝜎4:λ:φ  # 𝑛1, 𝑛4
