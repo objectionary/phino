@@ -22,8 +22,8 @@ lambdasOf text = withLambdasOf text readLambdas
 entry :: T.Text -> T.Text
 entry key = "- λ: " <> key <> "\n  dataize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
 
-fork :: T.Text
-fork = "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n"
+joint :: T.Text
+joint = "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n"
 
 answering :: Lambdas -> T.Text -> Maybe T.Text
 answering known func = _key <$> matched known func
@@ -57,14 +57,14 @@ answers known func = case _ending <$> matched known func of
   Just (Answering term) -> Just term
   _ -> Nothing
 
-forking :: Lambdas -> T.Text -> Maybe T.Text
-forking known func = case _ending <$> matched known func of
-  Just (Forking on _ _) -> Just (_spelling on)
+joining :: Lambdas -> T.Text -> Maybe T.Text
+joining known func = case _ending <$> matched known func of
+  Just (Joining on _ _) -> Just (_spelling on)
   _ -> Nothing
 
 sides :: Lambdas -> T.Text -> Maybe (Expression, Expression)
 sides known func = case _ending <$> matched known func of
-  Just (Forking _ left right) -> Just (left, right)
+  Just (Joining _ left right) -> Just (left, right)
   _ -> Nothing
 
 spec :: Spec
@@ -120,51 +120,51 @@ spec = do
       term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )"
       answers known "L_pair" `shouldBe` Just term
 
-    it "reads a 'fork' block forking on a meta 'dataize' bound" $ do
-      known <- lambdasOf fork
-      forking known "L_fork" `shouldBe` Just "𝛿1"
+    it "reads a 'join' block joining on a meta 'dataize' bound" $ do
+      known <- lambdasOf joint
+      joining known "L_fork" `shouldBe` Just "𝛿1"
 
-    it "reads the two sides of a 'fork' block as terms" $ do
-      known <- lambdasOf fork
+    it "reads the two sides of a 'join' block as terms" $ do
+      known <- lambdasOf joint
       left <- parseExpressionThrows "$.a"
       right <- parseExpressionThrows "$.b"
       sides known "L_fork" `shouldBe` Just (left, right)
 
-    it "reads a 'fork' block whose sides are metas 'morph' and 'stay' bound" $ do
-      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  stay:\n    𝑛3: 𝑛1\n  fork:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛2\n"
+    it "reads a 'join' block whose sides are metas 'morph' and 'stay' bound" $ do
+      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  stay:\n    𝑛3: 𝑛1\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛2\n"
       left <- parseExpressionThrows "𝑛3"
       right <- parseExpressionThrows "𝑛2"
       sides known "L_fork" `shouldBe` Just (left, right)
 
-    it "reads a 'fork' block whose sides are metas 'symbolize' bound" $ do
-      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  fork:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n"
+    it "reads a 'join' block whose sides are metas 'symbolize' bound" $ do
+      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  symbolize:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n"
       left <- parseExpressionThrows "𝑛3"
       right <- parseExpressionThrows "𝑛4"
       sides known "L_fork" `shouldBe` Just (left, right)
 
-    it "reads a 'fork' block whose sides are metas 'defer' bound" $ do
-      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  fork:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n"
+    it "reads a 'join' block whose sides are metas 'defer' bound" $ do
+      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n"
       left <- parseExpressionThrows "𝑛3"
       right <- parseExpressionThrows "𝑛4"
       sides known "L_fork" `shouldBe` Just (left, right)
 
-    it "runs each 'defer' line of a fork right after the 'symbolize' line it reads" $ do
-      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛7: 𝑛5\n    𝑛8: 𝑛6\n  symbolize:\n    𝑛5: 𝑛3\n    𝑛6: 𝑛4\n  stay:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  fork:\n    on: 𝛿1\n    left: 𝑛7\n    right: 𝑛8\n"
+    it "runs each 'defer' line of a join right after the 'symbolize' line it reads" $ do
+      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛7: 𝑛5\n    𝑛8: 𝑛6\n  symbolize:\n    𝑛5: 𝑛3\n    𝑛6: 𝑛4\n  stay:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛7\n    right: 𝑛8\n"
       order known "L_fork" `shouldBe` ["𝑛3", "𝑛4", "𝑛5", "𝑛7", "𝑛6", "𝑛8"]
 
-    it "reads a 'fork' block with one side a path and the other a meta" $ do
-      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.b\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: 𝑛1\n"
+    it "reads a 'join' block with one side a path and the other a meta" $ do
+      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.b\n  join:\n    on: 𝛿1\n    left: $.a\n    right: 𝑛1\n"
       left <- parseExpressionThrows "$.a"
       right <- parseExpressionThrows "𝑛1"
       sides known "L_fork" `shouldBe` Just (left, right)
 
-    it "reads an entry with a 'fork' block as one answering no term of its own" $ do
-      known <- lambdasOf fork
+    it "reads an entry with a 'join' block as one answering no term of its own" $ do
+      known <- lambdasOf joint
       answers known "L_fork" `shouldBe` Nothing
 
-    it "reads an entry with an '𝑛' key as one forking nowhere" $ do
+    it "reads an entry with an '𝑛' key as one joining nowhere" $ do
       known <- lambdasOf (entry "L_pair")
-      forking known "L_pair" `shouldBe` Nothing
+      joining known "L_pair" `shouldBe` Nothing
 
     it "reads the lines of 'defer' with the metas they read" $ do
       known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛4: 𝑛2\n    𝑛3: 𝑛1\n  𝑛: 𝑛3\n"
@@ -237,7 +237,7 @@ spec = do
     forM_
       [ ("a file which is no list of entries" :: String, "λ: L_pair\n" :: T.Text, "cannot be read" :: String)
       , ("an entry with no λ key", "- 𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "no 'λ' key")
-      , ("an entry with no answer at all", "- λ: L_pair\n", "The entry of λ function 'L_pair' has neither an '𝑛' key nor a 'fork' block")
+      , ("an entry with no answer at all", "- λ: L_pair\n", "The entry of λ function 'L_pair' has neither an '𝑛' key nor a 'join' block")
       , ("an entry whose answer is no term of the calculus", "- λ: L_pair\n  𝑛: ⟦ λ ⤍\n", "cannot be read")
       , ("two entries under one key", entry "L_pair" <> entry "L_pair", "is used by more than one entry")
       ,
@@ -282,20 +282,20 @@ spec = do
       , ("a meta bound by 'stay' and again by 'symbolize'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: 𝑛1\n  symbolize:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_hold' is bound by more than one line")
       , ("a meta bound by 'morph' and again by 'stay'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_hold' is bound by more than one line")
       , ("a meta bound by 'morph' and again by 'defer'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  defer:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_hold' is bound by more than one line")
-      , ("an entry with both an '𝑛' key and a 'fork' block", fork <> "  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The entry of λ function 'L_fork' has both an '𝑛' key and a 'fork' block, while a fork answers the side it takes")
-      , ("a 'fork' block forking on an expression meta", "- λ: L_fork\n  fork:\n    on: 𝑛1\n    left: $.a\n    right: $.b\n", "The 'on' of the 'fork' block of λ function 'L_fork' is '𝑛1', while it must name a bytes meta of 'dataize', such as '𝛿1'")
-      , ("a 'fork' block forking on a bytes meta 'dataize' never bound", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿2\n    left: $.a\n    right: $.b\n", "The 'on' of the 'fork' block of λ function 'L_fork' is '𝛿2', while it must name a bytes meta of 'dataize'")
-      , ("a 'fork' block forking on a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: $.c\n    left: $.a\n    right: $.b\n", "The 'on' of the 'fork' block of λ function 'L_fork' is '$.c'")
-      , ("a 'fork' block with no 'on' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    left: $.a\n    right: $.b\n", "The 'fork' block of λ function 'L_fork' has no 'on' key")
-      , ("a 'fork' block with no 'left' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    right: $.b\n", "The 'fork' block of λ function 'L_fork' has no 'left' key")
-      , ("a 'fork' block with no 'right' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n", "The 'fork' block of λ function 'L_fork' has no 'right' key")
-      , ("a 'fork' block with a key it does not read", fork <> "    middle: $.m\n", "The key 'middle' of the 'fork' block of λ function 'L_fork' is none of its keys: on, left, right")
-      , ("a 'fork' block which is no mapping", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork: [𝛿1, $.a, $.b]\n", "fork: parsing")
-      , ("a side of a 'fork' block naming a meta nothing binds", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: 𝑛1\n    right: $.b\n", "The side 'left' of the 'fork' block of λ function 'L_fork' reads the meta 'n1' that none of 'morph', 'stay', 'symbolize' and 'defer' binds")
-      , ("a side of a 'fork' block reading a meta inside a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n  fork:\n    on: 𝛿1\n    left: 𝑛1.x\n    right: $.b\n", "The side 'left' of the 'fork' block of λ function 'L_fork' reads the meta 'n1' inside a term, while a side is a path from '$' or a meta alone")
-      , ("a side of a 'fork' block which is no term of the calculus", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: ⟦ λ ⤍\n    right: $.b\n", "cannot be read")
-      , ("a 'fork' block beside an 'evaluate' block", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  evaluate:\n    𝑛2: 𝑛1\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n", "The entry of λ function 'L_fork' has a 'fork' block beside 'evaluate', while a fork takes nothing but 'dataize', 'morph', 'stay', 'symbolize' and 'defer'")
-      , ("a 'join' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    𝑛3: [𝑛1, 𝑛2]\n  𝑛: 𝑛3\n", "The key 'join' of λ function 'L_fork' is none of the keys an entry reads")
+      , ("an entry with both an '𝑛' key and a 'join' block", joint <> "  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The entry of λ function 'L_fork' has both an '𝑛' key and a 'join' block, while a join answers the term it joins")
+      , ("a 'join' block joining on an expression meta", "- λ: L_fork\n  join:\n    on: 𝑛1\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is '𝑛1', while it must name a bytes meta of 'dataize', such as '𝛿1'")
+      , ("a 'join' block joining on a bytes meta 'dataize' never bound", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿2\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is '𝛿2', while it must name a bytes meta of 'dataize'")
+      , ("a 'join' block joining on a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: $.c\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is '$.c'")
+      , ("a 'join' block with no 'on' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    left: $.a\n    right: $.b\n", "The 'join' block of λ function 'L_fork' has no 'on' key")
+      , ("a 'join' block with no 'left' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    right: $.b\n", "The 'join' block of λ function 'L_fork' has no 'left' key")
+      , ("a 'join' block with no 'right' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n", "The 'join' block of λ function 'L_fork' has no 'right' key")
+      , ("a 'join' block with a key it does not read", joint <> "    middle: $.m\n", "The key 'middle' of the 'join' block of λ function 'L_fork' is none of its keys: on, left, right")
+      , ("a 'join' block which is no mapping", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join: [𝛿1, $.a, $.b]\n", "join: parsing")
+      , ("a side of a 'join' block naming a meta nothing binds", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: 𝑛1\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' that none of 'morph', 'stay', 'symbolize' and 'defer' binds")
+      , ("a side of a 'join' block reading a meta inside a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n  join:\n    on: 𝛿1\n    left: 𝑛1.x\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' inside a term, while a side is a path from '$' or a meta alone")
+      , ("a side of a 'join' block which is no term of the calculus", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: ⟦ λ ⤍\n    right: $.b\n", "cannot be read")
+      , ("a 'join' block beside an 'evaluate' block", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  evaluate:\n    𝑛2: 𝑛1\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n", "The entry of λ function 'L_fork' has a 'join' block beside 'evaluate', while a join takes nothing but 'dataize', 'morph', 'stay', 'symbolize' and 'defer'")
+      , ("a 'fork' block, which is gone", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n", "The key 'fork' of λ function 'L_fork' is none of the keys an entry reads")
       , ("an 'unfold' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The key 'unfold' of λ function 'L_fork' is none of the keys an entry reads")
       , ("an 'upcast' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n", "The key 'upcast' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a 'rewrite' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules: []\n  𝑛: 𝑛2\n", "The key 'rewrite' of λ function 'L_fork' is none of the keys an entry reads")

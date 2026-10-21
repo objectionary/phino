@@ -10,7 +10,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, boxed, charged, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, snapshot, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, boxed, charged, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -26,7 +26,6 @@ import Data.Maybe (isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Engine (Engine (..))
-import Forks (Decision, Forks)
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
 import Lambdas (Lambdas)
@@ -69,12 +68,10 @@ data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IO
 
 data Answer
   = Answer Expression Expression
-  | Chosen Decision Expression Expression
   | Joined (Either Int Bytes) [(Int, (Int, Int))] (Expression, Expression) Expression
 
 ended :: Answer -> Expression
 ended (Answer _ normal) = normal
-ended (Chosen _ _ normal) = normal
 ended (Joined _ _ _ normal) = normal
 
 data Firing = Firing T.Text [Either Int Bytes] [Expression]
@@ -98,7 +95,6 @@ data ReduceContext = ReduceContext
   , _minted :: IORef Int
   , _deadline :: Maybe Deadline
   , _memo :: Maybe Memo
-  , _forks :: Forks
   , _nesting :: Int
   , _opened :: Maybe (Int, Judgment, Expression)
   , _depthSensitive :: Bool
@@ -201,15 +197,6 @@ expired ctx cap = do
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
 memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0)
 memoized _ = pure Nothing
-
-snapshot :: Maybe Memo -> IO (IO ())
-snapshot Nothing = pure (pure ())
-snapshot (Just (Memo store firings answers exhausted)) = do
-  store' <- readIORef store
-  firings' <- readIORef firings
-  answers' <- readIORef answers
-  exhausted' <- readIORef exhausted
-  pure (writeIORef store store' >> writeIORef firings firings' >> writeIORef answers answers' >> writeIORef exhausted exhausted')
 
 recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
 recalled Nothing _ _ = pure Nothing

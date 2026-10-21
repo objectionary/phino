@@ -116,14 +116,6 @@ optMaxSeconds =
         (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, unlimited unless given")
     )
 
-optMaxPaths :: Parser (Maybe Int)
-optMaxPaths =
-  optional
-    ( option
-        (boundedIntOption >>= validateIntOption (> 0) "--max-paths must be positive")
-        (long "max-paths" <> metavar "PATHS" <> help "Maximum number of paths a run may take at the forks it meets, unlimited unless given")
-    )
-
 optMargin :: Parser Int
 optMargin =
   option
@@ -269,8 +261,8 @@ optSymbolic =
               \the copies one of whose arguments reads to a bare symbol it answers with a fresh symbol under \
               \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", the terms \
               \it keeps with every datum along their φ turned into a fresh symbol under \"symbolize\", and \
-              \answering with the term under \"𝑛\", or forking under \"fork\" on a datum of \"dataize\" into \
-              \the two sides a path of the run picks between"
+              \answering with the term under \"𝑛\", or joining under \"join\" the two sides of a datum of \
+              \\"dataize\" into one term, with a fresh symbol where they differ"
         )
     )
 
@@ -423,7 +415,6 @@ dataizeParser =
             <*> optMaxSteps
             <*> optMaxFirings
             <*> optMaxSeconds
-            <*> optMaxPaths
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -474,7 +465,6 @@ morphParser =
             <*> optMaxSteps
             <*> optMaxFirings
             <*> optMaxSeconds
-            <*> optMaxPaths
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength

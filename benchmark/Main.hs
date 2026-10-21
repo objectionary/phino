@@ -16,7 +16,6 @@ import Data.String (fromString)
 import Data.Time.Clock
 import Dataize (reduction)
 import Deps (Acyclic (Plausible, Proven), Judgment (Morphing), dontSaveEval, dontSaveMade, dontSaveStep)
-import Forks (Forks, straight)
 import Encoding (Encoding (UNICODE))
 import Engine (Engine (_matching, _normal), building, stepOf, yaml)
 import Evaluate (evaluation)
@@ -63,8 +62,8 @@ rewriteCtx =
     dontSaveStep
     dontSaveMade
 
-symbolicCtx :: Acyclic -> Maybe Memo -> Forks -> IORef Int -> Lambdas -> Expression -> ReduceContext
-symbolicCtx acyclic memo forks minted lambdas locator =
+symbolicCtx :: Acyclic -> Maybe Memo -> IORef Int -> Lambdas -> Expression -> ReduceContext
+symbolicCtx acyclic memo minted lambdas locator =
   ReduceContext
     locator
     locator
@@ -76,7 +75,6 @@ symbolicCtx acyclic memo forks minted lambdas locator =
     minted
     Nothing
     memo
-    forks
     1
     Nothing
     False
@@ -196,9 +194,8 @@ main = do
     symbolic acyclic universe lambdas locator = do
       seedTaus universe
       memo <- memoized (Just acyclic)
-      forks <- straight
       minted <- newIORef 0
-      let ctx = symbolicCtx acyclic memo forks minted lambdas locator
+      let ctx = symbolicCtx acyclic memo minted lambdas locator
       started universe ctx
       (answer, _, _) <- morph universe emptyState ctx
       pure (hashExpression answer)

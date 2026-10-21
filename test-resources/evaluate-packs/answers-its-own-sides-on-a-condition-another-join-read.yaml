@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# Two forks on one condition are one decision, but each of them answers its
-# own side (#1940). The memo of 'plausible' keeps the answer of a firing by
-# the λ name and the operands it came down to, and a fork reads its sides as
-# well as its condition, so the second fork, deciding the condition the first
-# one decided, reduces its own sides and answers 70 instead of the 7 of the
-# first fork.
+# Two joins on one condition answer each its own sides (#1940). The memo of
+# 'plausible' keeps the answer of a firing by the λ name and the operands it
+# came down to, and a join reads its sides as well as its condition, so the
+# second join, on the condition the first one read, reduces its own sides and
+# answers 70 instead of the 7 of the first join.
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -25,7 +24,7 @@ symbolic: |
   - λ: L_fork
     dataize:
       𝛿1: $.ρ
-    fork:
+    join:
       on: 𝛿1
       left: $.then
       right: $.else
@@ -36,12 +35,12 @@ input: >
     bool(φ) ↦ ⟦ if ↦ ⟦ ρ ↦ ∅, then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧ ⟧,
     number(φ) ↦ ⟦ gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧,
     pick(x, y) ↦ ⟦ λ ⤍ L_pick ⟧,
-    φ ↦ Φ.pick( 5.gt( 0 ).if( 7, 8 ), 5.gt( 0 ).if( 70, 80 ) ).φ ⟧
+    φ ↦ Φ.pick( 5.gt( 0 ).if( 7, 7 ), 5.gt( 0 ).if( 70, 70 ) ).φ ⟧
 result: '⟦ φ ↦ ⟦ Δ ⤍ 40-51-80-00-00-00-00-00 ⟧ ⟧'
 protocol: |
   𝕄(Φ.φ):
-    𝑛·0·1 := Φ.pick( x ↦ 5.gt( 0 ).if( 7, 8 ) )
-    𝑛·0·2 := 𝑛·0·1( y ↦ 5.gt( 0 ).if( 70, 80 ) )
+    𝑛·0·1 := Φ.pick( x ↦ 5.gt( 0 ).if( 7, 7 ) )
+    𝑛·0·2 := 𝑛·0·1( y ↦ 5.gt( 0 ).if( 70, 70 ) )
     𝔼(L_pick):
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
@@ -65,7 +64,7 @@ protocol: |
               𝑛·2·6 := Φ.bool( φ ↦ 𝜎1:λ )
             𝑛·2·7 := 𝑛·2·6  # 𝕄(𝑛·2·5)
           𝑛·1·3 := 𝑛·2·6.if( then ↦ 7 )
-          𝑛·1·4 := 𝑛·1·3( else ↦ 8 )
+          𝑛·1·4 := 𝑛·1·3( else ↦ 7 )
         𝔼(L_fork):
           𝔻(Φ.a🌵3):
             𝕄(Φ.a🌵3):
@@ -74,9 +73,8 @@ protocol: |
           𝕄(Φ.a🌵4):
             𝑛·3·2 := 7
           𝕄(Φ.a🌵5):
-            𝑛·3·3 := 8
-          forked 𝔻(𝜎1:λ) := left  # ξ.then
-          𝑛·3·4 := 𝑛·3·2  # 𝕄(ξ.then)
+            𝑛·3·3 := 7
+          𝑛·3·4 := 𝑛·3·3  # 𝕄(ξ.then), 𝕄(ξ.else)
         𝕄(Φ.a🌵0):
           𝑛·1·5 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )
         𝛿·1·1 := 40-1C-00-00-00-00-00-00  # 7.0
@@ -88,7 +86,7 @@ protocol: |
           𝑛·4·1 := 𝑛·3·1  # 𝑛
           𝑛·4·2 := 𝑛·2·7  # 𝕄(𝑛·4·1)
         𝑛·1·8 := 𝑛·3·1.if( then ↦ 70 )
-        𝑛·1·9 := 𝑛·1·8( else ↦ 80 )
+        𝑛·1·9 := 𝑛·1·8( else ↦ 70 )
       𝑛1·1 := 𝑛·1·9  # 𝕄(ξ.y)
       𝔼(L_fork):  # 𝔼(𝑛1)
         𝔻(Φ.a🌵7):
@@ -98,10 +96,9 @@ protocol: |
         𝕄(Φ.a🌵8):
           𝑛·5·2 := 70
         𝕄(Φ.a🌵9):
-          𝑛·5·3 := 80
-        forked 𝔻(𝜎1:λ) := left  # ξ.then
-        𝑛·5·4 := 𝑛·5·2  # 𝕄(ξ.then)
-      𝑛2·1 := 𝑛·5·2  # 𝔼(𝑛1)
-      𝑛·1·10 := 𝑛·5·2  # 𝑛
-      𝑛·1·11 := 𝑛·5·2  # 𝕄(𝑛·1·10)
+          𝑛·5·3 := 70
+        𝑛·5·4 := 𝑛·5·3  # 𝕄(ξ.then), 𝕄(ξ.else)
+      𝑛2·1 := 𝑛·5·3  # 𝔼(𝑛1)
+      𝑛·1·10 := 𝑛·5·3  # 𝑛
+      𝑛·1·11 := 𝑛·5·3  # 𝕄(𝑛·1·10)
     𝑛·0·3 := Φ.bytes( φ ↦ 40-51-80-00-00-00-00-00:Δ )

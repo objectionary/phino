@@ -5,12 +5,12 @@
 # The left side reads the ρ of a copy, the way 'as-number' of EO reads its
 # 'data', so 𝕄 brings it to a number whose bytes carry the copy as an extra
 # '( ρ ↦ ⟦ … ⟧ )' tail. The right side is a number made of no object and has
-# no such tail. Both are numbers made of one symbol, yet the tail made the
-# fork split the run (#1967). A 'stay' line drops every ρ applied to a
-# dispatch, which 'stay' or 'skip' of normalization drops anyway once the
-# dispatch comes to a formation, so the two sides differ in their symbols
-# alone. The fork takes the metas the 'stay' lines bound as they are, joins
-# them into one term with a fresh symbol and does not split the run.
+# no such tail. Both are numbers made of one symbol, yet the tail kept the
+# join from making one term of them (#1967). A 'stay' line drops every ρ
+# applied to a dispatch, which 'stay' or 'skip' of normalization drops anyway
+# once the dispatch comes to a formation, so the two sides differ in their
+# symbols alone. The join takes the metas the 'stay' lines bound as they are
+# and makes one term of them with a fresh symbol.
 # The protocol comments the line of '𝑛3', which dropped a tail, with
 # 'stay(𝑛1)', and the line of '𝑛4', which dropped nothing, with '𝑛2' alone.
 symbolic: |
@@ -23,7 +23,7 @@ symbolic: |
     stay:
       𝑛3: 𝑛1
       𝑛4: 𝑛2
-    fork:
+    join:
       on: 𝛿1
       left: 𝑛3
       right: 𝑛4

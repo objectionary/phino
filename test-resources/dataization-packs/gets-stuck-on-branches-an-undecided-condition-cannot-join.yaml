@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Nobody decided the comparison, and the two branches are numbers that differ
+# in more than a symbol, so no join makes one term of them and the firing of
+# 'if' gets stuck instead of picking a branch (#1996).
+model: true
+symbolic: true
+input: '5.gt( 6 ).if( 1, 2 )'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"

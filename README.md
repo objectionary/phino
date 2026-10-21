@@ -153,7 +153,7 @@ exactly as it normalizes anything else, so `--protocol`, `--partial` and
 those of the two blocks below among them.
 
 An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`, `stay`,
-`symbolize`, `fork` and `𝑛`, and any other key, such as a misspelled `forkk`,
+`symbolize`, `join` and `𝑛`, and any other key, such as a misspelled `joinn`,
 refuses the whole file, so a typo never drops a block without a word.
 
 ### Firing what an operand came to
@@ -234,27 +234,27 @@ markup by the meta of the element that named it earlier, such as the
 `<applied>` of the call, or by an expression meta, such as `𝑒1`, when none
 did.
 
-A `fork` block, described below, defers nothing by itself. An entry that
-forks defers a side with a `defer` line of its own, reading the meta the side
-was morphed to, so a path whose branch is such a copy ends in a fresh symbol
-rather than getting stuck inside the unknown. A side written as a path from
-`$` is morphed and taken as it comes, a copy over a bare symbol included.
+A `join` block, described below, defers nothing by itself. An entry that
+joins defers a side with a `defer` line of its own, reading the meta the side
+was morphed to, so a side that is such a copy comes to a fresh symbol rather
+than getting stuck inside the unknown. A side written as a path from `$` is
+morphed and taken as it comes, a copy over a bare symbol included.
 
-### Forking on a condition nobody decided
+### Joining on a condition nobody decided
 
 A branching λ function answers neither of its branches. Which one the program
 takes is decided by a value nobody worked out, so handing one of them through
 would drop the branch point from the program altogether, and joining two
 different terms into one would make up a value no run of the program ever has.
-`fork` is the fifth block, and it answers nothing: it names the condition and
-the two sides, and the run splits into paths, one per side, unless the two
-sides turn out to be one.
+`join` is the fifth block: it names the condition and the two sides, and the
+entry answers the one term both sides join into, or gets stuck when they do
+not join.
 
 ```yaml
 - λ: L_fork
   dataize:
     𝛿1: $.φ
-  fork:
+  join:
     on: 𝛿1
     left: $.left
     right: $.right
@@ -263,97 +263,50 @@ sides turn out to be one.
 `on` names a bytes meta the `dataize` block bound, the condition, and `left`
 and `right` are paths from `$`, read against the formation being fired the way
 an operand is, or metas the `morph` block or a `stay`, `symbolize` or `defer`
-line bound, as described below. An entry with a `fork` block has no `𝑛`,
-since the side it takes is what it answers with, and no block beside
-`dataize`, `morph`, `stay`, `symbolize` and `defer`: an entry forks or it
+line bound, as described below. An entry with a `join` block has no `𝑛`,
+since the term it joins is what it answers with, and no block beside
+`dataize`, `morph`, `stay`, `symbolize` and `defer`: an entry joins or it
 computes, never both. A block missing one of the three keys, holding another,
 or naming under `on` anything but a meta of `dataize` is refused when the file
 is read, and so is a side reading a meta inside a term, such as `𝑛1.x`, or
 naming a meta that none of `morph`, `stay`, `symbolize` and `defer` binds.
 
-Before it decides anything, a fork morphs both of its sides, each where it
-stands in the universe, under a block of its own, `𝕄(Φ.a🌵3):` for the left
-side and `𝕄(Φ.a🌵4):` for the right one. A side that is a meta was morphed
-already, by the `morph` block, so the fork takes the term the meta is bound to
-as it is and morphs nothing again. When the two come to the same term,
-nothing depends on the condition: the fork decides nothing, opens no path and
-answers that term, and the line binding it is commented with both sides,
-`𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left), 𝕄(ξ.right)`. When the two differ in their
-symbols alone, such as `Φ.number( φ ↦ 𝜎3:λ )` and `Φ.number( φ ↦ 𝜎4:λ )`,
-the fork joins them into one term: every pair of symbols standing at the same
-place gets a fresh symbol, which a line of its own says is the left one where
-the condition holds and the right one where it does not, and the run goes on
-with the joined term on the path it is on:
+A join morphs both of its sides first, each where it stands in the universe,
+under a block of its own, `𝕄(Φ.a🌵3):` for the left side and `𝕄(Φ.a🌵4):` for
+the right one. A side that is a meta was morphed already, by the `morph`
+block, so the join takes the term the meta is bound to as it is and morphs
+nothing again. When the two come to the same term, nothing depends on the
+condition: the join mints nothing and answers that term, and the line binding
+it is commented with both sides, `𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left), 𝕄(ξ.right)`.
+When the two differ in their symbols alone, such as `Φ.number( φ ↦ 𝜎3:λ )` and
+`Φ.number( φ ↦ 𝜎4:λ )`, the join makes one term of them: every pair of symbols
+standing at the same place gets a fresh symbol, which a line of its own says
+is the left one where the condition holds and the right one where it does not:
 
 ```text
 joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
 ```
 
-A pair met twice gets the same fresh symbol both times. Only sides that differ
-in anything else, a datum, a λ name or the shape of a term, split the run, and
-so does a side holding a datum where the other holds a symbol, unless a
-`symbolize` line turned that datum into a symbol first, as described below.
+The condition is spelled by what the `dataize` operand came down to,
+`𝔻(𝜎2:λ)` for a symbol and the bytes for a datum. A pair met twice gets the
+same fresh symbol both times. Nothing is bound to the condition, which stays
+the unknown it was.
 
-A run keeps a decision per condition it has met, none when the run starts.
-When a firing reaches a fork whose condition nobody decided and whose sides
-differ, the run diverges there into two paths, and the protocol writes the
-split where it happens, with a block per side under it:
-
-```text
-forked 𝔻(𝜎2:λ):
-  left:  # ξ.left
-    …
-  right:  # ξ.right
-    …
-```
-
-The condition is spelled by what the `dataize` operand came down to, `𝔻(𝜎2:λ)`
-for a symbol and the bytes for a datum, and the comment of a side is the side
-as the entry wrote it, with `$` read as `ξ`. The first line of a side binds
-the answer and is commented with the side it took,
-`𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left)`, or with the meta alone, `# 𝑛3`, where the side
-is a meta, since the fork morphed nothing there. Each block holds what its
-path does after the fork, to the end of the run: what the side fires, since
-the fork answered the side rather than reduced it, and everything the program
-does with that answer afterwards. A side whose morph gets stuck or is
-cut cannot be compared with the other one, so the fork splits the run, and
-only the path taking that side gets stuck. A side that is a meta keeps this
-rule: in an entry that forks, an operand of `morph` that gets stuck or is cut
-binds its meta to nothing and throws nothing yet, a `stay` or `symbolize` line
-reading that meta binds nothing either, and only the path taking the side that
-reads it gets stuck.
-
-Once the left path ends, the right one goes on from the fork, in the state the
-run was in at the fork: what came before the fork is done and written once for
-both paths, and nothing the left path did after the fork is seen by the right
-one. A path that meets another fork nobody decided splits again where it
-stands, so the blocks of that fork nest inside the side that met it, and the
-paths run depth first: every path under the `left:` block before the first
-path under the `right:` one. Every path prints a result of its own, one line
-each, in that order. A path that gets stuck or is cut is parked by
-`--partial` the way one run is, and fails the command without it. The
-`--max-paths` option bounds how many paths the command runs, and there is no
-limit unless it is given: a program forking inside a recursion opens a path
-per round, so `--max-paths=8` ends such a run after eight paths, whatever else
-bounds it. Once that many paths are open, a fork nobody decided takes the left
-side as a decided one does. The option is refused with zero.
-
-A condition decided once on a path is decided for that path: a fork on a
-condition the path already decided takes the same side, opens no block and no
-path, and says so on a line of its own,
-`forked 𝔻(𝜎2:λ) := left  # ξ.left`, so a program forking twice on one
-condition runs two paths and not four. A decision is kept by the value the
-condition came down to and not by the firing that made it, so two forks on one
-symbol are one decision too. The right path goes on with the memo of
-`--acyclic=plausible` as it was at the fork, so a firing the left path made
-after the fork is made again on the right one, and the `right:` block writes
-every line of it, while a firing made before the fork is made once.
+Two sides that differ in anything else, a datum, a λ name or the shape of a
+term, do not join, and neither do a side holding a datum and a side holding a
+symbol, unless a `symbolize` line turned that datum into a symbol first, as
+described below. Such a firing gets stuck the way a λ function no entry
+answers does: the protocol writes `stuck L_fork`, `--partial` parks the site
+the entry was fired at, and without it the command fails with
+`No entry of --symbolic answers the λ function 'L_fork'`. A side whose morph
+gets stuck or is cut gets the firing stuck at once, the way an operand of
+`morph` does.
 
 A side may raise. EO raises with an object, a copy of
 `⟦ message ↦ ∅, λ ⤍ L_throw ⟧`, whose λ function the file leaves out on
-purpose, so that an error of the program stays an error at runtime. The path
-taking that side ends in the throw, where `--partial` parks it as it parks any
-λ name no entry answers, and the other path has a perfectly good value:
+purpose, so that an error of the program stays an error at runtime. Such a
+side is a term like any other, and it joins with no value the other side
+has, so the firing gets stuck and `--partial` parks it:
 
 ```bash
 $ cat raise.phi
@@ -371,22 +324,20 @@ $ cat raise.yaml
 - λ: L_fork
   dataize:
     𝛿1: $.φ
-  fork:
+  join:
     on: 𝛿1
     left: $.then
     right: $.else
 $ phino dataize --symbolic=raise.yaml --locator=Q.demo.a --partial \
     --sweet --hide-rho raise.phi
-40-1C-00-00-00-00-00-00
-⟦ message ↦ "negative", λ ⤍ L_throw ⟧
+⟦ λ ⤍ L_fork, then ↦ 7, else ↦ Φ.error( "negative" ), φ ↦ 𝜎1:λ ⟧
 ```
 
-The first path takes `then` and comes down to the bytes of 7, the second takes
-`else` and parks on the throw, so the `right:` block of the protocol ends in
-`unanswered L_throw`.
+The `then` side comes to the bytes of 7 and the `else` side to the copy of
+`error`, so the protocol ends in `stuck L_fork` and the command prints the
+`if` it parked.
 Without `--partial` the command fails there, with
-`No entry of --symbolic answers the λ function 'L_throw'`, the way one run
-does.
+`No entry of --symbolic answers the λ function 'L_fork'`.
 
 ### Dropping the ρ of a dispatch
 
@@ -405,7 +356,7 @@ dispatch:
   stay:
     𝑛3: 𝑛1
     𝑛4: 𝑛2
-  fork:
+  join:
     on: 𝛿1
     left: 𝑛3
     right: 𝑛4
@@ -425,16 +376,16 @@ comes to a formation, a later `( ρ ↦ 𝑒2 )` meets a `ρ` that is bound or n
 there, and `stay` or `skip` drops it. The block only drops it earlier, before
 the dispatch is reduced.
 
-This is how a fork brings two numbers to one shape. In EO `bytes.as-number`
+This is how a join brings two numbers to one shape. In EO `bytes.as-number`
 reads its `data` as `ρ`, so a branch computed through it comes to
 `Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1 )( ρ ↦ ⟦ … ⟧ ) )`, with the copy hung on the
 bytes as their `ρ`, while a branch made of no object comes to
-`Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2 ) )`. The fork compares the two as written,
-finds a shape apart, and splits the run; after `stay` they differ in their
-symbols alone, and the fork joins them. The protocol writes each line of the
-block. A line that dropped a `ρ` is commented `stay(…)` with the meta it took,
-so a reader sees that the term changed and what changed it, while a line that
-dropped nothing is commented with the meta alone:
+`Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2 ) )`. The join compares the two as written,
+finds a shape apart, and gets stuck; after `stay` they differ in their
+symbols alone, and the join makes one term of them. The protocol writes each
+line of the block. A line that dropped a `ρ` is commented `stay(…)` with the
+meta it took, so a reader sees that the term changed and what changed it, while
+a line that dropped nothing is commented with the meta alone:
 
 ```text
 𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
@@ -459,7 +410,7 @@ into a fresh symbol:
   symbolize:
     𝑛3: 𝑛1
     𝑛4: 𝑛2
-  fork:
+  join:
     on: 𝛿1
     left: 𝑛3
     right: 𝑛4
@@ -474,17 +425,17 @@ fresh, the way a bare `𝜎` of an answer is. A datum anywhere else, under a `ρ
 in a method or in an argument other than `φ`, stays, since it says nothing
 about the value of the term.
 
-This is how a fork joins a literal with a value some firing computed. In EO
-`x.gt( 0 ).if( 1, x )` has one side that is the literal `1`, a number whose
-bytes hold the datum `3F-F0-…`, and another side that is a number whose bytes
-hold a symbol. The two are numbers of one shape and differ in the value alone,
-yet a datum against a symbol is no pair of symbols, so the fork splits the run.
-After `symbolize` both sides hold a symbol where the value stands, and the fork
-joins them. The protocol writes every symbol the block minted with the datum
-it stands for, so a reader of the joined term can tell that `𝜎4` was `1` on
-the left path. A line that turned a datum into a symbol is commented
-`symbolize(…)` with the meta it took, while a line whose term held no datum is
-commented with the meta alone:
+This is how a join makes one term of a literal and a value some firing
+computed. In EO `x.gt( 0 ).if( 1, x )` has one side that is the literal `1`, a
+number whose bytes hold the datum `3F-F0-…`, and another side that is a number
+whose bytes hold a symbol. The two are numbers of one shape and differ in the
+value alone, yet a datum against a symbol is no pair of symbols, so the two do
+not join. After `symbolize` both sides hold a symbol where the value stands,
+and the join makes one term of them. The protocol writes every symbol the
+block minted with the datum it stands for, so a reader of the joined term can
+tell that `𝜎4` was `1` on the left side. A line that turned a datum into a
+symbol is commented `symbolize(…)` with the meta it took, while a line whose
+term held no datum is commented with the meta alone:
 
 ```text
 symbolized 𝜎4 := 3F-F0-00-00-00-00-00-00  # 1.0
@@ -494,11 +445,11 @@ joined 𝜎5 := 𝔻(𝜎3:λ) ? 𝜎4 : 𝜎2
 ```
 
 A line sees its own side alone, so a datum both sides share becomes two
-symbols and then one joined symbol, and the path loses that datum. A file that
-wants to keep it leaves the block out, and an entry without `symbolize` writes
-the same protocol it wrote before.
+symbols and then one joined symbol, and the joined term loses that datum. A
+file that wants to keep it leaves the block out, and an entry without
+`symbolize` writes the same protocol it wrote before.
 
-The blocks chain, and an entry that forks reads as a pipeline, every step of
+The blocks chain, and an entry that joins reads as a pipeline, every step of
 it on its own line. A side may go through a `stay` line, then a `symbolize`
 line, then a `defer` line, so that a copy over a bare symbol is deferred and
 two sides of one shape still join:
@@ -519,7 +470,7 @@ two sides of one shape still join:
   defer:
     𝑛7: 𝑛5
     𝑛8: 𝑛6
-  fork:
+  join:
     on: 𝛿1
     left: 𝑛7
     right: 𝑛8
@@ -528,9 +479,7 @@ two sides of one shape still join:
 A `defer` line here works as it does in an entry that computes: it answers a
 copy over a bare symbol with a fresh symbol, writes the `deferred …` line
 sited at the meta it read, such as `# 𝕄(𝑛6.φ)`, and binds any other term as
-it stands. Like a `stay` or `symbolize` line, it binds nothing and throws
-nothing when the `morph` of the meta it reads got stuck or was cut, and only
-the path taking that side gets stuck.
+it stands.
 
 ### The order of the lines
 
@@ -736,18 +685,11 @@ manufactured rather than read out of the program. A `𝜎` is the name of a λ
 function and no term of its own, so 𝔻 is applied to the formation carrying it
 and never to the name alone.
 
-A `fork` block writes the split it made, `forked 𝔻(𝜎2:λ):` with a `left:`
-and a `right:` block under it, the side it took on a condition already
-decided, `forked 𝔻(𝜎2:λ) := left  # ξ.left`, or the symbols it joined,
-`joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`. A side is a decision and no assignment:
-nothing is bound to the condition, which stays the unknown it was, and a
-reader of the protocol takes a side as the assumption every line inside it
-stands under. The comment of a side is
-the side as the entry spells it, with no judgment around it: picking a side is
-the file's own operation and nothing of the calculus runs there, so the line
-names a term of the entry where every other comment names a judgment. A
-comment carries the letter of a judgment exactly where a judgment made the
-value and the block around the line does not already say so.
+A `join` block writes every symbol it minted,
+`joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`, and nothing is bound to the condition,
+which stays the unknown it was. A comment carries the letter of a judgment
+exactly where a judgment made the value and the block around the line does
+not already say so.
 
 The site of a firing is a locator, and the block a firing stands in names it,
 under the letter of the judgment that asked for the firing: 𝔼 is fired by the
@@ -878,7 +820,7 @@ it always holds the firings of exactly one run.
 
 The blocks come in the order the reduction walks the term, and that order is
 not what the dependencies are read from — the symbols are. Take a comparison
-nobody can decide, a fork branching on it, and an `atoms.yaml` of three
+nobody can decide, a join branching on it, and an `atoms.yaml` of three
 entries, the λ functions named briefly to keep the lines below short:
 
 ```yaml
@@ -895,7 +837,7 @@ entries, the λ functions named briefly to keep the lines below short:
 - λ: L_fork
   dataize:
     𝛿1: $.φ
-  fork:
+  join:
     on: 𝛿1
     left: $.then
     right: $.else
@@ -910,7 +852,7 @@ $ cat fork.phi
   bool ↦ ⟦ if ↦ ∅ ⟧,
   number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_plus ⟧, gt(ρ, x) ↦ ⟦ λ ⤍ L_gt ⟧ ⟧,
   foo(x) ↦ ⟦
-    φ ↦ ξ.x.gt( 0 ).if( ξ.x.plus( ξ.x.plus( 1 ) ), ξ.x.plus( ξ.x ) ).plus( 5 )
+    φ ↦ ξ.x.gt( 0 ).if( ξ.x.plus( 1 ).plus( ξ.x ), ξ.x.plus( 2 ).plus( ξ.x ) ).plus( 5 )
   ⟧,
   demo ↦ ⟦ a ↦ Φ.foo( Φ.number( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ) ⟧
 ⟧
@@ -937,132 +879,108 @@ $ cat fork.txt
       𝕄(𝑛·1·4):
         𝑛·1·5 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )
       𝑛·1·6 := 𝑛·1·5  # 𝕄(𝑛·1·4)
-    𝑛·0·4 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛·1·1.plus( 𝑛·1·1.plus( 1 ) ) )
-    𝑛·0·5 := 𝑛·0·4( else ↦ 𝑛·1·1.plus( 𝑛·1·1 ) )
+    𝑛·0·4 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛·1·1.plus( 1 ).plus( 𝑛·1·1 ) )
+    𝑛·0·5 := 𝑛·0·4( else ↦ 𝑛·1·1.plus( 2 ).plus( 𝑛·1·1 ) )
     𝔼(L_fork):
       𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
       𝕄(Φ.a🌵3):
         𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )
-        𝑛·2·2 := 𝑛·2·1.plus( x ↦ 𝑛·2·1.plus( 1 ) )
-      𝕄(Φ.a🌵4):
-        𝑛·2·3 := Φ.number( φ ↦ 𝜎1:λ )
-        𝑛·2·4 := 𝑛·2·3.plus( x ↦ 𝑛·2·3 )
-      forked 𝔻(𝜎2:λ):
-        left:  # ξ.then
-          𝑛·2·5 := 𝑛·2·2  # 𝕄(ξ.then)
-          𝔼(L_plus):  # 𝕄(Φ.demo.a)
-            𝔻(Φ.a🌵5):
-              𝕄(Φ.a🌵5):
-                𝑛·3·1 := Φ.number( φ ↦ 𝜎1:λ )
-            𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-            𝔻(Φ.a🌵6):
-              𝕄(Φ.a🌵6):
-                𝑛·3·2 := Φ.number( φ ↦ 𝜎1:λ )
-                𝑛·3·3 := 𝑛·3·2.plus( x ↦ 1 )
-              𝔼(L_plus):
-                𝔻(Φ.a🌵7):
-                  𝕄(Φ.a🌵7):
-                    𝑛·4·1 := Φ.number( φ ↦ 𝜎1:λ )
-                𝛿1·4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-                𝔻(Φ.a🌵8):
-                  𝕄(Φ.a🌵8):
-                    𝑛·4·2 := 1
-                    𝑛·4·3 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
-                  𝛿·4·1 := 3F-F0-00-00-00-00-00-00  # 1.0
-                𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)
-                𝑛·4·4 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
-                𝕄(𝑛·4·4):
-                  𝑛·4·5 := Φ.number( φ ↦ 𝜎3:λ )
-                𝑛·4·6 := 𝑛·4·5  # 𝕄(𝑛·4·4)
-            𝛿2·3 := 𝔻(𝜎3:λ)  # 𝔻(ξ.x)
-            𝑛·3·4 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
-            𝕄(𝑛·3·4):
-              𝑛·3·5 := Φ.number( φ ↦ 𝜎4:λ )
-            𝑛·3·6 := 𝑛·3·5  # 𝕄(𝑛·3·4)
-          𝑛·0·6 := 𝑛·3·5.plus( x ↦ 5 )  # 𝕄(Φ.demo.a)
-          𝔼(L_plus):  # 𝔻(Φ.demo.a)
-            𝔻(Φ.a🌵9):
-              𝕄(Φ.a🌵9):
-                𝑛·5·1 := Φ.number( φ ↦ 𝜎4:λ )
-            𝛿1·5 := 𝔻(𝜎4:λ)  # 𝔻(ξ.ρ)
-            𝔻(Φ.a🌵10):
-              𝕄(Φ.a🌵10):
-                𝑛·5·2 := 5
-                𝑛·5·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-              𝛿·5·1 := 40-14-00-00-00-00-00-00  # 5.0
-            𝛿2·5 := 𝛿·5·1  # 𝔻(ξ.x)
-            𝑛·5·4 := Φ.number( φ ↦ 𝜎5:λ )  # 𝑛
-            𝕄(𝑛·5·4):
-              𝑛·5·5 := Φ.number( φ ↦ 𝜎5:λ )
-            𝑛·5·6 := 𝑛·5·5  # 𝕄(𝑛·5·4)
-        right:  # ξ.else
-          𝑛·2·6 := 𝑛·2·4  # 𝕄(ξ.else)
-          𝔼(L_plus):  # 𝕄(Φ.demo.a)
-            𝔻(Φ.a🌵11):
-              𝕄(Φ.a🌵11):
-                𝑛·6·1 := Φ.number( φ ↦ 𝜎1:λ )
-            𝛿1·6 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-            𝔻(Φ.a🌵12):
-              𝕄(Φ.a🌵12):
-                𝑛·6·2 := Φ.number( φ ↦ 𝜎1:λ )
-            𝛿2·6 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
-            𝑛·6·3 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
-            𝕄(𝑛·6·3):
-              𝑛·6·4 := Φ.number( φ ↦ 𝜎6:λ )
-            𝑛·6·5 := 𝑛·6·4  # 𝕄(𝑛·6·3)
-          𝑛·0·7 := 𝑛·6·4.plus( x ↦ 5 )  # 𝕄(Φ.demo.a)
-          𝔼(L_plus):  # 𝔻(Φ.demo.a)
-            𝔻(Φ.a🌵13):
-              𝕄(Φ.a🌵13):
-                𝑛·7·1 := Φ.number( φ ↦ 𝜎6:λ )
-            𝛿1·7 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
-            𝔻(Φ.a🌵14):
-              𝕄(Φ.a🌵14):
-                𝑛·7·2 := 5
-                𝑛·7·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-              𝛿·7·1 := 40-14-00-00-00-00-00-00  # 5.0
-            𝛿2·7 := 𝛿·7·1  # 𝔻(ξ.x)
-            𝑛·7·4 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
-            𝕄(𝑛·7·4):
-              𝑛·7·5 := Φ.number( φ ↦ 𝜎7:λ )
-            𝑛·7·6 := 𝑛·7·5  # 𝕄(𝑛·7·4)
+        𝑛·2·2 := 𝑛·2·1.plus( x ↦ 1 )
+        𝔼(L_plus):
+          𝔻(Φ.a🌵4):
+            𝕄(Φ.a🌵4):
+              𝑛·3·1 := Φ.number( φ ↦ 𝜎1:λ )
+          𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+          𝔻(Φ.a🌵5):
+            𝕄(Φ.a🌵5):
+              𝑛·3·2 := 1
+              𝑛·3·3 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+            𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
+          𝛿2·3 := 𝛿·3·1  # 𝔻(ξ.x)
+          𝑛·3·4 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
+          𝕄(𝑛·3·4):
+            𝑛·3·5 := Φ.number( φ ↦ 𝜎3:λ )
+          𝑛·3·6 := 𝑛·3·5  # 𝕄(𝑛·3·4)
+        𝑛·2·3 := 𝑛·3·5.plus( x ↦ 𝑛·3·1 )
+      𝕄(Φ.a🌵6):
+        𝑛·2·4 := Φ.number( φ ↦ 𝜎1:λ )
+        𝑛·2·5 := 𝑛·2·4.plus( x ↦ 2 )
+        𝔼(L_plus):
+          𝔻(Φ.a🌵7):
+            𝕄(Φ.a🌵7):
+              𝑛·4·1 := Φ.number( φ ↦ 𝜎1:λ )
+          𝛿1·4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+          𝔻(Φ.a🌵8):
+            𝕄(Φ.a🌵8):
+              𝑛·4·2 := 2
+              𝑛·4·3 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
+            𝛿·4·1 := 40-00-00-00-00-00-00-00  # 2.0
+          𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)
+          𝑛·4·4 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
+          𝕄(𝑛·4·4):
+            𝑛·4·5 := Φ.number( φ ↦ 𝜎4:λ )
+          𝑛·4·6 := 𝑛·4·5  # 𝕄(𝑛·4·4)
+        𝑛·2·6 := 𝑛·4·5.plus( x ↦ 𝑛·4·1 )
+      joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4
+      𝑛·2·7 := ⟦ x ↦ 𝑛·4·1, λ ⤍ L_plus ⟧  # 𝕄(ξ.then), 𝕄(ξ.else)
+    𝔼(L_plus):
+      𝔻(Φ.a🌵9):
+        𝕄(Φ.a🌵9):
+          𝑛·5·1 := Φ.number( φ ↦ 𝜎5:λ )
+      𝛿1·5 := 𝔻(𝜎5:λ)  # 𝔻(ξ.ρ)
+      𝔻(Φ.a🌵10):
+        𝕄(Φ.a🌵10):
+          𝑛·5·2 := Φ.number( φ ↦ 𝜎1:λ )
+      𝛿2·5 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+      𝑛·5·3 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
+      𝕄(𝑛·5·3):
+        𝑛·5·4 := Φ.number( φ ↦ 𝜎6:λ )
+      𝑛·5·5 := 𝑛·5·4  # 𝕄(𝑛·5·3)
+    𝑛·0·6 := 𝑛·5·4.plus( x ↦ 5 )
+  𝔼(L_plus):
+    𝔻(Φ.a🌵11):
+      𝕄(Φ.a🌵11):
+        𝑛·6·1 := Φ.number( φ ↦ 𝜎6:λ )
+    𝛿1·6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
+    𝔻(Φ.a🌵12):
+      𝕄(Φ.a🌵12):
+        𝑛·6·2 := 5
+        𝑛·6·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+      𝛿·6·1 := 40-14-00-00-00-00-00-00  # 5.0
+    𝛿2·6 := 𝛿·6·1  # 𝔻(ξ.x)
+    𝑛·6·4 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
+    𝕄(𝑛·6·4):
+      𝑛·6·5 := Φ.number( φ ↦ 𝜎7:λ )
+    𝑛·6·6 := 𝑛·6·5  # 𝕄(𝑛·6·4)
 ```
 
 <!-- markdownlint-enable MD013 -->
 
-`𝜎2` is minted by the first firing and consumed by the fork, which forks on
-it: the fork morphs both branches where they stand in the universe,
-`𝕄(Φ.a🌵3):` and `𝕄(Φ.a🌵4):`, finds that they differ, and since nobody
-decided `x.gt( 0 )`, the run diverges right there, on the `forked …:` line.
-That line holds a block per side, `left:` and `right:`, each commented with
-the side as the entry spells it, and each block holds the whole rest of the
-run on its path, down to the last firing of the outer `𝔻`. `𝜎3` is minted by
-the `plus( 1 )` inside the branch and consumed by the `plus` around it as
-`𝔻(𝜎3:λ)`, and `𝜎4` is what the branch came to, which the `plus( 5 )`
-standing after the fork reads as `𝔻(𝜎4:λ)`. The `right:` block goes on from
-the fork and not from the top of the program: it takes `else` over the same
-`𝜎2`, and reads `𝔻(𝜎6:λ)` after it. A reader who knows the entry knows that
-`𝛿1` is what decides between the two blocks and that the first of them
-belongs to `then`. Nothing is assigned to a `𝜎`, it being the name of a λ
-function, so the decision stands on a line of its own, with the two sides
-under it.
+`𝜎2` is minted by the first firing and consumed by the join, which morphs
+both branches where they stand in the universe, `𝕄(Φ.a🌵3):` and
+`𝕄(Φ.a🌵6):`, and each morph fires the `plus` its branch starts with. `𝜎3` is
+minted by the `plus( 1 )` of `then` and `𝜎4` by the `plus( 2 )` of `else`, and
+nothing else tells the two branches apart, so the join mints `𝜎5` and writes,
+on the `joined …` line, that `𝜎5` is `𝜎3` where `𝜎2` holds and `𝜎4` where it
+does not. A reader who knows the entry knows that `𝛿1` is the condition and
+that `𝜎3` belongs to `then`. Nothing is assigned to a `𝜎`, it being the name
+of a λ function, so the decision nobody made stands on a line of its own. The
+`plus` both branches end in reads the joined symbol as `𝔻(𝜎5:λ)`, and the
+`plus( 5 )` after it reads `𝔻(𝜎6:λ)`.
 
-The metas and the symbols keep counting across the paths, and a name given
-before the fork names the same term on both paths, which is why the second
-answers `𝑛·2·6 := 𝑛·2·4`: the branch it takes is the very term the fork morphed
-before it decided. Were the fork to join two branches this different
-into one term, `foo` would read as a program that computes a condition,
-computes both branches and then makes up a value neither of them has.
+Two branches that differ in more than their symbols do not join. Had `else`
+been `ξ.x.plus( ξ.x )`, the firing of `L_fork` would end in `stuck L_fork`,
+since one term for both would make `foo` read as a program that computes a
+condition, computes both branches and then makes up a value neither of them
+has.
 
 A firing that happened while an operand of another was being reduced stands one
 level deeper, under the firing that asked for it. The `plus( 1 )` of `then` is
-fired while the outer `plus` brings its `x` down, so it stands inside that
-firing. The branch the fork takes reaches it as a call 𝕄 left unfired, and is
-fired inside the side, since the fork answered the branch rather than reduced
-it. A side opens no heading of a judgment, so a line in it keeps the comment
-of the judgment that made it: `𝔼(L_plus):  # 𝕄(Φ.demo.a)` is the firing the
-morph of `Φ.demo.a` asked for once the fork answered, and
-`𝔼(L_plus):  # 𝔻(Φ.demo.a)` is the one the outer `𝔻` asked for after it.
+fired while the join morphs that branch, so it stands inside `𝔼(L_fork)`. The
+`plus` both branches end in reaches the join as a call 𝕄 left unfired, and is
+fired once the join answered, by the morph of `Φ.demo.a`, so it stands beside
+`𝔼(L_fork)` rather than inside it. The last `𝔼(L_plus)` is the one the outer
+`𝔻` asked for after the morph.
 
 ### The protocol as XML
 
@@ -1129,9 +1047,7 @@ $ cat atoms.xml
 The root is `<protocol>`, holding the run in one element, named after the
 judgment it ran — `<dataize>` for a 𝔻, `<morph>` for a 𝕄 — with `at` naming
 the term it was aimed at, which is what the text format opens with as
-`𝔻(Φ)`. A fork that splits the run writes every path inside that one
-element, at the fork that opened it, as described below. After the run the
-root holds `<msec>`, `<firings>`
+`𝔻(Φ)`. After the run the root holds `<msec>`, `<firings>`
 and `<fps>`: how long the command took, how many λ functions it fired, and how
 many it fired per second. The text format ends with the same three as
 `msec …`, `firings …` and `fps …`.
@@ -1223,22 +1139,12 @@ Since the markup names terms the text format writes out, the two count their
 metas each on their own: `𝑛·1·11` of the markup above is `𝑛·1·6` of the
 text.
 
-`<forked on="𝜎2">` is a fork that split the run, which the text format writes
-as `forked 𝔻(𝜎2:λ):`. The condition stands in `on`, the symbol or the datum
-the operand came down to, and the two `<morph>` elements before it are the
-sides being morphed where they stand in the universe. The element holds a
-`<left>` and a `<right>`, one per side, and each of them holds what its path
-did after the fork, to the end of the run: the `<answered>` of the firing
-first, then everything the program did with that answer. A fork met inside a
-side writes its own `<forked>` inside that side. `<forked side="left">𝜎2</forked>`
-is a fork on a condition the path had decided already, which the text format
-writes as `forked 𝔻(𝜎2:λ) := left`: the side stands in `side` and the
-condition is the text. Neither element takes a `meta`, since a decision binds
-nothing. A fork that joins its two sides writes
-`<joined symbol="𝜎5" left="𝜎3" right="𝜎4">𝜎2</joined>` instead, one element
-per fresh symbol, which the text format writes as
+A join writes `<joined symbol="𝜎5" left="𝜎3" right="𝜎4">𝜎2</joined>`, one
+element per fresh symbol, which the text format writes as
 `joined 𝜎5 := 𝔻(𝜎2:λ) ? 𝜎3 : 𝜎4`: the fresh symbol stands in `symbol`, the
-two it stands for in `left` and `right`, and the condition is the text.
+two it stands for in `left` and `right`, and the condition is the text. The
+two `<morph>` elements before it are the sides being morphed where they stand
+in the universe.
 
 `<symbolized symbol="𝜎4" number="1.0">3F-F0-00-00-00-00-00-00</symbolized>` is
 one symbol a `symbolize` line minted, which the text format writes as
@@ -1261,10 +1167,10 @@ a reader joins on: a later `<manufactured meta="𝛿·5·1">𝜎2</manufactured>
 the symbol the firing that wrote `<minted symbol="𝜎2">` handed out. A firing
 minting two symbols writes two elements and one minting none writes none,
 which no attribute on the answer could say: a term may carry several symbols,
-or carry one where the value it stands for is not a symbol at all. In the fork
+or carry one where the value it stands for is not a symbol at all. In the join
 above, `𝔼(L_gt)` writes `<minted symbol="𝜎2">` although `𝜎2` sits under `if`
 and not where the value of the term is, while `𝔼(L_fork)` writes none at all,
-since it answers a side of the program and mints nothing.
+since the one symbol it mints is written as `<joined>`.
 
 A λ name no entry answers is `<unanswered λ="…">`, standing where its
 `<evaluate>` would have stood with the name of the formation 𝔼 was fired
@@ -1529,14 +1435,6 @@ $ phino morph --symbolic=split.yaml --locator=Q.x --max-firings=64 split.phi
 [ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=64
 ```
 
-A fork of `--symbolic` whose sides differ opens a path per side, and a program
-forking inside a recursion opens a path per round, so a command may run more
-paths than its caller can wait for. The `--max-paths` option bounds how many
-paths the command runs: once that many are open, a fork nobody decided takes
-its left side and opens no path, and the command prints the results it has.
-There is no limit unless the option is given, and the option is refused with
-zero.
-
 Both budgets count work, so a run inside both of them may still take longer
 than its caller can wait, and a caller that kills it gets a protocol nobody
 closed. The `--max-seconds` option stops the run by the clock instead: once
@@ -1734,11 +1632,11 @@ million changes neither the answer nor the time.
 What `proven` cannot see is a recursion that never comes back to the same
 formation: one whose arguments grow by a wrapper every round. Take a factorial
 with an accumulator it builds a `pair` onto, with `facta.yaml` answering
-`L_zero` and `L_dec` with a fresh symbol each and `L_if` forking on its
-condition. Under `proven` every round opens a path of its own, nesting one
-level deeper than the last until `--max-steps` runs out, since no renaming of
-symbols turns a longer chain of pairs into a shorter one, and `--max-paths` is
-what ends such a run early:
+`L_zero` and `L_dec` with a fresh symbol each and `L_if` joining on its
+condition. Under `proven` the morph of every `right` fires the `if` inside it,
+nesting one level deeper than the last until `--max-steps` runs out, since no
+renaming of symbols turns a longer chain of pairs into a shorter one. Under
+`plausible` it is cut on the first round:
 
 <!-- markdownlint-disable MD013 -->
 
@@ -1765,17 +1663,16 @@ $ cat facta.yaml
 - λ: L_if
   dataize:
     𝛿1: $.c
-  fork:
+  join:
     on: 𝛿1
     left: $.left
     right: $.right
 $ phino morph --acyclic=plausible --partial --sweet --hide-rho --flat \
     --symbolic=facta.yaml --locator='Q.x' --protocol=facta.txt facta.phi
-00-:Δ
 Φ.if( c ↦ Φ.zero( x ↦ 𝜎1:λ ), left ↦ Φ.box( v ↦ 00-:Δ ), right ↦ Φ.fact( n ↦ Φ.dec( x ↦ 𝜎1:λ ), acc ↦ Φ.pair( head ↦ 𝜎1:λ, tail ↦ Φ.box( v ↦ 00-:Δ ) ) ).φ ).φ
-$ grep looped facta.txt
+$ grep 'looped\|stuck' facta.txt
       looped 𝑛·0·5  # plausible
-        looped 𝑛·0·5  # 𝕄(Φ.x), plausible
+    stuck L_if
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1786,14 +1683,12 @@ top, and every term the earlier one bound there is found again in the later
 one, as it stands or somewhere below a wrapper it gained. Any symbol stands for
 any other, and nothing is looked for under a `ρ`, which holds the object a term
 came from rather than a term it grew into. The first `if` morphs both of its
-sides before it decides, and its `right` holds a second `if`, which holds the
-first under one more `pair` and one more `dec`, so that morph is cut once,
-before the fork, for both paths, and its `looped …` line says `plausible`.
-The first path takes the `left` and answers the accumulator. The second takes
-the `right`, which comes back as the term the cut left, the path meets the
-same `if` once more and is cut again inside the `right:` block, and
-`--partial` parks it. A call
-nested in its own operand, such as a sum of sums, is never
+sides before it joins them, and its `right` holds a second `if`, which holds
+the first under one more `pair` and one more `dec`, so that morph is cut, and
+its `looped …` line says `plausible`. The `left` comes to the accumulator and
+the `right` comes back as the term the cut left, so the two do not join, the
+firing gets stuck, and `--partial` parks the `if`. A call nested in its own
+operand, such as a sum of sums, is never
 cut, since the inner call is smaller than the outer one and cannot hold it.
 The mode is not sound, though: a recursion whose argument grows on its way to
 stopping is cut too, which is why the line names the mode that made the cut.
