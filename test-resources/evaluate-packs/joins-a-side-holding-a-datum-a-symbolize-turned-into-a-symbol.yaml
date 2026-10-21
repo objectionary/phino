@@ -6,11 +6,11 @@
 # whose bytes hold a datum. The right side is a number some firing computed,
 # so its bytes hold a symbol. Both are numbers of one shape and differ in the
 # value alone, yet no join makes one term of a datum and a symbol (#1968). A
-# 'symbolize' line turns every datum along the φ chain of a term into a fresh
-# symbol, so '𝑛3' holds 𝜎4 where '𝑛1' held the datum, and the protocol writes
-# that 𝜎4 stands for that datum. The line of '𝑛4', whose term holds no datum,
-# is commented with '𝑛2' alone. The join takes the metas the 'symbolize'
-# lines bound and joins 𝜎4 with 𝜎2 into one fresh symbol 𝜎5.
+# 'symbolize' line turns every datum of a term into a fresh symbol, so '𝑛3'
+# holds 𝜎4 where '𝑛1' held the datum, and the protocol writes that 𝜎4 stands
+# for that datum. The line of '𝑛4', whose term holds no datum, is commented
+# with '𝑛2' alone. The join takes the metas the 'symbolize' lines bound and
+# joins 𝜎4 with 𝜎2 into one fresh symbol 𝜎5.
 symbolic: |
   - λ: L_fork
     dataize:
