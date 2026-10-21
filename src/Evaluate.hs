@@ -85,7 +85,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           throwIO (escaped failure)
     worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
     worked ctx entry firing@(Firing _ operands _) bound state' = do
-      (lined, state'') <- foldM (line ctx) (bound, state') entry._lines
+      (lined, state'') <- foldM (line ctx entry._ending) (bound, state') entry._lines
       (answer, state''') <- concluded ctx entry operands lined state''
       remember caller._memo firing answer
       pure (answer, state''')
@@ -95,11 +95,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     keyed :: Expression -> IO Expression
     keyed side@(ExMeta _) = pure side
     keyed side = operand side
-    line :: ReduceContext -> (Subst, State) -> Line -> IO (Subst, State)
-    line ctx held (Evaluated meta source) = evaluated ctx held meta source
-    line ctx (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
-    line ctx (bound, state') (Stayed meta source) = (,state') <$> reshaped ctx "stay" (pure . stayed) meta source bound
-    line ctx (bound, state') (Symbolized meta source) = (,state') <$> reshaped ctx "symbolize" (masked ctx) meta source bound
+    line :: ReduceContext -> Ending -> (Subst, State) -> Line -> IO (Subst, State)
+    line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
+    line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
+    line ctx _ (bound, state') (Stayed meta source) = (,state') <$> reshaped ctx "stay" (pure . stayed) meta source bound
+    line ctx _ (bound, state') (Symbolized meta source) = (,state') <$> reshaped ctx "symbolize" (masked ctx) meta source bound
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
@@ -170,13 +170,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       writeIORef ctx._minted spent
       mapM_ (\(fresh, bytes) -> ctx._saveEval (EvSymbolized ctx._nesting fresh bytes)) known
       pure stood
-    evaluated :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
-    evaluated ctx (bound, state') meta source = do
+    evaluated :: ReduceContext -> Ending -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
+    evaluated ctx ending (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      (answer, state'') <- fire ctx (ExMeta source._name) state' term
+      (answer, state'') <- kindled ctx ending (ExMeta source._name) state' term
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Evaluation (ExMeta source._name) answer)
       bound' <- bind meta (MvExpression answer) bound
       pure (bound', state'')
+    kindled :: ReduceContext -> Ending -> Expression -> State -> Expression -> IO (Expression, State)
+    kindled ctx _ site state' term@(ExFormation _) = fire ctx site state' term
+    kindled _ Joining{} _ state' term = pure (term, state')
+    kindled ctx _ site state' term = fire ctx site state' term
     fire :: ReduceContext -> Expression -> State -> Expression -> IO (Expression, State)
     fire _ _ state' ExTermination = pure (ExTermination, state')
     fire ctx site state' term@(ExFormation _) = do

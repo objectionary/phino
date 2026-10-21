@@ -113,12 +113,7 @@ instance FromJSON Lambda where
           (Nothing, Nothing) -> fail (printf "The entry of λ function '%s' has neither an '𝑛' key nor a 'join' block" key)
           (Just _, Just _) -> fail (printf "The entry of λ function '%s' has both an '𝑛' key and a 'join' block, while a join answers the term it joins" key)
           (Just term, Nothing) -> Answering term <$ sigmas key term <* dataless key term
-          (Nothing, Just joint) -> alone "evaluate" >> joining key dataized joint
-        where
-          alone :: Key -> Yaml.Parser ()
-          alone name
-            | KeyMap.member name entry = fail (printf "The entry of λ function '%s' has a 'join' block beside '%s', while a join takes nothing but 'dataize', 'morph', 'stay', 'symbolize' and 'defer'" key (Key.toString name))
-            | otherwise = pure ()
+          (Nothing, Just joint) -> joining key dataized joint
       joining :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       joining key dataized block = do
         case filter (`notElem` ["on", "left", "right"]) (map Key.toText (KeyMap.keys block)) of
@@ -245,7 +240,7 @@ instance FromJSON Lambda where
           sided :: String -> Expression -> Yaml.Parser ()
           sided name side = case filter (`notElem` reduced) (metas side) of
             [] -> pure ()
-            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'stay', 'symbolize' and 'defer' binds" name key (T.unpack meta))
+            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'evaluate', 'stay', 'symbolize' and 'defer' binds" name key (T.unpack meta))
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)

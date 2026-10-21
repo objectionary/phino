@@ -161,7 +161,10 @@ under `evaluate`, each firing through 𝔼 the term a `morph` meta or an earlier
 line is bound to and binding a meta of its own to the answer (`evaluated` of
 `Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
 formation with no λ and ⊥ as they are, and never fires its answer again, so
-another call takes another line. A `stay` line binds its meta to the term
+another call takes another line. Any other term, such as one `--partial`
+parked, gets the line stuck, unless the entry joins, where `kindled` of
+`Evaluate.hs` passes it on as it is, since a join compares any two terms
+(#1999). A `stay` line binds its meta to the term
 another meta is bound to with every `( ρ ↦ … )` applied to a dispatch dropped
 (`stayed` of `Lambdas.hs`, #1967), which `stay` or `skip` of normalization
 drops anyway. A `symbolize` line binds its meta to the term another meta is
@@ -183,10 +186,10 @@ which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
-never both, and a joining entry holds nothing beside `dataize`, `morph`,
-`stay`, `symbolize` and `defer` (#1938). The block names the condition under
-`on`, a bytes meta of `dataize`, and the two sides under `left` and `right`,
-each a path from `$` or a meta `morph`, `stay`, `symbolize` or `defer` binds.
+never both (#1938), and a joining entry may hold every other block, `evaluate`
+among them (#1999). The block names the condition under `on`, a bytes meta of
+`dataize`, and the two sides under `left` and `right`, each a path from `$` or
+a meta `morph`, `evaluate`, `stay`, `symbolize` or `defer` binds.
 `merged` of `Evaluate.hs` first brings both sides down (`reached`): it morphs
 a path where it stands in the universe through `insideUniverse`, so the
 protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The join
