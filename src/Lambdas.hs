@@ -20,6 +20,7 @@ module Lambdas
   , stayed
   , symbolized
   , taken
+  , unboxed
   )
 where
 
@@ -57,6 +58,7 @@ data Line
   = Evaluated Meta Meta
   | Deferred Meta Meta
   | Stayed Meta Meta
+  | Unboxed Meta Meta
   | Symbolized Meta Meta
 
 data Ending
@@ -104,7 +106,7 @@ instance FromJSON Lambda where
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "symbolize", "join", "𝑛"]
+          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "unbox", "symbolize", "join", "𝑛"]
       concluded :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       concluded key dataized entry = do
         answer <- entry .:? "𝑛"
@@ -151,7 +153,7 @@ instance FromJSON Lambda where
         Right (BtMeta name) -> pure (Meta meta name)
         _ -> fail (printf "The operand '%s' is not a bytes meta, such as '𝛿1'" (T.unpack meta))
       written :: Object -> Yaml.Parser [Line]
-      written entry = concat <$> sequence [links Evaluated entry "evaluate", links Deferred entry "defer", links Stayed entry "stay", links Symbolized entry "symbolize"]
+      written entry = concat <$> sequence [links Evaluated entry "evaluate", links Deferred entry "defer", links Stayed entry "stay", links Unboxed entry "unbox", links Symbolized entry "symbolize"]
       links :: (Meta -> Meta -> Line) -> Object -> Key -> Yaml.Parser [Line]
       links kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Text)
@@ -191,11 +193,13 @@ instance FromJSON Lambda where
           source (Evaluated _ meta) = meta
           source (Deferred _ meta) = meta
           source (Stayed _ meta) = meta
+          source (Unboxed _ meta) = meta
           source (Symbolized _ meta) = meta
       binding :: Line -> Meta
       binding (Evaluated meta _) = meta
       binding (Deferred meta _) = meta
       binding (Stayed meta _) = meta
+      binding (Unboxed meta _) = meta
       binding (Symbolized meta _) = meta
       sigmas :: String -> Expression -> Yaml.Parser ()
       sigmas key answer = case ([kind | Slot kind _ <- slots answer, kind /= "S"], symbols answer) of
@@ -240,7 +244,7 @@ instance FromJSON Lambda where
           sided :: String -> Expression -> Yaml.Parser ()
           sided name side = case filter (`notElem` reduced) (metas side) of
             [] -> pure ()
-            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'evaluate', 'stay', 'symbolize' and 'defer' binds" name key (T.unpack meta))
+            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'evaluate', 'stay', 'unbox', 'symbolize' and 'defer' binds" name key (T.unpack meta))
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)
@@ -360,6 +364,10 @@ stayed = goExpr
     dispatched (ExDispatch _ _) = True
     dispatched (ExApplication expr _) = dispatched expr
     dispatched _ = False
+
+unboxed :: Expression -> Expression
+unboxed (ExFormation [BiTau AtPhi expr]) = expr
+unboxed expr = expr
 
 type Minting = (Int, [(Int, Bytes)])
 

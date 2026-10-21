@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The left side morphs down to a call of 'L_eq' 𝕄 left unfired, and its
+# 'evaluate' line fires it. The entry of 'L_eq' answers an object inside a
+# formation that binds nothing but φ, the way the entry of 'L_bytes_eq' of EO
+# answers its bool, while the right side is the object alone. An 'unbox' line
+# after the 'evaluate' line takes the object out of the formation the answer
+# came in (#2000), so the two objects differ in their symbols alone, and the
+# join makes one term of them.
+symbolic: |
+  - λ: L_eq
+    𝑛: ⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧, not ↦ ⟦⟧ ⟧ ⟧
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    evaluate:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    unbox:
+      𝑛5: 𝑛3
+      𝑛6: 𝑛4
+    join:
+      on: 𝛿1
+      left: 𝑛5
+      right: 𝑛6
+location: 'Q.y'
+hide-rho: false
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ L_eq ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, not ↦ ⟦⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝑛1·1 := L_eq:λ  # 𝕄(ξ.a)
+      𝑛2·1 := ⟦ φ ↦ 𝜎2:λ, not ↦ ⟦⟧ ⟧  # 𝕄(ξ.b)
+      𝔼(L_eq):  # 𝔼(𝑛1)
+        𝑛·2·1 := ⟦ φ ↦ 𝜎3:λ, not ↦ ⟦⟧ ⟧:φ  # 𝑛
+        𝑛·2·2 := ⟦ φ ↦ 𝜎3:λ, not ↦ ⟦⟧ ⟧:φ  # 𝕄(𝑛·2·1)
+      𝑛3·1 := 𝑛·2·2  # 𝔼(𝑛1)
+      𝑛4·1 := 𝑛2·1  # 𝔼(𝑛2)
+      unboxed 𝑛5·1 := ⟦ φ ↦ 𝜎3:λ, not ↦ ⟦⟧ ⟧  # 𝑛3
+      𝑛6·1 := 𝑛4·1  # 𝑛4
+      joined 𝜎4 := 𝔻(𝜎1:λ) ? 𝜎3 : 𝜎2
+      𝑛·1·1 := ⟦ φ ↦ 𝜎4:λ, not ↦ ⟦⟧ ⟧  # 𝑛5, 𝑛6
