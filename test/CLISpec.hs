@@ -1219,6 +1219,18 @@ spec = do
           ["rewrite", "--sweet", "--flat", "--show=Q.org", "--hide=Q.org.eolang"]
           ["Φ.y:yegor256:org"]
 
+    it "hides an object outside the --show locator" $
+      withStdin "[[ org -> [[ eolang -> Q.x ]], x -> 42 ]]" $
+        testCLISucceeded
+          ["rewrite", "--sweet", "--flat", "--show=Q.x", "--hide=Q.org.eolang"]
+          ["42:x"]
+
+    it "hides an object inside an earlier --hide locator" $
+      withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]] ]], x -> 42 ]]" $
+        testCLISucceeded
+          ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.eolang.number"]
+          ["⟦ org ↦ ⟦⟧, x ↦ 42 ⟧"]
+
     it "fails on a --show locator that matches nothing" $
       withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]" $
         testCLIFailed

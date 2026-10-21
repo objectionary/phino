@@ -83,7 +83,7 @@ saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
         | _outputFormat == LATEX = "tex"
         | otherwise = show _outputFormat
       render expr = do
-        shown <- F.include' expr included >>= (`F.exclude'` excluded)
+        shown <- F.exclude' expr excluded >>= (`F.include'` included)
         printInFormat ctx ((if _canonize then canonizeExpr else id) shown)
       save :: SaveStepFunc
       save expr = do

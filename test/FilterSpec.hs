@@ -46,7 +46,7 @@ spec = do
           included <- traverse (parseExpressionThrows' MONOFORM) shown
           excluded <- traverse (parseExpressionThrows' MONOFORM) hidden
           res <- parseExpressionThrows' MONOFORM result
-          [(expr', _)] <- F.include [(expr, Nothing)] included >>= (`F.exclude` excluded)
+          [(expr', _)] <- F.exclude [(expr, Nothing)] excluded >>= (`F.include` included)
           expr' `shouldBe` res
       )
 
