@@ -10,12 +10,8 @@ when:
     - [Δ, λ]
     - [𝐵1, 𝐵2]
 premises:
-  - n-result: 𝑒3
-    contextualize:
-      - 𝑒2
-      - ⟦𝐵1, φ ↦ 𝑒2, 𝐵2⟧
   - n-result: 𝑛1
-    normalize: 𝑒3
+    normalize: ⟦𝐵1, φ ↦ 𝑒2, 𝐵2⟧.φ
   - d-result: 𝛿1
     dataize:
       - 𝑛1

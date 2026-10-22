@@ -56,7 +56,7 @@ dataizationSpine rule = case bytesProducer rule.dresult of
   Just concl@(Y.Premise _ (Y.OpDataize arg universe)) -> case producer arg rule.premises of
     Just normal@(Y.Premise _ (Y.OpNormalize inner)) ->
       let side = rule.premises `excluding` [concl, normal]
-       in Right (side, Onward (Normalized (labelled (Dataization, "") side)) inner universe)
+       in Right (side, Onward (Normalized (labelled (Dataization, rule.name) side)) inner universe)
     Just morphed@(Y.Premise _ (Y.OpMorph inner scene)) ->
       Right (rule.premises `excluding` [concl, morphed], Onward (Staged scene) inner universe)
     _ ->
