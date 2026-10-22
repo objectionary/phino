@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The two sides of 'L_fork' differ in shape, so the firing fabricates a
+# formation (#2024). The left side leaves 'tu' void, so the fabricated
+# formation leaves 'tu' void too and holds that side applied to 'tu' under
+# 'left🌵', reading it off the fabricated formation (#2029). The program asks
+# the formation for 'φ' and the copy of 'L_join' it finds there for 'k', which
+# asks both copies for 'φ' through its ρ. Nobody handed 'tu' over, so the left
+# copy binds it to ⊥, which its 'φ' never reads, and the join meets the two
+# symbols the sides hold under 'k'.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+      otherwise: L_join
+  - λ: L_join
+    join:
+      on: $.on🌵
+      left: $.left🌵
+      right: $.right🌵
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ k ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, tu ↦ ∅ ⟧, b ↦ ⟦ φ ↦ ⟦ k ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ.k ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      fabricated 𝑛·1·1 := ⟦ φ ↦ 𝜎2:λ:k, tu ↦ ∅ ⟧ and 𝜎3:λ:k:φ  # ⟦ tu ↦ ∅, left🌵 ↦ ⟦ φ ↦ 𝜎2:λ:k, tu ↦ ∅ ⟧( tu ↦ tu ), right🌵 ↦ 𝜎3:λ:k:φ, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧ ⟧
+    𝔼(L_join):
+      𝑛·2·1 := ⟦ φ ↦ 𝜎2:λ:k, tu ↦ ∅ ⟧( tu ↦ ⊥ )  # 𝕄(Φ.a🌵3)
+      joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3
+      𝑛·2·2 := 𝜎4:λ:k  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)

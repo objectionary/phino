@@ -225,12 +225,16 @@ off a path by that path, as `ξ.on🌵`, and answers the joined term (`Joined`
 of `Answer`, written by `EvTaken`) with no decision (#1954).
 Two formations of other shapes, neither holding a datum, are joined attribute
 by attribute when the block names a λ function under `otherwise` (#2024):
-`forked` of `Forks.hs` builds a formation binding every attribute of both
-sides but ρ and λ to a copy of that function, whose `on🌵` holds
-`⟦ Δ ⤍ 𝛿1 ⟧`, the bytes of the condition, or `⟦ λ ⤍ 𝜎k ⟧`, the symbol it
-came down to (#2026), and whose `left🌵` and `right🌵` ask each side for the
-attribute, keeping void an attribute both sides leave void. The 🌵 mark keeps
-these three names apart from any attribute of a side, such as the `left` and
+`forked` of `Forks.hs` builds a formation leaving void every attribute either
+side leaves void and holding under `left🌵` and `right🌵` each side applied to
+its own voids, as `𝑛1( x ↦ ξ.x )`, so an argument handed to the formation
+reaches the side while the side keeps the ρ it binds (#2029). It binds every
+other attribute of both sides but ρ, λ and a name ending with 🌵 to a copy of
+that function, whose `on🌵` holds `⟦ Δ ⤍ 𝛿1 ⟧`, the bytes of the condition, or
+`⟦ λ ⤍ 𝜎k ⟧`, the symbol it came down to (#2026), and whose `left🌵` and
+`right🌵` ask the copies of the sides for the attribute through its void ρ,
+as `ρ.left🌵.a`. The 🌵 mark keeps
+these names apart from any attribute of a side, such as the `left` and
 `right` voids of the `if` of a bool in EO, since no program spells it
 (#2027). The firing writes
 `fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ … ⟧` (`EvFabricated`), naming the

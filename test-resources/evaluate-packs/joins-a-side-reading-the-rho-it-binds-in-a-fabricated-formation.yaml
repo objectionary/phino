@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The left side of 'L_fork' is a copy of 'Φ.t', so morphing it binds its ρ to
+# 'Φ', as morphing binds the ρ of most objects of EO, and its 'φ' reads 's'
+# through that ρ. The fabricated formation holds that side applied to its void
+# 'tu' (#2029), so the copy keeps the ρ the side binds: the program asks the
+# formation for 'φ' and the copy of 'L_join' it finds there for 'k', which asks
+# the left copy for 'φ', and that copy still finds 's' of 'Φ', so the join
+# meets the symbol 's' holds under 'k' and the one the right side holds.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+      otherwise: L_join
+  - λ: L_join
+    join:
+      on: $.on🌵
+      left: $.left🌵
+      right: $.right🌵
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ s ↦ ⟦ k ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧, t(ρ, tu) ↦ ⟦ φ ↦ ξ.ρ.s ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ Φ.t, b ↦ ⟦ φ ↦ ⟦ k ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.φ.k ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      fabricated 𝑛·1·1 := ⟦ tu ↦ ∅, φ ↦ ρ.s ⟧ and 𝜎3:λ:k:φ  # ⟦ tu ↦ ∅, left🌵 ↦ ⟦ tu ↦ ∅, φ ↦ ρ.s ⟧( tu ↦ tu ), right🌵 ↦ 𝜎3:λ:k:φ, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧ ⟧
+    𝔼(L_join):
+      𝑛·2·1 := Φ.t( tu ↦ ⊥ )  # 𝕄(Φ.a🌵3)
+      joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3
+      𝑛·2·2 := 𝜎4:λ:k  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)
