@@ -143,7 +143,7 @@ parseCondition v = do
       "disjoint" -> do
         vals <- v .: "disjoint"
         case vals of
-          [attrs_, bds_] -> Disjoint <$> parseJSON attrs_ <*> parseJSON bds_
+          [attrs_, bds_] -> Disjoint <$> several attrs_ <*> several bds_
           _ -> fail "'disjoint' expects exactly two arguments"
       "eq" -> do
         vals <- v .: "eq"
