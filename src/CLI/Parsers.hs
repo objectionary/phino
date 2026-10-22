@@ -260,8 +260,7 @@ optSymbolic =
               \it reduces to a normal form under \"morph\", the terms it fires through 𝔼 under \"evaluate\", \
               \the copies one of whose arguments reads to a bare symbol it answers with a fresh symbol under \
               \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", the terms \
-              \it takes out of a formation binding nothing but φ and a ρ under \"unbox\", the terms it rewrites with \
-              \rules spelled as in a rule file under \"rewrite\", the terms it keeps with \
+              \it rewrites with rules spelled as in a rule file under \"rewrite\", the terms it keeps with \
               \every datum they hold turned into a fresh symbol under \"symbolize\", and \
               \answering with the term under \"𝑛\", or joining under \"join\" the two sides of a datum of \
               \\"dataize\" into one term, with a fresh symbol where they differ"

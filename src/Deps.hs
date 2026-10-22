@@ -116,7 +116,6 @@ data Evaluation
   | EvTerm Int T.Text Judgment Expression Expression
   | EvBound Int T.Text Expression Expression
   | EvReshaped Int T.Text T.Text Expression Expression
-  | EvUnboxed Int T.Text Expression Expression
   | EvSymbolized Int Int Bytes
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
@@ -172,7 +171,6 @@ tier (EvData depth _ _ _) = depth
 tier (EvTerm depth _ _ _ _) = depth
 tier (EvBound depth _ _ _) = depth
 tier (EvReshaped depth _ _ _ _) = depth
-tier (EvUnboxed depth _ _ _) = depth
 tier (EvSymbolized depth _ _) = depth
 tier (EvMinted depth _ _) = depth
 tier (EvDeferred depth _ _ _ _ _) = depth
@@ -369,11 +367,6 @@ saveEval handle cursor printed printed' report = do
       let naming = labelled protocol spelling
       (protocol', value) <- valued protocol naming term
       line <- printf "%s := %s  # %s(%s)" naming value (T.unpack block) <$> salted source
-      pure (protocol', Just (indented at line))
-    written at (EvUnboxed _ spelling source term) protocol = do
-      let naming = labelled protocol spelling
-      (protocol', value) <- valued protocol naming term
-      line <- commented' (printf "unboxed %s := %s" naming value) source
       pure (protocol', Just (indented at line))
     written at (EvSymbolized _ symbol bytes) protocol = do
       datum <- render (ExBytes bytes)
@@ -574,10 +567,6 @@ saveEvalXml handle cursor printed report = do
     elements at (EvTerm depth spelling _ _ term) nesting = placed at nesting (bind depth nesting spelling term)
     elements at (EvBound depth spelling _ term) nesting = placed at nesting (bind depth nesting spelling term)
     elements at (EvReshaped depth spelling _ _ term) nesting = placed at nesting (bind depth nesting spelling term)
-    elements at (EvUnboxed depth spelling source term) nesting =
-      placed at nesting $ do
-        origin <- lift (spelled source)
-        printf "<unboxed meta=\"%s\" of=\"%s\">%s</unboxed>" (escapeXML (labelled nesting spelling)) (escapeXML (labelled nesting (T.pack origin))) . escapeXMLText <$> leaf depth term
     elements at (EvSymbolized _ symbol bytes) nesting = do
       datum <- printed (ExBytes bytes)
       placed at nesting (pure (printf "<symbolized symbol=\"%s\"%s>%s</symbolized>" (sigma symbol) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum)))

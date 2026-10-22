@@ -174,12 +174,7 @@ turned into a fresh symbol (`symbolized` of `Lambdas.hs`, #1968, #2008), and
 writes `symbolized 𝜎4 := …` (`EvSymbolized`) per symbol it minted with the
 datum it stands for. A line of either that changed its term writes
 `# stay(𝑛1)` or `# symbolize(𝑛1)` to the text protocol (`EvReshaped`), and the
-markup binds it as any other. An `unbox` line binds its meta to what a
-formation holds in φ when it binds nothing else but a ρ, void or bound, as a
-copy of a global object does (#2007), taking off one formation and morphing
-nothing (`unboxed` of `Lambdas.hs`, #2000), and to any other term as it is;
-a line that took one off writes `unboxed 𝑛4·1 := …` and
-`<unboxed meta="𝑛4·1" of="𝑛2·1">` (`EvUnboxed`) in place of its binding. A
+markup binds it as any other. A
 `rewrite` line holds `of`, the meta it reads, and `rules`, spelled as in a
 rule file and read as `Rule` of `Yaml.hs`, and binds its meta to that term
 with the rules applied (`rewritten` of `Lambdas.hs`, #2005): every position
@@ -192,7 +187,7 @@ operand of `morph` naming a meta alone, such as `𝑛4: 𝑛3`, is a line too
 the meta is bound to through `morphing`, as it stands and not read against the
 formation fired, and writes `# 𝕄(𝑛3)`, while `_morphed` keeps the operands
 reading `$` alone, which run before every line. The lines of `morph`,
-`evaluate`, `defer`, `stay`, `unbox`, `rewrite` and `symbolize` are one list,
+`evaluate`, `defer`, `stay`, `rewrite` and `symbolize` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
 line reads, keeping the order of the blocks where no meta decides, and refuses
 a line reading what nothing binds or what it binds itself (#1903). No
@@ -207,8 +202,8 @@ An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
 among them (#1999). The block names the condition under `on`, a bytes meta of
 `dataize` or a path from `$`, and the two sides under `left` and `right`, each
-a path from `$` or a meta `morph`, `evaluate`, `stay`, `unbox`, `rewrite`,
-`symbolize` or `defer` binds.
+a path from `$` or a meta `morph`, `evaluate`, `stay`, `rewrite`, `symbolize`
+or `defer` binds.
 `merged` of `Evaluate.hs` first takes the condition (`weighed`), its bytes or
 the symbol they were manufactured for: a meta as its `dataize` operand came
 down, and a path off the formation fired, walking its bindings with no 𝔻, so
