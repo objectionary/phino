@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The two sides of 'L_fork' differ in shape, so the firing fabricates a
+# formation (#2024). The left side binds 'ke' to a formation leaving 'x' void
+# and the right one to a formation leaving 'x' and 'w' void, so the copy of
+# 'L_join' under 'ke' leaves both void and applies each side to the voids it
+# leaves alone (#2031), since 'miss' turns an application to an attribute a
+# formation lacks into ⊥. The program hands 'x' over, so the right side gets
+# 'w' bound to ⊥, the two sides differ in shape and are fabricated again, and
+# the copy under 'k' finds 'x' on both of them.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+      otherwise: L_join
+  - λ: L_join
+    join:
+      on: $.on🌵
+      left: $.left🌵
+      right: $.right🌵
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ ⟦ x ↦ ∅, k ↦ ξ.x ⟧ ⟧, b ↦ ⟦ ke ↦ ⟦ x ↦ ∅, w ↦ ∅, k ↦ ξ.x ⟧ ⟧, λ ⤍ L_fork ⟧.ke( x ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ).k.φ ⟧'
+result: '𝜎2:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧ and ⟦ ke(x, w) ↦ x:k ⟧  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧, right🌵 ↦ ⟦ ke(x, w) ↦ x:k ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x, w) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧ ⟧
+    𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧( x ↦ 𝜎2:λ:φ )
+    𝔼(L_join):
+      𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(Φ.a🌵3)
+      𝑛·2·2 := ⟦ x ↦ ∅, w ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(Φ.a🌵4)
+      𝑛·2·3 := 𝑛·2·2( w ↦ ⊥ )  # 𝕄(Φ.a🌵4)
+      fabricated 𝑛·2·4 := 𝑛·2·1 and 𝑛·2·3  # ⟦ left🌵 ↦ 𝑛·2·1, right🌵 ↦ 𝑛·2·3, x ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.x, right🌵 ↦ ρ.right🌵.x ⟧, k ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.k, right🌵 ↦ ρ.right🌵.k ⟧, w ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.w, right🌵 ↦ ρ.right🌵.w ⟧ ⟧
+    𝔼(L_join):
+      𝑛·3·1 := 𝜎2:λ:φ  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)

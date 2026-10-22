@@ -346,18 +346,19 @@ of that function, which asks a copy of each side for the attribute:
     left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ
   ⟧,
   if ↦ ⟦
-    ρ ↦ ∅, λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧,
-    left🌵 ↦ ρ.left🌵.if, right🌵 ↦ ρ.right🌵.if
+    ρ ↦ ∅, λ ⤍ L_join, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧,
+    left🌵 ↦ ρ.left🌵.if( left ↦ ξ.left, right ↦ ξ.right ),
+    right🌵 ↦ ρ.right🌵.if( left ↦ ξ.left, right ↦ ξ.right )
   ⟧
 ⟧
 ```
 
-Here `𝑛1` and `𝑛2` stand for the two sides, `x` for a void of `𝑛1`, and
-`𝛿1` for the bytes the
-condition came down to. When the condition is a symbol, such as `𝜎7`, `on🌵`
-holds that symbol, `⟦ λ ⤍ 𝜎7 ⟧`, and not the 42 every symbol is dataized to,
-so every copy still names the unknown it decides by. So asking the formation
-for an attribute means the same as asking
+Here `𝑛1` and `𝑛2` stand for the two sides, `x` for a void of `𝑛1`, `left`
+and `right` for the voids of the formations both sides bind `if` to, and
+`𝛿1` for the bytes the condition came down to. When the condition is a
+symbol, such as `𝜎7`, `on🌵` holds that symbol, `⟦ λ ⤍ 𝜎7 ⟧`, and not the 42
+every symbol is dataized to, so every copy still names the unknown it decides
+by. So asking the formation for an attribute means the same as asking
 `on🌵.if( left🌵, right🌵 )` for it. Every name the formation adds carries
 the 🌵 mark, as the names phino makes up do, such as `a🌵14`, since no
 program can spell it: an attribute a side binds, such as the `left` and
@@ -373,6 +374,17 @@ no copy of the function, nor does an attribute whose name ends with 🌵, since
 a side may be a formation a join fabricated, and no λ is copied, since asking
 a side for an attribute fires its λ where it stands. An attribute only one
 side binds gets its copy too, since the other side may reach it through `φ`.
+
+A copy of the function leaves void every void of the formations the sides
+bind its attribute to, once even when both leave it void, and those of the
+left side first, so an argument handed over by position reaches the same void
+on both sides. It applies a side binding the attribute to a formation to the
+voids of that formation alone, since applying a formation to an attribute it
+lacks gives ⊥, and any other side to every void it leaves, since phino sees
+no void of a term it has not morphed. A method of the formation thus takes
+its arguments, as in `if( left ↦ …, right ↦ … )`, and hands them to both
+sides.
+
 The firing writes a line naming the formation by the two sides, in place of
 `diverged`, and spells the formation out in its comment:
 

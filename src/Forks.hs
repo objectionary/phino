@@ -10,6 +10,7 @@ import Data.Bifunctor (first)
 import Data.List (nub)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 
@@ -74,9 +75,15 @@ forked func condition left@(ExFormation one) right@(ExFormation two)
     own (AtLabel label) = not ("🌵" `T.isSuffixOf` label)
     own attr = attr `notElem` [AtRho, AtLambda, AtDelta]
     copy :: Text -> Expression -> [Binding] -> Binding
-    copy name side bds = BiTau (AtLabel name) (foldl (\term attr -> ExApplication term (ArTau attr (ExDispatch ExXi attr))) side (vacant bds))
+    copy name side bds = BiTau (AtLabel name) (applied side (vacant bds))
+    applied :: Expression -> [Attribute] -> Expression
+    applied = foldl (\term attr -> ExApplication term (ArTau attr (ExDispatch ExXi attr)))
     branch :: Attribute -> Binding
-    branch attr = BiTau attr (ExFormation [BiVoid AtRho, BiLambda func, BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" attr, ask "right🌵" attr])
-    ask :: Text -> Attribute -> Binding
-    ask name attr = BiTau (AtLabel name) (ExDispatch (ExDispatch (ExDispatch ExXi AtRho) (AtLabel name)) attr)
+    branch attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" one attr, ask "right🌵" two attr]))
+    inner :: Attribute -> [Attribute]
+    inner attr = nub (concat (mapMaybe (`held` attr) [one, two]))
+    held :: [Binding] -> Attribute -> Maybe [Attribute]
+    held bds attr = listToMaybe [vacant inside | BiTau label (ExFormation inside) <- bds, label == attr]
+    ask :: Text -> [Binding] -> Attribute -> Binding
+    ask name bds attr = BiTau (AtLabel name) (applied (ExDispatch (ExDispatch (ExDispatch ExXi AtRho) (AtLabel name)) attr) (fromMaybe (inner attr) (held bds attr)))
 forked _ _ _ _ = Nothing
