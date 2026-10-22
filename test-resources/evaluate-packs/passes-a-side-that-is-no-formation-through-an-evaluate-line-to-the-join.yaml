@@ -46,4 +46,4 @@ protocol: |
       𝑛5·1 := Φ.k  # 𝔼(𝑛3)
       𝑛4·1 := Φ.j  # rewrite(𝑛2)
       𝑛6·1 := Φ.j  # 𝔼(𝑛4)
-      diverged 𝑛5·1 vs 𝑛6·1
+      diverged 𝑛5·1 vs 𝑛6·1  # the join names no otherwise

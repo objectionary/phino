@@ -26,4 +26,4 @@ protocol: |
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
       𝑛1·1 := 01-:Δ:φ  # 𝕄(ξ.a)
       𝑛2·1 := 02-:Δ:φ  # 𝕄(ξ.b)
-      diverged 𝑛1·1 vs 𝑛2·1
+      diverged 𝑛1·1 vs 𝑛2·1  # they differ at .φ.Δ, and the join names no otherwise

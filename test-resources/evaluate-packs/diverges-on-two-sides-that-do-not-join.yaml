@@ -7,7 +7,9 @@
 # normal form through 𝕄 first, each a call of 'plus' nobody has fired
 # (#1954). The calls add other numbers, so no join makes one term of them,
 # and the firing writes 'diverged' with the metas of the applications that
-# made the two sides, instead of splitting the run (#1996).
+# made the two sides, instead of splitting the run (#1996). Its comment tells
+# that the two copies of 'plus' first differ at the ρ the protocol hides, and
+# that the join names no function to fabricate a formation with (#2043).
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -69,4 +71,4 @@ protocol: |
       𝕄(Φ.a🌵4):
         𝑛·2·4 := 3
         𝑛·2·5 := 𝑛·2·4.plus( x ↦ 4 )
-      diverged 𝑛·2·3 vs 𝑛·2·5
+      diverged 𝑛·2·3 vs 𝑛·2·5  # they differ at .ρ, and the join names no otherwise

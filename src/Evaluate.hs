@@ -19,7 +19,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Forks (forked, joined)
+import Forks (Refusal (Unnamed), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, rewritten, stayed, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
@@ -322,17 +322,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (two, state''') <- reached ctx bound right state''
       spent <- readIORef ctx._minted
       case joined one two spent of
-        Just (term, made, spent') -> do
+        Right (term, made, spent') -> do
           writeIORef ctx._minted spent'
           mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair)) made
           ctx._saveEval (EvTaken ctx._nesting [left, right] term)
           pure (Joined (left, right) term, state''')
-        Nothing -> case fallback >>= \name -> forked name condition one two of
-          Just term -> do
+        Left path -> case maybe (Left Unnamed) (\name -> forked name condition one two) fallback of
+          Right term -> do
             ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) term)
             pure (Joined (left, right) term, state''')
-          Nothing -> do
-            ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two))
+          Left refusal -> do
+            ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two) path refusal)
             throwIO (Diverged func)
     weighed :: [(T.Text, Either Int Bytes)] -> Either Meta Expression -> IO (Either Int Bytes)
     weighed operands (Left meta) =

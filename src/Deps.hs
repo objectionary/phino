@@ -21,6 +21,7 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import qualified Data.Text as T
 import Files (overwrite)
+import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
 import Logger (logDebug, logInfo)
 import Matcher
@@ -99,6 +100,19 @@ certainty :: Acyclic -> String
 certainty Proven = "proven"
 certainty Plausible = "plausible"
 
+refused :: Refusal -> String
+refused refusal = case refusal of
+  Unnamed -> "the join names no otherwise"
+  Unformed side -> printf "the %s side is no formation" (handed side)
+  Holding side attr -> printf "the %s side has %s" (handed side) (printAttribute attr)
+  where
+    handed :: Side -> String
+    handed Lefthand = "left"
+    handed Righthand = "right"
+
+dotted :: [Attribute] -> String
+dotted = concatMap (('.' :) . printAttribute)
+
 data Evaluation
   = EvRun Judgment T.Text
   | EvFiring Int T.Text Judgment Expression
@@ -124,7 +138,7 @@ data Evaluation
   | EvAnswer Int Expression
   | EvMorphed Int Expression
   | EvJoined Int (Either T.Text Expression) Int (Int, Int)
-  | EvDiverged Int (Expression, Expression) (Expression, Expression)
+  | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int [Expression] Expression
   | EvWorld Expression
@@ -179,7 +193,7 @@ tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
 tier (EvJoined depth _ _ _) = depth
-tier (EvDiverged depth _ _) = depth
+tier (EvDiverged depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
 tier (EvTaken depth _ _) = depth
 tier EvWorld{} = maxBound
@@ -400,10 +414,10 @@ saveEval handle cursor printed printed' report = do
     written at (EvJoined _ condition symbol (left, right)) protocol = do
       on <- either (pure . labelled protocol) salted condition
       pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
-    written at (EvDiverged _ left right) protocol = do
+    written at (EvDiverged _ left right path refusal) protocol = do
       one <- sided protocol left
       two <- sided protocol right
-      pure (protocol, Just (indented at (printf "diverged %s vs %s" one two)))
+      pure (protocol, Just (indented at (printf "diverged %s vs %s  # %s" one two (explained path refusal))))
     written at (EvFabricated _ left right term) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -431,6 +445,9 @@ saveEval handle cursor printed printed' report = do
     borrowed protocol term = case namedLookup term protocol._named of
       Nothing -> render term
       Just naming -> pure (T.unpack naming)
+    explained :: [Attribute] -> Refusal -> String
+    explained [] refusal = refused refusal
+    explained path refusal = printf "they differ at %s, and %s" (dotted path) (refused refusal)
     sided :: Protocol -> (Expression, Expression) -> IO String
     sided _ (_, term@(ExFormation [BiLambda (FnSymbol _)])) = render term
     sided protocol (side@(ExMeta _), _) = labelled protocol . T.pack <$> salted side
@@ -604,8 +621,11 @@ saveEvalXml handle cursor printed report = do
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
         pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right))
-    elements at (EvDiverged depth left right) nesting =
-      placed at nesting (printf "<diverged left=\"%s\" right=\"%s\"/>" . escapeXML <$> sided depth nesting left <*> (escapeXML <$> sided depth nesting right))
+    elements at (EvDiverged depth left right path refusal) nesting =
+      placed at nesting $ do
+        one <- sided depth nesting left
+        two <- sided depth nesting right
+        pure (printf "<diverged left=\"%s\" right=\"%s\"%s reason=\"%s\"/>" (escapeXML one) (escapeXML two) (if null path then "" else printf " at=\"%s\"" (escapeXML (dotted path)) :: String) (escapeXML (refused refusal)))
     elements at (EvFabricated depth left right term) nesting =
       placed at nesting $ do
         one <- sided depth nesting left

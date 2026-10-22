@@ -2144,7 +2144,7 @@ spec = do
                          , "      <formed meta=\"𝑛·1·3\"><datum attr=\"φ\">02-</datum></formed>"
                          , "      <morphed meta=\"𝑛·1·4\">𝑛·1·3</morphed>"
                          , "    </morph>"
-                         , "    <diverged left=\"𝑛·1·1\" right=\"𝑛·1·3\"/>"
+                         , "    <diverged left=\"𝑛·1·1\" right=\"𝑛·1·3\" at=\".φ.Δ\" reason=\"the join names no otherwise\"/>"
                          , "  </evaluate>"
                          , "</morph>"
                          ]
@@ -2998,7 +2998,7 @@ spec = do
                      , "    <bound meta=\"𝑛2·1\">𝑛·1·2</bound>"
                      , "    <bound meta=\"𝑛3·1\">01-</bound>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol attr=\"tup\">𝜎1</symbol></with></deferred>"
-                     , "    <diverged left=\"𝑛3·1\" right=\"𝜎3\"/>"
+                     , "    <diverged left=\"𝑛3·1\" right=\"𝜎3\" at=\".Δ\" reason=\"the join names no otherwise\"/>"
                      , "  </evaluate>"
                      , "</dataize>"
                      ]
