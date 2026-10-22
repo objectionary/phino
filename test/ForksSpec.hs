@@ -62,9 +62,6 @@ spec = do
     it "skips an attribute of a side whose name ends with the 🌵 mark" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ left🌵 ↦ Φ.ub, rq🌵 ↦ ∅, φ ↦ Φ.ar ⟧, right🌵 ↦ ⟦ φ ↦ Φ.se ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_hn, on🌵 ↦ ⟦ Δ ⤍ 19- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_hn" (Right (BtOne "19")) "⟦ left🌵 ↦ Φ.ub, rq🌵 ↦ ∅, φ ↦ Φ.ar ⟧" "⟦ φ ↦ Φ.se ⟧" >>= (`shouldBe` Just expected)
-    it "copies the λ of neither side" $ do
-      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ λ ⤍ L_kp, φ ↦ Φ.ev ⟧, right🌵 ↦ ⟦ φ ↦ Φ.ni ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_cz, on🌵 ↦ ⟦ Δ ⤍ 07- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
-      fork "L_cz" (Right (BtOne "07")) "⟦ λ ⤍ L_kp, φ ↦ Φ.ev ⟧" "⟦ φ ↦ Φ.ni ⟧" >>= (`shouldBe` Just expected)
     it "binds the condition to the symbol it came down to, not to the bytes of that symbol" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ φ ↦ Φ.re ⟧, right🌵 ↦ ⟦ φ ↦ Φ.dy( Φ.ka ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_uo, on🌵 ↦ ⟦ λ ⤍ 𝜎37 ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_uo" (Left 37) "⟦ φ ↦ Φ.re ⟧" "⟦ φ ↦ Φ.dy( Φ.ka ) ⟧" >>= (`shouldBe` Just expected)
@@ -94,5 +91,9 @@ spec = do
       fork "L_pu" (Right (BtOne "5C")) "⟦ ke ↦ ⟦ ev ↦ ∅, jo ↦ ∅ ⟧ ⟧" "⟦ φ ↦ Φ.ty ⟧" >>= (`shouldBe` Just expected)
     it "fabricates nothing when a side holds a datum" $
       fork "L_ax" (Right (BtOne "11")) "⟦ Δ ⤍ 4F- ⟧" "⟦ φ ↦ Φ.bu ⟧" >>= (`shouldBe` Nothing)
+    it "fabricates nothing when a side holds a λ function" $
+      fork "L_cz" (Right (BtOne "07")) "⟦ λ ⤍ L_kp, φ ↦ Φ.ev ⟧" "⟦ φ ↦ Φ.ni ⟧" >>= (`shouldBe` Nothing)
+    it "fabricates nothing when a side is a bare symbol" $
+      fork "L_wq" (Left 83) "⟦ φ ↦ Φ.ju( ξ.zi ), zi ↦ Φ.ko ⟧" "⟦ λ ⤍ 𝜎329 ⟧" >>= (`shouldBe` Nothing)
     it "fabricates nothing when a side is no formation" $
       fork "L_rt" (Right (BtOne "2D")) "⟦ φ ↦ Φ.mo ⟧" "Φ.gl.fy" >>= (`shouldBe` Nothing)

@@ -60,11 +60,12 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
 
 forked :: Function -> Either Int Bytes -> Expression -> Expression -> Maybe Expression
 forked func condition left@(ExFormation one) right@(ExFormation two)
-  | not (any datum (one ++ two)) = Just (ExFormation (map BiVoid voids ++ [copy "left🌵" left one, copy "right🌵" right two] ++ map branch (filter (`notElem` voids) (nub (attributes one ++ attributes two)))))
+  | not (any asset (one ++ two)) = Just (ExFormation (map BiVoid voids ++ [copy "left🌵" left one, copy "right🌵" right two] ++ map branch (filter (`notElem` voids) (nub (attributes one ++ attributes two)))))
   where
-    datum :: Binding -> Bool
-    datum (BiDelta _) = True
-    datum _ = False
+    asset :: Binding -> Bool
+    asset (BiDelta _) = True
+    asset (BiLambda _) = True
+    asset _ = False
     voids :: [Attribute]
     voids = nub (vacant one ++ vacant two)
     vacant :: [Binding] -> [Attribute]
