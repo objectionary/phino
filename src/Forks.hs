@@ -5,11 +5,13 @@
 
 module Forks (forked, joined) where
 
-import AST (Argument (..), Attribute (AtDelta, AtLabel, AtLambda, AtRho), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet), Function (FnSymbol), attributeFromBinding)
+import AST (Argument (..), Attribute (AtDelta, AtLabel, AtLambda, AtRho), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet, ExXi), Function (FnSymbol), attributeFromBinding)
 import Data.Bifunctor (first)
 import Data.List (nub)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import Data.Text (Text)
+import qualified Data.Text as T
 
 type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 
@@ -57,15 +59,24 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
 
 forked :: Function -> Either Int Bytes -> Expression -> Expression -> Maybe Expression
 forked func condition left@(ExFormation one) right@(ExFormation two)
-  | not (any datum (one ++ two)) = Just (ExFormation (map branch (nub (attributes one ++ attributes two))))
+  | not (any datum (one ++ two)) = Just (ExFormation (map BiVoid voids ++ [copy "left🌵" left one, copy "right🌵" right two] ++ map branch (filter (`notElem` voids) (nub (attributes one ++ attributes two)))))
   where
     datum :: Binding -> Bool
     datum (BiDelta _) = True
     datum _ = False
+    voids :: [Attribute]
+    voids = nub (vacant one ++ vacant two)
+    vacant :: [Binding] -> [Attribute]
+    vacant bds = [attr | BiVoid attr <- bds, own attr]
     attributes :: [Binding] -> [Attribute]
-    attributes bds = [attr | Just attr <- map attributeFromBinding bds, attr `notElem` [AtRho, AtLambda, AtDelta]]
+    attributes bds = [attr | Just attr <- map attributeFromBinding bds, own attr]
+    own :: Attribute -> Bool
+    own (AtLabel label) = not ("🌵" `T.isSuffixOf` label)
+    own attr = attr `notElem` [AtRho, AtLambda, AtDelta]
+    copy :: Text -> Expression -> [Binding] -> Binding
+    copy name side bds = BiTau (AtLabel name) (foldl (\term attr -> ExApplication term (ArTau attr (ExDispatch ExXi attr))) side (vacant bds))
     branch :: Attribute -> Binding
-    branch attr
-      | BiVoid attr `elem` one && BiVoid attr `elem` two = BiVoid attr
-      | otherwise = BiTau attr (ExFormation [BiLambda func, BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), BiTau (AtLabel "left🌵") (ExDispatch left attr), BiTau (AtLabel "right🌵") (ExDispatch right attr)])
+    branch attr = BiTau attr (ExFormation [BiVoid AtRho, BiLambda func, BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" attr, ask "right🌵" attr])
+    ask :: Text -> Attribute -> Binding
+    ask name attr = BiTau (AtLabel name) (ExDispatch (ExDispatch (ExDispatch ExXi AtRho) (AtLabel name)) attr)
 forked _ _ _ _ = Nothing

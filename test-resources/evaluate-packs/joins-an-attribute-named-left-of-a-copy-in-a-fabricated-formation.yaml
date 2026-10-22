@@ -32,7 +32,7 @@ protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke ↦ 𝜎2:λ:left ⟧ and 𝜎3:λ:left:ke  # ⟦ φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ⟦ φ ↦ Φ.hx, ke ↦ 𝜎2:λ:left ⟧.φ, right🌵 ↦ 𝜎3:λ:left:ke.φ ⟧, ke ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ⟦ φ ↦ Φ.hx, ke ↦ 𝜎2:λ:left ⟧.ke, right🌵 ↦ 𝜎3:λ:left:ke.ke ⟧ ⟧
+      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke ↦ 𝜎2:λ:left ⟧ and 𝜎3:λ:left:ke  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx, ke ↦ 𝜎2:λ:left ⟧, right🌵 ↦ 𝜎3:λ:left:ke, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke, right🌵 ↦ ρ.right🌵.ke ⟧ ⟧
     𝔼(L_join):
       joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3
       𝑛·2·1 := 𝜎4:λ:left  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)

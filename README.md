@@ -326,7 +326,7 @@ Two formations of different shapes may still stand for one object, when
 whoever reads it asks it only for attributes both sides lead to alike. A
 block may name a λ function under a fourth key, `otherwise`, and then such a
 firing answers a formation binding every attribute of both sides to a copy
-of that function, which asks both sides for the attribute:
+of that function, which asks a copy of each side for the attribute:
 
 ```yaml
   join:
@@ -338,29 +338,46 @@ of that function, which asks both sides for the attribute:
 
 ```text
 ⟦
-  φ  ↦ ⟦ λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧, left🌵 ↦ 𝑛1.φ,  right🌵 ↦ 𝑛2.φ ⟧,
-  if ↦ ⟦ λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧, left🌵 ↦ 𝑛1.if, right🌵 ↦ 𝑛2.if ⟧
+  x ↦ ∅,
+  left🌵 ↦ 𝑛1( x ↦ ξ.x ),
+  right🌵 ↦ 𝑛2,
+  φ ↦ ⟦
+    ρ ↦ ∅, λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧,
+    left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ
+  ⟧,
+  if ↦ ⟦
+    ρ ↦ ∅, λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧,
+    left🌵 ↦ ρ.left🌵.if, right🌵 ↦ ρ.right🌵.if
+  ⟧
 ⟧
 ```
 
-Here `𝑛1` and `𝑛2` stand for the two sides, and `𝛿1` for the bytes the
+Here `𝑛1` and `𝑛2` stand for the two sides, `x` for a void of `𝑛1`, and
+`𝛿1` for the bytes the
 condition came down to. When the condition is a symbol, such as `𝜎7`, `on🌵`
 holds that symbol, `⟦ λ ⤍ 𝜎7 ⟧`, and not the 42 every symbol is dataized to,
 so every copy still names the unknown it decides by. So asking the formation
 for an attribute means the same as asking
-`on🌵.if( left🌵, right🌵 )` for it. The three names carry the 🌵 mark, as
-the names phino makes up do, such as `a🌵14`, since no program can spell it:
-an attribute a side binds, such as the `left` and `right` voids of the `if`
-of a bool in EO, never clashes with them. The ρ of either side is skipped,
-an attribute both sides leave void stays void, and no λ is copied, since
-asking a side for
-an attribute fires its λ where it stands. An attribute only one side binds
-gets its copy too, since the other side may reach it through `φ`. The firing
-writes a line naming the formation by the two sides, in place of `diverged`,
-and spells the formation out in its comment:
+`on🌵.if( left🌵, right🌵 )` for it. Every name the formation adds carries
+the 🌵 mark, as the names phino makes up do, such as `a🌵14`, since no
+program can spell it: an attribute a side binds, such as the `left` and
+`right` voids of the `if` of a bool in EO, never clashes with them.
+
+The formation leaves void every attribute either side leaves void, once even
+when both sides leave it void, and holds each side under `left🌵` or
+`right🌵` applied to its own voids. An argument handed to the formation thus
+reaches the side through `ξ`, while the side keeps the ρ it binds, which its
+own attributes may read. Every copy of the function asks a side for an
+attribute through its ρ, which the formation fills. The ρ of either side gets
+no copy of the function, nor does an attribute whose name ends with 🌵, since
+a side may be a formation a join fabricated, and no λ is copied, since asking
+a side for an attribute fires its λ where it stands. An attribute only one
+side binds gets its copy too, since the other side may reach it through `φ`.
+The firing writes a line naming the formation by the two sides, in place of
+`diverged`, and spells the formation out in its comment:
 
 ```text
-fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ φ ↦ ⟦ λ ⤍ L_join, … ⟧, … ⟧
+fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ left🌵 ↦ 𝑛1·1, …, φ ↦ ⟦ … ⟧, … ⟧
 ```
 
 phino implements no `L_join`: the file defines it, as an entry that joins

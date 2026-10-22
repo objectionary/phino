@@ -38,26 +38,35 @@ spec = do
   describe "forked" $ do
     let fork :: Text -> Either Int Bytes -> String -> String -> IO (Maybe Expression)
         fork func condition left right = forked (Function func) condition <$> parseExpressionThrows left <*> parseExpressionThrows right
-    it "asks both sides for an attribute the λ it is given picks between" $ do
-      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ L_qw, on🌵 ↦ ⟦ Δ ⤍ 1C- ⟧, left🌵 ↦ ⟦ φ ↦ Φ.hx ⟧.φ, right🌵 ↦ ⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧.φ ⟧ ⟧"
+    it "asks the copies of both sides for an attribute the λ it is given picks between" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx ⟧, right🌵 ↦ ⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_qw, on🌵 ↦ ⟦ Δ ⤍ 1C- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_qw" (Right (BtOne "1C")) "⟦ φ ↦ Φ.hx ⟧" "⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧" >>= (`shouldBe` Just expected)
-    it "asks both sides for an attribute only one of them binds" $ do
-      expected <- parseExpressionThrows "⟦ gv ↦ ⟦ λ ⤍ L_ny, on🌵 ↦ ⟦ Δ ⤍ 2B-31-70-0F ⟧, left🌵 ↦ ⟦ gv ↦ Φ.ob ⟧.gv, right🌵 ↦ ⟦ mu ↦ Φ.ra ⟧.gv ⟧, mu ↦ ⟦ λ ⤍ L_ny, on🌵 ↦ ⟦ Δ ⤍ 2B-31-70-0F ⟧, left🌵 ↦ ⟦ gv ↦ Φ.ob ⟧.mu, right🌵 ↦ ⟦ mu ↦ Φ.ra ⟧.mu ⟧ ⟧"
+    it "asks the copies of both sides for an attribute only one of them binds" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ gv ↦ Φ.ob ⟧, right🌵 ↦ ⟦ mu ↦ Φ.ra ⟧, gv ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ny, on🌵 ↦ ⟦ Δ ⤍ 2B-31-70-0F ⟧, left🌵 ↦ ξ.ρ.left🌵.gv, right🌵 ↦ ξ.ρ.right🌵.gv ⟧, mu ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ny, on🌵 ↦ ⟦ Δ ⤍ 2B-31-70-0F ⟧, left🌵 ↦ ξ.ρ.left🌵.mu, right🌵 ↦ ξ.ρ.right🌵.mu ⟧ ⟧"
       fork "L_ny" (Right (BtMany ["2B", "31", "70", "0F"])) "⟦ gv ↦ Φ.ob ⟧" "⟦ mu ↦ Φ.ra ⟧" >>= (`shouldBe` Just expected)
-    it "skips the ρ of both sides" $ do
-      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ L_ef, on🌵 ↦ ⟦ Δ ⤍ 0A- ⟧, left🌵 ↦ ⟦ ρ ↦ Φ.ji, φ ↦ Φ.wo ⟧.φ, right🌵 ↦ ⟦ ρ ↦ Φ.sa, φ ↦ Φ.pl ⟧.φ ⟧ ⟧"
+    it "keeps the ρ of both sides in their copies and asks neither for it" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ρ ↦ Φ.ji, φ ↦ Φ.wo ⟧, right🌵 ↦ ⟦ ρ ↦ Φ.sa, φ ↦ Φ.pl ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ef, on🌵 ↦ ⟦ Δ ⤍ 0A- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_ef" (Right (BtOne "0A")) "⟦ ρ ↦ Φ.ji, φ ↦ Φ.wo ⟧" "⟦ ρ ↦ Φ.sa, φ ↦ Φ.pl ⟧" >>= (`shouldBe` Just expected)
-    it "keeps void an attribute both sides leave void" $ do
-      expected <- parseExpressionThrows "⟦ dk ↦ ∅, φ ↦ ⟦ λ ⤍ L_vb, on🌵 ↦ ⟦ Δ ⤍ 3E- ⟧, left🌵 ↦ ⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧.φ, right🌵 ↦ ⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧.φ ⟧ ⟧"
+    it "takes every void of both sides as a void of its own and applies each side to its voids" $ do
+      expected <- parseExpressionThrows "⟦ tu ↦ ∅, os ↦ ∅, left🌵 ↦ ⟦ φ ↦ Φ.km( ξ.tu ), tu ↦ ∅ ⟧( tu ↦ ξ.tu ), right🌵 ↦ ⟦ φ ↦ Φ.wb( ξ.os ), os ↦ ∅ ⟧( os ↦ ξ.os ), φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_gi, on🌵 ↦ ⟦ Δ ⤍ 6D- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
+      fork "L_gi" (Right (BtOne "6D")) "⟦ φ ↦ Φ.km( ξ.tu ), tu ↦ ∅ ⟧" "⟦ φ ↦ Φ.wb( ξ.os ), os ↦ ∅ ⟧" >>= (`shouldBe` Just expected)
+    it "applies a side binding its ρ to its voids and keeps that ρ" $ do
+      expected <- parseExpressionThrows "⟦ pe ↦ ∅, left🌵 ↦ ⟦ ρ ↦ Φ.ov, φ ↦ Φ.ha( ξ.pe ), pe ↦ ∅ ⟧( pe ↦ ξ.pe ), right🌵 ↦ ⟦ φ ↦ Φ.ix ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_dz, on🌵 ↦ ⟦ Δ ⤍ 44- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
+      fork "L_dz" (Right (BtOne "44")) "⟦ ρ ↦ Φ.ov, φ ↦ Φ.ha( ξ.pe ), pe ↦ ∅ ⟧" "⟦ φ ↦ Φ.ix ⟧" >>= (`shouldBe` Just expected)
+    it "keeps one void for an attribute both sides leave void" $ do
+      expected <- parseExpressionThrows "⟦ dk ↦ ∅, left🌵 ↦ ⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧( dk ↦ ξ.dk ), right🌵 ↦ ⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧( dk ↦ ξ.dk ), φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vb, on🌵 ↦ ⟦ Δ ⤍ 3E- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_vb" (Right (BtOne "3E")) "⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧" "⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧" >>= (`shouldBe` Just expected)
-    it "asks both sides for an attribute one of them leaves void" $ do
-      expected <- parseExpressionThrows "⟦ ws ↦ ⟦ λ ⤍ L_oh, on🌵 ↦ ⟦ Δ ⤍ 52- ⟧, left🌵 ↦ ⟦ ws ↦ ∅ ⟧.ws, right🌵 ↦ ⟦ ws ↦ Φ.ug ⟧.ws ⟧ ⟧"
+    it "takes as its own void an attribute one side leaves void and the other binds" $ do
+      expected <- parseExpressionThrows "⟦ ws ↦ ∅, left🌵 ↦ ⟦ ws ↦ ∅ ⟧( ws ↦ ξ.ws ), right🌵 ↦ ⟦ ws ↦ Φ.ug ⟧ ⟧"
       fork "L_oh" (Right (BtOne "52")) "⟦ ws ↦ ∅ ⟧" "⟦ ws ↦ Φ.ug ⟧" >>= (`shouldBe` Just expected)
+    it "skips an attribute of a side whose name ends with the 🌵 mark" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ left🌵 ↦ Φ.ub, rq🌵 ↦ ∅, φ ↦ Φ.ar ⟧, right🌵 ↦ ⟦ φ ↦ Φ.se ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_hn, on🌵 ↦ ⟦ Δ ⤍ 19- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
+      fork "L_hn" (Right (BtOne "19")) "⟦ left🌵 ↦ Φ.ub, rq🌵 ↦ ∅, φ ↦ Φ.ar ⟧" "⟦ φ ↦ Φ.se ⟧" >>= (`shouldBe` Just expected)
     it "copies the λ of neither side" $ do
-      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ L_cz, on🌵 ↦ ⟦ Δ ⤍ 07- ⟧, left🌵 ↦ ⟦ λ ⤍ L_kp, φ ↦ Φ.ev ⟧.φ, right🌵 ↦ ⟦ φ ↦ Φ.ni ⟧.φ ⟧ ⟧"
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ λ ⤍ L_kp, φ ↦ Φ.ev ⟧, right🌵 ↦ ⟦ φ ↦ Φ.ni ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_cz, on🌵 ↦ ⟦ Δ ⤍ 07- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_cz" (Right (BtOne "07")) "⟦ λ ⤍ L_kp, φ ↦ Φ.ev ⟧" "⟦ φ ↦ Φ.ni ⟧" >>= (`shouldBe` Just expected)
     it "binds the condition to the symbol it came down to, not to the bytes of that symbol" $ do
-      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ L_uo, on🌵 ↦ ⟦ λ ⤍ 𝜎37 ⟧, left🌵 ↦ ⟦ φ ↦ Φ.re ⟧.φ, right🌵 ↦ ⟦ φ ↦ Φ.dy( Φ.ka ) ⟧.φ ⟧ ⟧"
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ φ ↦ Φ.re ⟧, right🌵 ↦ ⟦ φ ↦ Φ.dy( Φ.ka ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_uo, on🌵 ↦ ⟦ λ ⤍ 𝜎37 ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_uo" (Left 37) "⟦ φ ↦ Φ.re ⟧" "⟦ φ ↦ Φ.dy( Φ.ka ) ⟧" >>= (`shouldBe` Just expected)
     it "fabricates nothing when a side holds a datum" $
       fork "L_ax" (Right (BtOne "11")) "⟦ Δ ⤍ 4F- ⟧" "⟦ φ ↦ Φ.bu ⟧" >>= (`shouldBe` Nothing)

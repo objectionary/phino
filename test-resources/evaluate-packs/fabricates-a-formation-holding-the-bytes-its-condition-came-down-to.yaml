@@ -18,11 +18,11 @@ symbolic: |
       otherwise: L_join
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ c ↦ ⟦ Δ ⤍ 3A- ⟧, a ↦ ⟦ φ ↦ Φ.wu ⟧, b ↦ ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧, λ ⤍ L_fork ⟧.pe ⟧'
-result: '⟦ λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 3A- ⟧, left🌵 ↦ Φ.wu:φ.pe, right🌵 ↦ Φ.ki ⟧'
+result: '⟦ λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 3A- ⟧, left🌵 ↦ ρ.left🌵.pe, right🌵 ↦ ρ.right🌵.pe ⟧'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝔻(Φ.a🌵0):
         𝛿·1·1 := 3A-
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
-      fabricated 𝑛·1·1 := Φ.wu:φ and ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧  # ⟦ φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ Φ.wu:φ.φ, right🌵 ↦ ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧.φ ⟧, pe ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ Φ.wu:φ.pe, right🌵 ↦ ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧.pe ⟧ ⟧
+      fabricated 𝑛·1·1 := Φ.wu:φ and ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧  # ⟦ left🌵 ↦ Φ.wu:φ, right🌵 ↦ ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, pe ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ ρ.left🌵.pe, right🌵 ↦ ρ.right🌵.pe ⟧ ⟧
