@@ -236,7 +236,12 @@ that function, whose `on🌵` holds `⟦ Δ ⤍ 𝛿1 ⟧`, the bytes of the con
 as `ρ.left🌵.a`. The 🌵 mark keeps
 these names apart from any attribute of a side, such as the `left` and
 `right` voids of the `if` of a bool in EO, since no program spells it
-(#2027). The firing writes
+(#2027). A copy leaves void every void of the formations the sides bind its
+attribute to, the left side's first, and asks a side binding the attribute to
+a formation for it applied to the voids of that formation alone, as
+`ρ.left🌵.a( x ↦ ξ.x )`, and any other side for it applied to every void, so
+a method of the fabricated formation takes its arguments (#2031). The firing
+writes
 `fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ … ⟧` (`EvFabricated`), naming the
 sides as `diverged` does and spelling the formation out in the comment, and
 answers that formation as `Joined` of `Answer`. The entry of `L_join` reads

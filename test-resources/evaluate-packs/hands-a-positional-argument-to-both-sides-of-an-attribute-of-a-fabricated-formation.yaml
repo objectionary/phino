@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The two sides of 'L_fork' differ in shape, so the firing fabricates a
+# formation (#2024). Both sides bind 'ke' to a formation leaving 'x' void, so
+# the copy of 'L_join' under 'ke' leaves 'x' void too, as the first void it
+# holds, and asks each side for 'ke' applied to 'x' (#2031). The program hands
+# 'x' over by position and asks the answer for 'k': the copy takes 'x', both
+# sides read it, and the join meets two sides that are the same.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+      otherwise: L_join
+  - λ: L_join
+    join:
+      on: $.on🌵
+      left: $.left🌵
+      right: $.right🌵
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ ⟦ x ↦ ∅, k ↦ ξ.x ⟧ ⟧, b ↦ ⟦ ke ↦ ⟦ x ↦ ∅, k ↦ ξ.x ⟧ ⟧, λ ⤍ L_fork ⟧.ke( ⟦ λ ⤍ 𝜎2 ⟧ ).k ⟧'
+result: '𝜎2:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧ and ⟦ ke(x) ↦ x:k ⟧  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧, right🌵 ↦ ⟦ ke(x) ↦ x:k ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x ) ⟧ ⟧
+    𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x ) ⟧( x ↦ 𝜎2:λ )
+    𝔼(L_join):
+      𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ )  # 𝕄(Φ.a🌵3)
+      𝑛·2·2 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ )  # 𝕄(Φ.a🌵4)
+      𝑛·2·3 := 𝑛·2·2  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)
