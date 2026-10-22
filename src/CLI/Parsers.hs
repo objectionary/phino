@@ -305,7 +305,9 @@ optAbridged =
               \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', while every byte string \
               \it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
         )
-        <|> option auto (long "abridged" <> metavar "WIDTH" <> internal)
+        <|> option
+          (boundedIntOption >>= validateIntOption (> 0) "--abridged must be positive")
+          (long "abridged" <> metavar "WIDTH" <> internal)
     )
 
 optAbridgedData :: Parser Bool
@@ -323,7 +325,7 @@ optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 optSeed :: Parser Int
 optSeed =
   option
-    auto
+    boundedIntOption
     ( long "seed"
         <> metavar "SEED"
         <> help "Seed for the random generator that mints fresh synthetic names, making output reproducible across runs"

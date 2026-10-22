@@ -531,6 +531,18 @@ spec = do
           ["rewrite", "--seed=abc"]
           ["[ERROR]"]
 
+    it "refuses a --seed outside the Int range" $
+      withStdin "[[ ]]" $
+        testCLIFailed
+          ["rewrite", "--seed=18446744073709551616"]
+          ["value must be between"]
+
+    it "refuses a non-positive --abridged width" $
+      withStdin "[[ t -> 01- ]]" $
+        testCLIFailed
+          ["dataize", "--locator=Q.t", "--protocol=p.txt", "--abridged=0"]
+          ["--abridged must be positive"]
+
     it "saves steps to dir with --steps-dir" $
       withTempDirectory "phino-steps" $ \dir ->
         withStdin "[[ x -> \"hello\"]]" $ do
