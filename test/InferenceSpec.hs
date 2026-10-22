@@ -39,17 +39,17 @@ spec = do
   describe "dataizationSpine" $ do
     it "answers with the data the rule 'delta' finds" $
       snd <$> dataizationSpine (dataizationRule "delta") `shouldBe` Right (Answered (Dataization, "delta") (BtMeta "d1"))
-    it "labels the step of the rule 'box' by its 'contextualize'" $
-      snd <$> dataizationSpine (dataizationRule "box") `shouldBe` Right (Onward (Normalized (Contextualization, "contextualize")) (ExMeta "e3") (ExMeta "e1"))
+    it "labels the step of the rule 'box' by its own name" $
+      snd <$> dataizationSpine (dataizationRule "box") `shouldBe` Right (Onward (Normalized (Dataization, "box")) (ExDispatch (ExFormation [BiMeta "B1", BiTau AtPhi (ExMeta "e2"), BiMeta "B2"]) AtPhi) (ExMeta "e1"))
     it "labels the step of the rule 'fire' by its 'evaluate'" $
       snd <$> dataizationSpine (dataizationRule "fire") `shouldBe` Right (Onward (Taken (Evaluation, "evaluate")) (ExMeta "n1") (ExMeta "e1"))
     it "labels the step of the rule 'none' by its 'dataize'" $
       snd <$> dataizationSpine (dataizationRule "none") `shouldBe` Right (Onward (Taken (Dataization, "dataize")) ExTermination (ExMeta "e1"))
     it "stages the morphing the rule 'norm' asks for" $
       snd <$> dataizationSpine (dataizationRule "norm") `shouldBe` Right (Onward (Staged (ExMeta "e1")) (ExMeta "n1") (ExMeta "e1"))
-    it "labels blank a step normalizing with nothing beside it" $
+    it "labels a step normalizing with nothing beside it by its rule" $
       snd <$> dataizationSpine (Y.DataizeRule "pz" Nothing ExXi (ExMeta "e1") (BtMeta "d4") Nothing [Y.Premise "n5" (Y.OpNormalize ExXi), Y.Premise "d4" (Y.OpDataize (ExMeta "n5") (ExMeta "e1"))])
-        `shouldBe` Right (Onward (Normalized (Dataization, "")) ExXi (ExMeta "e1"))
+        `shouldBe` Right (Onward (Normalized (Dataization, "pz")) ExXi (ExMeta "e1"))
     it "refuses a rule whose data no 'dataize' produces" $
       dataizationSpine (Y.DataizeRule "jr" Nothing ExXi (ExMeta "e1") (BtMeta "d2") Nothing [Y.Premise "d2" (Y.OpNormalize ExXi)])
         `shouldBe` Left "it concludes with no 'dataize' premise"
@@ -77,9 +77,9 @@ spec = do
     it "hands the rule 'fire' the formation to evaluate" $ do
       Just (Evaluates form world _) <- dataizationOf (dataizationRule "fire") context (ExFormation [BiLambda (Function "Kq")]) (ExFormation [BiVoid (AtLabel "rb")])
       (form, world) `shouldBe` (ExFormation [BiLambda (Function "Kq")], ExFormation [BiVoid (AtLabel "rb")])
-    it "hands the rule 'box' the body to contextualize in its formation" $ do
-      Just (Contextualizes body formation _) <- dataizationOf (dataizationRule "box") context (ExFormation [BiTau AtPhi (ExDispatch ExXi (AtLabel "zu"))]) (ExFormation [])
-      (body, formation) `shouldBe` (ExDispatch ExXi (AtLabel "zu"), ExFormation [BiTau AtPhi (ExDispatch ExXi (AtLabel "zu"))])
+    it "hands the rule 'box' the φ of its formation to normalize" $ do
+      Just (Concludes conclusion) <- dataizationOf (dataizationRule "box") context (ExFormation [BiTau AtPhi (ExDispatch ExXi (AtLabel "zu"))]) (ExFormation [])
+      conclusion `shouldBe` Onward (Normalized (Dataization, "box")) (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExXi (AtLabel "zu"))]) AtPhi) (ExFormation [])
   describe "direct" $ do
     it "takes the first way a compiled rule matches" $ do
       Just (Concludes conclusion) <- direct (\_ _ -> [Concludes (Answered (Morphing, "w1") ExXi), Concludes (Answered (Morphing, "w2") ExXi)]) context ExXi ExXi

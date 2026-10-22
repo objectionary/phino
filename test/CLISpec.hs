@@ -1501,10 +1501,12 @@ spec = do
           [ intercalate
               "\n"
               [ "\\begin{phiquation}"
-              , "[[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| : @ \\phiContextualize"
-              , "  \\phiContextualize [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] : |x| . |x| \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ D> |01-|, |y| -> [[]] ]] : |x| ) \\phiNormalize[\\nameref{r:skip}]"
+              , "[[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| : @ \\phiDataize[\\nameref{r:box}]"
+              , "  \\phiDataize [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| : @ . @ \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] : |x| . |x| : @ . @ \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ D> |01-|, |y| -> [[]] ]] : |x| ) : @ . @ \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] : @ . @ \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:skip}]"
               , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] \\phiDataize[\\nameref{r:delta}]"
               , "  \\phiDataize |01-|{.}"
               , "\\end{phiquation}"
@@ -1534,7 +1536,7 @@ spec = do
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( |32| ), |c| -> |25| ]] } \\phiContextualize"]
+          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( |32| ), |c| -> |25| ]] } \\phiDataize[\\nameref{r:box}]"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# A decorator dataizes as what it decorates (#2034): 'box' takes the φ of 'k'
+# as the dispatch 'dot' takes for 'Φ.k.φ', so the φ formation gets 'k' as its
+# ρ and its 'ξ.ρ.v' reads the datum instead of ⊥.
+location: 'Q.k'
+input: |
+  ⟦
+    k ↦ ⟦ ρ ↦ ∅, v ↦ ⟦ Δ ⤍ 07- ⟧, φ ↦ ⟦ ρ ↦ ∅, φ ↦ ξ.ρ.v ⟧ ⟧,
+    m ↦ Φ.k.φ
+  ⟧
+result: '07-'

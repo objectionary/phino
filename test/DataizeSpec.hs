@@ -285,7 +285,7 @@ spec = do
     it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
       expr <- parseExpressionThrows boxed
       minted <- newIORef 0
-      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 0 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 1 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
       value `shouldBe` Dataized (BtOne "00")
     it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
       expr <- parseExpressionThrows boxed
@@ -319,10 +319,10 @@ spec = do
       loc <- parseExpressionThrows "Q"
       (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext loc
       map snd chain `shouldContain` [Just (Evaluation, "evaluate")]
-    it "takes the step of a box by contextualization" $ do
+    it "takes the step of a box by dataization" $ do
       expr <- parseExpressionThrows "[[ @ -> [[ D> 0A- ]] ]]"
       (_, chain, _) <- dataize expr emptyState =<< defaultReduceContext ExRoot
-      map snd chain `shouldContain` [Just (Contextualization, "contextualize")]
+      map snd chain `shouldContain` [Just (Dataization, "box")]
     it "takes the step of a delta by dataization" $ do
       expr <- parseExpressionThrows "[[ D> 3C- ]]"
       (_, chain, _) <- dataize expr emptyState =<< defaultReduceContext ExRoot
@@ -350,28 +350,32 @@ spec = do
           "Q"
           "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       labels
-        `shouldBe` [ "contextualize"
-                   , "maa"
-                   , "alpha"
-                   , "copy"
+        `shouldBe` [ "box"
+                   , "dot"
+                   , "ma"
+                   , "stay"
                    , "mf"
                    , "evaluate"
-                   , "contextualize"
+                   , "box"
+                   , "dot"
+                   , "skip"
                    , "symbol"
                    ]
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
-      labels `shouldBe` ["contextualize", "md", "dot", "skip", "mf", "delta"]
+      labels `shouldBe` ["box", "dot", "ma", "skip", "mf", "delta"]
     it "takes every step of 5.plus(6) by the judgment of its rule" $ do
       expr <- parseExpressionThrows "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext ExRoot
       [judgment | (_, Just (judgment, _)) <- chain]
-        `shouldBe` [ Contextualization
-                   , Morphing
+        `shouldBe` [ Dataization
                    , Normalization
+                   , Morphing
                    , Normalization
                    , Morphing
                    , Evaluation
-                   , Contextualization
+                   , Dataization
+                   , Normalization
+                   , Normalization
                    , Dataization
                    ]
