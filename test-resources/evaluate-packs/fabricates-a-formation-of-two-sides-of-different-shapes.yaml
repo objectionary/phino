@@ -23,9 +23,9 @@ symbolic: |
       otherwise: L_join
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧, b ↦ ⟦ φ ↦ Φ.zu ⟧, λ ⤍ L_fork ⟧.ke ⟧'
-result: '⟦ λ ⤍ L_join, on ↦ ⟦ λ ⤍ 𝜎1 ⟧, left ↦ Φ.ty, right ↦ Φ.zu:φ.ke ⟧'
+result: '⟦ λ ⤍ L_join, on🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧, left🌵 ↦ Φ.ty, right🌵 ↦ Φ.zu:φ.ke ⟧'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧ and Φ.zu:φ  # ⟦ φ ↦ ⟦ λ ⤍ L_join, on ↦ 𝜎1:λ, left ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧.φ, right ↦ Φ.zu:φ.φ ⟧, ke ↦ ⟦ λ ⤍ L_join, on ↦ 𝜎1:λ, left ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧.ke, right ↦ Φ.zu:φ.ke ⟧ ⟧
+      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧ and Φ.zu:φ  # ⟦ φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧.φ, right🌵 ↦ Φ.zu:φ.φ ⟧, ke ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧.ke, right🌵 ↦ Φ.zu:φ.ke ⟧ ⟧

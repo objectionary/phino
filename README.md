@@ -338,18 +338,22 @@ of that function, which asks both sides for the attribute:
 
 ```text
 ⟦
-  φ ↦ ⟦ λ ⤍ L_join, on ↦ ⟦ Δ ⤍ 𝛿1 ⟧, left ↦ 𝑛1.φ, right ↦ 𝑛2.φ ⟧,
-  if ↦ ⟦ λ ⤍ L_join, on ↦ ⟦ Δ ⤍ 𝛿1 ⟧, left ↦ 𝑛1.if, right ↦ 𝑛2.if ⟧
+  φ  ↦ ⟦ λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧, left🌵 ↦ 𝑛1.φ,  right🌵 ↦ 𝑛2.φ ⟧,
+  if ↦ ⟦ λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧, left🌵 ↦ 𝑛1.if, right🌵 ↦ 𝑛2.if ⟧
 ⟧
 ```
 
 Here `𝑛1` and `𝑛2` stand for the two sides, and `𝛿1` for the bytes the
-condition came down to. When the condition is a symbol, such as `𝜎7`, `on`
+condition came down to. When the condition is a symbol, such as `𝜎7`, `on🌵`
 holds that symbol, `⟦ λ ⤍ 𝜎7 ⟧`, and not the 42 every symbol is dataized to,
 so every copy still names the unknown it decides by. So asking the formation
 for an attribute means the same as asking
-`on.if( left, right )` for it. The ρ of either side is skipped, an attribute
-both sides leave void stays void, and no λ is copied, since asking a side for
+`on🌵.if( left🌵, right🌵 )` for it. The three names carry the 🌵 mark, as
+the names phino makes up do, such as `a🌵14`, since no program can spell it:
+an attribute a side binds, such as the `left` and `right` voids of the `if`
+of a bool in EO, never clashes with them. The ρ of either side is skipped,
+an attribute both sides leave void stays void, and no λ is copied, since
+asking a side for
 an attribute fires its λ where it stands. An attribute only one side binds
 gets its copy too, since the other side may reach it through `φ`. The firing
 writes a line naming the formation by the two sides, in place of `diverged`,
@@ -360,14 +364,14 @@ fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ φ ↦ ⟦ λ ⤍ L_join, 
 ```
 
 phino implements no `L_join`: the file defines it, as an entry that joins
-`$.left` and `$.right` on `$.on`:
+`$.left🌵` and `$.right🌵` on `$.on🌵`:
 
 ```yaml
 - λ: L_join
   join:
-    on: $.on
-    left: $.left
-    right: $.right
+    on: $.on🌵
+    left: $.left🌵
+    right: $.right🌵
     otherwise: L_join
 ```
 
@@ -375,7 +379,7 @@ A path under `on` dataizes nothing: the firing reads the bytes or the symbol
 the attribute holds off the formation it fires, so the condition is not
 brought down a second time, and it gets stuck when the path leads to neither.
 Its `joined`
-line names the condition by the path, as `joined 𝜎4 := ξ.on ? 𝜎2 : 𝜎3`. A
+line names the condition by the path, as `joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3`. A
 side that is no formation, or a formation holding a datum, which no attribute
 reaches, still gets the firing stuck.
 

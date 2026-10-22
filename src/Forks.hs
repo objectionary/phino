@@ -67,5 +67,5 @@ forked func condition left@(ExFormation one) right@(ExFormation two)
     branch :: Attribute -> Binding
     branch attr
       | BiVoid attr `elem` one && BiVoid attr `elem` two = BiVoid attr
-      | otherwise = BiTau attr (ExFormation [BiLambda func, BiTau (AtLabel "on") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), BiTau (AtLabel "left") (ExDispatch left attr), BiTau (AtLabel "right") (ExDispatch right attr)])
+      | otherwise = BiTau attr (ExFormation [BiLambda func, BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), BiTau (AtLabel "left🌵") (ExDispatch left attr), BiTau (AtLabel "right🌵") (ExDispatch right attr)])
 forked _ _ _ _ = Nothing

@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The two sides of 'L_fork' differ in shape, so the firing fabricates a
+# formation whose every attribute is a copy of 'L_join' (#2024). Both sides
+# bind 'ke' to an object with an attribute named 'left', as the 'if' of a bool
+# in EO has a void named 'left'. The program asks the copy under 'ke' for
+# 'left', which the copy names none of its own attributes, since those carry
+# the 🌵 mark (#2027), so the copy fires 'L_join', whose entry joins the 'ke'
+# of both sides, two objects that differ in a symbol alone, and the program
+# takes the 'left' of what the join made.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+      otherwise: L_join
+  - λ: L_join
+    join:
+      on: $.on🌵
+      left: $.left🌵
+      right: $.right🌵
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ ⟦ left ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧, b ↦ ⟦ ke ↦ ⟦ left ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧ ⟧, λ ⤍ L_fork ⟧.ke.left ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke ↦ 𝜎2:λ:left ⟧ and 𝜎3:λ:left:ke  # ⟦ φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ⟦ φ ↦ Φ.hx, ke ↦ 𝜎2:λ:left ⟧.φ, right🌵 ↦ 𝜎3:λ:left:ke.φ ⟧, ke ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ⟦ φ ↦ Φ.hx, ke ↦ 𝜎2:λ:left ⟧.ke, right🌵 ↦ 𝜎3:λ:left:ke.ke ⟧ ⟧
+    𝔼(L_join):
+      joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3
+      𝑛·2·1 := 𝜎4:λ:left  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)
