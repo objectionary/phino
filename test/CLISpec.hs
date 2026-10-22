@@ -570,6 +570,17 @@ spec = do
           concat saved `shouldNotContain` "Minus"
           concat saved `shouldNotContain` "Plus"
 
+    it "gives the saved steps the --focus of the printed ones" $
+      withTempDirectory "phino-steps-focused" $ \dir ->
+        withStdin "⟦ x ↦ ⟦ k ↦ ⟦ q ↦ ⟦⟧ ⟧ ⟧.k, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--sweet", "--flat", "--focus=Q.y", "--sequence", "--steps-dir=" ++ dir]
+            ["⟦⟧:z"]
+          files <- listDirectory dir
+          null files `shouldBe` False
+          saved <- mapM (\file -> readFile (dir ++ "/" ++ file)) (sort files)
+          map (filter (/= '\n')) saved `shouldSatisfy` all (== "⟦⟧:z")
+
     it "saves dataize steps to dir with --steps-dir" $
       withTempDirectory "phino-steps-dataize" $ \dir ->
         withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
