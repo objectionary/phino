@@ -22,4 +22,4 @@ protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      diverged 01-:Δ vs Φ.zu:φ
+      diverged 01-:Δ vs Φ.zu:φ  # they differ at .Δ, and the left side has Δ

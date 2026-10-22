@@ -23,4 +23,4 @@ protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      diverged 01-:Δ:φ vs 02-:Δ:φ
+      diverged 01-:Δ:φ vs 02-:Δ:φ  # they differ at .φ.Δ, and the join names no otherwise

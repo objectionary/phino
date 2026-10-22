@@ -310,7 +310,7 @@ described below. Such a firing closes with a line naming the two sides it
 could not join, the left one first:
 
 ```text
-diverged 𝑛·2·3 vs 𝑛·2·5
+diverged 𝑛·2·3 vs 𝑛·2·5  # they differ at .x, and the join names no otherwise
 ```
 
 A side is named by the line that bound it: the line its morph wrote, or the
@@ -323,6 +323,19 @@ that line the firing gets stuck the way a λ function no entry answers does:
 fails with `No entry of --symbolic answers the λ function 'L_fork'`. A side
 whose morph gets stuck or is cut gets the firing stuck at once, the way an
 operand of `morph` does.
+
+The comment of the line tells where the two sides differ and why the join
+could not make one formation of them, so a reader knows what to change in
+the file without rebuilding both sides by hand. The place is a path of
+attributes, such as `.x` or `.φ.Δ`. It walks down both sides through the
+formations they share and ends at the first attribute they bind differently,
+or that only one of them binds. It stops at an application or a dispatch, and
+the comment leaves it out when the two sides differ as a whole, such as a
+formation and a dispatch. A ρ counts like any other attribute, so the comment
+may name a `.ρ` that `--hide-rho` hides from the terms. The reason is one of
+three: the join names no `otherwise`, described below, a side is no
+formation, as in `the right side is no formation`, or a side has a Δ or a λ,
+as in `the left side has λ`.
 
 Two formations of different shapes may still stand for one object, when
 whoever reads it asks it only for attributes both sides lead to alike. A
@@ -378,7 +391,8 @@ gets its copy too, since the other side may reach it through `φ`. A side
 holding a datum or a λ, such as a bare symbol `⟦ λ ⤍ 𝜎7 ⟧`, keeps what it
 stands for where no attribute reaches it, so no such formation means the same
 as the two sides, and the firing writes `diverged` as it does with no
-`otherwise` at all.
+`otherwise` at all, its comment naming the side and what it has, as in
+`the left side has Δ`.
 
 A copy of the function leaves void every void of the formations the sides
 bind its attribute to, once even when both leave it void, and those of the
@@ -449,8 +463,9 @@ $ phino dataize --symbolic=raise.yaml --locator=Q.demo.a --partial \
 ```
 
 The `then` side comes to the bytes of 7 and the `else` side to the copy of
-`error`, so the protocol ends in `diverged 𝑛·2·1 vs 𝑛·2·2` and the command
-prints the `if` it parked.
+`error`, so the protocol ends in `diverged 𝑛·2·1 vs 𝑛·2·2`, commented with
+`they differ at .φ, and the join names no otherwise`, and the command prints
+the `if` it parked.
 Without `--partial` the command fails there, with
 `No entry of --symbolic answers the λ function 'L_fork'`.
 
@@ -1211,7 +1226,9 @@ a datum where `then` holds a symbol, and the firing of `L_fork` would end in
 `diverged 𝑛·2·3 vs 𝑛·2·5`, naming the two branches by the lines their morphs
 wrote, since one term for both would make `foo` read as a program that
 computes a condition, computes both branches and then makes up a value
-neither of them has.
+neither of them has. The comment of that line says that the two differ at
+`.x`, the argument each branch hands to its last `plus`, and that the join
+names no `otherwise`.
 
 A firing that happened while an operand of another was being reduced stands one
 level deeper, under the firing that asked for it. The `plus( 1 )` of `then` is
@@ -1384,9 +1401,13 @@ one element per fresh symbol, which the text format writes as
 meta of the condition in `on`, named the way `<bound>` names it, and the two
 it stands for in `left` and `right`. The two `<morph>` elements before it are
 the sides being morphed where they stand in the universe. Two sides that do
-not join write `<diverged left="𝑛·2·3" right="𝑛·2·6"/>` in its place, which
-the text format writes as `diverged 𝑛·2·3 vs 𝑛·2·5`, naming each side the way
-the markup names any other value.
+not join write
+`<diverged left="𝑛·2·3" right="𝑛·2·6" at=".x" reason="the join names no otherwise"/>`
+in its place, which the text format writes as
+`diverged 𝑛·2·3 vs 𝑛·2·5  # they differ at .x, and the join names no otherwise`,
+naming each side the way the markup names any other value. `at` holds the
+path where the two sides differ, left out when they differ as a whole, and
+`reason` says why the join made no formation of them.
 
 `<symbolized symbol="𝜎4" number="1.0">3F-F0-00-00-00-00-00-00</symbolized>` is
 one symbol a `symbolize` line minted, which the text format writes as

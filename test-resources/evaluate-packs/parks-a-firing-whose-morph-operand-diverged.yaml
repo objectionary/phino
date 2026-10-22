@@ -32,5 +32,5 @@ protocol: |
           𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.c)
           𝑛1·2 := 01-:Δ  # 𝕄(ξ.a)
           𝑛2·2 := 02-:Δ  # 𝕄(ξ.b)
-          diverged 𝑛1·2 vs 𝑛2·2
+          diverged 𝑛1·2 vs 𝑛2·2  # they differ at .Δ, and the join names no otherwise
       stuck L_fork

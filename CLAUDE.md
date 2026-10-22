@@ -244,7 +244,14 @@ sides as `diverged` does and spelling the formation out in the comment, and
 answers that formation as `Joined` of `Answer`. The entry of `L_join` reads
 `on: $.on🌵`, so the copy it fires decides by that condition.
 Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
-naming each side by the line that bound it, and throw `Diverged`, which the
+naming each side by the line that bound it and commenting where they differ
+and why nothing was fabricated of them, as in
+`# they differ at .φ, and the left side has λ` (#2043). `joined` answers the
+path of attributes through the formations both sides share down to the first
+one they bind differently, cut short at an application or a dispatch, and
+`forked` answers a `Refusal`, `Unformed` or `Holding` a Δ or a λ, the left
+side first, while `merged` of `Evaluate.hs` hands over `Unnamed` for a block
+with no `otherwise`. The firing then throws `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around
 it write `stuck` as for a λ function no entry answers. A side or an operand
 whose morph throws fails the firing with what it threw, so a run never
