@@ -124,8 +124,9 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvMorphed Int Expression
-  | EvJoined Int T.Text Int (Int, Int)
+  | EvJoined Int (Either T.Text Expression) Int (Int, Int)
   | EvDiverged Int (Expression, Expression) (Expression, Expression)
+  | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int [Expression] Expression
   | EvWorld Expression
 
@@ -181,6 +182,7 @@ tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
 tier (EvJoined depth _ _ _) = depth
 tier (EvDiverged depth _ _) = depth
+tier (EvFabricated depth _ _ _) = depth
 tier (EvTaken depth _ _) = depth
 tier EvWorld{} = maxBound
 
@@ -402,12 +404,19 @@ saveEval handle cursor printed printed' report = do
       (protocol', value) <- valued counted naming term
       pure (protocol', Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
     written _ EvMorphed{} protocol = pure (protocol, Nothing)
-    written at (EvJoined _ spelling symbol (left, right)) protocol =
-      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) (labelled protocol spelling) (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
+    written at (EvJoined _ condition symbol (left, right)) protocol = do
+      on <- either (pure . labelled protocol) salted condition
+      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
     written at (EvDiverged _ left right) protocol = do
       one <- sided protocol left
       two <- sided protocol right
       pure (protocol, Just (indented at (printf "diverged %s vs %s" one two)))
+    written at (EvFabricated _ left right term) protocol = do
+      one <- sided protocol left
+      two <- sided protocol right
+      body <- printed (abbreviatedInside protocol._made term)
+      let (index, counted) = numbered protocol
+      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "fabricated %s·%d := %s and %s  # %s" (labelled protocol answer) index one two body)))
     written at (EvTaken _ sides term) protocol = do
       let (index, counted) = numbered protocol
           naming :: String
@@ -602,17 +611,25 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
     elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
-    elements at (EvJoined _ spelling symbol (left, right)) nesting =
-      placed at nesting (pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML (labelled nesting spelling)) (sigma left) (sigma right)))
+    elements at (EvJoined _ condition symbol (left, right)) nesting =
+      placed at nesting $ do
+        on <- either (pure . labelled nesting) (lift . traced) condition
+        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right))
     elements at (EvDiverged depth left right) nesting =
-      placed at nesting (printf "<diverged left=\"%s\" right=\"%s\"/>" . escapeXML <$> sided left <*> (escapeXML <$> sided right))
-      where
-        sided :: (Expression, Expression) -> Naming String
-        sided (_, term@(ExFormation [BiLambda (FnSymbol _)])) = leaf depth term
-        sided (side@(ExMeta _), _) = labelled nesting . T.pack <$> lift (spelled side)
-        sided (_, term) = leaf depth term
+      placed at nesting (printf "<diverged left=\"%s\" right=\"%s\"/>" . escapeXML <$> sided depth nesting left <*> (escapeXML <$> sided depth nesting right))
+    elements at (EvFabricated depth left right term) nesting =
+      placed at nesting $ do
+        one <- sided depth nesting left
+        two <- sided depth nesting right
+        body <- leaf depth term
+        (naming, _) <- counted
+        pure (printf "<fabricated meta=\"%s\" left=\"%s\" right=\"%s\">%s</fabricated>" (escapeXML naming) (escapeXML one) (escapeXML two) (escapeXMLText body))
     elements at (EvTaken depth _ term) nesting = placed at nesting (concluded "answered" depth term)
     elements _ (EvWorld world) nesting = pure (known world nesting, [])
+    sided :: Int -> Nesting -> (Expression, Expression) -> Naming String
+    sided depth _ (_, term@(ExFormation [BiLambda (FnSymbol _)])) = leaf depth term
+    sided _ nesting (side@(ExMeta _), _) = labelled nesting . T.pack <$> lift (spelled side)
+    sided depth _ (_, term) = leaf depth term
     outer :: Int -> Nesting -> Nesting
     outer depth nesting = nesting{_openedAt = dropWhile ((>= depth) . fst) nesting._openedAt, _sources = dropWhile (\(level, _, _) -> level > depth) nesting._sources}
     labelled :: Nesting -> T.Text -> String
@@ -764,6 +781,10 @@ saveEvalXml handle cursor printed report = do
     spelled (ExDispatch inner attr)
       | sigmatic inner = printf "%s.%s" <$> spelled inner <*> pure (printAttribute attr)
     spelled term = printed term
+    traced :: Expression -> IO String
+    traced ExXi = pure "ξ"
+    traced (ExDispatch inner attr) = printf "%s.%s" <$> traced inner <*> pure (printAttribute attr)
+    traced term = printed term
     sigmatic :: Expression -> Bool
     sigmatic (ExFormation [BiLambda (FnSymbol _)]) = True
     sigmatic (ExDispatch inner _) = sigmatic inner

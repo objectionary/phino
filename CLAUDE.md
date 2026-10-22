@@ -205,18 +205,34 @@ using the same `insideUniverse` trick the `--inside` option exposes.
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
 among them (#1999). The block names the condition under `on`, a bytes meta of
-`dataize`, and the two sides under `left` and `right`, each a path from `$` or
-a meta `morph`, `evaluate`, `stay`, `unbox`, `rewrite`, `symbolize` or
-`defer` binds.
-`merged` of `Evaluate.hs` first brings both sides down (`reached`): it morphs
+`dataize` or a path from `$`, and the two sides under `left` and `right`, each
+a path from `$` or a meta `morph`, `evaluate`, `stay`, `unbox`, `rewrite`,
+`symbolize` or `defer` binds.
+`merged` of `Evaluate.hs` first takes the bytes of the condition (`weighed`):
+a meta as it is bound, and a path off the formation fired, walking its
+bindings with no 𝔻, so a firing of the `L_join` below brings no condition
+down again; a path leading to no datum gets the firing stuck. It then brings
+both sides down (`reached`): it morphs
 a path where it stands in the universe through `insideUniverse`, so the
 protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The join
 defers nothing by itself: an entry that wants a side deferred says so with a
 `defer` line, which works as in an entry that computes (#1982). Two sides
 that are the same, or differ only in the symbols at their leaves, are one
 term: `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the
-firing writes `joined …` (`EvJoined`) per fresh symbol and answers the joined
-term (`Joined` of `Answer`, written by `EvTaken`) with no decision (#1954).
+firing writes `joined …` (`EvJoined`) per fresh symbol, naming a condition read
+off a path by that path, as `ξ.on`, and answers the joined term (`Joined` of
+`Answer`, written by `EvTaken`) with no decision (#1954).
+Two formations of other shapes, neither holding a datum, are joined attribute
+by attribute when the block names a λ function under `otherwise` (#2024):
+`forked` of `Forks.hs` builds a formation binding every attribute of both
+sides but ρ and λ to a copy of that function, whose `on` holds `⟦ Δ ⤍ 𝛿1 ⟧`,
+the bytes of the condition, the 42 of a symbol among them, and whose `left`
+and `right` ask each side for the attribute, keeping void an attribute both
+sides leave void. The firing writes
+`fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ … ⟧` (`EvFabricated`), naming the
+sides as `diverged` does and spelling the formation out in the comment, and
+answers that formation as `Joined` of `Answer`. The entry of `L_join` reads
+`on: $.on`, so the copy it fires decides by those bytes.
 Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
 naming each side by the line that bound it, and throw `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around

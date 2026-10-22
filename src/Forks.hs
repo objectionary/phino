@@ -1,10 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Forks (joined) where
+module Forks (forked, joined) where
 
-import AST (Argument (..), Binding (..), Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet), Function (FnSymbol))
+import AST (Argument (..), Attribute (AtDelta, AtLabel, AtLambda, AtRho), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet), Function (FnSymbol), attributeFromBinding)
 import Data.Bifunctor (first)
+import Data.List (nub)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
@@ -51,3 +54,18 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
     picked pair joining@(spent', names, made) = case Map.lookup pair names of
       Just name -> (name, joining)
       Nothing -> (succ spent', (succ spent', Map.insert pair (succ spent') names, (succ spent', pair) : made))
+
+forked :: Function -> Bytes -> Expression -> Expression -> Maybe Expression
+forked func condition left@(ExFormation one) right@(ExFormation two)
+  | not (any datum (one ++ two)) = Just (ExFormation (map branch (nub (attributes one ++ attributes two))))
+  where
+    datum :: Binding -> Bool
+    datum (BiDelta _) = True
+    datum _ = False
+    attributes :: [Binding] -> [Attribute]
+    attributes bds = [attr | Just attr <- map attributeFromBinding bds, attr `notElem` [AtRho, AtLambda, AtDelta]]
+    branch :: Attribute -> Binding
+    branch attr
+      | BiVoid attr `elem` one && BiVoid attr `elem` two = BiVoid attr
+      | otherwise = BiTau attr (ExFormation [BiLambda func, BiTau (AtLabel "on") (ExFormation [BiDelta condition]), BiTau (AtLabel "left") (ExDispatch left attr), BiTau (AtLabel "right") (ExDispatch right attr)])
+forked _ _ _ _ = Nothing

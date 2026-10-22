@@ -47,7 +47,7 @@ import Language (Language, language, shared)
 import Logger (logDebug)
 import Matcher (substEmpty)
 import Metas (Metas (metas))
-import Parser (parseBytes, parseExpression)
+import Parser (parseBinding, parseBytes, parseExpression)
 import Rule (RuleContext, matchExpressionWithRule')
 import Slots (Slots (slots))
 import Text.Printf (printf)
@@ -72,7 +72,7 @@ data Line
 
 data Ending
   = Answering Expression
-  | Joining Meta Expression Expression
+  | Joining (Either Meta Expression) Expression Expression (Maybe Function)
 
 data Lambda = Lambda
   { _key :: Text
@@ -127,23 +127,32 @@ instance FromJSON Lambda where
           (Nothing, Just joint) -> joining key dataized joint
       joining :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       joining key dataized block = do
-        case filter (`notElem` ["on", "left", "right"]) (map Key.toText (KeyMap.keys block)) of
+        case filter (`notElem` ["on", "left", "right", "otherwise"]) (map Key.toText (KeyMap.keys block)) of
           [] -> pure ()
-          name : _ -> fail (printf "The key '%s' of the 'join' block of λ function '%s' is none of its keys: on, left, right" (T.unpack name) key)
+          name : _ -> fail (printf "The key '%s' of the 'join' block of λ function '%s' is none of its keys: on, left, right, otherwise" (T.unpack name) key)
         on <- required "on" >>= condition
-        Joining on <$> (required "left" >>= side "left") <*> (required "right" >>= side "right")
+        Joining on <$> (required "left" >>= side "left") <*> (required "right" >>= side "right") <*> (block .:? "otherwise" >>= traverse fallback)
         where
           required :: FromJSON value => Key -> Yaml.Parser value
           required name = block .:? name >>= maybe (fail (printf "The 'join' block of λ function '%s' has no '%s' key" key (Key.toString name))) pure
-          condition :: Text -> Yaml.Parser Meta
-          condition spelling = case parseBytes (T.unpack spelling) of
-            Right (BtMeta name) | name `elem` map (_name . fst) dataized -> pure (Meta spelling name)
-            _ -> fail (printf "The 'on' of the 'join' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize', such as '𝛿1'" key (T.unpack spelling))
+          condition :: Text -> Yaml.Parser (Either Meta Expression)
+          condition spelling = case (parseBytes (T.unpack spelling), parseExpression (T.unpack spelling)) of
+            (Right (BtMeta name), _) | name `elem` map (_name . fst) dataized -> pure (Left (Meta spelling name))
+            (_, Right path) | pathed path -> pure (Right path)
+            _ -> fail (printf "The 'on' of the 'join' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize', such as '𝛿1', or be a path from '$', such as '$.on'" key (T.unpack spelling))
+          pathed :: Expression -> Bool
+          pathed ExXi = True
+          pathed (ExDispatch inner _) = pathed inner
+          pathed _ = False
           side :: String -> Expression -> Yaml.Parser Expression
           side _ term@(ExMeta _) = pure term
           side name term = case metas term of
             [] -> pure term
             meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' inside a term, while a side is a path from '$' or a meta alone" name key (T.unpack meta))
+          fallback :: Text -> Yaml.Parser Function
+          fallback spelling = case parseBinding (printf "λ ⤍ %s" (T.unpack spelling)) of
+            Right (BiLambda func@(Function _)) -> pure func
+            _ -> fail (printf "The 'otherwise' of the 'join' block of λ function '%s' is '%s', while it must name a λ function, such as 'L_join'" key (T.unpack spelling))
       operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
       operands key kind entry name = do
         mapping <- entry .:? name .!= (Map.empty :: Map Text Expression)
@@ -276,7 +285,7 @@ instance FromJSON Lambda where
             )
       answered :: String -> Lambda -> Yaml.Parser ()
       answered key lambda = case lambda._ending of
-        Joining _ left right -> sided "left" left >> sided "right" right
+        Joining _ left right _ -> sided "left" left >> sided "right" right
         Answering term -> case filter (`notElem` ("S" : known)) (metas term) of
           [] -> pure ()
           name : _ -> fail (printf "The '𝑛' of λ function '%s' reads the meta '%s' that no block binds" key (T.unpack name))

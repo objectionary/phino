@@ -266,16 +266,19 @@ not join.
     right: $.right
 ```
 
-`on` names a bytes meta the `dataize` block bound, the condition, and `left`
-and `right` are paths from `$`, read against the formation being fired the way
+`on` names the condition, a bytes meta the `dataize` block bound or a path
+from `$`, described below, and `left` and `right` are paths from `$`, read
+against the formation being fired the way
 an operand is, or metas the `morph` block or an `evaluate`, `stay`, `unbox`,
 `rewrite`, `symbolize` or `defer` line bound, as described below. An entry
 with a `join` block has no `𝑛`, since the term it joins is what it answers
 with: an entry joins or it computes, never both. A block missing one of the
-three keys, holding another, or naming under `on` anything but a meta of
-`dataize` is refused when the file is read, and so is a side reading a meta
-inside a term, such as `𝑛1.x`, or naming a meta that none of `morph`,
-`evaluate`, `stay`, `unbox`, `rewrite`, `symbolize` and `defer` binds.
+three keys, holding another but `otherwise`, described below, or naming under
+`on` anything but a meta of `dataize` or a path from `$` is refused when the
+file is read, and
+so is a side reading a meta inside a term, such as `𝑛1.x`, or naming a meta
+that none of `morph`, `evaluate`, `stay`, `unbox`, `rewrite`, `symbolize` and
+`defer` binds.
 
 A join morphs both of its sides first, each where it stands in the universe,
 under a block of its own, `𝕄(Φ.a🌵3):` for the left side and `𝕄(Φ.a🌵4):` for
@@ -318,6 +321,61 @@ that line the firing gets stuck the way a λ function no entry answers does:
 fails with `No entry of --symbolic answers the λ function 'L_fork'`. A side
 whose morph gets stuck or is cut gets the firing stuck at once, the way an
 operand of `morph` does.
+
+Two formations of different shapes may still stand for one object, when
+whoever reads it asks it only for attributes both sides lead to alike. A
+block may name a λ function under a fourth key, `otherwise`, and then such a
+firing answers a formation binding every attribute of both sides to a copy
+of that function, which asks both sides for the attribute:
+
+```yaml
+  join:
+    on: 𝛿1
+    left: 𝑛1
+    right: 𝑛2
+    otherwise: L_join
+```
+
+```text
+⟦
+  φ ↦ ⟦ λ ⤍ L_join, on ↦ ⟦ Δ ⤍ 𝛿1 ⟧, left ↦ 𝑛1.φ, right ↦ 𝑛2.φ ⟧,
+  if ↦ ⟦ λ ⤍ L_join, on ↦ ⟦ Δ ⤍ 𝛿1 ⟧, left ↦ 𝑛1.if, right ↦ 𝑛2.if ⟧
+⟧
+```
+
+Here `𝑛1` and `𝑛2` stand for the two sides, and `𝛿1` for the bytes the
+condition came down to, which are the 42 every symbol is dataized to when the
+condition is a symbol. So asking the formation for an attribute means the same
+as asking
+`on.if( left, right )` for it. The ρ of either side is skipped, an attribute
+both sides leave void stays void, and no λ is copied, since asking a side for
+an attribute fires its λ where it stands. An attribute only one side binds
+gets its copy too, since the other side may reach it through `φ`. The firing
+writes a line naming the formation by the two sides, in place of `diverged`,
+and spells the formation out in its comment:
+
+```text
+fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ φ ↦ ⟦ λ ⤍ L_join, … ⟧, … ⟧
+```
+
+phino implements no `L_join`: the file defines it, as an entry that joins
+`$.left` and `$.right` on `$.on`:
+
+```yaml
+- λ: L_join
+  join:
+    on: $.on
+    left: $.left
+    right: $.right
+    otherwise: L_join
+```
+
+A path under `on` dataizes nothing: the firing reads the bytes the attribute
+holds off the formation it fires, so the condition is not brought down a
+second time, and it gets stuck when the path leads to no datum. Its `joined`
+line names the condition by the path, as `joined 𝜎4 := ξ.on ? 𝜎2 : 𝜎3`. A
+side that is no formation, or a formation holding a datum, which no attribute
+reaches, still gets the firing stuck.
 
 A side may raise. EO raises with an object, a copy of
 `⟦ message ↦ ∅, λ ⤍ L_throw ⟧`, whose λ function the file leaves out on
