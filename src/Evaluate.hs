@@ -187,6 +187,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       bound' <- bind meta (MvExpression answer) bound
       pure (bound', state'')
     kindled :: ReduceContext -> Ending -> Expression -> State -> Expression -> IO (Expression, State)
+    kindled _ _ _ state' term@(ExFormation [BiLambda (FnSymbol _)]) = pure (term, state')
     kindled ctx _ site state' term@(ExFormation _) = fire ctx site state' term
     kindled _ Joining{} _ state' term = pure (term, state')
     kindled ctx _ site state' term = fire ctx site state' term

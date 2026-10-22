@@ -160,7 +160,8 @@ form through 𝕄 under `morph`, each binding an expression meta `𝑛1`; the li
 under `evaluate`, each firing through 𝔼 the term a `morph` meta or an earlier
 line is bound to and binding a meta of its own to the answer (`evaluated` of
 `Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
-formation with no λ and ⊥ as they are, and never fires its answer again, so
+formation with no λ, a bare symbol `⟦ λ ⤍ 𝜎1 ⟧`, which no entry answers
+(#2036), and ⊥ as they are, and never fires its answer again, so
 another call takes another line. Any other term, such as one `--partial`
 parked, gets the line stuck, unless the entry joins, where `kindled` of
 `Evaluate.hs` passes it on as it is, since a join compares any two terms

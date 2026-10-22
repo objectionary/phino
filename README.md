@@ -181,7 +181,9 @@ The right-hand side of a line names a meta bound by `morph` or by another line
 of the entry, and nothing else. A formation with a λ function is fired by the
 entry its λ name matches, the way 𝕄 fires it, and the line binds its meta to
 the normal form of the answer. A formation with no λ function is no call and
-stays as it is, and so does `⊥`. A λ name no entry answers gets stuck, as it
+stays as it is, and so does `⊥`. So does a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, since it
+already stands for a value nobody worked out and no entry answers it. A λ name
+no entry answers gets stuck, as it
 does anywhere else, and `--partial` parks it. Any other term, such as a
 dispatch an `unbox` line, described below, took out of its formation, gets an
 entry stuck when it computes an `𝑛`, while an entry that joins passes the term
