@@ -116,4 +116,4 @@ spec = do
     it "tells that the right side is no formation" $
       fork "L_rt" (Right (BtOne "2D")) "⟦ φ ↦ Φ.mo ⟧" "Φ.gl.fy" >>= (`shouldBe` Left (Unformed Righthand))
     it "tells about the left side before the right one" $
-      fork "L_ib" (Left 5) "Φ.ot" "⟦ Δ ⤍ 1A- ⟧" >>= (`shouldBe` Left (Unformed Lefthand))
+      fork "L_ib" (Left 5) "Φ.vy" "⟦ Δ ⤍ 1A- ⟧" >>= (`shouldBe` Left (Unformed Lefthand))
