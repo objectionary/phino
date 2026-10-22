@@ -191,7 +191,8 @@ instance FromJSON Extra where
   parseJSON =
     withObject
       "Extra"
-      ( \o ->
+      ( \o -> do
+          validateKnownYamlKeys o ["meta", "function", "args"]
           Extra
             <$> o .: "meta"
             <*> o .: "function"
