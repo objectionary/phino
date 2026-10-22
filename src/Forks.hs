@@ -55,7 +55,7 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
       Just name -> (name, joining)
       Nothing -> (succ spent', (succ spent', Map.insert pair (succ spent') names, (succ spent', pair) : made))
 
-forked :: Function -> Either Int Bytes -> Expression -> Expression -> Maybe Expression
+forked :: Function -> Bytes -> Expression -> Expression -> Maybe Expression
 forked func condition left@(ExFormation one) right@(ExFormation two)
   | not (any datum (one ++ two)) = Just (ExFormation (map branch (nub (attributes one ++ attributes two))))
   where
@@ -67,7 +67,5 @@ forked func condition left@(ExFormation one) right@(ExFormation two)
     branch :: Attribute -> Binding
     branch attr
       | BiVoid attr `elem` one && BiVoid attr `elem` two = BiVoid attr
-      | otherwise = BiTau attr (ExFormation [BiLambda func, BiTau (AtLabel "on") decided, BiTau (AtLabel "left") (ExDispatch left attr), BiTau (AtLabel "right") (ExDispatch right attr)])
-    decided :: Expression
-    decided = either (\idx -> ExFormation [BiLambda (FnSymbol idx)]) (\bytes -> ExFormation [BiDelta bytes]) condition
+      | otherwise = BiTau attr (ExFormation [BiLambda func, BiTau (AtLabel "on") (ExFormation [BiDelta condition]), BiTau (AtLabel "left") (ExDispatch left attr), BiTau (AtLabel "right") (ExDispatch right attr)])
 forked _ _ _ _ = Nothing

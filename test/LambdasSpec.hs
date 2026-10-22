@@ -80,9 +80,9 @@ answers known func = case _ending <$> matched known func of
   Just (Answering term) -> Just term
   _ -> Nothing
 
-joining :: Lambdas -> T.Text -> Maybe T.Text
+joining :: Lambdas -> T.Text -> Maybe (Either T.Text Expression)
 joining known func = case _ending <$> matched known func of
-  Just (Joining on _ _ _) -> Just (_spelling on)
+  Just (Joining on _ _ _) -> Just (either (Left . _spelling) Right on)
   _ -> Nothing
 
 sides :: Lambdas -> T.Text -> Maybe (Expression, Expression)
@@ -166,7 +166,12 @@ spec = do
 
     it "reads a 'join' block joining on a meta 'dataize' bound" $ do
       known <- lambdasOf joint
-      joining known "L_fork" `shouldBe` Just "𝛿1"
+      joining known "L_fork" `shouldBe` Just (Left "𝛿1")
+
+    it "reads a 'join' block joining on a path from '$' as one that dataizes nothing" $ do
+      known <- lambdasOf "- λ: L_join\n  join:\n    on: $.on\n    left: $.left\n    right: $.right\n"
+      path <- parseExpressionThrows "$.on"
+      joining known "L_join" `shouldBe` Just (Right path)
 
     it "reads the two sides of a 'join' block as terms" $ do
       known <- lambdasOf joint
@@ -420,9 +425,10 @@ spec = do
       , ("a meta bound by 'morph' and again by 'stay'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_hold' is bound by more than one line")
       , ("a meta bound by 'morph' and again by 'defer'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  defer:\n    𝑛1: 𝑛1\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_hold' is bound by more than one line")
       , ("an entry with both an '𝑛' key and a 'join' block", joint <> "  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The entry of λ function 'L_fork' has both an '𝑛' key and a 'join' block, while a join answers the term it joins")
-      , ("a 'join' block joining on an expression meta", "- λ: L_fork\n  join:\n    on: 𝑛1\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is '𝑛1', while it must name a bytes meta of 'dataize', such as '𝛿1'")
+      , ("a 'join' block joining on an expression meta", "- λ: L_fork\n  join:\n    on: 𝑛1\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is '𝑛1', while it must name a bytes meta of 'dataize', such as '𝛿1', or be a path from '$', such as '$.on'")
       , ("a 'join' block joining on a bytes meta 'dataize' never bound", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿2\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is '𝛿2', while it must name a bytes meta of 'dataize'")
-      , ("a 'join' block joining on a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: $.c\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is '$.c'")
+      , ("a 'join' block joining on a path off 'Φ'", "- λ: L_fork\n  join:\n    on: Φ.c\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is 'Φ.c'")
+      , ("a 'join' block joining on an application", "- λ: L_fork\n  join:\n    on: $.c(x ↦ $.d)\n    left: $.a\n    right: $.b\n", "The 'on' of the 'join' block of λ function 'L_fork' is '$.c(x ↦ $.d)'")
       , ("a 'join' block with no 'on' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    left: $.a\n    right: $.b\n", "The 'join' block of λ function 'L_fork' has no 'on' key")
       , ("a 'join' block with no 'left' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    right: $.b\n", "The 'join' block of λ function 'L_fork' has no 'left' key")
       , ("a 'join' block with no 'right' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n", "The 'join' block of λ function 'L_fork' has no 'right' key")

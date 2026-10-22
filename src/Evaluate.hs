@@ -9,7 +9,7 @@
 module Evaluate (evaluation) where
 
 import AST
-import Builder (buildExpressionThrows)
+import Builder (buildBytesThrows, buildExpressionThrows)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.IORef (atomicModifyIORef', readIORef, writeIORef)
@@ -303,7 +303,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     concluded ctx entry operands bound state' = case entry._ending of
       Answering template -> answered ctx template operands bound state'
-      Joining on left right fallback -> merged ctx bound on left right ((,) <$> fallback <*> lookup on._name (zip [meta._name | (meta, _) <- entry._dataized] operands)) state'
+      Joining on left right fallback -> merged ctx bound on left right fallback state'
     answered :: ReduceContext -> Expression -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     answered ctx template operands bound state' = do
       (fresh, spent) <- minted template <$> readIORef ctx._minted
@@ -315,24 +315,38 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (normal, state'') <- settled built univ state' =<< opening Morphing ctx{_saveEval = ctx._saveEval . resited ctx._site built}
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (Answer built normal, state'')
-    merged :: ReduceContext -> Subst -> Meta -> Expression -> Expression -> Maybe (Function, Either Int Bytes) -> State -> IO (Answer, State)
+    merged :: ReduceContext -> Subst -> Either Meta Expression -> Expression -> Expression -> Maybe Function -> State -> IO (Answer, State)
     merged ctx bound on left right fallback state' = do
+      condition <- weighed bound on
       (one, state'') <- reached ctx bound left state'
       (two, state''') <- reached ctx bound right state''
       spent <- readIORef ctx._minted
       case joined one two spent of
         Just (term, made, spent') -> do
           writeIORef ctx._minted spent'
-          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting on._spelling fresh pair)) made
+          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair)) made
           ctx._saveEval (EvTaken ctx._nesting [left, right] term)
           pure (Joined (left, right) term, state''')
-        Nothing -> case fallback >>= \(name, condition) -> forked name condition one two of
+        Nothing -> case fallback >>= \name -> forked name condition one two of
           Just term -> do
             ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) term)
             pure (Joined (left, right) term, state''')
           Nothing -> do
             ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two))
             throwIO (Diverged func)
+    weighed :: Subst -> Either Meta Expression -> IO Bytes
+    weighed bound (Left meta) = buildBytesThrows (BtMeta meta._name) bound
+    weighed _ (Right path) = operand path >>= maybe (throwIO (Stuck func)) pure . held
+      where
+        held :: Expression -> Maybe Bytes
+        held term = case walked term of
+          Just (ExFormation bds) -> listToMaybe [bytes | BiDelta bytes <- bds]
+          _ -> Nothing
+        walked :: Expression -> Maybe Expression
+        walked (ExDispatch base attr) = case walked base of
+          Just (ExFormation bds) -> listToMaybe [term | BiTau attr' term <- bds, attr' == attr]
+          _ -> Nothing
+        walked term = Just term
     reached :: ReduceContext -> Subst -> Expression -> State -> IO (Expression, State)
     reached _ bound (ExMeta name) state' = (,state') <$> buildExpressionThrows (ExMeta name) bound
     reached ctx _ side state' = (\placed -> morphing univ ctx placed state') =<< operand side

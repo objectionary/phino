@@ -124,7 +124,7 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvMorphed Int Expression
-  | EvJoined Int T.Text Int (Int, Int)
+  | EvJoined Int (Either T.Text Expression) Int (Int, Int)
   | EvDiverged Int (Expression, Expression) (Expression, Expression)
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int [Expression] Expression
@@ -404,8 +404,9 @@ saveEval handle cursor printed printed' report = do
       (protocol', value) <- valued counted naming term
       pure (protocol', Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
     written _ EvMorphed{} protocol = pure (protocol, Nothing)
-    written at (EvJoined _ spelling symbol (left, right)) protocol =
-      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) (labelled protocol spelling) (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
+    written at (EvJoined _ condition symbol (left, right)) protocol = do
+      on <- either (pure . labelled protocol) salted condition
+      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
     written at (EvDiverged _ left right) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -413,8 +414,9 @@ saveEval handle cursor printed printed' report = do
     written at (EvFabricated _ left right term) protocol = do
       one <- sided protocol left
       two <- sided protocol right
+      body <- printed (abbreviatedInside protocol._made term)
       let (index, counted) = numbered protocol
-      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "fabricated %s·%d := %s and %s" (labelled protocol answer) index one two)))
+      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "fabricated %s·%d := %s and %s  # %s" (labelled protocol answer) index one two body)))
     written at (EvTaken _ sides term) protocol = do
       let (index, counted) = numbered protocol
           naming :: String
@@ -609,8 +611,10 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
     elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
-    elements at (EvJoined _ spelling symbol (left, right)) nesting =
-      placed at nesting (pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML (labelled nesting spelling)) (sigma left) (sigma right)))
+    elements at (EvJoined _ condition symbol (left, right)) nesting =
+      placed at nesting $ do
+        on <- either (pure . labelled nesting) (lift . traced) condition
+        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right))
     elements at (EvDiverged depth left right) nesting =
       placed at nesting (printf "<diverged left=\"%s\" right=\"%s\"/>" . escapeXML <$> sided depth nesting left <*> (escapeXML <$> sided depth nesting right))
     elements at (EvFabricated depth left right term) nesting =
@@ -777,6 +781,10 @@ saveEvalXml handle cursor printed report = do
     spelled (ExDispatch inner attr)
       | sigmatic inner = printf "%s.%s" <$> spelled inner <*> pure (printAttribute attr)
     spelled term = printed term
+    traced :: Expression -> IO String
+    traced ExXi = pure "ξ"
+    traced (ExDispatch inner attr) = printf "%s.%s" <$> traced inner <*> pure (printAttribute attr)
+    traced term = printed term
     sigmatic :: Expression -> Bool
     sigmatic (ExFormation [BiLambda (FnSymbol _)]) = True
     sigmatic (ExDispatch inner _) = sigmatic inner

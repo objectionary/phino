@@ -72,7 +72,7 @@ data Line
 
 data Ending
   = Answering Expression
-  | Joining Meta Expression Expression (Maybe Function)
+  | Joining (Either Meta Expression) Expression Expression (Maybe Function)
 
 data Lambda = Lambda
   { _key :: Text
@@ -135,10 +135,15 @@ instance FromJSON Lambda where
         where
           required :: FromJSON value => Key -> Yaml.Parser value
           required name = block .:? name >>= maybe (fail (printf "The 'join' block of λ function '%s' has no '%s' key" key (Key.toString name))) pure
-          condition :: Text -> Yaml.Parser Meta
-          condition spelling = case parseBytes (T.unpack spelling) of
-            Right (BtMeta name) | name `elem` map (_name . fst) dataized -> pure (Meta spelling name)
-            _ -> fail (printf "The 'on' of the 'join' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize', such as '𝛿1'" key (T.unpack spelling))
+          condition :: Text -> Yaml.Parser (Either Meta Expression)
+          condition spelling = case (parseBytes (T.unpack spelling), parseExpression (T.unpack spelling)) of
+            (Right (BtMeta name), _) | name `elem` map (_name . fst) dataized -> pure (Left (Meta spelling name))
+            (_, Right path) | pathed path -> pure (Right path)
+            _ -> fail (printf "The 'on' of the 'join' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize', such as '𝛿1', or be a path from '$', such as '$.on'" key (T.unpack spelling))
+          pathed :: Expression -> Bool
+          pathed ExXi = True
+          pathed (ExDispatch inner _) = pathed inner
+          pathed _ = False
           side :: String -> Expression -> Yaml.Parser Expression
           side _ term@(ExMeta _) = pure term
           side name term = case metas term of

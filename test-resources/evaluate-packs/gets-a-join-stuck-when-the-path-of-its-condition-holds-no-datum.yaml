@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The entry of 'L_join' reads the bytes of its condition off 'on', dataizing
+# nothing, but the formation it fires binds 'on' to a path and not to a datum.
+# The join has no bytes to decide by, so the firing gets stuck before it
+# morphs either side, as a firing no entry answers does (#2024).
+symbolic: |
+  - λ: L_join
+    join:
+      on: $.on
+      left: $.left
+      right: $.right
+location: 'Q.y'
+input: '⟦ ku ↦ ⟦ Δ ⤍ 01- ⟧, y ↦ ⟦ on ↦ Φ.ku, left ↦ ⟦ φ ↦ Φ.hx ⟧, right ↦ ⟦ φ ↦ Φ.zu ⟧, λ ⤍ L_join ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_join'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_join):
+      stuck L_join
