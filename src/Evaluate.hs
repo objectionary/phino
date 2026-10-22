@@ -9,7 +9,7 @@
 module Evaluate (evaluation) where
 
 import AST
-import Builder (buildBytesThrows, buildExpressionThrows)
+import Builder (buildExpressionThrows)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
 import Data.IORef (atomicModifyIORef', readIORef, writeIORef)
@@ -303,7 +303,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     concluded ctx entry operands bound state' = case entry._ending of
       Answering template -> answered ctx template operands bound state'
-      Joining on left right fallback -> merged ctx bound on left right fallback state'
+      Joining on left right fallback -> merged ctx bound (zip (map (_name . fst) entry._dataized) operands) on left right fallback state'
     answered :: ReduceContext -> Expression -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     answered ctx template operands bound state' = do
       (fresh, spent) <- minted template <$> readIORef ctx._minted
@@ -315,9 +315,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (normal, state'') <- settled built univ state' =<< opening Morphing ctx{_saveEval = ctx._saveEval . resited ctx._site built}
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (Answer built normal, state'')
-    merged :: ReduceContext -> Subst -> Either Meta Expression -> Expression -> Expression -> Maybe Function -> State -> IO (Answer, State)
-    merged ctx bound on left right fallback state' = do
-      condition <- weighed bound on
+    merged :: ReduceContext -> Subst -> [(T.Text, Either Int Bytes)] -> Either Meta Expression -> Expression -> Expression -> Maybe Function -> State -> IO (Answer, State)
+    merged ctx bound operands on left right fallback state' = do
+      condition <- weighed operands on
       (one, state'') <- reached ctx bound left state'
       (two, state''') <- reached ctx bound right state''
       spent <- readIORef ctx._minted
@@ -334,13 +334,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           Nothing -> do
             ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two))
             throwIO (Diverged func)
-    weighed :: Subst -> Either Meta Expression -> IO Bytes
-    weighed bound (Left meta) = buildBytesThrows (BtMeta meta._name) bound
+    weighed :: [(T.Text, Either Int Bytes)] -> Either Meta Expression -> IO (Either Int Bytes)
+    weighed operands (Left meta) =
+      maybe
+        (throwIO (userError (printf "The meta '%s' of λ function '%s' is bound by no operand of 'dataize'" (T.unpack meta._spelling) (T.unpack func))))
+        pure
+        (lookup meta._name operands)
     weighed _ (Right path) = operand path >>= maybe (throwIO (Stuck func)) pure . held
       where
-        held :: Expression -> Maybe Bytes
+        held :: Expression -> Maybe (Either Int Bytes)
         held term = case walked term of
-          Just (ExFormation bds) -> listToMaybe [bytes | BiDelta bytes <- bds]
+          Just (ExFormation bds) -> listToMaybe ([Left idx | BiLambda (FnSymbol idx) <- bds] ++ [Right bytes | BiDelta bytes <- bds])
           _ -> Nothing
         walked :: Expression -> Maybe Expression
         walked (ExDispatch base attr) = case walked base of

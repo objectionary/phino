@@ -208,10 +208,11 @@ among them (#1999). The block names the condition under `on`, a bytes meta of
 `dataize` or a path from `$`, and the two sides under `left` and `right`, each
 a path from `$` or a meta `morph`, `evaluate`, `stay`, `unbox`, `rewrite`,
 `symbolize` or `defer` binds.
-`merged` of `Evaluate.hs` first takes the bytes of the condition (`weighed`):
-a meta as it is bound, and a path off the formation fired, walking its
-bindings with no 𝔻, so a firing of the `L_join` below brings no condition
-down again; a path leading to no datum gets the firing stuck. It then brings
+`merged` of `Evaluate.hs` first takes the condition (`weighed`), its bytes or
+the symbol they were manufactured for: a meta as its `dataize` operand came
+down, and a path off the formation fired, walking its bindings with no 𝔻, so
+a firing of the `L_join` below brings no condition down again; a path leading
+to neither a datum nor a symbol gets the firing stuck. It then brings
 both sides down (`reached`): it morphs
 a path where it stands in the universe through `insideUniverse`, so the
 protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The join
@@ -226,13 +227,13 @@ Two formations of other shapes, neither holding a datum, are joined attribute
 by attribute when the block names a λ function under `otherwise` (#2024):
 `forked` of `Forks.hs` builds a formation binding every attribute of both
 sides but ρ and λ to a copy of that function, whose `on` holds `⟦ Δ ⤍ 𝛿1 ⟧`,
-the bytes of the condition, the 42 of a symbol among them, and whose `left`
-and `right` ask each side for the attribute, keeping void an attribute both
-sides leave void. The firing writes
+the bytes of the condition, or `⟦ λ ⤍ 𝜎k ⟧`, the symbol it came down to
+(#2026), and whose `left` and `right` ask each side for the attribute,
+keeping void an attribute both sides leave void. The firing writes
 `fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ … ⟧` (`EvFabricated`), naming the
 sides as `diverged` does and spelling the formation out in the comment, and
 answers that formation as `Joined` of `Answer`. The entry of `L_join` reads
-`on: $.on`, so the copy it fires decides by those bytes.
+`on: $.on`, so the copy it fires decides by that condition.
 Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
 naming each side by the line that bound it, and throw `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around
