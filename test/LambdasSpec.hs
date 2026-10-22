@@ -82,12 +82,17 @@ answers known func = case _ending <$> matched known func of
 
 joining :: Lambdas -> T.Text -> Maybe T.Text
 joining known func = case _ending <$> matched known func of
-  Just (Joining on _ _) -> Just (_spelling on)
+  Just (Joining on _ _ _) -> Just (_spelling on)
   _ -> Nothing
 
 sides :: Lambdas -> T.Text -> Maybe (Expression, Expression)
 sides known func = case _ending <$> matched known func of
-  Just (Joining _ left right) -> Just (left, right)
+  Just (Joining _ left right _) -> Just (left, right)
+  _ -> Nothing
+
+fallback :: Lambdas -> T.Text -> Maybe Function
+fallback known func = case _ending <$> matched known func of
+  Just (Joining _ _ _ name) -> name
   _ -> Nothing
 
 spec :: Spec
@@ -212,6 +217,14 @@ spec = do
       left <- parseExpressionThrows "$.a"
       right <- parseExpressionThrows "𝑛1"
       sides known "L_fork" `shouldBe` Just (left, right)
+
+    it "reads the λ function the 'otherwise' of a 'join' block names" $ do
+      known <- lambdasOf (joint <> "    otherwise: L_join\n")
+      fallback known "L_fork" `shouldBe` Just (Function "L_join")
+
+    it "reads a 'join' block with no 'otherwise' as one fabricating nothing" $ do
+      known <- lambdasOf joint
+      fallback known "L_fork" `shouldBe` Nothing
 
     it "reads an entry with a 'join' block as one answering no term of its own" $ do
       known <- lambdasOf joint
@@ -413,7 +426,9 @@ spec = do
       , ("a 'join' block with no 'on' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    left: $.a\n    right: $.b\n", "The 'join' block of λ function 'L_fork' has no 'on' key")
       , ("a 'join' block with no 'left' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    right: $.b\n", "The 'join' block of λ function 'L_fork' has no 'left' key")
       , ("a 'join' block with no 'right' key", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n", "The 'join' block of λ function 'L_fork' has no 'right' key")
-      , ("a 'join' block with a key it does not read", joint <> "    middle: $.m\n", "The key 'middle' of the 'join' block of λ function 'L_fork' is none of its keys: on, left, right")
+      , ("a 'join' block with a key it does not read", joint <> "    middle: $.m\n", "The key 'middle' of the 'join' block of λ function 'L_fork' is none of its keys: on, left, right, otherwise")
+      , ("a 'join' block whose 'otherwise' is no λ name", joint <> "    otherwise: l_join\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' is 'l_join', while it must name a λ function, such as 'L_join'")
+      , ("a 'join' block whose 'otherwise' names a symbol", joint <> "    otherwise: 𝜎3\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' is '𝜎3', while it must name a λ function, such as 'L_join'")
       , ("a 'join' block which is no mapping", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join: [𝛿1, $.a, $.b]\n", "join: parsing")
       , ("a side of a 'join' block naming a meta nothing binds", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: 𝑛1\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' that none of 'morph', 'evaluate', 'stay', 'unbox', 'rewrite', 'symbolize' and 'defer' binds")
       , ("a side of a 'join' block reading a meta inside a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n  join:\n    on: 𝛿1\n    left: 𝑛1.x\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' inside a term, while a side is a path from '$' or a meta alone")

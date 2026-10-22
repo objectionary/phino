@@ -19,7 +19,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Forks (joined)
+import Forks (forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, rewritten, stayed, symbolized, unboxed)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
@@ -92,7 +92,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (answer, state''')
     sides :: Ending -> IO [Expression]
     sides (Answering _) = pure []
-    sides (Joining _ left right) = traverse keyed [left, right]
+    sides (Joining _ left right _) = traverse keyed [left, right]
     keyed :: Expression -> IO Expression
     keyed side@(ExMeta _) = pure side
     keyed side = operand side
@@ -303,7 +303,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     concluded ctx entry operands bound state' = case entry._ending of
       Answering template -> answered ctx template operands bound state'
-      Joining on left right -> merged ctx bound on left right state'
+      Joining on left right fallback -> merged ctx bound on left right ((,) <$> fallback <*> lookup on._name (zip [meta._name | (meta, _) <- entry._dataized] operands)) state'
     answered :: ReduceContext -> Expression -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     answered ctx template operands bound state' = do
       (fresh, spent) <- minted template <$> readIORef ctx._minted
@@ -315,8 +315,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (normal, state'') <- settled built univ state' =<< opening Morphing ctx{_saveEval = ctx._saveEval . resited ctx._site built}
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (Answer built normal, state'')
-    merged :: ReduceContext -> Subst -> Meta -> Expression -> Expression -> State -> IO (Answer, State)
-    merged ctx bound on left right state' = do
+    merged :: ReduceContext -> Subst -> Meta -> Expression -> Expression -> Maybe (Function, Either Int Bytes) -> State -> IO (Answer, State)
+    merged ctx bound on left right fallback state' = do
       (one, state'') <- reached ctx bound left state'
       (two, state''') <- reached ctx bound right state''
       spent <- readIORef ctx._minted
@@ -326,9 +326,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting on._spelling fresh pair)) made
           ctx._saveEval (EvTaken ctx._nesting [left, right] term)
           pure (Joined (left, right) term, state''')
-        Nothing -> do
-          ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two))
-          throwIO (Diverged func)
+        Nothing -> case fallback >>= \(name, condition) -> forked name condition one two of
+          Just term -> do
+            ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) term)
+            pure (Joined (left, right) term, state''')
+          Nothing -> do
+            ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two))
+            throwIO (Diverged func)
     reached :: ReduceContext -> Subst -> Expression -> State -> IO (Expression, State)
     reached _ bound (ExMeta name) state' = (,state') <$> buildExpressionThrows (ExMeta name) bound
     reached ctx _ side state' = (\placed -> morphing univ ctx placed state') =<< operand side

@@ -6,11 +6,13 @@
 module ForksSpec (spec) where
 
 import AST
-import Forks (joined)
+import Data.Text (Text)
+import Forks (forked, joined)
+import Parser (parseExpressionThrows)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
-spec =
+spec = do
   describe "joined" $ do
     let application :: [Int] -> Expression
         application idxs = ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "x") (ExFormation (map (\idx -> BiTau (AtLabel "k") (ExFormation [BiLambda (FnSymbol idx)])) idxs)))
@@ -32,3 +34,29 @@ spec =
       joined (ExDispatch (application [3]) (AtLabel "a")) (ExDispatch (application [8]) (AtLabel "b")) 9 `shouldBe` Nothing
     it "does not join two formations of different sizes" $
       joined (application [3]) (application [3, 4]) 6 `shouldBe` Nothing
+
+  describe "forked" $ do
+    let fork :: Text -> Either Int Bytes -> String -> String -> IO (Maybe Expression)
+        fork func condition left right = forked (Function func) condition <$> parseExpressionThrows left <*> parseExpressionThrows right
+    it "asks both sides for an attribute the λ it is given picks between" $ do
+      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ L_qw, on ↦ ⟦ Δ ⤍ 1C- ⟧, left ↦ ⟦ φ ↦ Φ.hx ⟧.φ, right ↦ ⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧.φ ⟧ ⟧"
+      fork "L_qw" (Right (BtOne "1C")) "⟦ φ ↦ Φ.hx ⟧" "⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧" >>= (`shouldBe` Just expected)
+    it "asks both sides for an attribute only one of them binds" $ do
+      expected <- parseExpressionThrows "⟦ gv ↦ ⟦ λ ⤍ L_ny, on ↦ ⟦ λ ⤍ 𝜎7 ⟧, left ↦ ⟦ gv ↦ Φ.ob ⟧.gv, right ↦ ⟦ mu ↦ Φ.ra ⟧.gv ⟧, mu ↦ ⟦ λ ⤍ L_ny, on ↦ ⟦ λ ⤍ 𝜎7 ⟧, left ↦ ⟦ gv ↦ Φ.ob ⟧.mu, right ↦ ⟦ mu ↦ Φ.ra ⟧.mu ⟧ ⟧"
+      fork "L_ny" (Left 7) "⟦ gv ↦ Φ.ob ⟧" "⟦ mu ↦ Φ.ra ⟧" >>= (`shouldBe` Just expected)
+    it "skips the ρ of both sides" $ do
+      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ L_ef, on ↦ ⟦ Δ ⤍ 0A- ⟧, left ↦ ⟦ ρ ↦ Φ.ji, φ ↦ Φ.wo ⟧.φ, right ↦ ⟦ ρ ↦ Φ.sa, φ ↦ Φ.pl ⟧.φ ⟧ ⟧"
+      fork "L_ef" (Right (BtOne "0A")) "⟦ ρ ↦ Φ.ji, φ ↦ Φ.wo ⟧" "⟦ ρ ↦ Φ.sa, φ ↦ Φ.pl ⟧" >>= (`shouldBe` Just expected)
+    it "keeps void an attribute both sides leave void" $ do
+      expected <- parseExpressionThrows "⟦ dk ↦ ∅, φ ↦ ⟦ λ ⤍ L_vb, on ↦ ⟦ Δ ⤍ 3E- ⟧, left ↦ ⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧.φ, right ↦ ⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧.φ ⟧ ⟧"
+      fork "L_vb" (Right (BtOne "3E")) "⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧" "⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧" >>= (`shouldBe` Just expected)
+    it "asks both sides for an attribute one of them leaves void" $ do
+      expected <- parseExpressionThrows "⟦ ws ↦ ⟦ λ ⤍ L_oh, on ↦ ⟦ Δ ⤍ 52- ⟧, left ↦ ⟦ ws ↦ ∅ ⟧.ws, right ↦ ⟦ ws ↦ Φ.ug ⟧.ws ⟧ ⟧"
+      fork "L_oh" (Right (BtOne "52")) "⟦ ws ↦ ∅ ⟧" "⟦ ws ↦ Φ.ug ⟧" >>= (`shouldBe` Just expected)
+    it "copies the λ of neither side" $ do
+      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ L_cz, on ↦ ⟦ Δ ⤍ 07- ⟧, left ↦ ⟦ λ ⤍ L_kp, φ ↦ Φ.ev ⟧.φ, right ↦ ⟦ φ ↦ Φ.ni ⟧.φ ⟧ ⟧"
+      fork "L_cz" (Right (BtOne "07")) "⟦ λ ⤍ L_kp, φ ↦ Φ.ev ⟧" "⟦ φ ↦ Φ.ni ⟧" >>= (`shouldBe` Just expected)
+    it "fabricates nothing when a side holds a datum" $
+      fork "L_ax" (Right (BtOne "11")) "⟦ Δ ⤍ 4F- ⟧" "⟦ φ ↦ Φ.bu ⟧" >>= (`shouldBe` Nothing)
+    it "fabricates nothing when a side is no formation" $
+      fork "L_rt" (Right (BtOne "2D")) "⟦ φ ↦ Φ.mo ⟧" "Φ.gl.fy" >>= (`shouldBe` Nothing)

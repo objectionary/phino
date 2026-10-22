@@ -217,6 +217,14 @@ that are the same, or differ only in the symbols at their leaves, are one
 term: `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the
 firing writes `joined …` (`EvJoined`) per fresh symbol and answers the joined
 term (`Joined` of `Answer`, written by `EvTaken`) with no decision (#1954).
+Two formations of other shapes, neither holding a datum, are joined attribute
+by attribute when the block names a λ function under `otherwise` (#2024):
+`forked` of `Forks.hs` builds a formation binding every attribute of both
+sides but ρ and λ to a copy of that function, whose `on` holds the condition
+and whose `left` and `right` ask each side for the attribute, keeping void an
+attribute both sides leave void. The firing writes
+`fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1` (`EvFabricated`), naming the sides
+as `diverged` does, and answers that formation as `Joined` of `Answer`.
 Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
 naming each side by the line that bound it, and throw `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around

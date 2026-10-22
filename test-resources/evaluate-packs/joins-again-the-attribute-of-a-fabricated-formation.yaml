@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The two sides of 'L_fork' differ in shape, so the firing fabricates a
+# formation whose every attribute is a copy of 'L_join' (#2024). The program
+# asks that formation for 'φ' and asks the copy it finds there for 'φ' too,
+# which fires 'L_join': its entry brings the condition down again and morphs
+# the 'φ' of both sides, two copies of 'hx' that differ in a symbol alone, so
+# its join mints a fresh symbol for them.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+      otherwise: L_join
+  - λ: L_join
+    dataize:
+      𝛿1: $.on
+    join:
+      on: 𝛿1
+      left: $.left
+      right: $.right
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ hx(ke) ↦ ⟦ φ ↦ ke ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx( ⟦ λ ⤍ 𝜎2 ⟧ ), ob ↦ Φ.hx ⟧, b ↦ ⟦ φ ↦ Φ.hx( ⟦ λ ⤍ 𝜎3 ⟧ ) ⟧, λ ⤍ L_fork ⟧.φ.φ ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx( 𝜎2:λ ), ob ↦ Φ.hx ⟧ and Φ.hx( 𝜎3:λ ):φ
+    𝔼(L_join):
+      𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.on)
+      𝕄(Φ.a🌵4):
+        𝑛·2·1 := Φ.hx( ke ↦ 𝜎2:λ )
+      𝕄(Φ.a🌵5):
+        𝑛·2·2 := Φ.hx( ke ↦ 𝜎3:λ )
+      joined 𝜎4 := 𝛿1·2 ? 𝜎2 : 𝜎3
+      𝑛·2·3 := ⟦ ke ↦ 𝜎4:λ, φ ↦ ke ⟧  # 𝕄(ξ.left), 𝕄(ξ.right)
