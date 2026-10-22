@@ -6,9 +6,10 @@
 # binds 'φ' and 'ke', the right one 'φ' alone. No join makes one term of them,
 # but the block names 'L_join' under 'otherwise', so the firing fabricates a
 # formation holding every attribute of both sides, each of them a copy of
-# 'L_join' that holds the bytes the condition came down to and asks both
-# sides for that attribute, and writes 'fabricated' in place of 'diverged',
-# with that formation in its comment (#2024). The
+# 'L_join' that holds the symbol the condition came down to, not the 42 that
+# symbol is dataized to (#2026), and asks both sides for that attribute, and
+# writes 'fabricated' in place of 'diverged', with that formation in its
+# comment (#2024). The
 # program asks that formation for 'ke', which the left side binds alone, so
 # its copy asks the right side for 'ke' too, through the 'φ' of that side.
 symbolic: |
@@ -22,9 +23,9 @@ symbolic: |
       otherwise: L_join
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧, b ↦ ⟦ φ ↦ Φ.zu ⟧, λ ⤍ L_fork ⟧.ke ⟧'
-result: '⟦ λ ⤍ L_join, on ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, left ↦ Φ.ty, right ↦ Φ.zu:φ.ke ⟧'
+result: '⟦ λ ⤍ L_join, on ↦ ⟦ λ ⤍ 𝜎1 ⟧, left ↦ Φ.ty, right ↦ Φ.zu:φ.ke ⟧'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧ and Φ.zu:φ  # ⟦ φ ↦ ⟦ λ ⤍ L_join, on ↦ 40-45-00-00-00-00-00-00:Δ, left ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧.φ, right ↦ Φ.zu:φ.φ ⟧, ke ↦ ⟦ λ ⤍ L_join, on ↦ 40-45-00-00-00-00-00-00:Δ, left ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧.ke, right ↦ Φ.zu:φ.ke ⟧ ⟧
+      fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧ and Φ.zu:φ  # ⟦ φ ↦ ⟦ λ ⤍ L_join, on ↦ 𝜎1:λ, left ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧.φ, right ↦ Φ.zu:φ.φ ⟧, ke ↦ ⟦ λ ⤍ L_join, on ↦ 𝜎1:λ, left ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧.ke, right ↦ Φ.zu:φ.ke ⟧ ⟧

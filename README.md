@@ -344,9 +344,10 @@ of that function, which asks both sides for the attribute:
 ```
 
 Here `𝑛1` and `𝑛2` stand for the two sides, and `𝛿1` for the bytes the
-condition came down to, which are the 42 every symbol is dataized to when the
-condition is a symbol. So asking the formation for an attribute means the same
-as asking
+condition came down to. When the condition is a symbol, such as `𝜎7`, `on`
+holds that symbol, `⟦ λ ⤍ 𝜎7 ⟧`, and not the 42 every symbol is dataized to,
+so every copy still names the unknown it decides by. So asking the formation
+for an attribute means the same as asking
 `on.if( left, right )` for it. The ρ of either side is skipped, an attribute
 both sides leave void stays void, and no λ is copied, since asking a side for
 an attribute fires its λ where it stands. An attribute only one side binds
@@ -370,9 +371,10 @@ phino implements no `L_join`: the file defines it, as an entry that joins
     otherwise: L_join
 ```
 
-A path under `on` dataizes nothing: the firing reads the bytes the attribute
-holds off the formation it fires, so the condition is not brought down a
-second time, and it gets stuck when the path leads to no datum. Its `joined`
+A path under `on` dataizes nothing: the firing reads the bytes or the symbol
+the attribute holds off the formation it fires, so the condition is not
+brought down a second time, and it gets stuck when the path leads to neither.
+Its `joined`
 line names the condition by the path, as `joined 𝜎4 := ξ.on ? 𝜎2 : 𝜎3`. A
 side that is no formation, or a formation holding a datum, which no attribute
 reaches, still gets the firing stuck.

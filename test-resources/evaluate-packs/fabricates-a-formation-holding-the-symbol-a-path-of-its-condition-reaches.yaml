@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The entry of 'L_join' reads its condition off 'on', dataizing nothing, and
+# the formation it fires binds 'on' to a symbol, as a formation an earlier
+# join fabricated does. The two sides differ in shape, so the firing
+# fabricates a formation whose every attribute is a copy of 'L_join' holding
+# that symbol under 'on', not the 42 it is dataized to (#2026). The program
+# asks that formation for 'tu', which the right side binds alone.
+symbolic: |
+  - λ: L_join
+    join:
+      on: $.on
+      left: $.left
+      right: $.right
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ on ↦ ⟦ λ ⤍ 𝜎5 ⟧, left ↦ ⟦ φ ↦ Φ.jo ⟧, right ↦ ⟦ φ ↦ Φ.ma, tu ↦ Φ.ip ⟧, λ ⤍ L_join ⟧.tu ⟧'
+result: '⟦ λ ⤍ L_join, on ↦ ⟦ λ ⤍ 𝜎5 ⟧, left ↦ Φ.jo:φ.tu, right ↦ Φ.ip ⟧'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_join):
+      fabricated 𝑛·1·1 := Φ.jo:φ and ⟦ φ ↦ Φ.ma, tu ↦ Φ.ip ⟧  # ⟦ φ ↦ ⟦ λ ⤍ L_join, on ↦ 𝜎5:λ, left ↦ Φ.jo:φ.φ, right ↦ ⟦ φ ↦ Φ.ma, tu ↦ Φ.ip ⟧.φ ⟧, tu ↦ ⟦ λ ⤍ L_join, on ↦ 𝜎5:λ, left ↦ Φ.jo:φ.tu, right ↦ ⟦ φ ↦ Φ.ma, tu ↦ Φ.ip ⟧.tu ⟧ ⟧
