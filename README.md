@@ -373,9 +373,12 @@ reaches the side through `ξ`, while the side keeps the ρ it binds, which its
 own attributes may read. Every copy of the function asks a side for an
 attribute through its ρ, which the formation fills. The ρ of either side gets
 no copy of the function, nor does an attribute whose name ends with 🌵, since
-a side may be a formation a join fabricated, and no λ is copied, since asking
-a side for an attribute fires its λ where it stands. An attribute only one
-side binds gets its copy too, since the other side may reach it through `φ`.
+a side may be a formation a join fabricated. An attribute only one side binds
+gets its copy too, since the other side may reach it through `φ`. A side
+holding a datum or a λ, such as a bare symbol `⟦ λ ⤍ 𝜎7 ⟧`, keeps what it
+stands for where no attribute reaches it, so no such formation means the same
+as the two sides, and the firing writes `diverged` as it does with no
+`otherwise` at all.
 
 A copy of the function leaves void every void of the formations the sides
 bind its attribute to, once even when both leave it void, and those of the

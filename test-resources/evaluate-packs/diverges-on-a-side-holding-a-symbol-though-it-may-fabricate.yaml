@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The block names 'L_join' under 'otherwise', but the left side is a bare
+# symbol, which keeps what it stands for in its λ, where no dispatch reaches.
+# A formation asking both sides for their attributes would drop that λ and
+# ask the symbol for 'φ' and 'ke' it does not bind, so it would not mean the
+# same as the two of them. The firing writes 'diverged' and gets stuck, as it
+# does with a side holding a datum (#2041).
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ ⟦ φ ↦ Φ.zu, ke ↦ Φ.ty ⟧, λ ⤍ L_fork ⟧.ke ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      diverged 𝜎2:λ vs ⟦ φ ↦ Φ.zu, ke ↦ Φ.ty ⟧

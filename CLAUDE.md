@@ -219,8 +219,9 @@ term: `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the
 firing writes `joined …` (`EvJoined`) per fresh symbol, naming a condition read
 off a path by that path, as `ξ.on🌵`, and answers the joined term (`Joined`
 of `Answer`, written by `EvTaken`) with no decision (#1954).
-Two formations of other shapes, neither holding a datum, are joined attribute
-by attribute when the block names a λ function under `otherwise` (#2024):
+Two formations of other shapes, neither holding a datum nor a λ (#2041), are
+joined attribute by attribute when the block names a λ function under
+`otherwise` (#2024):
 `forked` of `Forks.hs` builds a formation leaving void every attribute either
 side leaves void and holding under `left🌵` and `right🌵` each side applied to
 its own voids, as `𝑛1( x ↦ ξ.x )`, so an argument handed to the formation
