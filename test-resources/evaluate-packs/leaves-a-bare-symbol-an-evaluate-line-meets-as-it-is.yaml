@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The 'morph' operand comes down to a bare symbol, ⟦ λ ⤍ 𝜎4 ⟧, which already
+# stands for a value nobody worked out. No entry answers a symbol, so firing
+# it could only get the whole entry stuck; the 'evaluate' line hands it back
+# as it is, the way it hands back ⊥ (#2036).
+symbolic: |
+  - λ: L_keep
+    morph:
+      𝑛1: $.x
+    evaluate:
+      𝑛2: 𝑛1
+    𝑛: ⟦ φ ↦ 𝑛2 ⟧
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ x ↦ ⟦ λ ⤍ 𝜎4 ⟧, λ ⤍ L_keep ⟧.φ ⟧'
+result: '𝜎4:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_keep):
+      𝑛1·1 := 𝜎4:λ  # 𝕄(ξ.x)
+      𝑛2·1 := 𝑛1·1  # 𝔼(𝑛1)
+      𝑛·1·1 := 𝜎4:λ:φ  # 𝑛
+      𝑛·1·2 := 𝜎4:λ:φ  # 𝕄(𝑛·1·1)
