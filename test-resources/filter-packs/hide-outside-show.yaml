@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+expression: '[[ app -> [[ @ -> Q.org.eolang.number ]], org -> [[ eolang -> [[ number -> [[ ]] ]] ]] ]]'
+shown: ['Q.app']
+hidden: ['Q.org.eolang']
+result: '⟦ app ↦ ⟦ φ ↦ Φ.org.eolang.number ⟧ ⟧'

@@ -7,17 +7,21 @@ module Filter (include, include', exclude, exclude') where
 
 import AST
 import Control.Exception (throwIO)
+import Data.Maybe (fromMaybe)
 import Locator (LocatorException (CanNotFindObjectByLocator, CanNotHideWholeProgram, InvalidLocatorProvided))
 import Misc
 import Rewriter
 
 exclude' :: Expression -> [Expression] -> IO Expression
-exclude' expr [] = pure expr
-exclude' _ (ExRoot : _) = throwIO (CanNotHideWholeProgram ExRoot)
-exclude' expr (fqn : remaining) = case fqnToAttrs fqn of
-  Just attrs@(_ : _) -> maybe (throwIO (CanNotFindObjectByLocator fqn)) (`exclude'` remaining) (excludedFormation expr attrs)
-  _ -> throwIO (InvalidLocatorProvided fqn)
+exclude' expr fqns = foldl hidden expr <$> traverse located fqns
   where
+    located :: Expression -> IO [Attribute]
+    located ExRoot = throwIO (CanNotHideWholeProgram ExRoot)
+    located fqn = case fqnToAttrs fqn of
+      Just attrs@(_ : _) -> maybe (throwIO (CanNotFindObjectByLocator fqn)) (const (pure attrs)) (excludedFormation expr attrs)
+      _ -> throwIO (InvalidLocatorProvided fqn)
+    hidden :: Expression -> [Attribute] -> Expression
+    hidden current attrs = fromMaybe current (excludedFormation current attrs)
     excludedFormation :: Expression -> [Attribute] -> Maybe Expression
     excludedFormation (ExFormation bindings) [at]
       | any ((== Just at) . attributeFromBinding) bindings = Just (ExFormation [bd | bd <- bindings, attributeFromBinding bd /= Just at])
