@@ -20,7 +20,7 @@ import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
 import Forks (forked, joined)
-import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, rewritten, stayed, symbolized, unboxed)
+import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, rewritten, stayed, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
@@ -101,7 +101,6 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
     line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
     line ctx _ (bound, state') (Stayed meta source) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "stay") (pure . stayed) meta source bound
-    line ctx _ (bound, state') (Unboxed meta source) = (,state') <$> reshaped ctx (EvUnboxed ctx._nesting meta._spelling) (pure . unboxed) meta source bound
     line ctx _ (bound, state') (Rewritten meta source rules) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "rewrite") (rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal) rules) meta source bound
     line ctx _ (bound, state') (Symbolized meta source) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "symbolize") (masked ctx) meta source bound
     shown :: Int -> Answer -> IO ()

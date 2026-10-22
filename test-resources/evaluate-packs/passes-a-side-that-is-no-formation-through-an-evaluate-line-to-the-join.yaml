@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# The 'unbox' lines take 'Φ.k' and 'Φ.j' out of the formations the two sides
+# The 'rewrite' lines take 'Φ.k' and 'Φ.j' out of the formations the two sides
 # morph to, and neither dispatch is a formation. An entry that computes gets
 # stuck on such a term in an 'evaluate' line, but a join compares whatever its
 # sides came to, so an 'evaluate' line of an entry that joins passes the term
@@ -15,9 +15,16 @@ symbolic: |
     morph:
       𝑛1: $.a
       𝑛2: $.b
-    unbox:
-      𝑛3: 𝑛1
-      𝑛4: 𝑛2
+    rewrite:
+      𝑛3:
+        of: 𝑛1
+        rules: &unwrap
+          - name: unwrap
+            pattern: ⟦ φ ↦ 𝑒1 ⟧
+            result: 𝑒1
+      𝑛4:
+        of: 𝑛2
+        rules: *unwrap
     evaluate:
       𝑛5: 𝑛3
       𝑛6: 𝑛4
@@ -35,8 +42,8 @@ protocol: |
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
       𝑛1·1 := Φ.k:φ  # 𝕄(ξ.a)
       𝑛2·1 := Φ.j:φ  # 𝕄(ξ.b)
-      unboxed 𝑛3·1 := Φ.k  # 𝑛1
+      𝑛3·1 := Φ.k  # rewrite(𝑛1)
       𝑛5·1 := Φ.k  # 𝔼(𝑛3)
-      unboxed 𝑛4·1 := Φ.j  # 𝑛2
+      𝑛4·1 := Φ.j  # rewrite(𝑛2)
       𝑛6·1 := Φ.j  # 𝔼(𝑛4)
       diverged 𝑛5·1 vs 𝑛6·1
