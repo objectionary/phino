@@ -3155,6 +3155,11 @@ spec = do
       latex <- explainPack "test-resources/explain-packs/normalize/copy.yaml"
       testCLISucceeded ["explain", "--rule=resources/normalize/copy.yaml"] [latex <> "\n"]
 
+    it "keeps a rule label with ] inside the optional argument of explain" $
+      testCLISucceeded
+        ["explain", rule "label-bracket.yaml"]
+        ["\\phinoNormalizationRule[a\\char93{}b]{id}"]
+
     it "explains single rule with a label" $
       testCLISucceeded
         ["explain", rule "labeled.yaml"]

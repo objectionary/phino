@@ -490,13 +490,21 @@ inference :: String -> String -> Maybe String -> Maybe Y.Condition -> [String] -
 inference env name label cond premises conclusion =
   intercalate "\n" $
     ["\\begin{" ++ env ++ "}", "  \\phinoName{" ++ escaped name ++ "}"]
-      ++ maybe [] (\symbol -> ["  \\phinoLabel{" ++ symbol ++ "}"]) label
+      ++ maybe [] (\symbol -> ["  \\phinoLabel{" ++ escapeBraceArg symbol ++ "}"]) label
       ++ maybe [] (\rendered -> ["  \\phinoCondition{ " ++ rendered ++ " }"]) (conditionInLatex cond)
       ++ map (\premise -> "  \\phinoPremise{ " ++ premise ++ " }") premises
       ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{" ++ env ++ "}"]
 
 escaped :: String -> String
 escaped = T.unpack . toLaTeX . T.pack
+
+-- YAML rule labels may embed intentional LaTeX such as \lambda. Still escape
+-- characters that terminate the TeX group the label is written into.
+escapeOptionalArg :: String -> String
+escapeOptionalArg = concatMap (\c -> if c == ']' then "\\char93{}" else [c])
+
+escapeBraceArg :: String -> String
+escapeBraceArg = concatMap (\c -> if c == '}' then "\\char125{}" else [c])
 
 renderExpr :: Expression -> String
 renderExpr expr = renderToLatex (expressionToCST expr) defaultLatexContext
@@ -515,7 +523,7 @@ trrule macro label name lhs rhs cond extras =
     , extraArgumentsToLatex extras
     ]
   where
-    labelArg = maybe "" (\symbol -> "[" ++ symbol ++ "]") label
+    labelArg = maybe "" (\symbol -> "[" ++ escapeOptionalArg symbol ++ "]") label
 
 phinoMorph :: String -> String -> String -> String -> String -> String
 phinoMorph input univ sIn sOut output = printf "\\phinoMorph{ %s }{ %s }{ %s }{ %s }{ %s }" input univ sIn output sOut
