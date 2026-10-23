@@ -605,6 +605,7 @@ instance FromJSON MorphRule where
     withObject
       "MorphRule"
       ( \o -> do
+          validateKnownYamlKeys o ["name", "label", "match", "universe", "conclusion", "when", "premises"]
           ruleName <- o .: "name"
           rule <-
             MorphRule ruleName
@@ -625,6 +626,7 @@ instance FromJSON DataizeRule where
     withObject
       "DataizeRule"
       ( \o -> do
+          validateKnownYamlKeys o ["name", "label", "match", "universe", "conclusion", "when", "premises"]
           ruleName <- o .: "name"
           rule <-
             DataizeRule ruleName
@@ -645,6 +647,7 @@ instance FromJSON ContextualizeRule where
     withObject
       "ContextualizeRule"
       ( \o -> do
+          validateKnownYamlKeys o ["name", "label", "match", "c-match", "c-result", "premises"]
           ruleName <- o .: "name"
           rule <-
             ContextualizeRule ruleName
