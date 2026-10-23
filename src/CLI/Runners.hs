@@ -214,9 +214,11 @@ runDataize OptsDataize{..} = do
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
-      when
-        (isJust _inside && _locator /= "Q")
-        (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
+      when (isJust _inside) $ do
+        parsed <- parseExpressionThrows _locator
+        when
+          (parsed /= ExRoot)
+          (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
     toPrintCtx :: Atoms -> Expression -> PrintContext
     toPrintCtx atoms focus =
       PrintCtx
@@ -299,9 +301,11 @@ runMorph OptsMorph{..} = do
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
-      when
-        (isJust _inside && _locator /= "Q")
-        (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
+      when (isJust _inside) $ do
+        parsed <- parseExpressionThrows _locator
+        when
+          (parsed /= ExRoot)
+          (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
     toPrintCtx :: Atoms -> Expression -> PrintContext
     toPrintCtx atoms focus =
       PrintCtx
