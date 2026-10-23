@@ -383,11 +383,11 @@ printElement indentLevel (Element name attrs nodes) eol
     isTextNode (NodeContent _) = True
     isTextNode _ = False
 
-    printRawText (NodeContent t) = TB.fromText t
+    printRawText (NodeContent t) = TB.fromString (escapeXMLText (T.unpack t))
     printRawText _ = mempty
 
 printNode :: Int -> Node -> TB.Builder
-printNode _ (NodeContent t) = TB.fromText t
+printNode _ (NodeContent t) = TB.fromString (escapeXMLText (T.unpack t))
 printNode i (NodeElement e) = printElement i e True
 printNode i (NodeComment t) =
   indent i
