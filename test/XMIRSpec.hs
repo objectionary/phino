@@ -491,6 +491,17 @@ spec = do
       out `shouldContain` "name=\"a&amp;b\""
       xmirToPhi xmir' `shouldReturn` expr
 
+    it "escapes an ampersand in a Δ text node so the XMIR round-trips" $ do
+      doc <-
+        parseXMIRThrows
+          "<object><o name=\"x\">A &amp; B</o></object>"
+      phi <- xmirToPhi doc
+      let out = printXMIR doc
+      out `shouldContain` ">A &amp; B<"
+      out `shouldNotContain` ">A & B<"
+      again <- parseXMIRThrows out
+      xmirToPhi again `shouldReturn` phi
+
   describe "XMIR malformed input containing a processing instruction" $
     it "embeds a processing instruction verbatim when rendering the offending element" $ do
       doc <-
