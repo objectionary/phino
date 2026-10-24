@@ -130,6 +130,7 @@ fast :: Expression -> Expression -> Bool
 fast (ExFormation _pbds@(pbd : pbds)) (ExFormation _rbds@(rbd : rbds)) =
   startsAndEndsWithMeta _pbds
     && startsAndEndsWithMeta _rbds
+    && not (null (init pbds))
     && pbd == rbd
     && last pbds == last rbds
     && not (hasMetaBindings (init pbds))
