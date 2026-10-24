@@ -27,11 +27,15 @@ instance Read Must where
     | ".." `isInfixOf` s = parseRange s
     | otherwise = parseExact s
     where
+      readInt :: String -> Maybe Int
+      readInt str = do
+        num <- readMaybe str :: Maybe Integer
+        if num > toInteger (maxBound :: Int) || num < toInteger (minBound :: Int) then Nothing else Just (fromInteger num)
       parseRange :: String -> [(Must, String)]
       parseRange str = case break (== '.') str of
         (loStr, '.' : '.' : hiStr) ->
-          let loPart = if null loStr then Nothing else readMaybe loStr
-              hiPart = if null hiStr then Nothing else readMaybe hiStr
+          let loPart = if null loStr then Nothing else readInt loStr
+              hiPart = if null hiStr then Nothing else readInt hiStr
            in case (loPart, hiPart, null loStr, null hiStr) of
                 (Nothing, Nothing, False, False) -> []
                 (Nothing, Nothing, True, True) -> [(MtRange Nothing Nothing, "")]
@@ -44,7 +48,7 @@ instance Read Must where
                 _ -> []
         _ -> []
       parseExact :: String -> [(Must, String)]
-      parseExact str = case readMaybe str of
+      parseExact str = case readInt str of
         Just n | n >= 0 -> [(if n == 0 then MtDisabled else MtExact n, "")]
         Just _ -> []
         Nothing -> []

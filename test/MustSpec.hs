@@ -56,6 +56,14 @@ spec = do
       , ("rejects a range with more than one '..' separator", "3.4..5", Nothing)
       , ("rejects a maximum-only range with a negative bound", "..-5", Nothing)
       , ("rejects a minimum-only range with a negative bound", "-5..", Nothing)
+      , ("parses an exact value of maxBound Int", "9223372036854775807", Just (MtExact 9223372036854775807))
+      , ("rejects an exact value above maxBound Int", "18446744073709551617", Nothing)
+      , ("rejects an exact value just above maxBound Int", "9223372036854775808", Nothing)
+      , ("rejects a negative value that wraps around to a positive Int", "-18446744073709551611", Nothing)
+      , ("rejects a maximum-only range with a bound above maxBound Int", "..18446744073709551617", Nothing)
+      , ("rejects a minimum-only range with a bound above maxBound Int", "18446744073709551617..", Nothing)
+      , ("rejects a range with a maximum above maxBound Int", "1..18446744073709551617", Nothing)
+      , ("parses a range ending at maxBound Int", "1..9223372036854775807", Just (MtRange (Just 1) (Just 9223372036854775807)))
       ]
       (\(desc, input, expected) -> it desc ((readMaybe input :: Maybe Must) `shouldBe` expected))
 
