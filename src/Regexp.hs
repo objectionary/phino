@@ -67,9 +67,9 @@ substituteGroups rep groups = B.concat (go (B.unpack rep))
                     Just idx -> fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
                in val : go afterDigits
     go (c : rest) = B.singleton c : go rest
-    safeIndex :: Int -> [B.ByteString] -> Maybe B.ByteString
+    safeIndex :: Integer -> [B.ByteString] -> Maybe B.ByteString
     safeIndex i xs
-      | i >= 0 && i < length xs = Just (xs !! i)
+      | i >= 0 && i < toInteger (length xs) = Just (xs !! fromInteger i)
       | otherwise = Nothing
 
 replaceFirst :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
