@@ -216,6 +216,7 @@ instance FromJSON Rule where
     referenceless rule.name "where" rule.where_
     referenceless rule.name "having" rule.having
     targets rule (metas rule.pattern) (fromMaybe [] rule.where_)
+    unread rule (named (metas rule.pattern)) "when" (metas rule.when)
     steps rule (named (metas rule.pattern)) (fromMaybe [] rule.where_)
     pure rule
     where
@@ -236,7 +237,6 @@ instance FromJSON Rule where
       steps :: Rule -> [Text] -> [Extra] -> Parser ()
       steps rule known [] = do
         unread rule known "result" (metas rule.result)
-        unread rule known "when" (metas rule.when)
         unread rule known "having" (metas rule.having)
       steps rule known (extra : rest) = do
         unread rule known "where" (metas extra.args)
