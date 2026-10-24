@@ -60,6 +60,9 @@ spec = do
     it "keeps the comment of a rule named by a folded scalar on one line" $
       fromRight "" (emitted [] [Y.Rule "folded rule name\n" Nothing Nothing ExXi ExRoot Nothing Nothing Nothing] [] [] [] [])
         `shouldSatisfy` ("-- The rule 'folded rule name'.\n" `isInfixOf`)
+    it "tells two metas apart whose names differ by a hyphen and an underscore" $
+      fromRight "" (emitted [] [Y.Rule "mc" Nothing Nothing (ExMeta "e1") (ExFormation [BiTau (AtLabel "y") (ExMeta "e-left"), BiTau (AtLabel "z") (ExMeta "e_left")]) Nothing (Just [Y.Extra (Y.ArgExpression (ExMeta "e-left")) "contextualize" [Y.ArgExpression ExRoot, Y.ArgExpression (ExFormation [])], Y.Extra (Y.ArgExpression (ExMeta "e_left")) "contextualize" [Y.ArgExpression ExXi, Y.ArgExpression (ExFormation [])]]) Nothing] [] [] [] [])
+        `shouldSatisfy` (\source -> "let m_e_45_left =" `isInfixOf` source && "let m_e_95_left =" `isInfixOf` source)
     it "writes a function for every rule of morphing" $
       fromRight "" (emitted [] [] [] Y.morphingRules [] [])
         `shouldSatisfy` (\source -> all (\rule -> ("-- The morphing rule '" ++ rule.name ++ "'.") `isInfixOf` source) Y.morphingRules)
