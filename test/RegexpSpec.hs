@@ -85,6 +85,19 @@ spec = do
         , ["only"]
         , "$999999999999999999999999999999999999999999"
         )
+      ,
+        ( "keeps a group reference that wraps to group one literal"
+        , "$18446744073709551617"
+        , ["only", "a"]
+        , "$18446744073709551617"
+        )
+      ,
+        ( "keeps a group reference that wraps to group zero literal"
+        , "$18446744073709551616"
+        , ["only", "a"]
+        , "$18446744073709551616"
+        )
+      , ("substitutes the highest existing group", "$1", ["only", "a"], "a")
       , ("handles replacement without group references", "plain", ["x"], "plain")
       , ("handles empty replacement", "", ["x"], "")
       , ("handles empty groups list with reference", "$0", [], "$0")
