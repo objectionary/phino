@@ -123,3 +123,18 @@ spec = do
         expected <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         [(expr', _)] <- F.include [(expr, Nothing)] [firstFqn, secondFqn]
         expr' `shouldBe` expected
+
+      forM_
+        [ ("merges sibling children of one parent into a single binding", "[[ a -> [[ x -> Q, y -> Q ]], b -> Q ]]", ["Q.a.x", "Q.a.y"], "[[ a -> [[ x -> Q, y -> Q ]] ]]")
+        , ("merges siblings at several depths", "[[ a -> [[ c -> [[ x -> ?, y -> ? ]], d -> ? ]], b -> ? ]]", ["Q.a.c.x", "Q.a.d", "Q.a.c.y"], "[[ a -> [[ c -> [[ x -> ?, y -> ? ]], d -> ? ]] ]]")
+        , ("keeps a single nested child alone", "[[ a -> [[ x -> Q, y -> Q ]], b -> Q ]]", ["Q.a.x"], "[[ a -> [[ x -> Q ]] ]]")
+        , ("keeps distinct top-level attributes", "[[ a -> [[ x -> Q ]], b -> Q ]]", ["Q.a", "Q.b"], "[[ a -> [[ x -> Q ]], b -> Q ]]")
+        , ("does not repeat a binding selected twice", "[[ a -> [[ x -> Q ]], b -> Q ]]", ["Q.a.x", "Q.a.x"], "[[ a -> [[ x -> Q ]] ]]")
+        ]
+        ( \(desc, exprText, fqnTexts, expectedText) -> it desc $ do
+            expr <- parseExpressionThrows exprText
+            fqns <- traverse parseExpressionThrows fqnTexts
+            expected <- parseExpressionThrows expectedText
+            [(expr', _)] <- F.include [(expr, Nothing)] fqns
+            expr' `shouldBe` expected
+        )
