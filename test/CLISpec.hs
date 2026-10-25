@@ -534,6 +534,19 @@ spec = do
       (secondRun, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI args)
       firstRun `shouldBe` secondRun
 
+    it "shuffles the rules away from their file order" $ do
+      let base =
+            [ "--sweet"
+            , "--sequence"
+            , "--max-depth=1"
+            , "--max-cycles=1"
+            , rule "swap-a.yaml"
+            , rule "swap-b.yaml"
+            ]
+      (plain, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI ("rewrite" : base))
+      (mixed, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI ("rewrite" : "--shuffle" : "--seed=1" : base))
+      mixed `shouldNotBe` plain
+
     it "fails with a non-integer --seed" $
       withStdin "[[ ]]" $
         testCLIFailed
@@ -3192,6 +3205,11 @@ spec = do
       (firstRun, _) <- withStdout (runCLI args)
       (secondRun, _) <- withStdout (runCLI args)
       firstRun `shouldBe` secondRun
+
+    it "shuffles the normalization rules away from their file order" $ do
+      (plain, _) <- withStdout (runCLI ["explain", "--normalize"])
+      (mixed, _) <- withStdout (runCLI ["explain", "--normalize", "--shuffle", "--seed=1"])
+      mixed `shouldNotBe` plain
 
     it "accepts --seed flag" $
       testCLISucceeded
