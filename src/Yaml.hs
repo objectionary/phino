@@ -34,12 +34,11 @@ import Slots
 import Text.Printf (printf)
 import Text.Regex.PCRE ((=~))
 
--- YAML reports positions counted from zero, while editors count from one.
 shiftYamlError :: String -> String
 shiftYamlError msg =
-  case msg =~ "^YAML parse exception at line ([0-9]+), column ([0-9]+)," :: (String, String, String, [String]) of
-    (before, _, after, [ln, col]) ->
-      printf "%sYAML parse exception at line %d, column %d,%s" before (read ln + 1 :: Int) (read col + 1 :: Int) after
+  case (msg =~ ("^YAML parse exception at line ([0-9]+), column ([0-9]+)([:,])" :: String)) :: (String, String, String, [String]) of
+    (before, _, after, [ln, col, sep]) ->
+      printf "%sYAML parse exception at line %d, column %d%s%s" before (read ln + 1 :: Int) (read col + 1 :: Int) sep after
     _ -> msg
 
 validateYamlObject :: (MonadFail a) => Object -> [String] -> a ()
