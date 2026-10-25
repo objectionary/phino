@@ -3434,6 +3434,24 @@ spec = do
         ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),1)", resource "foo.phi"]
         ["B1 >> ⟦ foo ↦ Φ.org.eolang.x ⟧"]
 
+    it "keeps an 'or' met when a raising item comes first" $
+      withStdin "[[ s -> [[ q -> ? ]] ]]" $
+        testCLISucceeded
+          ["match", "--flat", "--pattern=[[ s -> !e1 ]]", "--when=or(matches(\"x\", !e1), eq(1,1))"]
+          ["e1 >> ⟦ q ↦ ∅ ⟧"]
+
+    it "keeps an 'or' met when a raising item comes last" $
+      withStdin "[[ s -> [[ q -> ? ]] ]]" $
+        testCLISucceeded
+          ["match", "--flat", "--pattern=[[ s -> !e1 ]]", "--when=or(eq(1,1), matches(\"x\", !e1))"]
+          ["e1 >> ⟦ q ↦ ∅ ⟧"]
+
+    it "logs a raising 'or' item as not met" $
+      withStdin "[[ s -> [[ q -> ? ]] ]]" $
+        testCLISucceeded
+          ["match", "--log-level=debug", "--pattern=[[ s -> !e1 ]]", "--when=or(matches(\"x\", !e1), eq(1,1))"]
+          ["raised and was treated as not met"]
+
     it "rejects an anonymous meta in --when" $
       withStdin "[[ x -> Q.y ]]" $
         testCLIFailed
