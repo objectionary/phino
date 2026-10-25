@@ -45,6 +45,9 @@ spec = do
     it "tells two rules of the same name apart" $
       fromRight "" (emitted [] [Y.Rule "ov" Nothing Nothing ExXi ExRoot Nothing Nothing Nothing, Y.Rule "ov" Nothing Nothing ExRoot ExXi Nothing Nothing Nothing] [] [] [] [])
         `shouldSatisfy` (\source -> all (`isInfixOf` source) ["stepOv0 ::", "stepOv1 ::"])
+    it "keeps the comment of a rule named by a folded scalar on one line" $
+      fromRight "" (emitted [] [Y.Rule "folded rule name\n" Nothing Nothing ExXi ExRoot Nothing Nothing Nothing] [] [] [] [])
+        `shouldSatisfy` ("-- The rule 'folded rule name'.\n" `isInfixOf`)
     it "writes a function for every rule of morphing" $
       fromRight "" (emitted [] [] [] Y.morphingRules [] [])
         `shouldSatisfy` (\source -> all (\rule -> ("-- The morphing rule '" ++ rule.name ++ "'.") `isInfixOf` source) Y.morphingRules)

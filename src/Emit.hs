@@ -204,7 +204,7 @@ rewriting (name, rule) = do
       universe = if "universe" `elem` tokens body then "universe" else "_"
   Right
     ( unlines
-        [ printf "-- The rule '%s'." rule.name
+        [ printf "-- The rule '%s'." (unwords (lines rule.name))
         , printf "step%s :: Ru.Step" name
         , printf "step%s = R.direct %s %s rewrite%s" name (show rule.name) (show (redex rule)) name
         , ""
@@ -255,7 +255,7 @@ contextualizing name rule = do
       arg var = if var `elem` tokens body then var else "_"
   Right
     ( unlines
-        [ printf "-- The contextualization rule '%s'." rule.name
+        [ printf "-- The contextualization rule '%s'." (unwords (lines rule.name))
         , printf "contextualize%s :: Expression -> Expression -> [(String, Either C.ContextualizeException Expression)]" name
         , printf "contextualize%s %s %s =" name (arg "term") (arg "context")
         , body
@@ -301,7 +301,7 @@ inferring kind (name, answer) rule ematch builder spine = do
       arg var = if var `elem` tokens body then var else "_"
   Right
     ( unlines
-        [ printf "-- The %s rule '%s'." kind rule.name
+        [ printf "-- The %s rule '%s'." kind (unwords (lines rule.name))
         , printf "%s :: Expression -> Expression -> [In.Premises %s]" name answer
         , printf "%s %s %s =" name (arg "term") (arg "universe")
         , body
