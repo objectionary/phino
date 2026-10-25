@@ -55,6 +55,9 @@ spec = do
       , ("handles alternation", "cat|dog", "I have a dog", True)
       , ("handles unicode input", "日本語", "これは日本語です", True)
       , ("handles case sensitive match", "Hello", "hello", False)
+      , ("matches non-ASCII letters with \\w", "^\\w+$", "héllo", True)
+      , ("matches non-ASCII digits with \\d", "^\\d+$", "١٢٣", True)
+      , ("matches non-ASCII letters with [[:alpha:]]", "^[[:alpha:]]+$", "héllo", True)
       ]
       (\(desc, pattern, input, expected) -> it desc $ R.match (utf8 pattern) (utf8 input) `shouldReturn` expected)
 
