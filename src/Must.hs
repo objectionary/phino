@@ -3,6 +3,7 @@
 
 module Must (Must (..), inRange, exceedsUpperBound, validateMust) where
 
+import Data.Char (isDigit)
 import Data.List (isInfixOf)
 import Text.Printf (printf)
 import Text.Read (readMaybe)
@@ -28,9 +29,13 @@ instance Read Must where
     | otherwise = parseExact s
     where
       readInt :: String -> Maybe Int
-      readInt str = do
-        num <- readMaybe str :: Maybe Integer
-        if num > toInteger (maxBound :: Int) || num < toInteger (minBound :: Int) then Nothing else Just (fromInteger num)
+      readInt str
+        | null str || not (all isDigit str) = Nothing
+        | otherwise = do
+            num <- readMaybe str :: Maybe Integer
+            if num > toInteger (maxBound :: Int) || num < toInteger (minBound :: Int)
+              then Nothing
+              else Just (fromInteger num)
       parseRange :: String -> [(Must, String)]
       parseRange str = case break (== '.') str of
         (loStr, '.' : '.' : hiStr) ->
