@@ -257,6 +257,24 @@ spec = do
         , ["rewrite", "--flat", "--hide-rho", "--output=latex"]
         , ["[[ |n| -> [[ |k| -> \\phiTerminal{\\xi} ]] ]]"]
         )
+      ,
+        ( "drops the rho argument of a number literal from the LaTeX output"
+        , "42(ρ ↦ ξ)"
+        , ["rewrite", "--flat", "--hide-rho", "--output=latex"]
+        , ["Q . |number| ( @ -> Q . |bytes| ( @ -> [[ D> |40-45-00-00-00-00-00-00| ]] ) ){.}"]
+        )
+      ,
+        ( "drops only the rho argument of a string literal from the LaTeX output"
+        , "\"s\"(ρ ↦ ⊥, b ↦ Φ)"
+        , ["rewrite", "--flat", "--hide-rho", "--output=latex"]
+        , ["Q . |string| ( @ -> Q . |bytes| ( @ -> [[ D> |73-| ]] ) ) ( |b| -> Q ){.}"]
+        )
+      ,
+        ( "drops the rho argument of a non-finite literal from the LaTeX output"
+        , "Φ.nan(ρ ↦ ξ)"
+        , ["rewrite", "--flat", "--hide-rho", "--output=latex"]
+        , ["Q . |number| ( @ -> Q . |bytes| ( @ -> [[ D> |7F-F8-00-00-00-00-00-00| ]] ) ){.}"]
+        )
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 
