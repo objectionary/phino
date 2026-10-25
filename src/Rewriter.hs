@@ -13,7 +13,7 @@ module Rewriter (Seen, direct, every, fast, interpreted, rewrite, RewriteContext
 
 import AST
 import Builder
-import Control.Exception (Exception, throwIO)
+import Control.Exception (Exception, SomeException, displayException, throwIO, try)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
@@ -237,10 +237,20 @@ rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iterati
 
 applicable :: Expression -> [Step] -> RewriteContext -> IO Bool
 applicable _ [] _ = pure False
-applicable expression (rule : rest) ctx@RewriteContext{..} =
-  _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
-    Just (changed, _) | changed /= expression -> pure True
-    _ -> applicable expression rest ctx
+applicable expression (rule : rest) ctx@RewriteContext{..} = do
+  applies <- try (probe rule) :: IO (Either SomeException Bool)
+  case applies of
+    Right True -> pure True
+    Right False -> applicable expression rest ctx
+    Left err -> do
+      logDebug (printf "Rule '%s' raised and was treated as not applicable: %s" (_name rule) (displayException err))
+      applicable expression rest ctx
+  where
+    probe :: Step -> IO Bool
+    probe rule =
+      _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
+        Just (changed, _) | changed /= expression -> pure True
+        _ -> pure False
 
 rewrite :: Expression -> [Step] -> RewriteContext -> IO Rewrittens
 rewrite expr rules ctx@RewriteContext{..} = do
@@ -254,13 +264,10 @@ rewrite expr rules ctx@RewriteContext{..} = do
       | count == _maxCycles && not (inRange _must count) = throwIO (MustBeGoing _must count)
       | count == _maxCycles = do
           logDebug (printf "Max amount of rewriting cycles for all rules (%d) has been reached, rewriting is stopped" _maxCycles)
-          if _depthSensitive
-            then do
-              exhausted <- applicable expression rules ctx
-              if exhausted
-                then throwIO (StoppedOnLimit "max-cycles" _maxCycles)
-                else pure (rewrittens, False)
-            else pure (rewrittens, True)
+          applies <- applicable expression rules ctx
+          if _depthSensitive && applies
+            then throwIO (StoppedOnLimit "max-cycles" _maxCycles)
+            else pure (rewrittens, applies)
       | otherwise = do
           logDebug (printf "Starting rewriting cycle for all rules: %d out of %d" count _maxCycles)
           rewrite' state (zip [0 ..] rules) count ctx >>= \case
