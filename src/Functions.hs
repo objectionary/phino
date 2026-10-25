@@ -147,11 +147,10 @@ _sed args subst = do
           let (pat, rest, separator) = nextUntilSlash body B.empty False
            in if separator
                 then
-                  let (rep, flag, _) = nextUntilSlash rest B.empty True
-                   in case flag of
-                        "g" -> pure (pat, rep, True)
-                        "" -> pure (pat, rep, False)
-                        _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+                  let (rep, flag, sealed) = nextUntilSlash rest B.empty True
+                   in if sealed && flag `elem` ["", "g"]
+                        then pure (pat, rep, flag == "g")
+                        else throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
                 else throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
     nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString, Bool)

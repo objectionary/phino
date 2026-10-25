@@ -221,6 +221,12 @@ spec = describe "Functions" $ do
         , "sed pattern must be in format s/pat/rep/[g]"
         )
       ,
+        ( "sed fails when the replacement has no closing separator"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/a/b"))]
+        , "sed pattern must be in format s/pat/rep/[g]"
+        )
+      ,
         ( "sed fails when the pattern is only a delimiter"
         , "sed"
         , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/"))]
