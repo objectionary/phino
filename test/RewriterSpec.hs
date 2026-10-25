@@ -10,7 +10,7 @@
 module RewriterSpec where
 
 import AST (Argument (ArTau), Attribute (AtLabel, AtRho), Binding (BiMeta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExTermination, ExXi))
-import Control.Exception (SomeException)
+import Control.Exception (IOException, SomeException, throw)
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
@@ -144,6 +144,16 @@ spec = do
     it "throws with --depth-sensitive when a rule still applies at --max-cycles" $
       rewrite ExXi steps (context True)
         `shouldThrow` (\exc -> "--max-cycles=1" `isInfixOf` show (exc :: SomeException))
+
+  describe "a rule that raises while applicable is probed at the boundary" $ do
+    let steps = [Step "boom" (\_ _ -> throw (userError "boom"))]
+        context depthSensitive = RewriteContext ExRoot 5 0 depthSensitive Nothing (building linked) (_normal linked) (every steps) MtDisabled Nothing dontSaveStep dontSaveMade
+    it "treats the raise as not applicable without --depth-sensitive" $ do
+      (_, exceeded) <- rewrite ExXi steps (context False)
+      exceeded `shouldBe` False
+    it "propagates the raise with --depth-sensitive" $
+      rewrite ExXi steps (context True)
+        `shouldThrow` (\exc -> "boom" `isInfixOf` show (exc :: IOException))
 
   describe "--must once --max-cycles stops the run" $
     forM_
