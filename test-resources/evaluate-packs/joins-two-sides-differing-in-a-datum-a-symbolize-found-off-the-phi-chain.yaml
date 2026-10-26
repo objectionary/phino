@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# Both sides hold a bool in the method 'kq', the way the 'rewrite' rules bring
-# 'Φ.false' into the shape of a computed bool when EO lowers 'number.floor'.
-# The datum of the left one sits in the formation bound to 'if', which is no
-# φ of anything, so a 'symbolize' walking the φ chain alone left it a datum
-# and the sides never joined (#2008). The line turns every datum of the term
-# into a fresh symbol, wherever it stands, so '𝑛3' holds 𝜎3 where '𝑛1' held
-# 'FF-', the two sides differ in their symbols alone, and the join makes one
-# term of them, joining 𝜎3 with 𝜎2 into 𝜎4.
+# Both sides hold a bool in φ, the way the 'rewrite' rules bring 'Φ.false'
+# into the shape of a computed bool when EO lowers 'number.floor'. The datum
+# of the left one sits in the formation bound to 'if', which is no φ of
+# anything, so a 'symbolize' walking the φ chain alone left it a datum and the
+# sides never joined (#2008). The line walks every argument of an application
+# too, so '𝑛3' holds 𝜎3 where '𝑛1' held 'FF-', the two sides differ in their
+# symbols alone, and the join makes one term of them, joining 𝜎3 with 𝜎2 into
+# 𝜎4.
 symbolic: |
   - λ: L_fork
     dataize:
@@ -26,16 +26,17 @@ symbolic: |
       right: 𝑛4
 location: 'Q.y'
 hide-rho: false
-input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ ⟦ φ ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ) ⟧, b ↦ ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧.φ ⟧'
-result: '⟦⟧'
+input: '⟦ bool(if) ↦ ⟦ φ ↦ if ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ φ ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ ) ⟧, b ↦ ⟦ φ ↦ Φ.bool( if ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+result: '⟦ if ↦ 𝜎4:λ:φ, φ ↦ if ⟧'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      𝑛1·1 := ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ FF-:Δ:φ ) ⟧  # 𝕄(ξ.a)
-      𝑛2·1 := ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ 𝜎2:λ:φ ) ⟧  # 𝕄(ξ.b)
+      𝑛1·1 := Φ.bool( if ↦ FF-:Δ:φ ):φ  # 𝕄(ξ.a)
+      𝑛2·1 := Φ.bool( if ↦ 𝜎2:λ:φ ):φ  # 𝕄(ξ.b)
       symbolized 𝜎3 := FF-
-      𝑛3·1 := ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ 𝜎3:λ:φ ) ⟧  # symbolize(𝑛1)
-      𝑛4·1 := ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ 𝜎2:λ:φ ) ⟧  # 𝑛2
+      𝑛3·1 := Φ.bool( if ↦ 𝜎3:λ:φ ):φ  # symbolize(𝑛1)
+      𝑛4·1 := Φ.bool( if ↦ 𝜎2:λ:φ ):φ  # 𝑛2
       joined 𝜎4 := 𝛿1·1 ? 𝜎3 : 𝜎2
-      𝑛·1·1 := ⟦ φ ↦ ⟦⟧, kq ↦ Φ.bool( if ↦ 𝜎4:λ:φ ) ⟧  # 𝑛3, 𝑛4
+      𝑛·1·1 := Φ.bool( if ↦ 𝜎4:λ:φ ):φ  # 𝑛3, 𝑛4
+    𝑛·0·1 := Φ.bool( if ↦ 𝜎4:λ:φ )

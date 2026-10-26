@@ -169,8 +169,10 @@ parked, gets the line stuck, unless the entry joins, where `kindled` of
 another meta is bound to with every `( ρ ↦ … )` applied to a dispatch dropped
 (`stayed` of `Lambdas.hs`, #1967), which `stay` or `skip` of normalization
 drops anyway. A `symbolize` line binds its meta to the term another meta is
-bound to with every datum it holds, in any binding, argument or dispatch,
-turned into a fresh symbol (`symbolized` of `Lambdas.hs`, #1968, #2008), and
+bound to with every datum it holds in a φ, an argument, a dispatch or any
+binding of an atom turned into a fresh symbol, leaving alone the ρ and the
+methods of a formation holding no λ, since they hold the code of a library
+object, not its value (`symbolized` of `Lambdas.hs`, #1968, #2008, #2131), and
 writes `symbolized 𝜎4 := …` (`EvSymbolized`) per symbol it minted with the
 datum it stands for. A line of either that changed its term writes
 `# stay(𝑛1)` or `# symbolize(𝑛1)` to the text protocol (`EvReshaped`), and the

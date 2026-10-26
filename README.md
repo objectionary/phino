@@ -547,13 +547,17 @@ a fresh symbol:
 ```
 
 The right-hand side of a line names a meta bound by `morph` or by another line
-of the entry, and nothing else. The whole term is walked, the way a `rewrite`
-line walks it: every binding of every formation, `ρ` and methods among them,
-every argument of every application, named or positional, and the target of
-every dispatch. A `Δ ⤍ 𝑏` met anywhere becomes `λ ⤍ 𝜎4`, a symbol minted
-fresh, the way a bare `𝜎` of an answer is. A datum off the `φ` chain counts
-too, since a value may sit there: the bool a `rewrite` line makes of a literal
-holds its datum inside the formation bound to `if`.
+of the entry, and nothing else. The line walks the term wherever a value may
+sit: the `φ` of every formation, every binding of a formation holding a `λ`,
+since an atom reads them all, every argument of every application, named or
+positional, and the target of every dispatch. A `Δ ⤍ 𝑏` met there becomes
+`λ ⤍ 𝜎4`, a symbol minted fresh, the way a bare `𝜎` of an answer is. A datum
+off the `φ` chain counts too: the bool a `rewrite` line makes of a literal
+holds its datum inside the formation bound to `if`. The `ρ` and the methods
+of a formation holding no `λ` are left alone, since they hold the code of a
+library object and not its value. A copy of `number` keeps the constants of
+its methods, such as the `-1` its `neg` multiplies by, so both sides of a join
+hold the same constants there and join in one symbol, not in one per constant.
 
 This is how a join makes one term of a literal and a value some firing
 computed. In EO `x.gt( 0 ).if( 1, x )` has one side that is the literal `1`, a

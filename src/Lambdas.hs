@@ -447,16 +447,16 @@ symbolized term spent = case runState (goExpr term) (spent, []) of
   (masked, (spent', known)) -> (masked, reverse known, spent')
   where
     goExpr :: Expression -> State Minting Expression
-    goExpr (ExFormation bds) = ExFormation <$> mapM goBinding bds
+    goExpr (ExFormation bds) = ExFormation <$> mapM (goBinding (Just AtLambda `elem` map attributeFromBinding bds)) bds
     goExpr (ExApplication expr arg) = ExApplication <$> goExpr expr <*> goArgument arg
     goExpr (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr expr
     goExpr (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goExpr expr
     goExpr (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goExpr expr
     goExpr expr = pure expr
-    goBinding :: Binding -> State Minting Binding
-    goBinding (BiDelta bts) = state (\(count, known) -> (BiLambda (FnSymbol (succ count)), (succ count, (succ count, bts) : known)))
-    goBinding (BiTau attr expr) = BiTau attr <$> goExpr expr
-    goBinding bd = pure bd
+    goBinding :: Bool -> Binding -> State Minting Binding
+    goBinding _ (BiDelta bts) = state (\(count, known) -> (BiLambda (FnSymbol (succ count)), (succ count, (succ count, bts) : known)))
+    goBinding atom (BiTau attr expr) | atom || attr == AtPhi = BiTau attr <$> goExpr expr
+    goBinding _ bd = pure bd
     goArgument :: Argument -> State Minting Argument
     goArgument (ArTau attr expr) = ArTau attr <$> goExpr expr
     goArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr expr
