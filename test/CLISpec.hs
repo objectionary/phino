@@ -202,10 +202,11 @@ spec = do
       )
 
   it "fails when both --pin and --pin-file are given" $
-    withStdin "[[ ]]" $
-      testCLIFailed
-        ["--pin=" ++ showVersion version, "--pin-file=pinned-version.txt", "rewrite"]
-        ["[ERROR]"]
+    withTempFileContent "pin-versionXXXXXX.txt" (showVersion version ++ "\n") $ \file ->
+      withStdin "[[ ]]" $
+        testCLIFailed
+          ["--pin=" ++ showVersion version, "--pin-file=" ++ file, "rewrite"]
+          ["[ERROR]: Invalid option `--pin-file=" ++ file ++ "'"]
 
   describe "--hide-rho" $
     forM_
@@ -499,12 +500,20 @@ spec = do
           , ["rewrite", "--meet-length=4", "--output=phi"]
           , ["[ERROR]:", "--meet-length option can stay together with --output=latex only"]
           )
-        , ("with non-dispatch --focus", ["rewrite", "--focus=Q.x(Q.y)"], ["[ERROR]"])
-        , ("with --focus!=Q and --output=XMIR", ["rewrite", "--focus=Q.x", "--output=xmir"], ["[ERROR]"])
-        , ("with --margin < 0", ["rewrite", "--margin=-1"], ["[ERROR]"])
-        , ("with --breakpoint which does not exist across the rules", ["rewrite", "--breakpoint=hello", "--normalize"], ["[ERROR]"])
+        ,
+          ( "with non-dispatch --focus"
+          , ["rewrite", "--focus=Q.x(Q.y)"]
+          , ["Invalid set of arguments: Only dispatch expression started with Φ (or Q) can be used in --focus, but given: Φ.x( Φ.y )"]
+          )
+        , ("with --focus!=Q and --output=XMIR", ["rewrite", "--focus=Q.x", "--output=xmir"], ["Only --focus=Q is allowed to be used with --output=xmir"])
+        , ("with --margin < 0", ["rewrite", "--margin=-1"], ["--margin must be positive"])
+        ,
+          ( "with --breakpoint which does not exist across the rules"
+          , ["rewrite", "--breakpoint=hello", "--normalize"]
+          , ["The rule 'hello' provided in '--breakpoint' option is absent across given rewriting rules: alpha"]
+          )
         ]
-        (\(desc, args, expected) -> it desc (withStdin "" (testCLIFailed args expected)))
+        (\(desc, args, expected) -> it desc (withStdin "[[ x -> 5 ]]" (testCLIFailed args expected)))
 
     it "prints help" $
       testCLISucceeded
@@ -542,6 +551,19 @@ spec = do
       (firstRun, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI args)
       (secondRun, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI args)
       firstRun `shouldBe` secondRun
+
+    it "shuffles the rules away from their file order" $ do
+      let base =
+            [ "--sweet"
+            , "--sequence"
+            , "--max-depth=1"
+            , "--max-cycles=1"
+            , rule "swap-a.yaml"
+            , rule "swap-b.yaml"
+            ]
+      (plain, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI ("rewrite" : base))
+      (mixed, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI ("rewrite" : "--shuffle" : "--seed=1" : base))
+      mixed `shouldNotBe` plain
 
     it "fails with a non-integer --seed" $
       withStdin "[[ ]]" $
@@ -3224,6 +3246,11 @@ spec = do
       (firstRun, _) <- withStdout (runCLI args)
       (secondRun, _) <- withStdout (runCLI args)
       firstRun `shouldBe` secondRun
+
+    it "shuffles the normalization rules away from their file order" $ do
+      (plain, _) <- withStdout (runCLI ["explain", "--normalize"])
+      (mixed, _) <- withStdout (runCLI ["explain", "--normalize", "--shuffle", "--seed=1"])
+      mixed `shouldNotBe` plain
 
     it "accepts --seed flag" $
       testCLISucceeded
