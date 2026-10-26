@@ -148,7 +148,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (bound', state'')
     brought :: ReduceContext -> Subst -> State -> Meta -> Expression -> Expression -> IO (Either Int Bytes, Subst, State)
     brought ctx bound state' meta origin term = do
-      (value, state'') <- unparked (ctx._reduce univ ctx term state'{_manufactured = Nothing, _stuck = Nothing})
+      (value, state'') <- unparked (ctx._reduce univ ctx{_site = origin} term state'{_manufactured = Nothing, _stuck = Nothing})
       case value of
         Nothing -> throwIO (Stuck (fromMaybe func state''._stuck))
         Just bytes -> do
@@ -159,14 +159,14 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     through :: ReduceContext -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
     through ctx (bound, state', normals) (meta, term) = do
       placed <- operand term
-      (normal, state'') <- morphing univ ctx placed state'
+      (normal, state'') <- morphing univ ctx{_site = term} placed state'
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing term normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'', normal : normals)
     reduced :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     reduced ctx (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      (normal, state'') <- morphing univ ctx term state'
+      (normal, state'') <- morphing univ ctx{_site = ExMeta source._name} term state'
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing (ExMeta source._name) normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
@@ -361,7 +361,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         walked term = Just term
     reached :: ReduceContext -> Subst -> Expression -> State -> IO (Expression, State)
     reached _ bound (ExMeta name) state' = (,state') <$> buildExpressionThrows (ExMeta name) bound
-    reached ctx _ side state' = (\placed -> morphing univ ctx placed state') =<< operand side
+    reached ctx _ side state' = (\placed -> morphing univ ctx{_site = side} placed state') =<< operand side
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'

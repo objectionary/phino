@@ -20,7 +20,7 @@ result: '𝜎2:λ'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_hold):
-      𝕄(Φ.a🌵0):
+      𝕄(ξ.b):
         𝑛·1·1 := Φ.step( tup ↦ Φ.items.tail )
       𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.b)
       deferred 𝜎2 := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛1.φ)

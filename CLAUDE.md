@@ -217,8 +217,9 @@ down, and a path off the formation fired, walking its bindings with no 𝔻, so
 a firing of the `L_join` below brings no condition down again; a path leading
 to neither a datum nor a symbol gets the firing stuck. It then brings
 both sides down (`reached`): it morphs
-a path where it stands in the universe through `insideUniverse`, so the
-protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The join
+a path where it stands in the universe through `insideUniverse`, which moves
+the locator alone, so the protocol sites it as the side, such as `ξ.left`
+(#2145), and takes a meta as it is bound. The join
 defers nothing by itself: an entry that wants a side deferred says so with a
 `defer` line, which works as in an entry that computes (#1982). Two sides
 that are the same, or differ only in the symbols at their leaves, are one

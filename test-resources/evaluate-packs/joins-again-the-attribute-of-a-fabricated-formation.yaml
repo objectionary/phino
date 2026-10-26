@@ -33,9 +33,9 @@ protocol: |
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
       fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx( 𝜎2:λ ), ob ↦ Φ.hx ⟧ and Φ.hx( 𝜎3:λ ):φ  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx( 𝜎2:λ ), ob ↦ Φ.hx ⟧, right🌵 ↦ Φ.hx( 𝜎3:λ ):φ, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ob ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ob, right🌵 ↦ ρ.right🌵.ob ⟧ ⟧
     𝔼(L_join):
-      𝕄(Φ.a🌵3):
+      𝕄(ξ.left🌵):
         𝑛·2·1 := Φ.hx( ke ↦ 𝜎2:λ )
-      𝕄(Φ.a🌵4):
+      𝕄(ξ.right🌵):
         𝑛·2·2 := Φ.hx( ke ↦ 𝜎3:λ )
       joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3
       𝑛·2·3 := ⟦ ke ↦ 𝜎4:λ, φ ↦ ke ⟧  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)

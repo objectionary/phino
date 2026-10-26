@@ -35,9 +35,9 @@ protocol: |
       fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧ and ⟦ ke(x, w) ↦ x:k ⟧  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧, right🌵 ↦ ⟦ ke(x, w) ↦ x:k ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x, w) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧ ⟧
     𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧( x ↦ 𝜎2:λ:φ )
     𝔼(L_join):
-      𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(Φ.a🌵3)
-      𝑛·2·2 := ⟦ x ↦ ∅, w ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(Φ.a🌵4)
-      𝑛·2·3 := 𝑛·2·2( w ↦ ⊥ )  # 𝕄(Φ.a🌵4)
+      𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(ξ.left🌵)
+      𝑛·2·2 := ⟦ x ↦ ∅, w ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(ξ.right🌵)
+      𝑛·2·3 := 𝑛·2·2( w ↦ ⊥ )  # 𝕄(ξ.right🌵)
       fabricated 𝑛·2·4 := 𝑛·2·1 and 𝑛·2·3  # ⟦ left🌵 ↦ 𝑛·2·1, right🌵 ↦ 𝑛·2·3, x ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.x, right🌵 ↦ ρ.right🌵.x ⟧, k ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.k, right🌵 ↦ ρ.right🌵.k ⟧, w ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.w, right🌵 ↦ ρ.right🌵.w ⟧ ⟧
     𝔼(L_join):
       𝑛·3·1 := 𝜎2:λ:φ  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)

@@ -427,7 +427,7 @@ insideUniverse :: Expression -> Expression -> ReduceContext -> IO (Expression, R
 insideUniverse expr univ ctx@ReduceContext{_buildTerm = buildTerm} = case univ of
   ExFormation bds -> do
     (TeAttribute attr) <- buildTerm "random-tau" [] substEmpty
-    let aiming = ctx{_locator = ExDispatch ExRoot attr, _site = ExDispatch ExRoot attr}
+    let aiming = ctx{_locator = ExDispatch ExRoot attr}
         synthetic = ExFormation (BiTau attr expr : bds)
     (normal, _) <- normalized expr ((synthetic, Nothing) :| []) aiming
     pure (ExFormation (BiTau attr normal : bds), aiming{_universe = extended attr normal})

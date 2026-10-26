@@ -26,6 +26,6 @@ protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      𝕄(Φ.a🌵1):
+      𝕄(ξ.a):
         unanswered L_none  # 𝕄(L_none:λ)
       stuck L_none

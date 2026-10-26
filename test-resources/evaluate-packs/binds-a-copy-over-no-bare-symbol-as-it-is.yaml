@@ -19,7 +19,7 @@ result: '⟦ tup ↦ Φ.items.tail, φ ↦ tup.next ⟧'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_hold):
-      𝕄(Φ.a🌵0):
+      𝕄(ξ.b):
         𝑛·1·1 := Φ.step( tup ↦ Φ.items.tail )
       𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.b)
       𝑛2·1 := 𝑛·1·1  # 𝑛1
