@@ -97,6 +97,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     keyed side@(ExMeta _) = pure side
     keyed side = operand side
     line :: ReduceContext -> Ending -> (Subst, State) -> Line -> IO (Subst, State)
+    line ctx _ held (Dataized meta source) = lowered ctx held meta source
     line ctx _ held (Morphed meta source) = reduced ctx held meta source
     line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
     line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
@@ -139,15 +140,22 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       throwIO (Stuck name)
     down :: ReduceContext -> (Subst, State, [Either Int Bytes]) -> (Meta, Expression) -> IO (Subst, State, [Either Int Bytes])
     down ctx (bound, state', conditions) (meta, term) = do
-      placed <- operand term
-      (value, state'') <- unparked (ctx._reduce univ ctx placed state'{_manufactured = Nothing, _stuck = Nothing})
+      (datum, bound', state'') <- brought ctx bound state' meta term =<< operand term
+      pure (bound', state'', datum : conditions)
+    lowered :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
+    lowered ctx (bound, state') meta source = do
+      (_, bound', state'') <- brought ctx bound state' meta (ExMeta source._name) =<< buildExpressionThrows (ExMeta source._name) bound
+      pure (bound', state'')
+    brought :: ReduceContext -> Subst -> State -> Meta -> Expression -> Expression -> IO (Either Int Bytes, Subst, State)
+    brought ctx bound state' meta origin term = do
+      (value, state'') <- unparked (ctx._reduce univ ctx term state'{_manufactured = Nothing, _stuck = Nothing})
       case value of
         Nothing -> throwIO (Stuck (fromMaybe func state''._stuck))
         Just bytes -> do
           let datum = maybe (Right bytes) Left state''._manufactured
-          ctx._saveEval (EvData ctx._nesting meta._spelling term datum)
+          ctx._saveEval (EvData ctx._nesting meta._spelling origin datum)
           bound' <- bind meta (MvBytes bytes) bound
-          pure (bound', state'', datum : conditions)
+          pure (datum, bound', state'')
     through :: ReduceContext -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
     through ctx (bound, state', normals) (meta, term) = do
       placed <- operand term
