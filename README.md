@@ -268,16 +268,17 @@ not join.
     right: $.right
 ```
 
-`on` names the condition, a bytes meta the `dataize` block bound or a path
-from `$`, described below, and `left` and `right` are paths from `$`, read
+`on` names the condition, a bytes meta an operand of `dataize` reading `$`
+bound or a path from `$`, described below, and `left` and `right` are paths
+from `$`, read
 against the formation being fired the way
 an operand is, or metas the `morph` block or an `evaluate`, `stay`, `rewrite`,
 `symbolize` or `defer` line bound, as described below. An entry
 with a `join` block has no `𝑛`, since the term it joins is what it answers
 with: an entry joins or it computes, never both. A block missing one of the
 three keys, holding another but `otherwise`, described below, or naming under
-`on` anything but a meta of `dataize` or a path from `$` is refused when the
-file is read, and
+`on` anything but such a meta or a path from `$` is refused when the file is
+read, and
 so is a side reading a meta inside a term, such as `𝑛1.x`, or naming a meta
 that none of `morph`, `evaluate`, `stay`, `rewrite`, `symbolize` and `defer`
 binds.
@@ -732,13 +733,50 @@ The protocol comments the line with the morph of the meta it read:
 joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
 ```
 
+### Dataizing what a line made
+
+An operand of `dataize` may name a meta another block binds, the way an
+operand of `morph` may. It brings the term that meta is bound to down to data
+through 𝔻, the way an operand reading `$` is brought down, and binds a bytes
+meta of its own:
+
+```yaml
+- λ: L_entry
+  morph:
+    𝑛1: $.v.φ
+  dataize:
+    𝛿1: $.n
+    𝛿2: 𝑛1
+  𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
+```
+
+Such an operand is a line of the entry, so it runs once the meta it names is
+bound, as described below, and it takes the term as that meta holds it. An
+operand reading a meta inside a term, such as `𝑛1.x`, is refused when the file
+is read, and so is one naming a meta nothing binds. A line takes no part in
+what the entry is known by: only an operand reading `$` may be the `on` of a
+`join`, and only such operands stand in the `<minted>` element described
+below.
+
+This is how one entry gets both the object a body morphs into and the data
+that object comes down to. Above, `𝑛1` is what the `φ` of `v` morphs into,
+and `𝛿2` is the datum `𝑛1` holds. The protocol comments the line with the
+dataization of the meta it read:
+
+```text
+𝑛1·1 := 2A-:Δ  # 𝕄(ξ.v.φ)
+𝔻(Φ.a🌵2):
+  𝛿·1·1 := 2A-
+𝛿2·1 := 𝛿·1·1  # 𝔻(𝑛1)
+```
+
 ### The order of the lines
 
-The lines of `morph`, `evaluate`, `defer`, `stay`, `rewrite` and `symbolize`
-run in the order of the metas they read, not in the order of their blocks. A
-line of `morph` is an operand naming a meta. A line runs once every meta it
-reads is bound, so this entry fires what `x` came to and then fires the answer,
-one more call, although the line doing so stands first:
+The lines of `dataize`, `morph`, `evaluate`, `defer`, `stay`, `rewrite` and
+`symbolize` run in the order of the metas they read, not in the order of their
+blocks. A line of `dataize` or `morph` is an operand naming a meta. A line runs
+once every meta it reads is bound, so this entry fires what `x` came to and
+then fires the answer, one more call, although the line doing so stands first:
 
 ```yaml
 - λ: L_twice
@@ -751,10 +789,11 @@ one more call, although the line doing so stands first:
 ```
 
 The line binding `𝑛3` reads `𝑛2`, which the line under it binds, so that line
-runs first. The `dataize` block and the operands of `morph` reading `$` read
-no meta and always run before all the others. Where no meta orders two lines,
-they run in the order the list above gives their blocks, so a line of `morph`
-runs right after the line binding the meta it names, and the lines of one
+runs first. The operands of `dataize` and `morph` reading `$` read no meta and
+always run before all the others, those of `dataize` first. Where no meta
+orders two lines, they run in the order the list above gives their blocks, so
+a line of `dataize` or `morph` runs right after the line binding the meta it
+names, and the lines of one
 block run in the order of their metas, `𝑛2` before `𝑛10`. A line reading a
 meta nothing binds is refused when the file is read, and so is a line that
 reads the meta it binds, directly or through other lines, since it could never
@@ -1482,12 +1521,12 @@ any other.
 `<minted symbol="𝜎1">40-14-… 40-18-…</minted>` is one symbol the firing
 minted, one element per bare `𝜎` the entry wrote its answer with, standing
 inside the block ahead of the `<built>` carrying them. The symbol stands in
-`symbol` and the text is what is known about it: the values the `dataize`
-lines of the entry took, in the order the entry declares them, each spelled as
-its own line spells it — the bytes for a datum, `𝜎1` for a symbol — and
+`symbol` and the text is what is known about it: the values the operands of
+`dataize` reading `$` took, in the order the entry declares them, each spelled
+as its own line spells it — the bytes for a datum, `𝜎1` for a symbol — and
 separated by a space. With the `λ` of the block the element reads as the fact
 `𝔻(𝜎1:λ) == L_number_plus(40-14-…, 40-18-…)`, and a firing of an entry with
-no `dataize` line writes `<minted symbol="𝜎1"/>`. The symbol is also the edge
+no such operand writes `<minted symbol="𝜎1"/>`. The symbol is also the edge
 a reader joins on: a later `<manufactured meta="𝛿·5·1">𝜎2</manufactured>` names
 the symbol the firing that wrote `<minted symbol="𝜎2">` handed out. A firing
 minting two symbols writes two elements and one minting none writes none,

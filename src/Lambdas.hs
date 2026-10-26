@@ -61,7 +61,8 @@ data Meta = Meta
   }
 
 data Line
-  = Morphed Meta Meta
+  = Dataized Meta Meta
+  | Morphed Meta Meta
   | Evaluated Meta Meta
   | Deferred Meta Meta
   | Stayed Meta Meta
@@ -94,15 +95,15 @@ instance FromJSON Lambda where
   parseJSON = withObject "Lambda" $ \entry -> do
     key <- entry .:? "λ" >>= maybe (fail "The entry has no 'λ' key") pure
     unknown (T.unpack key) entry
-    dataized <- operands key bytesMeta entry "dataize"
+    (dataized, weighing) <- partitionEithers <$> reductions key bytesMeta Dataized entry "dataize"
     ending <- concluded (T.unpack key) dataized entry
-    (morphed, reading) <- partitionEithers <$> reductions key entry
+    (morphed, reading) <- partitionEithers <$> reductions key expressionMeta Morphed entry "morph"
     lambda <-
       Lambda key dataized morphed
-        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed) . (reading ++))
+        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed) . ((weighing ++ reading) ++))
         <*> pure ending
     once (T.unpack key) lambda
-    mapM_ (metaless (T.unpack key) "dataize" "a path from '$'") lambda._dataized
+    mapM_ (metaless (T.unpack key) "dataize" "a path from '$' or a meta alone") lambda._dataized
     mapM_ (metaless (T.unpack key) "morph" "a path from '$' or a meta alone") lambda._morphed
     answered (T.unpack key) lambda
     pure lambda
@@ -137,7 +138,7 @@ instance FromJSON Lambda where
           condition spelling = case (parseBytes (T.unpack spelling), parseExpression (T.unpack spelling)) of
             (Right (BtMeta name), _) | name `elem` map (_name . fst) dataized -> pure (Left (Meta spelling name))
             (_, Right path) | pathed path -> pure (Right path)
-            _ -> fail (printf "The 'on' of the 'join' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize', such as '𝛿1', or be a path from '$', such as '$.on'" key (T.unpack spelling))
+            _ -> fail (printf "The 'on' of the 'join' block of λ function '%s' is '%s', while it must name a bytes meta of 'dataize' reading a path from '$', such as '𝛿1', or be a path from '$', such as '$.on'" key (T.unpack spelling))
           pathed :: Expression -> Bool
           pathed ExXi = True
           pathed (ExDispatch inner _) = pathed inner
@@ -151,27 +152,18 @@ instance FromJSON Lambda where
           fallback spelling = case parseBinding (printf "λ ⤍ %s" (T.unpack spelling)) of
             Right (BiLambda func@(Function _)) -> pure func
             _ -> fail (printf "The 'otherwise' of the 'join' block of λ function '%s' is '%s', while it must name a λ function, such as 'L_join'" key (T.unpack spelling))
-      operands :: Text -> (Text -> Yaml.Parser Meta) -> Object -> Key -> Yaml.Parser [(Meta, Expression)]
-      operands key kind entry name = do
-        mapping <- entry .:? name .!= (Map.empty :: Map Text Expression)
-        mapM bound (numbered mapping)
-        where
-          bound :: (Text, Expression) -> Yaml.Parser (Meta, Expression)
-          bound (meta, term) = do
-            referenceless (T.unpack key) (T.unpack meta) term
-            kind meta >>= \named -> pure (named, term)
-      reductions :: Text -> Object -> Yaml.Parser [Either (Meta, Expression) Line]
-      reductions key entry = do
-        mapping <- entry .:? "morph" .!= (Map.empty :: Map Text Text)
+      reductions :: Text -> (Text -> Yaml.Parser Meta) -> (Meta -> Meta -> Line) -> Object -> Key -> Yaml.Parser [Either (Meta, Expression) Line]
+      reductions key spelled kind entry block = do
+        mapping <- entry .:? block .!= (Map.empty :: Map Text Text)
         mapM reduction (numbered mapping)
         where
           reduction :: (Text, Text) -> Yaml.Parser (Either (Meta, Expression) Line)
           reduction (meta, source) = do
-            named <- expressionMeta meta
+            named <- spelled meta
             case parseExpression (T.unpack source) of
-              Right (ExMeta name) -> pure (Right (Morphed named (Meta source name)))
+              Right (ExMeta name) -> pure (Right (kind named (Meta source name)))
               Right term -> Left (named, term) <$ referenceless (T.unpack key) (T.unpack meta) term
-              Left failure -> fail failure <?> Key (Key.fromText meta) <?> Key "morph"
+              Left failure -> fail failure <?> Key (Key.fromText meta) <?> Key block
       expressionMeta :: Text -> Yaml.Parser Meta
       expressionMeta meta = case parseExpression (T.unpack meta) of
         Right (ExMeta name) -> pure (Meta meta name)
@@ -236,6 +228,7 @@ instance FromJSON Lambda where
               feeding :: Meta -> [Meta]
               feeding meta = [source line | line <- pending, meta._name == (binding line)._name, (source line)._name `notElem` known]
           source :: Line -> Meta
+          source (Dataized _ meta) = meta
           source (Morphed _ meta) = meta
           source (Evaluated _ meta) = meta
           source (Deferred _ meta) = meta
@@ -243,6 +236,7 @@ instance FromJSON Lambda where
           source (Rewritten _ meta _) = meta
           source (Symbolized _ meta) = meta
       binding :: Line -> Meta
+      binding (Dataized meta _) = meta
       binding (Morphed meta _) = meta
       binding (Evaluated meta _) = meta
       binding (Deferred meta _) = meta

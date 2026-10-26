@@ -188,7 +188,12 @@ operand of `morph` naming a meta alone, such as `𝑛4: 𝑛3`, is a line too
 (`Morphed` of `Line`, `reduced` of `Evaluate.hs`, #2016): it morphs the term
 the meta is bound to through `morphing`, as it stands and not read against the
 formation fired, and writes `# 𝕄(𝑛3)`, while `_morphed` keeps the operands
-reading `$` alone, which run before every line. The lines of `morph`,
+reading `$` alone, which run before every line. An operand of `dataize`
+naming a meta alone, such as `𝛿2: 𝑛1`, is a line the same way (`Dataized` of
+`Line`, `lowered` of `Evaluate.hs`, #2139): it brings the term down through
+`_reduce`, as it stands, and writes `# 𝔻(𝑛1)`, while `_dataized` keeps the
+operands reading `$`, which alone make the `on` of a join and the data of
+`<minted>`. The lines of `dataize`, `morph`,
 `evaluate`, `defer`, `stay`, `rewrite` and `symbolize` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
 line reads, keeping the order of the blocks where no meta decides, and refuses
