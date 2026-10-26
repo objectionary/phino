@@ -24,7 +24,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Yaml as Yaml
-import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, resited, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
@@ -165,8 +165,8 @@ aimed printCtx judgment (Just src) expr@(ExFormation _) ctx = do
   held <- newIORef []
   (universe, aiming) <- insideUniverse target expr ctx{_saveEval = \record -> modifyIORef' held (record :)}
   heading ctx._saveEval printCtx judgment aiming._locator
-  mapM_ ctx._saveEval . reverse =<< readIORef held
-  pure (universe, aiming{_saveEval = ctx._saveEval})
+  mapM_ (ctx._saveEval . resited ctx._site aiming._locator) . reverse =<< readIORef held
+  pure (universe, aiming{_site = aiming._locator, _saveEval = ctx._saveEval})
 aimed _ _ (Just _) expr _ =
   invalidCLIArguments
     (printf "The option --inside requires the input expression to be a formation, but given: %s" (P.printExpression expr))

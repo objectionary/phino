@@ -291,7 +291,7 @@ saveEval handle cursor printed printed' report = do
     located :: Protocol -> Expression -> IO String
     located protocol site = case [naming | (_, built, naming) <- protocol._answered, built == site] of
       naming : _ -> pure naming
-      [] -> render site
+      [] -> salted site
     context :: Protocol -> Judgment -> Expression -> IO [String]
     context protocol judgment site = do
       locator <- located protocol site
@@ -689,7 +689,7 @@ saveEvalXml handle cursor printed report = do
     located :: Int -> Expression -> Naming String
     located depth site = do
       (nesting, _) <- get
-      maybe (leaf depth site) pure (listToMaybe [naming | (_, built, naming) <- nesting._sources, built == site])
+      maybe (titled depth site >>= lift . traced) pure (listToMaybe [naming | (_, built, naming) <- nesting._sources, built == site])
     concluded :: String -> Int -> Expression -> Naming String
     concluded tag depth term = do
       body <- leaf depth term
@@ -805,7 +805,7 @@ saveEvalXml handle cursor printed report = do
     traced :: Expression -> IO String
     traced ExXi = pure "ξ"
     traced (ExDispatch inner attr) = printf "%s.%s" <$> traced inner <*> pure (printAttribute attr)
-    traced term = printed term
+    traced term = spelled term
     sigmatic :: Expression -> Bool
     sigmatic (ExFormation [BiLambda (FnSymbol _)]) = True
     sigmatic (ExDispatch inner _) = sigmatic inner

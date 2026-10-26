@@ -33,6 +33,6 @@ protocol: |
       fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧ and ⟦ ke(x) ↦ x:k ⟧  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧, right🌵 ↦ ⟦ ke(x) ↦ x:k ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x ) ⟧ ⟧
     𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x ) ⟧( x ↦ 𝜎2:λ )
     𝔼(L_join):
-      𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ )  # 𝕄(Φ.a🌵3)
-      𝑛·2·2 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ )  # 𝕄(Φ.a🌵4)
+      𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ )  # 𝕄(ξ.left🌵)
+      𝑛·2·2 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ )  # 𝕄(ξ.right🌵)
       𝑛·2·3 := 𝑛·2·2  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)

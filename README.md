@@ -255,8 +255,8 @@ $ cat atoms.txt
     𝑛·0·2 := 5.0
     𝑛·0·3 := 𝑛·0·2.plus( x ↦ 6.0 )
   𝔼(L_number_plus):  # 𝔻(𝑛·0·1)
-    𝔻(Φ.a🌵0):
-      𝕄(Φ.a🌵0):
+    𝔻(ξ.ρ):
+      𝕄(ξ.ρ):
         𝑛·1·1 := 5.0
       boxed 𝑛·1·2 := 𝑛·1·1.φ
       𝕄(𝑛·1·2):
@@ -264,8 +264,8 @@ $ cat atoms.txt
       boxed 𝑛·1·4 := 𝑛·1·3.φ
       𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
     𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
-    𝔻(Φ.a🌵1):
-      𝕄(Φ.a🌵1):
+    𝔻(ξ.x):
+      𝕄(ξ.x):
         𝑛·1·5 := 6.0
       boxed 𝑛·1·6 := 𝑛·1·5.φ
       𝕄(𝑛·1·6):
@@ -330,7 +330,7 @@ answer is named after the answer, and a firing that 𝔻 asks for is commented
 with it, `# 𝔻(𝑛·0·1)`. The line stands in the `𝔻(…):` block it belongs to and
 between the morphings of that 𝔻, so each morphing opens a `𝕄(…):` block of its
 own: in the run above 𝔻 morphs each number the entry brings down under
-`𝕄(Φ.a🌵0):`, gets into its `φ`, and morphs that `φ` into the bytes the number
+`𝕄(ξ.ρ):`, gets into its `φ`, and morphs that `φ` into the bytes the number
 holds under `𝕄(𝑛·1·2):`. Two blocks of one heading with nothing between them
 are written as one.
 
@@ -443,8 +443,8 @@ $ cat atoms.txt
     𝑛·0·2 := 5.0
     𝑛·0·3 := 𝑛·0·2.plus( x ↦ 6.0 )
     𝔼(L_number_plus):
-      𝔻(Φ.a🌵0):
-        𝕄(Φ.a🌵0):
+      𝔻(ξ.ρ):
+        𝕄(ξ.ρ):
           𝑛·1·1 := 5.0
         boxed 𝑛·1·2 := 𝑛·1·1.φ
         𝕄(𝑛·1·2):
@@ -452,8 +452,8 @@ $ cat atoms.txt
         boxed 𝑛·1·4 := 𝑛·1·3.φ
         𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵1):
-        𝕄(Φ.a🌵1):
+      𝔻(ξ.x):
+        𝕄(ξ.x):
           𝑛·1·5 := 6.0
         boxed 𝑛·1·6 := 𝑛·1·5.φ
         𝕄(𝑛·1·6):
@@ -487,24 +487,24 @@ never reads as a fresh firing that wrote nothing.
 `starved 3` is where `--max-steps=3` ran out, whether or not `--partial` goes
 on to park it. It stands in the block of the judgment and the site the
 reduction stood at, and where the budget ran out before that block could open,
-right in a firing, it is commented with them instead, `starved 3  # 𝔻(Φ.a🌵2)`:
+right in a firing, it is commented with them instead, `starved 3  # 𝔻(ξ.arg)`:
 
 ```text
 𝕄(Φ.x):
   𝕄(Φ.x.arg):
     𝔼(L_outer):
-      𝔻(Φ.a🌵0):
+      𝔻(ξ.arg):
         starved 3
       stuck L_outer
   𝔼(L_outer):
-    𝔻(Φ.a🌵1):
+    𝔻(ξ.arg):
       𝔼(L_outer):
-        starved 3  # 𝔻(Φ.a🌵2)
+        starved 3  # 𝔻(ξ.arg)
     stuck L_outer
 ```
 
 The markup spells them `<stuck λ="L_outer"/>`, `<stalled λ="L_outer"/>` and
-`<starved limit="3" by="dataize" at="Φ.a🌵2"/>`.
+`<starved limit="3" by="dataize" at="ξ.arg"/>`.
 
 `timeout 5` is where `--max-seconds=5` ran out, placed and commented the same
 way and written at the first step the deadline refused.
@@ -570,13 +570,13 @@ $ cat fork.txt
     𝑛·0·3 := Φ.number( φ ↦ 𝜎1:λ )
     𝑛·0·4 := 𝑛·0·3.gt( x ↦ 0.0 )
     𝔼(L_gt):
-      𝔻(Φ.a🌵0):
-        𝕄(Φ.a🌵0):
+      𝔻(ξ.ρ):
+        𝕄(ξ.ρ):
           𝑛·1·1 := Φ.number( φ ↦ 𝜎1:λ )
         boxed 𝑛·1·2 := 𝑛·1·1.φ
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵1):
-        𝕄(Φ.a🌵1):
+      𝔻(ξ.x):
+        𝕄(ξ.x):
           𝑛·1·3 := 0.0
         boxed 𝑛·1·4 := 𝑛·1·3.φ
         𝕄(𝑛·1·4):
@@ -592,17 +592,17 @@ $ cat fork.txt
     𝑛·0·6 := 𝑛·0·5( else ↦ 𝑛·1·1.plus( 2.0 ).plus( 𝑛·1·1 ) )
     𝔼(L_fork):
       𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
-      𝕄(Φ.a🌵3):
+      𝕄(ξ.then):
         𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )
         𝑛·2·2 := 𝑛·2·1.plus( x ↦ 1.0 )
         𝔼(L_plus):
-          𝔻(Φ.a🌵4):
-            𝕄(Φ.a🌵4):
+          𝔻(ξ.ρ):
+            𝕄(ξ.ρ):
               𝑛·3·1 := Φ.number( φ ↦ 𝜎1:λ )
             boxed 𝑛·3·2 := 𝑛·3·1.φ
           𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-          𝔻(Φ.a🌵5):
-            𝕄(Φ.a🌵5):
+          𝔻(ξ.x):
+            𝕄(ξ.x):
               𝑛·3·3 := 1.0
             boxed 𝑛·3·4 := 𝑛·3·3.φ
             𝕄(𝑛·3·4):
@@ -615,17 +615,17 @@ $ cat fork.txt
             𝑛·3·8 := Φ.number( φ ↦ 𝜎3:λ )
           𝑛·3·9 := 𝑛·3·8  # 𝕄(𝑛·3·7)
         𝑛·2·3 := 𝑛·3·8.plus( x ↦ 𝑛·3·1 )
-      𝕄(Φ.a🌵6):
+      𝕄(ξ.else):
         𝑛·2·4 := Φ.number( φ ↦ 𝜎1:λ )
         𝑛·2·5 := 𝑛·2·4.plus( x ↦ 2.0 )
         𝔼(L_plus):
-          𝔻(Φ.a🌵7):
-            𝕄(Φ.a🌵7):
+          𝔻(ξ.ρ):
+            𝕄(ξ.ρ):
               𝑛·4·1 := Φ.number( φ ↦ 𝜎1:λ )
             boxed 𝑛·4·2 := 𝑛·4·1.φ
           𝛿1·4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-          𝔻(Φ.a🌵8):
-            𝕄(Φ.a🌵8):
+          𝔻(ξ.x):
+            𝕄(ξ.x):
               𝑛·4·3 := 2.0
             boxed 𝑛·4·4 := 𝑛·4·3.φ
             𝕄(𝑛·4·4):
@@ -641,13 +641,13 @@ $ cat fork.txt
       joined 𝜎5 := 𝛿1·2 ? 𝜎3 : 𝜎4
       𝑛·2·7 := ⟦ x ↦ 𝑛·4·1, λ ⤍ L_plus ⟧  # 𝕄(ξ.then), 𝕄(ξ.else)
     𝔼(L_plus):
-      𝔻(Φ.a🌵9):
-        𝕄(Φ.a🌵9):
+      𝔻(ξ.ρ):
+        𝕄(ξ.ρ):
           𝑛·5·1 := Φ.number( φ ↦ 𝜎5:λ )
         boxed 𝑛·5·2 := 𝑛·5·1.φ
       𝛿1·5 := 𝔻(𝜎5:λ)  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵10):
-        𝕄(Φ.a🌵10):
+      𝔻(ξ.x):
+        𝕄(ξ.x):
           𝑛·5·3 := Φ.number( φ ↦ 𝜎1:λ )
         boxed 𝑛·5·4 := 𝑛·5·3.φ
       𝛿2·5 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
@@ -657,13 +657,13 @@ $ cat fork.txt
       𝑛·5·7 := 𝑛·5·6  # 𝕄(𝑛·5·5)
     𝑛·0·7 := 𝑛·5·6.plus( x ↦ 5.0 )
   𝔼(L_plus):  # 𝔻(𝑛·0·2)
-    𝔻(Φ.a🌵11):
-      𝕄(Φ.a🌵11):
+    𝔻(ξ.ρ):
+      𝕄(ξ.ρ):
         𝑛·6·1 := Φ.number( φ ↦ 𝜎6:λ )
       boxed 𝑛·6·2 := 𝑛·6·1.φ
     𝛿1·6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
-    𝔻(Φ.a🌵12):
-      𝕄(Φ.a🌵12):
+    𝔻(ξ.x):
+      𝕄(ξ.x):
         𝑛·6·3 := 5.0
       boxed 𝑛·6·4 := 𝑛·6·3.φ
       𝕄(𝑛·6·4):
@@ -681,8 +681,8 @@ $ cat fork.txt
 <!-- markdownlint-enable MD013 -->
 
 `𝜎2` is minted by the first firing and consumed by the join, which morphs
-both branches where they stand in the universe, `𝕄(Φ.a🌵3):` and
-`𝕄(Φ.a🌵6):`, and each morph fires the `plus` its branch starts with. `𝜎3` is
+both branches where they stand in the universe, `𝕄(ξ.then):` and
+`𝕄(ξ.else):`, and each morph fires the `plus` its branch starts with. `𝜎3` is
 minted by the `plus( 1 )` of `then` and `𝜎4` by the `plus( 2 )` of `else`, and
 nothing else tells the two branches apart, so the join mints `𝜎5` and writes,
 on the `joined …` line, that `𝜎5` is `𝜎3` where `𝛿1·2` holds and `𝜎4`
@@ -738,9 +738,9 @@ $ cat atoms.xml
       <morphed meta="𝑛·0·7">𝑛·0·6</morphed>
     </morph>
     <evaluate λ="L_number_plus" by="dataize" at="𝑛·0·1">
-      <dataize at="Φ.a🌵0">
-        <morph at="Φ.a🌵0">
-          <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·2</meta></applied>
+      <dataize at="ξ.ρ">
+        <morph at="ξ.ρ">
+          <applied meta="𝑛·1·1" by="morph" at="ξ.ρ" of="Φ.number"><meta attr="φ">𝑛·0·2</meta></applied>
           <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
         </morph>
         <boxed meta="𝑛·1·3">𝑛·1·1.φ</boxed>
@@ -752,9 +752,9 @@ $ cat atoms.xml
         <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
       </dataize>
       <bound meta="𝛿1·1">𝛿·1·1</bound>
-      <dataize at="Φ.a🌵1">
-        <morph at="Φ.a🌵1">
-          <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
+      <dataize at="ξ.x">
+        <morph at="ξ.x">
+          <applied meta="𝑛·1·7" by="morph" at="ξ.x" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
           <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
         </morph>
         <boxed meta="𝑛·1·9">𝑛·1·7.φ</boxed>
@@ -799,8 +799,8 @@ the block the firing stands in, or to its comment where the block names another
 site, as `𝔼(L_number_plus):  # 𝔻(𝑛·0·1)` in `𝔻(Φ):`, while the markup keeps
 them on every element, so a program reading it never has to track the elements
 around one.
-A nested `<dataize at="Φ.a🌵0">` or `<morph at="Φ.a🌵0">` is a judgment started
-at a new site, which the text format writes as `𝔻(Φ.a🌵0):` or `𝕄(Φ.a🌵0):`,
+A nested `<dataize at="ξ.ρ">` or `<morph at="ξ.ρ">` is a judgment started
+at a new site, which the text format writes as `𝔻(ξ.ρ):` or `𝕄(ξ.ρ):`,
 and `at` names that site. Whatever the judgment does is written inside the
 element, so it closes where the text format drops back to the indentation it
 opened at, and like the text line it counts nothing and names no meta.
@@ -837,7 +837,7 @@ text format writes no line for it. `<boxed>` is the `boxed …` line of the text
 format, holding the name of the term 𝔻 went on with, with `meta` naming it the
 way the text format does and counted with the other metas of the firing, so
 it stands between the two runs of 𝕄 a dataization makes, and each gets an
-element of its own: the first `<morph at="Φ.a🌵0">` came to the `Φ.number` of
+element of its own: the first `<morph at="ξ.ρ">` came to the `Φ.number` of
 `𝑛·1·1`, and after `<boxed meta="𝑛·1·3">𝑛·1·1.φ</boxed>` the second,
 `<morph at="𝑛·1·3">`, came to the `Φ.bytes` of `𝑛·1·4`, which holds the
 datum.
@@ -954,9 +954,9 @@ $ cat atoms.xml
       <applied meta="𝑛·0·5" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
       <applied meta="𝑛·0·6" by="morph" at="𝑛·0·1" of="𝑛·0·3.plus"><meta attr="x">𝑛·0·5</meta></applied>
       <evaluate λ="L_number_plus" by="morph" at="𝑛·0·1">
-        <dataize at="Φ.a🌵0">
-          <morph at="Φ.a🌵0">
-            <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·2</meta></applied>
+        <dataize at="ξ.ρ">
+          <morph at="ξ.ρ">
+            <applied meta="𝑛·1·1" by="morph" at="ξ.ρ" of="Φ.number"><meta attr="φ">𝑛·0·2</meta></applied>
             <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
           </morph>
           <boxed meta="𝑛·1·3">𝑛·1·1.φ</boxed>
@@ -968,9 +968,9 @@ $ cat atoms.xml
           <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
         </dataize>
         <bound meta="𝛿1·1">𝛿·1·1</bound>
-        <dataize at="Φ.a🌵1">
-          <morph at="Φ.a🌵1">
-            <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
+        <dataize at="ξ.x">
+          <morph at="ξ.x">
+            <applied meta="𝑛·1·7" by="morph" at="ξ.x" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
             <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
           </morph>
           <boxed meta="𝑛·1·9">𝑛·1·7.φ</boxed>
@@ -1122,8 +1122,8 @@ $ cat atoms.txt
     𝑛·0·2 := 2.0
     𝑛·0·3 := 𝑛·0·2.times( x ↦ 3.0 )
     𝔼(L_number_times):
-      𝔻(Φ.a🌵0):
-        𝕄(Φ.a🌵0):
+      𝔻(ξ.ρ):
+        𝕄(ξ.ρ):
           𝑛·1·1 := 2.0
         boxed 𝑛·1·2 := 𝑛·1·1.φ
         𝕄(𝑛·1·2):
@@ -1131,8 +1131,8 @@ $ cat atoms.txt
         boxed 𝑛·1·4 := 𝑛·1·3.φ
         𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵1):
-        𝕄(Φ.a🌵1):
+      𝔻(ξ.x):
+        𝕄(ξ.x):
           𝑛·1·5 := 3.0
         boxed 𝑛·1·6 := 𝑛·1·5.φ
         𝕄(𝑛·1·6):
@@ -1146,13 +1146,13 @@ $ cat atoms.txt
       𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)
     𝑛·0·4 := 𝑛·1·10.plus( x ↦ 4.0 )
     𝔼(L_number_plus):
-      𝔻(Φ.a🌵2):
-        𝕄(Φ.a🌵2):
+      𝔻(ξ.ρ):
+        𝕄(ξ.ρ):
           𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )
         boxed 𝑛·2·2 := 𝑛·2·1.φ
       𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
-      𝔻(Φ.a🌵3):
-        𝕄(Φ.a🌵3):
+      𝔻(ξ.x):
+        𝕄(ξ.x):
           𝑛·2·3 := 4.0
         boxed 𝑛·2·4 := 𝑛·2·3.φ
         𝕄(𝑛·2·4):
