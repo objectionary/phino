@@ -179,6 +179,9 @@ spec = do
     it "numbers a box step past the term the morphing before it came to, as the markup does" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ.e", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "e")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "байт")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 1)]))) (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 1)])]) (ExDispatch ExRoot (AtLabel "e")), EvMorphed 2 (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 1)])]), EvBoxed 1 (ExDispatch (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 1)])]) AtPhi)])
       last (lines written) `shouldBe` "  boxed 𝑛·0·3 := 𝑛·0·1.φ"
+    it "names the term a morphing came to in the box after it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук")), EvMorphed 2 (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "щука"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "щука"))]) AtPhi)])
+      last (lines written) `shouldBe` "  boxed 𝑛·0·2 := 𝑛·0·1.φ"
     it "spells the datum of an operand in full when the line before it found no datum" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvFiring 2 "L_з" Dataization ExRoot, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       last (lines written) `shouldBe` "    𝛿1·1 := 7F-  # 𝔻(ξ.щ)"

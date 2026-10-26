@@ -37,7 +37,7 @@ protocol: |
         morphed 𝑛·1·1 := ⟦ tu ↦ ∅, φ ↦ ρ.s ⟧
       𝕄(ξ.b):
         morphed 𝑛·1·2 := 𝜎3:λ:k:φ
-      fabricated 𝑛·1·3 := ⟦ tu ↦ ∅, φ ↦ ρ.s ⟧ and 𝜎3:λ:k:φ  # ⟦ tu ↦ ∅, left🌵 ↦ ⟦ tu ↦ ∅, φ ↦ ρ.s ⟧( tu ↦ tu ), right🌵 ↦ 𝜎3:λ:k:φ, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧ ⟧
+      fabricated 𝑛·1·3 := 𝑛·1·1 and 𝑛·1·2  # ⟦ tu ↦ ∅, left🌵 ↦ 𝑛·1·1( tu ↦ tu ), right🌵 ↦ 𝑛·1·2, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧ ⟧
     𝔼(L_join):
       𝑛·2·1 := Φ.t( tu ↦ ⊥ )  # 𝕄(ξ.left🌵)
       𝕄(ξ.left🌵):

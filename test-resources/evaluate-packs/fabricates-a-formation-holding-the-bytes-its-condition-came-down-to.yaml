@@ -29,5 +29,5 @@ protocol: |
         morphed 𝑛·1·1 := Φ.wu:φ
       𝕄(ξ.b):
         morphed 𝑛·1·2 := ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧
-      fabricated 𝑛·1·3 := Φ.wu:φ and ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧  # ⟦ left🌵 ↦ Φ.wu:φ, right🌵 ↦ ⟦ φ ↦ Φ.ol, pe ↦ Φ.ki ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, pe ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ ρ.left🌵.pe, right🌵 ↦ ρ.right🌵.pe ⟧ ⟧
+      fabricated 𝑛·1·3 := 𝑛·1·1 and 𝑛·1·2  # ⟦ left🌵 ↦ 𝑛·1·1, right🌵 ↦ 𝑛·1·2, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, pe ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ ρ.left🌵.pe, right🌵 ↦ ρ.right🌵.pe ⟧ ⟧
     morphed 𝑛·0·1 := ⟦ λ ⤍ L_join, on🌵 ↦ 3A-:Δ, left🌵 ↦ ρ.left🌵.pe, right🌵 ↦ ρ.right🌵.pe ⟧

@@ -28,8 +28,8 @@ protocol: |
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       𝕄(ξ.a):
         morphed 𝑛·1·1 := 01-:Δ:φ
-      𝑛1·1 := 01-:Δ:φ  # 𝕄(ξ.a)
+      𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.a)
       𝕄(ξ.b):
         morphed 𝑛·1·2 := 02-:Δ:φ
-      𝑛2·1 := 02-:Δ:φ  # 𝕄(ξ.b)
+      𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
       diverged 𝑛1·1 vs 𝑛2·1  # they differ at .φ.Δ, and the join names no otherwise

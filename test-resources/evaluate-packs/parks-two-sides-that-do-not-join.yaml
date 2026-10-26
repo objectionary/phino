@@ -29,4 +29,4 @@ protocol: |
         morphed 𝑛·1·1 := 01-:Δ:φ
       𝕄(ξ.b):
         morphed 𝑛·1·2 := 02-:Δ:φ
-      diverged 01-:Δ:φ vs 02-:Δ:φ  # they differ at .φ.Δ, and the join names no otherwise
+      diverged 𝑛·1·1 vs 𝑛·1·2  # they differ at .φ.Δ, and the join names no otherwise

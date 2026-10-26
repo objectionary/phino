@@ -38,7 +38,7 @@ protocol: |
         morphed 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧
       𝕄(ξ.b):
         morphed 𝑛·1·2 := ⟦ ke(x, w) ↦ x:k ⟧
-      fabricated 𝑛·1·3 := ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧ and ⟦ ke(x, w) ↦ x:k ⟧  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧, right🌵 ↦ ⟦ ke(x, w) ↦ x:k ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x, w) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧ ⟧
+      fabricated 𝑛·1·3 := 𝑛·1·1 and 𝑛·1·2  # ⟦ left🌵 ↦ 𝑛·1·1, right🌵 ↦ 𝑛·1·2, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x, w) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧ ⟧
     𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧( x ↦ 𝜎2:λ:φ )
     𝔼(L_join):
       𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(ξ.left🌵)
@@ -53,6 +53,6 @@ protocol: |
       𝕄(ξ.left🌵):
         morphed 𝑛·3·1 := 𝜎2:λ:φ
       𝕄(ξ.right🌵):
-        morphed 𝑛·3·2 := 𝜎2:λ:φ
-      𝑛·3·3 := 𝜎2:λ:φ  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)
+        morphed 𝑛·3·2 := 𝑛·3·1
+      𝑛·3·3 := 𝑛·3·1  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)
     morphed 𝑛·0·2 := 𝜎2:λ
