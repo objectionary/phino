@@ -211,6 +211,11 @@ namedInsert term naming = Map.alter renamed (hashExpression term)
     renamed :: Maybe [(Expression, a)] -> Maybe [(Expression, a)]
     renamed entries = Just ((term, naming) : filter ((/= term) . fst) (fromMaybe [] entries))
 
+namedFormation :: Expression -> a -> Named a -> Named a
+namedFormation term@(ExFormation bds) naming names
+  | all ((`notElem` [Just AtLambda, Just AtDelta]) . attributeFromBinding) bds = namedInsert term naming names
+namedFormation _ _ names = names
+
 abbreviated :: Named Expression -> Expression -> Expression
 abbreviated names term
   | Map.null names = term
@@ -424,9 +429,9 @@ saveEval handle cursor printed printed' report = do
           naming :: String
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- case (namedLookup term protocol._made, namedLookup term protocol._named) of
-        (Nothing, Nothing) -> first (\fresh -> fresh{_made = adopted term (alias (opener protocol) index) fresh._made}) <$> valued counted naming term
+        (Nothing, Nothing) -> valued counted naming term
         _ -> (,) counted <$> borrowed protocol term
-      pure (protocol', Just (indented at (printf "morphed %s := %s" naming value)))
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "morphed %s := %s" naming value)))
     written at (EvJoined _ condition symbol (left, right)) protocol = do
       on <- either (pure . labelled protocol) salted condition
       pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
@@ -449,9 +454,7 @@ saveEval handle cursor printed printed' report = do
       pure (protocol'{_made = adopted term (alias (opener protocol) index) protocol'._made}, Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
     written _ (EvWorld world) protocol = pure (protocol{_made = namedInsert world ExRoot protocol._made}, Nothing)
     adopted :: Expression -> Expression -> Named Expression -> Named Expression
-    adopted term@(ExFormation bds) aliased made
-      | all ((`notElem` [Just AtLambda, Just AtDelta]) . attributeFromBinding) bds = maybe (namedInsert term aliased made) (const made) (namedLookup term made)
-    adopted _ _ made = made
+    adopted term aliased made = maybe (namedFormation term aliased made) (const made) (namedLookup term made)
     spelt :: Either Int Bytes -> IO String
     spelt (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
     spelt (Right bytes) = render (ExBytes bytes)
@@ -649,7 +652,12 @@ saveEvalXml handle cursor printed report = do
         modify (first (\nesting' -> nesting'{_sources = (depth, term, naming) : nesting'._sources}))
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
-    elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
+    elements at (EvMorphed depth term) nesting =
+      placed at nesting $ do
+        body <- leaf depth term
+        (naming, aliased) <- counted
+        modify (first (\nesting' -> nesting'{_objects = namedFormation term aliased nesting'._objects}))
+        pure (printf "<morphed meta=\"%s\">%s</morphed>" (escapeXML naming) (escapeXMLText body))
     elements at (EvJoined _ condition symbol (left, right)) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
