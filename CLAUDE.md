@@ -409,8 +409,12 @@ eight bytes hold (`ieee`, the `number` of `<dataized>` in the markup), and the
 operand line right after names it. The symbol a `𝔻` comes down to closes the
 block the same way, as `𝛿·1·2 := 𝔻(𝜎1:λ)` (`EvManufactured`, #2150), and as
 `<manufactured>` in the markup (#1962), counted with the data. The term a `𝕄`
-came to closes its block in the markup alone, as `<morphed>`
-(`EvMorphed`, #1984), counted with the metas of `<answered>`. Only the chain
+came to closes its block in the markup, as `<morphed>` (`EvMorphed`, #1984),
+counted with the metas of `<answered>`. The text writes it only where a `𝔻`
+ran the `𝕄`, as `𝑛·0·1 := …`, counted with the answers (#2153), since the
+box, firing or datum the `𝔻` goes on with never says what the `𝕄` made,
+while an operand or answer line does elsewhere, and only once no line named
+the term, such as the copy an application made. Only the chain
 that opened the block writes it: `detached` runs a premise of a rule of 𝕄
 through `morph''` told it owns nothing, since it stands in the block of the
 rule. A cut is a line too,

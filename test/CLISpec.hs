@@ -1806,6 +1806,30 @@ spec = do
                        , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
                        ]
 
+      it "writes what every morphing a dataization ran came to" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_make\n  𝑛: ⟦ φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ) ⟧\n") $ \makes ->
+            withStdin "⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧, make ↦ ⟦ λ ⤍ L_make ⟧, foo ↦ ⟦ φ ↦ Φ.make ⟧, e ↦ Φ.foo ⟧" $
+              testCLISucceeded ["dataize", "--symbolic=" ++ makes, "--locator=Q.e", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          records <- readProtocol path
+          lines records
+            `shouldBe` [ "𝔻(Φ.e):"
+                       , "  𝕄(Φ.e):"
+                       , "    𝑛·0·1 := Φ.make:φ"
+                       , "  boxed 𝑛·0·2 := 𝑛·0·1.φ"
+                       , "  𝕄(𝑛·0·2):"
+                       , "    𝑛·0·3 := L_make:λ"
+                       , "  𝔼(L_make):  # 𝔻(𝑛·0·2)"
+                       , "    𝑛·1·1 := Φ.bytes( φ ↦ 𝜎1:λ ):φ  # 𝑛"
+                       , "    𝑛·1·2 := Φ.bytes( φ ↦ 𝜎1:λ ):φ  # 𝕄(𝑛·1·1)"
+                       , "  boxed 𝑛·0·4 := 𝑛·1·2.φ"
+                       , "  𝕄(𝑛·0·4):"
+                       , "    𝑛·0·5 := Φ.bytes( φ ↦ 𝜎1:λ )"
+                       , "  boxed 𝑛·0·6 := 𝑛·0·5.φ"
+                       , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
+                       ]
+
       it "numbers the firings of one entry apart and names the symbol between them" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -2054,6 +2078,7 @@ spec = do
                        , "      𝕄(𝑛·1·9):"
                        , "        𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "      𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)"
+                       , "    𝑛·0·4 := L_number_nope:λ"
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
 
@@ -2731,6 +2756,7 @@ spec = do
                        , "      𝕄(𝑛·1·9):"
                        , "        𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "      𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)"
+                       , "    𝑛·0·4 := L_number_nope:λ"
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
 
