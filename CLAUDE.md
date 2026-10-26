@@ -337,12 +337,13 @@ a symbol, a datum, a meta, a path off `Φ`, `ξ`, `ρ` or a meta, a name, or `�
 `leaf` of `saveEvalXml` names any other term before the record that holds it
 and by that name from then on: an application by an `<applied>` record with no
 `by` and `at`, a formation by a `<formed>` one, and anything else by an
-expression meta, `𝑒1`, which nothing defines. A `<formed>` record names in `of`
-the object of the world the formation copies and holds only the attributes it
-binds anew (`copied`); the world is the normalized universe, which `universed`
-of `Morph.hs` hands to the writers as `EvWorld` and the text writer ignores.
-Since the markup names terms the text writes out, the two count their metas
-apart, and an `𝑛` of one may be another `𝑛` of the other.
+expression meta, `𝑒1`, which nothing defines. The first two are named
+`𝑒·1·1` (`recorded`), counted per firing apart from the `𝑛` of the steps, so
+the markup and the text of one run give every step the same `𝑛` (#2152). A
+`<formed>` record names in `of` the object of the world the formation copies
+and holds only the attributes it binds anew (`copied`); the world is the
+normalized universe, which `universed` of `Morph.hs` hands to the writers as
+`EvWorld` and the text writer ignores.
 
 ### Dependency inversion for circular imports
 
@@ -409,8 +410,9 @@ eight bytes hold (`ieee`, the `number` of `<dataized>` in the markup), and the
 operand line right after names it. The symbol a `𝔻` comes down to closes the
 block the same way, as `𝛿·1·2 := 𝔻(𝜎1:λ)` (`EvManufactured`, #2150), and as
 `<manufactured>` in the markup (#1962), counted with the data. The term a `𝕄`
-came to closes its block in the markup alone, as `<morphed>`
-(`EvMorphed`, #1984), counted with the metas of `<answered>`. Only the chain
+came to closes its block too, as `morphed 𝑛·1·2 := 𝑛·1·1`
+(`EvMorphed`, #2153), and as `<morphed>` in the markup (#1984), counted with
+the metas of the firing. Only the chain
 that opened the block writes it: `detached` runs a premise of a rule of 𝕄
 through `morph''` told it owns nothing, since it stands in the block of the
 rule. A cut is a line too,
