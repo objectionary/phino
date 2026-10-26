@@ -47,10 +47,12 @@ include' expr fqns
       Just attrs -> maybe (throwIO (CanNotFindObjectByLocator fqn)) pure (includedFormation expr attrs)
       _ -> throwIO (InvalidLocatorProvided fqn)
     mergeForms :: [Expression] -> Expression
-    mergeForms forms =
-      let bds = concat [bs | ExFormation bs <- forms]
-          bds' = filter (\bd -> attributeFromBinding bd /= Just AtRho) bds
-       in ExFormation bds'
+    mergeForms forms = ExFormation (foldl merged [] (filter ((/= Just AtRho) . attributeFromBinding) (concat [bs | ExFormation bs <- forms])))
+    merged :: [Binding] -> Binding -> [Binding]
+    merged acc bd = case break ((== attributeFromBinding bd) . attributeFromBinding) acc of
+      (before, BiTau at (ExFormation old) : after) | BiTau _ (ExFormation new) <- bd -> before ++ BiTau at (mergeForms [ExFormation old, ExFormation new]) : after
+      (before, _ : after) -> before ++ bd : after
+      _ -> acc ++ [bd]
     includedFormation :: Expression -> [Attribute] -> Maybe Expression
     includedFormation (ExFormation bindings) [at] =
       let bs = [bd | bd <- bindings, attributeFromBinding bd == Just at]
