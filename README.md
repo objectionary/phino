@@ -126,9 +126,12 @@ $ phino dataize hello.phi
 
 ### Symbolic λ functions
 
-Which λ functions exist is a property of the object model being dataized, not
-of the calculus, so `phino` implements none of them. They come from a YAML file
-given with `--symbolic`, one entry per λ function:
+`phino` implements no λ function.
+They come from a YAML file given with `--symbolic`, one entry per λ function.
+An entry never computes a value.
+It answers with a term that holds a symbol, `𝜎`, which names a value nobody
+worked out.
+Here is `atoms.yaml`, which the examples below use:
 
 ```yaml
 - λ: L_number_(plus|times)
@@ -137,693 +140,6 @@ given with `--symbolic`, one entry per λ function:
     𝛿2: $.x
   𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 ```
-
-The `λ` of an entry is the λ names it answers for, as a regular expression, so
-the one above stands for `L_number_plus` and `L_number_times`. Under `dataize`
-stand the operands it brings down to data through 𝔻, each binding a bytes meta
-`𝛿1`, `𝛿2` and so on; under `morph` the operands it reduces to a normal
-form through 𝕄, each binding an expression meta `𝑛1`, `𝑛2`. Both blocks are
-terms of the calculus, read against the formation being fired, so `ξ` is that
-formation and `$.x` its `x`, while `Φ` is the universe. Every entry numbers its
-own metas from `𝛿1` and `𝑛1`, and the entry is what tells two `𝛿1` apart.
-An operand whose reduction gets stuck, is cut or runs out of steps gets the
-firing stuck right there: no later block runs, and `--partial` parks the
-firing as a whole instead of handing the operand on as it was written.
-
-The term under `𝑛` is what the firing answers with. `phino` normalizes it
-exactly as it normalizes anything else, so `--protocol`, `--partial` and
-`--max-steps` work on it unchanged. It may name any meta the entry bound,
-those of the two blocks below among them.
-
-An entry reads no key but `λ`, `dataize`, `morph`, `evaluate`, `defer`, `stay`,
-`rewrite`, `symbolize`, `join` and `𝑛`, and any other key, such as a
-misspelled `joinn`, refuses the whole file, so a typo never drops a block
-without a word.
-
-### Firing what an operand came to
-
-𝕄 fires a λ function only where a dispatch reads the formation carrying it, so
-an operand reduced under `morph` may come to a formation whose λ function
-nobody fired, such as a call the program passed as an argument and never read.
-There is a third block, `evaluate`, and each line of it fires such a formation
-through 𝔼 and binds an expression meta of its own to the answer:
-
-```yaml
-- λ: L_apply
-  morph:
-    𝑛1: $.f
-  evaluate:
-    𝑛2: 𝑛1
-  𝑛: 𝑛2
-```
-
-The right-hand side of a line names a meta bound by `morph` or by another line
-of the entry, and nothing else. A formation with a λ function is fired by the
-entry its λ name matches, the way 𝕄 fires it, and the line binds its meta to
-the normal form of the answer. A formation with no λ function is no call and
-stays as it is, and so does `⊥`. So does a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, since it
-already stands for a value nobody worked out and no entry answers it. A λ name
-no entry answers gets stuck, as it
-does anywhere else, and `--partial` parks it. Any other term, such as a
-dispatch a `rewrite` line, described below, took out of its formation, gets an
-entry stuck when it computes an `𝑛`, while an entry that joins passes the term
-on as it is, since a join compares whatever its sides come to. An answer is
-not fired again,
-even when it is one more call: firing it takes one more line, so how many
-calls an entry makes is written in its file and not guessed by `phino`. Each
-firing of a line is one step deeper, the way a frame of 𝕄 or 𝔻 is, so a
-recursion running through `evaluate` lines alone spends `--max-steps` and is
-cut by `--acyclic` like any other.
-
-The protocol writes the firing of a line as a block of its own, commented with
-the meta it fired, `𝔼(L_second):  # 𝔼(𝑛2)`, and the line binding the answer
-the same way, `𝑛3·1 := 𝑛·3·2  # 𝔼(𝑛2)`.
-
-### Deferring a copy over an unknown
-
-A term 𝕄 leaves may be a copy of an object of the world, such as
-`Φ.step( tup ↦ Φ.items.tail )`, one of whose arguments reads to a bare symbol
-`⟦ λ ⤍ 𝜎1 ⟧`. Nothing can be worked out about such a copy: its `φ` reads
-`tup.next`, an attribute of `𝜎1` nobody knows, so morphing it gets stuck where
-the symbol stands. There is a fourth block, `defer`, and each line of it reads
-a meta and binds another, the way a line of `evaluate` does. When the term is a
-copy one of whose arguments, `φ` and `ρ` aside, reads to a bare symbol, the
-line binds its meta to a fresh symbol and writes what the symbol stands for:
-
-```yaml
-- λ: L_step
-  morph:
-    𝑛1: $.x
-  defer:
-    𝑛2: 𝑛1
-  𝑛: 𝑛2
-```
-
-```text
-deferred 𝜎3 := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛1.φ)
-```
-
-The markup writes it as `<deferred symbol="𝜎3" … of="Φ.step">`, holding a
-`<with>` element with a `<symbol attr="tup">𝜎1</symbol>` per argument. When
-the world declares no object the copy was made of, `of` names the `<formed>`
-element that spells the copy out, and there is no `<with>`. Any other term,
-a copy whose arguments read to no bare symbol among them, is bound as it
-stands, as `𝑛2·1 := 𝑛·1·1  # 𝑛1`. A `defer` line asks nothing of the `φ` of a
-copy, so it defers one whose `φ` reads nothing of its own object too, such as
-`⟦ φ ↦ Φ.bool( … ) ⟧`.
-
-An argument that is no bare symbol, such as `w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ )`, is
-worked out before the line is written. The entry morphs it in the copy, fires
-what that comes to, the way an `evaluate` line does, and writes every step to
-the protocol under `𝕄(𝑛1.w):`. The line then names the object the firing
-answered, `Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·2 )`, and so does the markup,
-`<meta attr="w">𝑛·2·3</meta>`, with a meta of its own count. A reader follows
-the meta to the application that made the object. An argument whose morph or
-firing gets stuck, is cut or runs out of steps gets the firing stuck right
-there, as an operand does, and no `deferred` line is written.
-
-A `join` block, described below, defers nothing by itself. An entry that
-joins defers a side with a `defer` line of its own, reading the meta the side
-was morphed to, so a side that is such a copy comes to a fresh symbol rather
-than getting stuck inside the unknown. A side written as a path from `$` is
-morphed and taken as it comes, a copy over a bare symbol included.
-
-### Joining on a condition nobody decided
-
-A branching λ function answers neither of its branches. Which one the program
-takes is decided by a value nobody worked out, so handing one of them through
-would drop the branch point from the program altogether, and joining two
-different terms into one would make up a value no run of the program ever has.
-`join` is the fifth block: it names the condition and the two sides, and the
-entry answers the one term both sides join into, or gets stuck when they do
-not join.
-
-```yaml
-- λ: L_fork
-  dataize:
-    𝛿1: $.φ
-  join:
-    on: 𝛿1
-    left: $.left
-    right: $.right
-```
-
-`on` names the condition, a bytes meta an operand of `dataize` reading `$`
-bound or a path from `$`, described below, and `left` and `right` are paths
-from `$`, read
-against the formation being fired the way
-an operand is, or metas the `morph` block or an `evaluate`, `stay`, `rewrite`,
-`symbolize` or `defer` line bound, as described below. An entry
-with a `join` block has no `𝑛`, since the term it joins is what it answers
-with: an entry joins or it computes, never both. A block missing one of the
-three keys, holding another but `otherwise`, described below, or naming under
-`on` anything but such a meta or a path from `$` is refused when the file is
-read, and
-so is a side reading a meta inside a term, such as `𝑛1.x`, or naming a meta
-that none of `morph`, `evaluate`, `stay`, `rewrite`, `symbolize` and `defer`
-binds.
-
-A join morphs both of its sides first, each where it stands in the universe,
-under a block of its own, `𝕄(Φ.a🌵3):` for the left side and `𝕄(Φ.a🌵4):` for
-the right one. A side that is a meta was morphed already, by the `morph`
-block, so the join takes the term the meta is bound to as it is and morphs
-nothing again. When the two come to the same term, nothing depends on the
-condition: the join mints nothing and answers that term, and the line binding
-it is commented with both sides, `𝑛·2·5 := 𝑛·2·3  # 𝕄(ξ.left), 𝕄(ξ.right)`.
-When the two differ in their symbols alone, such as `Φ.number( φ ↦ 𝜎3:λ )` and
-`Φ.number( φ ↦ 𝜎4:λ )`, the join makes one term of them: every pair of symbols
-standing at the same place gets a fresh symbol, which a line of its own says
-is the left one where the condition holds and the right one where it does not:
-
-```text
-joined 𝜎5 := 𝛿1·2 ? 𝜎3 : 𝜎4
-```
-
-The condition is named by the meta its `dataize` operand bound, `𝛿1·2`,
-since the join reads the datum that line holds and runs no 𝔻 of its own. A
-pair met twice gets the same fresh symbol both times. Nothing is bound to the
-condition, which stays the unknown it was.
-
-Two sides that differ in anything else, a datum, a λ name or the shape of a
-term, do not join, and neither do a side holding a datum and a side holding a
-symbol, unless a `symbolize` line turned that datum into a symbol first, as
-described below. Such a firing closes with a line naming the two sides it
-could not join, the left one first:
-
-```text
-diverged 𝑛·2·3 vs 𝑛·2·5  # they differ at .x, and the join names no otherwise
-```
-
-A side is named by the line that bound it: the line its morph wrote, or the
-line of `morph`, `evaluate`, `stay`, `rewrite`, `symbolize` or `defer` whose
-meta it reads, such as `𝑛1·1`. A side that is a bare symbol is
-written as that symbol, and a side no line named, such as a datum its morph
-left as it was, as the term it is. Past
-that line the firing gets stuck the way a λ function no entry answers does:
-`--partial` parks the site the entry was fired at, and without it the command
-fails with `No entry of --symbolic answers the λ function 'L_fork'`. A side
-whose morph gets stuck or is cut gets the firing stuck at once, the way an
-operand of `morph` does.
-
-The comment of the line tells where the two sides differ and why the join
-could not make one formation of them, so a reader knows what to change in
-the file without rebuilding both sides by hand. The place is a path of
-attributes, such as `.x` or `.φ.Δ`. It walks down both sides through the
-formations they share and ends at the first attribute they bind differently,
-or that only one of them binds. It stops at an application or a dispatch, and
-the comment leaves it out when the two sides differ as a whole, such as a
-formation and a dispatch. A ρ counts like any other attribute, so the comment
-may name a `.ρ` that `--hide-rho` hides from the terms. The reason is one of
-three: the join names no `otherwise`, described below, a side is no
-formation, as in `the right side is no formation`, or a side has a Δ or a λ,
-as in `the left side has λ`.
-
-Two formations of different shapes may still stand for one object, when
-whoever reads it asks it only for attributes both sides lead to alike. A
-block may name a λ function under a fourth key, `otherwise`, and then such a
-firing answers a formation binding every attribute of both sides to a copy
-of that function, which asks a copy of each side for the attribute:
-
-```yaml
-  join:
-    on: 𝛿1
-    left: 𝑛1
-    right: 𝑛2
-    otherwise: L_join
-```
-
-```text
-⟦
-  x ↦ ∅,
-  left🌵 ↦ 𝑛1( x ↦ ξ.x ),
-  right🌵 ↦ 𝑛2,
-  φ ↦ ⟦
-    ρ ↦ ∅, λ ⤍ L_join, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧,
-    left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ
-  ⟧,
-  if ↦ ⟦
-    ρ ↦ ∅, λ ⤍ L_join, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 𝛿1 ⟧,
-    left🌵 ↦ ρ.left🌵.if( left ↦ ξ.left, right ↦ ξ.right ),
-    right🌵 ↦ ρ.right🌵.if( left ↦ ξ.left, right ↦ ξ.right )
-  ⟧
-⟧
-```
-
-Here `𝑛1` and `𝑛2` stand for the two sides, `x` for a void of `𝑛1`, `left`
-and `right` for the voids of the formations both sides bind `if` to, and
-`𝛿1` for the bytes the condition came down to. When the condition is a
-symbol, such as `𝜎7`, `on🌵` holds that symbol, `⟦ λ ⤍ 𝜎7 ⟧`, and not the 42
-every symbol is dataized to, so every copy still names the unknown it decides
-by. So asking the formation for an attribute means the same as asking
-`on🌵.if( left🌵, right🌵 )` for it. Every name the formation adds carries
-the 🌵 mark, as the names phino makes up do, such as `a🌵14`, since no
-program can spell it: an attribute a side binds, such as the `left` and
-`right` voids of the `if` of a bool in EO, never clashes with them.
-
-The formation leaves void every attribute either side leaves void, once even
-when both sides leave it void, and holds each side under `left🌵` or
-`right🌵` applied to its own voids. An argument handed to the formation thus
-reaches the side through `ξ`, while the side keeps the ρ it binds, which its
-own attributes may read. Every copy of the function asks a side for an
-attribute through its ρ, which the formation fills. The ρ of either side gets
-no copy of the function, nor does an attribute whose name ends with 🌵, since
-a side may be a formation a join fabricated. An attribute only one side binds
-gets its copy too, since the other side may reach it through `φ`. A side
-holding a datum or a λ, such as a bare symbol `⟦ λ ⤍ 𝜎7 ⟧`, keeps what it
-stands for where no attribute reaches it, so no such formation means the same
-as the two sides, and the firing writes `diverged` as it does with no
-`otherwise` at all, its comment naming the side and what it has, as in
-`the left side has Δ`.
-
-A copy of the function leaves void every void of the formations the sides
-bind its attribute to, once even when both leave it void, and those of the
-left side first, so an argument handed over by position reaches the same void
-on both sides. It applies a side binding the attribute to a formation to the
-voids of that formation alone, since applying a formation to an attribute it
-lacks gives ⊥, and any other side to every void it leaves, since phino sees
-no void of a term it has not morphed. A method of the formation thus takes
-its arguments, as in `if( left ↦ …, right ↦ … )`, and hands them to both
-sides.
-
-The firing writes a line naming the formation by the two sides, in place of
-`diverged`, and spells the formation out in its comment:
-
-```text
-fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ left🌵 ↦ 𝑛1·1, …, φ ↦ ⟦ … ⟧, … ⟧
-```
-
-phino implements no `L_join`: the file defines it, as an entry that joins
-`$.left🌵` and `$.right🌵` on `$.on🌵`:
-
-```yaml
-- λ: L_join
-  join:
-    on: $.on🌵
-    left: $.left🌵
-    right: $.right🌵
-    otherwise: L_join
-```
-
-A path under `on` dataizes nothing: the firing reads the bytes or the symbol
-the attribute holds off the formation it fires, so the condition is not
-brought down a second time, and it gets stuck when the path leads to neither.
-Its `joined`
-line names the condition by the path, as `joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3`. A
-side that is no formation, or a formation holding a datum, which no attribute
-reaches, still gets the firing stuck.
-
-A side may raise. EO raises with an object, a copy of
-`⟦ message ↦ ∅, λ ⤍ L_throw ⟧`, whose λ function the file leaves out on
-purpose, so that an error of the program stays an error at runtime. Such a
-side is a term like any other, and it joins with no value the other side
-has, so the firing gets stuck and `--partial` parks it:
-
-```bash
-$ cat raise.phi
-⟦
-  bytes ↦ ⟦ φ ↦ ∅ ⟧,
-  number ↦ ⟦ φ ↦ ∅ ⟧,
-  error ↦ ⟦ message ↦ ∅, λ ⤍ L_throw ⟧,
-  bool ↦ ⟦ if ↦ ∅ ⟧,
-  check ↦ ⟦ λ ⤍ L_check ⟧,
-  demo ↦ ⟦ a ↦ Φ.check.if( 7, Φ.error( "negative" ) ) ⟧
-⟧
-$ cat raise.yaml
-- λ: L_check
-  𝑛: Φ.bool( if ↦ ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧ )
-- λ: L_fork
-  dataize:
-    𝛿1: $.φ
-  join:
-    on: 𝛿1
-    left: $.then
-    right: $.else
-$ phino dataize --symbolic=raise.yaml --locator=Q.demo.a --partial \
-    --sweet --hide-rho raise.phi
-⟦ λ ⤍ L_fork, then ↦ 7.0, else ↦ Φ.error( "negative" ), φ ↦ 𝜎1:λ ⟧
-```
-
-The `then` side comes to the bytes of 7 and the `else` side to the copy of
-`error`, so the protocol ends in `diverged 𝑛·2·1 vs 𝑛·2·2`, commented with
-`they differ at .φ, and the join names no otherwise`, and the command prints
-the `if` it parked.
-Without `--partial` the command fails there, with
-`No entry of --symbolic answers the λ function 'L_fork'`.
-
-### Dropping the ρ of a dispatch
-
-There is a sixth block, `stay`, and it reduces nothing. Each line of it takes
-the term another meta of the entry is bound to and binds an expression meta of
-its own to that term with every `( ρ ↦ … )` dropped that is applied to a
-dispatch:
-
-```yaml
-- λ: L_fork
-  dataize:
-    𝛿1: $.φ
-  morph:
-    𝑛1: $.then
-    𝑛2: $.else
-  stay:
-    𝑛3: 𝑛1
-    𝑛4: 𝑛2
-  join:
-    on: 𝛿1
-    left: 𝑛3
-    right: 𝑛4
-```
-
-The right-hand side of a line names a meta bound by `morph` or by another line
-of the entry, and nothing else. Every position of the term is walked, the
-methods and the `ρ` of a formation among them, and `𝑒.𝜏( ρ ↦ 𝑒2 )` becomes
-`𝑒.𝜏`. So does a dispatch heading a chain of applications that bind no `ρ`:
-`𝑒.𝜏( φ ↦ 𝑒3 )( ρ ↦ 𝑒2 )` becomes `𝑒.𝜏( φ ↦ 𝑒3 )`. A `ρ` applied to anything
-else, such as a formation, stays.
-
-Dropping it changes no value. The `dot` rule answers a dispatch as
-`𝑛1( ρ ↦ ⟦…⟧ )`, and then `copy` fills a void `ρ` of the body, `stay` keeps a
-bound one and `skip` drops it where the body declares none. So once `𝑒.𝜏`
-comes to a formation, a later `( ρ ↦ 𝑒2 )` meets a `ρ` that is bound or not
-there, and `stay` or `skip` drops it. The block only drops it earlier, before
-the dispatch is reduced.
-
-This is how a join brings two numbers to one shape. In EO `bytes.as-number`
-reads its `data` as `ρ`, so a branch computed through it comes to
-`Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1 )( ρ ↦ ⟦ … ⟧ ) )`, with the copy hung on the
-bytes as their `ρ`, while a branch made of no object comes to
-`Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2 ) )`. The join compares the two as written,
-finds a shape apart, and gets stuck; after `stay` they differ in their
-symbols alone, and the join makes one term of them. The protocol writes each
-line of the block. A line that dropped a `ρ` is commented `stay(…)` with the
-meta it took, so a reader sees that the term changed and what changed it, while
-a line that dropped nothing is commented with the meta alone:
-
-```text
-𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
-𝑛4·1 := 𝑛2·1  # 𝑛2
-joined 𝜎4 := 𝛿1·1 ? 𝜎1 : 𝜎2
-```
-
-### Standing a symbol for a datum
-
-There is a seventh block, `symbolize`, and it reduces nothing either. Each line
-of it takes the term another meta of the entry is bound to and binds an
-expression meta of its own to that term with every datum it holds turned into
-a fresh symbol:
-
-```yaml
-- λ: L_fork
-  dataize:
-    𝛿1: $.φ
-  morph:
-    𝑛1: $.then
-    𝑛2: $.else
-  symbolize:
-    𝑛3: 𝑛1
-    𝑛4: 𝑛2
-  join:
-    on: 𝛿1
-    left: 𝑛3
-    right: 𝑛4
-```
-
-The right-hand side of a line names a meta bound by `morph` or by another line
-of the entry, and nothing else. The line walks the term wherever a value may
-sit: the `φ` of every formation, every binding of a formation holding a `λ`,
-since an atom reads them all, every argument of every application, named or
-positional, and the target of every dispatch. A `Δ ⤍ 𝑏` met there becomes
-`λ ⤍ 𝜎4`, a symbol minted fresh, the way a bare `𝜎` of an answer is. A datum
-off the `φ` chain counts too: the bool a `rewrite` line makes of a literal
-holds its datum inside the formation bound to `if`. The `ρ` and the methods
-of a formation holding no `λ` are left alone, since they hold the code of a
-library object and not its value. A copy of `number` keeps the constants of
-its methods, such as the `-1` its `neg` multiplies by, so both sides of a join
-hold the same constants there and join in one symbol, not in one per constant.
-
-This is how a join makes one term of a literal and a value some firing
-computed. In EO `x.gt( 0 ).if( 1, x )` has one side that is the literal `1`, a
-number whose bytes hold the datum `3F-F0-…`, and another side that is a number
-whose bytes hold a symbol. The two are numbers of one shape and differ in the
-value alone, yet a datum against a symbol is no pair of symbols, so the two do
-not join. After `symbolize` both sides hold a symbol where the value stands,
-and the join makes one term of them. The protocol writes every symbol the
-block minted with the datum it stands for, so a reader of the joined term can
-tell that `𝜎4` was `1` on the left side. A line that turned a datum into a
-symbol is commented `symbolize(…)` with the meta it took, while a line whose
-term held no datum is commented with the meta alone:
-
-```text
-symbolized 𝜎4 := 3F-F0-00-00-00-00-00-00  # 1.0
-𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # symbolize(𝑛1)
-𝑛4·1 := 𝑛2·1  # 𝑛2
-joined 𝜎5 := 𝛿1·1 ? 𝜎4 : 𝜎2
-```
-
-A line sees its own side alone, so a datum both sides share becomes two
-symbols and then one joined symbol, and the joined term loses that datum. A
-file that wants to keep it leaves the block out, and an entry without
-`symbolize` writes the same protocol it wrote before.
-
-The blocks chain, and an entry that joins reads as a pipeline, every step of
-it on its own line. A side may go through a `stay` line, then an `evaluate`
-line, then a `symbolize` line, then a `defer` line, so that a call 𝕄 left
-unfired is fired, a copy over a bare symbol is deferred, and two sides of one
-shape still join:
-
-```yaml
-- λ: L_fork
-  dataize:
-    𝛿1: $.φ
-  morph:
-    𝑛1: $.then
-    𝑛2: $.else
-  stay:
-    𝑛3: 𝑛1
-    𝑛4: 𝑛2
-  evaluate:
-    𝑛5: 𝑛3
-    𝑛6: 𝑛4
-  symbolize:
-    𝑛7: 𝑛5
-    𝑛8: 𝑛6
-  defer:
-    𝑛9: 𝑛7
-    𝑛10: 𝑛8
-  join:
-    on: 𝛿1
-    left: 𝑛9
-    right: 𝑛10
-```
-
-An `evaluate` line here works as it does in an entry that computes, except
-that it passes on a term that is no formation instead of getting stuck. In EO
-`bool.and` is `flag.if( FF-.eq( x ), false )`, so one side morphs down to the
-`eq` of bytes with its λ function unfired, which could never join with the
-bool on the other side. The line fires it, and the side comes to a bool too,
-while the other side is a bool already, a formation with no λ function, and
-its line leaves it as it is. A `defer` line here works as it does in an entry
-that computes too: it answers a copy over a bare symbol with a fresh symbol,
-writes the `deferred …` line sited at the meta it read, such as `# 𝕄(𝑛8.φ)`,
-and binds any other term as it stands.
-
-### Rewriting a term with rules
-
-There is an eighth block, `rewrite`, and it reduces nothing either. Each line of
-it takes the term another meta of the entry is bound to, named under `of`,
-applies the rules listed under `rules`, spelled with the `pattern`, `result`,
-`when`, `where` and meta variables a rule file uses, and binds an expression
-meta of its own to the outcome:
-
-```yaml
-- λ: L_fork
-  dataize:
-    𝛿1: $.c
-  morph:
-    𝑛1: $.a
-    𝑛2: $.b
-  rewrite:
-    𝑛3:
-      of: 𝑛1
-      rules: &bool
-        - name: true-literal
-          pattern: Φ.true
-          result: Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )
-        - name: false-literal
-          pattern: Φ.false
-          result: Φ.bool( if ↦ ⟦ Δ ⤍ 00- ⟧ )
-    𝑛4:
-      of: 𝑛2
-      rules: *bool
-  join:
-    on: 𝛿1
-    left: 𝑛3
-    right: 𝑛4
-```
-
-The meta under `of` is one bound by `morph` or by another line of the entry,
-and nothing else. A line reads no key but `of` and `rules`, and two lines may
-share their rules through a YAML anchor, as above. A rule is tried at every
-position of the term, the outermost first. The first rule whose pattern
-matches a position rewrites it, and a rewritten position is not walked into
-again, so a rule whose result carries its own pattern never loops. Nothing is
-normalized afterwards: a rewrite is a substitution the entry vouches for and
-not a reduction, exactly as an answer is. A rule writing a symbol such as `𝜎4`
-into its result, or reading a meta its pattern never binds, is refused when the
-file is read, since only a firing mints a symbol.
-
-This is how a join compares a literal with a bool a computation answered. In
-EO the literal `Φ.true` stands where the other side holds `Φ.bool( … )`, the
-same value in another shape, and the join gets stuck on the two as written.
-After `rewrite` both sides are bools. A line that changed its term is
-commented with the block and the meta it read, while a line that changed
-nothing writes the plain line of a meta bound to another:
-
-```text
-𝑛3·1 := ⟦ φ ↦ 𝜎2:λ, kq ↦ Φ.bool( if ↦ 01-:Δ ) ⟧  # rewrite(𝑛1)
-𝑛4·1 := 𝑛2·1  # 𝑛2
-joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
-```
-
-The markup writes both lines as a plain `<bound>`.
-
-### Morphing what a line made
-
-An operand of `morph` may name a meta another line binds instead of a path
-from `$`. It reduces the term that meta is bound to through 𝕄, the way an
-operand reading `$` is reduced, and binds a meta of its own to the normal
-form:
-
-```yaml
-- λ: L_fork
-  dataize:
-    𝛿1: $.c
-  morph:
-    𝑛1: $.a
-    𝑛2: $.b
-    𝑛4: 𝑛3
-  rewrite:
-    𝑛3:
-      of: 𝑛2
-      rules:
-        - name: unwrap
-          pattern: ⟦ φ ↦ 𝑒1 ⟧
-          result: 𝑒1
-  join:
-    on: 𝛿1
-    left: 𝑛1
-    right: 𝑛4
-```
-
-Such an operand is a line of the entry, so it runs once the meta it names is
-bound, as described below. It takes the term as the other line bound it and
-does not read it against the formation being fired. An operand reading a meta
-inside a term, such as `𝑛1.x`, is refused when the file is read, and so is
-one naming a meta nothing binds.
-
-This is how a join compares a side that `rewrite` made with a side in its
-normal form. Above, `$.b` comes down to `⟦ φ ↦ Φ.t ⟧`, and the rule `unwrap`
-takes out `Φ.t`, a path the join cannot compare with the object on the left.
-The morph of `𝑛3` brings the path down to the object it reads. In EO the same
-happens to the `Φ.bool( … )` a `rewrite` line writes in place of `Φ.false`.
-The protocol comments the line with the morph of the meta it read:
-
-```text
-𝑛3·1 := Φ.t  # rewrite(𝑛2)
-𝑛4·1 := 𝜎3:λ:φ  # 𝕄(𝑛3)
-joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
-```
-
-### Dataizing what a line made
-
-An operand of `dataize` may name a meta another block binds, the way an
-operand of `morph` may. It brings the term that meta is bound to down to data
-through 𝔻, the way an operand reading `$` is brought down, and binds a bytes
-meta of its own:
-
-```yaml
-- λ: L_entry
-  morph:
-    𝑛1: $.v.φ
-  dataize:
-    𝛿1: $.n
-    𝛿2: 𝑛1
-  𝑛: ⟦ φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
-```
-
-Such an operand is a line of the entry, so it runs once the meta it names is
-bound, as described below, and it takes the term as that meta holds it. An
-operand reading a meta inside a term, such as `𝑛1.x`, is refused when the file
-is read, and so is one naming a meta nothing binds. A line takes no part in
-what the entry is known by: only an operand reading `$` may be the `on` of a
-`join`, and only such operands stand in the `<minted>` element described
-below.
-
-This is how one entry gets both the object a body morphs into and the data
-that object comes down to. Above, `𝑛1` is what the `φ` of `v` morphs into,
-and `𝛿2` is the datum `𝑛1` holds. The protocol comments the line with the
-dataization of the meta it read:
-
-```text
-𝑛1·1 := 2A-:Δ  # 𝕄(ξ.v.φ)
-𝔻(Φ.a🌵2):
-  𝛿·1·1 := 2A-
-𝛿2·1 := 𝛿·1·1  # 𝔻(𝑛1)
-```
-
-### The order of the lines
-
-The lines of `dataize`, `morph`, `evaluate`, `defer`, `stay`, `rewrite` and
-`symbolize` run in the order of the metas they read, not in the order of their
-blocks. A line of `dataize` or `morph` is an operand naming a meta. A line runs
-once every meta it reads is bound, so this entry fires what `x` came to and
-then fires the answer, one more call, although the line doing so stands first:
-
-```yaml
-- λ: L_twice
-  morph:
-    𝑛1: $.x
-  evaluate:
-    𝑛3: 𝑛2
-    𝑛2: 𝑛1
-  𝑛: 𝑛3
-```
-
-The line binding `𝑛3` reads `𝑛2`, which the line under it binds, so that line
-runs first. The operands of `dataize` and `morph` reading `$` read no meta and
-always run before all the others, those of `dataize` first. Where no meta
-orders two lines, they run in the order the list above gives their blocks, so
-a line of `dataize` or `morph` runs right after the line binding the meta it
-names, and the lines of one
-block run in the order of their metas, `𝑛2` before `𝑛10`. A line reading a
-meta nothing binds is refused when the file is read, and so is a line that
-reads the meta it binds, directly or through other lines, since it could never
-run.
-
-### Symbols
-
-An entry answers, it never computes. The job of these functions is symbolic
-morphing: what `5.plus( 6 )` comes to is the arithmetic of the object model and
-not `phino`'s, so an entry answers a term carrying a symbol standing for a
-value nobody worked out, and the data its `dataize` operands came down to is
-not its to read. An answer mentioning a `𝛿` is refused where the file is read.
-
-`𝜎` is a meta of the calculus, beside `𝑛`, `𝛿` and `𝑓`, and it stands where
-a λ name stands. In a term, `𝜎1` is a concrete symbol: a λ function nothing
-answers, which is what makes the value the term carries unknown. Firing it is
-therefore the same question as firing a λ name the `--symbolic` file does not
-carry, and gets the same answer: 𝔼 stops there, the protocol records the site as
-`unanswered 𝜎1`, and `--partial` leaves the term where it stands. Dispatching
-an attribute off a symbol — `⟦ λ ⤍ 𝜎1 ⟧.plus( 5 )` — therefore taints its own
-binding and nothing else; what stands beside it still computes. In an answer, a
-bare `𝜎` asks for a fresh one, minted as the firing happens and numbered by the
-run, so no two unknowns are ever spelled alike. Minting starts after the symbols
-the program already carries, so a run over the 𝜑-program an earlier run wrote
-never spells a fresh symbol like one already standing there.
-
-Dataizing a symbol never gets stuck. It answers a fixed datum, 42
-(`40-45-00-00-00-00-00-00`), the same one for every symbol, so 𝔻 always
-answers, a `𝛿` always holds concrete data and no firing ever declines for the
-lack of it:
 
 ```bash
 $ cat sum.phi
@@ -836,26 +152,88 @@ $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho sum.phi
 40-45-00-00-00-00-00-00
 ```
 
-### The keys of the file
+Dataizing a symbol always gives the same bytes, the number 42, as above.
+A λ name that no entry matches stops the run with an error, unless
+`--partial` is given.
 
-Each `λ` is a regular expression, and it must match the whole λ name, so a
-plain name such as `L_number_plus` means that one function and nothing else,
-while `L_number_.*` stands for every function of `number`. The keys are unique:
-nothing tells two entries under one key apart, so a second entry under a key is
-unreachable and the file is refused rather than merely redundant.
+Inside an entry, `$` is the formation being fired and `Φ` is the universe.
+A meta is a named placeholder: `𝛿1`, `𝛿2` and so on hold bytes, while `𝑛1`,
+`𝑛2` and so on hold terms.
+An entry may hold only the keys below, and any other key refuses the whole
+file:
 
-A λ name no key matches has no λ function at all, so 𝔼 gets stuck on it.
-Without `--symbolic` there is no entry at all and every λ function gets stuck:
+* `λ` is a regular expression that matches the whole λ name.
+  No two entries may match the same name.
+* `dataize` binds a bytes meta to the data a term comes down to through
+  dataization, 𝔻.
+  The term is a path from `$`, as in `𝛿1: $.ρ`, or a meta another line binds,
+  as in `𝛿2: 𝑛1`.
+* `morph` binds a term meta to the normal form a term reaches through
+  morphing, 𝕄.
+  The term is a path from `$`, as in `𝑛1: $.x`, or a meta another line binds,
+  as in `𝑛4: 𝑛3`.
+* `evaluate` binds a term meta to the answer of firing the formation another
+  meta holds, through evaluation, 𝔼, as in `𝑛2: 𝑛1`.
+* `defer` binds a term meta to a fresh symbol when another meta holds a copy
+  of an object whose argument is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and to that
+  term as it is otherwise.
+* `stay` binds a term meta to the term another meta holds, with every
+  `( ρ ↦ … )` applied to a dispatch dropped.
+* `symbolize` binds a term meta to the term another meta holds, with every
+  datum turned into a fresh symbol.
+* `rewrite` binds a term meta to the term the meta under `of` holds, with the
+  rules under `rules` applied and nothing normalized afterwards.
+  The rules are written as in a [rule file](#rule-structure).
+* `𝑛` is the term the entry answers with.
+  A bare `𝜎` in it stands for a fresh symbol, and no `𝛿` may appear in it.
+* `join` answers with one term made of two sides, in place of `𝑛`.
+  It holds `on`, the condition, which is a bytes meta of `dataize` or a path
+  from `$`.
+  It holds `left` and `right`, the two sides, each a path from `$` or a term
+  meta.
+  It may hold `otherwise`, a λ name that joins two formations of different
+  shapes one attribute at a time, and the file must answer that name too.
 
-```bash
-$ phino dataize --sweet --hide-rho sum.phi
-[ERROR]: No entry of --symbolic answers the λ function 'L_number_plus'
+An entry holds either `𝑛` or `join`, never both.
+The lines of all blocks run in the order of the metas they read, not in the
+order of the blocks.
+A line that reads a meta nothing binds refuses the file.
+These two entries use every key:
+
+```yaml
+- λ: L_fork
+  dataize:
+    𝛿1: $.φ
+  morph:
+    𝑛1: $.then
+    𝑛2: $.else
+  stay:
+    𝑛3: 𝑛1
+  evaluate:
+    𝑛4: 𝑛3
+  rewrite:
+    𝑛5:
+      of: 𝑛4
+      rules:
+        - name: true-literal
+          pattern: Φ.true
+          result: Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )
+  symbolize:
+    𝑛6: 𝑛5
+  defer:
+    𝑛7: 𝑛6
+  join:
+    on: 𝛿1
+    left: 𝑛7
+    right: 𝑛2
+    otherwise: L_join
+- λ: L_join
+  join:
+    on: $.on🌵
+    left: $.left🌵
+    right: $.right🌵
+    otherwise: L_join
 ```
-
-The file is read before anything is parsed or reduced, so a key that is no
-regular expression, an operand that is no meta of the kind its block binds, or
-an answer the calculus cannot read fails the run up front rather than half-way
-through a derivation.
 
 ### Recording what fired
 
@@ -1101,8 +479,8 @@ Three more lines say why a firing gave no answer.
 function it got stuck on, which is seldom the one `unanswered …` names: that
 one is written where it was asked for, and this one closes every firing the
 failure passed on its way out. A join that could not join closes its own
-firing with `diverged …` instead, as described above, and the firings around
-it with `stuck`.
+firing with `diverged …` instead, naming the two sides it could not join, and
+the firings around it with `stuck`.
 `stall L_outer` stands under a firing that `--acyclic=plausible` answered
 with the stall an earlier firing of the same formation kept, so a told stall
 never reads as a fresh firing that wrote nothing.
@@ -2607,10 +1985,11 @@ This is the list of supported meta variables:
 * `!d` || `𝛿` - bytes in meta delta binding
 * `!F` || `𝑓` - function name in meta lambda binding
 * `!S` || `𝜎` - a symbol standing where a λ name stands (see
-                [Symbols](#symbols)). It is spelled the way a meta variable is
-                spelled but is a name and no capture: `𝜎1` is one concrete
-                symbol, which no substitution ever binds, and a bare `𝜎` in the
-                answer of a `--symbolic` entry asks for a fresh one
+                [Symbolic λ functions](#symbolic-λ-functions)). It is spelled
+                the way a meta variable is spelled but is a name and no
+                capture: `𝜎1` is one concrete symbol, which no substitution
+                ever binds, and a bare `𝜎` in the answer of a `--symbolic`
+                entry asks for a fresh one
 
 A meta variable carries a suffix, like `!B1` or `𝜏2`, to name what it
 captured, so that the `result`, `when`, `where` and `having` of a rule can
