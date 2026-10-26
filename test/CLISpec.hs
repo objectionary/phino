@@ -1367,6 +1367,14 @@ spec = do
           , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"
           ]
 
+    it "leaves no step files of the rewritings --breakpoint dropped" $
+      withTempDirectory "phino-steps-breakpoint" $ \dir ->
+        withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $ do
+          testCLISucceeded
+            ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--steps-dir=" ++ dir]
+            ["⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"]
+          listDirectory dir `shouldReturn` []
+
     it "finishes under --depth-sensitive when the only match left would not change the term" $
       withTempFileContent "phino-fixpoint.yaml" "name: fix\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ x -> Q, !B1 ]]'\n" $ \fix ->
         withStdin "[[ x -> $ ]]" $
@@ -2819,6 +2827,14 @@ spec = do
       it "cannot be used together with --locator" $
         withStdin universe $
           testCLIFailed ["dataize", "--inside=Q.@", "--locator=Q.@"] ["--inside and --locator cannot be used together"]
+
+      it "accepts --locator=Φ with --inside, since Φ and Q both name the root" $
+        withStdin universe $
+          testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x", "--locator=Φ"] ["2A-"]
+
+      it "accepts --locator=Φ with morph --inside, since Φ and Q both name the root" $
+        withStdin universe $
+          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--locator=Φ", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6, λ ⤍ L_number_plus ⟧"]
 
       it "fails when the input expression is not a formation" $
         withStdin "Q.x" $

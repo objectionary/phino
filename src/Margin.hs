@@ -34,7 +34,7 @@ instance WithMargin EXPRESSION where
      in if lengthOf single + extra <= margin then single else ex'
   withMargin' _ num@EX_NUMBER{} = num
   withMargin' _ str@EX_STRING{} = str
-  withMargin' cfg EX_DISPATCH{..} = EX_DISPATCH (withMargin' cfg expr) space attr
+  withMargin' (extra, margin) EX_DISPATCH{..} = EX_DISPATCH (withMargin' (extra, margin - lengthOf attr - 1) expr) space attr
   withMargin' cfg EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (withMargin' cfg expr)
   withMargin' _ EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (toSingleLine expr)
   withMargin' cfg@(extra, margin) ex@EX_SINGLE{pair = PA_TAU{..}, ..} =
@@ -50,7 +50,7 @@ instance WithMargin EXPRESSION where
         singleArg = toSingleLine arg'
      in if
           | lengthOf single + extra <= margin -> single
-          | lengthOf singleMain + extra <= margin -> EX_APPLICATION singleMain space EOL tab arg' EOL tab' indent
+          | lengthOf singleMain + extra + 1 <= margin -> EX_APPLICATION singleMain space EOL tab arg' EOL tab' indent
           | lengthOf singleArg + extra' <= margin -> EX_APPLICATION main space NO_EOL TAB' singleArg NO_EOL TAB' indent
           | otherwise -> EX_APPLICATION main space EOL tab arg' EOL tab' indent
   withMargin' _ ex = ex
@@ -73,12 +73,20 @@ instance WithMargin APP_ARGS where
   withMargin' _ args = args
 
 instance WithMargin BINDING where
-  withMargin' cfg BI_PAIR{..} = BI_PAIR (withMargin' cfg pair) (withMargin' cfg bindings) tab
+  withMargin' cfg BI_PAIR{..} = BI_PAIR (withMargin' (commas cfg) pair) (withMargin' cfg bindings) tab
+    where
+      commas (extra, margin) = case bindings of
+        BDS_EMPTY{} -> (extra, margin)
+        _ -> (extra + 1, margin)
   withMargin' cfg BI_META{..} = BI_META meta (withMargin' cfg bindings) tab
   withMargin' _ bd = bd
 
 instance WithMargin BINDINGS where
-  withMargin' cfg BDS_PAIR{..} = BDS_PAIR EOL tab (withMargin' cfg pair) (withMargin' cfg bindings)
+  withMargin' cfg BDS_PAIR{..} = BDS_PAIR EOL tab (withMargin' (commas cfg) pair) (withMargin' cfg bindings)
+    where
+      commas (extra, margin) = case bindings of
+        BDS_EMPTY{} -> (extra, margin)
+        _ -> (extra + 1, margin)
   withMargin' cfg BDS_META{..} = BDS_META EOL tab meta (withMargin' cfg bindings)
   withMargin' _ bds = bds
 
