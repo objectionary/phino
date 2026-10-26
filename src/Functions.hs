@@ -66,11 +66,23 @@ argToString :: Y.ExtraArgument -> Subst -> IO String
 argToString arg subst = argToBytes arg subst <&> btsToUnescapedStr
 
 argToNumber :: Y.ExtraArgument -> Subst -> IO Double
-argToNumber arg subst = do
-  bts <- argToBytes arg subst
-  case btsSize bts of
-    8 -> pure (btsToNum bts)
-    _ -> throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
+argToNumber (Y.ArgBytes bytes) subst = buildBytesThrows bytes subst >>= number
+argToNumber arg@(Y.ArgExpression expr) subst = do
+  expr' <- buildExpressionThrows expr subst
+  case expr' of
+    DataNumber _ -> dataized
+    DataObject "bytes" _ -> dataized
+    _ -> throwIO (userError "Only numbers and bytes are supported by 'sum' function")
+  where
+    dataized = do
+      TeBytes bts <- _dataize [arg] subst
+      number bts
+argToNumber arg _ = throwIO (userError (printf "Can't extract a number from given argument: %s" (printExtraArg arg)))
+
+number :: Bytes -> IO Double
+number bts = case btsSize bts of
+  8 -> pure (btsToNum bts)
+  _ -> throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
 
 _contextualize :: BuildTermMethod
 _contextualize = contextualizing contextualize

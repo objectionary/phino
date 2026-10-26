@@ -10,7 +10,7 @@
 module RewriterSpec where
 
 import AST (Argument (ArTau), Attribute (AtLabel, AtRho), Binding (BiMeta, BiTau, BiVoid), Expression (ExApplication, ExDispatch, ExFormation, ExRoot, ExTermination, ExXi))
-import Control.Exception (SomeException)
+import Control.Exception (IOException, SomeException, throw)
 import Control.Monad (forM_, unless)
 import Data.Aeson
 import Data.Char (isSpace)
@@ -114,6 +114,12 @@ spec = do
         , (5, 1, True)
         , Right (\(rewrittens, _) -> fst (NE.last rewrittens) == ExFormation [BiTau (AtLabel "t") ExTermination])
         )
+      ,
+        ( "does not exceed without --depth-sensitive when rewriting finishes in exactly --max-cycles cycles"
+        , "⟦ t ↦ ⊥.a ⟧"
+        , (5, 1, False)
+        , Right (\(_, exceeded) -> not exceeded)
+        )
       ]
       ( \(desc, input', (maxDepth, maxCycles, depthSensitive), expected) -> it desc $ do
           expr <- parseExpressionThrows input'
@@ -124,6 +130,30 @@ spec = do
               result <- action
               result `shouldSatisfy` predicate
       )
+
+  describe "--max-cycles at the boundary, with rules that keep applying" $ do
+    let steps =
+          [ direct "te" False (\_ expr -> [ExXi | ExTermination <- [expr]])
+          , direct "ex" False (\_ expr -> [ExRoot | ExXi <- [expr]])
+          , direct "rt" False (\_ expr -> [ExTermination | ExRoot <- [expr]])
+          ]
+        context depthSensitive = RewriteContext ExRoot 5 1 depthSensitive Nothing (building linked) (_normal linked) (every steps) MtDisabled Nothing dontSaveStep dontSaveMade
+    it "exceeds without --depth-sensitive when a rule still applies at --max-cycles" $ do
+      (_, exceeded) <- rewrite ExXi steps (context False)
+      exceeded `shouldBe` True
+    it "throws with --depth-sensitive when a rule still applies at --max-cycles" $
+      rewrite ExXi steps (context True)
+        `shouldThrow` (\exc -> "--max-cycles=1" `isInfixOf` show (exc :: SomeException))
+
+  describe "a rule that raises while applicable is probed at the boundary" $ do
+    let steps = [Step "boom" (\_ _ -> throw (userError "boom"))]
+        context depthSensitive = RewriteContext ExRoot 5 0 depthSensitive Nothing (building linked) (_normal linked) (every steps) MtDisabled Nothing dontSaveStep dontSaveMade
+    it "treats the raise as not applicable without --depth-sensitive" $ do
+      (_, exceeded) <- rewrite ExXi steps (context False)
+      exceeded `shouldBe` False
+    it "propagates the raise with --depth-sensitive" $
+      rewrite ExXi steps (context True)
+        `shouldThrow` (\exc -> "boom" `isInfixOf` show (exc :: IOException))
 
   describe "--must once --max-cycles stops the run" $
     forM_

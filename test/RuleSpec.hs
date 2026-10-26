@@ -63,6 +63,36 @@ spec = do
                       ++ printSubsts matched
                 )
       )
+  describe "an 'or' condition does not depend on the order of its items" $ do
+    let ctx = RuleContext buildTerm Nothing (_normal linked)
+        rule :: Yaml.Condition -> Yaml.Rule
+        rule cond =
+          Yaml.Rule
+            "or-order"
+            Nothing
+            Nothing
+            (ExFormation [BiTau (AtLabel "s") (ExMeta "e1")])
+            (ExFormation [BiTau (AtLabel "ok") (ExFormation [])])
+            (Just cond)
+            Nothing
+            Nothing
+        term = ExFormation [BiTau (AtLabel "s") (ExFormation [BiVoid (AtLabel "q")])]
+        inner = ExFormation [BiVoid (AtLabel "q")]
+        raising = Yaml.Matches "x" (ExMeta "e1")
+        met = Yaml.Eq (Yaml.CmpNum (Yaml.Literal 1)) (Yaml.CmpNum (Yaml.Literal 1))
+        unmatched = Yaml.Eq (Yaml.CmpNum (Yaml.Literal 1)) (Yaml.CmpNum (Yaml.Literal 2))
+        buildE1 cond = mapM (buildExpressionThrows (ExMeta "e1")) =<< matchExpressionWithRule term (rule cond) ctx
+    it "keeps a later item met when an earlier one raises" $
+      buildE1 (Yaml.Or [raising, met]) `shouldReturn` [inner]
+    it "keeps an earlier item met when a later one raises" $
+      buildE1 (Yaml.Or [met, raising]) `shouldReturn` [inner]
+    it "keeps a last item met after a middle one raises" $
+      buildE1 (Yaml.Or [unmatched, raising, met]) `shouldReturn` [inner]
+    it "stays not met when no item is met" $
+      buildE1 (Yaml.Or [raising, unmatched]) `shouldReturn` []
+    it "stays not met under 'not' when an item raises" $
+      buildE1 (Yaml.Not (Yaml.Or [raising, unmatched])) `shouldReturn` []
+
   describe "isNF determines normal form" $ do
     let ctx = RuleContext buildTerm Nothing (_normal linked)
     forM_

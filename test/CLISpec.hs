@@ -1024,6 +1024,12 @@ spec = do
               ]
           ]
 
+    it "ends the last step with a period when --max-cycles lands on the normal form" $
+      withStdin "⟦ a ↦ ⟦ x ↦ ∅ ⟧( x ↦ ⟦⟧ ).x ⟧" $
+        testCLISucceeded
+          ["rewrite", "--normalize", "--max-cycles=1", "--sequence", "--output=latex"]
+          ["  \\phiNormalize [[ |a| -> [[]] ]]{.}"]
+
     it "focuses expression in phi without sequence" $
       withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
         testCLISucceeded
@@ -2713,6 +2719,16 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
 
+    it "finishes exactly on --max-cycles without reporting the limit" $
+      withStdin "⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
+        testCLISucceeded ["dataize", "--max-cycles=1"] ["01-"]
+
+    it "reports --max-cycles exceeded when a rule still applies at the limit" $
+      withStdin "[[ @ -> [[ x -> [[ D> 00- ]] ]].x ]]" $
+        testCLIFailed
+          ["dataize", "--max-cycles=1"]
+          ["[ERROR]: Normalization did not finish before reaching the limit of cycles: --max-cycles=1"]
+
   describe "morph" $ do
     let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
     it "prints help" $
@@ -3433,6 +3449,24 @@ spec = do
       testCLISucceeded
         ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),1)", resource "foo.phi"]
         ["B1 >> ⟦ foo ↦ Φ.org.eolang.x ⟧"]
+
+    it "keeps an 'or' met when a raising item comes first" $
+      withStdin "[[ s -> [[ q -> ? ]] ]]" $
+        testCLISucceeded
+          ["match", "--flat", "--pattern=[[ s -> !e1 ]]", "--when=or(matches(\"x\", !e1), eq(1,1))"]
+          ["e1 >> ⟦ q ↦ ∅ ⟧"]
+
+    it "keeps an 'or' met when a raising item comes last" $
+      withStdin "[[ s -> [[ q -> ? ]] ]]" $
+        testCLISucceeded
+          ["match", "--flat", "--pattern=[[ s -> !e1 ]]", "--when=or(eq(1,1), matches(\"x\", !e1))"]
+          ["e1 >> ⟦ q ↦ ∅ ⟧"]
+
+    it "logs a raising 'or' item as not met" $
+      withStdin "[[ s -> [[ q -> ? ]] ]]" $
+        testCLISucceeded
+          ["match", "--log-level=debug", "--pattern=[[ s -> !e1 ]]", "--when=or(matches(\"x\", !e1), eq(1,1))"]
+          ["raised and was treated as not met"]
 
     it "rejects an anonymous meta in --when" $
       withStdin "[[ x -> Q.y ]]" $

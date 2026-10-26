@@ -274,6 +274,12 @@ spec = describe "Functions" $ do
         , [ArgExpression (DataNumber (BtMany ["68", "65", "6C", "6C", "6F"]))]
         , "Expected 8 bytes for a number, got 5"
         )
+      ,
+        ( "sum fails on a string even if it is 8 bytes long"
+        , "sum"
+        , [ArgExpression (DataString (strToBts "abcdefgh"))]
+        , "Only numbers and bytes are supported by 'sum' function"
+        )
       , ("sum fails on an empty argument list", "sum", [], "sum() requires at least 1 argument")
       ,
         ( "an unsupported function name fails with a descriptive message"
