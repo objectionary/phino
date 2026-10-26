@@ -6,5 +6,5 @@ expression: |
   [[ x -> [[ y -> 42 ]] ]]
 result: |-
   \begin{phiquation}
-  |42| : |y| : |x|{.}
+  |42.0| : |y| : |x|{.}
   \end{phiquation}

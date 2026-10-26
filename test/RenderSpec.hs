@@ -219,7 +219,7 @@ spec = do
         , "ξ(\n  a ↦ ξ\n)"
         )
       , ("EX_STRING", EX_STRING "hi" (TAB 0) [], "\"hi\"")
-      , ("EX_NUMBER integer", EX_NUMBER (Left 42) (TAB 0) [], "42")
+      , ("EX_NUMBER whole", EX_NUMBER (Left 42) (TAB 0) [], "42.0")
       , ("EX_NUMBER double", EX_NUMBER (Right 3.5) (TAB 0) [], "3.5")
       , ("EX_NONFINITE nan", EX_NONFINITE Φ NfNan (TAB 0) [], "Φ.nan")
       , ("EX_NONFINITE pinf", EX_NONFINITE Φ NfPinf (TAB 0) [], "Φ.pinf")

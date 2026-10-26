@@ -459,7 +459,7 @@ $ cat raise.yaml
     right: $.else
 $ phino dataize --symbolic=raise.yaml --locator=Q.demo.a --partial \
     --sweet --hide-rho raise.phi
-⟦ λ ⤍ L_fork, then ↦ 7, else ↦ Φ.error( "negative" ), φ ↦ 𝜎1:λ ⟧
+⟦ λ ⤍ L_fork, then ↦ 7.0, else ↦ Φ.error( "negative" ), φ ↦ 𝜎1:λ ⟧
 ```
 
 The `then` side comes to the bytes of 7 and the `else` side to the copy of
@@ -834,18 +834,18 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ):
   𝕄(Φ):
-    𝑛·0·1 := 5
-    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6 )
+    𝑛·0·1 := 5.0
+    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )
   𝔼(L_number_plus):
     𝔻(Φ.a🌵0):
       𝕄(Φ.a🌵0):
-        𝑛·1·1 := 5
+        𝑛·1·1 := 5.0
         𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
       𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
     𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
     𝔻(Φ.a🌵1):
       𝕄(Φ.a🌵1):
-        𝑛·1·3 := 6
+        𝑛·1·3 := 6.0
         𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
       𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0
     𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
@@ -923,7 +923,7 @@ and an object made outside every firing is counted under `𝑛·0`. From then on
 every line spells the object by that name rather than as the formation it is,
 and the application by the same name, since `copy` makes the same object of the
 same application wherever it stands: `𝑛·1·1` is the object `5` made,
-`𝑛·0·1.plus( x ↦ 6 )` is the `plus` of the first `5` applied to `6`, one line
+`𝑛·0·1.plus( x ↦ 6.0 )` is the `plus` of the first `5` applied to `6`, one line
 for one call, and `𝑛·1·7 := 𝑛·1·6` says the firing answered with the object 𝕄
 made of what the entry wrote. Such a line names its head and its argument that
 way, each on its own, and never the application as a whole, so a line spells out
@@ -999,18 +999,18 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ):
   𝕄(Φ):
-    𝑛·0·1 := 5
-    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6 )
+    𝑛·0·1 := 5.0
+    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )
     𝔼(L_number_plus):
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
-          𝑛·1·1 := 5
+          𝑛·1·1 := 5.0
           𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
         𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵1):
         𝕄(Φ.a🌵1):
-          𝑛·1·3 := 6
+          𝑛·1·3 := 6.0
           𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
         𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
@@ -1119,7 +1119,7 @@ $ cat fork.txt
   𝕄(Φ.demo.a):
     𝑛·0·1 := Φ.foo( x ↦ Φ.number( φ ↦ 𝜎1:λ ) )
     𝑛·0·2 := Φ.number( φ ↦ 𝜎1:λ )
-    𝑛·0·3 := 𝑛·0·2.gt( x ↦ 0 )
+    𝑛·0·3 := 𝑛·0·2.gt( x ↦ 0.0 )
     𝔼(L_gt):
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
@@ -1127,7 +1127,7 @@ $ cat fork.txt
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵1):
         𝕄(Φ.a🌵1):
-          𝑛·1·2 := 0
+          𝑛·1·2 := 0.0
           𝑛·1·3 := Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ )
         𝛿·1·1 := 00-00-00-00-00-00-00-00  # 0.0
       𝛿2·1 := 𝛿·1·1  # 𝔻(ξ.x)
@@ -1135,13 +1135,13 @@ $ cat fork.txt
       𝕄(𝑛·1·4):
         𝑛·1·5 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )
       𝑛·1·6 := 𝑛·1·5  # 𝕄(𝑛·1·4)
-    𝑛·0·4 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛·1·1.plus( 1 ).plus( 𝑛·1·1 ) )
-    𝑛·0·5 := 𝑛·0·4( else ↦ 𝑛·1·1.plus( 2 ).plus( 𝑛·1·1 ) )
+    𝑛·0·4 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛·1·1.plus( 1.0 ).plus( 𝑛·1·1 ) )
+    𝑛·0·5 := 𝑛·0·4( else ↦ 𝑛·1·1.plus( 2.0 ).plus( 𝑛·1·1 ) )
     𝔼(L_fork):
       𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
       𝕄(Φ.a🌵3):
         𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )
-        𝑛·2·2 := 𝑛·2·1.plus( x ↦ 1 )
+        𝑛·2·2 := 𝑛·2·1.plus( x ↦ 1.0 )
         𝔼(L_plus):
           𝔻(Φ.a🌵4):
             𝕄(Φ.a🌵4):
@@ -1149,7 +1149,7 @@ $ cat fork.txt
           𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
           𝔻(Φ.a🌵5):
             𝕄(Φ.a🌵5):
-              𝑛·3·2 := 1
+              𝑛·3·2 := 1.0
               𝑛·3·3 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
             𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
           𝛿2·3 := 𝛿·3·1  # 𝔻(ξ.x)
@@ -1160,7 +1160,7 @@ $ cat fork.txt
         𝑛·2·3 := 𝑛·3·5.plus( x ↦ 𝑛·3·1 )
       𝕄(Φ.a🌵6):
         𝑛·2·4 := Φ.number( φ ↦ 𝜎1:λ )
-        𝑛·2·5 := 𝑛·2·4.plus( x ↦ 2 )
+        𝑛·2·5 := 𝑛·2·4.plus( x ↦ 2.0 )
         𝔼(L_plus):
           𝔻(Φ.a🌵7):
             𝕄(Φ.a🌵7):
@@ -1168,7 +1168,7 @@ $ cat fork.txt
           𝛿1·4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
           𝔻(Φ.a🌵8):
             𝕄(Φ.a🌵8):
-              𝑛·4·2 := 2
+              𝑛·4·2 := 2.0
               𝑛·4·3 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
             𝛿·4·1 := 40-00-00-00-00-00-00-00  # 2.0
           𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)
@@ -1192,7 +1192,7 @@ $ cat fork.txt
       𝕄(𝑛·5·3):
         𝑛·5·4 := Φ.number( φ ↦ 𝜎6:λ )
       𝑛·5·5 := 𝑛·5·4  # 𝕄(𝑛·5·3)
-    𝑛·0·6 := 𝑛·5·4.plus( x ↦ 5 )
+    𝑛·0·6 := 𝑛·5·4.plus( x ↦ 5.0 )
   𝔼(L_plus):
     𝔻(Φ.a🌵11):
       𝕄(Φ.a🌵11):
@@ -1200,7 +1200,7 @@ $ cat fork.txt
     𝛿1·6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
     𝔻(Φ.a🌵12):
       𝕄(Φ.a🌵12):
-        𝑛·6·2 := 5
+        𝑛·6·2 := 5.0
         𝑛·6·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
       𝛿·6·1 := 40-14-00-00-00-00-00-00  # 5.0
     𝛿2·6 := 𝛿·6·1  # 𝔻(ξ.x)
@@ -1225,7 +1225,7 @@ made stands on a line of its own. The `plus` both branches end in reads the
 joined symbol as `𝔻(𝜎5:λ)`, and the `plus( 5 )` after it reads `𝔻(𝜎6:λ)`.
 
 Two branches that differ in more than their symbols do not join. Had `else`
-been `ξ.x.plus( 2 )`, its morph would come to `𝑛·2·4.plus( x ↦ 2 )`, holding
+been `ξ.x.plus( 2 )`, its morph would come to `𝑛·2·4.plus( x ↦ 2.0 )`, holding
 a datum where `then` holds a symbol, and the firing of `L_fork` would end in
 `diverged 𝑛·2·3 vs 𝑛·2·5`, naming the two branches by the lines their morphs
 wrote, since one term for both would make `foo` read as a program that
@@ -1620,18 +1620,18 @@ $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
 $ cat atoms.txt
 𝔻(Φ):
   𝕄(Φ):
-    𝑛·0·1 := 2
-    𝑛·0·2 := 𝑛·0·1.times( x ↦ 3 )
+    𝑛·0·1 := 2.0
+    𝑛·0·2 := 𝑛·0·1.times( x ↦ 3.0 )
     𝔼(L_number_times):
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
-          𝑛·1·1 := 2
+          𝑛·1·1 := 2.0
           𝑛·1·2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
         𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵1):
         𝕄(Φ.a🌵1):
-          𝑛·1·3 := 3
+          𝑛·1·3 := 3.0
           𝑛·1·4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )
         𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
@@ -1639,7 +1639,7 @@ $ cat atoms.txt
       𝕄(𝑛·1·5):
         𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )
       𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
-    𝑛·0·3 := 𝑛·1·6.plus( x ↦ 4 )
+    𝑛·0·3 := 𝑛·1·6.plus( x ↦ 4.0 )
     𝔼(L_number_plus):
       𝔻(Φ.a🌵2):
         𝕄(Φ.a🌵2):
@@ -1647,7 +1647,7 @@ $ cat atoms.txt
       𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵3):
         𝕄(Φ.a🌵3):
-          𝑛·2·2 := 4
+          𝑛·2·2 := 4.0
           𝑛·2·3 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )
         𝛿·2·1 := 40-10-00-00-00-00-00-00  # 4.0
       𝛿2·2 := 𝛿·2·1  # 𝔻(ξ.x)
@@ -1744,7 +1744,7 @@ $ cat two.phi
 $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho two.phi
 40-45-00-00-00-00-00-00
 $ phino morph --symbolic=atoms.yaml --locator=Q.φ --sweet --hide-rho two.phi
-⟦ x ↦ 7, λ ⤍ L_number_plus ⟧
+⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧
 ```
 
 The inner `5.plus( 6 )` fires, because `.plus` is dispatched on its result,

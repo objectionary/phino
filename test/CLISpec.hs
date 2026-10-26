@@ -225,13 +225,13 @@ spec = do
         ( "keeps sweet numeric literals intact"
         , "[[ a -> 42 ]]"
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
-        , ["42:a"]
+        , ["42.0:a"]
         )
       ,
         ( "keeps the one-binding sugar after inline voids"
         , "[[ x(y) -> [[ a -> 42, ^ -> ? ]] ]]"
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
-        , ["⟦ x(y) ↦ 42:a ⟧"]
+        , ["⟦ x(y) ↦ 42.0:a ⟧"]
         )
       ,
         ( "prints a lone void as the term without the rho would be printed"
@@ -262,11 +262,11 @@ spec = do
 
   it "keeps a data literal sugared when it is applied to more arguments" $
     withStdin "⟦ i ↦ 42(z ↦ ξ.f), s ↦ \"Hello\"(z ↦ ξ.f) ⟧" $
-      testCLISucceeded ["rewrite", "--sweet", "--flat"] ["⟦ i ↦ 42( z ↦ f ), s ↦ \"Hello\"( z ↦ f ) ⟧"]
+      testCLISucceeded ["rewrite", "--sweet", "--flat"] ["⟦ i ↦ 42.0( z ↦ f ), s ↦ \"Hello\"( z ↦ f ) ⟧"]
 
   it "prints the one-binding sugar after inline voids with --sweet" $
     withStdin "[[ x(y) -> [[ a -> 42 ]] ]]" $
-      testCLISucceeded ["rewrite", "--sweet"] ["⟦ x(y) ↦ 42:a ⟧"]
+      testCLISucceeded ["rewrite", "--sweet"] ["⟦ x(y) ↦ 42.0:a ⟧"]
 
   it "prints debug info with --log-level=DEBUG" $
     withStdin "[[]]" $
@@ -497,7 +497,7 @@ spec = do
       withStdin "[[ x -> 5 ]]" $
         testCLISucceeded
           ["rewrite", "--seed=42", "--sweet"]
-          ["5:x"]
+          ["5.0:x"]
 
     it "defaults --seed to 0 in help" $
       testCLISucceeded
@@ -670,7 +670,7 @@ spec = do
       withStdin "[[ x -> 5]]" $
         testCLISucceeded
           ["rewrite", "--sweet"]
-          ["5:x"]
+          ["5.0:x"]
 
     it "rewrites as XMIR" $
       withStdin "[[ x -> Q.y ]]" $
@@ -716,11 +716,11 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "[["
-              , "  |x\\char95{}o| -> Q . |z| ( |y| -> |5| ),"
+              , "  |x\\char95{}o| -> Q . |z| ( |y| -> |5.0| ),"
               , "  |q\\char36{}| -> T,"
               , "  |w| -> \\phiTerminal{\\xi},"
               , "  \\phiTerminal{\\rho} -> Q,"
-              , "  @ -> |1|,"
+              , "  @ -> |1.0|,"
               , "  |y| -> \"H\\char36{}\\char64{}\\char94{}M\","
               , "  L> |Fu\\char95{}nc|"
               , "]]{.}"
@@ -734,7 +734,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
           [ unlines
               [ "\\begin{phiquation*}"
-              , "|5| : |x|{.}"
+              , "|5.0| : |x|{.}"
               , "\\end{phiquation*}"
               ]
           ]
@@ -756,7 +756,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\phiExpression{foo} |5| : |x|{.}"
+              , "\\phiExpression{foo} |5.0| : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -767,7 +767,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=bad%tag"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\\phiExpression{bad\\char37{}tag} |5| : |x|{.}"
+              , "\\phiExpression{bad\\char37{}tag} |5.0| : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -778,7 +778,7 @@ spec = do
           ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
           [ unlines
               [ "\\begin{phiquation}\n\\label{foo}"
-              , "|5| : |x|{.}"
+              , "|5.0| : |x|{.}"
               , "\\end{phiquation}"
               ]
           ]
@@ -954,7 +954,7 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> \\phinoMeet{1}{ |42| : |t| } ]] ( |y| -> \\phinoAgain{1} ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "[[ |y| -> ?, |k| -> \\phinoMeet{1}{ |42.0| : |t| } ]] ( |y| -> \\phinoAgain{1} ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
               , "  \\phiNormalize [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
               , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
@@ -967,8 +967,8 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-popularity=70"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> |42| : |t| ]] ( |y| -> |42| : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ |y| -> |42| : |t|, |k| -> |42| : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+              , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
               , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
               ]
@@ -980,8 +980,8 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> |42| : |t| ]] ( |y| -> |42| : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ |y| -> |42| : |t|, |k| -> |42| : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+              , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
               , "  \\phiNormalize T : |ex|{.}"
               , "\\end{phiquation}"
               ]
@@ -993,8 +993,8 @@ spec = do
           ["rewrite", "--normalize", "--sequence", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
           [ unlines
               [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> |42| : |t| ]] ( |y| -> |42| : |t| ) : |x| . |i| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ |y| -> |42| : |t|, |k| -> |42| : |t| ]] : |x| . |i| \\phiNormalize[\\nameref{r:stop}]"
+              , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| \\phiNormalize[\\nameref{r:stop}]"
               , "  \\phiNormalize T{.}"
               , "\\end{phiquation}"
               ]
@@ -1035,8 +1035,8 @@ spec = do
         testCLISucceeded
           ["rewrite", "--normalize", "--sequence", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
           [ unlines
-              [ "⟦ y ↦ ∅, k ↦ 42:t ⟧( y ↦ 42:t ):x.i"
-              , "⟦ y ↦ 42:t, k ↦ 42:t ⟧:x.i"
+              [ "⟦ y ↦ ∅, k ↦ 42.0:t ⟧( y ↦ 42.0:t ):x.i"
+              , "⟦ y ↦ 42.0:t, k ↦ 42.0:t ⟧:x.i"
               , "⊥"
               ]
           ]
@@ -1216,13 +1216,13 @@ spec = do
       withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--hide=Q.org"]
-          ["42:x"]
+          ["42.0:x"]
 
     it "hides several FQNs" $
       withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.yegor256"]
-          ["⟦ org ↦ ⟦⟧, x ↦ 42 ⟧"]
+          ["⟦ org ↦ ⟦⟧, x ↦ 42.0 ⟧"]
 
     it "shows and hides" $
       withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]" $
@@ -1234,13 +1234,13 @@ spec = do
       withStdin "[[ org -> [[ eolang -> Q.x ]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--show=Q.x", "--hide=Q.org.eolang"]
-          ["42:x"]
+          ["42.0:x"]
 
     it "hides an object inside an earlier --hide locator" $
       withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]] ]], x -> 42 ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.eolang.number"]
-          ["⟦ org ↦ ⟦⟧, x ↦ 42 ⟧"]
+          ["⟦ org ↦ ⟦⟧, x ↦ 42.0 ⟧"]
 
     it "fails on a --show locator that matches nothing" $
       withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]" $
@@ -1258,7 +1258,7 @@ spec = do
       withStdin "[[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat"]
-          ["⟦ x ↦ 5, y ↦ \"hey\", z ↦ ⟦⟧:w ⟧"]
+          ["⟦ x ↦ 5.0, y ↦ \"hey\", z ↦ ⟦⟧:w ⟧"]
 
     it "removes unnecessary rho bindings in primitive applications" $
       withStdin
@@ -1271,7 +1271,7 @@ spec = do
         )
         ( testCLISucceeded
             ["rewrite", "--sweet", "--normalize", "--flat"]
-            ["⟦ z ↦ 42, org ↦ ⟦ bytes(data) ↦ ⟦⟧, number(as-bytes) ↦ ⟦⟧ ⟧:eolang ⟧"]
+            ["⟦ z ↦ 42.0, org ↦ ⟦ bytes(data) ↦ ⟦⟧, number(as-bytes) ↦ ⟦⟧ ⟧:eolang ⟧"]
         )
 
     it "reduces log message" $
@@ -1303,7 +1303,7 @@ spec = do
       withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]" $
         testCLISucceeded
           ["rewrite", "--sweet", "--flat", "--locator=Q.ex", "--normalize"]
-          ["⟦ ex ↦ 5:x, abc ↦ ∅:x( x ↦ 5 ) ⟧"]
+          ["⟦ ex ↦ 5.0:x, abc ↦ ∅:x( x ↦ 5.0 ) ⟧"]
 
     it "returns original expression on --breakpoint" $
       withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
@@ -1547,7 +1547,7 @@ spec = do
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( |32| ), |c| -> |25| ]] } \\phiDataize[\\nameref{r:box}]"]
+          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( |32.0| ), |c| -> |25.0| ]] } \\phiDataize[\\nameref{r:box}]"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
       withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
@@ -1698,18 +1698,18 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛·0·1 := 5"
-                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6 )"
+                       , "    𝑛·0·1 := 5.0"
+                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )"
                        , "  𝔼(L_number_plus):"
                        , "    𝔻(Φ.a🌵0):"
                        , "      𝕄(Φ.a🌵0):"
-                       , "        𝑛·1·1 := 5"
+                       , "        𝑛·1·1 := 5.0"
                        , "        𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
                        , "      𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
                        , "    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "    𝔻(Φ.a🌵1):"
                        , "      𝕄(Φ.a🌵1):"
-                       , "        𝑛·1·3 := 6"
+                       , "        𝑛·1·3 := 6.0"
                        , "        𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
                        , "      𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
@@ -1728,18 +1728,18 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛·0·1 := 5"
-                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6 )"
+                       , "    𝑛·0·1 := 5.0"
+                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(Φ.a🌵0):"
                        , "        𝕄(Φ.a🌵0):"
-                       , "          𝑛·1·1 := 5"
+                       , "          𝑛·1·1 := 5.0"
                        , "          𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
                        , "        𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
                        , "      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "      𝔻(Φ.a🌵1):"
                        , "        𝕄(Φ.a🌵1):"
-                       , "          𝑛·1·3 := 6"
+                       , "          𝑛·1·3 := 6.0"
                        , "          𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
                        , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
@@ -1747,7 +1747,7 @@ spec = do
                        , "      𝕄(𝑛·1·5):"
                        , "        𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "      𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
-                       , "    𝑛·0·3 := 𝑛·1·6.plus( x ↦ 7 )"
+                       , "    𝑛·0·3 := 𝑛·1·6.plus( x ↦ 7.0 )"
                        , "  𝔼(L_number_plus):"
                        , "    𝔻(Φ.a🌵2):"
                        , "      𝕄(Φ.a🌵2):"
@@ -1755,7 +1755,7 @@ spec = do
                        , "    𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
                        , "    𝔻(Φ.a🌵3):"
                        , "      𝕄(Φ.a🌵3):"
-                       , "        𝑛·2·2 := 7"
+                       , "        𝑛·2·2 := 7.0"
                        , "        𝑛·2·3 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
                        , "      𝛿·2·1 := 40-1C-00-00-00-00-00-00  # 7.0"
                        , "    𝛿2·2 := 𝛿·2·1  # 𝔻(ξ.x)"
@@ -1774,18 +1774,18 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛·0·1 := 5"
-                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6 )"
+                       , "    𝑛·0·1 := 5.0"
+                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(Φ.a🌵0):"
                        , "        𝕄(Φ.a🌵0):"
-                       , "          𝑛·1·1 := 5"
+                       , "          𝑛·1·1 := 5.0"
                        , "          𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
                        , "        𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
                        , "      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "      𝔻(Φ.a🌵1):"
                        , "        𝕄(Φ.a🌵1):"
-                       , "          𝑛·1·3 := 6"
+                       , "          𝑛·1·3 := 6.0"
                        , "          𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
                        , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
@@ -1793,7 +1793,7 @@ spec = do
                        , "      𝕄(𝑛·1·5):"
                        , "        𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "      𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
-                       , "    𝑛·0·3 := 𝑛·1·6.times( x ↦ 7 )"
+                       , "    𝑛·0·3 := 𝑛·1·6.times( x ↦ 7.0 )"
                        , "  𝔼(L_number_times):"
                        , "    𝔻(Φ.a🌵2):"
                        , "      𝕄(Φ.a🌵2):"
@@ -1801,7 +1801,7 @@ spec = do
                        , "    𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)"
                        , "    𝔻(Φ.a🌵3):"
                        , "      𝕄(Φ.a🌵3):"
-                       , "        𝑛·2·2 := 7"
+                       , "        𝑛·2·2 := 7.0"
                        , "        𝑛·2·3 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
                        , "      𝛿·2·1 := 40-1C-00-00-00-00-00-00  # 7.0"
                        , "    𝛿2·2 := 𝛿·2·1  # 𝔻(ξ.x)"
@@ -1820,29 +1820,29 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛·0·1 := 5"
-                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.plus( 7 ) )"
+                       , "    𝑛·0·1 := 5.0"
+                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0.plus( 7.0 ) )"
                        , "  𝔼(L_number_plus):"
                        , "    𝔻(Φ.a🌵0):"
                        , "      𝕄(Φ.a🌵0):"
-                       , "        𝑛·1·1 := 5"
+                       , "        𝑛·1·1 := 5.0"
                        , "        𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
                        , "      𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
                        , "    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "    𝔻(Φ.a🌵1):"
                        , "      𝕄(Φ.a🌵1):"
-                       , "        𝑛·1·3 := 6"
-                       , "        𝑛·1·4 := 𝑛·1·3.plus( x ↦ 7 )"
+                       , "        𝑛·1·3 := 6.0"
+                       , "        𝑛·1·4 := 𝑛·1·3.plus( x ↦ 7.0 )"
                        , "      𝔼(L_number_plus):"
                        , "        𝔻(Φ.a🌵2):"
                        , "          𝕄(Φ.a🌵2):"
-                       , "            𝑛·2·1 := 6"
+                       , "            𝑛·2·1 := 6.0"
                        , "            𝑛·2·2 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
                        , "          𝛿·2·1 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "        𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.ρ)"
                        , "        𝔻(Φ.a🌵3):"
                        , "          𝕄(Φ.a🌵3):"
-                       , "            𝑛·2·3 := 7"
+                       , "            𝑛·2·3 := 7.0"
                        , "            𝑛·2·4 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
                        , "          𝛿·2·2 := 40-1C-00-00-00-00-00-00  # 7.0"
                        , "        𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)"
@@ -1899,18 +1899,18 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛·0·1 := 5"
-                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6 )"
+                       , "    𝑛·0·1 := 5.0"
+                       , "    𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(Φ.a🌵0):"
                        , "        𝕄(Φ.a🌵0):"
-                       , "          𝑛·1·1 := 5"
+                       , "          𝑛·1·1 := 5.0"
                        , "          𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
                        , "        𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
                        , "      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "      𝔻(Φ.a🌵1):"
                        , "        𝕄(Φ.a🌵1):"
-                       , "          𝑛·1·3 := 6"
+                       , "          𝑛·1·3 := 6.0"
                        , "          𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
                        , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
@@ -2509,18 +2509,18 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  𝕄(Φ):"
-                       , "    𝑛·0·1 := 2"
-                       , "    𝑛·0·2 := 𝑛·0·1.times( x ↦ 3 )"
+                       , "    𝑛·0·1 := 2.0"
+                       , "    𝑛·0·2 := 𝑛·0·1.times( x ↦ 3.0 )"
                        , "    𝔼(L_number_times):"
                        , "      𝔻(Φ.a🌵0):"
                        , "        𝕄(Φ.a🌵0):"
-                       , "          𝑛·1·1 := 2"
+                       , "          𝑛·1·1 := 2.0"
                        , "          𝑛·1·2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
                        , "        𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0"
                        , "      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "      𝔻(Φ.a🌵1):"
                        , "        𝕄(Φ.a🌵1):"
-                       , "          𝑛·1·3 := 3"
+                       , "          𝑛·1·3 := 3.0"
                        , "          𝑛·1·4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
                        , "        𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
                        , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
@@ -2556,7 +2556,7 @@ spec = do
         withStdin stuck $
           testCLISucceeded
             ["dataize", symbolic, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
-            ["2.times( 3 ).nope", "L_number_nope:λ"]
+            ["2.0.times( 3.0 ).nope", "L_number_nope:λ"]
 
       it "still stops on the terminator ⊥, since a wrong operand is not a stuck λ function" $
         withStdin "[[ ]]" $
@@ -2622,7 +2622,7 @@ spec = do
 
       it "morphs inside the universe just as it dataizes inside it" $
         withStdin universe $
-          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6, λ ⤍ L_number_plus ⟧"]
+          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
 
       it "opens the text protocol before the objects it made while aiming" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -2726,7 +2726,7 @@ spec = do
       withStdin chained $
         testCLISucceeded
           ["morph", symbolic, "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
-          ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+          ["⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"]
 
     it "leaves to dataize the firing that takes the same term to bytes" $
       withStdin chained $
@@ -2764,7 +2764,7 @@ spec = do
           , "Rule 'alpha'"
           , "Rule 'copy'"
           , "Rule 'mf'"
-          , "⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"
+          , "⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
           ]
 
     it "writes every step of a LaTeX --sequence with the arrow of its judgment" $
@@ -2795,18 +2795,18 @@ spec = do
         records <- readProtocol path
         lines records
           `shouldBe` [ "𝕄(Φ.φ):"
-                     , "  𝑛·0·1 := 5"
-                     , "  𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6 )"
+                     , "  𝑛·0·1 := 5.0"
+                     , "  𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )"
                      , "  𝔼(L_number_plus):"
                      , "    𝔻(Φ.a🌵0):"
                      , "      𝕄(Φ.a🌵0):"
-                     , "        𝑛·1·1 := 5"
+                     , "        𝑛·1·1 := 5.0"
                      , "        𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
                      , "      𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
                      , "    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
                      , "    𝔻(Φ.a🌵1):"
                      , "      𝕄(Φ.a🌵1):"
-                     , "        𝑛·1·3 := 6"
+                     , "        𝑛·1·3 := 6.0"
                      , "        𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
                      , "      𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                      , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
@@ -2814,7 +2814,7 @@ spec = do
                      , "    𝕄(𝑛·1·5):"
                      , "      𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )"
                      , "    𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
-                     , "  𝑛·0·3 := 𝑛·1·6.plus( x ↦ 7 )"
+                     , "  𝑛·0·3 := 𝑛·1·6.plus( x ↦ 7.0 )"
                      ]
 
     it "saves morphing steps to dir with --steps-dir" $
@@ -2822,7 +2822,7 @@ spec = do
         withStdin chained $ do
           testCLISucceeded
             ["morph", symbolic, "--locator=Q.@", "--steps-dir=" ++ dir, "--sweet", "--hide-rho", "--flat"]
-            ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+            ["⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"]
           steps <- sort <$> listDirectory dir
           steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
           length steps `shouldSatisfy` (> 0)
@@ -2961,7 +2961,7 @@ spec = do
       withStdin "⟦ φ ↦ 5.gt(Φ.nan) ⟧" $
         testCLISucceeded
           ["morph", "--locator=Q.@", "--max-steps=10", "--partial", "--flat", "--hide-rho", "--sweet"]
-          ["5.gt( Φ.nan )"]
+          ["5.0.gt( Φ.nan )"]
 
     describe "--partial" $ do
       let stuck = "[[ @ -> [[ L> Sym_arg_0 ]].foo ]]"
@@ -3095,7 +3095,7 @@ spec = do
         withStdin chained $
           testCLISucceeded
             ["morph", symbolic, "--acyclic=proven", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
-            ["⟦ x ↦ 7, λ ⤍ L_number_plus ⟧"]
+            ["⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"]
 
     describe "--max-loops" $ do
       it "fires a looping λ function once more with --max-loops=1" $

@@ -8,4 +8,4 @@ expression: |
     y -> Q.string(~0 -> Q.bytes([[ D> 68-65-79 ]]), ^ -> Q.x.y.z)
   ]]
 result: |-
-  ⟦ x ↦ 1, y ↦ "hey" ⟧
+  ⟦ x ↦ 1.0, y ↦ "hey" ⟧

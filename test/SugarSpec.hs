@@ -671,7 +671,7 @@ spec = do
       "a sweet numeric literal expands into Q.number(Q.bytes(...)) when salted"
       $ do
         let number = DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
-        printExpression' number (config SWEET) `shouldBe` "42"
+        printExpression' number (config SWEET) `shouldBe` "42.0"
         printExpression' number (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) )"
     it
       "a sweet string literal expands into Q.string(Q.bytes(...)) when salted"
@@ -698,10 +698,10 @@ spec = do
         printExpression' meetChain (config SWEET) `shouldBe` "\\phinoMeet{2}{ \\phinoAgain{a:1} }:x"
         printExpression' meetChain (config SALTY) `shouldBe` "⟦ x ↦ \\phinoMeet{2}{ \\phinoAgain{a:1} } ⟧"
     it "a ρ applied to a number literal after another argument keeps its place when sweet" $
-      printExpression' (applied (ArTau (AtLabel "x") ExXi) (ArTau AtRho ExTermination)) (config SWEET) `shouldBe` "42( x ↦ ξ, ρ ↦ ⊥ )"
+      printExpression' (applied (ArTau (AtLabel "x") ExXi) (ArTau AtRho ExTermination)) (config SWEET) `shouldBe` "42.0( x ↦ ξ, ρ ↦ ⊥ )"
     it "a ρ applied to a number literal after another argument keeps its place when salted" $
       printExpression' (applied (ArTau (AtLabel "x") ExXi) (ArTau AtRho ExTermination)) (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) )( x ↦ ξ )( ρ ↦ ⊥ )"
     it "a ρ applied straight to a number literal is dropped when sweet" $
-      printExpression' (applied (ArTau AtRho ExTermination) (ArTau (AtLabel "x") ExXi)) (config SWEET) `shouldBe` "42( x ↦ ξ )"
+      printExpression' (applied (ArTau AtRho ExTermination) (ArTau (AtLabel "x") ExXi)) (config SWEET) `shouldBe` "42.0( x ↦ ξ )"
     it "a ρ applied straight to a number literal keeps its place when salted" $
       printExpression' (applied (ArTau AtRho ExTermination) (ArTau (AtLabel "x") ExXi)) (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) )( ρ ↦ ⊥ )( x ↦ ξ )"
