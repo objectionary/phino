@@ -6,6 +6,7 @@
 module PrinterSpec where
 
 import AST
+import Bytes (numToBts)
 import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
 import Encoding (Encoding (..))
@@ -18,6 +19,7 @@ import Printer
 import Sugar (SugarType (..))
 import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldContain, shouldNotContain, shouldSatisfy)
 import Test.Hspec.QuickCheck (prop)
+import Test.QuickCheck (chooseInt, forAll)
 import Yaml (ExtraArgument (..))
 
 spec :: Spec
@@ -102,6 +104,11 @@ spec = do
             salty `shouldContain` "Q.bytes("
             salty `shouldContain` printBytes bts
       )
+
+  describe "printExpression writes a whole number as a double (#2133)" $
+    prop "with a zero after the point" $
+      forAll (chooseInt (-1000000, 1000000)) $ \whole ->
+        printExpression' (DataNumber (numToBts (fromIntegral whole))) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` show whole ++ ".0"
 
   describe "printExpression keeps a non-finite double without a name in byte form" $
     forM_

@@ -12,7 +12,6 @@ module Sugar (toSalty, withSugarType, withoutRho, revealXi, SugarType (..), ToSa
 import AST
 import Bytes (nonFiniteBts, numToBts, strToBts, unescapeStr)
 import CST
-import Misc (toDouble)
 
 withSugarType :: (ToSalty a) => SugarType -> a -> a
 withSugarType SWEET node = node
@@ -195,7 +194,7 @@ instance ToSalty EXPRESSION where
     saltifyPrimitive
       (toCST (BaseObject "number") (indent + 1, EOL))
       (toCST (BaseObject "bytes") (indent + 2, EOL))
-      (toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2, EOL))
+      (toCST (ExFormation [BiDelta (numToBts num)]) (indent + 2, EOL))
       tab
       rhos
   toSalty EX_NONFINITE{nonfinite, tab = tab@TAB{..}, rhos} =

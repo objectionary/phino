@@ -177,7 +177,7 @@ data EXPRESSION
   | EX_DISPATCH {expr :: EXPRESSION, space :: SPACE, attr :: ATTRIBUTE}
   | EX_APPLICATION {expr :: EXPRESSION, space :: SPACE, eol :: EOL, tab :: TAB, argument :: APP_ARGUMENT, eol' :: EOL, tab' :: TAB, indent :: Int}
   | EX_STRING {str :: String, tab :: TAB, rhos :: [Argument]}
-  | EX_NUMBER {num :: Either Int Double, tab :: TAB, rhos :: [Argument]}
+  | EX_NUMBER {num :: Double, tab :: TAB, rhos :: [Argument]}
   | EX_NONFINITE {global :: GLOBAL, nonfinite :: NonFinite, tab :: TAB, rhos :: [Argument]}
   | EX_META {meta :: META}
   | EX_PHI_MEET {prefix :: Maybe String, idx :: Int, expr :: EXPRESSION}
@@ -268,7 +268,7 @@ sweetNumber (BtAny _) = False
 sweetNumber bts
   | btsSize bts /= 8 = False
 sweetNumber bts = case btsToNum bts of
-  Right dbl | isNaN dbl || isInfinite dbl -> isJust (btsToNonFinite bts)
+  dbl | isNaN dbl || isInfinite dbl -> isJust (btsToNonFinite bts)
   _ -> True
 
 sweetString :: Bytes -> Bool

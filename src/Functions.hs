@@ -21,7 +21,6 @@ import qualified Data.Text.Encoding.Error as T
 import Deps
 import Logger (logDebug)
 import Matcher
-import Misc
 import Parser (ParserException (CouldNotParseAttribute), parseAttributeThrows, parseNumberThrows)
 import Printer (printAttribute, printExpression, printExtraArg)
 import Random (randomString)
@@ -82,7 +81,7 @@ argToNumber arg _ = throwIO (userError (printf "Can't extract a number from give
 
 number :: Bytes -> IO Double
 number bts = case btsSize bts of
-  8 -> pure (either toDouble id (btsToNum bts))
+  8 -> pure (btsToNum bts)
   _ -> throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
 
 _contextualize :: BuildTermMethod
@@ -208,7 +207,7 @@ _string [Y.ArgExpression expr] subst = do
     DataNumber bts
       | btsSize bts /= 8 ->
           throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
-      | otherwise -> pure (DataString (strToBts (either show show (btsToNum bts))))
+      | otherwise -> pure (DataString (strToBts (spelled (btsToNum bts))))
     DataString bts -> pure (DataString bts)
     ex ->
       throwIO
@@ -219,6 +218,13 @@ _string [Y.ArgExpression expr] subst = do
             )
         )
   pure (TeExpression str)
+  where
+    spelled :: Double -> String
+    spelled num
+      | isNaN num || isInfinite num || isNegativeZero num = show num
+      | otherwise = case properFraction num :: (Integer, Double) of
+          (whole, 0.0) | whole >= toInteger (minBound :: Int) && whole <= toInteger (maxBound :: Int) -> show whole
+          _ -> show num
 _string [Y.ArgAttribute attr] subst = do
   attr' <- buildAttributeThrows attr subst
   pure (TeExpression (DataString (strToBts (printAttribute attr'))))

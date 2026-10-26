@@ -127,7 +127,7 @@ expression (DataNumber bytes) XmirContext{..} =
         , if _omitComments || btsSize bytes /= 8
             then [bts]
             else
-              [ NodeComment (T.pack (either show show (btsToNum bytes)))
+              [ NodeComment (T.pack (show (btsToNum bytes)))
               , bts
               ]
         )

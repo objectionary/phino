@@ -164,6 +164,12 @@ spec = describe "Functions" $ do
         , \term -> expectExpression term (DataString (strToBts "5"))
         )
       ,
+        ( "string keeps the fraction of a number"
+        , "string"
+        , [ArgExpression (DataNumber (numToBts (-0.375)))]
+        , \term -> expectExpression term (DataString (strToBts "-0.375"))
+        )
+      ,
         ( "string keeps a string expression as is"
         , "string"
         , [ArgExpression (DataString (strToBts "already"))]
