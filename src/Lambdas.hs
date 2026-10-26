@@ -343,7 +343,7 @@ readLambdas path = do
   pure (Lambdas registered)
   where
     broken :: Yaml.ParseException -> IO [Lambda]
-    broken failure = throwIO (BrokenLambdas path (Yaml.prettyPrintParseException failure))
+    broken failure = throwIO (BrokenLambdas path (Y.shiftYamlError (Yaml.prettyPrintParseException failure)))
     unique :: [Lambda] -> Lambda -> IO ()
     unique entries entry
       | length (filter ((== entry._key) . (._key)) entries) == 1 = pure ()

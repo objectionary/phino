@@ -294,7 +294,7 @@ loadRule file =
   where
     reportInvalidRule :: Yaml.ParseException -> IO Y.Rule
     reportInvalidRule err =
-      invalidCLIArguments (printf "Could not load rule from '%s'\n%s" file (Yaml.prettyPrintParseException err))
+      invalidCLIArguments (printf "Could not load rule from '%s'\n%s" file (Y.shiftYamlError (Yaml.prettyPrintParseException err)))
 
 validateRewriteRule :: Y.Rule -> IO Y.Rule
 validateRewriteRule rule =

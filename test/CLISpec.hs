@@ -642,6 +642,13 @@ spec = do
           , "unexpected '⟧'"
           ]
 
+    it "counts the position of a YAML error from one" $
+      withTempFileContent "badruleXXXXXX.yaml" "name: a\npattern: x: y\n" $ \path ->
+        withStdin "⟦⟧" $
+          testCLIFailed
+            ["rewrite", "--rule=" ++ path]
+            ["YAML parse exception at line 2, column 11"]
+
     it "normalizes with --normalize flag" $
       testCLISucceeded
         ["rewrite", "--normalize", resource "normalize.phi", "--margin=25"]
