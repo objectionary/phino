@@ -2697,6 +2697,14 @@ spec = do
         withStdin universe $
           testCLIFailed ["dataize", "--inside=Q.@", "--locator=Q.@"] ["--inside and --locator cannot be used together"]
 
+      it "accepts --locator=Φ with --inside, since Φ and Q both name the root" $
+        withStdin universe $
+          testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x", "--locator=Φ"] ["2A-"]
+
+      it "accepts --locator=Φ with morph --inside, since Φ and Q both name the root" $
+        withStdin universe $
+          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--locator=Φ", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6, λ ⤍ L_number_plus ⟧"]
+
       it "fails when the input expression is not a formation" $
         withStdin "Q.x" $
           testCLIFailed ["dataize", "--inside=Q.x"] ["--inside requires the input expression to be a formation"]
