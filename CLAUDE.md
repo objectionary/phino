@@ -321,11 +321,11 @@ a stack every record prunes by its depth (`tier`), and from then on
 object of the same call, by that name wherever a later line holds it whole.
 The line itself goes through `abbreviatedInside`, which names the head and
 each argument and never the call as a whole, so an application made again is
-spelled out again (#1756). The text writer names the formation an answer
-binds the same way (`adopted`), unless it holds λ or Δ or a line named it
-before, so the box step after a firing writes `boxed 𝑛·0·2 := 𝑛·1·2.φ`
-rather than the whole answer again (#2151). The
-markup writes the head in `of` and the argument by name in an element named
+spelled out again (#1756). Both writers name the formation an answer binds
+the same way (`namedFormation`), even when a line named it before, unless it
+holds λ or Δ, so the box step after a firing writes `boxed 𝑛·0·2 := 𝑛·1·2.φ`
+with the meta of the answer rather than the whole answer again (#2151, #2158).
+The markup writes the head in `of` and the argument by name in an element named
 after the kind of its value, `<symbol>`, `<datum>`, `<meta>`, `<ref>` for a
 path or an empty `<bottom>` for ⊥ (`attributed` of `saveEvalXml`), and so does
 every binding of `<formed>` and `<with>` (#1961). Under `--inside` the
@@ -412,9 +412,10 @@ block the same way, as `𝛿·1·2 := 𝔻(𝜎1:λ)` (`EvManufactured`, #2150),
 `<manufactured>` in the markup (#1962), counted with the data. The term a `𝕄`
 came to closes its block too, as `morphed 𝑛·1·2 := 𝑛·1·1`
 (`EvMorphed`, #2153), and as `<morphed>` in the markup (#1984), counted with
-the metas of the firing, and the text names that term by the meta from then
-on (`adopted`), unless a line named it before. Only the chain
-that opened the block writes it: `detached` runs a premise of a rule of 𝕄
+the metas of the firing, and both writers name that term by the meta from then
+on (`namedFormation`), even when a line named it before, unless it holds λ or
+Δ, so the box step after it writes `boxed 𝑛·1·3 := 𝑛·1·2.φ` (#2158). Only the
+chain that opened the block writes it: `detached` runs a premise of a rule of 𝕄
 through `morph''` told it owns nothing, since it stands in the block of the
 rule. A cut is a line too,
 `looped …` (`EvLooped`), written by `enter` where the refused frame would have

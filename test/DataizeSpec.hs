@@ -228,29 +228,29 @@ spec = do
           , "          𝕄(ξ.ρ):"
           , "            𝑛·1·1 := 2.0"
           , "            morphed 𝑛·1·2 := 𝑛·1·1"
-          , "          boxed 𝑛·1·3 := 𝑛·1·1.φ"
+          , "          boxed 𝑛·1·3 := 𝑛·1·2.φ"
           , "          𝕄(𝑛·1·3):"
           , "            𝑛·1·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
           , "            morphed 𝑛·1·5 := 𝑛·1·4"
-          , "          boxed 𝑛·1·6 := 𝑛·1·4.φ"
+          , "          boxed 𝑛·1·6 := 𝑛·1·5.φ"
           , "          𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0"
           , "        𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
           , "        𝔻(ξ.x):"
           , "          𝕄(ξ.x):"
           , "            𝑛·1·7 := 3.0"
           , "            morphed 𝑛·1·8 := 𝑛·1·7"
-          , "          boxed 𝑛·1·9 := 𝑛·1·7.φ"
+          , "          boxed 𝑛·1·9 := 𝑛·1·8.φ"
           , "          𝕄(𝑛·1·9):"
           , "            𝑛·1·10 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
           , "            morphed 𝑛·1·11 := 𝑛·1·10"
-          , "          boxed 𝑛·1·12 := 𝑛·1·10.φ"
+          , "          boxed 𝑛·1·12 := 𝑛·1·11.φ"
           , "          𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
           , "        𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
           , "        𝑛·1·13 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
           , "        𝕄(𝑛·1·13):"
           , "          𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )"
           , "          morphed 𝑛·1·15 := 𝑛·1·14"
-          , "        𝑛·1·16 := 𝑛·1·14  # 𝕄(𝑛·1·13)"
+          , "        𝑛·1·16 := 𝑛·1·15  # 𝕄(𝑛·1·13)"
           , "      morphed 𝑛·0·4 := ⟦ ρ ↦ 𝑛·1·14, λ ⤍ L_number_nope ⟧"
           , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·14, λ ⤍ L_number_nope ⟧)"
           ]
@@ -270,7 +270,7 @@ spec = do
       length (filter (isPrefixOf "    𝕄(") (lines protocol)) `shouldBe` 2
     it "writes every box step of a dataization into the protocol" $ do
       (_, protocol) <- partially known "73.25"
-      filter (isInfixOf "boxed") (lines protocol) `shouldBe` ["    boxed 𝑛·0·1 := Φ.φ", "    boxed 𝑛·0·4 := 𝑛·0·2.φ", "    boxed 𝑛·0·7 := 𝑛·0·5.φ"]
+      filter (isInfixOf "boxed") (lines protocol) `shouldBe` ["    boxed 𝑛·0·1 := Φ.φ", "    boxed 𝑛·0·4 := 𝑛·0·3.φ", "    boxed 𝑛·0·7 := 𝑛·0·6.φ"]
     it "names the morphing that follows a box step by the meta the box step bound" $ do
       (_, protocol) <- partially known "73.25"
       lines protocol `shouldContain` ["    boxed 𝑛·0·1 := Φ.φ", "    𝕄(𝑛·0·1):"]

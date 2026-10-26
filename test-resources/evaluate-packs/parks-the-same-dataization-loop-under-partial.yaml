@@ -29,9 +29,9 @@ protocol: |
         𝕄(ξ.arg):
           𝑛·1·1 := Φ.cyc( x ↦ ⟦⟧ )
           morphed 𝑛·1·2 := 𝑛·1·1
-        boxed 𝑛·1·3 := 𝑛·1·1.φ
+        boxed 𝑛·1·3 := 𝑛·1·2.φ
         𝕄(𝑛·1·3):
           𝑛·1·4 := Φ.cyc( x ↦ ⟦⟧ )
           morphed 𝑛·1·5 := 𝑛·1·4
-        looped 𝑛·1·4  # 𝔻(𝑛·1·3), proven
+        looped 𝑛·1·5  # 𝔻(𝑛·1·3), proven
       stuck L_outer
