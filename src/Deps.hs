@@ -272,6 +272,7 @@ saveEval handle cursor printed printed' report = do
   where
     forgotten :: Evaluation -> Protocol -> Protocol
     forgotten EvDelta{} protocol = protocol
+    forgotten EvManufactured{} protocol = protocol
     forgotten EvWorld{} protocol = protocol
     forgotten _ protocol = protocol{_found = Nothing}
     beside :: Int -> Evaluation -> Protocol -> Protocol
@@ -340,11 +341,12 @@ saveEval handle cursor printed printed' report = do
         _ -> (protocol{_blocks = (at, Just heading, indented at (heading ++ ":"), False) : dropWhile (\(level, _, _, _) -> level >= at) inner}, Nothing)
     written at (EvDelta _ bytes) protocol = do
       datum <- render (ExBytes bytes)
-      let index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
-          naming :: String
-          naming = printf "%s·%d" (labelled protocol sigil) index
-      pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (Right bytes, naming)}, Just (indented at (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
-    written _ EvManufactured{} protocol = pure (protocol, Nothing)
+      let (naming, protocol') = stored (Right bytes) protocol
+      pure (protocol', Just (indented at (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
+    written at (EvManufactured _ symbol) protocol = do
+      datum <- spelt (Left symbol)
+      let (naming, protocol') = stored (Left symbol) protocol
+      pure (protocol', Just (indented at (printf "%s := %s" naming datum)))
     written at (EvBoxed _ term) protocol = do
       let (index, counted) = numbered protocol
       taken <- printed (abbreviatedInside protocol._made term)
@@ -471,6 +473,13 @@ saveEval handle cursor printed printed' report = do
     labelled protocol spelling = printf "%s·%d" (T.unpack spelling) (opener protocol)
     opener :: Protocol -> Int
     opener protocol = maybe 0 snd (listToMaybe protocol._open)
+    stored :: Either Int Bytes -> Protocol -> (String, Protocol)
+    stored value protocol = (naming, protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (value, naming)})
+      where
+        index :: Int
+        index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._deltas)
+        naming :: String
+        naming = printf "%s·%d" (labelled protocol sigil) index
     numbered :: Protocol -> (Int, Protocol)
     numbered protocol = (index, protocol{_counted = Map.insert (opener protocol) index protocol._counted})
       where

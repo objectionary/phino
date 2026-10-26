@@ -30,7 +30,9 @@ result: '𝜎4:λ'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
-      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx( 𝜎2:λ ), ob ↦ Φ.hx ⟧ and Φ.hx( 𝜎3:λ ):φ  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx( 𝜎2:λ ), ob ↦ Φ.hx ⟧, right🌵 ↦ Φ.hx( 𝜎3:λ ):φ, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ob ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ob, right🌵 ↦ ρ.right🌵.ob ⟧ ⟧
     𝔼(L_join):
       𝕄(ξ.left🌵):

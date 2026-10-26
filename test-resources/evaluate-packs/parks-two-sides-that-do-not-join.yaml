@@ -22,5 +22,7 @@ result: '⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
-      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       diverged 01-:Δ:φ vs 02-:Δ:φ  # they differ at .φ.Δ, and the join names no otherwise

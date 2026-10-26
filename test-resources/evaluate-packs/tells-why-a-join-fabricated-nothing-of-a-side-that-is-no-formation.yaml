@@ -32,7 +32,9 @@ result: '⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.k ⟧, λ ⤍ L_for
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
-      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       𝑛1·1 := Φ.k:φ  # 𝕄(ξ.a)
       𝑛2·1 := Φ.k  # rewrite(𝑛1)
       diverged 𝑛1·1 vs 𝑛2·1  # the right side is no formation
