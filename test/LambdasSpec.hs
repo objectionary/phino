@@ -531,15 +531,27 @@ spec = do
       masked <- parseExpressionThrows "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧ ⟧"
       (\(made, _, _) -> made) (symbolized term 4) `shouldBe` masked
 
-    it "turns the datum a ρ of a formation holds into a fresh symbol" $ do
+    it "keeps the datum the ρ of a formation holding no λ binds" $ do
       term <- parseExpressionThrows "⟦ ρ ↦ ⟦ Δ ⤍ 02- ⟧, q ↦ ∅ ⟧"
-      masked <- parseExpressionThrows "⟦ ρ ↦ ⟦ λ ⤍ 𝜎10 ⟧, q ↦ ∅ ⟧"
-      (\(made, _, _) -> made) (symbolized term 9) `shouldBe` masked
+      (\(made, _, _) -> made) (symbolized term 9) `shouldBe` term
 
-    it "turns the datum a method of a formation holds into a fresh symbol" $ do
+    it "keeps the datum a method of a formation holding no λ binds" $ do
       term <- parseExpressionThrows "⟦ φ ↦ ⟦⟧, neg ↦ ⟦ Δ ⤍ BF-F0-00-00-00-00-00-00 ⟧ ⟧"
-      masked <- parseExpressionThrows "⟦ φ ↦ ⟦⟧, neg ↦ ⟦ λ ⤍ 𝜎10 ⟧ ⟧"
-      (\(made, _, _) -> made) (symbolized term 9) `shouldBe` masked
+      (\(made, _, _) -> made) (symbolized term 9) `shouldBe` term
+
+    it "mints no symbol for a constant the method of a number holds" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ), abs ↦ ⟦ φ ↦ ξ.ρ.lt( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ) ) ⟧ ⟧"
+      (\(_, known, _) -> known) (symbolized term 603) `shouldBe` [(604, BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])]
+
+    it "turns the datum the ρ of an atom binds into a fresh symbol" $ do
+      term <- parseExpressionThrows "⟦ λ ⤍ L_bytes_size, ρ ↦ ⟦ Δ ⤍ 2B-07 ⟧ ⟧"
+      masked <- parseExpressionThrows "⟦ λ ⤍ L_bytes_size, ρ ↦ ⟦ λ ⤍ 𝜎32 ⟧ ⟧"
+      (\(made, _, _) -> made) (symbolized term 31) `shouldBe` masked
+
+    it "turns the datum an attribute of an atom binds into a fresh symbol" $ do
+      term <- parseExpressionThrows "Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ FF- ⟧ ⟧ )"
+      masked <- parseExpressionThrows "Φ.bool( if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎58 ⟧ ⟧ )"
+      (\(made, _, _) -> made) (symbolized term 57) `shouldBe` masked
 
     it "turns the datum a named argument other than φ holds into a fresh symbol" $ do
       term <- parseExpressionThrows "Φ.f( q ↦ ⟦ Δ ⤍ 1D- ⟧ )"

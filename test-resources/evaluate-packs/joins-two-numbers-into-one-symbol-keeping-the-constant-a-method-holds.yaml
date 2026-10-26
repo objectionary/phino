@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# Both sides are copies of 'number', so both carry its method 'neg', and 'neg'
+# holds the library constant '-1'. The left side is the literal '42', the
+# right one a number some firing computed. A 'symbolize' line turning every
+# datum of a term into a symbol turned the '-1' of each side into a symbol of
+# its own, and the join joined the two into one more symbol, though both sides
+# hold the same '-1' there (#2131). The line leaves a method of a formation
+# holding no λ alone, so the '42' alone becomes a symbol, 𝜎4, the '-1' stays a
+# datum on both sides, and the join makes one symbol, 𝜎5, of 𝜎4 and 𝜎2.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      on: 𝛿1
+      left: 𝑛3
+      right: 𝑛4
+location: 'Q.y'
+input: '⟦ number ↦ ⟦ φ ↦ ∅, neg ↦ ⟦ φ ↦ ξ.ρ.times( x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ BF-F0-00-00-00-00-00-00 ⟧ ) ) ) ⟧ ⟧, bytes ↦ ⟦ φ ↦ ∅ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎3 ⟧, a ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) ), b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ), λ ⤍ L_fork ⟧.φ ⟧'
+result: '𝜎5:λ:φ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝛿1·1 := 𝔻(𝜎3:λ)  # 𝔻(ξ.c)
+      𝕄(Φ.a🌵1):
+        𝑛·1·1 := 42
+      𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.a)
+      𝕄(Φ.a🌵2):
+        𝑛·1·2 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎2:λ ) )
+      𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
+      symbolized 𝜎4 := 40-45-00-00-00-00-00-00  # 42.0
+      𝑛3·1 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ), neg ↦ ρ.times( x ↦ -1 ):φ ⟧  # symbolize(𝑛1)
+      𝑛4·1 := 𝑛2·1  # 𝑛2
+      joined 𝜎5 := 𝛿1·1 ? 𝜎4 : 𝜎2
+      𝑛·1·3 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎5:λ ), neg ↦ ρ.times( x ↦ -1 ):φ ⟧  # 𝑛3, 𝑛4
+    𝑛·0·1 := Φ.bytes( φ ↦ 𝜎5:λ )
