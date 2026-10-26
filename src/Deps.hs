@@ -417,7 +417,7 @@ saveEval handle cursor printed printed' report = do
           naming :: String
           naming = printf "%s·%d" stem index
       (protocol', value) <- valued counted naming term
-      pure (protocol', Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
+      pure (protocol'{_made = adopted term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
     written _ EvMorphed{} protocol = pure (protocol, Nothing)
     written at (EvJoined _ condition symbol (left, right)) protocol = do
       on <- either (pure . labelled protocol) salted condition
@@ -438,8 +438,12 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- valued counted naming term
       remarks <- mapM sourced sides
-      pure (protocol', Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
+      pure (protocol'{_made = adopted term (alias (opener protocol) index) protocol'._made}, Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
     written _ (EvWorld world) protocol = pure (protocol{_made = namedInsert world ExRoot protocol._made}, Nothing)
+    adopted :: Expression -> Expression -> Named Expression -> Named Expression
+    adopted term@(ExFormation bds) aliased made
+      | all ((`notElem` [Just AtLambda, Just AtDelta]) . attributeFromBinding) bds = maybe (namedInsert term aliased made) (const made) (namedLookup term made)
+    adopted _ _ made = made
     spelt :: Either Int Bytes -> IO String
     spelt (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
     spelt (Right bytes) = render (ExBytes bytes)
