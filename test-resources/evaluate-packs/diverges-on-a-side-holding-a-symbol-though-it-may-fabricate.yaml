@@ -23,5 +23,7 @@ fails: "No entry of --symbolic answers the λ function 'L_fork'"
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
-      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       diverged 𝜎2:λ vs ⟦ φ ↦ Φ.zu, ke ↦ Φ.ty ⟧  # they differ at .λ, and the left side has λ

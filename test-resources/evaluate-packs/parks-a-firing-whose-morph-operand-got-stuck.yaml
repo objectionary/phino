@@ -25,7 +25,9 @@ result: '⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ L_none ⟧.x, b ↦ �
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
-      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       𝕄(ξ.a):
         unanswered L_none  # 𝕄(L_none:λ)
       stuck L_none

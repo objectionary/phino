@@ -158,10 +158,18 @@ spec = do
     it "spells the datum of an operand by the name the delta rule just gave it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       last (lines written) `shouldBe` "    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.щ)"
-    it "writes no line for the symbol a dataization came down to" $ do
-      (_, manufactured) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvManufactured 3 32, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
-      (_, plain) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
-      manufactured `shouldBe` plain
+    it "writes the symbol a dataization came down to under a name of its own" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvManufactured 1 12])
+      lines written `shouldBe` ["𝔻(Φ):", "  𝛿·0·1 := 𝔻(𝜎12:λ)"]
+    it "counts the symbols a dataization came down to with the data the delta rule found" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvManufactured 3 32])
+      last (lines written) `shouldBe` "      𝛿·1·2 := 𝔻(𝜎32:λ)"
+    it "spells the symbol of an operand by the name the dataization just gave it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvManufactured 3 32, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
+      last (lines written) `shouldBe` "    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.щ)"
+    it "spells the symbol of an operand in full when the line before it named another symbol" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvManufactured 3 31, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
+      last (lines written) `shouldBe` "    𝛿1·1 := 𝔻(𝜎32:λ)  # 𝔻(ξ.щ)"
     it "writes no line for the term a morphing came to" $ do
       (_, morphed) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук")), EvMorphed 2 (ExDispatch ExRoot (AtLabel "щука"))])
       (_, plain) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук"))])

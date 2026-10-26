@@ -31,7 +31,9 @@ result: '𝜎2:λ'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
-      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       fabricated 𝑛·1·1 := ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧ and ⟦ ke(x, w) ↦ x:k ⟧  # ⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx, ke(x) ↦ x:k ⟧, right🌵 ↦ ⟦ ke(x, w) ↦ x:k ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x, w) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧ ⟧
     𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧( x ↦ 𝜎2:λ:φ )
     𝔼(L_join):

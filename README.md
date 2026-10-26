@@ -278,6 +278,7 @@ $ cat atoms.txt
       𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )
     𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)
   boxed 𝑛·0·4 := 𝑛·1·10.φ
+  𝛿·0·1 := 𝔻(𝜎1:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -370,10 +371,10 @@ made, the way `𝑛·1·1 := 5` does, and a later line names the latest of them.
 Only an object still standing as it was made is named: once a rule rewrote a
 part of it, it is another object and it is spelled out again.
 
-Where an operand came down to the datum a symbol stands for, the protocol writes
-`𝔻(𝜎1:λ)` in place of that 42 (`𝜎1:λ` is the formation `⟦ λ ⤍ 𝜎1 ⟧`, in the
-sugar every sweet term is written with), so a reader sees that the value was
-manufactured rather than read out of the program. A `𝜎` is the name of a λ
+Where a dataization came down to the datum a symbol stands for, the protocol
+writes `𝔻(𝜎1:λ)` in place of that 42 (`𝜎1:λ` is the formation `⟦ λ ⤍ 𝜎1 ⟧`,
+in the sugar every sweet term is written with), so a reader sees that the value
+was manufactured rather than read out of the program. A `𝜎` is the name of a λ
 function and no term of its own, so 𝔻 is applied to the formation carrying it
 and never to the name alone.
 
@@ -574,7 +575,8 @@ $ cat fork.txt
         𝕄(ξ.ρ):
           𝑛·1·1 := Φ.number( φ ↦ 𝜎1:λ )
         boxed 𝑛·1·2 := 𝑛·1·1.φ
-      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
           𝑛·1·3 := 0.0
@@ -582,8 +584,8 @@ $ cat fork.txt
         𝕄(𝑛·1·4):
           𝑛·1·5 := Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ )
         boxed 𝑛·1·6 := 𝑛·1·5.φ
-        𝛿·1·1 := 00-00-00-00-00-00-00-00  # 0.0
-      𝛿2·1 := 𝛿·1·1  # 𝔻(ξ.x)
+        𝛿·1·2 := 00-00-00-00-00-00-00-00  # 0.0
+      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
       𝑛·1·7 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
       𝕄(𝑛·1·7):
         𝑛·1·8 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )
@@ -591,7 +593,9 @@ $ cat fork.txt
     𝑛·0·5 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛·1·1.plus( 1.0 ).plus( 𝑛·1·1 ) )
     𝑛·0·6 := 𝑛·0·5( else ↦ 𝑛·1·1.plus( 2.0 ).plus( 𝑛·1·1 ) )
     𝔼(L_fork):
-      𝛿1·2 := 𝔻(𝜎2:λ)  # 𝔻(ξ.φ)
+      𝔻(ξ.φ):
+        𝛿·2·1 := 𝔻(𝜎2:λ)
+      𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.φ)
       𝕄(ξ.then):
         𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )
         𝑛·2·2 := 𝑛·2·1.plus( x ↦ 1.0 )
@@ -600,7 +604,8 @@ $ cat fork.txt
             𝕄(ξ.ρ):
               𝑛·3·1 := Φ.number( φ ↦ 𝜎1:λ )
             boxed 𝑛·3·2 := 𝑛·3·1.φ
-          𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+            𝛿·3·1 := 𝔻(𝜎1:λ)
+          𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
           𝔻(ξ.x):
             𝕄(ξ.x):
               𝑛·3·3 := 1.0
@@ -608,8 +613,8 @@ $ cat fork.txt
             𝕄(𝑛·3·4):
               𝑛·3·5 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
             boxed 𝑛·3·6 := 𝑛·3·5.φ
-            𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
-          𝛿2·3 := 𝛿·3·1  # 𝔻(ξ.x)
+            𝛿·3·2 := 3F-F0-00-00-00-00-00-00  # 1.0
+          𝛿2·3 := 𝛿·3·2  # 𝔻(ξ.x)
           𝑛·3·7 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
           𝕄(𝑛·3·7):
             𝑛·3·8 := Φ.number( φ ↦ 𝜎3:λ )
@@ -623,7 +628,8 @@ $ cat fork.txt
             𝕄(ξ.ρ):
               𝑛·4·1 := Φ.number( φ ↦ 𝜎1:λ )
             boxed 𝑛·4·2 := 𝑛·4·1.φ
-          𝛿1·4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+            𝛿·4·1 := 𝔻(𝜎1:λ)
+          𝛿1·4 := 𝛿·4·1  # 𝔻(ξ.ρ)
           𝔻(ξ.x):
             𝕄(ξ.x):
               𝑛·4·3 := 2.0
@@ -631,8 +637,8 @@ $ cat fork.txt
             𝕄(𝑛·4·4):
               𝑛·4·5 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
             boxed 𝑛·4·6 := 𝑛·4·5.φ
-            𝛿·4·1 := 40-00-00-00-00-00-00-00  # 2.0
-          𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)
+            𝛿·4·2 := 40-00-00-00-00-00-00-00  # 2.0
+          𝛿2·4 := 𝛿·4·2  # 𝔻(ξ.x)
           𝑛·4·7 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
           𝕄(𝑛·4·7):
             𝑛·4·8 := Φ.number( φ ↦ 𝜎4:λ )
@@ -645,12 +651,14 @@ $ cat fork.txt
         𝕄(ξ.ρ):
           𝑛·5·1 := Φ.number( φ ↦ 𝜎5:λ )
         boxed 𝑛·5·2 := 𝑛·5·1.φ
-      𝛿1·5 := 𝔻(𝜎5:λ)  # 𝔻(ξ.ρ)
+        𝛿·5·1 := 𝔻(𝜎5:λ)
+      𝛿1·5 := 𝛿·5·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
           𝑛·5·3 := Φ.number( φ ↦ 𝜎1:λ )
         boxed 𝑛·5·4 := 𝑛·5·3.φ
-      𝛿2·5 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+        𝛿·5·2 := 𝔻(𝜎1:λ)
+      𝛿2·5 := 𝛿·5·2  # 𝔻(ξ.x)
       𝑛·5·5 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
       𝕄(𝑛·5·5):
         𝑛·5·6 := Φ.number( φ ↦ 𝜎6:λ )
@@ -661,7 +669,8 @@ $ cat fork.txt
       𝕄(ξ.ρ):
         𝑛·6·1 := Φ.number( φ ↦ 𝜎6:λ )
       boxed 𝑛·6·2 := 𝑛·6·1.φ
-    𝛿1·6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
+      𝛿·6·1 := 𝔻(𝜎6:λ)
+    𝛿1·6 := 𝛿·6·1  # 𝔻(ξ.ρ)
     𝔻(ξ.x):
       𝕄(ξ.x):
         𝑛·6·3 := 5.0
@@ -669,13 +678,14 @@ $ cat fork.txt
       𝕄(𝑛·6·4):
         𝑛·6·5 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
       boxed 𝑛·6·6 := 𝑛·6·5.φ
-      𝛿·6·1 := 40-14-00-00-00-00-00-00  # 5.0
-    𝛿2·6 := 𝛿·6·1  # 𝔻(ξ.x)
+      𝛿·6·2 := 40-14-00-00-00-00-00-00  # 5.0
+    𝛿2·6 := 𝛿·6·2  # 𝔻(ξ.x)
     𝑛·6·7 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
     𝕄(𝑛·6·7):
       𝑛·6·8 := Φ.number( φ ↦ 𝜎7:λ )
     𝑛·6·9 := 𝑛·6·8  # 𝕄(𝑛·6·7)
   boxed 𝑛·0·8 := 𝑛·6·8.φ
+  𝛿·0·1 := 𝔻(𝜎7:λ)
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -817,9 +827,10 @@ closes the `<dataize>` element the way `<dataized>` does, `meta` naming it with
 the same counter, and holds the symbol of that unknown rather than the 42
 standing for it, `𝜎2` where the text format writes the formation `𝜎2:λ`. The
 `<bound>` after the element holds that name, as it does after a `<dataized>`,
-while the text format writes the whole line as `𝛿1·2 := 𝔻(𝜎2:λ)`. The name of
-the element is what tells a manufactured datum from data, the way `𝔻(…)` does
-in the text format, so a reader never looks at the text to tell the two apart.
+and the text format writes them as `𝛿·2·1 := 𝔻(𝜎2:λ)` and `𝛿1·2 := 𝛿·2·1`.
+The name of the element is what tells a manufactured datum from data, the way
+`𝔻(…)` does in the text format, so a reader never looks at the text to tell the
+two apart.
 `<answered>` holds the name of the term the firing answered with, named the same
 way by its own `meta`, and `<built>` before it holds the name of the term the
 entry wrote, the one 𝕄 made that answer of: two elements rather than two
@@ -1150,7 +1161,8 @@ $ cat atoms.txt
         𝕄(ξ.ρ):
           𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )
         boxed 𝑛·2·2 := 𝑛·2·1.φ
-      𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
+        𝛿·2·1 := 𝔻(𝜎1:λ)
+      𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
           𝑛·2·3 := 4.0
@@ -1158,8 +1170,8 @@ $ cat atoms.txt
         𝕄(𝑛·2·4):
           𝑛·2·5 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )
         boxed 𝑛·2·6 := 𝑛·2·5.φ
-        𝛿·2·1 := 40-10-00-00-00-00-00-00  # 4.0
-      𝛿2·2 := 𝛿·2·1  # 𝔻(ξ.x)
+        𝛿·2·2 := 40-10-00-00-00-00-00-00  # 4.0
+      𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)
       𝑛·2·7 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
       𝕄(𝑛·2·7):
         𝑛·2·8 := Φ.number( φ ↦ 𝜎2:λ )
@@ -1383,7 +1395,9 @@ $ cat down.txt
 𝕄(Φ.y):
   𝑛·0·1 := Φ.down( x ↦ 𝜎1:λ )
   𝔼(L_down):
-    𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
+    𝔻(ξ.x):
+      𝛿·1·1 := 𝔻(𝜎1:λ)
+    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
     𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛
     𝕄(𝑛·1·1):
       𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
