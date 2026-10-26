@@ -283,7 +283,7 @@ $ cat atoms.txt
       𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )
       morphed 𝑛·1·15 := 𝑛·1·14
     𝑛·1·16 := 𝑛·1·15  # 𝕄(𝑛·1·13)
-  boxed 𝑛·0·5 := 𝑛·1·15.φ
+  boxed 𝑛·0·5 := 𝑛·1·16.φ
   𝛿·0·1 := 𝔻(𝜎1:λ)
 ```
 
@@ -370,14 +370,14 @@ and the application by the same name, since `copy` makes the same object of the
 same application wherever it stands: `𝑛·1·1` is the object `5` made,
 `𝑛·0·2.plus( x ↦ 6.0 )` is the `plus` of the first `5` applied to `6`, one line
 for one call, and `𝑛·1·16 := 𝑛·1·15` says the firing answered with the object
-𝕄 made of what the entry wrote, named by the `morphed …` line that came to it,
-as every object holding neither `Δ` nor `λ` is from then on. Such a line names
-its head and its argument that way, each on its own, and never the application
-as a whole, so a line spells out every application, even one making an object
-an earlier one already made, the way `𝑛·1·1 := 5` does, and a later line names
-the latest of them.
+𝕄 made of what the entry wrote. Such a line names its head and its argument
+that way, each on its own, and never the application as a whole, so a line
+spells out every application, even one making an object an earlier one already
+made, the way `𝑛·1·1 := 5` does, and a later line names the latest of them.
 Only an object still standing as it was made is named: once a rule rewrote a
-part of it, it is another object and it is spelled out again.
+part of it, it is another object and it is spelled out again. A `morphed …`
+line and an answer rename an object holding neither `Δ` nor `λ`, so the box
+step after the firing writes `𝑛·1·16.φ`, the newest name of that object.
 
 Where a dataization came down to the datum a symbol stands for, the protocol
 writes `𝔻(𝜎1:λ)` in place of that 42 (`𝜎1:λ` is the formation `⟦ λ ⤍ 𝜎1 ⟧`,
@@ -721,7 +721,7 @@ $ cat fork.txt
       𝑛·6·11 := Φ.number( φ ↦ 𝜎7:λ )
       morphed 𝑛·6·12 := 𝑛·6·11
     𝑛·6·13 := 𝑛·6·12  # 𝕄(𝑛·6·10)
-  boxed 𝑛·0·10 := 𝑛·6·12.φ
+  boxed 𝑛·0·10 := 𝑛·6·13.φ
   𝛿·0·1 := 𝔻(𝜎7:λ)
 ```
 
@@ -822,7 +822,7 @@ $ cat atoms.xml
       </morph>
       <answered meta="𝑛·1·16">𝑛·1·15</answered>
     </evaluate>
-    <boxed meta="𝑛·0·5">𝑛·1·15.φ</boxed>
+    <boxed meta="𝑛·0·5">𝑛·1·16.φ</boxed>
     <manufactured meta="𝛿·0·1">𝜎1</manufactured>
   </dataize>
 </protocol>
@@ -903,9 +903,10 @@ text holding the value. An application nothing reduced gets an `<applied>`
 too, with no `by` and no `at`, right before the element that holds it:
 `<applied meta="𝑒·0·1" of="Φ.bytes">` is `Φ.bytes( 40-14-… )`, the argument of
 the `Φ.number` that `𝑛·0·2` applies. A later element holding an object holds
-its name instead, the one its `<morphed>` gave it once a 𝕄 came to it, so
-`<answered meta="𝑛·1·16">𝑛·1·15</answered>` says the firing answered with it
-and `<morph at="𝑛·1·13">` that 𝕄 got into what the entry built.
+its newest name instead, the one the last `<morphed>` or `<answered>` gave
+it, so `<answered meta="𝑛·1·16">𝑛·1·15</answered>` says the firing answered
+with it, `<boxed meta="𝑛·0·5">𝑛·1·16.φ</boxed>` goes on with that answer, and
+`<morph at="𝑛·1·13">` says that 𝕄 got into what the entry built.
 
 The markup is for a program, which never has to parse a term of 𝜑-calculus to
 read it. Every value the markup holds, in an attribute or as the text of an

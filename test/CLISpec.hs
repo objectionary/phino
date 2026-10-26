@@ -1810,7 +1810,7 @@ spec = do
                        , "      𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "      morphed 𝑛·1·15 := 𝑛·1·14"
                        , "    𝑛·1·16 := 𝑛·1·15  # 𝕄(𝑛·1·13)"
-                       , "  boxed 𝑛·0·5 := 𝑛·1·15.φ"
+                       , "  boxed 𝑛·0·5 := 𝑛·1·16.φ"
                        , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
                        ]
 
@@ -1833,7 +1833,7 @@ spec = do
                        , "    𝕄(𝑛·1·1):"
                        , "      morphed 𝑛·1·2 := Φ.bytes( φ ↦ 𝜎1:λ ):φ"
                        , "    𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)"
-                       , "  boxed 𝑛·0·4 := 𝑛·1·2.φ"
+                       , "  boxed 𝑛·0·4 := 𝑛·1·3.φ"
                        , "  𝕄(𝑛·0·4):"
                        , "    𝑛·0·5 := Φ.bytes( φ ↦ 𝜎1:λ )"
                        , "    morphed 𝑛·0·6 := 𝑛·0·5"
@@ -1907,7 +1907,7 @@ spec = do
                        , "      𝑛·2·11 := Φ.number( φ ↦ 𝜎2:λ )"
                        , "      morphed 𝑛·2·12 := 𝑛·2·11"
                        , "    𝑛·2·13 := 𝑛·2·12  # 𝕄(𝑛·2·10)"
-                       , "  boxed 𝑛·0·6 := 𝑛·2·12.φ"
+                       , "  boxed 𝑛·0·6 := 𝑛·2·13.φ"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
 
@@ -1977,7 +1977,7 @@ spec = do
                        , "      𝑛·2·11 := Φ.number( φ ↦ 𝜎2:λ )"
                        , "      morphed 𝑛·2·12 := 𝑛·2·11"
                        , "    𝑛·2·13 := 𝑛·2·12  # 𝕄(𝑛·2·10)"
-                       , "  boxed 𝑛·0·6 := 𝑛·2·12.φ"
+                       , "  boxed 𝑛·0·6 := 𝑛·2·13.φ"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
 
@@ -2039,7 +2039,7 @@ spec = do
                        , "          𝑛·2·14 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "          morphed 𝑛·2·15 := 𝑛·2·14"
                        , "        𝑛·2·16 := 𝑛·2·15  # 𝕄(𝑛·2·13)"
-                       , "      boxed 𝑛·1·10 := 𝑛·2·15.φ"
+                       , "      boxed 𝑛·1·10 := 𝑛·2·16.φ"
                        , "      𝛿·1·2 := 𝔻(𝜎1:λ)"
                        , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
                        , "    𝑛·1·11 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
@@ -2047,7 +2047,7 @@ spec = do
                        , "      𝑛·1·12 := Φ.number( φ ↦ 𝜎2:λ )"
                        , "      morphed 𝑛·1·13 := 𝑛·1·12"
                        , "    𝑛·1·14 := 𝑛·1·13  # 𝕄(𝑛·1·11)"
-                       , "  boxed 𝑛·0·5 := 𝑛·1·13.φ"
+                       , "  boxed 𝑛·0·5 := 𝑛·1·14.φ"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
 
@@ -2141,7 +2141,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          records `shouldEndWith` "    𝕄(𝑛·1·13):\n      𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )\n      morphed 𝑛·1·15 := 𝑛·1·14\n    𝑛·1·16 := 𝑛·1·15  # 𝕄(𝑛·1·13)\n  boxed 𝑛·0·5 := 𝑛·1·15.φ\n  𝛿·0·1 := 𝔻(𝜎1:λ)\n"
+          records `shouldEndWith` "    𝕄(𝑛·1·13):\n      𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )\n      morphed 𝑛·1·15 := 𝑛·1·14\n    𝑛·1·16 := 𝑛·1·15  # 𝕄(𝑛·1·13)\n  boxed 𝑛·0·5 := 𝑛·1·16.φ\n  𝛿·0·1 := 𝔻(𝜎1:λ)\n"
 
       it "numbers every step in the text as the XML of the same run numbers it" $
         withTempFile "protocolXXXXXX.txt" $ \(text, one) ->
@@ -2214,7 +2214,7 @@ spec = do
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·16\">𝑛·1·15</answered>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·5\">𝑛·1·15.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·5\">𝑛·1·16.φ</boxed>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎1</manufactured>"
                          , "</dataize>"
                          ]
@@ -2375,7 +2375,7 @@ spec = do
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·2·13\">𝑛·2·12</answered>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·6\">𝑛·2·12.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·6\">𝑛·2·13.φ</boxed>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎2</manufactured>"
                          , "</dataize>"
                          ]
@@ -2573,7 +2573,7 @@ spec = do
                          , "        </morph>"
                          , "        <answered meta=\"𝑛·2·16\">𝑛·2·15</answered>"
                          , "      </evaluate>"
-                         , "      <boxed meta=\"𝑛·1·10\">𝑛·2·15.φ</boxed>"
+                         , "      <boxed meta=\"𝑛·1·10\">𝑛·2·16.φ</boxed>"
                          , "      <manufactured meta=\"𝛿·1·2\">𝜎1</manufactured>"
                          , "    </dataize>"
                          , "    <bound meta=\"𝛿2·1\">𝛿·1·2</bound>"
@@ -2586,7 +2586,7 @@ spec = do
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·14\">𝑛·1·13</answered>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·5\">𝑛·1·13.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·5\">𝑛·1·14.φ</boxed>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎2</manufactured>"
                          , "</dataize>"
                          ]
@@ -3360,7 +3360,7 @@ spec = do
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
         records <- recordedWith (joining <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
-        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·2·3</meta></with></deferred>"]
+        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·2·4</meta></with></deferred>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"

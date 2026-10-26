@@ -423,7 +423,7 @@ saveEval handle cursor printed printed' report = do
           naming :: String
           naming = printf "%s·%d" stem index
       (protocol', value) <- valued counted naming term
-      pure (protocol'{_made = adopted term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
     written at (EvMorphed _ term) protocol = do
       let (index, counted) = numbered protocol
           naming :: String
@@ -451,10 +451,8 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- valued counted naming term
       remarks <- mapM sourced sides
-      pure (protocol'{_made = adopted term (alias (opener protocol) index) protocol'._made}, Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
     written _ (EvWorld world) protocol = pure (protocol{_made = namedInsert world ExRoot protocol._made}, Nothing)
-    adopted :: Expression -> Expression -> Named Expression -> Named Expression
-    adopted term aliased made = maybe (namedFormation term aliased made) (const made) (namedLookup term made)
     spelt :: Either Int Bytes -> IO String
     spelt (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
     spelt (Right bytes) = render (ExBytes bytes)
@@ -652,12 +650,7 @@ saveEvalXml handle cursor printed report = do
         modify (first (\nesting' -> nesting'{_sources = (depth, term, naming) : nesting'._sources}))
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
-    elements at (EvMorphed depth term) nesting =
-      placed at nesting $ do
-        body <- leaf depth term
-        (naming, aliased) <- counted
-        modify (first (\nesting' -> nesting'{_objects = namedFormation term aliased nesting'._objects}))
-        pure (printf "<morphed meta=\"%s\">%s</morphed>" (escapeXML naming) (escapeXMLText body))
+    elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
     elements at (EvJoined _ condition symbol (left, right)) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
@@ -724,7 +717,8 @@ saveEvalXml handle cursor printed report = do
     concluded :: String -> Int -> Expression -> Naming String
     concluded tag depth term = do
       body <- leaf depth term
-      (naming, _) <- counted
+      (naming, aliased) <- counted
+      modify (first (\nesting -> nesting{_objects = namedFormation term aliased nesting._objects}))
       pure (printf "<%s meta=\"%s\">%s</%s>" tag (escapeXML naming) (escapeXMLText body) tag)
     bind :: Int -> Nesting -> T.Text -> Expression -> Naming String
     bind depth nesting spelling term = printf "<bound meta=\"%s\">%s</bound>" (escapeXML (labelled nesting spelling)) . escapeXMLText <$> leaf depth term
