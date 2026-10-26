@@ -20,7 +20,7 @@ compile pat = do
   pure (Regex first continuation)
   where
     compileWith option = do
-      compiled <- R.compile R.compUTF8 option pat
+      compiled <- R.compile R.compUTF8 option (B.pack "(*UCP)" `B.append` pat)
       case compiled of
         Left (_, err) -> throwIO (userError ("Regex compilation failed: " ++ err))
         Right regex -> pure regex
