@@ -250,6 +250,7 @@ data Nesting = Nesting
   , _closing :: [(Int, String)]
   , _objects :: Named Expression
   , _numbered :: Map.Map Int Int
+  , _parts :: Map.Map Int Int
   , _datums :: Map.Map Int Int
   , _held :: Maybe (Either Int Bytes, String)
   , _heads :: [(Int, (Judgment, Expression))]
@@ -263,7 +264,7 @@ data Nesting = Nesting
 type Naming = StateT (Nesting, [String]) IO
 
 emptyNesting :: Nesting
-emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Nothing [] [] [] Map.empty Map.empty 0
+emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Map.empty Nothing [] [] [] Map.empty Map.empty 0
 
 saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
 saveEval handle cursor printed printed' report = do
@@ -418,11 +419,14 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" stem index
       (protocol', value) <- valued counted naming term
       pure (protocol'{_made = adopted term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
-    written at (EvMorphed depth term) protocol
-      | _ : (_, Just (Dataization, _), _, _) : _ <- protocol._blocks
-      , Nothing <- namedLookup term protocol._made =
-          written at (EvTaken depth [] term) protocol
-    written _ EvMorphed{} protocol = pure (protocol, Nothing)
+    written at (EvMorphed _ term) protocol = do
+      let (index, counted) = numbered protocol
+          naming :: String
+          naming = printf "%s·%d" (labelled protocol answer) index
+      (protocol', value) <- case (namedLookup term protocol._made, namedLookup term protocol._named) of
+        (Nothing, Nothing) -> first (\fresh -> fresh{_made = adopted term (alias (opener protocol) index) fresh._made}) <$> valued counted naming term
+        _ -> (,) counted <$> borrowed protocol term
+      pure (protocol', Just (indented at (printf "morphed %s := %s" naming value)))
     written at (EvJoined _ condition symbol (left, right)) protocol = do
       on <- either (pure . labelled protocol) salted condition
       pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
@@ -694,8 +698,10 @@ saveEvalXml handle cursor printed report = do
       pure (printf "%s·%d" (labelled nesting answer) index, alias (opener nesting) index)
     recorded :: Expression -> (String -> String) -> Naming Expression
     recorded term element = do
-      (naming, aliased) <- counted
-      modify (bimap (\nesting -> nesting{_objects = namedInsert term aliased nesting._objects}) (element (escapeXML naming) :))
+      (nesting, records) <- get
+      let index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._parts)
+          aliased = ExMeta (T.pack (printf "e·%d·%d" (opener nesting) index))
+      put (nesting{_parts = Map.insert (opener nesting) index nesting._parts, _objects = namedInsert term aliased nesting._objects}, element (escapeXML (printf "%s·%d" (labelled nesting fragment) index)) : records)
       pure aliased
     opaque :: Expression -> Naming Expression
     opaque term = do
@@ -933,6 +939,9 @@ answer = "𝑛"
 
 sigil :: T.Text
 sigil = "𝛿"
+
+fragment :: T.Text
+fragment = "𝑒"
 
 found :: Either Int Bytes -> Maybe (Either Int Bytes, String) -> Maybe String
 found value (Just (held, naming))

@@ -24,4 +24,8 @@ protocol: |
       𝔻(ξ.c):
         𝛿·1·1 := 𝔻(𝜎1:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
-      diverged 01-:Δ vs Φ.zu:φ  # they differ at .Δ, and the left side has Δ
+      𝕄(ξ.a):
+        morphed 𝑛·1·1 := 01-:Δ
+      𝕄(ξ.b):
+        morphed 𝑛·1·2 := Φ.zu:φ
+      diverged 01-:Δ vs 𝑛·1·2  # they differ at .Δ, and the left side has Δ

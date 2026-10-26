@@ -254,30 +254,36 @@ $ cat atoms.txt
   𝕄(𝑛·0·1):
     𝑛·0·2 := 5.0
     𝑛·0·3 := 𝑛·0·2.plus( x ↦ 6.0 )
+    morphed 𝑛·0·4 := 𝑛·0·3
   𝔼(L_number_plus):  # 𝔻(𝑛·0·1)
     𝔻(ξ.ρ):
       𝕄(ξ.ρ):
         𝑛·1·1 := 5.0
-      boxed 𝑛·1·2 := 𝑛·1·1.φ
-      𝕄(𝑛·1·2):
-        𝑛·1·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-      boxed 𝑛·1·4 := 𝑛·1·3.φ
+        morphed 𝑛·1·2 := 𝑛·1·1
+      boxed 𝑛·1·3 := 𝑛·1·1.φ
+      𝕄(𝑛·1·3):
+        𝑛·1·4 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+        morphed 𝑛·1·5 := 𝑛·1·4
+      boxed 𝑛·1·6 := 𝑛·1·4.φ
       𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
     𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
     𝔻(ξ.x):
       𝕄(ξ.x):
-        𝑛·1·5 := 6.0
-      boxed 𝑛·1·6 := 𝑛·1·5.φ
-      𝕄(𝑛·1·6):
-        𝑛·1·7 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
-      boxed 𝑛·1·8 := 𝑛·1·7.φ
+        𝑛·1·7 := 6.0
+        morphed 𝑛·1·8 := 𝑛·1·7
+      boxed 𝑛·1·9 := 𝑛·1·7.φ
+      𝕄(𝑛·1·9):
+        𝑛·1·10 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
+        morphed 𝑛·1·11 := 𝑛·1·10
+      boxed 𝑛·1·12 := 𝑛·1·10.φ
       𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0
     𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
-    𝑛·1·9 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-    𝕄(𝑛·1·9):
-      𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )
-    𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)
-  boxed 𝑛·0·4 := 𝑛·1·10.φ
+    𝑛·1·13 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+    𝕄(𝑛·1·13):
+      𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )
+      morphed 𝑛·1·15 := 𝑛·1·14
+    𝑛·1·16 := 𝑛·1·14  # 𝕄(𝑛·1·13)
+  boxed 𝑛·0·5 := 𝑛·1·14.φ
   𝛿·0·1 := 𝔻(𝜎1:λ)
 ```
 
@@ -324,23 +330,23 @@ formation dispatched to its `φ` before 𝕄 reduces it, to a fresh `𝑛`, coun
 with the metas of the firing it stands in, as the objects below are. An object
 an application made is named by its line and the program the run started from
 is named `Φ`, so `boxed 𝑛·0·1 := Φ.φ` opens the run above and
-`boxed 𝑛·1·2 := 𝑛·1·1.φ` is the `φ` of the `5` the first morphing of the
+`boxed 𝑛·1·3 := 𝑛·1·1.φ` is the `φ` of the `5` the first morphing of the
 firing made. What 𝔻 does after the line it does to that term, so the morphing
-that follows is named after the meta, `𝕄(𝑛·1·2):`, the way the morphing of an
+that follows is named after the meta, `𝕄(𝑛·1·3):`, the way the morphing of an
 answer is named after the answer, and a firing that 𝔻 asks for is commented
 with it, `# 𝔻(𝑛·0·1)`. The line stands in the `𝔻(…):` block it belongs to and
 between the morphings of that 𝔻, so each morphing opens a `𝕄(…):` block of its
 own: in the run above 𝔻 morphs each number the entry brings down under
 `𝕄(ξ.ρ):`, gets into its `φ`, and morphs that `φ` into the bytes the number
-holds under `𝕄(𝑛·1·2):`. Two blocks of one heading with nothing between them
+holds under `𝕄(𝑛·1·3):`. Two blocks of one heading with nothing between them
 are written as one.
 
 An answer stands on two lines and not one. A firing answers the term its entry
 wrote and `phino` morphs that term before standing it back into the program, so
-`𝑛·1·9` is what the entry wrote, with the symbols this firing minted already in
-it, commented with `𝑛` to name the key it was read from, and `𝑛·1·11` is the
-normal form 𝕄 made of it, commented with `𝕄(𝑛·1·9)` to say where it came
-from. That morphing opens a block of its own, `𝕄(𝑛·1·9):`, named after the
+`𝑛·1·13` is what the entry wrote, with the symbols this firing minted already in
+it, commented with `𝑛` to name the key it was read from, and `𝑛·1·16` is the
+normal form 𝕄 made of it, commented with `𝕄(𝑛·1·13)` to say where it came
+from. That morphing opens a block of its own, `𝕄(𝑛·1·13):`, named after the
 term it started from, since that term stands nowhere in the program a locator
 could reach. It is the same morphing every other term goes through, and writing
 only its outcome would have the formation of `number` appear in place of the
@@ -349,7 +355,7 @@ fires or applies writes its lines between the two, exactly where a firing an
 operand took opens its block, so the order the lines come in is the order the
 work was done in.
 
-`𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )` is an object an application made. The `copy`
+`𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )` is an object an application made. The `copy`
 rule of normalization fills a void of a formation with the argument it was
 given, and so makes a new object, whatever judgment is running and wherever in
 the term the application stands. The line binds that object to a fresh `𝑛` and
@@ -357,13 +363,13 @@ spells the application: the object applied on the left and the argument it got
 on the right, so `5` is `Φ.number( φ ↦ … )` in sugar. The `ρ` a dispatch gives
 the attribute it takes writes no line. The block the line stands in names the
 judgment that normalized and the site it stood at. The name is counted with the
-metas of the firing the line stands in, `𝑛·1·9` before it and `𝑛·1·11` after
+metas of the firing the line stands in, `𝑛·1·13` before it and `𝑛·1·15` after
 it, and an object made outside every firing is counted under `𝑛·0`. From then
 on every line spells the object by that name rather than as the formation it is,
 and the application by the same name, since `copy` makes the same object of the
 same application wherever it stands: `𝑛·1·1` is the object `5` made,
 `𝑛·0·2.plus( x ↦ 6.0 )` is the `plus` of the first `5` applied to `6`, one line
-for one call, and `𝑛·1·11 := 𝑛·1·10` says the firing answered with the object
+for one call, and `𝑛·1·16 := 𝑛·1·14` says the firing answered with the object
 𝕄 made of what the entry wrote. Such a line names its head and its argument
 that way, each on its own, and never the application as a whole, so a line
 spells out every application, even one making an object an earlier one already
@@ -447,26 +453,31 @@ $ cat atoms.txt
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
           𝑛·1·1 := 5.0
-        boxed 𝑛·1·2 := 𝑛·1·1.φ
-        𝕄(𝑛·1·2):
-          𝑛·1·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-        boxed 𝑛·1·4 := 𝑛·1·3.φ
+          morphed 𝑛·1·2 := 𝑛·1·1
+        boxed 𝑛·1·3 := 𝑛·1·1.φ
+        𝕄(𝑛·1·3):
+          𝑛·1·4 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+          morphed 𝑛·1·5 := 𝑛·1·4
+        boxed 𝑛·1·6 := 𝑛·1·4.φ
         𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
-          𝑛·1·5 := 6.0
-        boxed 𝑛·1·6 := 𝑛·1·5.φ
-        𝕄(𝑛·1·6):
-          𝑛·1·7 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
-        boxed 𝑛·1·8 := 𝑛·1·7.φ
+          𝑛·1·7 := 6.0
+          morphed 𝑛·1·8 := 𝑛·1·7
+        boxed 𝑛·1·9 := 𝑛·1·7.φ
+        𝕄(𝑛·1·9):
+          𝑛·1·10 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
+          morphed 𝑛·1·11 := 𝑛·1·10
+        boxed 𝑛·1·12 := 𝑛·1·10.φ
         𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
-      𝑛·1·9 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝕄(𝑛·1·9):
-        𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )
-      𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)
-    𝑛·0·4 := L_number_nope:λ
+      𝑛·1·13 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+      𝕄(𝑛·1·13):
+        𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )
+        morphed 𝑛·1·15 := 𝑛·1·14
+      𝑛·1·16 := 𝑛·1·14  # 𝕄(𝑛·1·13)
+    morphed 𝑛·0·4 := L_number_nope:λ
   unanswered L_number_nope  # 𝔻(L_number_nope:λ)
 ```
 
@@ -567,32 +578,37 @@ $ cat fork.txt
 𝔻(Φ.demo.a):
   𝕄(Φ.demo.a):
     𝑛·0·1 := Φ.foo( x ↦ Φ.number( φ ↦ 𝜎1:λ ) )
-  boxed 𝑛·0·2 := 𝑛·0·1.φ
-  𝕄(𝑛·0·2):
-    𝑛·0·3 := Φ.number( φ ↦ 𝜎1:λ )
-    𝑛·0·4 := 𝑛·0·3.gt( x ↦ 0.0 )
+    morphed 𝑛·0·2 := 𝑛·0·1
+  boxed 𝑛·0·3 := 𝑛·0·1.φ
+  𝕄(𝑛·0·3):
+    𝑛·0·4 := Φ.number( φ ↦ 𝜎1:λ )
+    𝑛·0·5 := 𝑛·0·4.gt( x ↦ 0.0 )
     𝔼(L_gt):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
           𝑛·1·1 := Φ.number( φ ↦ 𝜎1:λ )
-        boxed 𝑛·1·2 := 𝑛·1·1.φ
+          morphed 𝑛·1·2 := 𝑛·1·1
+        boxed 𝑛·1·3 := 𝑛·1·1.φ
         𝛿·1·1 := 𝔻(𝜎1:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
-          𝑛·1·3 := 0.0
-        boxed 𝑛·1·4 := 𝑛·1·3.φ
-        𝕄(𝑛·1·4):
-          𝑛·1·5 := Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ )
-        boxed 𝑛·1·6 := 𝑛·1·5.φ
+          𝑛·1·4 := 0.0
+          morphed 𝑛·1·5 := 𝑛·1·4
+        boxed 𝑛·1·6 := 𝑛·1·4.φ
+        𝕄(𝑛·1·6):
+          𝑛·1·7 := Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ )
+          morphed 𝑛·1·8 := 𝑛·1·7
+        boxed 𝑛·1·9 := 𝑛·1·7.φ
         𝛿·1·2 := 00-00-00-00-00-00-00-00  # 0.0
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
-      𝑛·1·7 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
-      𝕄(𝑛·1·7):
-        𝑛·1·8 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )
-      𝑛·1·9 := 𝑛·1·8  # 𝕄(𝑛·1·7)
-    𝑛·0·5 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛·1·1.plus( 1.0 ).plus( 𝑛·1·1 ) )
-    𝑛·0·6 := 𝑛·0·5( else ↦ 𝑛·1·1.plus( 2.0 ).plus( 𝑛·1·1 ) )
+      𝑛·1·10 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
+      𝕄(𝑛·1·10):
+        𝑛·1·11 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )
+        morphed 𝑛·1·12 := 𝑛·1·11
+      𝑛·1·13 := 𝑛·1·11  # 𝕄(𝑛·1·10)
+    𝑛·0·6 := ⟦ λ ⤍ L_fork, then ↦ ∅, else ↦ ∅, φ ↦ 𝜎2:λ ⟧( then ↦ 𝑛·1·1.plus( 1.0 ).plus( 𝑛·1·1 ) )
+    𝑛·0·7 := 𝑛·0·6( else ↦ 𝑛·1·1.plus( 2.0 ).plus( 𝑛·1·1 ) )
     𝔼(L_fork):
       𝔻(ξ.φ):
         𝛿·2·1 := 𝔻(𝜎2:λ)
@@ -604,88 +620,106 @@ $ cat fork.txt
           𝔻(ξ.ρ):
             𝕄(ξ.ρ):
               𝑛·3·1 := Φ.number( φ ↦ 𝜎1:λ )
-            boxed 𝑛·3·2 := 𝑛·3·1.φ
+              morphed 𝑛·3·2 := 𝑛·3·1
+            boxed 𝑛·3·3 := 𝑛·3·1.φ
             𝛿·3·1 := 𝔻(𝜎1:λ)
           𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.ρ)
           𝔻(ξ.x):
             𝕄(ξ.x):
-              𝑛·3·3 := 1.0
-            boxed 𝑛·3·4 := 𝑛·3·3.φ
-            𝕄(𝑛·3·4):
-              𝑛·3·5 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
-            boxed 𝑛·3·6 := 𝑛·3·5.φ
+              𝑛·3·4 := 1.0
+              morphed 𝑛·3·5 := 𝑛·3·4
+            boxed 𝑛·3·6 := 𝑛·3·4.φ
+            𝕄(𝑛·3·6):
+              𝑛·3·7 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+              morphed 𝑛·3·8 := 𝑛·3·7
+            boxed 𝑛·3·9 := 𝑛·3·7.φ
             𝛿·3·2 := 3F-F0-00-00-00-00-00-00  # 1.0
           𝛿2·3 := 𝛿·3·2  # 𝔻(ξ.x)
-          𝑛·3·7 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
-          𝕄(𝑛·3·7):
-            𝑛·3·8 := Φ.number( φ ↦ 𝜎3:λ )
-          𝑛·3·9 := 𝑛·3·8  # 𝕄(𝑛·3·7)
-        𝑛·2·3 := 𝑛·3·8.plus( x ↦ 𝑛·3·1 )
+          𝑛·3·10 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
+          𝕄(𝑛·3·10):
+            𝑛·3·11 := Φ.number( φ ↦ 𝜎3:λ )
+            morphed 𝑛·3·12 := 𝑛·3·11
+          𝑛·3·13 := 𝑛·3·11  # 𝕄(𝑛·3·10)
+        𝑛·2·3 := 𝑛·3·11.plus( x ↦ 𝑛·3·1 )
+        morphed 𝑛·2·4 := 𝑛·2·3
       𝕄(ξ.else):
-        𝑛·2·4 := Φ.number( φ ↦ 𝜎1:λ )
-        𝑛·2·5 := 𝑛·2·4.plus( x ↦ 2.0 )
+        𝑛·2·5 := Φ.number( φ ↦ 𝜎1:λ )
+        𝑛·2·6 := 𝑛·2·5.plus( x ↦ 2.0 )
         𝔼(L_plus):
           𝔻(ξ.ρ):
             𝕄(ξ.ρ):
               𝑛·4·1 := Φ.number( φ ↦ 𝜎1:λ )
-            boxed 𝑛·4·2 := 𝑛·4·1.φ
+              morphed 𝑛·4·2 := 𝑛·4·1
+            boxed 𝑛·4·3 := 𝑛·4·1.φ
             𝛿·4·1 := 𝔻(𝜎1:λ)
           𝛿1·4 := 𝛿·4·1  # 𝔻(ξ.ρ)
           𝔻(ξ.x):
             𝕄(ξ.x):
-              𝑛·4·3 := 2.0
-            boxed 𝑛·4·4 := 𝑛·4·3.φ
-            𝕄(𝑛·4·4):
-              𝑛·4·5 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
-            boxed 𝑛·4·6 := 𝑛·4·5.φ
+              𝑛·4·4 := 2.0
+              morphed 𝑛·4·5 := 𝑛·4·4
+            boxed 𝑛·4·6 := 𝑛·4·4.φ
+            𝕄(𝑛·4·6):
+              𝑛·4·7 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
+              morphed 𝑛·4·8 := 𝑛·4·7
+            boxed 𝑛·4·9 := 𝑛·4·7.φ
             𝛿·4·2 := 40-00-00-00-00-00-00-00  # 2.0
           𝛿2·4 := 𝛿·4·2  # 𝔻(ξ.x)
-          𝑛·4·7 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
-          𝕄(𝑛·4·7):
-            𝑛·4·8 := Φ.number( φ ↦ 𝜎4:λ )
-          𝑛·4·9 := 𝑛·4·8  # 𝕄(𝑛·4·7)
-        𝑛·2·6 := 𝑛·4·8.plus( x ↦ 𝑛·4·1 )
+          𝑛·4·10 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
+          𝕄(𝑛·4·10):
+            𝑛·4·11 := Φ.number( φ ↦ 𝜎4:λ )
+            morphed 𝑛·4·12 := 𝑛·4·11
+          𝑛·4·13 := 𝑛·4·11  # 𝕄(𝑛·4·10)
+        𝑛·2·7 := 𝑛·4·11.plus( x ↦ 𝑛·4·1 )
+        morphed 𝑛·2·8 := 𝑛·2·7
       joined 𝜎5 := 𝛿1·2 ? 𝜎3 : 𝜎4
-      𝑛·2·7 := ⟦ x ↦ 𝑛·4·1, λ ⤍ L_plus ⟧  # 𝕄(ξ.then), 𝕄(ξ.else)
+      𝑛·2·9 := ⟦ x ↦ 𝑛·4·1, λ ⤍ L_plus ⟧  # 𝕄(ξ.then), 𝕄(ξ.else)
     𝔼(L_plus):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
           𝑛·5·1 := Φ.number( φ ↦ 𝜎5:λ )
-        boxed 𝑛·5·2 := 𝑛·5·1.φ
+          morphed 𝑛·5·2 := 𝑛·5·1
+        boxed 𝑛·5·3 := 𝑛·5·1.φ
         𝛿·5·1 := 𝔻(𝜎5:λ)
       𝛿1·5 := 𝛿·5·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
-          𝑛·5·3 := Φ.number( φ ↦ 𝜎1:λ )
-        boxed 𝑛·5·4 := 𝑛·5·3.φ
+          𝑛·5·4 := Φ.number( φ ↦ 𝜎1:λ )
+          morphed 𝑛·5·5 := 𝑛·5·4
+        boxed 𝑛·5·6 := 𝑛·5·4.φ
         𝛿·5·2 := 𝔻(𝜎1:λ)
       𝛿2·5 := 𝛿·5·2  # 𝔻(ξ.x)
-      𝑛·5·5 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
-      𝕄(𝑛·5·5):
-        𝑛·5·6 := Φ.number( φ ↦ 𝜎6:λ )
-      𝑛·5·7 := 𝑛·5·6  # 𝕄(𝑛·5·5)
-    𝑛·0·7 := 𝑛·5·6.plus( x ↦ 5.0 )
-  𝔼(L_plus):  # 𝔻(𝑛·0·2)
+      𝑛·5·7 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
+      𝕄(𝑛·5·7):
+        𝑛·5·8 := Φ.number( φ ↦ 𝜎6:λ )
+        morphed 𝑛·5·9 := 𝑛·5·8
+      𝑛·5·10 := 𝑛·5·8  # 𝕄(𝑛·5·7)
+    𝑛·0·8 := 𝑛·5·8.plus( x ↦ 5.0 )
+    morphed 𝑛·0·9 := 𝑛·0·8
+  𝔼(L_plus):  # 𝔻(𝑛·0·3)
     𝔻(ξ.ρ):
       𝕄(ξ.ρ):
         𝑛·6·1 := Φ.number( φ ↦ 𝜎6:λ )
-      boxed 𝑛·6·2 := 𝑛·6·1.φ
+        morphed 𝑛·6·2 := 𝑛·5·10
+      boxed 𝑛·6·3 := 𝑛·6·1.φ
       𝛿·6·1 := 𝔻(𝜎6:λ)
     𝛿1·6 := 𝛿·6·1  # 𝔻(ξ.ρ)
     𝔻(ξ.x):
       𝕄(ξ.x):
-        𝑛·6·3 := 5.0
-      boxed 𝑛·6·4 := 𝑛·6·3.φ
-      𝕄(𝑛·6·4):
-        𝑛·6·5 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
-      boxed 𝑛·6·6 := 𝑛·6·5.φ
+        𝑛·6·4 := 5.0
+        morphed 𝑛·6·5 := 𝑛·6·4
+      boxed 𝑛·6·6 := 𝑛·6·4.φ
+      𝕄(𝑛·6·6):
+        𝑛·6·7 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+        morphed 𝑛·6·8 := 𝑛·6·7
+      boxed 𝑛·6·9 := 𝑛·6·7.φ
       𝛿·6·2 := 40-14-00-00-00-00-00-00  # 5.0
     𝛿2·6 := 𝛿·6·2  # 𝔻(ξ.x)
-    𝑛·6·7 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
-    𝕄(𝑛·6·7):
-      𝑛·6·8 := Φ.number( φ ↦ 𝜎7:λ )
-    𝑛·6·9 := 𝑛·6·8  # 𝕄(𝑛·6·7)
-  boxed 𝑛·0·8 := 𝑛·6·8.φ
+    𝑛·6·10 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
+    𝕄(𝑛·6·10):
+      𝑛·6·11 := Φ.number( φ ↦ 𝜎7:λ )
+      morphed 𝑛·6·12 := 𝑛·6·11
+    𝑛·6·13 := 𝑛·6·11  # 𝕄(𝑛·6·10)
+  boxed 𝑛·0·10 := 𝑛·6·11.φ
   𝛿·0·1 := 𝔻(𝜎7:λ)
 ```
 
@@ -704,9 +738,9 @@ made stands on a line of its own. The `plus` both branches end in reads the
 joined symbol as `𝔻(𝜎5:λ)`, and the `plus( 5 )` after it reads `𝔻(𝜎6:λ)`.
 
 Two branches that differ in more than their symbols do not join. Had `else`
-been `ξ.x.plus( 2 )`, its morph would come to `𝑛·2·4.plus( x ↦ 2.0 )`, holding
+been `ξ.x.plus( 2 )`, its morph would come to `𝑛·2·5.plus( x ↦ 2.0 )`, holding
 a datum where `then` holds a symbol, and the firing of `L_fork` would end in
-`diverged 𝑛·2·3 vs 𝑛·2·5`, naming the two branches by the lines their morphs
+`diverged 𝑛·2·3 vs 𝑛·2·6`, naming the two branches by the lines their morphs
 wrote, since one term for both would make `foo` read as a program that
 computes a condition, computes both branches and then makes up a value
 neither of them has. The comment of that line says that the two differ at
@@ -719,7 +753,7 @@ fired while the join morphs that branch, so it stands inside `𝔼(L_fork)`. The
 `plus` both branches end in reaches the join as a call 𝕄 left unfired, and is
 fired once the join answered, by the morph of `Φ.demo.a`, so it stands beside
 `𝔼(L_fork)` rather than inside it. The last `𝔼(L_plus)` is the one the outer
-`𝔻` asked for after the morph, so it is commented with `𝔻(𝑛·0·2)`, the `φ` of
+`𝔻` asked for after the morph, so it is commented with `𝔻(𝑛·0·3)`, the `φ` of
 `foo` that the box step bound.
 
 ### The protocol as XML
@@ -741,17 +775,17 @@ $ cat atoms.xml
   <dataize at="Φ">
     <boxed meta="𝑛·0·1">Φ.φ</boxed>
     <morph at="𝑛·0·1">
-      <applied meta="𝑛·0·2" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
-      <applied meta="𝑛·0·3" by="morph" at="𝑛·0·1" of="Φ.number"><meta attr="φ">𝑛·0·2</meta></applied>
-      <applied meta="𝑛·0·4" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
-      <applied meta="𝑛·0·5" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
-      <applied meta="𝑛·0·6" by="morph" at="𝑛·0·1" of="𝑛·0·3.plus"><meta attr="x">𝑛·0·5</meta></applied>
-      <morphed meta="𝑛·0·7">𝑛·0·6</morphed>
+      <applied meta="𝑒·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
+      <applied meta="𝑛·0·2" by="morph" at="𝑛·0·1" of="Φ.number"><meta attr="φ">𝑒·0·1</meta></applied>
+      <applied meta="𝑒·0·2" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
+      <applied meta="𝑒·0·3" of="Φ.number"><meta attr="φ">𝑒·0·2</meta></applied>
+      <applied meta="𝑛·0·3" by="morph" at="𝑛·0·1" of="𝑛·0·2.plus"><meta attr="x">𝑒·0·3</meta></applied>
+      <morphed meta="𝑛·0·4">𝑛·0·3</morphed>
     </morph>
     <evaluate λ="L_number_plus" by="dataize" at="𝑛·0·1">
       <dataize at="ξ.ρ">
         <morph at="ξ.ρ">
-          <applied meta="𝑛·1·1" by="morph" at="ξ.ρ" of="Φ.number"><meta attr="φ">𝑛·0·2</meta></applied>
+          <applied meta="𝑛·1·1" by="morph" at="ξ.ρ" of="Φ.number"><meta attr="φ">𝑒·0·1</meta></applied>
           <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
         </morph>
         <boxed meta="𝑛·1·3">𝑛·1·1.φ</boxed>
@@ -765,7 +799,7 @@ $ cat atoms.xml
       <bound meta="𝛿1·1">𝛿·1·1</bound>
       <dataize at="ξ.x">
         <morph at="ξ.x">
-          <applied meta="𝑛·1·7" by="morph" at="ξ.x" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
+          <applied meta="𝑛·1·7" by="morph" at="ξ.x" of="Φ.number"><meta attr="φ">𝑒·0·2</meta></applied>
           <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
         </morph>
         <boxed meta="𝑛·1·9">𝑛·1·7.φ</boxed>
@@ -778,15 +812,15 @@ $ cat atoms.xml
       </dataize>
       <bound meta="𝛿2·1">𝛿·1·2</bound>
       <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-      <applied meta="𝑛·1·13" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
-      <built meta="𝑛·1·14">𝑛·1·13</built>
-      <morph at="𝑛·1·14">
-        <applied meta="𝑛·1·15" by="morph" at="𝑛·1·14" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
-        <morphed meta="𝑛·1·16">𝑛·1·15</morphed>
+      <applied meta="𝑒·1·1" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
+      <built meta="𝑛·1·13">𝑒·1·1</built>
+      <morph at="𝑛·1·13">
+        <applied meta="𝑛·1·14" by="morph" at="𝑛·1·13" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
+        <morphed meta="𝑛·1·15">𝑛·1·14</morphed>
       </morph>
-      <answered meta="𝑛·1·17">𝑛·1·15</answered>
+      <answered meta="𝑛·1·16">𝑛·1·14</answered>
     </evaluate>
-    <boxed meta="𝑛·0·8">𝑛·1·15.φ</boxed>
+    <boxed meta="𝑛·0·5">𝑛·1·14.φ</boxed>
     <manufactured meta="𝛿·0·1">𝜎1</manufactured>
   </dataize>
 </protocol>
@@ -838,42 +872,43 @@ entry wrote, the one 𝕄 made that answer of: two elements rather than two
 attributes of one, for the same reason `<manufactured>` is no `<dataized>`.
 `<morphed>` closes the `<morph>` element with the name of the term the 𝕄 came
 to, named the same way by its own `meta`, so
-`<morphed meta="𝑛·1·16">𝑛·1·15</morphed>` says the 𝕄 at `𝑛·1·14` came to the
-object `𝑛·1·15`. Only the 𝕄 that opened the element writes one: an operand a
+`<morphed meta="𝑛·1·15">𝑛·1·14</morphed>` says the 𝕄 at `𝑛·1·13` came to the
+object `𝑛·1·14`. Only the 𝕄 that opened the element writes one: an operand a
 rule of 𝕄 morphs on its way stands inside the same element and closes nothing,
 and a 𝕄 that was parked or cut came to nothing and writes none. Two runs of 𝕄
 at one site stand in one element only when nothing stands between them, the
 way the text format writes two blocks of one heading as one, and each closes
 with its own `<morphed>`, so the last one is what the element came to. The
-text format writes no line for it. `<boxed>` is the `boxed …` line of the text
-format, holding the name of the term 𝔻 went on with, with `meta` naming it the
-way the text format does and counted with the other metas of the firing, so
-it stands between the two runs of 𝕄 a dataization makes, and each gets an
-element of its own: the first `<morph at="ξ.ρ">` came to the `Φ.number` of
+text format writes it as `morphed 𝑛·1·15 := 𝑛·1·14`. `<boxed>` is the
+`boxed …` line of the text format, holding the name of the term 𝔻 went on
+with, with `meta` naming it the way the text format does and counted with the
+other metas of the firing, so it stands between the two runs of 𝕄 a
+dataization makes, and each gets an element of its own: the first
+`<morph at="ξ.ρ">` came to the `Φ.number` of
 `𝑛·1·1`, and after `<boxed meta="𝑛·1·3">𝑛·1·1.φ</boxed>` the second,
 `<morph at="𝑛·1·3">`, came to the `Φ.bytes` of `𝑛·1·4`, which holds the
 datum.
 
-`<applied meta="𝑛·1·15" by="morph" at="𝑛·1·14" of="Φ.number">` is an object
-an application made, which the text format writes as `𝑛·1·10 := …` in the
-block `𝕄(𝑛·1·9):`: `meta` names the object, counted with the `<built>`, the
+`<applied meta="𝑛·1·14" by="morph" at="𝑛·1·13" of="Φ.number">` is an object
+an application made, which the text format writes as `𝑛·1·14 := …` in the
+block `𝕄(𝑛·1·13):`: `meta` names the object, counted with the `<built>`, the
 `<morphed>` and the `<answered>` of the firing it stands in, `by` and `at`
 name the judgment that normalized and the site it stood at, and `of` names the
 object applied. The argument stands in an element named after the kind of its
 value, here a `<symbol>`, with `name` naming the attribute it fills and the
 text holding the value. An application nothing reduced gets an `<applied>`
 too, with no `by` and no `at`, right before the element that holds it:
-`<applied meta="𝑛·0·2" of="Φ.bytes">` is `Φ.bytes( 40-14-… )`, the argument of
-the `Φ.number` that `𝑛·0·3` applies. A later element holding an object holds
-its name instead, so `<answered meta="𝑛·1·17">𝑛·1·15</answered>` says the
-firing answered with it and `<morph at="𝑛·1·14">` that 𝕄 got into what the
+`<applied meta="𝑒·0·1" of="Φ.bytes">` is `Φ.bytes( 40-14-… )`, the argument of
+the `Φ.number` that `𝑛·0·2` applies. A later element holding an object holds
+its name instead, so `<answered meta="𝑛·1·16">𝑛·1·14</answered>` says the
+firing answered with it and `<morph at="𝑛·1·13">` that 𝕄 got into what the
 entry built.
 
 The markup is for a program, which never has to parse a term of 𝜑-calculus to
 read it. Every value the markup holds, in an attribute or as the text of an
 element, is one of a few kinds: a symbol such as `𝜎1`, a datum such as
-`40-14-00-00-00-00-00-00`, a meta such as `𝑛·0·3` or `𝛿·1·1`, a path of
-attribute names off `Φ`, `ξ`, `ρ` or a meta, such as `𝑛·0·3.plus`, a name such
+`40-14-00-00-00-00-00-00`, a meta such as `𝑛·0·2` or `𝛿·1·1`, a path of
+attribute names off `Φ`, `ξ`, `ρ` or a meta, such as `𝑛·0·2.plus`, a name such
 as `tail` or `L_fork`, or `⊥`. Inside `<applied>`, `<formed>` and `<with>`, the
 element holding a value is named after its kind, so a reader never looks at the
 text to tell a symbol from a meta: `<symbol>`, `<datum>`, `<meta>`, `<ref>` for
@@ -882,21 +917,20 @@ named by an element of its own, written before the first element that holds
 it, and is its meta from then on: an application by an `<applied>`, and a
 formation by a `<formed>`. A formation that copies an object of the world,
 binding its `φ` to `𝜎196`, is
-`<formed meta="𝑛·3·9" of="Φ.string"><symbol attr="φ">𝜎196</symbol>`: `of`
+`<formed meta="𝑒·3·9" of="Φ.string"><symbol attr="φ">𝜎196</symbol>`: `of`
 names the object by its path, and every element inside is an attribute the
 copy binds to a value other than the one the object has. A copy that binds
 nothing new is named by its path alone. A formation that copies no object of
 the world has no `of` and holds all its bindings: an element for each bound
 attribute, named after the kind of its value, a `<void attr="x"/>` for each
 void one, and its `λ` or `Δ`, if it has one, as an attribute of the element,
-such as `<formed meta="𝑛·1·1" λ="L_fork">`. A term
+such as `<formed meta="𝑒·1·1" λ="L_fork">`. A term
 the markup can name in none of these ways, such as an argument of a deferred
 call that nothing worked out, is an expression meta, `𝑒1`: the same term gets
 the same `𝑒` throughout the file and another term gets another, so a reader can
 tell two holes apart, while what the term is stays in the text format alone.
-Since the markup names terms the text format writes out, the two count their
-metas each on their own: `𝑛·1·15` of the markup above is `𝑛·1·10` of the
-text.
+Such a name is an `𝑒`, counted apart from the `𝑛` of the steps, so every `𝑛`
+of the markup names the line of the text that bears the same `𝑛`.
 
 A join writes `<joined symbol="𝜎5" on="𝛿1·2" left="𝜎3" right="𝜎4"/>`,
 one element per fresh symbol, which the text format writes as
@@ -907,7 +941,7 @@ the sides being morphed where they stand in the universe. Two sides that do
 not join write
 `<diverged left="𝑛·2·3" right="𝑛·2·6" at=".x" reason="the join names no otherwise"/>`
 in its place, which the text format writes as
-`diverged 𝑛·2·3 vs 𝑛·2·5  # they differ at .x, and the join names no otherwise`,
+`diverged 𝑛·2·3 vs 𝑛·2·6  # they differ at .x, and the join names no otherwise`,
 naming each side the way the markup names any other value. `at` holds the
 path where the two sides differ, left out when they differ as a whole, and
 `reason` says why the join made no formation of them.
@@ -940,7 +974,7 @@ since the one symbol it mints is written as `<joined>`.
 
 A λ name no entry answers is `<unanswered λ="…">`, standing where its
 `<evaluate>` would have stood with the name of the formation 𝔼 was fired
-against as its text, such as `𝑛·1·15.nope` below, and the judgment that asked
+against as its text, such as `𝑛·1·14.nope` below, and the judgment that asked
 in its `by` attribute, where the text format writes the letter of it. A firing
 that happened while an operand of another was being reduced is an `<evaluate>`
 inside the one that asked, which is what the deeper indentation means in the
@@ -960,15 +994,15 @@ $ cat atoms.xml
   <dataize at="Φ">
     <boxed meta="𝑛·0·1">Φ.φ</boxed>
     <morph at="𝑛·0·1">
-      <applied meta="𝑛·0·2" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
-      <applied meta="𝑛·0·3" by="morph" at="𝑛·0·1" of="Φ.number"><meta attr="φ">𝑛·0·2</meta></applied>
-      <applied meta="𝑛·0·4" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
-      <applied meta="𝑛·0·5" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
-      <applied meta="𝑛·0·6" by="morph" at="𝑛·0·1" of="𝑛·0·3.plus"><meta attr="x">𝑛·0·5</meta></applied>
+      <applied meta="𝑒·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
+      <applied meta="𝑛·0·2" by="morph" at="𝑛·0·1" of="Φ.number"><meta attr="φ">𝑒·0·1</meta></applied>
+      <applied meta="𝑒·0·2" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
+      <applied meta="𝑒·0·3" of="Φ.number"><meta attr="φ">𝑒·0·2</meta></applied>
+      <applied meta="𝑛·0·3" by="morph" at="𝑛·0·1" of="𝑛·0·2.plus"><meta attr="x">𝑒·0·3</meta></applied>
       <evaluate λ="L_number_plus" by="morph" at="𝑛·0·1">
         <dataize at="ξ.ρ">
           <morph at="ξ.ρ">
-            <applied meta="𝑛·1·1" by="morph" at="ξ.ρ" of="Φ.number"><meta attr="φ">𝑛·0·2</meta></applied>
+            <applied meta="𝑛·1·1" by="morph" at="ξ.ρ" of="Φ.number"><meta attr="φ">𝑒·0·1</meta></applied>
             <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
           </morph>
           <boxed meta="𝑛·1·3">𝑛·1·1.φ</boxed>
@@ -982,7 +1016,7 @@ $ cat atoms.xml
         <bound meta="𝛿1·1">𝛿·1·1</bound>
         <dataize at="ξ.x">
           <morph at="ξ.x">
-            <applied meta="𝑛·1·7" by="morph" at="ξ.x" of="Φ.number"><meta attr="φ">𝑛·0·4</meta></applied>
+            <applied meta="𝑛·1·7" by="morph" at="ξ.x" of="Φ.number"><meta attr="φ">𝑒·0·2</meta></applied>
             <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
           </morph>
           <boxed meta="𝑛·1·9">𝑛·1·7.φ</boxed>
@@ -995,17 +1029,17 @@ $ cat atoms.xml
         </dataize>
         <bound meta="𝛿2·1">𝛿·1·2</bound>
         <minted symbol="𝜎1">40-14-00-00-00-00-00-00 40-18-00-00-00-00-00-00</minted>
-        <applied meta="𝑛·1·13" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
-        <built meta="𝑛·1·14">𝑛·1·13</built>
-        <morph at="𝑛·1·14">
-          <applied meta="𝑛·1·15" by="morph" at="𝑛·1·14" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
-          <morphed meta="𝑛·1·16">𝑛·1·15</morphed>
+        <applied meta="𝑒·1·1" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
+        <built meta="𝑛·1·13">𝑒·1·1</built>
+        <morph at="𝑛·1·13">
+          <applied meta="𝑛·1·14" by="morph" at="𝑛·1·13" of="Φ.number"><symbol attr="φ">𝜎1</symbol></applied>
+          <morphed meta="𝑛·1·15">𝑛·1·14</morphed>
         </morph>
-        <answered meta="𝑛·1·17">𝑛·1·15</answered>
+        <answered meta="𝑛·1·16">𝑛·1·14</answered>
       </evaluate>
-      <morphed meta="𝑛·0·7">𝑛·1·15.nope</morphed>
+      <morphed meta="𝑛·0·4">𝑛·1·14.nope</morphed>
     </morph>
-    <unanswered λ="L_number_nope" by="dataize">𝑛·1·15.nope</unanswered>
+    <unanswered λ="L_number_nope" by="dataize">𝑛·1·14.nope</unanswered>
   </dataize>
 </protocol>
 ```
@@ -1137,47 +1171,56 @@ $ cat atoms.txt
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
           𝑛·1·1 := 2.0
-        boxed 𝑛·1·2 := 𝑛·1·1.φ
-        𝕄(𝑛·1·2):
-          𝑛·1·3 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
-        boxed 𝑛·1·4 := 𝑛·1·3.φ
+          morphed 𝑛·1·2 := 𝑛·1·1
+        boxed 𝑛·1·3 := 𝑛·1·1.φ
+        𝕄(𝑛·1·3):
+          𝑛·1·4 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
+          morphed 𝑛·1·5 := 𝑛·1·4
+        boxed 𝑛·1·6 := 𝑛·1·4.φ
         𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
-          𝑛·1·5 := 3.0
-        boxed 𝑛·1·6 := 𝑛·1·5.φ
-        𝕄(𝑛·1·6):
-          𝑛·1·7 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )
-        boxed 𝑛·1·8 := 𝑛·1·7.φ
+          𝑛·1·7 := 3.0
+          morphed 𝑛·1·8 := 𝑛·1·7
+        boxed 𝑛·1·9 := 𝑛·1·7.φ
+        𝕄(𝑛·1·9):
+          𝑛·1·10 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )
+          morphed 𝑛·1·11 := 𝑛·1·10
+        boxed 𝑛·1·12 := 𝑛·1·10.φ
         𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
-      𝑛·1·9 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
-      𝕄(𝑛·1·9):
-        𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )
-      𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)
-    𝑛·0·4 := 𝑛·1·10.plus( x ↦ 4.0 )
+      𝑛·1·13 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+      𝕄(𝑛·1·13):
+        𝑛·1·14 := Φ.number( φ ↦ 𝜎1:λ )
+        morphed 𝑛·1·15 := 𝑛·1·14
+      𝑛·1·16 := 𝑛·1·14  # 𝕄(𝑛·1·13)
+    𝑛·0·4 := 𝑛·1·14.plus( x ↦ 4.0 )
     𝔼(L_number_plus):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
           𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )
-        boxed 𝑛·2·2 := 𝑛·2·1.φ
+          morphed 𝑛·2·2 := 𝑛·1·16
+        boxed 𝑛·2·3 := 𝑛·2·1.φ
         𝛿·2·1 := 𝔻(𝜎1:λ)
       𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
-          𝑛·2·3 := 4.0
-        boxed 𝑛·2·4 := 𝑛·2·3.φ
-        𝕄(𝑛·2·4):
-          𝑛·2·5 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )
-        boxed 𝑛·2·6 := 𝑛·2·5.φ
+          𝑛·2·4 := 4.0
+          morphed 𝑛·2·5 := 𝑛·2·4
+        boxed 𝑛·2·6 := 𝑛·2·4.φ
+        𝕄(𝑛·2·6):
+          𝑛·2·7 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )
+          morphed 𝑛·2·8 := 𝑛·2·7
+        boxed 𝑛·2·9 := 𝑛·2·7.φ
         𝛿·2·2 := 40-10-00-00-00-00-00-00  # 4.0
       𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)
-      𝑛·2·7 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
-      𝕄(𝑛·2·7):
-        𝑛·2·8 := Φ.number( φ ↦ 𝜎2:λ )
-      𝑛·2·9 := 𝑛·2·8  # 𝕄(𝑛·2·7)
-    𝑛·0·5 := L_number_as_bool:λ
+      𝑛·2·10 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
+      𝕄(𝑛·2·10):
+        𝑛·2·11 := Φ.number( φ ↦ 𝜎2:λ )
+        morphed 𝑛·2·12 := 𝑛·2·11
+      𝑛·2·13 := 𝑛·2·11  # 𝕄(𝑛·2·10)
+    morphed 𝑛·0·5 := L_number_as_bool:λ
   unanswered L_number_as_bool  # 𝔻(L_number_as_bool:λ)
 ```
 
@@ -1403,7 +1446,8 @@ $ cat down.txt
     𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛
     𝕄(𝑛·1·1):
       𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
-    𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)
+      morphed 𝑛·1·3 := 𝑛·1·2
+    𝑛·1·4 := 𝑛·1·2  # 𝕄(𝑛·1·1)
   looped 𝑛·0·1  # proven
 ```
 

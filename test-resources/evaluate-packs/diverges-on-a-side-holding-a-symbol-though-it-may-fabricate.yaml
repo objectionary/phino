@@ -26,4 +26,8 @@ protocol: |
       𝔻(ξ.c):
         𝛿·1·1 := 𝔻(𝜎1:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
-      diverged 𝜎2:λ vs ⟦ φ ↦ Φ.zu, ke ↦ Φ.ty ⟧  # they differ at .λ, and the left side has λ
+      𝕄(ξ.a):
+        morphed 𝑛·1·1 := 𝜎2:λ
+      𝕄(ξ.b):
+        morphed 𝑛·1·2 := ⟦ φ ↦ Φ.zu, ke ↦ Φ.ty ⟧
+      diverged 𝜎2:λ vs 𝑛·1·2  # they differ at .λ, and the left side has λ
