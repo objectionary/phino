@@ -41,8 +41,13 @@ dataize universe state ctx@ReduceContext{..} = do
     Left (StuckAt func seq parked) | _partial -> residual seq parked{_stuck = Just func}
     Left (OutOfStepsAt _ seq parked) | _partial -> residual seq parked
     Left (LoopingAt _ seq parked) | _partial -> residual seq parked
+    Left (Undataizable term seq parked) | _partial -> do
+      unless (dead `elem` _parked) (_saveEval (EvStuck _nesting dead Dataization term))
+      residual seq parked{_stuck = Just dead}
     Left failure -> throwIO (failure :: ReduceException)
   where
+    dead :: T.Text
+    dead = "⊥"
     residual :: NonEmpty Rewritten -> State -> IO (Outcome, [Rewritten], State)
     residual seq parked = do
       residue <- locatedExpression _locator (fst (NE.head seq))
@@ -64,7 +69,7 @@ dataize' (expr, seq) univ state caller = do
           when (way == In.Normalized (Dataization, "box")) (ctx._saveEval (EvBoxed ctx._nesting built))
           (dataizable, state'') <- onward seq state' way built ctx
           dataize' dataizable world state'' ctx
-        Nothing -> throwIO (Undataizable expr state)
+        Nothing -> throwIO (Undataizable expr seq state)
   where
     unknown :: Expression -> Maybe Int
     unknown (ExFormation bds) = listToMaybe [idx | BiLambda (FnSymbol idx) <- bds]
@@ -78,16 +83,9 @@ dataize' (expr, seq) univ state caller = do
 reduction :: ReductionFunc
 reduction univ ctx expr state = do
   (universe, aiming) <- insideUniverse expr univ ctx
-  result <- try (dataize universe state aiming)
-  case result of
-    Right (outcome, _, state') -> pure (reached outcome, state')
-    Left (Undataizable term state') | ctx._partial -> do
-      unless (dead `elem` ctx._parked) (ctx._saveEval (EvStuck ctx._nesting dead Dataization term))
-      pure (Nothing, state'{_stuck = Just dead})
-    Left failure -> throwIO failure
+  (outcome, _, state') <- dataize universe state aiming
+  pure (reached outcome, state')
   where
-    dead :: T.Text
-    dead = "⊥"
     reached :: Outcome -> Maybe Bytes
     reached (Dataized bytes) = Just bytes
     reached (Residual _) = Nothing

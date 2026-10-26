@@ -1787,8 +1787,10 @@ An operand of a firing that reaches the terminator `⊥`, or a term no
 dataization rule matches, such as a formation whose `φ` is a void nothing
 filled, never comes down to data either, and `--partial` parks that firing
 the same way, writing the dead end into the protocol as `unanswered ⊥` with the
-term that could not be dataized beside it. Dataization aimed at `⊥` itself still
-fails, with or without `--partial`, since there is no firing to park.
+term that could not be dataized beside it. Dataization aimed at an object that
+reduces to `⊥` fails without `--partial`; with it, the run ends successfully,
+prints `⊥` as the residual program and writes the same `unanswered ⊥` line into
+the protocol.
 
 The nested morphing and dataization recursion is bounded by the
 `--max-steps` option (default `1000`): when the budget is exhausted, the run
