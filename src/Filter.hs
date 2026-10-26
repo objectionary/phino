@@ -63,6 +63,7 @@ include' expr fqns
         includedBindings ((BiTau at' form@(ExFormation _)) : bs) as@(at'' : rs)
           | at' == at'' = includedFormation form rs >>= Just . BiTau at'
           | otherwise = includedBindings bs as
+        includedBindings (_ : bs) as = includedBindings bs as
         includedBindings _ _ = Nothing
     includedFormation _ _ = Nothing
 
