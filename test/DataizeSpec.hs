@@ -277,6 +277,12 @@ spec = do
         Residual (ExFormation bds) -> bds `shouldContain` [BiLambda (Function "L_number_plus")]
         other -> expectationFailure ("expected a residual formation, got " ++ show other)
       protocol `shouldSatisfy` isInfixOf "unanswered ⊥  # 𝔻(⊥)"
+    it "leaves the terminator ⊥ the object reduces to as the whole residue" $ do
+      ((outcome, _), _) <- partially known "⊥"
+      outcome `shouldBe` Residual ExTermination
+    it "writes the terminator ⊥ the object reduces to into the protocol" $ do
+      (_, protocol) <- partially known "⊥"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed Φ.φ\n  unanswered ⊥  # 𝔻(⊥)\n"
 
   describe "ReduceContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
     let boxed = "[[ @ -> [[ D> 00- ]] ]]"
