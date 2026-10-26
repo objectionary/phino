@@ -61,6 +61,7 @@ dataize' (expr, seq) univ state caller = do
           seq' <- leadsTo seq step (ExBytes bts) ctx
           pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
         Just (In.Onward way built world, state') -> do
+          when (way == In.Normalized (Dataization, "box")) (ctx._saveEval (EvBoxed ctx._nesting built))
           (dataizable, state'') <- onward seq state' way built ctx
           dataize' dataizable world state'' ctx
         Nothing -> throwIO (Undataizable expr state)

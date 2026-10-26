@@ -119,6 +119,7 @@ data Evaluation
   | EvStarted Int Judgment Expression
   | EvDelta Int Bytes
   | EvManufactured Int Int
+  | EvBoxed Int Expression
   | EvLooped Int Judgment Acyclic Expression Expression
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
@@ -174,6 +175,7 @@ tier (EvFiring depth _ _ _) = depth
 tier (EvStarted depth _ _) = depth
 tier (EvDelta depth _) = depth
 tier (EvManufactured depth _) = depth
+tier (EvBoxed depth _) = depth
 tier (EvLooped depth _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
@@ -343,6 +345,9 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" (labelled protocol sigil) index
       pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (Right bytes, naming)}, Just (indented at (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
     written _ EvManufactured{} protocol = pure (protocol, Nothing)
+    written at (EvBoxed _ term) protocol = do
+      taken <- render term
+      pure (protocol, Just (indented at (printf "boxed %s" taken)))
     written at (EvLooped _ judgment mode self site) protocol = do
       form <- render self
       remarks <- context protocol judgment site
@@ -431,7 +436,7 @@ saveEval handle cursor printed printed' report = do
       (protocol', value) <- valued counted naming term
       remarks <- mapM sourced sides
       pure (protocol', Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
-    written _ EvWorld{} protocol = pure (protocol, Nothing)
+    written _ (EvWorld world) protocol = pure (protocol{_made = namedInsert world ExRoot protocol._made}, Nothing)
     spelt :: Either Int Bytes -> IO String
     spelt (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
     spelt (Right bytes) = render (ExBytes bytes)
@@ -573,6 +578,7 @@ saveEvalXml handle cursor printed report = do
     elements at (EvManufactured _ symbol) nesting = placed at nesting' (pure (printf "<manufactured meta=\"%s\">%s</manufactured>" (escapeXML naming) (sigma symbol)))
       where
         (naming, nesting') = stored (Left symbol) nesting
+    elements at (EvBoxed depth term) nesting = placed at nesting (printf "<boxed>%s</boxed>" . escapeXMLText <$> leaf depth term)
     elements at (EvData _ spelling _ value) nesting =
       placed at nesting $ case (found value nesting._held, value) of
         (Just naming, _) -> pure (bound (escapeXMLText naming))

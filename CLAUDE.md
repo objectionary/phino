@@ -387,7 +387,10 @@ the block it stands in is the same judgment at the same site (`_opened` of
 `ReduceContext`). Both writers print a block only once a line stands in it,
 merge two sibling blocks of one heading, and drop the comment of a line that
 repeats the innermost block; a firing is a block with no heading, so a line in
-it keeps its comment. The morphing of an answer is named after the answer
+it keeps its comment. The `box` rule of 𝔻 writes the term it goes on with,
+`boxed 𝑛·1·1.φ` (`EvBoxed`, #2134), between the morphings of one 𝔻, so each of
+them opens a block of its own; the text writer names the world `EvWorld` hands
+it `Φ`, as the markup does. The morphing of an answer is named after the answer
 (`resited`), as `𝕄(𝑛·1·5):`. The datum `delta` finds closes a `𝔻` block as
 `𝛿·1·1 := …` (`EvDelta`), commented with the double eight bytes hold (`ieee`,
 the `number` of `<dataized>` in the markup), and the operand line right after
