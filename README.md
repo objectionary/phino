@@ -960,15 +960,15 @@ An answer stands on two lines and not one. A firing answers the term its entry
 wrote and `phino` morphs that term before standing it back into the program, so
 `𝑛·1·9` is what the entry wrote, with the symbols this firing minted already in
 it, commented with `𝑛` to name the key it was read from, and `𝑛·1·11` is the
-normal form 𝕄 made of it, commented with `𝕄(𝑛·1·9)` to say where it came from.
-That morphing opens a block of its own, `𝕄(𝑛·1·9):`, named after the term it
-started from, since that term stands nowhere in the program a locator could
-reach. It is the same morphing every other term goes through, and writing only its
-outcome would have the formation of `number` appear in place of the three
-tokens the entry wrote with nothing saying why. Whatever that morphing fires
-or applies writes its lines between the two, exactly where a firing an operand
-took opens its block, so the order the lines come in is the order the work was
-done in.
+normal form 𝕄 made of it, commented with `𝕄(𝑛·1·9)` to say where it came
+from. That morphing opens a block of its own, `𝕄(𝑛·1·9):`, named after the
+term it started from, since that term stands nowhere in the program a locator
+could reach. It is the same morphing every other term goes through, and writing
+only its outcome would have the formation of `number` appear in place of the
+three tokens the entry wrote with nothing saying why. Whatever that morphing
+fires or applies writes its lines between the two, exactly where a firing an
+operand took opens its block, so the order the lines come in is the order the
+work was done in.
 
 `𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )` is an object an application made. The `copy`
 rule of normalization fills a void of a formation with the argument it was
@@ -978,19 +978,19 @@ spells the application: the object applied on the left and the argument it got
 on the right, so `5` is `Φ.number( φ ↦ … )` in sugar. The `ρ` a dispatch gives
 the attribute it takes writes no line. The block the line stands in names the
 judgment that normalized and the site it stood at. The name is counted with the
-metas of the firing the line stands in, `𝑛·1·9` before it and `𝑛·1·11` after it,
-and an object made outside every firing is counted under `𝑛·0`. From then on
-every line spells the object by that name rather than as the formation it is,
+metas of the firing the line stands in, `𝑛·1·9` before it and `𝑛·1·11` after
+it, and an object made outside every firing is counted under `𝑛·0`. From then
+on every line spells the object by that name rather than as the formation it is,
 and the application by the same name, since `copy` makes the same object of the
 same application wherever it stands: `𝑛·1·1` is the object `5` made,
 `𝑛·0·2.plus( x ↦ 6.0 )` is the `plus` of the first `5` applied to `6`, one line
-for one call, and `𝑛·1·11 := 𝑛·1·10` says the firing answered with the object 𝕄
-made of what the entry wrote. Such a line names its head and its argument that
-way, each on its own, and never the application as a whole, so a line spells out
-every application, even one making an object an earlier one already made, the
-way `𝑛·1·1 := 5` does, and a later line names the latest of them. Only an object
-still standing as it was made is named: once a rule rewrote a part of it, it is
-another object and it is spelled out again.
+for one call, and `𝑛·1·11 := 𝑛·1·10` says the firing answered with the object
+𝕄 made of what the entry wrote. Such a line names its head and its argument
+that way, each on its own, and never the application as a whole, so a line
+spells out every application, even one making an object an earlier one already
+made, the way `𝑛·1·1 := 5` does, and a later line names the latest of them.
+Only an object still standing as it was made is named: once a rule rewrote a
+part of it, it is another object and it is spelled out again.
 
 Where an operand came down to the datum a symbol stands for, the protocol writes
 `𝔻(𝜎1:λ)` in place of that 42 (`𝜎1:λ` is the formation `⟦ λ ⤍ 𝜎1 ⟧`, in the
@@ -1417,10 +1417,10 @@ The examples here leave them out, since the time differs from run to run.
 naming the judgment that asked for the firing — the same word the run is named
 after and an `<unanswered>` carries —
 and `at` naming the site it was fired at. The text format leaves those two to
-the block the firing stands in, or to its comment where the block names
-another site, as `𝔼(L_number_plus):  # 𝔻(𝑛·0·1)` in `𝔻(Φ):`, while the markup
-keeps them on every element, so a program reading it never has to track the
-elements around one.
+the block the firing stands in, or to its comment where the block names another
+site, as `𝔼(L_number_plus):  # 𝔻(𝑛·0·1)` in `𝔻(Φ):`, while the markup keeps
+them on every element, so a program reading it never has to track the elements
+around one.
 A nested `<dataize at="Φ.a🌵0">` or `<morph at="Φ.a🌵0">` is a judgment started
 at a new site, which the text format writes as `𝔻(Φ.a🌵0):` or `𝕄(Φ.a🌵0):`,
 and `at` names that site. Whatever the judgment does is written inside the

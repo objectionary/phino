@@ -394,14 +394,14 @@ merge two sibling blocks of one heading, and drop the comment of a line that
 repeats the innermost block; a firing is a block with no heading, so a line in
 it keeps its comment. The `box` rule of 𝔻 binds the term it goes on with to a
 meta of its own, `boxed 𝑛·1·2 := 𝑛·1·1.φ` (`EvBoxed`, #2134), counted with the
-metas of the firing, and the rest of that 𝔻 is sited at that term (`resited`
-in `dataize'`, #2144): the morphing that follows is named after the meta, as
+metas of the firing, and the rest of that 𝔻 is sited at that term (`resited` in
+`dataize'`, #2144): the morphing that follows is named after the meta, as
 `𝕄(𝑛·1·2):`, and opens a block of its own, and a firing or a cut the 𝔻 makes
 there names the meta in its comment, as `# 𝔻(𝑛·1·2)`. The text writer names
 the world `EvWorld` hands it `Φ`, as the markup does. The morphing of an answer
 is named after the answer (`resited`), as `𝕄(𝑛·1·5):`. The datum `delta` finds
-closes a `𝔻` block as `𝛿·1·1 := …` (`EvDelta`), commented with the double eight
-bytes hold (`ieee`, the `number` of `<dataized>` in the markup), and the
+closes a `𝔻` block as `𝛿·1·1 := …` (`EvDelta`), commented with the double
+eight bytes hold (`ieee`, the `number` of `<dataized>` in the markup), and the
 operand line right after names it. The symbol a `𝔻` comes down to closes the
 block in the markup alone, as `<manufactured>` (`EvManufactured`, #1962),
 counted with the data, and the `<bound>` right after names it the same way. The
