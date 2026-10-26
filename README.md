@@ -466,6 +466,7 @@ $ cat atoms.txt
       𝕄(𝑛·1·9):
         𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )
       𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)
+    𝑛·0·4 := L_number_nope:λ
   unanswered L_number_nope  # 𝔻(L_number_nope:λ)
 ```
 
@@ -1176,6 +1177,7 @@ $ cat atoms.txt
       𝕄(𝑛·2·7):
         𝑛·2·8 := Φ.number( φ ↦ 𝜎2:λ )
       𝑛·2·9 := 𝑛·2·8  # 𝕄(𝑛·2·7)
+    𝑛·0·5 := L_number_as_bool:λ
   unanswered L_number_as_bool  # 𝔻(L_number_as_bool:λ)
 ```
 

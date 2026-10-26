@@ -246,6 +246,7 @@ spec = do
           , "        𝕄(𝑛·1·9):"
           , "          𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )"
           , "        𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)"
+          , "      𝑛·0·4 := ⟦ ρ ↦ 𝑛·1·10, λ ⤍ L_number_nope ⟧"
           , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·10, λ ⤍ L_number_nope ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do

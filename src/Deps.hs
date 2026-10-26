@@ -237,7 +237,7 @@ data Protocol = Protocol
   , _built :: Map.Map Int Int
   , _deltas :: Map.Map Int Int
   , _found :: Maybe (Either Int Bytes, String)
-  , _blocks :: [(Int, Maybe String, String, Bool)]
+  , _blocks :: [(Int, Maybe (Judgment, String), String, Bool)]
   , _answered :: [(Int, Expression, String)]
   }
 
@@ -300,7 +300,7 @@ saveEval handle cursor printed printed' report = do
       pure [said | innermost protocol /= Just said]
     innermost :: Protocol -> Maybe String
     innermost protocol = case protocol._blocks of
-      (_, heading, _, _) : _ -> heading
+      (_, heading, _, _) : _ -> snd <$> heading
       [] -> Nothing
     remarked :: String -> [String] -> String
     remarked line [] = line
@@ -315,7 +315,7 @@ saveEval handle cursor printed printed' report = do
       logDebug (printf "Saved one line of the protocol: %s" (dropWhile (== ' ') line))
     written :: Int -> Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written _ (EvRun judgment locator) protocol =
-      pure (protocol{_begun = True, _blocks = [(0, Just heading, heading ++ ":", True)]}, Just (heading ++ ":"))
+      pure (protocol{_begun = True, _blocks = [(0, Just (judgment, heading), heading ++ ":", True)]}, Just (heading ++ ":"))
       where
         heading :: String
         heading = printf "%s(%s)" (letter judgment) (T.unpack locator)
@@ -337,8 +337,8 @@ saveEval handle cursor printed printed' report = do
       let heading = printf "%s(%s)" (letter judgment) locator
           inner = dropWhile (\(level, _, _, _) -> level > at) protocol._blocks
       pure $ case inner of
-        (level, Just heading', _, _) : _ | level == at && heading' == heading -> (protocol{_blocks = inner}, Nothing)
-        _ -> (protocol{_blocks = (at, Just heading, indented at (heading ++ ":"), False) : dropWhile (\(level, _, _, _) -> level >= at) inner}, Nothing)
+        (level, Just heading', _, _) : _ | level == at && heading' == (judgment, heading) -> (protocol{_blocks = inner}, Nothing)
+        _ -> (protocol{_blocks = (at, Just (judgment, heading), indented at (heading ++ ":"), False) : dropWhile (\(level, _, _, _) -> level >= at) inner}, Nothing)
     written at (EvDelta _ bytes) protocol = do
       datum <- render (ExBytes bytes)
       let (naming, protocol') = stored (Right bytes) protocol
@@ -418,6 +418,10 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" stem index
       (protocol', value) <- valued counted naming term
       pure (protocol'{_made = adopted term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
+    written at (EvMorphed depth term) protocol
+      | _ : (_, Just (Dataization, _), _, _) : _ <- protocol._blocks
+      , Nothing <- namedLookup term protocol._made =
+          written at (EvTaken depth [] term) protocol
     written _ EvMorphed{} protocol = pure (protocol, Nothing)
     written at (EvJoined _ condition symbol (left, right)) protocol = do
       on <- either (pure . labelled protocol) salted condition
