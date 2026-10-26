@@ -116,6 +116,20 @@ spec = do
         map fst included `shouldBe` [expected, expected]
         map snd included `shouldBe` [Just (Normalization, "rule-a"), Just (Evaluation, "rule-b")]
 
+      forM_
+        [ ("finds a nested object after a non-formation sibling", "[[ a -> Q, b -> [[ c -> Q ]] ]]", "Q.b.c", "[[ b -> [[ c -> Q ]] ]]")
+        , ("finds a nested object after several non-formation siblings", "[[ a -> Q, d -> ?, b -> [[ c -> Q ]] ]]", "Q.b.c", "[[ b -> [[ c -> Q ]] ]]")
+        , ("finds a deeper object after a non-formation sibling", "[[ a -> Q, b -> [[ x -> ?, c -> [[ d -> ? ]] ]] ]]", "Q.b.c.d", "[[ b -> [[ c -> [[ d -> ? ]] ]] ]]")
+        , ("finds a nested object before a non-formation sibling", "[[ b -> [[ c -> Q ]], a -> Q ]]", "Q.b.c", "[[ b -> [[ c -> Q ]] ]]")
+        ]
+        ( \(desc, exprText, fqnText, expectedText) -> it desc $ do
+            expr <- parseExpressionThrows exprText
+            fqn <- parseExpressionThrows fqnText
+            expected <- parseExpressionThrows expectedText
+            [(expr', _)] <- F.include [(expr, Nothing)] [fqn]
+            expr' `shouldBe` expected
+        )
+
       it "keeps every matching fqn, not only the first one" $ do
         expr <- parseExpressionThrows "[[ x -> ?, y -> ? ]]"
         firstFqn <- parseExpressionThrows "Q.x"
