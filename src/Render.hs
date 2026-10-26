@@ -211,7 +211,9 @@ instance Render EXPRESSION where
   render EX_DISPATCH{..} = render expr <> render space <> "." <> render space <> render attr
   render EX_APPLICATION{..} = render expr <> render space <> "(" <> render eol <> render tab <> render argument <> render eol' <> render tab' <> ")"
   render EX_STRING{..} = "\"" <> render str <> "\""
-  render EX_NUMBER{..} = T.pack (show num)
+  render EX_NUMBER{..} = case properFraction num :: (Int, Double) of
+    (whole, 0.0) | abs num < 1.0e7 && not (isNegativeZero num) -> T.pack (show whole) <> ".0"
+    _ -> T.pack (show num)
   render EX_NONFINITE{..} = render global <> "." <> nonFiniteName nonfinite
   render EX_META{..} = render meta
   render EX_PHI_MEET{..} = "\\phinoMeet{" <> maybe "" (\p -> T.pack p <> ":") prefix <> render idx <> "}{ " <> render expr <> " }"

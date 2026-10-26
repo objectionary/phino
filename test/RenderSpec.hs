@@ -11,6 +11,8 @@ import Control.Monad (forM_)
 import Data.Text qualified as T
 import Render (Render (render))
 import Test.Hspec
+import Test.Hspec.QuickCheck (prop)
+import Test.QuickCheck (chooseInt, forAll)
 
 xiExpr :: EXPRESSION
 xiExpr = EX_XI XI
@@ -221,6 +223,9 @@ spec = do
       , ("EX_STRING", EX_STRING "hi" (TAB 0) [], "\"hi\"")
       , ("EX_NUMBER whole", EX_NUMBER 42 (TAB 0) [], "42.0")
       , ("EX_NUMBER double", EX_NUMBER 3.5 (TAB 0) [], "3.5")
+      , ("EX_NUMBER negative zero", EX_NUMBER (-0.0) (TAB 0) [], "-0.0")
+      , ("EX_NUMBER below ten million", EX_NUMBER 9999999 (TAB 0) [], "9999999.0")
+      , ("EX_NUMBER ten million", EX_NUMBER 10000000 (TAB 0) [], "1.0e7")
       , ("EX_NONFINITE nan", EX_NONFINITE Φ NfNan (TAB 0) [], "Φ.nan")
       , ("EX_NONFINITE pinf", EX_NONFINITE Φ NfPinf (TAB 0) [], "Φ.pinf")
       , ("EX_NONFINITE ninf ascii", EX_NONFINITE Q NfNinf (TAB 0) [], "Q.ninf")
@@ -232,6 +237,13 @@ spec = do
       , ("EX_BYTES", EX_BYTES (BT_ONE "1F"), "1F-")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))
+
+  describe "render EX_NUMBER as show does" $ do
+    prop "for any double" $
+      \value -> render (EX_NUMBER value (TAB 0) []) `shouldBe` T.pack (show value)
+    prop "for a whole number on either side of ten million" $
+      forAll (chooseInt (-20000000, 20000000)) $ \whole ->
+        render (EX_NUMBER (fromIntegral whole) (TAB 0) []) `shouldBe` T.pack (show (fromIntegral whole :: Double))
 
   describe "render [ATTRIBUTE]" $
     it "joins with comma space" (render [AT_LABEL "a", AT_LABEL "b"] `shouldBe` "a, b")
