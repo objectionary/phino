@@ -14,7 +14,7 @@ import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON)
 import Data.IORef (newIORef)
-import Data.List (find, isInfixOf, nub)
+import Data.List (find, isInfixOf, isPrefixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
@@ -219,52 +219,55 @@ spec = do
       protocol
         `shouldBe` unlines
           [ "  𝔻(Φ):"
-          , "    boxed Φ.φ"
-          , "    𝕄(Φ):"
-          , "      𝑛·0·1 := 2.0"
-          , "      𝑛·0·2 := 𝑛·0·1.times( x ↦ 3.0 )"
+          , "    boxed 𝑛·0·1 := Φ.φ"
+          , "    𝕄(𝑛·0·1):"
+          , "      𝑛·0·2 := 2.0"
+          , "      𝑛·0·3 := 𝑛·0·2.times( x ↦ 3.0 )"
           , "      𝔼(L_number_times):"
           , "        𝔻(Φ.a🌵0):"
           , "          𝕄(Φ.a🌵0):"
           , "            𝑛·1·1 := 2.0"
-          , "          boxed 𝑛·1·1.φ"
-          , "          𝕄(Φ.a🌵0):"
-          , "            𝑛·1·2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
-          , "          boxed 𝑛·1·2.φ"
+          , "          boxed 𝑛·1·2 := 𝑛·1·1.φ"
+          , "          𝕄(𝑛·1·2):"
+          , "            𝑛·1·3 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
+          , "          boxed 𝑛·1·4 := 𝑛·1·3.φ"
           , "          𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0"
           , "        𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
           , "        𝔻(Φ.a🌵1):"
           , "          𝕄(Φ.a🌵1):"
-          , "            𝑛·1·3 := 3.0"
-          , "          boxed 𝑛·1·3.φ"
-          , "          𝕄(Φ.a🌵1):"
-          , "            𝑛·1·4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
-          , "          boxed 𝑛·1·4.φ"
+          , "            𝑛·1·5 := 3.0"
+          , "          boxed 𝑛·1·6 := 𝑛·1·5.φ"
+          , "          𝕄(𝑛·1·6):"
+          , "            𝑛·1·7 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
+          , "          boxed 𝑛·1·8 := 𝑛·1·7.φ"
           , "          𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
           , "        𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-          , "        𝑛·1·5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-          , "        𝕄(𝑛·1·5):"
-          , "          𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )"
-          , "        𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)"
-          , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·6, λ ⤍ L_number_nope ⟧)"
+          , "        𝑛·1·9 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+          , "        𝕄(𝑛·1·9):"
+          , "          𝑛·1·10 := Φ.number( φ ↦ 𝜎1:λ )"
+          , "        𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)"
+          , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·10, λ ⤍ L_number_nope ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
       outcome `shouldBe` Residual placeholder
-      protocol `shouldBe` "  𝔻(Φ):\n    boxed Φ.φ\n    unanswered Sym_arg_0  # 𝔻(Sym_arg_0:λ)\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    unanswered Sym_arg_0  # 𝔻(Sym_arg_0:λ)\n"
       map fst chain `shouldEndWith` [placeholder]
     it "closes a dataization with the datum the delta rule found" $ do
       (_, protocol) <- partially known "[[ @ -> [[ D> 01-02 ]] ]]"
-      protocol `shouldBe` "  𝔻(Φ):\n    boxed Φ.φ\n    boxed 01-02:Δ:φ.φ\n    𝛿·0·1 := 01-02\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    boxed 𝑛·0·2 := 01-02:Δ:φ.φ\n    𝛿·0·1 := 01-02\n"
     it "continues the block of a dataization the box rule enters again at the same site" $ do
       (_, protocol) <- partially known "[[ @ -> [[ @ -> [[ D> 0A- ]] ]] ]]"
-      protocol `shouldBe` "  𝔻(Φ):\n    boxed Φ.φ\n    boxed 0A-:Δ:φ:φ.φ\n    boxed 0A-:Δ:φ.φ\n    𝛿·0·1 := 0A-\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    boxed 𝑛·0·2 := 0A-:Δ:φ:φ.φ\n    boxed 𝑛·0·3 := 0A-:Δ:φ.φ\n    𝛿·0·1 := 0A-\n"
     it "writes the two morphings of one dataization as two blocks" $ do
       (_, protocol) <- partially known "73.25"
-      length (filter (== "    𝕄(Φ):") (lines protocol)) `shouldBe` 2
+      length (filter (isPrefixOf "    𝕄(") (lines protocol)) `shouldBe` 2
     it "writes every box step of a dataization into the protocol" $ do
       (_, protocol) <- partially known "73.25"
-      filter (isInfixOf "boxed") (lines protocol) `shouldBe` ["    boxed Φ.φ", "    boxed 𝑛·0·1.φ", "    boxed 𝑛·0·2.φ"]
+      filter (isInfixOf "boxed") (lines protocol) `shouldBe` ["    boxed 𝑛·0·1 := Φ.φ", "    boxed 𝑛·0·3 := 𝑛·0·2.φ", "    boxed 𝑛·0·5 := 𝑛·0·4.φ"]
+    it "names the morphing that follows a box step by the meta the box step bound" $ do
+      (_, protocol) <- partially known "73.25"
+      lines protocol `shouldContain` ["    boxed 𝑛·0·1 := Φ.φ", "    𝕄(𝑛·0·1):"]
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"
       outcome `shouldBe` Dataized (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
@@ -279,7 +282,7 @@ spec = do
       outcome `shouldBe` Residual ExTermination
     it "writes the terminator ⊥ the object reduces to into the protocol" $ do
       (_, protocol) <- partially known "⊥"
-      protocol `shouldBe` "  𝔻(Φ):\n    boxed Φ.φ\n  unanswered ⊥  # 𝔻(⊥)\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n  unanswered ⊥  # 𝔻(⊥)\n"
 
   describe "ReduceContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
     let boxed = "[[ @ -> [[ D> 00- ]] ]]"

@@ -16,7 +16,7 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (listToMaybe)
 import qualified Data.Text as T
-import Deps (Evaluation (..), Judgment (..), State (..))
+import Deps (Evaluation (..), Judgment (..), State (..), resited)
 import Engine (Engine (..))
 import qualified Inference as In
 import Locator (locatedExpression)
@@ -66,11 +66,17 @@ dataize' (expr, seq) univ state caller = do
           seq' <- leadsTo seq step (ExBytes bts) ctx
           pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
         Just (In.Onward way built world, state') -> do
-          when (way == In.Normalized (Dataization, "box")) (ctx._saveEval (EvBoxed ctx._nesting built))
-          (dataizable, state'') <- onward seq state' way built ctx
-          dataize' dataizable world state'' ctx
+          ctx' <- boxing way built ctx
+          (dataizable, state'') <- onward seq state' way built ctx'
+          dataize' dataizable world state'' ctx'
         Nothing -> throwIO (Undataizable expr seq state)
   where
+    boxing :: In.Way -> Expression -> ReduceContext -> IO ReduceContext
+    boxing way built ctx
+      | way == In.Normalized (Dataization, "box") = do
+          ctx._saveEval (EvBoxed ctx._nesting built)
+          pure ctx{_saveEval = ctx._saveEval . resited ctx._site built}
+      | otherwise = pure ctx
     unknown :: Expression -> Maybe Int
     unknown (ExFormation bds) = listToMaybe [idx | BiLambda (FnSymbol idx) <- bds]
     unknown _ = Nothing
