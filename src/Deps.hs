@@ -165,7 +165,7 @@ resited from to = record
 
 ieee :: Bytes -> Maybe String
 ieee bytes
-  | btsSize bytes == 8 = Just (show (either fromIntegral id (btsToNum bytes) :: Double))
+  | btsSize bytes == 8 = Just (show (btsToNum bytes))
   | otherwise = Nothing
 
 tier :: Evaluation -> Int

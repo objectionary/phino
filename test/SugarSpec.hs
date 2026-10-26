@@ -192,12 +192,12 @@ spec = do
         )
       ,
         ( "EX_NUMBER with no extra rho expands into the Q.number(Q.bytes(...)) form"
-        , EX_NUMBER (Left 42) (TAB 1) []
+        , EX_NUMBER 42 (TAB 1) []
         , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00\n      ⟧\n    )\n  )"
         )
       ,
         ( "EX_NUMBER preserves an extra rho argument carried alongside the primitive"
-        , EX_NUMBER (Left 42) (TAB 1) [ArTau AtRho (ExDispatch ExXi (AtLabel "y"))]
+        , EX_NUMBER 42 (TAB 1) [ArTau AtRho (ExDispatch ExXi (AtLabel "y"))]
         , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00\n      ⟧\n    )\n  )(\n    ρ ↦ ξ.y\n  )"
         )
       ,

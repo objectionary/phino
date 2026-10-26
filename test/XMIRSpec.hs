@@ -415,7 +415,7 @@ spec = do
     it "includes a decimal comment for a number when comments aren't omitted" $ do
       expr <- parseExpressionThrows "[[ x -> 5 ]]"
       xmir' <- expressionToXMIR expr commentedContext
-      printXMIR xmir' `shouldContain` "<!-- 5 -->"
+      printXMIR xmir' `shouldContain` "<!-- 5.0 -->"
 
     it "includes a quoted comment for a string when comments aren't omitted" $ do
       expr <- parseExpressionThrows "[[ x -> \"foo\" ]]"
