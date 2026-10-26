@@ -346,8 +346,9 @@ saveEval handle cursor printed printed' report = do
       pure (protocol{_deltas = Map.insert (opener protocol) index protocol._deltas, _found = Just (Right bytes, naming)}, Just (indented at (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
     written _ EvManufactured{} protocol = pure (protocol, Nothing)
     written at (EvBoxed _ term) protocol = do
-      taken <- render term
-      pure (protocol, Just (indented at (printf "boxed %s" taken)))
+      let (index, counted) = numbered protocol
+      taken <- printed (abbreviatedInside protocol._made term)
+      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "boxed %s·%d := %s" (labelled protocol answer) index taken)))
     written at (EvLooped _ judgment mode self site) protocol = do
       form <- render self
       remarks <- context protocol judgment site
@@ -578,7 +579,12 @@ saveEvalXml handle cursor printed report = do
     elements at (EvManufactured _ symbol) nesting = placed at nesting' (pure (printf "<manufactured meta=\"%s\">%s</manufactured>" (escapeXML naming) (sigma symbol)))
       where
         (naming, nesting') = stored (Left symbol) nesting
-    elements at (EvBoxed depth term) nesting = placed at nesting (printf "<boxed>%s</boxed>" . escapeXMLText <$> leaf depth term)
+    elements at (EvBoxed depth term) nesting =
+      placed at nesting $ do
+        taken <- coined depth term >>= lift . spelled
+        (naming, aliased) <- counted
+        modify (first (\nesting' -> nesting'{_objects = namedInsert term aliased nesting'._objects}))
+        pure (printf "<boxed meta=\"%s\">%s</boxed>" (escapeXML naming) (escapeXMLText taken))
     elements at (EvData _ spelling _ value) nesting =
       placed at nesting $ case (found value nesting._held, value) of
         (Just naming, _) -> pure (bound (escapeXMLText naming))
