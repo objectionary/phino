@@ -128,7 +128,7 @@ data ReduceException
   | Diverged T.Text
   | Looping Expression
   | LoopingAt Expression (NonEmpty Rewritten) State
-  | Undataizable Expression State
+  | Undataizable Expression (NonEmpty Rewritten) State
   | Unmorphable Expression
   deriving anyclass (Exception)
 
@@ -147,8 +147,8 @@ instance Show ReduceException where
   show (Diverged func) = printf "The λ function '%s' could not join its two sides" (T.unpack func)
   show (Looping term) = printf "Reduction entered a formation it is already inside: %s" (printExpression term)
   show (LoopingAt term _ _) = show (Looping term)
-  show (Undataizable ExTermination _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
-  show (Undataizable term _) = printf "no dataization rule matched, while dataization expects a normal form: %s" (printExpression term)
+  show (Undataizable ExTermination _ _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
+  show (Undataizable term _ _) = printf "no dataization rule matched, while dataization expects a normal form: %s" (printExpression term)
   show (Unmorphable term) = printf "Morphing expects a normal form, but no morphing rule matches: %s" (printExpression term)
 
 deeper :: ReduceContext -> IO ReduceContext

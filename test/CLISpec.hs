@@ -2742,9 +2742,9 @@ spec = do
             ["dataize", symbolic, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
             ["2.0.times( 3.0 ).nope", "L_number_nope:λ"]
 
-      it "still stops on the terminator ⊥, since a wrong operand is not a stuck λ function" $
+      it "prints the terminator ⊥ the object reduces to as the residue" $
         withStdin "[[ ]]" $
-          testCLIFailed ["dataize", "--partial"] ["terminator ⊥"]
+          testCLISucceeded ["dataize", "--partial"] ["⊥"]
 
     describe "--symbolic" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
