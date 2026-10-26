@@ -2834,7 +2834,7 @@ spec = do
 
       it "accepts --locator=Φ with morph --inside, since Φ and Q both name the root" $
         withStdin universe $
-          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--locator=Φ", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6, λ ⤍ L_number_plus ⟧"]
+          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--locator=Φ", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
 
       it "fails when the input expression is not a formation" $
         withStdin "Q.x" $
