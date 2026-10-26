@@ -1367,6 +1367,14 @@ spec = do
           , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"
           ]
 
+    it "leaves no step files of the rewritings --breakpoint dropped" $
+      withTempDirectory "phino-steps-breakpoint" $ \dir ->
+        withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $ do
+          testCLISucceeded
+            ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--steps-dir=" ++ dir]
+            ["⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"]
+          listDirectory dir `shouldReturn` []
+
     it "finishes under --depth-sensitive when the only match left would not change the term" $
       withTempFileContent "phino-fixpoint.yaml" "name: fix\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ x -> Q, !B1 ]]'\n" $ \fix ->
         withStdin "[[ x -> $ ]]" $
