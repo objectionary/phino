@@ -216,6 +216,12 @@ spec = do
     it "spells out again the φ a box step takes once more" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvWorld (ExFormation [BiTau (AtLabel "лунь") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "лунь"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "лунь") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "лунь"))]) AtPhi), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "лунь") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "лунь"))]) AtPhi)])
       last (lines written) `shouldBe` "  boxed 𝑛·0·2 := Φ.φ"
+    it "names the answer of a firing by its line in the box step that takes its φ" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_дрозд" Dataization ExRoot, EvBuilt 2 (ExFormation [BiTau AtPhi (ExApplication (ExDispatch ExRoot (AtLabel "сыч")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 4)])))]), EvAnswer 2 (ExFormation [BiTau AtPhi (ExApplication (ExDispatch ExRoot (AtLabel "сыч")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 4)])))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau AtPhi (ExApplication (ExDispatch ExRoot (AtLabel "сыч")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 4)])))]) AtPhi)])
+      last (lines written) `shouldBe` "  boxed 𝑛·0·1 := 𝑛·1·2.φ"
+    it "names the answer of a join by its line in the box step that takes its φ" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_клёст" Dataization ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiTau (AtLabel "жук") (ExFormation [BiLambda (FnSymbol 7)]), BiTau AtPhi (ExDispatch ExXi (AtLabel "жук"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "жук") (ExFormation [BiLambda (FnSymbol 7)]), BiTau AtPhi (ExDispatch ExXi (AtLabel "жук"))]) AtPhi)])
+      last (lines written) `shouldBe` "  boxed 𝑛·0·1 := 𝑛·1·1.φ"
     it "keeps the mode of a cut made at the site of its block" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvLooped 1 Morphing Proven (ExFormation []) ExRoot])
       last (lines written) `shouldBe` "  looped ⟦⟧  # proven"

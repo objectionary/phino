@@ -321,7 +321,10 @@ a stack every record prunes by its depth (`tier`), and from then on
 object of the same call, by that name wherever a later line holds it whole.
 The line itself goes through `abbreviatedInside`, which names the head and
 each argument and never the call as a whole, so an application made again is
-spelled out again (#1756). The
+spelled out again (#1756). The text writer names the formation an answer
+binds the same way (`adopted`), unless it holds λ or Δ or a line named it
+before, so the box step after a firing writes `boxed 𝑛·0·2 := 𝑛·1·2.φ`
+rather than the whole answer again (#2151). The
 markup writes the head in `of` and the argument by name in an element named
 after the kind of its value, `<symbol>`, `<datum>`, `<meta>`, `<ref>` for a
 path or an empty `<bottom>` for ⊥ (`attributed` of `saveEvalXml`), and so does
