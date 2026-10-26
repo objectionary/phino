@@ -219,6 +219,7 @@ spec = do
       protocol
         `shouldBe` unlines
           [ "  𝔻(Φ):"
+          , "    boxed Φ.φ"
           , "    𝕄(Φ):"
           , "      𝑛·0·1 := 2.0"
           , "      𝑛·0·2 := 𝑛·0·1.times( x ↦ 3.0 )"
@@ -226,13 +227,19 @@ spec = do
           , "        𝔻(Φ.a🌵0):"
           , "          𝕄(Φ.a🌵0):"
           , "            𝑛·1·1 := 2.0"
+          , "          boxed 𝑛·1·1.φ"
+          , "          𝕄(Φ.a🌵0):"
           , "            𝑛·1·2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
+          , "          boxed 𝑛·1·2.φ"
           , "          𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0"
           , "        𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
           , "        𝔻(Φ.a🌵1):"
           , "          𝕄(Φ.a🌵1):"
           , "            𝑛·1·3 := 3.0"
+          , "          boxed 𝑛·1·3.φ"
+          , "          𝕄(Φ.a🌵1):"
           , "            𝑛·1·4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
+          , "          boxed 𝑛·1·4.φ"
           , "          𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
           , "        𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
           , "        𝑛·1·5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
@@ -244,14 +251,20 @@ spec = do
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
       outcome `shouldBe` Residual placeholder
-      protocol `shouldBe` "  𝔻(Φ):\n    unanswered Sym_arg_0  # 𝔻(Sym_arg_0:λ)\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed Φ.φ\n    unanswered Sym_arg_0  # 𝔻(Sym_arg_0:λ)\n"
       map fst chain `shouldEndWith` [placeholder]
     it "closes a dataization with the datum the delta rule found" $ do
       (_, protocol) <- partially known "[[ @ -> [[ D> 01-02 ]] ]]"
-      protocol `shouldBe` "  𝔻(Φ):\n    𝛿·0·1 := 01-02\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed Φ.φ\n    boxed 01-02:Δ:φ.φ\n    𝛿·0·1 := 01-02\n"
     it "continues the block of a dataization the box rule enters again at the same site" $ do
       (_, protocol) <- partially known "[[ @ -> [[ @ -> [[ D> 0A- ]] ]] ]]"
-      protocol `shouldBe` "  𝔻(Φ):\n    𝛿·0·1 := 0A-\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed Φ.φ\n    boxed 0A-:Δ:φ:φ.φ\n    boxed 0A-:Δ:φ.φ\n    𝛿·0·1 := 0A-\n"
+    it "writes the two morphings of one dataization as two blocks" $ do
+      (_, protocol) <- partially known "73.25"
+      length (filter (== "    𝕄(Φ):") (lines protocol)) `shouldBe` 2
+    it "writes every box step of a dataization into the protocol" $ do
+      (_, protocol) <- partially known "73.25"
+      filter (isInfixOf "boxed") (lines protocol) `shouldBe` ["    boxed Φ.φ", "    boxed 𝑛·0·1.φ", "    boxed 𝑛·0·2.φ"]
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"
       outcome `shouldBe` Dataized (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])

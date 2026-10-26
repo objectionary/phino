@@ -11,7 +11,7 @@ import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBuilt, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -193,6 +193,15 @@ spec = do
     it "writes the heading again for a block that follows a line beside it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvDelta 1 (BtOne "0B"), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))])
       length (filter (== "  𝕄(Φ.w):") (lines written)) `shouldBe` 2
+    it "writes the box step of a dataization as a line naming the φ it took" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "гнёт")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щур")) (ArTau (AtLabel "ял") (ExFormation []))) (ExFormation [BiTau (AtLabel "ял") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) (ExDispatch ExRoot (AtLabel "гнёт")), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "ял") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) AtPhi)])
+      lines written `shouldBe` ["𝔻(Φ):", "  𝕄(Φ.гнёт):", "    𝑛·0·1 := Φ.щур( ял ↦ ⟦⟧ )", "  boxed 𝑛·0·1.φ"]
+    it "writes the heading again for a morphing that follows a box step" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "гнёт")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щур")) (ArTau (AtLabel "ял") (ExFormation []))) (ExFormation [BiTau (AtLabel "ял") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) (ExDispatch ExRoot (AtLabel "гнёт")), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "ял") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) AtPhi), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "гнёт")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щур")) (ArTau (AtLabel "ял") (ExBytes (BtOne "3C")))) (ExFormation [BiTau (AtLabel "ял") (ExBytes (BtOne "3C"))]) (ExDispatch ExRoot (AtLabel "гнёт"))])
+      length (filter (== "  𝕄(Φ.гнёт):") (lines written)) `shouldBe` 2
+    it "names the world it is told by Φ in the line of a box step" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvWorld (ExFormation [BiTau (AtLabel "вьюн") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "вьюн"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "вьюн") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "вьюн"))]) AtPhi)])
+      last (lines written) `shouldBe` "  boxed Φ.φ"
     it "keeps the mode of a cut made at the site of its block" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvLooped 1 Morphing Proven (ExFormation []) ExRoot])
       last (lines written) `shouldBe` "  looped ⟦⟧  # proven"
@@ -384,6 +393,15 @@ spec = do
     it "closes a block element before the element that follows beside it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvDelta 1 (BtOne "0D")])
       lines written `shouldContain` ["  </morph>", "  <dataized meta=\"𝛿·0·1\">0D-</dataized>"]
+    it "writes the box step of a dataization as an element naming the φ it took" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "гнёт")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щур")) (ArTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]))) (ExFormation [BiTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) (ExDispatch ExRoot (AtLabel "гнёт")), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) AtPhi)])
+      lines written `shouldContain` ["  </morph>", "  <boxed>𝑛·0·1.φ</boxed>"]
+    it "writes a morph element again for a morphing that follows a box step" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "гнёт")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щур")) (ArTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]))) (ExFormation [BiTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) (ExDispatch ExRoot (AtLabel "гнёт")), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) AtPhi), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "гнёт")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щур")) (ArTau (AtLabel "ял") (ExBytes (BtOne "3C")))) (ExFormation [BiTau (AtLabel "ял") (ExBytes (BtOne "3C"))]) (ExDispatch ExRoot (AtLabel "гнёт"))])
+      length (filter (isInfixOf "<morph at=") (lines written)) `shouldBe` 2
+    it "names the world it is told by Φ in the element of a box step" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvWorld (ExFormation [BiTau (AtLabel "вьюн") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "вьюн"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "вьюн") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "вьюн"))]) AtPhi)])
+      lines written `shouldContain` ["  <boxed>Φ.φ</boxed>"]
     it "names the element over an answer by the element that built it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
       lines written `shouldContain` ["    <morph at=\"𝑛·1·1\">"]

@@ -833,6 +833,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
     --sweet --hide-rho sum.phi
 $ cat atoms.txt
 𝔻(Φ):
+  boxed Φ.φ
   𝕄(Φ):
     𝑛·0·1 := 5.0
     𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )
@@ -840,19 +841,26 @@ $ cat atoms.txt
     𝔻(Φ.a🌵0):
       𝕄(Φ.a🌵0):
         𝑛·1·1 := 5.0
+      boxed 𝑛·1·1.φ
+      𝕄(Φ.a🌵0):
         𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+      boxed 𝑛·1·2.φ
       𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
     𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
     𝔻(Φ.a🌵1):
       𝕄(Φ.a🌵1):
         𝑛·1·3 := 6.0
+      boxed 𝑛·1·3.φ
+      𝕄(Φ.a🌵1):
         𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
+      boxed 𝑛·1·4.φ
       𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0
     𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
     𝑛·1·5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
     𝕄(𝑛·1·5):
       𝑛·1·6 := Φ.number( φ ↦ 𝜎1:λ )
     𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
+  boxed 𝑛·1·6.φ
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -892,9 +900,17 @@ such as `𝛿·1·1 := 40-14-00-00-00-00-00-00`, named by the firing it stands i
 and a counter of its own, and the operand line right after the block names it.
 A datum of eight bytes is commented with the number those bytes hold as an
 IEEE 754 double, `# 5.0` here, since that is how a number keeps its data.
-In the run above 𝔻 gets into each number the entry brings down, and through
-its `φ` into the bytes that number holds, in the same block, since the site is
-the same.
+`boxed …` is the `box` rule of 𝔻 getting into the `φ` of a formation that
+carries neither a `Δ` nor a `λ`, and the term on the line is the one 𝔻 goes on
+with: that formation dispatched to its `φ`, before 𝕄 reduces it. An object an
+application made is named by its line and the program the run started from is
+named `Φ`, so `boxed Φ.φ` opens the run above and `boxed 𝑛·1·1.φ` is the `φ`
+of the `5` the first morphing made. The line stands in the `𝔻(…):` block it
+belongs to and between the morphings of that 𝔻, so each morphing opens a
+`𝕄(…):` block of its own, even at the same site: in the run above 𝔻 morphs
+each number the entry brings down, gets into its `φ`, and morphs that `φ` into
+the bytes the number holds, under a second `𝕄(Φ.a🌵0):`. Two blocks of one
+heading with nothing between them are written as one.
 
 An answer stands on two lines and not one. A firing answers the term its entry
 wrote and `phino` morphs that term before standing it back into the program, so
@@ -998,6 +1014,7 @@ $ phino dataize --symbolic=atoms.yaml --protocol=atoms.txt --quiet \
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_nope'
 $ cat atoms.txt
 𝔻(Φ):
+  boxed Φ.φ
   𝕄(Φ):
     𝑛·0·1 := 5.0
     𝑛·0·2 := 𝑛·0·1.plus( x ↦ 6.0 )
@@ -1005,13 +1022,19 @@ $ cat atoms.txt
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
           𝑛·1·1 := 5.0
+        boxed 𝑛·1·1.φ
+        𝕄(Φ.a🌵0):
           𝑛·1·2 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+        boxed 𝑛·1·2.φ
         𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵1):
         𝕄(Φ.a🌵1):
           𝑛·1·3 := 6.0
+        boxed 𝑛·1·3.φ
+        𝕄(Φ.a🌵1):
           𝑛·1·4 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )
+        boxed 𝑛·1·4.φ
         𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
       𝑛·1·5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
@@ -1118,17 +1141,23 @@ $ cat fork.txt
 𝔻(Φ.demo.a):
   𝕄(Φ.demo.a):
     𝑛·0·1 := Φ.foo( x ↦ Φ.number( φ ↦ 𝜎1:λ ) )
+  boxed 𝑛·0·1.φ
+  𝕄(Φ.demo.a):
     𝑛·0·2 := Φ.number( φ ↦ 𝜎1:λ )
     𝑛·0·3 := 𝑛·0·2.gt( x ↦ 0.0 )
     𝔼(L_gt):
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
           𝑛·1·1 := Φ.number( φ ↦ 𝜎1:λ )
+        boxed 𝑛·1·1.φ
       𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵1):
         𝕄(Φ.a🌵1):
           𝑛·1·2 := 0.0
+        boxed 𝑛·1·2.φ
+        𝕄(Φ.a🌵1):
           𝑛·1·3 := Φ.bytes( φ ↦ 00-00-00-00-00-00-00-00:Δ )
+        boxed 𝑛·1·3.φ
         𝛿·1·1 := 00-00-00-00-00-00-00-00  # 0.0
       𝛿2·1 := 𝛿·1·1  # 𝔻(ξ.x)
       𝑛·1·4 := Φ.bool( if(then, else) ↦ ⟦ λ ⤍ L_fork, φ ↦ 𝜎2:λ ⟧ )  # 𝑛
@@ -1146,11 +1175,15 @@ $ cat fork.txt
           𝔻(Φ.a🌵4):
             𝕄(Φ.a🌵4):
               𝑛·3·1 := Φ.number( φ ↦ 𝜎1:λ )
+            boxed 𝑛·3·1.φ
           𝛿1·3 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
           𝔻(Φ.a🌵5):
             𝕄(Φ.a🌵5):
               𝑛·3·2 := 1.0
+            boxed 𝑛·3·2.φ
+            𝕄(Φ.a🌵5):
               𝑛·3·3 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+            boxed 𝑛·3·3.φ
             𝛿·3·1 := 3F-F0-00-00-00-00-00-00  # 1.0
           𝛿2·3 := 𝛿·3·1  # 𝔻(ξ.x)
           𝑛·3·4 := Φ.number( φ ↦ 𝜎3:λ )  # 𝑛
@@ -1165,11 +1198,15 @@ $ cat fork.txt
           𝔻(Φ.a🌵7):
             𝕄(Φ.a🌵7):
               𝑛·4·1 := Φ.number( φ ↦ 𝜎1:λ )
+            boxed 𝑛·4·1.φ
           𝛿1·4 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
           𝔻(Φ.a🌵8):
             𝕄(Φ.a🌵8):
               𝑛·4·2 := 2.0
+            boxed 𝑛·4·2.φ
+            𝕄(Φ.a🌵8):
               𝑛·4·3 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
+            boxed 𝑛·4·3.φ
             𝛿·4·1 := 40-00-00-00-00-00-00-00  # 2.0
           𝛿2·4 := 𝛿·4·1  # 𝔻(ξ.x)
           𝑛·4·4 := Φ.number( φ ↦ 𝜎4:λ )  # 𝑛
@@ -1183,10 +1220,12 @@ $ cat fork.txt
       𝔻(Φ.a🌵9):
         𝕄(Φ.a🌵9):
           𝑛·5·1 := Φ.number( φ ↦ 𝜎5:λ )
+        boxed 𝑛·5·1.φ
       𝛿1·5 := 𝔻(𝜎5:λ)  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵10):
         𝕄(Φ.a🌵10):
           𝑛·5·2 := Φ.number( φ ↦ 𝜎1:λ )
+        boxed 𝑛·5·2.φ
       𝛿2·5 := 𝔻(𝜎1:λ)  # 𝔻(ξ.x)
       𝑛·5·3 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛
       𝕄(𝑛·5·3):
@@ -1197,17 +1236,22 @@ $ cat fork.txt
     𝔻(Φ.a🌵11):
       𝕄(Φ.a🌵11):
         𝑛·6·1 := Φ.number( φ ↦ 𝜎6:λ )
+      boxed 𝑛·6·1.φ
     𝛿1·6 := 𝔻(𝜎6:λ)  # 𝔻(ξ.ρ)
     𝔻(Φ.a🌵12):
       𝕄(Φ.a🌵12):
         𝑛·6·2 := 5.0
+      boxed 𝑛·6·2.φ
+      𝕄(Φ.a🌵12):
         𝑛·6·3 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )
+      boxed 𝑛·6·3.φ
       𝛿·6·1 := 40-14-00-00-00-00-00-00  # 5.0
     𝛿2·6 := 𝛿·6·1  # 𝔻(ξ.x)
     𝑛·6·4 := Φ.number( φ ↦ 𝜎7:λ )  # 𝑛
     𝕄(𝑛·6·4):
       𝑛·6·5 := Φ.number( φ ↦ 𝜎7:λ )
     𝑛·6·6 := 𝑛·6·5  # 𝕄(𝑛·6·4)
+  boxed 𝑛·6·5.φ
 ```
 
 <!-- markdownlint-enable MD013 -->
@@ -1259,6 +1303,7 @@ $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol>
   <dataize at="Φ">
+    <boxed>Φ.φ</boxed>
     <morph at="Φ">
       <applied meta="𝑛·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
       <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
@@ -1272,9 +1317,13 @@ $ cat atoms.xml
         <morph at="Φ.a🌵0">
           <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
           <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
+        </morph>
+        <boxed>𝑛·1·1.φ</boxed>
+        <morph at="Φ.a🌵0">
           <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
           <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
         </morph>
+        <boxed>𝑛·1·3.φ</boxed>
         <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
       </dataize>
       <bound meta="𝛿1·1">𝛿·1·1</bound>
@@ -1282,9 +1331,13 @@ $ cat atoms.xml
         <morph at="Φ.a🌵1">
           <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
           <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
+        </morph>
+        <boxed>𝑛·1·5.φ</boxed>
+        <morph at="Φ.a🌵1">
           <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
           <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
         </morph>
+        <boxed>𝑛·1·7.φ</boxed>
         <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
       </dataize>
       <bound meta="𝛿2·1">𝛿·1·2</bound>
@@ -1297,6 +1350,7 @@ $ cat atoms.xml
       </morph>
       <answered meta="𝑛·1·13">𝑛·1·11</answered>
     </evaluate>
+    <boxed>𝑛·1·11.φ</boxed>
     <manufactured meta="𝛿·0·1">𝜎1</manufactured>
   </dataize>
 </protocol>
@@ -1349,11 +1403,15 @@ to, named the same way by its own `meta`, so
 object `𝑛·1·11`. Only the 𝕄 that opened the element writes one: an operand a
 rule of 𝕄 morphs on its way stands inside the same element and closes nothing,
 and a 𝕄 that was parked or cut came to nothing and writes none. Two runs of 𝕄
-at one site stand in one element, the way the text format merges two blocks of
-one heading, and each closes with its own `<morphed>`, so the last one is what
-the element came to: inside `<morph at="Φ.a🌵0">` the first run came to the
-`Φ.number` of `𝑛·1·1` and the second to the `Φ.bytes` of `𝑛·1·3`, which holds
-the datum. The text format writes no line for it.
+at one site stand in one element only when nothing stands between them, the
+way the text format writes two blocks of one heading as one, and each closes
+with its own `<morphed>`, so the last one is what the element came to. The
+text format writes no line for it. `<boxed>` is the `boxed …` line of the text
+format, holding the name of the term 𝔻 went on with, so it stands between the
+two runs of 𝕄 a dataization makes at one site, and each gets an element of its
+own: the first `<morph at="Φ.a🌵0">` came to the `Φ.number` of `𝑛·1·1`, and
+after `<boxed>𝑛·1·1.φ</boxed>` the second came to the `Φ.bytes` of `𝑛·1·3`,
+which holds the datum.
 
 `<applied meta="𝑛·1·11" by="morph" at="𝑛·1·10" of="Φ.number">` is an object
 an application made, which the text format writes as `𝑛·1·6 := …` in the block
@@ -1459,6 +1517,7 @@ $ cat atoms.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <protocol>
   <dataize at="Φ">
+    <boxed>Φ.φ</boxed>
     <morph at="Φ">
       <applied meta="𝑛·0·1" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
       <applied meta="𝑛·0·2" by="morph" at="Φ" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
@@ -1470,9 +1529,13 @@ $ cat atoms.xml
           <morph at="Φ.a🌵0">
             <applied meta="𝑛·1·1" by="morph" at="Φ.a🌵0" of="Φ.number"><meta attr="φ">𝑛·0·1</meta></applied>
             <morphed meta="𝑛·1·2">𝑛·1·1</morphed>
+          </morph>
+          <boxed>𝑛·1·1.φ</boxed>
+          <morph at="Φ.a🌵0">
             <applied meta="𝑛·1·3" by="morph" at="Φ.a🌵0" of="Φ.bytes"><datum attr="φ">40-14-00-00-00-00-00-00</datum></applied>
             <morphed meta="𝑛·1·4">𝑛·1·3</morphed>
           </morph>
+          <boxed>𝑛·1·3.φ</boxed>
           <dataized meta="𝛿·1·1" number="5.0">40-14-00-00-00-00-00-00</dataized>
         </dataize>
         <bound meta="𝛿1·1">𝛿·1·1</bound>
@@ -1480,9 +1543,13 @@ $ cat atoms.xml
           <morph at="Φ.a🌵1">
             <applied meta="𝑛·1·5" by="morph" at="Φ.a🌵1" of="Φ.number"><meta attr="φ">𝑛·0·3</meta></applied>
             <morphed meta="𝑛·1·6">𝑛·1·5</morphed>
+          </morph>
+          <boxed>𝑛·1·5.φ</boxed>
+          <morph at="Φ.a🌵1">
             <applied meta="𝑛·1·7" by="morph" at="Φ.a🌵1" of="Φ.bytes"><datum attr="φ">40-18-00-00-00-00-00-00</datum></applied>
             <morphed meta="𝑛·1·8">𝑛·1·7</morphed>
           </morph>
+          <boxed>𝑛·1·7.φ</boxed>
           <dataized meta="𝛿·1·2" number="6.0">40-18-00-00-00-00-00-00</dataized>
         </dataize>
         <bound meta="𝛿2·1">𝛿·1·2</bound>
@@ -1533,6 +1600,7 @@ $ phino dataize --locator=Q.t --protocol=wide.txt --abridged --quiet \
     --sweet --hide-rho wide.phi
 $ cat wide.txt
 𝔻(Φ.t):
+  boxed ⟦ φ ↦ 48-65-6C-6C-6F-2C-20-77-6F-72-6C-64:Δ, +3 ⟧.φ
   𝛿·0·1 := 48-65-6C-6C-6F-2C-20-77-6F-72-6C-64
 ```
 
@@ -1550,6 +1618,7 @@ $ phino dataize --locator=Q.t --protocol=wide.txt --abridged \
     --abridged-data --quiet --sweet --hide-rho wide.phi
 $ cat wide.txt
 𝔻(Φ.t):
+  boxed ⟦ φ ↦ 48-65-..(8b)..-6C-64:Δ, +3 ⟧.φ
   𝛿·0·1 := 48-65-..(8b)..-6C-64
 ```
 
@@ -1619,6 +1688,7 @@ $ phino dataize --symbolic=atoms.yaml --partial --protocol=atoms.txt --quiet \
     --sweet --hide-rho partial.phi
 $ cat atoms.txt
 𝔻(Φ):
+  boxed Φ.φ
   𝕄(Φ):
     𝑛·0·1 := 2.0
     𝑛·0·2 := 𝑛·0·1.times( x ↦ 3.0 )
@@ -1626,13 +1696,19 @@ $ cat atoms.txt
       𝔻(Φ.a🌵0):
         𝕄(Φ.a🌵0):
           𝑛·1·1 := 2.0
+        boxed 𝑛·1·1.φ
+        𝕄(Φ.a🌵0):
           𝑛·1·2 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )
+        boxed 𝑛·1·2.φ
         𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵1):
         𝕄(Φ.a🌵1):
           𝑛·1·3 := 3.0
+        boxed 𝑛·1·3.φ
+        𝕄(Φ.a🌵1):
           𝑛·1·4 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )
+        boxed 𝑛·1·4.φ
         𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
       𝑛·1·5 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
@@ -1644,11 +1720,15 @@ $ cat atoms.txt
       𝔻(Φ.a🌵2):
         𝕄(Φ.a🌵2):
           𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )
+        boxed 𝑛·2·1.φ
       𝛿1·2 := 𝔻(𝜎1:λ)  # 𝔻(ξ.ρ)
       𝔻(Φ.a🌵3):
         𝕄(Φ.a🌵3):
           𝑛·2·2 := 4.0
+        boxed 𝑛·2·2.φ
+        𝕄(Φ.a🌵3):
           𝑛·2·3 := Φ.bytes( φ ↦ 40-10-00-00-00-00-00-00:Δ )
+        boxed 𝑛·2·3.φ
         𝛿·2·1 := 40-10-00-00-00-00-00-00  # 4.0
       𝛿2·2 := 𝛿·2·1  # 𝔻(ξ.x)
       𝑛·2·4 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
