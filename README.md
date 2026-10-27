@@ -297,6 +297,7 @@ $ phino morph --symbolic=down.yaml --locator=Q.y --acyclic=proven \
 $ cat down.txt
 𝕄(Φ.y):
   𝑛·0·1 := Φ.down( x ↦ 𝜎1:λ )
+  𝑛·0·2 := ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
   𝔼(L_down):
     𝔻(ξ.x):
       𝛿·1·1 := 𝔻(𝜎1:λ)
@@ -304,9 +305,10 @@ $ cat down.txt
     𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛
     𝕄(𝑛·1·1):
       𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
-      morphed 𝑛·1·3 := 𝑛·1·2
-    𝑛·1·4 := 𝑛·1·2  # 𝕄(𝑛·1·1)
-  looped 𝑛·0·1  # proven
+      𝑛·1·3 := ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
+      morphed 𝑛·1·4 := 𝑛·1·3
+    𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
+  looped 𝑛·0·2  # proven
 ```
 
 In a name such as `𝑛·1·2`, the first number counts the firings, `0` outside
@@ -319,7 +321,8 @@ A protocol may hold these lines:
 * `𝔻(…):` and `𝕄(…):` open a block where dataization or morphing starts at a
   new site, and what it does stands under it.
 * `𝔼(…):` opens one firing, named by its λ function.
-* `𝑛·0·1 := …` names an object an application made.
+* `𝑛·0·1 := …` names an application, and the line after it names the
+  object the application made.
 * `𝛿1·1 := …` binds a meta of the entry, and the comment names the judgment
   and the term it came from.
 * `𝑛·1·1 := …  # 𝑛` is the term the entry answered with, and the line

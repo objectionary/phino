@@ -40,19 +40,23 @@ protocol: |
         morphed 𝑛·1·2 := ⟦ ke(x, w) ↦ x:k ⟧
       fabricated 𝑛·1·3 := 𝑛·1·1 and 𝑛·1·2  # ⟦ left🌵 ↦ 𝑛·1·1, right🌵 ↦ 𝑛·1·2, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x, w) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧ ⟧
     𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧( x ↦ 𝜎2:λ:φ )
+    𝑛·0·2 := ⟦ λ ⤍ L_join, x ↦ 𝜎2:λ:φ, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧
     𝔼(L_join):
       𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(ξ.left🌵)
+      𝑛·2·2 := ⟦ x ↦ 𝜎2:λ:φ, k ↦ x ⟧
       𝕄(ξ.left🌵):
-        morphed 𝑛·2·2 := 𝑛·2·1
-      𝑛·2·3 := ⟦ x ↦ ∅, w ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(ξ.right🌵)
-      𝑛·2·4 := 𝑛·2·3( w ↦ ⊥ )  # 𝕄(ξ.right🌵)
+        morphed 𝑛·2·3 := 𝑛·2·2
+      𝑛·2·4 := ⟦ x ↦ ∅, w ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(ξ.right🌵)
+      𝑛·2·5 := ⟦ x ↦ 𝜎2:λ:φ, w ↦ ∅, k ↦ x ⟧
+      𝑛·2·6 := 𝑛·2·5( w ↦ ⊥ )  # 𝕄(ξ.right🌵)
+      𝑛·2·7 := ⟦ x ↦ 𝜎2:λ:φ, w ↦ ⊥, k ↦ x ⟧
       𝕄(ξ.right🌵):
-        morphed 𝑛·2·5 := 𝑛·2·4
-      fabricated 𝑛·2·6 := 𝑛·2·2 and 𝑛·2·5  # ⟦ left🌵 ↦ 𝑛·2·2, right🌵 ↦ 𝑛·2·5, x ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.x, right🌵 ↦ ρ.right🌵.x ⟧, k ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.k, right🌵 ↦ ρ.right🌵.k ⟧, w ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.w, right🌵 ↦ ρ.right🌵.w ⟧ ⟧
+        morphed 𝑛·2·8 := 𝑛·2·7
+      fabricated 𝑛·2·9 := 𝑛·2·3 and 𝑛·2·8  # ⟦ left🌵 ↦ 𝑛·2·3, right🌵 ↦ 𝑛·2·8, x ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.x, right🌵 ↦ ρ.right🌵.x ⟧, k ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.k, right🌵 ↦ ρ.right🌵.k ⟧, w ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.w, right🌵 ↦ ρ.right🌵.w ⟧ ⟧
     𝔼(L_join):
       𝕄(ξ.left🌵):
         morphed 𝑛·3·1 := 𝜎2:λ:φ
       𝕄(ξ.right🌵):
         morphed 𝑛·3·2 := 𝑛·3·1
       𝑛·3·3 := 𝑛·3·1  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)
-    morphed 𝑛·0·2 := 𝜎2:λ
+    morphed 𝑛·0·3 := 𝜎2:λ

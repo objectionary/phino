@@ -32,9 +32,11 @@ protocol: |
     𝔼(L_pair):
       𝕄(ξ.c):
         𝑛·1·1 := Φ.box( s ↦ 𝜎1:λ )
-        𝑛·1·2 := 𝑛·1·1( x ↦ ⟦ arg ↦ L_none:λ, λ ⤍ L_outer ⟧.φ )
-        morphed 𝑛·1·3 := 𝑛·1·2
-      𝑛1·1 := 𝑛·1·3  # 𝕄(ξ.c)
+        𝑛·1·2 := ⟦ s ↦ 𝜎1:λ, x ↦ ∅, φ ↦ s.next ⟧
+        𝑛·1·3 := 𝑛·1·1( x ↦ ⟦ arg ↦ L_none:λ, λ ⤍ L_outer ⟧.φ )
+        𝑛·1·4 := ⟦ s ↦ 𝜎1:λ, x ↦ ⟦ arg ↦ L_none:λ, λ ⤍ L_outer ⟧.φ, φ ↦ s.next ⟧
+        morphed 𝑛·1·5 := 𝑛·1·4
+      𝑛1·1 := 𝑛·1·5  # 𝕄(ξ.c)
       𝕄(𝑛1.x):
         𝔼(L_outer):
           𝔻(ξ.arg):

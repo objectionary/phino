@@ -314,14 +314,18 @@ its head, which of the built-in rules only `copy` does, to `_saveMade` of
 `RewriteContext`, except one filling ρ, which a dispatch makes. `normalized` of
 `Morph.hs` writes it with the judgment and the site, spelling the call as the
 head, named by `nameIn` of `Builder.hs`, applied to its argument; the `rewrite`
-command saves nothing (`dontSaveMade`). The name of the object is counted with
-`built` and `answer` of the innermost open firing, which both writers keep as
-a stack every record prunes by its depth (`tier`), and from then on
-`abbreviated` writes the object, and the call too, since `copy` makes the same
-object of the same call, by that name wherever a later line holds it whole.
-The line itself goes through `abbreviatedInside`, which names the head and
-each argument and never the call as a whole, so an application made again is
-spelled out again (#1756). Both writers name the formation an answer binds
+command saves nothing (`dontSaveMade`). The line names the call, and the line
+right after it, `𝑛·1·2 := ⟦ … ⟧`, names the object the call made, abridged as
+any formation is, each by a name of its own counted with `built` and `answer`
+of the innermost open firing, which both writers keep as a stack every record
+prunes by its depth (`tier`), and from then on `abbreviated` writes each by its
+name wherever a later line holds it whole (#2165). The markup writes the object
+as a `<formed>` record with that name right after the `<applied>` one (`made`
+of `saveEvalXml`), so both formats count the same names.
+Either line goes through `abbreviatedInside`, which names the head and each
+argument of a call, or each binding of an object, and never the term as a
+whole, so an application made again is spelled out again, and so is the object
+it made (#1756). Both writers name the formation an answer binds
 the same way (`namedFormation`), even when a line named it before, unless it
 holds λ or Δ, so the box step after a firing writes `boxed 𝑛·0·2 := 𝑛·1·2.φ`
 with the meta of the answer rather than the whole answer again (#2151, #2158).
