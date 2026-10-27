@@ -38,7 +38,7 @@ import GHC.Clock (getMonotonicTime)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
 import Lambdas (Lambdas, emptyLambdas, readLambdas, sized, taken)
 import Lining (LineFormat (SINGLELINE))
-import Locator (locatedExpression)
+import Locator (locatedExpression, withLocatedExpression)
 import Logger
 import Morph (ReduceContext (..), insideUniverse)
 import Parser (Form, parseExpressionThrows, parseExpressionThrows')
@@ -253,6 +253,12 @@ printFocused :: PrintContext -> Expression -> IO String
 printFocused ctx@PrintCtx{..} expr
   | _focus == ExRoot = printInFormat ctx expr
   | otherwise = locatedExpression _focus expr >>= printExpression ctx
+
+filteredAt :: Expression -> Expression -> [Expression] -> [Expression] -> Expression -> IO Expression
+filteredAt locator universe excluded included answer = do
+  placed <- withLocatedExpression locator answer universe
+  shown <- F.exclude' placed excluded >>= (`F.include'` included)
+  locatedExpression locator shown
 
 printExpression :: PrintContext -> Expression -> IO String
 printExpression ctx@PrintCtx{..} ex = case _outputFormat of
