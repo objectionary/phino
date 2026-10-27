@@ -427,6 +427,20 @@ spec = do
           it tight (parseExpression tight `shouldBe` parseExpression spaced)
       )
 
+  describe "an arrow ends a meta variable" $
+    forM_
+      [ ("[[ !t1->$ ]]", "[[ !t1 -> $ ]]")
+      , ("[[ !t1->!e1 ]]", "[[ !t1 -> !e1 ]]")
+      , ("⟦ 𝜏1->$ ⟧", "⟦ 𝜏1 -> $ ⟧")
+      , ("[[]](!t1->$)", "[[]](!t1 -> $)")
+      , ("[[ !t-a->$ ]]", "[[ !t-a -> $ ]]")
+      ]
+      ( \(tight, spaced) ->
+          it tight $ do
+            parseExpression spaced `shouldSatisfy` isRight
+            parseExpression tight `shouldBe` parseExpression spaced
+      )
+
   describe "parse number" $
     test
       parseNumber
