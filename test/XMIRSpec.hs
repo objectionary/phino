@@ -305,6 +305,9 @@ spec = do
       , ("keeps a bare 'Q' bound to a named attribute", "[[ x -> Q ]]")
       , ("keeps a formation bound to φ", "[[ k -> [[ @ -> [[ L> S8 ]] ]] ]]")
       , ("keeps byte data and sibling bindings in an application argument", "[[ x -> Q.y(a -> [[ D> 01-02, b -> Q.z ]]) ]]")
+      , ("keeps data after an application argument's sibling binding", "[[ top -> [[ @ -> ⊥(a -> [[ x -> [[]], D> 00-FF ]]) ]] ]]")
+      , ("keeps data between an application argument's sibling bindings", "[[ top -> [[ @ -> ⊥(a -> [[ x -> [[]], D> 00-FF, y -> [[]] ]]) ]] ]]")
+      , ("keeps data between a positional argument's sibling bindings", "[[ top -> [[ @ -> ⊥(α0 -> [[ x -> [[]], D> 00-FF, y -> [[]] ]]) ]] ]]")
       ]
       ( \(desc, source) -> it desc $ do
           expr <- parseExpressionThrows source
