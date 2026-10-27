@@ -414,11 +414,16 @@ saveEval handle cursor printed printed' report = do
       pure (protocol, Just (indented at (remarked (printf "deferred %s := %s" (printFunction (FnSymbol symbol)) form) remarks)))
     written at (EvApplied _ judgment call object site) protocol = do
       let (index, counted) = numbered protocol
-          aliased :: Expression
-          aliased = alias (opener protocol) index
+          (index', counted') = numbered counted
+          stem :: String
+          stem = labelled protocol answer
       form <- printed (abbreviatedInside protocol._made call)
+      body <- printed (abbreviatedInside protocol._made object)
       remarks <- context protocol judgment site
-      pure (counted{_made = namedInsert call aliased (namedInsert object aliased counted._made)}, Just (indented at (remarked (printf "%s·%d := %s" (labelled protocol answer) index form) remarks)))
+      pure
+        ( counted'{_made = namedInsert call (alias (opener protocol) index) (namedInsert object (alias (opener protocol) index') counted'._made)}
+        , Just (unlines [indented at (remarked (printf "%s·%d := %s" stem index form) remarks), indented at (printf "%s·%d := %s" stem index' body)])
+        )
     written at (EvBuilt depth term) protocol = do
       let (index, counted) = numbered protocol
       value <- borrowed protocol term
@@ -676,8 +681,11 @@ saveEvalXml handle cursor printed report = do
         locator <- located depth site
         (origin, given) <- parted depth call
         (naming, aliased) <- counted
-        modify (first (\nesting' -> nesting'{_objects = namedInsert call aliased (namedInsert object aliased nesting'._objects)}))
-        pure (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\" of=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXML origin) given)
+        modify (bimap (\nesting' -> nesting'{_objects = namedInsert call aliased nesting'._objects}) (printf "<applied meta=\"%s\" by=\"%s\" at=\"%s\" of=\"%s\">%s</applied>" (escapeXML naming) (opened judgment) (escapeXML locator) (escapeXML origin) given :))
+        element <- made depth object
+        (naming', aliased') <- counted
+        modify (first (\nesting' -> nesting'{_objects = namedInsert object aliased' nesting'._objects}))
+        pure (element (escapeXML naming'))
     elements at (EvBuilt depth term) nesting =
       placed at nesting $ do
         body <- leaf depth term
@@ -775,7 +783,12 @@ saveEvalXml handle cursor printed report = do
     coined _ term@(ExFormation [BiDelta _]) = pure term
     coined depth term@(ExFormation bds) = do
       (nesting, _) <- get
-      maybe (anonymous depth term bds) (cloned depth term) (copied nesting bds)
+      case copied nesting bds of
+        Just (origin, []) -> do
+          path <- titled depth origin
+          modify (first (\nesting' -> nesting'{_objects = namedInsert term path nesting'._objects}))
+          pure path
+        copy -> maybe (anonymous depth bds) (cloned depth) copy >>= recorded term
     coined depth term@(ExDispatch inner attr) = do
       head' <- titled depth inner
       if pathed head' then pure (ExDispatch head' attr) else opaque term
@@ -788,21 +801,22 @@ saveEvalXml handle cursor printed report = do
     coined _ term
       | plain term = pure term
       | otherwise = opaque term
-    cloned :: Int -> Expression -> (Expression, [(Attribute, Expression)]) -> Naming Expression
-    cloned depth term (origin, []) = do
-      path <- titled depth origin
-      modify (first (\nesting -> nesting{_objects = namedInsert term path nesting._objects}))
-      pure path
-    cloned depth term (origin, bound) = do
+    made :: Int -> Expression -> Naming (String -> String)
+    made depth (ExFormation bds) = do
+      (nesting, _) <- get
+      maybe (anonymous depth bds) (cloned depth) (copied nesting bds)
+    made depth term = cloned depth (term, [])
+    cloned :: Int -> (Expression, [(Attribute, Expression)]) -> Naming (String -> String)
+    cloned depth (origin, bound) = do
       path <- leaf depth origin
       given <- mapM (\(attr, value) -> titled depth value >>= lift . attributed (printAttribute attr)) bound
-      recorded term (\naming -> printf "<formed meta=\"%s\" of=\"%s\">%s</formed>" naming (escapeXML path) (concat given))
-    anonymous :: Int -> Expression -> [Binding] -> Naming Expression
-    anonymous depth term bds = do
+      pure (\naming -> enclosed "formed" (printf "<formed meta=\"%s\"" naming) (path, concat given))
+    anonymous :: Int -> [Binding] -> Naming (String -> String)
+    anonymous depth bds = do
       parts <- mapM (part depth) bds
       let marks = concat (lefts parts)
           inner = concat (rights parts)
-      recorded term (\naming -> if null inner then printf "<formed meta=\"%s\"%s/>" naming marks else printf "<formed meta=\"%s\"%s>%s</formed>" naming marks inner)
+      pure (\naming -> if null inner then printf "<formed meta=\"%s\"%s/>" naming marks else printf "<formed meta=\"%s\"%s>%s</formed>" naming marks inner)
     part :: Int -> Binding -> Naming (Either String String)
     part depth (BiTau attr value) = Right <$> (titled depth value >>= lift . attributed (printAttribute attr))
     part _ (BiVoid attr) = pure (Right (printf "<void attr=\"%s\"/>" (escapeXML (printAttribute attr))))

@@ -37,20 +37,26 @@ fails: 'terminator ⊥'
 protocol: |
   𝕄(Φ.l🌵.e1):
     𝑛·0·1 := ⟦ n ↦ ∅, v ↦ ∅, λ ⤍ L_entry ⟧( n ↦ 1.0 )
-    𝑛·0·2 := 𝑛·0·1( v ↦ Φ.block( buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ).read )
+    𝑛·0·2 := ⟦ n ↦ 1.0, v ↦ ∅, λ ⤍ L_entry ⟧
+    𝑛·0·3 := 𝑛·0·2( v ↦ Φ.block( buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ).read )
+    𝑛·0·4 := ⟦ n ↦ 1.0, v ↦ Φ.block( buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ).read, λ ⤍ L_entry ⟧
     𝔼(L_entry):
       𝔻(ξ.n):
         𝕄(ξ.n):
           𝑛·1·1 := 1.0
-          morphed 𝑛·1·2 := 𝑛·1·1
-        boxed 𝑛·1·3 := 𝑛·1·2.φ
-        𝕄(𝑛·1·3):
-          𝑛·1·4 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
-          morphed 𝑛·1·5 := 𝑛·1·4
-        boxed 𝑛·1·6 := 𝑛·1·5.φ
+          𝑛·1·2 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ):φ
+          morphed 𝑛·1·3 := 𝑛·1·2
+        boxed 𝑛·1·4 := 𝑛·1·3.φ
+        𝕄(𝑛·1·4):
+          𝑛·1·5 := Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ )
+          𝑛·1·6 := ⟦ φ ↦ 3F-F0-00-00-00-00-00-00:Δ, size ↦ L_bytes_size:λ ⟧
+          morphed 𝑛·1·7 := 𝑛·1·6
+        boxed 𝑛·1·8 := 𝑛·1·7.φ
         𝛿·1·1 := 3F-F0-00-00-00-00-00-00  # 1.0
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.n)
       𝕄(ξ.v.φ):
-        𝑛·1·7 := Φ.block( buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )
-        𝑛·1·8 := Φ.dataized( target ↦ ⊥ )
+        𝑛·1·9 := Φ.block( buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )
+        𝑛·1·10 := ⟦ data ↦ ∅, buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ), read ↦ Φ.dataized( target ↦ ρ.data.size ).as-bytes:φ ⟧
+        𝑛·1·11 := Φ.dataized( target ↦ ⊥ )
+        𝑛·1·12 := ⟦ target ↦ ⊥, λ ⤍ L_dataized ⟧
         𝔼(L_dataized):
