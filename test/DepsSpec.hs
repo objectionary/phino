@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvHeader, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Header (Header), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvHeader, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvWorld), Header (Header), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -195,6 +195,12 @@ spec = do
     it "names the term a morphing came to by its meta in the box after it, though an application named it before" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ.ю", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "хорь")) (ArTau (AtLabel "ось") (ExFormation []))) (ExFormation [BiTau (AtLabel "ось") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ось"))]) (ExDispatch ExRoot (AtLabel "ю")), EvMorphed 2 (ExFormation [BiTau (AtLabel "ось") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ось"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "ось") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ось"))]) AtPhi)])
       last (lines written) `shouldBe` "  boxed 𝑛·0·4 := 𝑛·0·3.φ"
+    it "writes a pass of an undress line as a line naming the φ it took off the term a morphing came to" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvMorphed 2 (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "щегол"))]), EvUndressed 2 (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "щегол"))]) AtPhi)])
+      last (lines written) `shouldBe` "    undressed 𝑛·1·2 := 𝑛·1·1.φ"
+    it "names the morphing after a pass of an undress line by the meta of that pass" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvMorphed 2 (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "сокол"))]), EvUndressed 2 (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "сокол"))]) AtPhi), EvStarted 2 Morphing (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "сокол"))]) AtPhi), EvMorphed 3 (ExDispatch ExRoot (AtLabel "сокол"))])
+      lines written `shouldContain` ["    𝕄(𝑛·1·2):", "      morphed 𝑛·1·3 := Φ.сокол"]
     it "spells the datum of an operand in full when the line before it found no datum" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvFiring 2 "L_з" Dataization ExRoot, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       last (lines written) `shouldBe` "    𝛿1·1 := 7F-  # 𝔻(ξ.щ)"
@@ -527,6 +533,12 @@ spec = do
     it "names the answer of a firing by its meta in the element of the box after it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_сова" Dataization ExRoot, EvAnswer 2 (ExFormation [BiTau (AtLabel "мох") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "мох"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "мох") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "мох"))]) AtPhi)])
       lines written `shouldContain` ["  <boxed meta=\"𝑛·0·1\">𝑛·1·1.φ</boxed>"]
+    it "writes a pass of an undress line as an element naming the φ it took" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvMorphed 2 (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "чибис"))]), EvUndressed 2 (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "чибис"))]) AtPhi)])
+      lines written `shouldContain` ["    <undressed meta=\"𝑛·1·2\">𝑛·1·1.φ</undressed>"]
+    it "writes a morph element at the meta of an undress pass for the morphing that follows it" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvMorphed 2 (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "кайра"))]), EvUndressed 2 (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "кайра"))]) AtPhi), EvStarted 2 Morphing (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "кайра"))]) AtPhi), EvMorphed 3 (ExDispatch ExRoot (AtLabel "кайра"))])
+      lines written `shouldContain` ["    <morph at=\"𝑛·1·2\">"]
     it "writes a morph element again for a morphing that follows a box step" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "гнёт")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щур")) (ArTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]))) (ExFormation [BiTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) (ExDispatch ExRoot (AtLabel "гнёт")), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "ял") (ExFormation [BiDelta (BtOne "3C")]), BiTau AtPhi (ExDispatch ExXi (AtLabel "ял"))]) AtPhi), EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "гнёт")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "щур")) (ArTau (AtLabel "ял") (ExBytes (BtOne "3C")))) (ExFormation [BiTau (AtLabel "ял") (ExBytes (BtOne "3C"))]) (ExDispatch ExRoot (AtLabel "гнёт"))])
       length (filter (isInfixOf "<morph at=") (lines written)) `shouldBe` 2

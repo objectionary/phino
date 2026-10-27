@@ -143,6 +143,8 @@ file:
   morphing, 𝕄.
   The term is a path from `$`, as in `𝑛1: $.x`, or a meta another line binds,
   as in `𝑛4: 𝑛3`.
+* `undress` binds a term meta as `morph` does, and then, while the term is a
+  formation binding `φ` alone beside its `ρ`, takes its `φ` and morphs that.
 * `evaluate` binds a term meta to the answer of firing the formation another
   meta holds, through evaluation, 𝔼, as in `𝑛2: 𝑛1`.
 * `defer` binds a term meta to a fresh symbol when another meta holds a copy
@@ -328,6 +330,7 @@ A protocol may hold these lines:
 * `𝑛·1·1 := …  # 𝑛` is the term the entry answered with, and the line
   commented with `𝕄(𝑛·1·1)` is its normal form.
 * `boxed …` is dataization stepping into the `φ` of a formation.
+* `undressed …` is an `undress` line taking the `φ` of a formation.
 * `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.

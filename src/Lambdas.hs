@@ -64,6 +64,7 @@ data Meta = Meta
 data Line
   = Dataized Meta Meta
   | Morphed Meta Meta
+  | Undressed Meta Meta
   | Evaluated Meta Meta
   | Deferred Meta Meta
   | Stayed Meta Meta
@@ -78,6 +79,7 @@ data Lambda = Lambda
   { _key :: Text
   , _dataized :: [(Meta, Expression)]
   , _morphed :: [(Meta, Expression)]
+  , _undressed :: [(Meta, Expression)]
   , _lines :: [Line]
   , _ending :: Ending
   }
@@ -99,13 +101,15 @@ instance FromJSON Lambda where
     (dataized, weighing) <- partitionEithers <$> reductions key bytesMeta Dataized entry "dataize"
     ending <- concluded (T.unpack key) dataized entry
     (morphed, reading) <- partitionEithers <$> reductions key expressionMeta Morphed entry "morph"
+    (undressed, peeling) <- partitionEithers <$> reductions key expressionMeta Undressed entry "undress"
     lambda <-
-      Lambda key dataized morphed
-        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) morphed) . ((weighing ++ reading) ++))
+      Lambda key dataized morphed undressed
+        <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) (morphed ++ undressed)) . ((weighing ++ reading ++ peeling) ++))
         <*> pure ending
     once (T.unpack key) lambda
     mapM_ (metaless (T.unpack key) "dataize" "a path from '$' or a meta alone") lambda._dataized
     mapM_ (metaless (T.unpack key) "morph" "a path from '$' or a meta alone") lambda._morphed
+    mapM_ (metaless (T.unpack key) "undress" "a path from '$' or a meta alone") lambda._undressed
     answered (T.unpack key) lambda
     pure lambda
     where
@@ -115,7 +119,7 @@ instance FromJSON Lambda where
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "evaluate", "defer", "stay", "rewrite", "symbolize", "join", "𝑛"]
+          known = ["λ", "dataize", "morph", "undress", "evaluate", "defer", "stay", "rewrite", "symbolize", "join", "𝑛"]
       concluded :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       concluded key dataized entry = do
         answer <- entry .:? "𝑛"
@@ -231,6 +235,7 @@ instance FromJSON Lambda where
           source :: Line -> Meta
           source (Dataized _ meta) = meta
           source (Morphed _ meta) = meta
+          source (Undressed _ meta) = meta
           source (Evaluated _ meta) = meta
           source (Deferred _ meta) = meta
           source (Stayed _ meta) = meta
@@ -239,6 +244,7 @@ instance FromJSON Lambda where
       binding :: Line -> Meta
       binding (Dataized meta _) = meta
       binding (Morphed meta _) = meta
+      binding (Undressed meta _) = meta
       binding (Evaluated meta _) = meta
       binding (Deferred meta _) = meta
       binding (Stayed meta _) = meta
@@ -255,7 +261,7 @@ instance FromJSON Lambda where
         Just meta -> fail (printf "The meta '%s' of λ function '%s' is bound by more than one line, while each meta may be bound once" (T.unpack meta._spelling) key)
         where
           bound :: [Meta]
-          bound = map fst lambda._morphed ++ map binding lambda._lines
+          bound = map fst (lambda._morphed ++ lambda._undressed) ++ map binding lambda._lines
           twice :: [Text] -> [Meta] -> Maybe Meta
           twice _ [] = Nothing
           twice seen (meta : rest)
@@ -284,11 +290,11 @@ instance FromJSON Lambda where
           known :: [Text]
           known = map (_name . fst) lambda._dataized ++ reduced
           reduced :: [Text]
-          reduced = map (_name . fst) lambda._morphed ++ map (_name . binding) lambda._lines
+          reduced = map (_name . fst) (lambda._morphed ++ lambda._undressed) ++ map (_name . binding) lambda._lines
           sided :: String -> Expression -> Yaml.Parser ()
           sided name side = case filter (`notElem` reduced) (metas side) of
             [] -> pure ()
-            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'evaluate', 'stay', 'rewrite', 'symbolize' and 'defer' binds" name key (T.unpack meta))
+            meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' that none of 'morph', 'undress', 'evaluate', 'stay', 'rewrite', 'symbolize' and 'defer' binds" name key (T.unpack meta))
       dataless :: String -> Expression -> Yaml.Parser ()
       dataless key answer
         | computes answer = fail (printf "The '𝑛' of λ function '%s' reads data, while a symbolic answer may mention nothing but 𝜎" key)

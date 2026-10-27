@@ -193,7 +193,16 @@ naming a meta alone, such as `𝛿2: 𝑛1`, is a line the same way (`Dataized` 
 `Line`, `lowered` of `Evaluate.hs`, #2139): it brings the term down through
 `_reduce`, as it stands, and writes `# 𝔻(𝑛1)`, while `_dataized` keeps the
 operands reading `$`, which alone make the `on` of a join and the data of
-`<minted>`. The lines of `dataize`, `morph`,
+`<minted>`. An operand of `undress`, a path from `$` or a meta alone
+(`_undressed` of `Lambda`, `Undressed` of `Line`, `peeled` of `Evaluate.hs`),
+is morphed as one of `morph` is, and then, while the term is a formation
+binding φ alone beside its ρ, gets φ dispatched off it and morphed again,
+never its body taken out, so ξ keeps its meaning (#2174). Every pass spends a
+step of `deeper` and writes `undressed 𝑛·1·5 := 𝑛·1·4.φ` (`EvUndressed`),
+counted and named as `boxed` is, so the 𝕄 after it is named after that meta,
+and an operand a pass changed writes `# undress(…)` (`EvReshaped`). The
+operands reading `$` join the key of the memo as those of `morph` do. The
+lines of `dataize`, `morph`, `undress`,
 `evaluate`, `defer`, `stay`, `rewrite` and `symbolize` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
 line reads, keeping the order of the blocks where no meta decides, and refuses
@@ -209,8 +218,8 @@ An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
 among them (#1999). The block names the condition under `on`, a bytes meta of
 `dataize` or a path from `$`, and the two sides under `left` and `right`, each
-a path from `$` or a meta `morph`, `evaluate`, `stay`, `rewrite`, `symbolize`
-or `defer` binds.
+a path from `$` or a meta `morph`, `undress`, `evaluate`, `stay`, `rewrite`,
+`symbolize` or `defer` binds.
 `merged` of `Evaluate.hs` first takes the condition (`weighed`), its bytes or
 the symbol they were manufactured for: a meta as its `dataize` operand came
 down, and a path off the formation fired, walking its bindings with no 𝔻, so

@@ -122,6 +122,7 @@ data Evaluation
   | EvDelta Int Bytes
   | EvManufactured Int Int
   | EvBoxed Int Expression
+  | EvUndressed Int Expression
   | EvLooped Int Judgment Acyclic Expression Expression
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
@@ -183,6 +184,7 @@ tier (EvStarted depth _ _) = depth
 tier (EvDelta depth _) = depth
 tier (EvManufactured depth _) = depth
 tier (EvBoxed depth _) = depth
+tier (EvUndressed depth _) = depth
 tier (EvLooped depth _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
@@ -361,10 +363,8 @@ saveEval handle cursor printed printed' report = do
       datum <- spelt (Left symbol)
       let (naming, protocol') = stored (Left symbol) protocol
       pure (protocol', Just (indented at (printf "%s := %s" naming datum)))
-    written at (EvBoxed _ term) protocol = do
-      let (index, counted) = numbered protocol
-      taken <- printed (abbreviatedInside protocol._made term)
-      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "boxed %s·%d := %s" (labelled protocol answer) index taken)))
+    written at (EvBoxed _ term) protocol = taking at "boxed" term protocol
+    written at (EvUndressed _ term) protocol = taking at "undressed" term protocol
     written at (EvLooped _ judgment mode self site) protocol = do
       form <- render self
       remarks <- context protocol judgment site
@@ -526,6 +526,11 @@ saveEval handle cursor printed printed' report = do
       where
         index :: Int
         index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._counted)
+    taking :: Int -> String -> Expression -> Protocol -> IO (Protocol, Maybe String)
+    taking at word term protocol = do
+      let (index, counted) = numbered protocol
+      taken <- printed (abbreviatedInside protocol._made term)
+      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "%s %s·%d := %s" word (labelled protocol answer) index taken)))
 
 endEval :: Handle -> IORef Protocol -> Double -> IO ()
 endEval handle cursor began = do
@@ -641,12 +646,8 @@ saveEvalXml handle cursor printed report = do
     elements at (EvManufactured _ symbol) nesting = placed at nesting' (pure (printf "<manufactured meta=\"%s\">%s</manufactured>" (escapeXML naming) (sigma symbol)))
       where
         (naming, nesting') = stored (Left symbol) nesting
-    elements at (EvBoxed depth term) nesting =
-      placed at nesting $ do
-        taken <- coined depth term >>= lift . spelled
-        (naming, aliased) <- counted
-        modify (first (\nesting' -> nesting'{_objects = namedInsert term aliased nesting'._objects}))
-        pure (printf "<boxed meta=\"%s\">%s</boxed>" (escapeXML naming) (escapeXMLText taken))
+    elements at (EvBoxed depth term) nesting = taken at "boxed" depth term nesting
+    elements at (EvUndressed depth term) nesting = taken at "undressed" depth term nesting
     elements at (EvData _ spelling _ value) nesting =
       placed at nesting $ case (found value nesting._held, value) of
         (Just naming, _) -> pure (bound (escapeXMLText naming))
@@ -764,6 +765,13 @@ saveEvalXml handle cursor printed report = do
     located depth site = do
       (nesting, _) <- get
       maybe (titled depth site >>= lift . traced) pure (listToMaybe [naming | (_, built, naming) <- nesting._sources, built == site])
+    taken :: Int -> String -> Int -> Expression -> Nesting -> IO (Nesting, [String])
+    taken at tag depth term nesting =
+      placed at nesting $ do
+        body <- coined depth term >>= lift . spelled
+        (naming, aliased) <- counted
+        modify (first (\nesting' -> nesting'{_objects = namedInsert term aliased nesting'._objects}))
+        pure (printf "<%s meta=\"%s\">%s</%s>" tag (escapeXML naming) (escapeXMLText body) tag)
     concluded :: String -> Int -> Expression -> Naming String
     concluded tag depth term = do
       body <- leaf depth term
