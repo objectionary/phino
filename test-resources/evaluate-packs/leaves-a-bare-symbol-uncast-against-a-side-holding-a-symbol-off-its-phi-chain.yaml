@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The right side ends its φ chain in a bare symbol, but it holds another one
+# under 'ke', off that chain. A cast would copy that symbol into the left side
+# too, as if the left branch knew it, so a 'cast' block casts nothing here and
+# binds both metas to their terms as they are. The join then diverges as it
+# would with no 'cast' block at all (#2187).
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    cast:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      on: 𝛿1
+      left: 𝑛3
+      right: 𝑛4
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, ke ↦ ⟦ λ ⤍ 𝜎4 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
+      𝕄(ξ.a):
+        morphed 𝑛·1·1 := 𝜎2:λ
+      𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.a)
+      𝕄(ξ.b):
+        morphed 𝑛·1·2 := ⟦ φ ↦ 𝜎3:λ, ke ↦ 𝜎4:λ ⟧
+      𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
+      𝑛3·1 := 𝑛1·1  # 𝑛1
+      𝑛4·1 := 𝑛2·1  # 𝑛2
+      diverged 𝜎2:λ vs 𝑛4·1  # they differ at .λ, and the join names no otherwise
