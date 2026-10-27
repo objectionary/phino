@@ -31,7 +31,7 @@ import Bytes (btsIsUtf8, btsSize, btsToNum, btsToStr, bytesToBts)
 import Control.Exception (Exception (displayException), throwIO)
 import Control.Monad (unless, when)
 import Data.Bifunctor (bimap)
-import Data.Char (isAsciiLower, isDigit)
+import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.Foldable (foldlM)
 import Data.List (find, groupBy, intercalate, nub)
 import qualified Data.Map as M
@@ -502,8 +502,15 @@ type Derived = M.Map [String] T.Text
 
 lambdaName :: Derived -> C.Cursor -> [String] -> IO T.Text
 lambdaName derived cur fqn
-  | hasText cur = T.strip . T.pack <$> getText cur
+  | hasText cur = do
+      name <- T.strip . T.pack <$> getText cur
+      unless (grammatical (T.unpack name)) (throwIO (InvalidXMIRFormat (printf "The λ name '%s' is not a function name the phi grammar reads" (T.unpack name)) cur))
+      pure name
   | otherwise = pure (M.findWithDefault (spelled fqn) fqn derived)
+  where
+    grammatical :: String -> Bool
+    grammatical (first : rest) = isAsciiUpper first && all (\ch -> isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ') rest
+    grammatical [] = False
 
 spelled :: [String] -> T.Text
 spelled fqn = T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn)))
