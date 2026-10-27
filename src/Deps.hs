@@ -14,12 +14,14 @@ import Control.Monad (foldM, guard, unless, when, zipWithM, (>=>))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State.Strict (StateT, get, modify, put, runStateT)
 import Data.Bifunctor (bimap, first, second)
+import Data.Char (isAlphaNum)
 import Data.Either (lefts, rights)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.List (intercalate, sortOn)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import qualified Data.Text as T
+import Data.Time (ZonedTime, defaultTimeLocale, formatTime)
 import Files (overwrite)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -143,6 +145,11 @@ data Evaluation
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int [Expression] Expression
   | EvWorld Expression
+  | EvHeader Header Expression Expression
+
+data Header = Header String (Maybe String) ZonedTime [String] World (Maybe (FilePath, Int))
+
+data World = World (Maybe FilePath) Int Int Int Int
 
 type SaveEvalFunc = Evaluation -> IO ()
 
@@ -199,6 +206,7 @@ tier (EvDiverged depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
 tier (EvTaken depth _ _) = depth
 tier EvWorld{} = maxBound
+tier EvHeader{} = 0
 
 type Named a = Map.Map Int [(Expression, a)]
 
@@ -453,6 +461,21 @@ saveEval handle cursor printed printed' report = do
       remarks <- mapM sourced sides
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
     written _ (EvWorld world) protocol = pure (protocol{_made = namedInsert world ExRoot protocol._made}, Nothing)
+    written _ (EvHeader (Header release revision dated command (World file count size tops bindings) table) locator expression) protocol = do
+      place <- printed locator
+      body <- printed expression
+      pure (protocol, Just (unlines (map ("# " ++) (told ++ ["Locator: " ++ place, "Expression: " ++ body]) ++ [""])))
+      where
+        told :: [String]
+        told =
+          [ printf "Written by phino %s on %s" (maybe release (printf "%s (%s)" release) revision) (formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S %Ez" dated)
+          , "Command: " ++ commanded command
+          , printf "World: %s, %s" (fromMaybe "stdin" file) (intercalate ", " [amount count "line" "lines", amount size "byte" "bytes", amount tops "object" "objects" ++ " at the top", amount bindings "binding" "bindings"])
+          ]
+            ++ ["Symbolic: " ++ path ++ ", " ++ amount entries "entry" "entries" | Just (path, entries) <- [table]]
+        amount :: Int -> String -> String -> String
+        amount 1 one _ = "1 " ++ one
+        amount many _ several = show many ++ " " ++ several
     spelt :: Either Int Bytes -> IO String
     spelt (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
     spelt (Right bytes) = render (ExBytes bytes)
@@ -554,16 +577,28 @@ saveEvalXml handle cursor printed report = do
     elements :: Int -> Evaluation -> Nesting -> IO (Nesting, [String])
     elements _ (EvRun judgment locator) nesting =
       pure
-        ( nesting{_closing = (0, opened judgment) : (if null nesting._closing then [(-1, "protocol")] else kept)}
-        , ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>" | null nesting._closing]
-            ++ ["<protocol>" | null nesting._closing]
-            ++ closers
-            ++ [run]
+        ( nesting{_closing = (0, opened judgment) : rooted kept}
+        , prologue nesting ++ closers ++ [run]
         )
       where
         (kept, closers) = closed 0 nesting._closing
         run :: String
         run = indentedXml 0 (printf "<%s at=\"%s\">" (opened judgment) (quoted locator))
+    elements _ (EvHeader (Header release revision dated command (World file count size tops bindings) table) locator _) nesting = do
+      place <- printed locator
+      pure
+        ( nesting{_closing = rooted nesting._closing}
+        , prologue nesting
+            ++ map
+              (indentedXml 0)
+              ( [ printf "<written by=\"phino\" version=\"%s\"%s on=\"%s\"/>" (escapeXML release) (maybe "" (printf " revision=\"%s\"" . escapeXML) revision :: String) (formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S%Ez" dated)
+                , printf "<command>%s</command>" (escapeXMLText (commanded command))
+                , printf "<world%s lines=\"%d\" bytes=\"%d\" objects=\"%d\" bindings=\"%d\"/>" (maybe "" (printf " file=\"%s\"" . escapeXML) file :: String) count size tops bindings
+                ]
+                  ++ [printf "<symbolic file=\"%s\" entries=\"%d\"/>" (escapeXML path) entries | Just (path, entries) <- [table]]
+                  ++ [printf "<locator>%s</locator>" (escapeXMLText place)]
+              )
+        )
     elements at (EvFiring depth key judgment site) nesting = do
       (fired, lines') <- placed at nesting (printf "<evaluate λ=\"%s\" by=\"%s\" at=\"%s\">" (quoted key) (opened judgment) . escapeXML <$> located depth site)
       pure (fired{_fires = fired._fires + 1, _openedAt = (depth, fired._fires + 1) : fired._openedAt, _closing = (at, "evaluate") : fired._closing}, lines')
@@ -669,6 +704,13 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<fabricated meta=\"%s\" left=\"%s\" right=\"%s\">%s</fabricated>" (escapeXML naming) (escapeXML one) (escapeXML two) (escapeXMLText body))
     elements at (EvTaken depth _ term) nesting = placed at nesting (concluded "answered" depth term)
     elements _ (EvWorld world) nesting = pure (known world nesting, [])
+    prologue :: Nesting -> [String]
+    prologue nesting
+      | null nesting._closing = ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<protocol>"]
+      | otherwise = []
+    rooted :: [(Int, String)] -> [(Int, String)]
+    rooted [] = [(-1, "protocol")]
+    rooted open = open
     sided :: Int -> Nesting -> (Expression, Expression) -> Naming String
     sided depth _ (_, term@(ExFormation [BiLambda (FnSymbol _)])) = leaf depth term
     sided _ nesting (side@(ExMeta _), _) = labelled nesting . T.pack <$> lift (spelled side)
@@ -918,6 +960,19 @@ endEvalXml handle cursor began = do
     hPutStrLn handle (indentedXml 0 (printf "<fps>%d</fps>" (perSecond nesting._fires taken)))
     hPutStrLn handle "</protocol>"
   writeIORef cursor nesting{_closing = []}
+
+commanded :: [String] -> String
+commanded command = unwords (map shelled ("phino" : command))
+  where
+    shelled :: String -> String
+    shelled word
+      | not (null word) && all safe word = word
+      | otherwise = "'" ++ concatMap escaped word ++ "'"
+    safe :: Char -> Bool
+    safe char = isAlphaNum char || char `elem` ("-_./=:,+@%" :: String)
+    escaped :: Char -> String
+    escaped '\'' = "'\\''"
+    escaped char = [char]
 
 closed :: Int -> [(Int, String)] -> ([(Int, String)], [String])
 closed depth open = (kept, [indentedXml level (printf "</%s>" element) | (level, element) <- shut])

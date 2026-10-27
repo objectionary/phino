@@ -314,6 +314,8 @@ every firing, and the second counts the names within that firing.
 The name `𝛿1·1` is the meta `𝛿1` of the first firing.
 A protocol may hold these lines:
 
+* `# …` lines open the file with the phino that wrote it, the command, the
+  world, the λ functions, the locator, and the expression it points at.
 * `𝔻(…):` and `𝕄(…):` open a block where dataization or morphing starts at a
   new site, and what it does stands under it.
 * `𝔼(…):` opens one firing, named by its λ function.
@@ -337,7 +339,7 @@ A protocol may hold these lines:
 * `starved …`, `spent …` and `timeout …` are where `--max-steps`,
   `--max-firings` and `--max-seconds` ran out.
 * `msec …`, `firings …` and `fps …` close the file, and the listing above
-  leaves them out, since they differ from run to run.
+  leaves them and the `# …` lines out, since they differ from run to run.
 
 The `--abridged` option folds every formation longer than sixty-four
 characters, or than `--abridged=WIDTH`, into its `φ`, `Δ` and `λ` and a count

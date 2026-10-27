@@ -23,7 +23,7 @@ import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, makeAbsolute, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime, withCurrentDirectory)
 import System.Exit (ExitCode (ExitFailure))
-import System.FilePath ((</>))
+import System.FilePath (takeFileName, (</>))
 import System.IO
 import System.Timeout (timeout)
 import Test.Hspec
@@ -1737,6 +1737,78 @@ spec = do
           records <- readProtocol path
           records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
 
+      it "opens the protocol with a header naming the phino that wrote it" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          records `shouldSatisfy` isPrefixOf ("# Written by phino " ++ showVersion version ++ " ")
+
+      it "writes the command line of the run into the header" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--protocol=" ++ takeFileName path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["# Command: phino dataize --protocol=" ++ takeFileName path ++ " --quiet"]
+
+      it "writes the world read from the standard input into the header" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["# World: stdin, 1 line, 32 bytes, 1 object at the top, 2 bindings"]
+
+      it "writes the world read from a file into the header" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withTempFileContent "worldXXXXXX.phi" "[[\n  t -> [[ D> 01- ]]\n]]\n" $ \world -> do
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet", world] []
+            records <- readUtf8 path
+            lines records `shouldContain` [printf "# World: %s, 3 lines, 26 bytes, 1 object at the top, 2 bindings" world]
+
+      it "writes the λ functions of the run into the header" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin sum' $
+            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` [printf "# Symbolic: %s, 5 entries" lambdasFile]
+
+      it "writes the locator of the run into the header" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["# Locator: Φ.t"]
+
+      it "writes the expression the locator points at into the header" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["# Expression: ⟦ Δ ⤍ 01- ⟧"]
+
+      it "writes the expression given to --inside into the header" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
+            testCLISucceeded ["morph", "--inside=Φ.t", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["# Expression: Φ.t"]
+
+      it "writes the header into the XML protocol" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
+            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          lines records `shouldContain` ["  <locator>Φ.t</locator>"]
+
       it "closes the protocol with its msec on the third line from the end" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -2225,12 +2297,18 @@ spec = do
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            take 4 (lines records)
-              `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                         , "<protocol>"
-                         , "  <dataize at=\"Φ\">"
+            take 2 (dropWhile (not . isPrefixOf "  <dataize ") (lines records))
+              `shouldBe` [ "  <dataize at=\"Φ\">"
                          , "    <dataized meta=\"𝛿·0·1\">01-</dataized>"
                          ]
+
+        it "opens the '<protocol>' root right under the declaration" $
+          withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+            hClose stream
+            withStdin "[[ D> 01- ]]" $
+              testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            records <- readUtf8 path
+            take 2 (lines records) `shouldBe` ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<protocol>"]
 
         it "closes the '<protocol>' root with its msec" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2238,7 +2316,7 @@ spec = do
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            (lines records !! 5) `shouldSatisfy` isPrefixOf "  <msec>"
+            (reverse (lines records) !! 3) `shouldSatisfy` isPrefixOf "  <msec>"
 
         it "closes the '<protocol>' root with its firings" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -2254,7 +2332,7 @@ spec = do
             withStdin "[[ D> 01- ]]" $
               testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
             records <- readUtf8 path
-            drop 7 (lines records) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
+            reverse (take 2 (reverse (lines records))) `shouldBe` ["  <fps>0</fps>", "</protocol>"]
 
         it "nests what a φ body dataizes inside the element of the box rule that entered it" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do

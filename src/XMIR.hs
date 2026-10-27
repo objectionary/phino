@@ -20,6 +20,7 @@ module XMIR
   , defaultXmirContext
   , escapeXML
   , escapeXMLText
+  , gitRevision
   , xmirTime
   , XmirContext (XmirContext)
   )

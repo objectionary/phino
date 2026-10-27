@@ -10,8 +10,9 @@ import Control.Exception (bracket)
 import Control.Monad (replicateM_, when)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
+import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvHeader, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvWorld), Header (Header), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -40,6 +41,9 @@ withScratchDir =
         exists <- doesDirectoryExist dir
         when exists (removeDirectoryRecursive dir)
     )
+
+dated :: Int -> ZonedTime
+dated hours = ZonedTime (LocalTime (fromGregorian 2026 10 27) (TimeOfDay 9 41 12)) (hoursToTimeZone hours)
 
 spec :: Spec
 spec = do
@@ -308,7 +312,73 @@ spec = do
     it "opens a heading of its own for every run of the protocol" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C"), EvRun Morphing "Φ", EvDelta 1 (BtOne "0D")])
       lines written `shouldBe` ["𝕄(Φ):", "  𝛿·0·1 := 0C-", "𝕄(Φ):", "  𝛿·0·2 := 0D-"]
+    it "opens the header with the version and the revision of phino and the date the run began" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      take 1 (lines written) `shouldBe` ["# Written by phino 0.0.156 (9be96d8) on 2026-10-27 09:41:12 +03:00"]
+    it "leaves the revision out of the header when phino was built with none" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.157" Nothing (dated (-5)) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      take 1 (lines written) `shouldBe` ["# Written by phino 0.0.157 on 2026-10-27 09:41:12 -05:00"]
+    it "writes the command of the run into the header, quoting an argument a shell would split" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["morph", "--inside=⟦ ёж ↦ ∅ ⟧", "--sweet"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Morphing "Φ"])
+      lines written `shouldContain` ["# Command: phino morph '--inside=⟦ ёж ↦ ∅ ⟧' --sweet"]
+    it "writes the size of the world into the header" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "лес/мир.phi") 8125 295805 51 6454) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["# World: лес/мир.phi, 8125 lines, 295805 bytes, 51 objects at the top, 6454 bindings"]
+    it "names a world read from the standard input stdin in the header" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World Nothing 4 77 0 9) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["# World: stdin, 4 lines, 77 bytes, 0 objects at the top, 9 bindings"]
+    it "writes one of a kind in the world of the header in the singular" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "ёж.phi") 1 1 1 1) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["# World: ёж.phi, 1 line, 1 byte, 1 object at the top, 1 binding"]
+    it "writes the λ functions of the run and the count of their entries into the header" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) (Just ("ёж.yaml", 10))) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["# Symbolic: ёж.yaml, 10 entries"]
+    it "writes one entry of the λ functions in the header in the singular" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) (Just ("ёж.yaml", 1))) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["# Symbolic: ёж.yaml, 1 entry"]
+    it "writes no λ functions into the header of a run with none" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      filter (isPrefixOf "# Symbolic") (lines written) `shouldBe` []
+    it "writes the locator of the run into the header" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) (ExDispatch (ExDispatch ExRoot (AtLabel "лес")) (AtLabel "ёж")) (ExFormation []), EvRun Dataization "Φ.лес.ёж"])
+      lines written `shouldContain` ["# Locator: Φ.лес.ёж"]
+    it "writes the expression the locator points at into the header" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) (ExDispatch ExRoot (AtLabel "ёж")) (ExDispatch ExRoot (AtLabel "щука")), EvRun Dataization "Φ.ёж"])
+      lines written `shouldContain` ["# Expression: Φ.щука"]
+    it "parts the header from the heading of the run with an empty line" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) (ExDispatch ExRoot (AtLabel "ёж")) (ExFormation []), EvRun Dataization "Φ.ёж"])
+      lines written `shouldContain` ["# Expression: ⟦⟧", "", "𝔻(Φ.ёж):"]
   describe "saveEvalXml" $ do
+    it "opens the root with the version and the revision of phino and the date the run began" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      take 3 (lines written) `shouldBe` ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<protocol>", "  <written by=\"phino\" version=\"0.0.156\" revision=\"9be96d8\" on=\"2026-10-27T09:41:12+03:00\"/>"]
+    it "leaves the revision out of the markup when phino was built with none" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.157" Nothing (dated (-5)) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["  <written by=\"phino\" version=\"0.0.157\" on=\"2026-10-27T09:41:12-05:00\"/>"]
+    it "writes the command of the run into the markup" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["morph", "--inside=⟦ ёж ↦ ∅ ⟧", "--x=<b>"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Morphing "Φ"])
+      lines written `shouldContain` ["  <command>phino morph '--inside=⟦ ёж ↦ ∅ ⟧' '--x=&lt;b&gt;'</command>"]
+    it "writes the size of the world into the markup" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "лес/мир.phi") 8125 295805 51 6454) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["  <world file=\"лес/мир.phi\" lines=\"8125\" bytes=\"295805\" objects=\"51\" bindings=\"6454\"/>"]
+    it "writes a world read from the standard input into the markup with no file" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World Nothing 4 77 0 9) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["  <world lines=\"4\" bytes=\"77\" objects=\"0\" bindings=\"9\"/>"]
+    it "writes the λ functions of the run into the markup" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) (Just ("ёж.yaml", 10))) ExRoot ExRoot, EvRun Dataization "Φ"])
+      lines written `shouldContain` ["  <symbolic file=\"ёж.yaml\" entries=\"10\"/>"]
+    it "writes no λ functions into the markup of a run with none" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      filter (isInfixOf "<symbolic") (lines written) `shouldBe` []
+    it "writes the locator of the run into the markup" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) (ExDispatch (ExDispatch ExRoot (AtLabel "лес")) (AtLabel "ёж")) (ExFormation []), EvRun Dataization "Φ.лес.ёж"])
+      lines written `shouldContain` ["  <locator>Φ.лес.ёж</locator>"]
+    it "writes no expression into the markup, since the markup writes no term" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) (ExDispatch ExRoot (AtLabel "ёж")) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "щука"))]), EvRun Dataization "Φ.ёж"])
+      filter (isInfixOf "щука") (lines written) `shouldBe` []
+    it "opens the root once for the header and the run after it" $ do
+      (_, written) <- recordedWhole (\record -> mapM_ record [EvHeader (Header "0.0.156" (Just "9be96d8") (dated 3) ["dataize"] (World (Just "мир.phi") 3 120 2 7) Nothing) ExRoot ExRoot, EvRun Dataization "Φ"])
+      filter (== "<protocol>") (lines written) `shouldBe` ["<protocol>"]
     it "writes an application as an element naming its head and holding its argument" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ.w", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) (ExDispatch ExRoot (AtLabel "w"))])
       lines written `shouldContain` ["  <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ.w\" of=\"Φ.ёж\"><ref attr=\"q\">Φ.ю</ref></applied>"]
