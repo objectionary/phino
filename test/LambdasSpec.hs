@@ -40,6 +40,7 @@ order known func = map bound (lined known func)
     bound :: Line -> T.Text
     bound (Dataized meta _) = _spelling meta
     bound (Morphed meta _) = _spelling meta
+    bound (Undressed meta _) = _spelling meta
     bound (Evaluated meta _) = _spelling meta
     bound (Deferred meta _) = _spelling meta
     bound (Stayed meta _) = _spelling meta
@@ -51,6 +52,9 @@ dataizes known func = [(_spelling meta, _spelling source) | Dataized meta source
 
 morphs :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 morphs known func = [(_spelling meta, _spelling source) | Morphed meta source <- lined known func]
+
+undresses :: Lambdas -> T.Text -> [(T.Text, T.Text)]
+undresses known func = [(_spelling meta, _spelling source) | Undressed meta source <- lined known func]
 
 fired :: Lambdas -> T.Text -> [(T.Text, T.Text)]
 fired known func = [(_spelling meta, _spelling source) | Evaluated meta source <- lined known func]
@@ -309,6 +313,32 @@ spec = do
       known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
       symbolizes known "L_hold" `shouldBe` []
 
+    it "keeps under 'undress' only the operands reading '$'" $ do
+      known <- lambdasOf "- λ: L_hold\n  undress:\n    𝑛1: $.a\n    𝑛3: 𝑛2\n  stay:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n"
+      map (_spelling . fst) (maybe [] _undressed (matched known "L_hold")) `shouldBe` ["𝑛1"]
+
+    it "reads the lines of 'undress' with the metas they read" $ do
+      known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  undress:\n    𝑛4: 𝑛2\n    𝑛3: 𝑛1\n  𝑛: 𝑛3\n"
+      undresses known "L_hold" `shouldBe` [("𝑛3", "𝑛1"), ("𝑛4", "𝑛2")]
+
+    it "runs a 'morph' line reading what an operand of 'undress' bound" $ do
+      known <- lambdasOf "- λ: L_hold\n  undress:\n    𝑛1: $.a\n  morph:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n"
+      morphs known "L_hold" `shouldBe` [("𝑛2", "𝑛1")]
+
+    it "runs an 'undress' line after the 'stay' line binding the meta it reads" $ do
+      known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  undress:\n    𝑛3: 𝑛2\n  stay:\n    𝑛2: 𝑛1\n  𝑛: 𝑛3\n"
+      order known "L_hold" `shouldBe` ["𝑛2", "𝑛3"]
+
+    it "reads a 'join' block whose sides are metas 'undress' bound" $ do
+      known <- lambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  undress:\n    𝑛1: $.a\n    𝑛2: $.b\n  join:\n    on: 𝛿1\n    left: 𝑛1\n    right: 𝑛2\n"
+      left <- parseExpressionThrows "𝑛1"
+      right <- parseExpressionThrows "𝑛2"
+      sides known "L_fork" `shouldBe` Just (left, right)
+
+    it "reads an entry naming no 'undress' block at all" $ do
+      known <- lambdasOf "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
+      undresses known "L_hold" `shouldBe` []
+
     it "reads the lines of 'rewrite' with the metas they read and the count of their rules" $ do
       known <- lambdasOf ("- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  rewrite:\n    𝑛4:\n      of: 𝑛2\n" <> truth <> "        - name: false-literal\n          pattern: Φ.false\n          result: Φ.bool( if ↦ ⟦ Δ ⤍ 00- ⟧ )\n    𝑛3:\n      of: 𝑛1\n" <> truth <> "  𝑛: 𝑛3\n")
       rewrites known "L_hold" `shouldBe` [("𝑛3", "𝑛1", 1), ("𝑛4", "𝑛2", 2)]
@@ -391,6 +421,10 @@ spec = do
       , ("a meta bound by 'defer' and again by 'evaluate'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  defer:\n    𝑛2: 𝑛1\n  evaluate:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The meta '𝑛2' of λ function 'L_hold' is bound by more than one line")
       , ("a meta bound by 'evaluate' and again by 'defer' in its other spelling", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛3: 𝑛1\n  defer:\n    \"!n3\": 𝑛1\n  𝑛: 𝑛3\n", "The meta '!n3' of λ function 'L_hold' is bound by more than one line")
       , ("a meta bound twice by 'defer' in its two spellings", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛3: 𝑛1\n    \"!n3\": 𝑛2\n  𝑛: 𝑛3\n", "is bound by more than one line")
+      , ("an operand of 'undress' which is no expression meta", "- λ: L_hold\n  undress:\n    𝛿1: $.a\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "is not an expression meta")
+      , ("an operand of 'undress' reading a meta inside a term", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  undress:\n    𝑛2: 𝑛1.x\n  𝑛: 𝑛2\n", "The operand '𝑛2' of 'undress' of λ function 'L_hold' reads the meta 'n1', while only a path from '$' or a meta alone can be reduced there")
+      , ("an operand of 'undress' naming a meta nothing binds", "- λ: L_hold\n  undress:\n    𝑛2: 𝑛5\n  𝑛: 𝑛2\n", "The operand '𝑛5' of λ function 'L_hold' names no meta bound by 'morph' or by any line")
+      , ("a meta bound by 'morph' and again by 'undress'", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  undress:\n    𝑛1: $.b\n  𝑛: 𝑛1\n", "The meta '𝑛1' of λ function 'L_hold' is bound by more than one line")
       , ("a 'stay' line keeping a meta the entry never bound", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛3: 𝑛2\n  𝑛: 𝑛3\n", "names no meta bound by 'morph' or by any line")
       , ("a 'stay' line bound to what is no expression meta", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  stay:\n    𝛿1: 𝑛1\n  𝑛: 𝑛1\n", "is not an expression meta")
       , ("a 'stay' line keeping a term instead of a meta", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  stay:\n    𝑛2: $.a\n  𝑛: 𝑛2\n", "is not an expression meta")
@@ -423,7 +457,7 @@ spec = do
       , ("a 'join' block whose 'otherwise' is no λ name", joint <> "    otherwise: l_join\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' is 'l_join', while it must name a λ function, such as 'L_join'")
       , ("a 'join' block whose 'otherwise' names a symbol", joint <> "    otherwise: 𝜎3\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' is '𝜎3', while it must name a λ function, such as 'L_join'")
       , ("a 'join' block which is no mapping", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join: [𝛿1, $.a, $.b]\n", "join: parsing")
-      , ("a side of a 'join' block naming a meta nothing binds", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: 𝑛1\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' that none of 'morph', 'evaluate', 'stay', 'rewrite', 'symbolize' and 'defer' binds")
+      , ("a side of a 'join' block naming a meta nothing binds", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: 𝑛1\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' that none of 'morph', 'undress', 'evaluate', 'stay', 'rewrite', 'symbolize' and 'defer' binds")
       , ("a side of a 'join' block reading a meta inside a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n  join:\n    on: 𝛿1\n    left: 𝑛1.x\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' inside a term, while a side is a path from '$' or a meta alone")
       , ("a side of a 'join' block which is no term of the calculus", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: ⟦ λ ⤍\n    right: $.b\n", "cannot be read")
       , ("a 'fork' block, which is gone", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  fork:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n", "The key 'fork' of λ function 'L_fork' is none of the keys an entry reads")

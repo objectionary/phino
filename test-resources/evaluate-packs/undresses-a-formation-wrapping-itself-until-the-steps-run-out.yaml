@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The object 'w' binds in φ alone the object 'w' itself, so every φ a line of
+# 'undress' dispatches off it morphs to the same formation again, and the line
+# would undress it forever (#2174). Every pass spends a step of '--max-steps',
+# as a frame does, so the run ends once the budget runs out, and the protocol
+# keeps the passes it made and the 'starved' line where it stopped.
+symbolic: |
+  - λ: L_peel
+    morph:
+      𝑛1: $.x
+    undress:
+      𝑛2: 𝑛1
+    𝑛: 𝑛2
+location: 'Q.y'
+steps: 6
+input: '⟦ w ↦ ⟦ φ ↦ Φ.w ⟧, y ↦ ⟦ λ ⤍ L_peel, x ↦ Φ.w ⟧.φ ⟧'
+fails: 'reaching the limit of steps'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_peel):
+      𝕄(ξ.x):
+        morphed 𝑛·1·1 := Φ.w:φ
+      𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.x)
+      undressed 𝑛·1·2 := 𝑛·1·1.φ
+      𝕄(𝑛·1·2):
+        morphed 𝑛·1·3 := 𝑛·1·1
+      undressed 𝑛·1·4 := 𝑛·1·3.φ
+      𝕄(𝑛·1·4):
+        starved 6

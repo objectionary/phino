@@ -257,7 +257,9 @@ optSymbolic =
             <> help
               "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
-              \it reduces to a normal form under \"morph\", the terms it fires through 𝔼 under \"evaluate\", \
+              \it reduces to a normal form under \"morph\", the ones it reduces to a normal form and takes the \
+              \φ of while it is a formation binding φ alone under \"undress\", the terms it fires through 𝔼 \
+              \under \"evaluate\", \
               \the copies one of whose arguments reads to a bare symbol it answers with a fresh symbol under \
               \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", the terms \
               \it rewrites with rules spelled as in a rule file under \"rewrite\", the terms it keeps with \

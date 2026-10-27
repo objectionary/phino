@@ -71,10 +71,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       let ctx = caller{_nesting = caller._nesting + 1}
       outcome <- try $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-        (bound', morphed, normals) <- foldM (through ctx) (bound, dataized, []) entry._morphed
-        firing <- Firing func (reverse conditions) . (reverse normals ++) <$> sides entry._ending
+        (bound', morphed, normals) <- foldM (through ctx "morph" (still pure)) (bound, dataized, []) entry._morphed
+        (bound'', undressed, normals') <- foldM (through ctx "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
+        firing <- Firing func (reverse conditions) . (reverse normals' ++) <$> sides entry._ending
         known <- remembered caller._memo firing
-        maybe (worked ctx entry firing bound' morphed) (\answer -> (answer, morphed) <$ shown ctx._nesting answer) known
+        maybe (worked ctx entry firing bound'' undressed) (\answer -> (answer, undressed) <$ shown ctx._nesting answer) known
       case outcome of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
@@ -101,9 +102,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     line ctx _ held (Morphed meta source) = reduced ctx held meta source
     line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
     line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
-    line ctx _ (bound, state') (Stayed meta source) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "stay") (pure . stayed) meta source bound
-    line ctx _ (bound, state') (Rewritten meta source rules) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "rewrite") (rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal) rules) meta source bound
-    line ctx _ (bound, state') (Symbolized meta source) = (,state') <$> reshaped ctx (EvReshaped ctx._nesting meta._spelling "symbolize") (masked ctx) meta source bound
+    line ctx _ held (Stayed meta source) = reshaped ctx "stay" (still (pure . stayed)) meta source held
+    line ctx _ held (Rewritten meta source rules) = reshaped ctx "rewrite" (still (rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal) rules)) meta source held
+    line ctx _ held (Symbolized meta source) = reshaped ctx "symbolize" (still (masked ctx)) meta source held
+    line ctx _ held (Undressed meta source) = reshaped ctx "undress" (peeled ctx) meta source held
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
@@ -156,13 +158,18 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           ctx._saveEval (EvData ctx._nesting meta._spelling origin datum)
           bound' <- bind meta (MvBytes bytes) bound
           pure (datum, bound', state'')
-    through :: ReduceContext -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
-    through ctx (bound, state', normals) (meta, term) = do
+    through :: ReduceContext -> T.Text -> (State -> Expression -> IO (Expression, State)) -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
+    through ctx block change (bound, state', normals) (meta, term) = do
       placed <- operand term
       (normal, state'') <- morphing univ ctx{_site = term} placed state'
-      ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing term normal)
-      bound' <- bind meta (MvExpression normal) bound
-      pure (bound', state'', normal : normals)
+      (shaped, state''') <- change state'' normal
+      ctx._saveEval
+        ( if shaped == normal
+            then EvTerm ctx._nesting meta._spelling Morphing term normal
+            else EvReshaped ctx._nesting meta._spelling block term shaped
+        )
+      bound' <- bind meta (MvExpression shaped) bound
+      pure (bound', state''', shaped : normals)
     reduced :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     reduced ctx (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
@@ -170,16 +177,31 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing (ExMeta source._name) normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
-    reshaped :: ReduceContext -> (Expression -> Expression -> Evaluation) -> (Expression -> IO Expression) -> Meta -> Meta -> Subst -> IO Subst
-    reshaped ctx record change meta source bound = do
+    reshaped :: ReduceContext -> T.Text -> (State -> Expression -> IO (Expression, State)) -> Meta -> Meta -> (Subst, State) -> IO (Subst, State)
+    reshaped ctx block change meta source (bound, state') = do
       kept <- buildExpressionThrows (ExMeta source._name) bound
-      term <- change kept
+      (term, state'') <- change state' kept
       ctx._saveEval
         ( if term == kept
             then EvBound ctx._nesting meta._spelling (ExMeta source._name) term
-            else record (ExMeta source._name) term
+            else EvReshaped ctx._nesting meta._spelling block (ExMeta source._name) term
         )
-      bind meta (MvExpression term) bound
+      (,state'') <$> bind meta (MvExpression term) bound
+    still :: (Expression -> IO Expression) -> State -> Expression -> IO (Expression, State)
+    still change state' term = (,state') <$> change term
+    peeled :: ReduceContext -> State -> Expression -> IO (Expression, State)
+    peeled ctx state' term@(ExFormation bds)
+      | dressed bds = do
+          let taken = ExDispatch term AtPhi
+          ctx._saveEval (EvUndressed ctx._nesting taken)
+          deep <- deeper ctx{_judgment = Morphing, _site = taken}
+          (normal, state'') <- morphing univ deep taken state'
+          peeled deep state'' normal
+    peeled _ state' term = pure (term, state')
+    dressed :: [Binding] -> Bool
+    dressed bds = case filter ((/= Just AtRho) . attributeFromBinding) bds of
+      [BiTau AtPhi _] -> True
+      _ -> False
     masked :: ReduceContext -> Expression -> IO Expression
     masked ctx term = do
       (stood, known, spent) <- symbolized term <$> readIORef ctx._minted
