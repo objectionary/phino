@@ -59,6 +59,17 @@ spec =
         )
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
         `shouldBe` "⟦ φ ↦ ⟦ +9 ⟧, +2 ⟧"
+    it "keeps a void φ of a long formation and folds the rest into a count" $
+      printExpressionWith
+        (const (abridged True 64))
+        ( ExFormation
+            ( BiLambda (Function "L_weit")
+                : BiVoid AtPhi
+                : map (\idx -> BiTau (AtLabel (T.pack ("anfang-" <> show idx))) ExRoot) [1 .. 5 :: Int]
+            )
+        )
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "⟦ λ ⤍ L_weit, φ ↦ ∅, +5 ⟧"
     it "cuts a long byte string to its first bytes, its last bytes and the count of the bytes between them" $
       printExpressionWith
         (const (abridged True 64))
