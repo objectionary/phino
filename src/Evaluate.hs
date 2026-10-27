@@ -20,7 +20,7 @@ import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
 import Forks (Refusal (Unnamed), forked, joined)
-import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), emptyLambdas, matched, minted, rewritten, stayed, symbolized)
+import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
@@ -106,6 +106,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     line ctx _ held (Rewritten meta source rules) = reshaped ctx "rewrite" (still (rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal) rules)) meta source held
     line ctx _ held (Symbolized meta source) = reshaped ctx "symbolize" (still (masked ctx)) meta source held
     line ctx _ held (Undressed meta source) = reshaped ctx "undress" (peeled ctx) meta source held
+    line ctx _ held (Cast one first two second) = casting ctx held (one, first) (two, second)
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
@@ -187,6 +188,23 @@ symbol func form self univ state caller = case matched caller._symbolic func of
             else EvReshaped ctx._nesting meta._spelling block (ExMeta source._name) term
         )
       (,state'') <$> bind meta (MvExpression term) bound
+    casting :: ReduceContext -> (Subst, State) -> (Meta, Meta) -> (Meta, Meta) -> IO (Subst, State)
+    casting ctx (bound, state') (one, first) (two, second) = do
+      left <- buildExpressionThrows (ExMeta first._name) bound
+      right <- buildExpressionThrows (ExMeta second._name) bound
+      (,state') <$> case (cast left right, cast right left) of
+        (Just made, _) -> molded one first second made bound >>= kept two second right
+        (_, Just made) -> kept one first left bound >>= molded two second first made
+        _ -> kept one first left bound >>= kept two second right
+      where
+        kept :: Meta -> Meta -> Expression -> Subst -> IO Subst
+        kept meta source term held = do
+          ctx._saveEval (EvBound ctx._nesting meta._spelling (ExMeta source._name) term)
+          bind meta (MvExpression term) held
+        molded :: Meta -> Meta -> Meta -> Expression -> Subst -> IO Subst
+        molded meta source shape made held = do
+          ctx._saveEval (EvCast ctx._nesting meta._spelling source._spelling shape._spelling made)
+          bind meta (MvExpression made) held
     still :: (Expression -> IO Expression) -> State -> Expression -> IO (Expression, State)
     still change state' term = (,state') <$> change term
     peeled :: ReduceContext -> State -> Expression -> IO (Expression, State)

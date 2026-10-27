@@ -201,9 +201,19 @@ never its body taken out, so ξ keeps its meaning (#2174). Every pass spends a
 step of `deeper` and writes `undressed 𝑛·1·5 := 𝑛·1·4.φ` (`EvUndressed`),
 counted and named as `boxed` is, so the 𝕄 after it is named after that meta,
 and an operand a pass changed writes `# undress(…)` (`EvReshaped`). The
-operands reading `$` join the key of the memo as those of `morph` do. The
+operands reading `$` join the key of the memo as those of `morph` do. A
+`cast` block holds exactly two lines, read as one line binding both metas
+(`Cast` of `Line`, #2187). Where one of its two terms is a bare
+`⟦ λ ⤍ 𝜎1 ⟧` and the φ chain of the other ends in the only symbol that
+other holds, `cast` of `Lambdas.hs` copies the other with `𝜎1` at the end
+of its chain, and `casting` of `Evaluate.hs` binds the meta of the bare
+symbol to that copy and the other meta to its term as it is, so a join sees
+a branch that reached its data and one a decorator short of it differ in
+their symbols alone. The cast mints no symbol: it writes the meta it bound
+as `cast 𝑛20·1 := …  # 𝑛14·1 up to 𝑛13·1` (`EvCast`), naming the meta it
+read and the meta whose shape it took, and the markup as `<cast>`. The
 lines of `dataize`, `morph`, `undress`,
-`evaluate`, `defer`, `stay`, `rewrite` and `symbolize` are one list,
+`evaluate`, `defer`, `stay`, `rewrite`, `symbolize` and `cast` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
 line reads, keeping the order of the blocks where no meta decides, and refuses
 a line reading what nothing binds or what it binds itself (#1903). No
@@ -219,7 +229,7 @@ never both (#1938), and a joining entry may hold every other block, `evaluate`
 among them (#1999). The block names the condition under `on`, a bytes meta of
 `dataize` or a path from `$`, and the two sides under `left` and `right`, each
 a path from `$` or a meta `morph`, `undress`, `evaluate`, `stay`, `rewrite`,
-`symbolize` or `defer` binds.
+`symbolize`, `cast` or `defer` binds.
 `merged` of `Evaluate.hs` first takes the condition (`weighed`), its bytes or
 the symbol they were manufactured for: a meta as its `dataize` operand came
 down, and a path off the formation fired, walking its bindings with no 𝔻, so

@@ -157,6 +157,10 @@ file:
 * `rewrite` binds a term meta to the term the meta under `of` holds, with the
   rules under `rules` applied and nothing normalized afterwards.
   The rules are written as in a [rule file](#rule-structure).
+* `cast` holds exactly two lines and binds their two metas as one pair.
+  When one term is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and the φ chain of the other
+  ends in the only symbol it holds, the bare symbol becomes a copy of the other
+  term with `𝜎1` at the end of that chain.
 * `𝑛` is the term the entry answers with.
   A bare `𝜎` in it stands for a fresh symbol, and no `𝛿` may appear in it.
 * `join` answers with one term made of two sides, in place of `𝑛`.
@@ -338,6 +342,8 @@ A protocol may hold these lines:
   two sides, or why it could not join them.
 * `deferred …` and `symbolized …` are the symbols a `defer` or a `symbolize`
   line minted.
+* `cast …` binds a meta to the copy a `cast` block made of a bare symbol, and
+  the comment names the meta it read and the meta whose shape it took.
 * `unanswered …` is a λ name no entry answers.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
