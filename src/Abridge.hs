@@ -75,6 +75,7 @@ abridged cut width = goExpr
     salient :: PAIR -> Bool
     salient PA_TAU{attr = AT_PHI{}} = True
     salient PA_FORMATION{attr = AT_PHI{}} = True
+    salient PA_VOID{attr = AT_PHI{}} = True
     salient PA_LAMBDA{} = True
     salient PA_META_LAMBDA{} = True
     salient PA_DELTA{} = True
