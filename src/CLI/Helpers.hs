@@ -15,7 +15,8 @@ import CST (EXPRESSION)
 import Canonizer (canonizeExpr, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
-import Control.Monad (when, (>=>))
+import Control.Monad (mfilter, when, (>=>))
+import qualified Data.ByteString as BS
 import Data.Char (isDigit, toLower)
 import Data.Functor ((<&>))
 import Data.IORef
@@ -23,8 +24,11 @@ import Data.List (intercalate, nub)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
+import Data.Time (getZonedTime)
+import Data.Version (showVersion)
 import qualified Data.Yaml as Yaml
-import Deps (Evaluation (EvRun), Judgment, SaveEvalFunc, SaveStepFunc, dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, resited, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvHeader, EvRun), Header (Header), Judgment, SaveEvalFunc, SaveStepFunc, World (World), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, resited, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
@@ -32,12 +36,13 @@ import qualified Filter as F
 import Functions (buildFunctions, execFunctions)
 import GHC.Clock (getMonotonicTime)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
-import Lambdas (Lambdas, emptyLambdas, readLambdas, taken)
+import Lambdas (Lambdas, emptyLambdas, readLambdas, sized, taken)
 import Lining (LineFormat (SINGLELINE))
 import Locator (locatedExpression)
 import Logger
 import Morph (ReduceContext (..), insideUniverse)
 import Parser (Form, parseExpressionThrows, parseExpressionThrows')
+import Paths_phino (version)
 import qualified Printer as P
 import qualified Random as R
 import Rewriter (Rewrittens', stepHeaders)
@@ -46,7 +51,7 @@ import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileE
 import System.FilePath (splitExtension, takeDirectory, takeExtension, (</>))
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
-import XMIR (Atoms, expressionToXMIR, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
+import XMIR (Atoms, expressionToXMIR, gitRevision, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
 
@@ -155,19 +160,46 @@ flattened ctx@PrintCtx{..} expr =
 salted :: PrintContext -> Expression -> IO String
 salted ctx = flattened ctx{_sugar = SALTY}
 
-aimed :: PrintContext -> Judgment -> Maybe String -> Expression -> ReduceContext -> IO (Expression, ReduceContext)
-aimed printCtx judgment Nothing expr ctx = do
+headerOf :: [String] -> Maybe FilePath -> String -> Expression -> Maybe FilePath -> Lambdas -> IO Header
+headerOf args file input expr table lambdas = do
+  now <- getZonedTime
+  pure
+    ( Header
+        (showVersion version)
+        (mfilter (/= "UNKNOWN") (Just gitRevision))
+        now
+        args
+        (World file (length (lines input)) (BS.length (encodeUtf8 (T.pack input))) (tops expr) (bindings expr))
+        ((,sized lambdas) <$> table)
+    )
+  where
+    tops :: Expression -> Int
+    tops (ExFormation bds) = length [attr | BiTau attr _ <- bds]
+    tops _ = 0
+    bindings :: Expression -> Int
+    bindings (ExFormation bds) = length bds + sum [bindings inner | BiTau _ inner <- bds]
+    bindings (ExApplication inner (ArTau _ arg)) = bindings inner + bindings arg
+    bindings (ExApplication inner (ArAlpha _ arg)) = bindings inner + bindings arg
+    bindings (ExDispatch inner _) = bindings inner
+    bindings (ExPhiMeet _ _ inner) = bindings inner
+    bindings (ExPhiAgain _ _ inner) = bindings inner
+    bindings _ = 0
+
+aimed :: PrintContext -> Judgment -> Header -> Maybe String -> Expression -> ReduceContext -> IO (Expression, ReduceContext)
+aimed printCtx judgment header Nothing expr ctx = do
+  ctx._saveEval . EvHeader header ctx._locator =<< locatedExpression ctx._locator expr
   heading ctx._saveEval printCtx judgment ctx._locator
   pure (expr, ctx)
-aimed printCtx judgment (Just src) expr@(ExFormation _) ctx = do
+aimed printCtx judgment header (Just src) expr@(ExFormation _) ctx = do
   target <- parseExpressionThrows src
   logDebug (printf "The option '--inside' is specified, reducing '%s' inside the given universe" (P.printExpression target))
   held <- newIORef []
   (universe, aiming) <- insideUniverse target expr ctx{_saveEval = \record -> modifyIORef' held (record :)}
+  ctx._saveEval (EvHeader header aiming._locator target)
   heading ctx._saveEval printCtx judgment aiming._locator
   mapM_ (ctx._saveEval . resited ctx._site aiming._locator) . reverse =<< readIORef held
   pure (universe, aiming{_site = aiming._locator, _saveEval = ctx._saveEval})
-aimed _ _ (Just _) expr _ =
+aimed _ _ _ (Just _) expr _ =
   invalidCLIArguments
     (printf "The option --inside requires the input expression to be a formation, but given: %s" (P.printExpression expr))
 

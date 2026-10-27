@@ -330,7 +330,11 @@ after the kind of its value, `<symbol>`, `<datum>`, `<meta>`, `<ref>` for a
 path or an empty `<bottom>` for ⊥ (`attributed` of `saveEvalXml`), and so does
 every binding of `<formed>` and `<with>` (#1961). Under `--inside` the
 universe is normalized before the heading, so `aimed` of `CLI/Helpers.hs`
-holds those records back and writes them after it.
+holds those records back and writes them after it. Before the heading, `aimed`
+writes `EvHeader`, which `headerOf` builds: the phino that wrote the protocol,
+the time, the command, the size of the world, the λ functions, the locator and
+the term it points at. The text writes it as `# …` lines and an empty line, and
+the markup as elements of `<protocol>`, leaving the term out (#2163).
 
 The markup is read by programs and never writes a term (#1924): every value is
 a symbol, a datum, a meta, a path off `Φ`, `ξ`, `ρ` or a meta, a name, or `⊥`.

@@ -18,6 +18,7 @@ module Lambdas
   , minted
   , readLambdas
   , rewritten
+  , sized
   , stayed
   , symbolized
   , taken
@@ -326,6 +327,9 @@ computes = goExpr
 
 emptyLambdas :: Lambdas
 emptyLambdas = Lambdas []
+
+sized :: Lambdas -> Int
+sized (Lambdas registered) = length registered
 
 readLambdas :: FilePath -> IO Lambdas
 readLambdas path = do

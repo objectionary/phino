@@ -161,8 +161,8 @@ runRewrite OptsRewrite{..} = do
         _meetPrefix
         _outputFormat
 
-runDataize :: OptsDataize -> IO ()
-runDataize OptsDataize{..} = do
+runDataize :: [String] -> OptsDataize -> IO ()
+runDataize args OptsDataize{..} = do
   validateOpts
   deadline <- timed _maxSeconds
   lambdas <- lambdasOf _symbolic
@@ -183,13 +183,14 @@ runDataize OptsDataize{..} = do
   minted <- newIORef 0
   memo <- memoized _acyclic
   linked <- engine
+  header <- headerOf args _inputFile input expr _symbolic lambdas
   (outcome, chain, _) <-
     withEvalFunc
       _protocol
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
-          (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
+          (universe, aiming) <- aimed printCtx Dataization header _inside expr ctx
           started universe aiming
           dataize universe emptyState aiming
       )
@@ -245,8 +246,8 @@ runDataize OptsDataize{..} = do
     listing :: Expression -> String
     listing e = escapeXMLText (P.printExpression' e (_sugarType, UNICODE, _flat, _margin))
 
-runMorph :: OptsMorph -> IO ()
-runMorph OptsMorph{..} = do
+runMorph :: [String] -> OptsMorph -> IO ()
+runMorph args OptsMorph{..} = do
   validateOpts
   deadline <- timed _maxSeconds
   lambdas <- lambdasOf _symbolic
@@ -267,13 +268,14 @@ runMorph OptsMorph{..} = do
   minted <- newIORef 0
   memo <- memoized _acyclic
   linked <- engine
+  header <- headerOf args _inputFile input expr _symbolic lambdas
   (morphed, chain, _) <-
     withEvalFunc
       _protocol
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
-          (universe, aiming) <- aimed printCtx Morphing _inside expr ctx
+          (universe, aiming) <- aimed printCtx Morphing header _inside expr ctx
           started universe aiming
           morph universe emptyState aiming
       )
