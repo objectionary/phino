@@ -53,7 +53,7 @@ spec = do
       ( \names -> it ("keeps declarations unique for " ++ show names) $ do
           let rules = [Y.Rule name Nothing Nothing ExXi ExRoot Nothing Nothing Nothing | name <- names]
               source = fromRight "" (emitted [] rules [] [] [] [])
-              declarations = [head fields | line <- lines source, let fields = words line, length fields >= 2, fields !! 1 == "::", head fields /= "steps", any (`isPrefixOf` head fields) ["step", "rewrite"]]
+              declarations = [name | line <- lines source, name : "::" : _ <- [words line], name /= "steps", any (`isPrefixOf` name) ["step", "rewrite"]]
           length declarations `shouldBe` 2 * length names
           length (nub declarations) `shouldBe` length declarations
       )
