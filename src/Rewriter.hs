@@ -29,6 +29,7 @@ import Printer (printExpression)
 import Replacer (ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
 import Rule (RuleContext (RuleContext), Step (..))
 import qualified Rule as R
+import Tau (reserveTaus)
 import Text.Printf (printf)
 import qualified Yaml as Y
 
@@ -227,6 +228,7 @@ rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iterati
                                     (printExpression expr)
                                 )
                               updated <- withLocatedExpression _locator expr current
+                              reserveTaus updated
                               _saveStep updated
                               mapM_ (uncurry _saveMade) [(redex, object) | (redex@(ExApplication head' (ArTau attr _)), object@(ExFormation _)) <- rewritten, attr /= AtRho, object /= head']
                               _rewrite (leadsTo updated, expr, seenInsert digest expr _unique, False, Nothing) (_count + 1)

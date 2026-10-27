@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Tau (seedTaus, freshTau) where
+module Tau (seedTaus, reserveTaus, freshTau) where
 
 import AST
 import Data.IORef (IORef, atomicModifyIORef', newIORef, writeIORef)
@@ -19,6 +19,9 @@ taus = unsafePerformIO (newIORef (Set.empty, 0))
 
 seedTaus :: Expression -> IO ()
 seedTaus expr = writeIORef taus (exprLabels expr, 0)
+
+reserveTaus :: Expression -> IO ()
+reserveTaus expr = atomicModifyIORef' taus (\(taken, cursor) -> ((taken <> exprLabels expr, cursor), ()))
 
 freshTau :: IO Text
 freshTau = atomicModifyIORef' taus advance
