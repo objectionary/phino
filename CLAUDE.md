@@ -207,10 +207,11 @@ operands reading `$` join the key of the memo as those of `morph` do. A
 `⟦ λ ⤍ 𝜎1 ⟧` and the φ chain of the other ends in the only symbol that
 other holds, `cast` of `Lambdas.hs` copies the other with `𝜎1` at the end
 of its chain, and `casting` of `Evaluate.hs` binds the meta of the bare
-symbol to that copy, writing `cast 𝜎1 := …  # at .φ of 𝑛13·1` (`EvCast`)
-and `# cast(𝑛14)` (`EvReshaped`), and the other meta to its term as it is,
-so a join sees a branch that reached its data and one a decorator short of
-it differ in their symbols alone. The
+symbol to that copy and the other meta to its term as it is, so a join sees
+a branch that reached its data and one a decorator short of it differ in
+their symbols alone. The cast changes no symbol and mints a fresh one for
+the copy, writing `cast 𝜎4 := …  # at .φ of 𝑛13·1` (`EvCast`) and
+`# cast(𝑛14)` (`EvReshaped`). The
 lines of `dataize`, `morph`, `undress`,
 `evaluate`, `defer`, `stay`, `rewrite`, `symbolize` and `cast` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each

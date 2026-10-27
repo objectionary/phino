@@ -439,13 +439,13 @@ stayed = goExpr
     dispatched (ExApplication expr _) = dispatched expr
     dispatched _ = False
 
-cast :: Expression -> Expression -> Maybe (Int, Expression, [Attribute])
-cast (ExFormation [BiLambda (FnSymbol bare)]) shape
-  | length (symbols shape) == 1 = (\(made, path) -> (bare, made, path)) <$> goExpr shape
+cast :: Expression -> Expression -> Maybe (Expression, [Attribute])
+cast bare@(ExFormation [BiLambda (FnSymbol _)]) shape
+  | length (symbols shape) == 1 = goExpr shape
   where
     goExpr :: Expression -> Maybe (Expression, [Attribute])
     goExpr (ExFormation bds) = case [body | BiTau AtPhi body <- bds] of
-      [ExFormation [BiLambda (FnSymbol _)]] -> Just (ExFormation (map (placed (ExFormation [BiLambda (FnSymbol bare)])) bds), [AtPhi])
+      [ExFormation [BiLambda (FnSymbol _)]] -> Just (ExFormation (map (placed bare) bds), [AtPhi])
       [body] -> (\(made, path) -> (ExFormation (map (placed made) bds), AtPhi : path)) <$> goExpr body
       _ -> Nothing
     goExpr _ = Nothing

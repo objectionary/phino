@@ -198,8 +198,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         _ -> pure (left, right)
       reshaped ctx "cast" (still (const (pure left'))) one first held >>= reshaped ctx "cast" (still (const (pure right'))) two second
       where
-        recorded :: Meta -> (Int, Expression, [Attribute]) -> IO Expression
-        recorded other (bare, made, path) = made <$ ctx._saveEval (EvCast ctx._nesting bare made path other._spelling)
+        recorded :: Meta -> (Expression, [Attribute]) -> IO Expression
+        recorded other (made, path) = do
+          fresh <- coined
+          made <$ ctx._saveEval (EvCast ctx._nesting fresh made path other._spelling)
     still :: (Expression -> IO Expression) -> State -> Expression -> IO (Expression, State)
     still change state' term = (,state') <$> change term
     peeled :: ReduceContext -> State -> Expression -> IO (Expression, State)
