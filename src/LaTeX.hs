@@ -316,7 +316,10 @@ instance ToLaTeX PAIR where
 instance ToLaTeX META where
   toLaTeX META{..} =
     let idx = readMaybe (T.unpack rest) :: Maybe Int
-        rest' = if not (T.null rest) && T.length rest <= 2 && isJust idx then T.cons '_' rest else rest
+        rest'
+          | T.length rest == 1 && isJust idx = T.cons '_' rest
+          | T.length rest == 2 && isJust idx = "_{" <> rest <> "}"
+          | otherwise = rest
      in META NO_EXCL (toLaTeX hd) rest'
 
 instance ToLaTeX META_HEAD where
