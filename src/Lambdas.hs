@@ -439,14 +439,14 @@ stayed = goExpr
     dispatched (ExApplication expr _) = dispatched expr
     dispatched _ = False
 
-cast :: Expression -> Expression -> Maybe (Expression, [Attribute])
+cast :: Expression -> Expression -> Maybe Expression
 cast bare@(ExFormation [BiLambda (FnSymbol _)]) shape
   | length (symbols shape) == 1 = goExpr shape
   where
-    goExpr :: Expression -> Maybe (Expression, [Attribute])
+    goExpr :: Expression -> Maybe Expression
     goExpr (ExFormation bds) = case [body | BiTau AtPhi body <- bds] of
-      [ExFormation [BiLambda (FnSymbol _)]] -> Just (ExFormation (map (placed bare) bds), [AtPhi])
-      [body] -> (\(made, path) -> (ExFormation (map (placed made) bds), AtPhi : path)) <$> goExpr body
+      [ExFormation [BiLambda (FnSymbol _)]] -> Just (ExFormation (map (placed bare) bds))
+      [body] -> (\made -> ExFormation (map (placed made) bds)) <$> goExpr body
       _ -> Nothing
     goExpr _ = Nothing
     placed :: Expression -> Binding -> Binding

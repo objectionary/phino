@@ -189,19 +189,22 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         )
       (,state'') <$> bind meta (MvExpression term) bound
     casting :: ReduceContext -> (Subst, State) -> (Meta, Meta) -> (Meta, Meta) -> IO (Subst, State)
-    casting ctx held (one, first) (two, second) = do
-      left <- buildExpressionThrows (ExMeta first._name) (fst held)
-      right <- buildExpressionThrows (ExMeta second._name) (fst held)
-      (left', right') <- case (cast left right, cast right left) of
-        (Just made, _) -> (,right) <$> recorded second made
-        (_, Just made) -> (left,) <$> recorded first made
-        _ -> pure (left, right)
-      reshaped ctx "cast" (still (const (pure left'))) one first held >>= reshaped ctx "cast" (still (const (pure right'))) two second
+    casting ctx (bound, state') (one, first) (two, second) = do
+      left <- buildExpressionThrows (ExMeta first._name) bound
+      right <- buildExpressionThrows (ExMeta second._name) bound
+      (,state') <$> case (cast left right, cast right left) of
+        (Just made, _) -> molded one first second made bound >>= kept two second right
+        (_, Just made) -> kept one first left bound >>= molded two second first made
+        _ -> kept one first left bound >>= kept two second right
       where
-        recorded :: Meta -> (Expression, [Attribute]) -> IO Expression
-        recorded other (made, path) = do
-          fresh <- coined
-          made <$ ctx._saveEval (EvCast ctx._nesting fresh made path other._spelling)
+        kept :: Meta -> Meta -> Expression -> Subst -> IO Subst
+        kept meta source term held = do
+          ctx._saveEval (EvBound ctx._nesting meta._spelling (ExMeta source._name) term)
+          bind meta (MvExpression term) held
+        molded :: Meta -> Meta -> Meta -> Expression -> Subst -> IO Subst
+        molded meta source shape made held = do
+          ctx._saveEval (EvCast ctx._nesting meta._spelling source._spelling shape._spelling made)
+          bind meta (MvExpression made) held
     still :: (Expression -> IO Expression) -> State -> Expression -> IO (Expression, State)
     still change state' term = (,state') <$> change term
     peeled :: ReduceContext -> State -> Expression -> IO (Expression, State)

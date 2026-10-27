@@ -342,8 +342,8 @@ A protocol may hold these lines:
   two sides, or why it could not join them.
 * `deferred …` and `symbolized …` are the symbols a `defer` or a `symbolize`
   line minted.
-* `cast …` is a fresh symbol for the copy a `cast` block made of a bare
-  symbol, and the comment names the end of the φ chain and the term it copied.
+* `cast …` binds a meta to the copy a `cast` block made of a bare symbol, and
+  the comment names the meta it read and the meta whose shape it took.
 * `unanswered …` is a λ name no entry answers.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.

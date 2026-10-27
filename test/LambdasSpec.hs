@@ -556,19 +556,19 @@ spec = do
       bare <- parseExpressionThrows "⟦ λ ⤍ 𝜎5 ⟧"
       shape <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎8 ⟧, wj ↦ Φ.hu ⟧"
       made <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, wj ↦ Φ.hu ⟧"
-      cast bare shape `shouldBe` Just (made, [AtPhi])
+      cast bare shape `shouldBe` Just made
 
     it "casts a bare symbol into a copy of a decorator holding an object beside its φ" $ do
       bare <- parseExpressionThrows "⟦ λ ⤍ 𝜎13 ⟧"
       shape <- parseExpressionThrows "⟦ kz ↦ ⟦⟧, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧"
       made <- parseExpressionThrows "⟦ kz ↦ ⟦⟧, φ ↦ ⟦ λ ⤍ 𝜎13 ⟧ ⟧"
-      cast bare shape `shouldBe` Just (made, [AtPhi])
+      cast bare shape `shouldBe` Just made
 
     it "casts a bare symbol down every decorator of the φ chain" $ do
       bare <- parseExpressionThrows "⟦ λ ⤍ 𝜎2 ⟧"
       shape <- parseExpressionThrows "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎9 ⟧, if ↦ ξ.ty ⟧, and ↦ ∅ ⟧"
       made <- parseExpressionThrows "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, if ↦ ξ.ty ⟧, and ↦ ∅ ⟧"
-      cast bare shape `shouldBe` Just (made, [AtPhi, AtPhi])
+      cast bare shape `shouldBe` Just made
 
     forM_
       [ ("another bare symbol" :: String, "⟦ λ ⤍ 𝜎3 ⟧", "⟦ λ ⤍ 𝜎4 ⟧")

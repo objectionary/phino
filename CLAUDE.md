@@ -209,9 +209,9 @@ other holds, `cast` of `Lambdas.hs` copies the other with `𝜎1` at the end
 of its chain, and `casting` of `Evaluate.hs` binds the meta of the bare
 symbol to that copy and the other meta to its term as it is, so a join sees
 a branch that reached its data and one a decorator short of it differ in
-their symbols alone. The cast changes no symbol and mints a fresh one for
-the copy, writing `cast 𝜎4 := …  # at .φ of 𝑛13·1` (`EvCast`) and
-`# cast(𝑛14)` (`EvReshaped`). The
+their symbols alone. The cast mints no symbol: it writes the meta it bound
+as `cast 𝑛20·1 := …  # 𝑛14 up to 𝑛13` (`EvCast`), naming the meta it read
+and the meta whose shape it took, and the markup as `<cast>`. The
 lines of `dataize`, `morph`, `undress`,
 `evaluate`, `defer`, `stay`, `rewrite`, `symbolize` and `cast` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each

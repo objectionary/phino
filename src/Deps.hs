@@ -135,7 +135,7 @@ data Evaluation
   | EvBound Int T.Text Expression Expression
   | EvReshaped Int T.Text T.Text Expression Expression
   | EvSymbolized Int Int Bytes
-  | EvCast Int Int Expression [Attribute] T.Text
+  | EvCast Int T.Text T.Text T.Text Expression
   | EvMinted Int Int [Either Int Bytes]
   | EvDeferred Int Int Judgment Expression (Maybe Expression) Expression
   | EvApplied Int Judgment Expression Expression Expression
@@ -409,9 +409,10 @@ saveEval handle cursor printed printed' report = do
     written at (EvSymbolized _ symbol bytes) protocol = do
       datum <- render (ExBytes bytes)
       pure (protocol, Just (indented at (remarked (printf "symbolized %s := %s" (printFunction (FnSymbol symbol)) datum) (maybe [] pure (ieee bytes)))))
-    written at (EvCast _ symbol term path spelling) protocol = do
-      form <- render term
-      pure (protocol, Just (indented at (printf "cast %s := %s  # at %s of %s" (printFunction (FnSymbol symbol)) form (dotted path) (labelled protocol spelling))))
+    written at (EvCast _ spelling source model term) protocol = do
+      let naming = labelled protocol spelling
+      (protocol', value) <- valued protocol naming term
+      pure (protocol', Just (indented at (printf "cast %s := %s  # %s up to %s" naming value source model)))
     written _ EvMinted{} protocol = pure (protocol, Nothing)
     written at (EvDeferred _ symbol judgment copy call site) protocol = do
       form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call
@@ -667,8 +668,8 @@ saveEvalXml handle cursor printed report = do
     elements at (EvSymbolized _ symbol bytes) nesting = do
       datum <- printed (ExBytes bytes)
       placed at nesting (pure (printf "<symbolized symbol=\"%s\"%s>%s</symbolized>" (sigma symbol) (maybe "" (printf " number=\"%s\"" . escapeXML) (ieee bytes) :: String) (escapeXMLText datum)))
-    elements at (EvCast _ symbol _ path spelling) nesting =
-      placed at nesting (pure (printf "<cast symbol=\"%s\" at=\"%s\" of=\"%s\"/>" (sigma symbol) (escapeXML (dotted path)) (escapeXML (labelled nesting spelling))))
+    elements at (EvCast depth spelling source model term) nesting =
+      placed at nesting (printf "<cast meta=\"%s\" of=\"%s\" up-to=\"%s\">%s</cast>" (escapeXML (labelled nesting spelling)) (escapeXML (labelled nesting source)) (escapeXML (labelled nesting model)) . escapeXMLText <$> leaf depth term)
     elements at (EvMinted _ symbol operands) nesting = do
       spelledOperands <- mapM spelled' operands
       placed at nesting (pure (minted spelledOperands))
