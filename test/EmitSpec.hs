@@ -9,7 +9,7 @@ module EmitSpec where
 import AST
 import Control.Monad (forM_)
 import Data.Either (fromRight)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, isPrefixOf, nub)
 import Emit (emitted)
 import Engine (current)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotSatisfy, shouldSatisfy)
@@ -45,6 +45,18 @@ spec = do
     it "tells two rules of the same name apart" $
       fromRight "" (emitted [] [Y.Rule "ov" Nothing Nothing ExXi ExRoot Nothing Nothing Nothing, Y.Rule "ov" Nothing Nothing ExRoot ExXi Nothing Nothing Nothing] [] [] [] [])
         `shouldSatisfy` (\source -> all (`isInfixOf` source) ["stepOv0 ::", "stepOv1 ::"])
+    forM_
+      [ ["probe-a", "probe a", "probe a0"]
+      , ["probe a0", "probe-a", "probe a"]
+      , ["a1", "a1"] ++ ["unique" ++ show idx | idx <- [0 :: Int .. 7]] ++ ["a", "a"]
+      ]
+      ( \names -> it ("keeps declarations unique for " ++ show names) $ do
+          let rules = [Y.Rule name Nothing Nothing ExXi ExRoot Nothing Nothing Nothing | name <- names]
+              source = fromRight "" (emitted [] rules [] [] [] [])
+              declarations = [head fields | line <- lines source, let fields = words line, length fields >= 2, fields !! 1 == "::", head fields /= "steps", any (`isPrefixOf` head fields) ["step", "rewrite"]]
+          length declarations `shouldBe` 2 * length names
+          length (nub declarations) `shouldBe` length declarations
+      )
     it "keeps the comment of a rule named by a folded scalar on one line" $
       fromRight "" (emitted [] [Y.Rule "folded rule name\n" Nothing Nothing ExXi ExRoot Nothing Nothing Nothing] [] [] [] [])
         `shouldSatisfy` ("-- The rule 'folded rule name'.\n" `isInfixOf`)
