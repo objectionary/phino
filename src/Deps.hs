@@ -412,7 +412,7 @@ saveEval handle cursor printed printed' report = do
     written at (EvCast _ spelling source model term) protocol = do
       let naming = labelled protocol spelling
       (protocol', value) <- valued protocol naming term
-      pure (protocol', Just (indented at (printf "cast %s := %s  # %s up to %s" naming value source model)))
+      pure (protocol', Just (indented at (printf "cast %s := %s  # %s up to %s" naming value (labelled protocol source) (labelled protocol model))))
     written _ EvMinted{} protocol = pure (protocol, Nothing)
     written at (EvDeferred _ symbol judgment copy call site) protocol = do
       form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call

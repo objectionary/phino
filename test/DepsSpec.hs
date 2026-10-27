@@ -290,7 +290,7 @@ spec = do
       last (lines written) `shouldBe` "    symbolized 𝜎6 := C0-09-1E-B8-51-EB-85-1F  # -3.14"
     it "writes the meta a cast bound beside the meta it read and the meta whose shape it took" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvCast 2 "𝑛9" "𝑛2" "𝑛4" (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)]), BiTau (AtLabel "щ") (ExDispatch ExRoot (AtLabel "ёж"))])])
-      last (lines written) `shouldBe` "    cast 𝑛9·1 := ⟦ φ ↦ 𝜎7:λ, щ ↦ Φ.ёж ⟧  # 𝑛2 up to 𝑛4"
+      last (lines written) `shouldBe` "    cast 𝑛9·1 := ⟦ φ ↦ 𝜎7:λ, щ ↦ Φ.ёж ⟧  # 𝑛2·1 up to 𝑛4·1"
     it "writes the symbol a join minted beside the meta its condition was bound to and the two it stands for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left "𝛿3") 12 (5, 9)])
       last (lines written) `shouldBe` "    joined 𝜎12 := 𝛿3·1 ? 𝜎5 : 𝜎9"
