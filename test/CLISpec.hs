@@ -23,7 +23,7 @@ import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, makeAbsolute, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime, withCurrentDirectory)
 import System.Exit (ExitCode (ExitFailure))
-import System.FilePath ((</>))
+import System.FilePath (takeFileName, (</>))
 import System.IO
 import System.Timeout (timeout)
 import Test.Hspec
@@ -1749,9 +1749,9 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "[[ D> 01- ]]" $
-            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", "--protocol=" ++ takeFileName path, "--quiet"] []
           records <- readUtf8 path
-          lines records `shouldContain` ["# Command: phino dataize --protocol=" ++ path ++ " --quiet"]
+          lines records `shouldContain` ["# Command: phino dataize --protocol=" ++ takeFileName path ++ " --quiet"]
 
       it "writes the world read from the standard input into the header" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
