@@ -3,13 +3,17 @@
 ---
 name: ml
 label: \uplambda
-match: '⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧.𝜏1'
+match: ⟦𝐵1⟧.𝜏1
 universe: 𝑒1
 conclusion: 𝑛3
+when:
+  in:
+    - λ
+    - 𝐵1
 premises:
   - n-result: 𝑛1
     evaluate:
-      - '⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧'
+      - ⟦𝐵1⟧
       - 𝑒1
   - n-result: 𝑛2
     normalize: '𝑛1.𝜏1'
