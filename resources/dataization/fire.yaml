@@ -2,17 +2,21 @@
 # SPDX-License-Identifier: MIT
 ---
 name: fire
-match: ⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧
+match: ⟦𝐵1⟧
 universe: 𝑒1
 conclusion: 𝛿1
 when:
-  disjoint:
-    - [Δ]
-    - [𝐵1, 𝐵2]
+  and:
+    - in:
+        - λ
+        - 𝐵1
+    - disjoint:
+        - [Δ]
+        - [𝐵1]
 premises:
   - n-result: 𝑛1
     evaluate:
-      - ⟦𝐵1, λ ⤍ 𝑓1, 𝐵2⟧
+      - ⟦𝐵1⟧
       - 𝑒1
   - d-result: 𝛿1
     dataize:
