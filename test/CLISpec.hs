@@ -1643,6 +1643,10 @@ spec = do
       withStdin "[[ @ -> [[ L> Foo ]] ]]" $
         testCLISucceeded ["dataize", "--partial", "--canonize", "--flat", "--sweet"] ["Fn1:λ"]
 
+    it "hides an object outside the residue --locator aims at with --partial" $
+      withStdin "[[ t -> [[ @ -> [[ L> Foo ]] ]], o -> [[ D> 03- ]] ]]" $
+        testCLISucceeded ["dataize", "--partial", "--locator=Q.t", "--hide=Q.o", "--flat", "--sweet"] ["Foo:λ"]
+
     it "dataizes with --locator" $
       withStdin "[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]" $
         testCLISucceeded ["dataize", "--locator=Q.ex"] ["42-"]
@@ -3099,6 +3103,10 @@ spec = do
         withStdin universe $
           testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x"] ["2A-"]
 
+      it "hides an object of the universe from the answer it morphs inside it" $
+        withStdin universe $
+          testCLISucceeded ["morph", "--inside=[[ x -> [[ D> 2A- ]] ]].x", "--hide=Q.bytes", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 2A- ⟧"]
+
       it "morphs inside the universe just as it dataizes inside it" $
         withStdin universe $
           testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
@@ -3252,6 +3260,18 @@ spec = do
     it "shows only one binding of the answer it prints" $
       withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
         testCLISucceeded ["morph", "--show=Q.x", "--flat", "--sweet"] ["Foo:λ:x"]
+
+    it "hides an object outside the answer --locator aims at" $
+      withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]" $
+        testCLISucceeded ["morph", "--locator=Q.t", "--hide=Q.o", "--flat", "--hide-rho"] ["⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
+
+    it "hides a binding of the answer --locator aims at" $
+      withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]" $
+        testCLISucceeded ["morph", "--locator=Q.t", "--hide=Q.t.a", "--flat", "--hide-rho"] ["⟦ b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
+
+    it "shows only one binding of the answer --locator aims at" $
+      withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]" $
+        testCLISucceeded ["morph", "--locator=Q.t", "--show=Q.t.b", "--flat", "--hide-rho"] ["⟦ b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
 
     it "prints ⊥ instead of failing the run" $
       withStdin "[[ x -> $ ]]" $

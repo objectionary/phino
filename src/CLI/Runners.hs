@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -184,7 +185,7 @@ runDataize args OptsDataize{..} = do
   memo <- memoized _acyclic
   linked <- engine
   header <- headerOf args _inputFile input expr _symbolic lambdas
-  (outcome, chain, _) <-
+  ((outcome, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
       printCtx
@@ -192,10 +193,10 @@ runDataize args OptsDataize{..} = do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Dataization header _inside expr ctx
           started universe aiming
-          dataize universe emptyState aiming
+          (,universe,aiming._locator) <$> dataize universe emptyState aiming
       )
   when _sequence (exclude chain >>= include >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (\residue -> F.exclude' residue excluded >>= (`F.include'` included)) outcome >>= putStrLn)
+  unless _quiet (printOutcome printCtx (filteredAt aim universe excluded included) outcome >>= putStrLn)
   where
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
@@ -269,7 +270,7 @@ runMorph args OptsMorph{..} = do
   memo <- memoized _acyclic
   linked <- engine
   header <- headerOf args _inputFile input expr _symbolic lambdas
-  (morphed, chain, _) <-
+  ((morphed, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
       printCtx
@@ -277,13 +278,16 @@ runMorph args OptsMorph{..} = do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Morphing header _inside expr ctx
           started universe aiming
-          morph universe emptyState aiming
+          (,universe,aiming._locator) <$> morph universe emptyState aiming
       )
   printed <-
     if _quiet
       then pure Nothing
       else do
-        answer <- F.exclude' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) excluded >>= (`F.include'` included)
+        answer <-
+          if foc == ExRoot
+            then filteredAt aim universe excluded included morphed
+            else F.exclude' (maybe morphed fst (lastMaybe chain)) excluded >>= (`F.include'` included)
         validateXmirTopLevel _outputFormat answer
         Just <$> printAnswer printCtx answer
   when _sequence (exclude chain >>= include >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
