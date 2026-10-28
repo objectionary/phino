@@ -36,6 +36,4 @@ protocol: |
       𝕄(ξ.b):
         morphed 𝑛·1·2 := ⟦ φ ↦ 𝜎3:λ, ke ↦ 𝜎4:λ ⟧
       𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
-      𝑛3·1 := 𝑛1·1  # 𝑛1
-      𝑛4·1 := 𝑛2·1  # 𝑛2
-      diverged 𝜎2:λ vs 𝑛4·1  # they differ at .λ, and the join names no otherwise
+      diverged 𝜎2:λ vs 𝑛2·1  # they differ at .λ, and the join names no otherwise

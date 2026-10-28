@@ -211,7 +211,12 @@ symbol to that copy and the other meta to its term as it is, so a join sees
 a branch that reached its data and one a decorator short of it differ in
 their symbols alone. The cast mints no symbol: it writes the meta it bound
 as `cast 𝑛20·1 := …  # 𝑛14·1 up to 𝑛13·1` (`EvCast`), naming the meta it
-read and the meta whose shape it took, and the markup as `<cast>`. The
+read and the meta whose shape it took, and the markup as `<cast>`. A line
+of `evaluate`, `defer`, `stay`, `rewrite`, `symbolize`, `cast` or `undress`
+reading a meta that leaves its term as it was writes nothing (`EvBound`), in
+the text and the markup alike, and a later record naming that meta, in a site,
+a comment, a cast or a side of a join, names the term the meta holds instead
+(`_unwritten` of `Protocol`, `_unmarked` of `Nesting`, #2192). The
 lines of `dataize`, `morph`, `undress`,
 `evaluate`, `defer`, `stay`, `rewrite`, `symbolize` and `cast` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each

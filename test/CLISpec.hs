@@ -3553,9 +3553,8 @@ spec = do
                      , "      <morphed meta=\"𝑛·1·4\">𝑛·1·3</morphed>"
                      , "    </morph>"
                      , "    <bound meta=\"𝑛2·1\">𝑛·1·4</bound>"
-                     , "    <bound meta=\"𝑛3·1\">01-</bound>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol attr=\"tup\">𝜎1</symbol></with></deferred>"
-                     , "    <diverged left=\"𝑛3·1\" right=\"𝜎3\" at=\".Δ\" reason=\"the join names no otherwise\"/>"
+                     , "    <diverged left=\"01-\" right=\"𝜎3\" at=\".Δ\" reason=\"the join names no otherwise\"/>"
                      , "  </evaluate>"
                      , "</dataize>"
                      ]

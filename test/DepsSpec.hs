@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvHeader, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvWorld), Header (Header), Judgment (Dataization, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvHeader, EvJoined, EvLooped, EvManufactured, EvMorphed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -289,8 +289,29 @@ spec = do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
       last (lines written) `shouldBe` "    symbolized 𝜎6 := C0-09-1E-B8-51-EB-85-1F  # -3.14"
     it "writes the meta a cast bound beside the meta it read and the meta whose shape it took" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvCast 2 "𝑛9" "𝑛2" "𝑛4" (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)]), BiTau (AtLabel "щ") (ExDispatch ExRoot (AtLabel "ёж"))])])
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvCast 2 "𝑛9" (ExMeta "n2") (ExMeta "n4") (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)]), BiTau (AtLabel "щ") (ExDispatch ExRoot (AtLabel "ёж"))])])
       last (lines written) `shouldBe` "    cast 𝑛9·1 := ⟦ φ ↦ 𝜎7:λ, щ ↦ Φ.ёж ⟧  # 𝑛2·1 up to 𝑛4·1"
+    it "writes no line for a meta a line bound to the term it read as it was" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n3") (ExDispatch ExRoot (AtLabel "щука"))])
+      lines written `shouldBe` ["𝕄(Φ):", "  𝔼(L_ф):"]
+    it "names the term a meta that wrote no line holds where a cast read that meta" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n2") (ExDispatch ExRoot (AtLabel "ёрш")), EvCast 2 "𝑛9" (ExMeta "n2") (ExMeta "n4") (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)]), BiTau (AtLabel "щ") (ExDispatch ExRoot (AtLabel "ёж"))])])
+      last (lines written) `shouldBe` "    cast 𝑛9·1 := ⟦ φ ↦ 𝜎7:λ, щ ↦ Φ.ёж ⟧  # Φ.ёрш up to 𝑛4·1"
+    it "names a meta a line of another firing left as it was by its own name" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n2") (ExDispatch ExRoot (AtLabel "ёрш")), EvFiring 1 "L_ц" Morphing ExRoot, EvCast 2 "𝑛9" (ExMeta "n2") (ExMeta "n4") (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)]), BiTau (AtLabel "щ") (ExDispatch ExRoot (AtLabel "ёж"))])])
+      last (lines written) `shouldBe` "    cast 𝑛9·2 := ⟦ φ ↦ 𝜎7:λ, щ ↦ Φ.ёж ⟧  # 𝑛2·2 up to 𝑛4·2"
+    it "names the term a meta that wrote no line holds in the comment of a line that read that meta" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n1") (ExDispatch ExRoot (AtLabel "щ")), EvReshaped 2 "𝑛3" "stay" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "    𝑛3·1 := 𝜎3:λ  # stay(Φ.щ)"
+    it "names the term a meta that wrote no line holds at the site of a firing it was read for" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n4") (ExDispatch ExRoot (AtLabel "щ")), EvFiring 2 "L_ю" Evaluation (ExMeta "n4")])
+      last (lines written) `shouldBe` "    𝔼(L_ю):  # 𝔼(Φ.щ)"
+    it "names the term a meta that wrote no line holds beside the term a join came to" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n3") (ExDispatch ExRoot (AtLabel "щ")), EvTaken 2 [ExMeta "n3", ExMeta "n4"] (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # Φ.щ, 𝑛4"
+    it "names the term a meta that wrote no line holds where a join could not join the side that meta bound" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n1") (ExDispatch ExRoot (AtLabel "ёж")), EvDiverged 2 (ExMeta "n1", ExDispatch ExRoot (AtLabel "ёж")) (ExMeta "n2", ExDispatch ExRoot (AtLabel "щука")) [] (Unformed Lefthand)])
+      last (lines written) `shouldBe` "    diverged Φ.ёж vs 𝑛2·1  # the left side is no formation"
     it "writes the symbol a join minted beside the meta its condition was bound to and the two it stands for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left "𝛿3") 12 (5, 9)])
       last (lines written) `shouldBe` "    joined 𝜎12 := 𝛿3·1 ? 𝜎5 : 𝜎9"
@@ -478,13 +499,21 @@ spec = do
     it "spells the datum of an operand by the name the delta rule just gave it in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       lines written `shouldContain` ["    <bound meta=\"𝛿1·1\">𝛿·1·1</bound>"]
-    it "binds the term a stay line dropped a ρ from in the markup as it binds a term passed through" $ do
-      (_, stayed) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvReshaped 2 "𝑛3" "stay" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
-      (_, passed) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvBound 2 "𝑛3" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
-      stayed `shouldBe` passed
-    it "writes the term a line bound as a bound element in the markup" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvBound 2 "𝑛3" (ExMeta "n1") (ExDispatch ExRoot (AtLabel "щ"))])
-      lines written `shouldContain` ["    <bound meta=\"𝑛3·1\">Φ.щ</bound>"]
+    it "writes the term a stay line dropped a ρ from as a bound element in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvReshaped 2 "𝑛3" "stay" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
+      lines written `shouldContain` ["    <bound meta=\"𝑛3·1\">𝜎3</bound>"]
+    it "writes no element for a meta a line bound to the term it read as it was" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ж" Morphing ExRoot, EvBound 2 (ExMeta "n3") (ExDispatch ExRoot (AtLabel "щ"))])
+      filter (isInfixOf "𝑛3") (lines written) `shouldBe` []
+    it "names the term a meta that wrote no element holds where a cast read that meta in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n2") (ExDispatch ExRoot (AtLabel "ёрш")), EvCast 2 "𝑛9" (ExMeta "n2") (ExMeta "n4") (ExFormation [BiTau AtPhi (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)])]), BiTau (AtLabel "щ") ExRoot])])
+      lines written `shouldContain` ["    <cast meta=\"𝑛9·1\" of=\"Φ.ёрш\" up-to=\"𝑛4·1\">𝑒·1·2</cast>"]
+    it "names the term a meta that wrote no element holds where a join could not join the side that meta bound in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n5") (ExDispatch ExRoot (AtLabel "ёж")), EvDiverged 2 (ExMeta "n5", ExDispatch ExRoot (AtLabel "ёж")) (ExMeta "n6", ExDispatch ExRoot (AtLabel "ёрш")) [] (Unformed Lefthand)])
+      lines written `shouldContain` ["    <diverged left=\"Φ.ёж\" right=\"𝑛6·1\" reason=\"the left side is no formation\"/>"]
+    it "names the term a meta that wrote no element holds at the site of a firing it was read for in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n4") (ExDispatch ExRoot (AtLabel "щ")), EvFiring 2 "L_ю" Evaluation (ExMeta "n4")])
+      lines written `shouldContain` ["    <evaluate λ=\"L_ю\" by=\"evaluate\" at=\"Φ.щ\">"]
     it "writes the term a morphing came to as an element with its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvMorphed 1 (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldContain` ["  <morphed meta=\"𝑛·0·1\">Φ.щука</morphed>"]
@@ -600,7 +629,7 @@ spec = do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvFabricated 2 (ExMeta "n3", ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) (ExMeta "n4", ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) (ExFormation [BiTau AtPhi (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) AtPhi), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) AtPhi)]), BiTau (AtLabel "к") (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) (AtLabel "к")), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) (AtLabel "к"))])])])
       lines written `shouldContain` ["    <fabricated meta=\"𝑛·1·1\" left=\"𝑛3·1\" right=\"𝑛4·1\">𝑒·1·5</fabricated>"]
     it "writes the meta a cast bound as an element naming the meta it read and the meta whose shape it took" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvCast 2 "𝑛9" "𝑛2" "𝑛4" (ExFormation [BiTau AtPhi (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)])]), BiTau (AtLabel "щ") ExRoot])])
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvCast 2 "𝑛9" (ExMeta "n2") (ExMeta "n4") (ExFormation [BiTau AtPhi (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)])]), BiTau (AtLabel "щ") ExRoot])])
       lines written `shouldContain` ["    <cast meta=\"𝑛9·1\" of=\"𝑛2·1\" up-to=\"𝑛4·1\">𝑒·1·2</cast>"]
     it "writes the symbol a symbolize line minted as an element holding the datum it stands for" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtOne "4A")])
