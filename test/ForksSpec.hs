@@ -57,8 +57,8 @@ spec = do
     it "joins ⊥ and a symbol with ⊥ on the left of the pair" $
       joined ExTermination (ExFormation [BiLambda (FnSymbol 7)]) 9 `shouldBe` Right (ExFormation [BiLambda (FnSymbol 10)], [(10, (Nothing, Just 7))], 10)
     it "keeps the shape of the side facing ⊥ and joins the symbol it holds with ⊥" $ do
-      expected <- parseExpressionThrows "⟦ φ ↦ Φ.ba( φ ↦ ⟦ λ ⤍ 𝜎42 ⟧ ), ko ↦ Φ.ze ⟧"
-      apart "⟦ φ ↦ Φ.ba( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), ko ↦ Φ.ze ⟧" "⊥" >>= (`shouldBe` Right (expected, [(42, (Just 3, Nothing))], 42))
+      expected <- parseExpressionThrows "⟦ φ ↦ Φ.qo( φ ↦ ⟦ λ ⤍ 𝜎42 ⟧ ), ko ↦ Φ.ze ⟧"
+      apart "⟦ φ ↦ Φ.qo( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), ko ↦ Φ.ze ⟧" "⊥" >>= (`shouldBe` Right (expected, [(42, (Just 3, Nothing))], 42))
     it "names a symbol the side facing ⊥ holds twice by one fresh symbol" $ do
       expected <- parseExpressionThrows "⟦ ub ↦ ⟦ λ ⤍ 𝜎42 ⟧, xe ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎42 ⟧ ⟧ ⟧"
       apart "⊥" "⟦ ub ↦ ⟦ λ ⤍ 𝜎8 ⟧, xe ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ⟧" >>= (`shouldBe` Right (expected, [(42, (Nothing, Just 8))], 42))
