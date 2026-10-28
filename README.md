@@ -351,11 +351,12 @@ A protocol may hold these lines:
 * `starved …`, `spent …` and `timeout …` are where `--max-steps`,
   `--max-firings` and `--max-seconds` ran out.
 * `msec …`, `firings …` and `fps …` close the file after the last step, so
-  nothing follows them, and `timeout …` is not the last line.
-  `msec` is the milliseconds the whole run took, `firings` is how many
-  λ functions it fired, and `fps` is those firings per second, each rounded
-  to an integer, and the listing above leaves them and the `# …` lines out,
-  since they differ from run to run.
+  `timeout …` is not the last line.
+  In the XML form they stand right before `</protocol>`.
+  `msec` is the milliseconds the evaluation took, `firings` is the exact
+  count of the λ functions the run fired, and `fps` is those firings per
+  second, with `msec` and `fps` rounded to integers, and the listing above
+  leaves them and the `# …` lines out, since they differ from run to run.
 
 The `--abridged` option folds every formation longer than sixty-four
 characters, or than `--abridged=WIDTH`, into its `φ`, `Δ` and `λ` and a count
