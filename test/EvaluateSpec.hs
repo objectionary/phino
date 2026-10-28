@@ -164,9 +164,9 @@ spec = do
 
   describe "stops a line by the clock of --max-seconds" $
     it "fails a rewrite line that outlasts the deadline" $ do
-      let wide = iterate (\half -> ExFormation [BiTau (AtLabel "lo") half, BiTau (AtLabel "hi") half]) (ExFormation []) !! 48
+      let wide = iterate (\half -> ExFormation [BiTau (AtLabel "lo") half, BiTau (AtLabel "hi") half]) (ExFormation []) !! 18
           program = ExFormation [BiTau (AtLabel "y") (ExDispatch (ExFormation [BiTau (AtLabel "x") wide, BiLambda (Function "L_wide")]) AtPhi)]
-      table <- withLambdasOf "- λ: L_wide\n  morph:\n    𝑛1: $.x\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n        - name: never\n          pattern: 𝑒1.qz\n          result: 𝑒1\n  𝑛: 𝑛2\n" readLambdas
+      table <- withLambdasOf ("- λ: L_wide\n  morph:\n    𝑛1: $.x\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n" <> T.concat (map (\idx -> "        - name: never" <> T.pack (show idx) <> "\n          pattern: 𝑒1.qz\n          result: 𝑒1\n") [1 .. 2000 :: Int]) <> "  𝑛: 𝑛2\n") readLambdas
       due <- (+ 0.2) <$> getMonotonicTime
       ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
       timeout 10000000 (morph program emptyState ctx{_deadline = Just (Deadline 37 due)})

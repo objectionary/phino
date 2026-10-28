@@ -639,7 +639,7 @@ spec = do
       term <- evaluate (iterate (\half -> ExFormation [BiTau (AtLabel "lo") half, BiTau (AtLabel "hi") half]) (ExFormation []) !! 9)
       rule <- (\from to -> Y.Rule "kq" Nothing Nothing from to Nothing Nothing Nothing) <$> parseExpressionThrows "Φ.true" <*> parseExpressionThrows "Φ.vw"
       made <- rewritten (RuleContext buildTerm Nothing normal) [rule] term >>= evaluate
-      (==) <$> makeStableName made <*> makeStableName term `shouldReturn` True
+      (==) <$> (makeStableName $! made) <*> (makeStableName $! term) `shouldReturn` True
 
   describe "symbolized" $ do
     it "turns the datum of a formation into a fresh symbol" $ do
