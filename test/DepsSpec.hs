@@ -299,7 +299,7 @@ spec = do
       last (lines written) `shouldBe` "    𝔼(L_ю):  # 𝔼(Φ.щ)"
     it "names the term a meta that wrote no line holds where a join could not join the side that meta bound" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n1") (ExDispatch ExRoot (AtLabel "ёж")), EvDiverged 2 (ExMeta "n1", ExDispatch ExRoot (AtLabel "ёж")) (ExMeta "n2", ExDispatch ExRoot (AtLabel "щука")) [] (Unformed Lefthand)])
-      last (lines written) `shouldBe` "    diverged Φ.ёж vs 𝑛2·1  # the left side is no formation"
+      last (lines written) `shouldBe` "    diverged Φ.ёж vs 𝑛2·1  # cannot join: the left side is Φ.ёж and the right side is Φ.щука; cannot fabricate: the left side is no formation"
     it "writes the symbol a join minted beside the meta its condition was bound to and the two it stands for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left "𝛿3") 12 (5, 9) Nothing])
       last (lines written) `shouldBe` "    joined 𝜎12 := 𝛿3·1 ? 𝜎5 : 𝜎9"
@@ -311,19 +311,25 @@ spec = do
       last (lines written) `shouldBe` "    joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥"
     it "writes two sides a join could not join by the formations applications made" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExFormation []))) (ExFormation [BiTau (AtLabel "w") (ExFormation [])]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExFormation [])]) [AtLabel "q"] Unnamed])
-      last (lines written) `shouldBe` "    diverged 𝑛·1·2 vs 𝑛·1·4  # they differ at .q, and the join names no otherwise"
+      last (lines written) `shouldBe` "    diverged 𝑛·1·2 vs 𝑛·1·4  # cannot join: at .q the left side has q ↦ ⟦⟧ and the right side has no q; cannot fabricate: the join names no otherwise"
     it "writes two sides a join could not join by the metas of the lines that bound them" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTerm 2 "𝑛1" Morphing (ExDispatch ExXi (AtLabel "a")) (ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]), EvTerm 2 "𝑛2" Morphing (ExDispatch ExXi (AtLabel "b")) (ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])]), EvDiverged 2 (ExMeta "n1", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]) (ExMeta "n2", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])]) [AtPhi, AtDelta] Unnamed])
-      last (lines written) `shouldBe` "    diverged 𝑛1·1 vs 𝑛2·1  # they differ at .φ.Δ, and the join names no otherwise"
+      last (lines written) `shouldBe` "    diverged 𝑛1·1 vs 𝑛2·1  # cannot join: at .φ.Δ the left side has Δ ⤍ 1F- and the right side has Δ ⤍ 2E-; cannot fabricate: the join names no otherwise"
     it "writes a side of a join no line named as the term it is" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "a"), ExDispatch ExRoot (AtLabel "ёж")) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука")) [] (Unformed Lefthand)])
-      last (lines written) `shouldBe` "    diverged Φ.ёж vs Φ.щука  # the left side is no formation"
+      last (lines written) `shouldBe` "    diverged Φ.ёж vs Φ.щука  # cannot join: the left side is Φ.ёж and the right side is Φ.щука; cannot fabricate: the left side is no formation"
     it "writes a side of a join a defer line bound to a symbol as that symbol" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n7", ExFormation [BiLambda (FnSymbol 4)]) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука")) [] (Holding Lefthand AtLambda)])
-      last (lines written) `shouldBe` "    diverged 𝜎4:λ vs Φ.щука  # the left side has λ"
+      last (lines written) `shouldBe` "    diverged 𝜎4:λ vs Φ.щука  # cannot join: the left side is 𝜎4:λ and the right side is Φ.щука; cannot fabricate: the left side is an atom"
     it "writes where the two sides of a join differ beside why no formation was fabricated of them" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n2", ExFormation [BiTau AtPhi (ExFormation [BiTau (AtLabel "ко") (ExDispatch ExRoot (AtLabel "уж"))])]) (ExMeta "n9", ExFormation [BiTau AtPhi (ExFormation [BiTau (AtLabel "ко") (ExDispatch ExRoot (AtLabel "ёрш"))]), BiDelta (BtOne "3C")]) [AtPhi, AtLabel "ко"] (Holding Righthand AtDelta)])
-      last (lines written) `shouldBe` "    diverged 𝑛2·1 vs 𝑛9·1  # they differ at .φ.ко, and the right side has Δ"
+      last (lines written) `shouldBe` "    diverged 𝑛2·1 vs 𝑛9·1  # cannot join: at .φ.ко the left side has ко ↦ Φ.уж and the right side has ко ↦ Φ.ёрш; cannot fabricate: the right side is a datum"
+    it "writes that a side of a join binds nothing where the other one binds a λ" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n5", ExFormation [BiLambda (FnSymbol 8)]) (ExMeta "n6", ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёрш"))]) [AtLambda] (Holding Lefthand AtLambda)])
+      last (lines written) `shouldBe` "    diverged 𝜎8:λ vs 𝑛6·1  # cannot join: at .λ the left side has λ ⤍ 𝜎8 and the right side has no λ; cannot fabricate: the left side is an atom"
+    it "writes the void a side of a join leaves where the two sides differ" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n3", ExFormation [BiVoid (AtLabel "щи")]) (ExMeta "n4", ExFormation [BiTau (AtLabel "щи") (ExDispatch ExRoot (AtLabel "ёж"))]) [AtLabel "щи"] Unnamed])
+      last (lines written) `shouldBe` "    diverged 𝑛3·1 vs 𝑛4·1  # cannot join: at .щи the left side has щи ↦ ∅ and the right side has щи ↦ Φ.ёж; cannot fabricate: the join names no otherwise"
     it "writes two sides a join could not join for an attribute the left one leaves void as unripe" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvUnripe 2 (ExMeta "n1", ExFormation [BiVoid (AtLabel "кот")]) (ExMeta "n2", ExFormation [BiTau (AtLabel "кот") (ExDispatch ExRoot (AtLabel "ёж"))]) Lefthand (AtLabel "кот")])
       last (lines written) `shouldBe` "    unripe 𝑛1·1 vs 𝑛2·1  # кот is void on the left and attached on the right"
@@ -507,7 +513,7 @@ spec = do
       lines written `shouldContain` ["    <cast meta=\"𝑛9·1\" of=\"Φ.ёрш\" up-to=\"𝑛4·1\">𝑒·1·2</cast>"]
     it "names the term a meta that wrote no element holds where a join could not join the side that meta bound in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n5") (ExDispatch ExRoot (AtLabel "ёж")), EvDiverged 2 (ExMeta "n5", ExDispatch ExRoot (AtLabel "ёж")) (ExMeta "n6", ExDispatch ExRoot (AtLabel "ёрш")) [] (Unformed Lefthand)])
-      lines written `shouldContain` ["    <diverged left=\"Φ.ёж\" right=\"𝑛6·1\" reason=\"the left side is no formation\"/>"]
+      lines written `shouldContain` ["    <diverged left=\"Φ.ёж\" right=\"𝑛6·1\" reason=\"the left side is no formation\"><left>Φ.ёж</left><right>Φ.ёрш</right></diverged>"]
     it "names the term a meta that wrote no element holds at the site of a firing it was read for in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n4") (ExDispatch ExRoot (AtLabel "щ")), EvFiring 2 "L_ю" Evaluation (ExMeta "n4")])
       lines written `shouldContain` ["    <evaluate λ=\"L_ю\" by=\"evaluate\" at=\"Φ.щ\">"]
@@ -618,16 +624,19 @@ spec = do
       lines written `shouldContain` ["    <joined symbol=\"𝜎23\" on=\"𝛿2·1\" left=\"𝜎8\" right=\"𝜎14\"/>"]
     it "writes two sides a join could not join as an element naming both" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))]) [AtLabel "q"] Unnamed])
-      lines written `shouldContain` ["    <diverged left=\"𝑛·1·2\" right=\"𝑛·1·4\" at=\".q\" reason=\"the join names no otherwise\"/>"]
+      lines written `shouldContain` ["    <diverged left=\"𝑛·1·2\" right=\"𝑛·1·4\" at=\".q\" reason=\"the join names no otherwise\"><left><ref attr=\"q\">Φ.ю</ref></left><right/></diverged>"]
     it "writes a side of a join that is a path as that path in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "a"), ExDispatch ExRoot (AtLabel "ёж")) (ExDispatch ExXi (AtLabel "b"), ExDispatch ExRoot (AtLabel "щука")) [] (Unformed Righthand)])
-      lines written `shouldContain` ["    <diverged left=\"Φ.ёж\" right=\"Φ.щука\" reason=\"the right side is no formation\"/>"]
+      lines written `shouldContain` ["    <diverged left=\"Φ.ёж\" right=\"Φ.щука\" reason=\"the right side is no formation\"><left>Φ.ёж</left><right>Φ.щука</right></diverged>"]
     it "writes a side of a join read from a meta by the meta of its line in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n3", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "1F")])]) (ExMeta "n4", ExFormation [BiTau AtPhi (ExFormation [BiDelta (BtOne "2E")])]) [AtPhi, AtDelta] Unnamed])
-      lines written `shouldContain` ["    <diverged left=\"𝑛3·1\" right=\"𝑛4·1\" at=\".φ.Δ\" reason=\"the join names no otherwise\"/>"]
+      lines written `shouldContain` ["    <diverged left=\"𝑛3·1\" right=\"𝑛4·1\" at=\".φ.Δ\" reason=\"the join names no otherwise\"><left Δ=\"1F-\"/><right Δ=\"2E-\"/></diverged>"]
     it "writes where the two sides of a join differ and why no formation was fabricated of them in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n5", ExFormation [BiLambda (FnSymbol 8)]) (ExMeta "n6", ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёрш"))]) [AtLambda] (Holding Lefthand AtLambda)])
-      lines written `shouldContain` ["    <diverged left=\"𝜎8\" right=\"𝑛6·1\" at=\".λ\" reason=\"the left side has λ\"/>"]
+      lines written `shouldContain` ["    <diverged left=\"𝜎8\" right=\"𝑛6·1\" at=\".λ\" reason=\"the left side is an atom\"><left λ=\"𝜎8\"/><right/></diverged>"]
+    it "writes the void a side of a join leaves where the two sides differ in the markup" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvDiverged 2 (ExMeta "n3", ExFormation [BiVoid (AtLabel "щи")]) (ExMeta "n4", ExFormation [BiTau (AtLabel "щи") (ExDispatch ExRoot (AtLabel "ёж"))]) [AtLabel "щи"] Unnamed])
+      lines written `shouldContain` ["    <diverged left=\"𝑛3·1\" right=\"𝑛4·1\" at=\".щи\" reason=\"the join names no otherwise\"><left><void attr=\"щи\"/></left><right><ref attr=\"щи\">Φ.ёж</ref></right></diverged>"]
     it "writes two sides a join could not join for a void as an element naming both and the attribute in the markup" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvUnripe 2 (ExMeta "n3", ExFormation [BiTau (AtLabel "щи") (ExFormation [])]) (ExMeta "n4", ExFormation [BiVoid (AtLabel "щи")]) Righthand (AtLabel "щи")])
       lines written `shouldContain` ["    <unripe left=\"𝑛3·1\" right=\"𝑛4·1\" at=\"щи\"/>"]

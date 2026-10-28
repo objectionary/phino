@@ -284,9 +284,15 @@ sides as `diverged` does and spelling the formation out in the comment, and
 answers that formation as `Joined` of `Answer`. The entry of `L_join` reads
 `on: $.on🌵`, so the copy it fires decides by that condition.
 Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
-naming each side by the line that bound it and commenting where they differ
-and why nothing was fabricated of them, as in
-`# they differ at .φ, and the left side has λ` (#2043). `joined` answers the
+naming each side by the line that bound it. Its comment tells the two steps
+apart (#2043, #2204): `cannot join:` says what each side binds where they
+differ, as in `at .λ the left side has λ ⤍ 𝜎2 and the right side has no λ`,
+or what each side is where they differ at the top, and `cannot fabricate:`
+says why nothing was fabricated of them, as in `the left side is an atom`.
+`lodged` of `Deps.hs` walks a side down the path to what it binds there, and
+the markup writes that inside `<diverged>` as `<left λ="𝜎2"/><right/>`, the
+way `<formed>` writes a binding, or each whole side as `<left>Φ.k</left>`
+where the path is empty. `joined` answers the
 path of attributes through the formations both sides share down to the first
 one they bind differently, cut short at an application or a dispatch, and
 `forked` answers a `Refusal`, `Unformed` or `Holding` a Δ or a λ, the left
