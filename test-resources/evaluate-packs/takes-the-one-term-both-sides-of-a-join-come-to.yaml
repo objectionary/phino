@@ -3,8 +3,7 @@
 ---
 # yamllint disable rule:line-length
 # A join whose two sides come to the same normal form through 𝕄 has
-# nothing to join (#1954): it mints no symbol and answers that one term,
-# commented with both sides it came from.
+# nothing to join (#1954): it mints no symbol and answers that one term.
 symbolic: |
   - λ: L_number_gt
     dataize:
@@ -96,7 +95,7 @@ protocol: |
         𝑛·2·12 := 𝑛·2·10.plus( x ↦ 2.0 )
         𝑛·2·13 := ⟦ x ↦ 2.0, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·14 := 𝑛·2·13
-      𝑛·2·15 := 𝑛·2·13  # 𝕄(ξ.then), 𝕄(ξ.else)
+      𝑛·2·15 := 𝑛·2·13
     𝔼(L_number_plus):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):

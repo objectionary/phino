@@ -250,7 +250,7 @@ spec = do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_выдра" Dataization ExRoot, EvBuilt 2 (ExFormation [BiTau (AtLabel "кот") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "кот"))]), EvMorphed 2 (ExFormation [BiTau (AtLabel "кот") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "кот"))]), EvAnswer 2 (ExFormation [BiTau (AtLabel "кот") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "кот"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "кот") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "кот"))]) AtPhi)])
       last (lines written) `shouldBe` "  boxed 𝑛·0·1 := 𝑛·1·3.φ"
     it "names the answer of a join by its line in the box step that takes its φ" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_клёст" Dataization ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiTau (AtLabel "жук") (ExFormation [BiLambda (FnSymbol 7)]), BiTau AtPhi (ExDispatch ExXi (AtLabel "жук"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "жук") (ExFormation [BiLambda (FnSymbol 7)]), BiTau AtPhi (ExDispatch ExXi (AtLabel "жук"))]) AtPhi)])
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_клёст" Dataization ExRoot, EvTaken 2 (ExFormation [BiTau (AtLabel "жук") (ExFormation [BiLambda (FnSymbol 7)]), BiTau AtPhi (ExDispatch ExXi (AtLabel "жук"))]), EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "жук") (ExFormation [BiLambda (FnSymbol 7)]), BiTau AtPhi (ExDispatch ExXi (AtLabel "жук"))]) AtPhi)])
       last (lines written) `shouldBe` "  boxed 𝑛·0·1 := 𝑛·1·1.φ"
     it "keeps the mode of a cut made at the site of its block" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvLooped 1 Morphing Proven (ExFormation []) ExRoot])
@@ -264,18 +264,9 @@ spec = do
     it "writes a deferred copy as it stands when no object of the world made it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDeferred 1 9 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiLambda (FnSymbol 4)]), BiTau AtPhi (ExDispatch (ExDispatch ExXi (AtLabel "щ")) (AtLabel "й"))]) Nothing ExRoot])
       last (lines written) `shouldBe` "  deferred 𝜎9 := ⟦ щ ↦ 𝜎4:λ, φ ↦ щ.й ⟧"
-    it "writes the term a join came to as the answer of its firing" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
-      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then)"
-    it "writes the term both sides of a join came to beside both of them" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then"), ExDispatch ExXi (AtLabel "else")] (ExFormation [BiLambda (FnSymbol 3)])])
-      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then), 𝕄(ξ.else)"
-    it "writes the side a join read from a meta beside that meta alone" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExMeta "n3"] (ExFormation [BiLambda (FnSymbol 3)])])
-      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝑛3"
-    it "writes the term a path and a meta of a join came to beside the morph of the one and the other alone" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then"), ExMeta "n4"] (ExFormation [BiLambda (FnSymbol 3)])])
-      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # 𝕄(ξ.then), 𝑛4"
+    it "writes the term a join came to as the answer of its firing naming neither side" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ"
     it "writes the term a stay line dropped a ρ from beside the stay of the meta it read" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvReshaped 2 "𝑛3" "stay" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
       last (lines written) `shouldBe` "    𝑛3·1 := 𝜎3:λ  # stay(𝑛1)"
@@ -306,9 +297,6 @@ spec = do
     it "names the term a meta that wrote no line holds at the site of a firing it was read for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n4") (ExDispatch ExRoot (AtLabel "щ")), EvFiring 2 "L_ю" Evaluation (ExMeta "n4")])
       last (lines written) `shouldBe` "    𝔼(L_ю):  # 𝔼(Φ.щ)"
-    it "names the term a meta that wrote no line holds beside the term a join came to" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n3") (ExDispatch ExRoot (AtLabel "щ")), EvTaken 2 [ExMeta "n3", ExMeta "n4"] (ExFormation [BiLambda (FnSymbol 3)])])
-      last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ  # Φ.щ, 𝑛4"
     it "names the term a meta that wrote no line holds where a join could not join the side that meta bound" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvBound 2 (ExMeta "n1") (ExDispatch ExRoot (AtLabel "ёж")), EvDiverged 2 (ExMeta "n1", ExDispatch ExRoot (AtLabel "ёж")) (ExMeta "n2", ExDispatch ExRoot (AtLabel "щука")) [] (Unformed Lefthand)])
       last (lines written) `shouldBe` "    diverged Φ.ёж vs 𝑛2·1  # the left side is no formation"
@@ -343,8 +331,8 @@ spec = do
       (_, written) <- recorded (\record -> mapM_ record (EvRun Morphing "Φ" : EvFiring 1 "L_ф" Morphing ExRoot : replicate 2 (EvFabricated 2 (ExMeta "n1", ExFormation [BiTau (AtLabel "ю") (ExDispatch ExRoot (AtLabel "ёж"))]) (ExMeta "n2", ExFormation [BiTau (AtLabel "ю") (ExDispatch ExRoot (AtLabel "щука"))]) (ExFormation [BiTau (AtLabel "ю") (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "3F")]), BiTau (AtLabel "left") (ExDispatch ExRoot (AtLabel "ёж")), BiTau (AtLabel "right") (ExDispatch ExRoot (AtLabel "щука"))])]))))
       last (lines written) `shouldBe` "    fabricated 𝑛·1·2 := 𝑛1·1 and 𝑛2·1  # ⟦ λ ⤍ L_ж, on ↦ 3F-:Δ, left ↦ Φ.ёж, right ↦ Φ.щука ⟧:ю"
     it "writes the formation a join fabricated by its name in a later line" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvFabricated 2 (ExMeta "n1", ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) (ExMeta "n2", ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) (ExFormation [BiTau AtPhi (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) AtPhi), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) AtPhi)]), BiTau (AtLabel "к") (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) (AtLabel "к")), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) (AtLabel "к"))])]), EvTaken 2 [ExMeta "n7"] (ExFormation [BiTau AtPhi (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) AtPhi), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) AtPhi)]), BiTau (AtLabel "к") (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) (AtLabel "к")), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) (AtLabel "к"))])])])
-      last (lines written) `shouldBe` "    𝑛·1·2 := 𝑛·1·1  # 𝑛7"
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvFabricated 2 (ExMeta "n1", ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) (ExMeta "n2", ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) (ExFormation [BiTau AtPhi (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) AtPhi), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) AtPhi)]), BiTau (AtLabel "к") (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) (AtLabel "к")), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) (AtLabel "к"))])]), EvTaken 2 (ExFormation [BiTau AtPhi (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) AtPhi), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) AtPhi)]), BiTau (AtLabel "к") (ExFormation [BiLambda (Function "L_ж"), BiTau (AtLabel "on") (ExFormation [BiDelta (BtOne "05")]), BiTau (AtLabel "left") (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "ёж"))]) (AtLabel "к")), BiTau (AtLabel "right") (ExDispatch (ExFormation [BiTau (AtLabel "к") (ExDispatch ExRoot (AtLabel "щука"))]) (AtLabel "к"))])])])
+      last (lines written) `shouldBe` "    𝑛·1·2 := 𝑛·1·1"
     it "opens a heading of its own for every run of the protocol" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvDelta 1 (BtOne "0C"), EvRun Morphing "Φ", EvDelta 1 (BtOne "0D")])
       lines written `shouldBe` ["𝕄(Φ):", "  𝛿·0·1 := 0C-", "𝕄(Φ):", "  𝛿·0·2 := 0D-"]
@@ -605,7 +593,7 @@ spec = do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "кулик")) (ArTau (AtLabel "ш") ExRoot)) (ExFormation [BiTau (AtLabel "ш") ExRoot]) ExRoot, EvDeferred 1 31 Morphing (ExFormation [BiTau (AtLabel "щ") (ExFormation [BiTau (AtLabel "ш") ExRoot]), BiTau AtPhi (ExDispatch ExXi (AtLabel "щ"))]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "щ") (ExFormation [BiTau (AtLabel "ш") ExRoot])))) ExRoot])
       lines written `shouldContain` ["  <deferred symbol=\"𝜎31\" by=\"morph\" at=\"Φ\" of=\"Φ.ёж\"><with><meta attr=\"щ\">𝑛·0·2</meta></with></deferred>"]
     it "writes the term a join came to as the answer of its firing in the markup" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 [ExDispatch ExXi (AtLabel "then")] (ExFormation [BiLambda (FnSymbol 3)])])
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvTaken 2 (ExFormation [BiLambda (FnSymbol 3)])])
       lines written `shouldContain` ["    <answered meta=\"𝑛·1·1\">𝜎3</answered>"]
     it "writes the symbol a join minted as an element naming the meta its condition was bound to and the two it stands for" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left "𝛿3") 12 (5, 9)])

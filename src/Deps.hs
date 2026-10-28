@@ -145,7 +145,7 @@ data Evaluation
   | EvJoined Int (Either T.Text Expression) Int (Int, Int)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
-  | EvTaken Int [Expression] Expression
+  | EvTaken Int Expression
   | EvWorld Expression
   | EvHeader Header Expression Expression
 
@@ -208,7 +208,7 @@ tier (EvMorphed depth _) = depth
 tier (EvJoined depth _ _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
-tier (EvTaken depth _ _) = depth
+tier (EvTaken depth _) = depth
 tier EvWorld{} = maxBound
 tier EvHeader{} = 0
 
@@ -467,13 +467,12 @@ saveEval handle cursor printed printed' report = do
       body <- printed (abbreviatedInside protocol._made term)
       let (index, counted) = numbered protocol
       pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "fabricated %s·%d := %s and %s  # %s" (labelled protocol answer) index one two body)))
-    written at (EvTaken _ sides term) protocol = do
+    written at (EvTaken _ term) protocol = do
       let (index, counted) = numbered protocol
           naming :: String
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- valued counted naming term
-      remarks <- mapM (sourced protocol) sides
-      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (remarked (printf "%s := %s" naming value) remarks)))
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s" naming value)))
     written _ (EvWorld world) protocol = pure (protocol{_made = namedInsert world ExRoot protocol._made}, Nothing)
     written _ (EvHeader (Header release revision dated command (World file count size tops bindings) table) locator expression) protocol = do
       place <- printed locator
@@ -514,9 +513,6 @@ saveEval handle cursor printed printed' report = do
     spoken protocol meta = maybe (labelled protocol . T.pack <$> salted meta) (borrowed protocol) (namedLookup meta (held protocol))
     commented :: Protocol -> String -> Judgment -> Expression -> IO String
     commented protocol line judgment operand = printf "%s  # %s(%s)" line (letter judgment) <$> salted (unwritten protocol operand)
-    sourced :: Protocol -> Expression -> IO String
-    sourced protocol side@(ExMeta _) = maybe (salted side) (borrowed protocol) (namedLookup side (held protocol))
-    sourced _ side = printf "%s(%s)" (letter Morphing) <$> salted side
     unwritten :: Protocol -> Expression -> Expression
     unwritten protocol = abbreviated (held protocol)
     held :: Protocol -> Named Expression
@@ -732,7 +728,7 @@ saveEvalXml handle cursor printed report = do
         body <- leaf depth term
         (naming, _) <- counted
         pure (printf "<fabricated meta=\"%s\" left=\"%s\" right=\"%s\">%s</fabricated>" (escapeXML naming) (escapeXML one) (escapeXML two) (escapeXMLText body))
-    elements at (EvTaken depth _ term) nesting = placed at nesting (concluded "answered" depth term)
+    elements at (EvTaken depth term) nesting = placed at nesting (concluded "answered" depth term)
     elements _ (EvWorld world) nesting = pure (known world nesting, [])
     prologue :: Nesting -> [String]
     prologue nesting

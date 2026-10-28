@@ -111,7 +111,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
       caller._saveEval (EvAnswer depth normal)
-    shown depth (Joined (left, right) normal) = caller._saveEval (EvTaken depth [left, right] normal)
+    shown depth (Joined normal) = caller._saveEval (EvTaken depth normal)
     kept :: Bool -> ReduceException -> Maybe Kept
     kept _ (Looping term) = Just (Looped term)
     kept _ (LoopingAt term _ _) = Just (Looped term)
@@ -377,12 +377,12 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         Right (term, made, spent') -> do
           writeIORef ctx._minted spent'
           mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair)) made
-          ctx._saveEval (EvTaken ctx._nesting [left, right] term)
-          pure (Joined (left, right) term, state''')
+          ctx._saveEval (EvTaken ctx._nesting term)
+          pure (Joined term, state''')
         Left path -> case maybe (Left Unnamed) (\name -> forked name condition one two) fallback of
           Right term -> do
             ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) term)
-            pure (Joined (left, right) term, state''')
+            pure (Joined term, state''')
           Left refusal -> do
             ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two) path refusal)
             throwIO (Diverged func)

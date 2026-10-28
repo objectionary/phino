@@ -12,8 +12,7 @@
 # symbols alone. The join takes the metas the 'stay' lines bound as they are
 # and makes one term of them with a fresh symbol.
 # The protocol comments the line of '𝑛3', which dropped a tail, with
-# 'stay(𝑛1)'. The line of '𝑛4', which dropped nothing, writes nothing, and the
-# join names it by the term it holds, '𝑛2·1' (#2192).
+# 'stay(𝑛1)'. The line of '𝑛4', which dropped nothing, writes nothing (#2192).
 symbolic: |
   - λ: L_fork
     dataize:
@@ -46,7 +45,7 @@ protocol: |
       𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
       𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ):φ  # stay(𝑛1)
       joined 𝜎4 := 𝛿1·1 ? 𝜎1 : 𝜎2
-      𝑛·1·3 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # 𝑛3, 𝑛2·1
+      𝑛·1·3 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ
     𝑛·0·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) )
     𝑛·0·2 := Φ.bytes( φ ↦ 𝜎4:λ ):φ
     morphed 𝑛·0·3 := 𝑛·0·2

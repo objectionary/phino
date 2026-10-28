@@ -173,7 +173,7 @@ protocol: |
         𝑛·2·17 := ⟦ x ↦ 𝑛·1·9, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·18 := 𝑛·2·17
       joined 𝜎4 := 𝛿1·2 ? 𝜎2 : 𝜎3
-      𝑛·2·19 := ⟦ x ↦ 𝑛·1·9, λ ⤍ L_number_plus ⟧  # 𝕄(ξ.then), 𝕄(ξ.else)
+      𝑛·2·19 := ⟦ x ↦ 𝑛·1·9, λ ⤍ L_number_plus ⟧
     𝔼(L_number_plus):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
@@ -228,7 +228,7 @@ protocol: |
           𝑛·6·12 := ⟦ then ↦ 𝑛·3·1.plus( 𝑛·3·9 ).plus( 𝑛·5·5 ), else ↦ 𝑛·4·1.plus( 𝑛·4·9 ).plus( 𝑛·5·5 ), λ ⤍ L_fork ⟧
           morphed 𝑛·6·13 := 𝑛·6·12
         𝔼(L_fork):
-          𝑛·8·1 := ⟦ x ↦ 𝑛·5·5, λ ⤍ L_number_plus ⟧  # 𝕄(ξ.then), 𝕄(ξ.else)
+          𝑛·8·1 := ⟦ x ↦ 𝑛·5·5, λ ⤍ L_number_plus ⟧
         𝔼(L_number_plus):
           𝑛·9·1 := 𝑛·6·1  # 𝑛
           𝑛·9·2 := 𝑛·5·17  # 𝕄(𝑛·9·1)
