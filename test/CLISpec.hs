@@ -463,7 +463,12 @@ spec = do
         ,
           ( "with an unsafe --label and --output=latex"
           , ["rewrite", "--label=eq:bad%tag", "--output=latex"]
-          , ["The --label option must contain only letters, numbers, colons, periods, underscores, and hyphens"]
+          , ["The --label option must contain only letters, numbers, colons, underscores, and hyphens"]
+          )
+        ,
+          ( "with a period in --label and --output=latex"
+          , ["rewrite", "--label=a.b", "--output=latex"]
+          , ["The --label option must contain only letters, numbers, colons, underscores, and hyphens"]
           )
         ,
           ( "with --compress and --output != latex"
