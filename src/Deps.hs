@@ -716,9 +716,7 @@ saveEvalXml handle cursor printed report = do
     elements at (EvJoined _ condition symbol (left, right) bottom) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
-        one <- lift (branched bottom left)
-        two <- lift (branched bottom right)
-        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML on) (escapeXML one) (escapeXML two))
+        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"%s/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right) (concat [printf " terminator=\"%s\"" (sigma idx) :: String | Just idx <- [bottom], idx `elem` [left, right]]))
     elements at (EvDiverged depth left right path refusal) nesting =
       placed at nesting $ do
         one <- sided depth nesting left
@@ -909,10 +907,6 @@ saveEvalXml handle cursor printed report = do
     symbolic (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds] >>= symbolic
     symbolic (ExApplication _ (ArTau AtPhi body)) = symbolic body
     symbolic _ = Nothing
-    branched :: Maybe Int -> Int -> IO String
-    branched bottom idx
-      | bottom == Just idx = spelled ExTermination
-      | otherwise = pure (sigma idx)
     spelled :: Expression -> IO String
     spelled (ExFormation [BiLambda (FnSymbol idx)]) = pure (sigma idx)
     spelled (ExFormation [BiDelta bytes]) = printed (ExBytes bytes)

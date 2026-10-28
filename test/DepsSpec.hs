@@ -604,9 +604,12 @@ spec = do
     it "writes the symbol a join minted as an element naming the path its condition was read off" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Right (ExDispatch ExXi (AtLabel "щит"))) 12 (5, 9) Nothing])
       lines written `shouldContain` ["    <joined symbol=\"𝜎12\" on=\"ξ.щит\" left=\"𝜎5\" right=\"𝜎9\"/>"]
-    it "writes ⊥ in the markup for the side of a join whose symbol stands for ⊥" $ do
+    it "writes the symbol standing for ⊥ in the markup and names it under terminator" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left "𝛿4") 17 (16, 6) (Just 16)])
-      lines written `shouldContain` ["    <joined symbol=\"𝜎17\" on=\"𝛿4·1\" left=\"⊥\" right=\"𝜎6\"/>"]
+      lines written `shouldContain` ["    <joined symbol=\"𝜎17\" on=\"𝛿4·1\" left=\"𝜎16\" right=\"𝜎6\" terminator=\"𝜎16\"/>"]
+    it "writes no terminator in the markup for a pair of a join that met ⊥ elsewhere" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvJoined 2 (Left "𝛿2") 23 (8, 14) (Just 21)])
+      lines written `shouldContain` ["    <joined symbol=\"𝜎23\" on=\"𝛿2·1\" left=\"𝜎8\" right=\"𝜎14\"/>"]
     it "writes two sides a join could not join as an element naming both" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "жук")) (ArTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю")))) (ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))]) ExRoot, EvDiverged 2 (ExDispatch ExXi (AtLabel "then"), ExFormation [BiTau (AtLabel "q") (ExDispatch ExRoot (AtLabel "ю"))]) (ExDispatch ExXi (AtLabel "else"), ExFormation [BiTau (AtLabel "w") (ExDispatch ExRoot (AtLabel "ю"))]) [AtLabel "q"] Unnamed])
       lines written `shouldContain` ["    <diverged left=\"𝑛·1·2\" right=\"𝑛·1·4\" at=\".q\" reason=\"the join names no otherwise\"/>"]
