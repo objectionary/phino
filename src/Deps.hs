@@ -107,6 +107,8 @@ refused refusal = case refusal of
   Unnamed -> "the join names no otherwise"
   Unformed side -> printf "the %s side is no formation" (handed side)
   Holding side attr -> printf "the %s side has %s" (handed side) (printAttribute attr)
+  Unripe Lefthand attr -> printf "%s is void on the left and attached on the right" (printAttribute attr)
+  Unripe Righthand attr -> printf "%s is void on the right and attached on the left" (printAttribute attr)
   where
     handed :: Side -> String
     handed Lefthand = "left"
@@ -144,6 +146,7 @@ data Evaluation
   | EvMorphed Int Expression
   | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
+  | EvUnripe Int (Expression, Expression) (Expression, Expression) Side Attribute
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int Expression
   | EvWorld Expression
@@ -207,6 +210,7 @@ tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
 tier (EvJoined depth _ _ _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
+tier (EvUnripe depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
 tier (EvTaken depth _) = depth
 tier EvWorld{} = maxBound
@@ -462,6 +466,10 @@ saveEval handle cursor printed printed' report = do
       one <- sided protocol left
       two <- sided protocol right
       pure (protocol, Just (indented at (printf "diverged %s vs %s  # %s" one two (explained path refusal))))
+    written at (EvUnripe _ left right side attr) protocol = do
+      one <- sided protocol left
+      two <- sided protocol right
+      pure (protocol, Just (indented at (printf "unripe %s vs %s  # %s" one two (refused (Unripe side attr)))))
     written at (EvFabricated _ left right term) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -722,6 +730,11 @@ saveEvalXml handle cursor printed report = do
         one <- sided depth nesting left
         two <- sided depth nesting right
         pure (printf "<diverged left=\"%s\" right=\"%s\"%s reason=\"%s\"/>" (escapeXML one) (escapeXML two) (if null path then "" else printf " at=\"%s\"" (escapeXML (dotted path)) :: String) (escapeXML (refused refusal)))
+    elements at (EvUnripe depth left right _ attr) nesting =
+      placed at nesting $ do
+        one <- sided depth nesting left
+        two <- sided depth nesting right
+        pure (printf "<unripe left=\"%s\" right=\"%s\" at=\"%s\"/>" (escapeXML one) (escapeXML two) (escapeXML (printAttribute attr)))
     elements at (EvFabricated depth left right term) nesting =
       placed at nesting $ do
         one <- sided depth nesting left

@@ -338,8 +338,8 @@ A protocol may hold these lines:
 * `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.
-* `joined …`, `fabricated …` and `diverged …` are what a `join` made of its
-  two sides, or why it could not join them.
+* `joined …`, `fabricated …`, `diverged …` and `unripe …` are what a `join`
+  made of its two sides, or why it could not join them.
 * `deferred …` and `symbolized …` are the symbols a `defer` or a `symbolize`
   line minted.
 * `cast …` binds a meta to the copy a `cast` block made of a bare symbol, and
