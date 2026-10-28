@@ -29,7 +29,7 @@ import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
 import Control.Monad (guard, when)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, put)
-import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
+import Data.Char (isAsciiLower, isAsciiUpper, isControl, isDigit, isSpace)
 import Data.Scientific (scientific, toRealFloat)
 import qualified Data.Set as Set
 import qualified Data.Text as T
@@ -118,8 +118,11 @@ twofold ascii' unicode' = get >>= spelled
 label' :: Parser T.Text
 label' = lexeme $ do
   first <- oneOf ['a' .. 'z']
-  rest <- many (choice [try (char '-' <* notFollowedBy (char '>')), satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦-↦⤍>\"ξΦ⊥")] <?> "allowed character")
+  rest <- many (choice [try (char '-' <* notFollowedBy (char '>')), satisfy allowed] <?> "allowed character")
   return (T.pack (first : rest))
+  where
+    allowed :: Char -> Bool
+    allowed ch = ch `notElem` ",.|':;!?][}{)(⟧⟦-↦⤍>\"ξΦ⊥" && not (isSpace ch) && not (isControl ch)
 
 function :: Parser String
 function =
