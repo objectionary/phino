@@ -374,9 +374,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (two, state''') <- reached ctx bound right state''
       spent <- readIORef ctx._minted
       case joined one two spent of
-        Right (term, made, spent') -> do
+        Right (term, made, bottom, spent') -> do
           writeIORef ctx._minted spent'
-          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair)) made
+          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair bottom)) made
           ctx._saveEval (EvTaken ctx._nesting term)
           pure (Joined term, state''')
         Left path -> case maybe (Left Unnamed) (\name -> forked name condition one two) fallback of
