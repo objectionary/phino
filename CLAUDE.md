@@ -181,7 +181,9 @@ markup binds it as any other. A
 rule file and read as `Rule` of `Yaml.hs`, and binds its meta to that term
 with the rules applied (`rewritten` of `Lambdas.hs`, #2005): every position
 is tried, the outermost first, the first rule matching it rewrites it, what
-a rule made is not walked into again, and nothing is normalized. A rule
+a rule made is not walked into again, and nothing is normalized. A position
+no rule changed is handed back as the very term it was, so a term sharing its
+parts, as the formation a join fabricates does, stays shared (#2196). A rule
 writing a symbol such as `𝜎4` into its result is refused, and a line that
 changed its term writes `# rewrite(𝑛1)` (`EvReshaped`) as `stay` does. An
 operand of `morph` naming a meta alone, such as `𝑛4: 𝑛3`, is a line too
@@ -476,8 +478,11 @@ state it started from and would refund the firings made inside it (#1472).
 by `charged` at every firing, since a run may spend its time rewriting terms
 that fire nothing (#1619), and by `enter` while it compares formations, since
 under `plausible` one comparison by `within` may outlast the whole run, so a
-timer cuts that comparison where it stands (#1622). The first step, firing or
-comparison after the deadline writes `timeout …` (`EvTimeout`) and throws
+timer cuts that comparison where it stands (#1622). The same timer
+(`awaited` of `Morph.hs`) cuts the walk of a `rewrite` line, which takes no
+step either (#2196). It wraps no work that steps or writes a record, so the
+clock of the steps keeps the place of the timeout. The first step, firing,
+comparison or walk after the deadline writes `timeout …` (`EvTimeout`) and throws
 `OutOfTime`, which no frame parks, so the run fails with or without
 `--partial` and a caller that cannot wait gets a closed protocol ending in the
 timeout instead of killing the process (#1607).

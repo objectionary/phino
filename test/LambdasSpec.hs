@@ -7,7 +7,7 @@
 module LambdasSpec (spec) where
 
 import AST
-import Control.Exception (SomeException)
+import Control.Exception (SomeException, evaluate)
 import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
@@ -16,6 +16,7 @@ import Functions (buildTerm)
 import Lambdas (Ending (..), Lambda (..), Lambdas, Line (..), Meta (..), cast, emptyLambdas, matched, minted, readLambdas, rewritten, stayed, symbolized, taken)
 import Parser (parseExpressionThrows)
 import Rule (RuleContext (..), normal)
+import System.Mem.StableName (makeStableName)
 import Test.Hspec
 import Yaml qualified as Y
 
@@ -633,6 +634,12 @@ spec = do
       term <- parseExpressionThrows "Φ.false( α0 ↦ ⟦ Δ ⤍ 2E- ⟧ )"
       made <- rewrote [("Φ.true", "Φ.vw")] "Φ.false( α0 ↦ ⟦ Δ ⤍ 2E- ⟧ )"
       made `shouldBe` term
+
+    it "hands back the very term no rule matches, so a shared term stays shared" $ do
+      term <- evaluate (iterate (\half -> ExFormation [BiTau (AtLabel "lo") half, BiTau (AtLabel "hi") half]) (ExFormation []) !! 9)
+      rule <- (\from to -> Y.Rule "kq" Nothing Nothing from to Nothing Nothing Nothing) <$> parseExpressionThrows "Φ.true" <*> parseExpressionThrows "Φ.vw"
+      made <- rewritten (RuleContext buildTerm Nothing normal) [rule] term >>= evaluate
+      (==) <$> makeStableName made <*> makeStableName term `shouldReturn` True
 
   describe "symbolized" $ do
     it "turns the datum of a formation into a fresh symbol" $ do

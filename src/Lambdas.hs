@@ -29,6 +29,7 @@ where
 import AST
 import Builder (buildExpressionThrows)
 import Control.Exception (Exception, throwIO)
+import Control.Monad ((<$!>))
 import Control.Monad.Trans.State.Strict (State, runState, state)
 import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:?))
 import qualified Data.Aeson.Key as Key
@@ -458,7 +459,11 @@ rewritten :: RuleContext -> [Y.Rule] -> Expression -> IO Expression
 rewritten ctx rules = goExpr
   where
     goExpr :: Expression -> IO Expression
-    goExpr expr = goRules expr rules
+    goExpr expr = kept expr <$!> goRules expr rules
+    kept :: Expression -> Expression -> Expression
+    kept expr made
+      | made == expr = expr
+      | otherwise = made
     goRules :: Expression -> [Y.Rule] -> IO Expression
     goRules expr [] = goInside expr
     goRules expr (rule : rest) = do
