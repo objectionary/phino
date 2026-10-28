@@ -259,7 +259,18 @@ It takes every option of `dataize`.
 ### Acyclic morphing
 
 `phino` stops no recursion by itself, so a run that never ends fails once
-`--max-steps` runs out.
+`--max-steps` runs out:
+
+```bash
+$ cat loop.yaml
+- λ: L_loop
+  𝑛: ⟦ λ ⤍ L_loop ⟧
+$ cat loop.phi
+⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧
+$ phino morph --symbolic=loop.yaml --locator='Q.x' --max-steps=40 loop.phi
+[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40
+```
+
 The `--acyclic=<mode>` option makes the run notice a loop instead.
 When a reduction is about to enter a formation it is already inside, the run
 stops there and leaves the term in place, as `--partial` does.
