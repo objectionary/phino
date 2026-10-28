@@ -5,7 +5,8 @@
 
 module Forks (Refusal (..), Side (..), forked, joined) where
 
-import AST (Argument (..), Attribute (AtDelta, AtLabel, AtLambda, AtRho), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet, ExXi), Function (FnSymbol), attributeFromBinding)
+import AST (Argument (..), Attribute (AtDelta, AtLabel, AtLambda, AtRho), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet, ExTermination, ExXi), Function (FnSymbol), attributeFromBinding, symbols)
+import Control.Monad.Trans.State.Strict (State, runState, state)
 import Data.Bifunctor (bimap, first)
 import Data.List (nub)
 import Data.Map.Strict (Map)
@@ -14,7 +15,7 @@ import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 
-type Joining = (Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+type Joining = (Int, Map (Maybe Int, Maybe Int) Int, [(Int, (Maybe Int, Maybe Int))])
 
 data Side = Lefthand | Righthand
   deriving (Eq, Show)
@@ -25,7 +26,7 @@ data Refusal
   | Holding Side Attribute
   deriving (Eq, Show)
 
-joined :: Expression -> Expression -> Int -> Either [Attribute] (Expression, [(Int, (Int, Int))], Int)
+joined :: Expression -> Expression -> Int -> Either [Attribute] (Expression, [(Int, (Maybe Int, Maybe Int))], Int)
 joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, spent')) <$> goExpr left right (spent, Map.empty, [])
   where
     goExpr :: Expression -> Expression -> Joining -> Either [Attribute] (Expression, Joining)
@@ -39,12 +40,15 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
       | prefix == prefix' && idx == idx' = within (first (ExPhiMeet prefix idx) <$> goExpr one two joining)
     goExpr (ExPhiAgain prefix idx one) (ExPhiAgain prefix' idx' two) joining
       | prefix == prefix' && idx == idx' = within (first (ExPhiAgain prefix idx) <$> goExpr one two joining)
+    goExpr ExTermination ExTermination joining = Right (ExTermination, joining)
+    goExpr ExTermination two joining = faced (\idx -> (Nothing, Just idx)) two joining
+    goExpr one ExTermination joining = faced (\idx -> (Just idx, Nothing)) one joining
     goExpr one two joining = same one two joining
     goBinding :: Binding -> Binding -> Joining -> Either [Attribute] (Binding, Joining)
     goBinding (BiTau attr one) (BiTau attr' two) joining
       | attr == attr' = bimap (attr :) (first (BiTau attr)) (goExpr one two joining)
     goBinding (BiLambda (FnSymbol one)) (BiLambda (FnSymbol two)) joining
-      | one /= two = Right (first (BiLambda . FnSymbol) (picked (one, two) joining))
+      | one /= two = Right (first (BiLambda . FnSymbol) (picked (Just one, Just two) joining))
     goBinding one two joining = first (const (maybe [] pure (attributeFromBinding one))) (same one two joining)
     goArgument :: Argument -> Argument -> Joining -> Either [Attribute] (Argument, Joining)
     goArgument (ArTau attr one) (ArTau attr' two) joining
@@ -67,7 +71,26 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
     same one two joining
       | one == two = Right (one, joining)
       | otherwise = Left []
-    picked :: (Int, Int) -> Joining -> (Int, Joining)
+    faced :: (Int -> (Maybe Int, Maybe Int)) -> Expression -> Joining -> Either [Attribute] (Expression, Joining)
+    faced pair side joining
+      | null (symbols side) = Left []
+      | otherwise = Right (runState (goFaced side) joining)
+      where
+        goFaced :: Expression -> State Joining Expression
+        goFaced (ExFormation bds) = ExFormation <$> mapM goFacedBinding bds
+        goFaced (ExApplication expr arg) = ExApplication <$> goFaced expr <*> goFacedArgument arg
+        goFaced (ExDispatch expr attr) = (`ExDispatch` attr) <$> goFaced expr
+        goFaced (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goFaced expr
+        goFaced (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goFaced expr
+        goFaced expr = pure expr
+        goFacedBinding :: Binding -> State Joining Binding
+        goFacedBinding (BiTau attr expr) = BiTau attr <$> goFaced expr
+        goFacedBinding (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> state (picked (pair idx))
+        goFacedBinding bd = pure bd
+        goFacedArgument :: Argument -> State Joining Argument
+        goFacedArgument (ArTau attr expr) = ArTau attr <$> goFaced expr
+        goFacedArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goFaced expr
+    picked :: (Maybe Int, Maybe Int) -> Joining -> (Int, Joining)
     picked pair joining@(spent', names, made) = case Map.lookup pair names of
       Just name -> (name, joining)
       Nothing -> (succ spent', (succ spent', Map.insert pair (succ spent') names, (succ spent', pair) : made))

@@ -142,7 +142,7 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvMorphed Int Expression
-  | EvJoined Int (Either T.Text Expression) Int (Int, Int)
+  | EvJoined Int (Either T.Text Expression) Int (Maybe Int, Maybe Int)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int Expression
@@ -456,7 +456,9 @@ saveEval handle cursor printed printed' report = do
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "morphed %s := %s" naming value)))
     written at (EvJoined _ condition symbol (left, right)) protocol = do
       on <- either (pure . labelled protocol) salted condition
-      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right)))))
+      one <- branched left
+      two <- branched right
+      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on one two)))
     written at (EvDiverged _ left right path refusal) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -489,6 +491,8 @@ saveEval handle cursor printed printed' report = do
         amount :: Int -> String -> String -> String
         amount 1 one _ = "1 " ++ one
         amount many _ several = show many ++ " " ++ several
+    branched :: Maybe Int -> IO String
+    branched = maybe (render ExTermination) (pure . printFunction . FnSymbol)
     spelt :: Either Int Bytes -> IO String
     spelt (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
     spelt (Right bytes) = render (ExBytes bytes)
@@ -715,7 +719,9 @@ saveEvalXml handle cursor printed report = do
     elements at (EvJoined _ condition symbol (left, right)) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
-        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right))
+        one <- lift (branched left)
+        two <- lift (branched right)
+        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML on) (escapeXML one) (escapeXML two))
     elements at (EvDiverged depth left right path refusal) nesting =
       placed at nesting $ do
         one <- sided depth nesting left
@@ -906,6 +912,8 @@ saveEvalXml handle cursor printed report = do
     symbolic (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds] >>= symbolic
     symbolic (ExApplication _ (ArTau AtPhi body)) = symbolic body
     symbolic _ = Nothing
+    branched :: Maybe Int -> IO String
+    branched = spelled . maybe ExTermination (ExFormation . pure . BiLambda . FnSymbol)
     spelled :: Expression -> IO String
     spelled (ExFormation [BiLambda (FnSymbol idx)]) = pure (sigma idx)
     spelled (ExFormation [BiDelta bytes]) = printed (ExBytes bytes)
