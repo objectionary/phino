@@ -19,7 +19,7 @@ import Data.Either (lefts, rights)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.List (intercalate, sortOn)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
+import Data.Maybe (fromMaybe, listToMaybe, mapMaybe, maybeToList)
 import qualified Data.Text as T
 import Data.Time (ZonedTime, defaultTimeLocale, formatTime)
 import Files (overwrite)
@@ -27,7 +27,7 @@ import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
 import Logger (logDebug, logInfo)
 import Matcher
-import Printer (printAlpha, printAttribute, printFunction)
+import Printer (printAlpha, printAttribute, printBinding, printFunction)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
 import System.IO (Handle, hPutStrLn)
@@ -106,6 +106,8 @@ refused :: Refusal -> String
 refused refusal = case refusal of
   Unnamed -> "the join names no otherwise"
   Unformed side -> printf "the %s side is no formation" (handed side)
+  Holding side AtLambda -> printf "the %s side is an atom" (handed side)
+  Holding side AtDelta -> printf "the %s side is a datum" (handed side)
   Holding side attr -> printf "the %s side has %s" (handed side) (printAttribute attr)
   Unripe Lefthand attr -> printf "%s is void on the left and attached on the right" (printAttribute attr)
   Unripe Righthand attr -> printf "%s is void on the right and attached on the left" (printAttribute attr)
@@ -116,6 +118,11 @@ refused refusal = case refusal of
 
 dotted :: [Attribute] -> String
 dotted = concatMap (('.' :) . printAttribute)
+
+lodged :: [Attribute] -> Expression -> Maybe Binding
+lodged [attr] (ExFormation bds) = listToMaybe [bd | bd <- bds, attributeFromBinding bd == Just attr]
+lodged (attr : path) (ExFormation bds) = listToMaybe [inner | BiTau attr' inner <- bds, attr' == attr] >>= lodged path
+lodged _ _ = Nothing
 
 data Evaluation
   = EvRun Judgment T.Text
@@ -465,7 +472,8 @@ saveEval handle cursor printed printed' report = do
     written at (EvDiverged _ left right path refusal) protocol = do
       one <- sided protocol left
       two <- sided protocol right
-      pure (protocol, Just (indented at (printf "diverged %s vs %s  # %s" one two (explained path refusal))))
+      differed <- explained protocol path (snd left) (snd right)
+      pure (protocol, Just (indented at (printf "diverged %s vs %s  # cannot join: %s; cannot fabricate: %s" one two differed (refused refusal))))
     written at (EvUnripe _ left right side attr) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -511,9 +519,19 @@ saveEval handle cursor printed printed' report = do
     borrowed protocol term = case namedLookup term protocol._named of
       Nothing -> render term
       Just naming -> pure (T.unpack naming)
-    explained :: [Attribute] -> Refusal -> String
-    explained [] refusal = refused refusal
-    explained path refusal = printf "they differ at %s, and %s" (dotted path) (refused refusal)
+    explained :: Protocol -> [Attribute] -> Expression -> Expression -> IO String
+    explained protocol path one two = case reverse path of
+      [] -> printf "the left side is %s and the right side is %s" <$> borrowed protocol one <*> borrowed protocol two
+      attr : _ -> printf "at %s the left side %s and the right side %s" (dotted path) <$> had one <*> had two
+        where
+          had :: Expression -> IO String
+          had side = maybe (pure (printf "has no %s" (printAttribute attr))) (fmap ("has " ++) . bound) (lodged path side)
+          bound :: Binding -> IO String
+          bound (BiTau attr' term) = printf "%s ↦ %s" (printAttribute attr') <$> borrowed protocol term
+          bound (BiVoid attr') = pure (printf "%s ↦ ∅" (printAttribute attr'))
+          bound (BiDelta bytes) = printf "Δ ⤍ %s" <$> render (ExBytes bytes)
+          bound (BiLambda func) = pure (printf "λ ⤍ %s" (printFunction func))
+          bound bd = pure (printBinding bd)
     sided :: Protocol -> (Expression, Expression) -> IO String
     sided _ (_, term@(ExFormation [BiLambda (FnSymbol _)])) = render term
     sided protocol (side@(ExMeta _), _) = spoken protocol side
@@ -729,7 +747,8 @@ saveEvalXml handle cursor printed report = do
       placed at nesting $ do
         one <- sided depth nesting left
         two <- sided depth nesting right
-        pure (printf "<diverged left=\"%s\" right=\"%s\"%s reason=\"%s\"/>" (escapeXML one) (escapeXML two) (if null path then "" else printf " at=\"%s\"" (escapeXML (dotted path)) :: String) (escapeXML (refused refusal)))
+        places <- mapM (uncurry (lodging depth path)) [("left", snd left), ("right", snd right)]
+        pure (printf "<diverged left=\"%s\" right=\"%s\"%s reason=\"%s\">%s</diverged>" (escapeXML one) (escapeXML two) (if null path then "" else printf " at=\"%s\"" (escapeXML (dotted path)) :: String) (escapeXML (refused refusal)) (concat places))
     elements at (EvUnripe depth left right _ attr) nesting =
       placed at nesting $ do
         one <- sided depth nesting left
@@ -857,9 +876,19 @@ saveEvalXml handle cursor printed report = do
     anonymous :: Int -> [Binding] -> Naming (String -> String)
     anonymous depth bds = do
       parts <- mapM (part depth) bds
-      let marks = concat (lefts parts)
-          inner = concat (rights parts)
-      pure (\naming -> if null inner then printf "<formed meta=\"%s\"%s/>" naming marks else printf "<formed meta=\"%s\"%s>%s</formed>" naming marks inner)
+      pure (\naming -> gathered "formed" (printf "formed meta=\"%s\"" naming) parts)
+    lodging :: Int -> [Attribute] -> String -> Expression -> Naming String
+    lodging depth [] tag side = (\body -> printf "<%s>%s</%s>" tag (escapeXMLText body) tag) <$> leaf depth side
+    lodging depth path tag side = gathered tag tag <$> mapM (part depth) (maybeToList (lodged path side))
+    gathered :: String -> String -> [Either String String] -> String
+    gathered tag opening parts
+      | null inner = printf "<%s%s/>" opening marks
+      | otherwise = printf "<%s%s>%s</%s>" opening marks inner tag
+      where
+        marks :: String
+        marks = concat (lefts parts)
+        inner :: String
+        inner = concat (rights parts)
     part :: Int -> Binding -> Naming (Either String String)
     part depth (BiTau attr value) = Right <$> (titled depth value >>= lift . attributed (printAttribute attr))
     part _ (BiVoid attr) = pure (Right (printf "<void attr=\"%s\"/>" (escapeXML (printAttribute attr))))

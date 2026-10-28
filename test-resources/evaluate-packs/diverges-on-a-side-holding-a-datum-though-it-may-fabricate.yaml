@@ -28,4 +28,4 @@ protocol: |
         morphed 𝑛·1·1 := 01-:Δ
       𝕄(ξ.b):
         morphed 𝑛·1·2 := Φ.zu:φ
-      diverged 01-:Δ vs 𝑛·1·2  # they differ at .Δ, and the left side has Δ
+      diverged 01-:Δ vs 𝑛·1·2  # cannot join: at .Δ the left side has Δ ⤍ 01- and the right side has no Δ; cannot fabricate: the left side is a datum

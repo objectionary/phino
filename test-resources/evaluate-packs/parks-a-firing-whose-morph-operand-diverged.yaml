@@ -40,5 +40,5 @@ protocol: |
           𝕄(ξ.b):
             morphed 𝑛·2·2 := 02-:Δ
           𝑛2·2 := 02-:Δ  # 𝕄(ξ.b)
-          diverged 𝑛1·2 vs 𝑛2·2  # they differ at .Δ, and the join names no otherwise
+          diverged 𝑛1·2 vs 𝑛2·2  # cannot join: at .Δ the left side has Δ ⤍ 01- and the right side has Δ ⤍ 02-; cannot fabricate: the join names no otherwise
       stuck L_fork
