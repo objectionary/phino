@@ -140,6 +140,11 @@ spec = do
 
       forM_
         [ ("merges sibling children of one parent into a single binding", "[[ a -> [[ x -> Q, y -> Q ]], b -> Q ]]", ["Q.a.x", "Q.a.y"], "[[ a -> [[ x -> Q, y -> Q ]] ]]")
+        , ("keeps an explicitly selected bound rho", "[[ ^ -> Q, a -> Q ]]", ["Q.^"], "[[ ^ -> Q ]]")
+        , ("keeps an explicitly selected nested rho", "[[ a -> [[ ^ -> Q, x -> Q ]] ]]", ["Q.a.^"], "[[ a -> [[ ^ -> Q ]] ]]")
+        , ("follows a rho formation to a selected child", "[[ ^ -> [[ x -> Q, y -> Q ]], a -> Q ]]", ["Q.^.x"], "[[ ^ -> [[ x -> Q ]] ]]")
+        , ("keeps rho when merging selected sibling children", "[[ a -> [[ ^ -> Q, x -> Q, y -> Q ]] ]]", ["Q.a.^", "Q.a.x"], "[[ a -> [[ ^ -> Q, x -> Q ]] ]]")
+        , ("does not select an unrelated rho", "[[ ^ -> Q, a -> Q ]]", ["Q.a"], "[[ a -> Q ]]")
         , ("merges siblings at several depths", "[[ a -> [[ c -> [[ x -> ?, y -> ? ]], d -> ? ]], b -> ? ]]", ["Q.a.c.x", "Q.a.d", "Q.a.c.y"], "[[ a -> [[ c -> [[ x -> ?, y -> ? ]], d -> ? ]] ]]")
         , ("keeps a single nested child alone", "[[ a -> [[ x -> Q, y -> Q ]], b -> Q ]]", ["Q.a.x"], "[[ a -> [[ x -> Q ]] ]]")
         , ("keeps distinct top-level attributes", "[[ a -> [[ x -> Q ]], b -> Q ]]", ["Q.a", "Q.b"], "[[ a -> [[ x -> Q ]], b -> Q ]]")
