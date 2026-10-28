@@ -19,7 +19,7 @@ import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Forks (Refusal (Unnamed), forked, joined)
+import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), awaited, boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
@@ -383,6 +383,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           Right term -> do
             ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) term)
             pure (Joined term, state''')
+          Left (Unripe side attr) -> do
+            ctx._saveEval (EvUnripe ctx._nesting (left, one) (right, two) side attr)
+            throwIO (Diverged func)
           Left refusal -> do
             ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two) path refusal)
             throwIO (Diverged func)

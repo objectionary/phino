@@ -25,6 +25,7 @@ data Refusal
   = Unnamed
   | Unformed Side
   | Holding Side Attribute
+  | Unripe Side Attribute
   deriving (Eq, Show)
 
 joined :: Expression -> Expression -> Int -> Either [Attribute] (Expression, [(Int, (Int, Int))], Maybe Int, Int)
@@ -98,7 +99,10 @@ joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse 
       Nothing -> (succ spent', (succ spent', bottom, Map.insert pair (succ spent') names, (succ spent', pair) : made))
 
 forked :: Function -> Either Int Bytes -> Expression -> Expression -> Either Refusal Expression
-forked func condition left right = fabricated <$> formed Lefthand left <*> formed Righthand right
+forked func condition left right = do
+  one <- formed Lefthand left
+  two <- formed Righthand right
+  maybe (Right (fabricated one two)) Left (listToMaybe (unripe Lefthand one two ++ unripe Righthand two one))
   where
     formed :: Side -> Expression -> Either Refusal [Binding]
     formed side (ExFormation bds) = maybe (Right bds) (Left . Holding side) (listToMaybe [attr | Just attr <- map attributeFromBinding bds, attr == AtDelta || attr == AtLambda])
@@ -114,6 +118,8 @@ forked func condition left right = fabricated <$> formed Lefthand left <*> forme
         inner attr = nub (concat (mapMaybe (`held` attr) [one, two]))
         ask :: Text -> [Binding] -> Attribute -> Binding
         ask name bds attr = BiTau (AtLabel name) (applied (ExDispatch (ExDispatch (ExDispatch ExXi AtRho) (AtLabel name)) attr) (fromMaybe (inner attr) (held bds attr)))
+    unripe :: Side -> [Binding] -> [Binding] -> [Refusal]
+    unripe side bds others = [Unripe side attr | attr <- vacant bds, attr `elem` [label | BiTau label _ <- others]]
     vacant :: [Binding] -> [Attribute]
     vacant bds = [attr | BiVoid attr <- bds, own attr]
     attributes :: [Binding] -> [Attribute]

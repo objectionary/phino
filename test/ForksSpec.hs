@@ -96,9 +96,15 @@ spec = do
     it "keeps one void for an attribute both sides leave void" $ do
       expected <- parseExpressionThrows "⟦ dk ↦ ∅, left🌵 ↦ ⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧( dk ↦ ξ.dk ), right🌵 ↦ ⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧( dk ↦ ξ.dk ), φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vb, on🌵 ↦ ⟦ Δ ⤍ 3E- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_vb" (Right (BtOne "3E")) "⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧" "⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧" >>= (`shouldBe` Right expected)
-    it "takes as its own void an attribute one side leaves void and the other binds" $ do
-      expected <- parseExpressionThrows "⟦ ws ↦ ∅, left🌵 ↦ ⟦ ws ↦ ∅ ⟧( ws ↦ ξ.ws ), right🌵 ↦ ⟦ ws ↦ Φ.ug ⟧ ⟧"
-      fork "L_oh" (Right (BtOne "52")) "⟦ ws ↦ ∅ ⟧" "⟦ ws ↦ Φ.ug ⟧" >>= (`shouldBe` Right expected)
+    it "tells that the left side leaves void an attribute the right side binds" $
+      fork "L_oh" (Right (BtOne "52")) "⟦ ws ↦ ∅ ⟧" "⟦ ws ↦ Φ.ug ⟧" >>= (`shouldBe` Left (Unripe Lefthand (AtLabel "ws")))
+    it "tells that the right side leaves void an attribute the left side binds" $
+      fork "L_yk" (Left 17) "⟦ φ ↦ Φ.di, ob ↦ ⟦ ⟧ ⟧" "⟦ ob ↦ ∅, φ ↦ Φ.ru( ξ.ob ) ⟧" >>= (`shouldBe` Left (Unripe Righthand (AtLabel "ob")))
+    it "tells about a void of the left side before a void of the right side" $
+      fork "L_ze" (Right (BtOne "6A")) "⟦ ma ↦ Φ.pi, iv ↦ ∅ ⟧" "⟦ ma ↦ ∅, iv ↦ Φ.go ⟧" >>= (`shouldBe` Left (Unripe Lefthand (AtLabel "iv")))
+    it "fabricates a formation of a side leaving its ρ void and a side binding it" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ρ ↦ ∅, φ ↦ Φ.ah ⟧, right🌵 ↦ ⟦ ρ ↦ Φ.nu, φ ↦ Φ.ek ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_sa, on🌵 ↦ ⟦ Δ ⤍ 0D- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
+      fork "L_sa" (Right (BtOne "0D")) "⟦ ρ ↦ ∅, φ ↦ Φ.ah ⟧" "⟦ ρ ↦ Φ.nu, φ ↦ Φ.ek ⟧" >>= (`shouldBe` Right expected)
     it "skips an attribute of a side whose name ends with the 🌵 mark" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ left🌵 ↦ Φ.ub, rq🌵 ↦ ∅, φ ↦ Φ.ar ⟧, right🌵 ↦ ⟦ φ ↦ Φ.se ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_hn, on🌵 ↦ ⟦ Δ ⤍ 19- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_hn" (Right (BtOne "19")) "⟦ left🌵 ↦ Φ.ub, rq🌵 ↦ ∅, φ ↦ Φ.ar ⟧" "⟦ φ ↦ Φ.se ⟧" >>= (`shouldBe` Right expected)

@@ -291,7 +291,14 @@ path of attributes through the formations both sides share down to the first
 one they bind differently, cut short at an application or a dispatch, and
 `forked` answers a `Refusal`, `Unformed` or `Holding` a Δ or a λ, the left
 side first, while `merged` of `Evaluate.hs` hands over `Unnamed` for a block
-with no `otherwise`. The firing then throws `Diverged`, which the
+with no `otherwise`. `forked` answers `Unripe` too, the left side first, where
+one side leaves void an attribute the other one binds, since that side is
+applied further and a formation leaving the attribute void would hand a void
+to whoever takes it there; the firing writes it as
+`unripe 𝑛1·2 vs 𝑛2·2  # k is void on the left and attached on the right`
+(`EvUnripe`) in place of `diverged`, and the markup as
+`<unripe left="𝑛·2·1" right="𝑛·2·2" at="k"/>` (#2202). The firing then
+throws `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around
 it write `stuck` as for a λ function no entry answers. A side or an operand
 whose morph throws fails the firing with what it threw, so a run never
@@ -463,9 +470,9 @@ opened, carrying the formation its ancestor entered (#1434) and naming the mode
 that cut it.
 Three records say why a firing gave no answer (#1524): `stuck …` closes a
 firing that got stuck, other than a join that could not join, which
-`diverged …` closes, `stall …` stands under one the memo answered with a
-kept stall, and `starved …` is written by `deeper` where the step budget runs
-out, with the site it stood at rather than its term (#1531).
+`diverged …` or `unripe …` closes, `stall …` stands under one the memo
+answered with a kept stall, and `starved …` is written by `deeper` where the
+step budget runs out, with the site it stood at rather than its term (#1531).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the
