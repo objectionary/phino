@@ -252,10 +252,11 @@ firing writes `joined …` (`EvJoined`) per fresh symbol, naming a condition rea
 off a path by that path, as `ξ.on🌵`, and answers the joined term (`Joined`
 of `Answer`, written by `EvTaken`) with no decision (#1954).
 Where one side is ⊥ and the other holds a symbol, `joined` keeps the shape of
-the other side and mints a fresh symbol per symbol it holds, paired with ⊥, so
-the firing writes `joined 𝜎3 := 𝛿1·1 ? 𝜎2 : ⊥` and the markup `right="⊥"`, the
-side that raises (#2195); a side holding no symbol has nothing to stand for ⊥
-and does not join.
+the other side, mints one symbol to stand for ⊥ and a fresh symbol per symbol
+the other side holds, paired with it, so the firing writes
+`joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥` and the markup `right="⊥"`,
+the side that raises (#2195); a side holding no symbol has nothing to stand
+for ⊥ and does not join.
 Two formations of other shapes, neither holding a datum nor a λ (#2041), are
 joined attribute by attribute when the block names a λ function under
 `otherwise` (#2024):

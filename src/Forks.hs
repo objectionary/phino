@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -15,7 +16,7 @@ import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 
-type Joining = (Int, Map (Maybe Int, Maybe Int) Int, [(Int, (Maybe Int, Maybe Int))])
+type Joining = (Int, Maybe Int, Map (Int, Int) Int, [(Int, (Int, Int))])
 
 data Side = Lefthand | Righthand
   deriving (Eq, Show)
@@ -26,8 +27,8 @@ data Refusal
   | Holding Side Attribute
   deriving (Eq, Show)
 
-joined :: Expression -> Expression -> Int -> Either [Attribute] (Expression, [(Int, (Maybe Int, Maybe Int))], Int)
-joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, spent')) <$> goExpr left right (spent, Map.empty, [])
+joined :: Expression -> Expression -> Int -> Either [Attribute] (Expression, [(Int, (Int, Int))], Maybe Int, Int)
+joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse made, bottom, spent')) <$> goExpr left right (spent, Nothing, Map.empty, [])
   where
     goExpr :: Expression -> Expression -> Joining -> Either [Attribute] (Expression, Joining)
     goExpr (ExFormation one) (ExFormation two) joining = first ExFormation <$> goBindings one two joining
@@ -41,14 +42,14 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
     goExpr (ExPhiAgain prefix idx one) (ExPhiAgain prefix' idx' two) joining
       | prefix == prefix' && idx == idx' = within (first (ExPhiAgain prefix idx) <$> goExpr one two joining)
     goExpr ExTermination ExTermination joining = Right (ExTermination, joining)
-    goExpr ExTermination two joining = faced (\idx -> (Nothing, Just idx)) two joining
-    goExpr one ExTermination joining = faced (\idx -> (Just idx, Nothing)) one joining
+    goExpr ExTermination two joining = faced (,) two joining
+    goExpr one ExTermination joining = faced (flip (,)) one joining
     goExpr one two joining = same one two joining
     goBinding :: Binding -> Binding -> Joining -> Either [Attribute] (Binding, Joining)
     goBinding (BiTau attr one) (BiTau attr' two) joining
       | attr == attr' = bimap (attr :) (first (BiTau attr)) (goExpr one two joining)
     goBinding (BiLambda (FnSymbol one)) (BiLambda (FnSymbol two)) joining
-      | one /= two = Right (first (BiLambda . FnSymbol) (picked (Just one, Just two) joining))
+      | one /= two = Right (first (BiLambda . FnSymbol) (picked (one, two) joining))
     goBinding one two joining = first (const (maybe [] pure (attributeFromBinding one))) (same one two joining)
     goArgument :: Argument -> Argument -> Joining -> Either [Attribute] (Argument, Joining)
     goArgument (ArTau attr one) (ArTau attr' two) joining
@@ -71,11 +72,12 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
     same one two joining
       | one == two = Right (one, joining)
       | otherwise = Left []
-    faced :: (Int -> (Maybe Int, Maybe Int)) -> Expression -> Joining -> Either [Attribute] (Expression, Joining)
-    faced pair side joining
+    faced :: (Int -> Int -> (Int, Int)) -> Expression -> Joining -> Either [Attribute] (Expression, Joining)
+    faced pair side joining@(spent', bottom, names, made)
       | null (symbols side) = Left []
-      | otherwise = Right (runState (goFaced side) joining)
+      | otherwise = Right (runState (goFaced side) joining')
       where
+        (termination, joining') = maybe (succ spent', (succ spent', Just (succ spent'), names, made)) (,joining) bottom
         goFaced :: Expression -> State Joining Expression
         goFaced (ExFormation bds) = ExFormation <$> mapM goFacedBinding bds
         goFaced (ExApplication expr arg) = ExApplication <$> goFaced expr <*> goFacedArgument arg
@@ -85,15 +87,15 @@ joined left right spent = (\(term, (spent', _, made)) -> (term, reverse made, sp
         goFaced expr = pure expr
         goFacedBinding :: Binding -> State Joining Binding
         goFacedBinding (BiTau attr expr) = BiTau attr <$> goFaced expr
-        goFacedBinding (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> state (picked (pair idx))
+        goFacedBinding (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> state (picked (pair termination idx))
         goFacedBinding bd = pure bd
         goFacedArgument :: Argument -> State Joining Argument
         goFacedArgument (ArTau attr expr) = ArTau attr <$> goFaced expr
         goFacedArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goFaced expr
-    picked :: (Maybe Int, Maybe Int) -> Joining -> (Int, Joining)
-    picked pair joining@(spent', names, made) = case Map.lookup pair names of
+    picked :: (Int, Int) -> Joining -> (Int, Joining)
+    picked pair joining@(spent', bottom, names, made) = case Map.lookup pair names of
       Just name -> (name, joining)
-      Nothing -> (succ spent', (succ spent', Map.insert pair (succ spent') names, (succ spent', pair) : made))
+      Nothing -> (succ spent', (succ spent', bottom, Map.insert pair (succ spent') names, (succ spent', pair) : made))
 
 forked :: Function -> Either Int Bytes -> Expression -> Expression -> Either Refusal Expression
 forked func condition left right = fabricated <$> formed Lefthand left <*> formed Righthand right

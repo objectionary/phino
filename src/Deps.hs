@@ -142,7 +142,7 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvMorphed Int Expression
-  | EvJoined Int (Either T.Text Expression) Int (Maybe Int, Maybe Int)
+  | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int Expression
@@ -205,7 +205,7 @@ tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
-tier (EvJoined depth _ _ _) = depth
+tier (EvJoined depth _ _ _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
 tier (EvTaken depth _) = depth
@@ -454,11 +454,10 @@ saveEval handle cursor printed printed' report = do
         (Nothing, Nothing) -> valued counted naming term
         _ -> (,) counted <$> borrowed protocol term
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "morphed %s := %s" naming value)))
-    written at (EvJoined _ condition symbol (left, right)) protocol = do
+    written at (EvJoined _ condition symbol (left, right) bottom) protocol = do
       on <- either (pure . labelled protocol) salted condition
-      one <- branched left
-      two <- branched right
-      pure (protocol, Just (indented at (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on one two)))
+      termination <- render ExTermination
+      pure (protocol, Just (indented at (remarked (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right))) [printf "where %s is %s" (printFunction (FnSymbol idx)) termination | Just idx <- [bottom], idx `elem` [left, right]])))
     written at (EvDiverged _ left right path refusal) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -491,8 +490,6 @@ saveEval handle cursor printed printed' report = do
         amount :: Int -> String -> String -> String
         amount 1 one _ = "1 " ++ one
         amount many _ several = show many ++ " " ++ several
-    branched :: Maybe Int -> IO String
-    branched = maybe (render ExTermination) (pure . printFunction . FnSymbol)
     spelt :: Either Int Bytes -> IO String
     spelt (Left symbol) = printf "𝔻(%s)" <$> render (standing symbol)
     spelt (Right bytes) = render (ExBytes bytes)
@@ -716,11 +713,11 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
     elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
-    elements at (EvJoined _ condition symbol (left, right)) nesting =
+    elements at (EvJoined _ condition symbol (left, right) bottom) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
-        one <- lift (branched left)
-        two <- lift (branched right)
+        one <- lift (branched bottom left)
+        two <- lift (branched bottom right)
         pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"/>" (sigma symbol) (escapeXML on) (escapeXML one) (escapeXML two))
     elements at (EvDiverged depth left right path refusal) nesting =
       placed at nesting $ do
@@ -912,8 +909,10 @@ saveEvalXml handle cursor printed report = do
     symbolic (ExFormation bds) = listToMaybe [body | BiTau AtPhi body <- bds] >>= symbolic
     symbolic (ExApplication _ (ArTau AtPhi body)) = symbolic body
     symbolic _ = Nothing
-    branched :: Maybe Int -> IO String
-    branched = spelled . maybe ExTermination (ExFormation . pure . BiLambda . FnSymbol)
+    branched :: Maybe Int -> Int -> IO String
+    branched bottom idx
+      | bottom == Just idx = spelled ExTermination
+      | otherwise = pure (sigma idx)
     spelled :: Expression -> IO String
     spelled (ExFormation [BiLambda (FnSymbol idx)]) = pure (sigma idx)
     spelled (ExFormation [BiDelta bytes]) = printed (ExBytes bytes)

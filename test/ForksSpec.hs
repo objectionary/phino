@@ -17,13 +17,13 @@ spec = do
     let application :: [Int] -> Expression
         application idxs = ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "x") (ExFormation (map (\idx -> BiTau (AtLabel "k") (ExFormation [BiLambda (FnSymbol idx)])) idxs)))
     it "joins two terms that differ in one symbol under a fresh symbol past the count" $
-      joined (application [3]) (application [8]) 11 `shouldBe` Right (application [12], [(12, (Just 3, Just 8))], 12)
+      joined (application [3]) (application [8]) 11 `shouldBe` Right (application [12], [(12, (3, 8))], Nothing, 12)
     it "names a pair of symbols met twice by one fresh symbol" $
-      joined (application [4, 4]) (application [9, 9]) 17 `shouldBe` Right (application [18, 18], [(18, (Just 4, Just 9))], 18)
+      joined (application [4, 4]) (application [9, 9]) 17 `shouldBe` Right (application [18, 18], [(18, (4, 9))], Nothing, 18)
     it "names two pairs sharing a symbol by two fresh symbols" $
-      joined (application [5, 5]) (application [6, 7]) 20 `shouldBe` Right (application [21, 22], [(21, (Just 5, Just 6)), (22, (Just 5, Just 7))], 22)
+      joined (application [5, 5]) (application [6, 7]) 20 `shouldBe` Right (application [21, 22], [(21, (5, 6)), (22, (5, 7))], Nothing, 22)
     it "mints nothing for two terms that are the same" $
-      joined (application [2, 6]) (application [2, 6]) 13 `shouldBe` Right (application [2, 6], [], 13)
+      joined (application [2, 6]) (application [2, 6]) 13 `shouldBe` Right (application [2, 6], [], Nothing, 13)
     it "tells the datum two formations differ in" $
       joined (ExFormation [BiDelta (BtOne "01"), BiLambda (FnSymbol 4)]) (ExFormation [BiDelta (BtOne "02"), BiLambda (FnSymbol 9)]) 10 `shouldBe` Left [AtDelta]
     it "tells the λ of two formations naming two functions" $
@@ -34,7 +34,7 @@ spec = do
       joined (ExDispatch (application [3]) (AtLabel "a")) (ExDispatch (application [8]) (AtLabel "b")) 9 `shouldBe` Left []
     it "tells no attribute inside an application whose arguments differ" $
       joined (application [3]) (application [3, 4]) 6 `shouldBe` Left []
-    let apart :: String -> String -> IO (Either [Attribute] (Expression, [(Int, (Maybe Int, Maybe Int))], Int))
+    let apart :: String -> String -> IO (Either [Attribute] (Expression, [(Int, (Int, Int))], Maybe Int, Int))
         apart left right = (\one two -> joined one two 41) <$> parseExpressionThrows left <*> parseExpressionThrows right
     it "tells every attribute down to the datum two formations differ in" $
       apart "⟦ φ ↦ ⟦ ko ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" "⟦ φ ↦ ⟦ ko ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧" >>= (`shouldBe` Left [AtPhi, AtLabel "ko", AtDelta])
@@ -52,21 +52,24 @@ spec = do
       apart "⟦ φ ↦ Φ.fe( ix ↦ ⟦ ke ↦ Φ.ab ⟧ ) ⟧" "⟦ φ ↦ Φ.fe( ix ↦ ⟦ ke ↦ Φ.yo ⟧ ) ⟧" >>= (`shouldBe` Left [AtPhi])
     it "tells no attribute of a dispatch and a formation" $
       apart "Φ.ab.cd" "⟦ φ ↦ Φ.ab ⟧" >>= (`shouldBe` Left [])
-    it "joins a symbol and ⊥ under a fresh symbol standing for the symbol or ⊥" $
-      joined (ExFormation [BiLambda (FnSymbol 2)]) ExTermination 5 `shouldBe` Right (ExFormation [BiLambda (FnSymbol 6)], [(6, (Just 2, Nothing))], 6)
-    it "joins ⊥ and a symbol with ⊥ on the left of the pair" $
-      joined ExTermination (ExFormation [BiLambda (FnSymbol 7)]) 9 `shouldBe` Right (ExFormation [BiLambda (FnSymbol 10)], [(10, (Nothing, Just 7))], 10)
+    it "joins a symbol and ⊥ under a fresh symbol, past another fresh one standing for ⊥" $
+      joined (ExFormation [BiLambda (FnSymbol 2)]) ExTermination 5 `shouldBe` Right (ExFormation [BiLambda (FnSymbol 7)], [(7, (2, 6))], Just 6, 7)
+    it "joins ⊥ and a symbol with the symbol standing for ⊥ on the left of the pair" $
+      joined ExTermination (ExFormation [BiLambda (FnSymbol 7)]) 9 `shouldBe` Right (ExFormation [BiLambda (FnSymbol 11)], [(11, (10, 7))], Just 10, 11)
     it "keeps the shape of the side facing ⊥ and joins the symbol it holds with ⊥" $ do
-      expected <- parseExpressionThrows "⟦ φ ↦ Φ.qo( φ ↦ ⟦ λ ⤍ 𝜎42 ⟧ ), ko ↦ Φ.ze ⟧"
-      apart "⟦ φ ↦ Φ.qo( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), ko ↦ Φ.ze ⟧" "⊥" >>= (`shouldBe` Right (expected, [(42, (Just 3, Nothing))], 42))
+      expected <- parseExpressionThrows "⟦ φ ↦ Φ.qo( φ ↦ ⟦ λ ⤍ 𝜎43 ⟧ ), ko ↦ Φ.ze ⟧"
+      apart "⟦ φ ↦ Φ.qo( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), ko ↦ Φ.ze ⟧" "⊥" >>= (`shouldBe` Right (expected, [(43, (3, 42))], Just 42, 43))
     it "names a symbol the side facing ⊥ holds twice by one fresh symbol" $ do
-      expected <- parseExpressionThrows "⟦ ub ↦ ⟦ λ ⤍ 𝜎42 ⟧, xe ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎42 ⟧ ⟧ ⟧"
-      apart "⊥" "⟦ ub ↦ ⟦ λ ⤍ 𝜎8 ⟧, xe ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ⟧" >>= (`shouldBe` Right (expected, [(42, (Nothing, Just 8))], 42))
+      expected <- parseExpressionThrows "⟦ ub ↦ ⟦ λ ⤍ 𝜎43 ⟧, xe ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎43 ⟧ ⟧ ⟧"
+      apart "⊥" "⟦ ub ↦ ⟦ λ ⤍ 𝜎8 ⟧, xe ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ⟧ ⟧" >>= (`shouldBe` Right (expected, [(43, (42, 8))], Just 42, 43))
     it "joins ⊥ one formation binds with the symbol the other one binds there" $ do
-      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎42 ⟧, ws ↦ Φ.ug ⟧"
-      apart "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, ws ↦ Φ.ug ⟧" "⟦ φ ↦ ⊥, ws ↦ Φ.ug ⟧" >>= (`shouldBe` Right (expected, [(42, (Just 5, Nothing))], 42))
+      expected <- parseExpressionThrows "⟦ φ ↦ ⟦ λ ⤍ 𝜎43 ⟧, ws ↦ Φ.ug ⟧"
+      apart "⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧, ws ↦ Φ.ug ⟧" "⟦ φ ↦ ⊥, ws ↦ Φ.ug ⟧" >>= (`shouldBe` Right (expected, [(43, (5, 42))], Just 42, 43))
+    it "names every ⊥ a join meets by one fresh symbol" $ do
+      expected <- parseExpressionThrows "⟦ ub ↦ ⟦ λ ⤍ 𝜎43 ⟧, xe ↦ ⟦ λ ⤍ 𝜎44 ⟧ ⟧"
+      apart "⟦ ub ↦ ⊥, xe ↦ ⊥ ⟧" "⟦ ub ↦ ⟦ λ ⤍ 𝜎5 ⟧, xe ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧" >>= (`shouldBe` Right (expected, [(43, (42, 5)), (44, (42, 6))], Just 42, 44))
     it "mints nothing for two sides of ⊥" $
-      joined ExTermination ExTermination 4 `shouldBe` Right (ExTermination, [], 4)
+      joined ExTermination ExTermination 4 `shouldBe` Right (ExTermination, [], Nothing, 4)
     it "tells no attribute of ⊥ and a side holding no symbol to stand for ⊥" $
       apart "⟦ φ ↦ Φ.ab, ko ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" "⊥" >>= (`shouldBe` Left [])
     it "tells the attribute of a formation binding ⊥ where the other one binds no symbol" $

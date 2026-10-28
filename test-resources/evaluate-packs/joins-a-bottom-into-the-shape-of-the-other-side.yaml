@@ -5,9 +5,10 @@
 # The left side is ⊥ and the right side wraps its symbol in φ beside 'k', the
 # way the 'bytes' object a branch of EO comes to holds its data. The join
 # keeps the shape of the right side and takes ⊥ for the symbol at its leaf:
-# it mints 𝜎3 for 𝜎2 against ⊥, writes it with ⊥ on the left of the
-# condition, and answers the right side with 𝜎3 in place of 𝜎2, so a method
-# the run asks the answer for later is still there (#2195).
+# it mints 𝜎3 to stand for ⊥ and 𝜎4 for 𝜎2 against it, writes 𝜎3 on the
+# left of the condition with a comment saying it is ⊥, and answers the right
+# side with 𝜎4 in place of 𝜎2, so a method the run asks the answer for later
+# is still there (#2195).
 symbolic: |
   - λ: L_fork
     dataize:
@@ -22,7 +23,7 @@ symbolic: |
       otherwise: L_fork
 location: 'Q.e1'
 input: '⟦ e1 ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧, left🌵 ↦ ⊥, right🌵 ↦ ⟦ k ↦ ⟦⟧, φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ⟧.φ ⟧'
-result: '𝜎3:λ'
+result: '𝜎4:λ'
 protocol: |
   𝕄(Φ.e1):
     𝔼(L_fork):
@@ -35,6 +36,6 @@ protocol: |
       𝕄(ξ.right🌵):
         morphed 𝑛·1·2 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎2:λ ⟧
       𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.right🌵)
-      joined 𝜎3 := 𝛿1·1 ? ⊥ : 𝜎2
-      𝑛·1·3 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎3:λ ⟧
-    morphed 𝑛·0·1 := 𝜎3:λ
+      joined 𝜎4 := 𝛿1·1 ? 𝜎3 : 𝜎2  # where 𝜎3 is ⊥
+      𝑛·1·3 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎4:λ ⟧
+    morphed 𝑛·0·1 := 𝜎4:λ
