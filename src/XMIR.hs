@@ -435,11 +435,16 @@ xmirToPhi xmir =
               o <- case doc C.$/ C.element (toName "o") of
                 [single] -> pure single
                 _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
-              let pckg =
-                    [ T.unpack t
+              let packages =
+                    [ meta
                     | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta")
                     , let heads = meta C.$/ C.element (toName "head") C.&/ C.content
                     , heads == ["package"]
+                    ]
+              when (length packages > 1) (throwIO (InvalidXMIRFormat "A <metas> can hold only one package meta" doc))
+              let pckg =
+                    [ T.unpack t
+                    | meta <- packages
                     , tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content
                     , t <- T.splitOn "." (T.strip tail')
                     ]
