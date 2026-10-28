@@ -641,9 +641,10 @@ xmirToApplication derived = xmirToApplication' 0
       | hasAttr "as" cur = do
           as <- getAttr "as" cur
           case as of
-            'α' : rest' -> case TR.readMaybe rest' :: Maybe Int of
-              Just idx -> pure (Left (Alpha idx))
-              Nothing -> throwIO (InvalidXMIRFormat "The attribute started with 'α' must be followed by integer" cur)
+            'α' : rest' -> case TR.readMaybe rest' :: Maybe Integer of
+              Just idx
+                | all isDigit rest' && idx <= toInteger (maxBound :: Int) -> pure (Left (Alpha (fromInteger idx)))
+              _ -> throwIO (InvalidXMIRFormat (printf "The attribute started with 'α' must be followed by a non-negative integer that fits into %d" (maxBound :: Int)) cur)
             "ρ" -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
             _ -> Right <$> toAttr as cur
       | otherwise = pure (Left (Alpha position))
