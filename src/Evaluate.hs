@@ -22,7 +22,7 @@ import Engine (Engine (..))
 import Forks (Refusal (Unnamed), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), awaited, boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -103,7 +103,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
     line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
     line ctx _ held (Stayed meta source) = reshaped ctx "stay" (still (pure . stayed)) meta source held
-    line ctx _ held (Rewritten meta source rules) = reshaped ctx "rewrite" (still (rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal) rules)) meta source held
+    line ctx _ held (Rewritten meta source rules) = reshaped ctx "rewrite" (still (awaited ctx . rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal) rules)) meta source held
     line ctx _ held (Symbolized meta source) = reshaped ctx "symbolize" (still (masked ctx)) meta source held
     line ctx _ held (Undressed meta source) = reshaped ctx "undress" (peeled ctx) meta source held
     line ctx _ held (Cast one first two second) = casting ctx held (one, first) (two, second)

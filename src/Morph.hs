@@ -10,7 +10,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, boxed, charged, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, awaited, boxed, charged, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -196,6 +196,13 @@ expired ctx cap = do
   ctx._saveEval (EvTimeout ctx._nesting cap ctx._judgment ctx._site)
   throwIO (OutOfTime cap)
 
+awaited :: ReduceContext -> IO a -> IO a
+awaited ctx action = case ctx._deadline of
+  Nothing -> action
+  Just (Deadline cap due) -> do
+    now <- getMonotonicTime
+    maybe (expired ctx cap) pure =<< timeout (ceiling (max 0 (due - now) * 1000000)) action
+
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
 memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0)
 memoized _ = pure Nothing
@@ -276,13 +283,7 @@ admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
     remembered :: Acyclic -> IO (Either (Acyclic, Expression) ReduceContext)
     remembered mode =
       maybe (Right ctx{_entered = seenInsert (digest mode form) form ctx._entered}) (\before -> Left (mode, before))
-        <$> awaited (listToMaybe (drop ctx._maxLoops (filter (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered))))
-    awaited :: Maybe Expression -> IO (Maybe Expression)
-    awaited found = case ctx._deadline of
-      Nothing -> pure found
-      Just (Deadline cap due) -> do
-        now <- getMonotonicTime
-        maybe (expired ctx cap) pure =<< timeout (ceiling (max 0 (due - now) * 1000000)) (evaluate found)
+        <$> awaited ctx (evaluate (listToMaybe (drop ctx._maxLoops (filter (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered)))))
     digest :: Acyclic -> Expression -> Int
     digest Proven = hashShape
     digest Plausible = hashSkeleton
