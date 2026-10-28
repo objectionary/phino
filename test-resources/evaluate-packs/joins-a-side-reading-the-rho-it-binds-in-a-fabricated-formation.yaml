@@ -46,5 +46,5 @@ protocol: |
       𝕄(ξ.right🌵):
         morphed 𝑛·2·4 := 𝜎3:λ:k
       joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3
-      𝑛·2·5 := 𝜎4:λ:k  # 𝕄(ξ.left🌵), 𝕄(ξ.right🌵)
+      𝑛·2·5 := 𝜎4:λ:k
     morphed 𝑛·0·1 := 𝜎4:λ

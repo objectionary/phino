@@ -111,7 +111,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     shown depth (Answer built normal) = do
       caller._saveEval (EvBuilt depth built)
       caller._saveEval (EvAnswer depth normal)
-    shown depth (Joined (left, right) normal) = caller._saveEval (EvTaken depth [left, right] normal)
+    shown depth (Joined normal) = caller._saveEval (EvTaken depth normal)
     kept :: Bool -> ReduceException -> Maybe Kept
     kept _ (Looping term) = Just (Looped term)
     kept _ (LoopingAt term _ _) = Just (Looped term)
@@ -184,7 +184,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (term, state'') <- change state' kept
       ctx._saveEval
         ( if term == kept
-            then EvBound ctx._nesting meta._spelling (ExMeta source._name) term
+            then EvBound ctx._nesting (ExMeta meta._name) term
             else EvReshaped ctx._nesting meta._spelling block (ExMeta source._name) term
         )
       (,state'') <$> bind meta (MvExpression term) bound
@@ -193,17 +193,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       left <- buildExpressionThrows (ExMeta first._name) bound
       right <- buildExpressionThrows (ExMeta second._name) bound
       (,state') <$> case (cast left right, cast right left) of
-        (Just made, _) -> molded one first second made bound >>= kept two second right
-        (_, Just made) -> kept one first left bound >>= molded two second first made
-        _ -> kept one first left bound >>= kept two second right
+        (Just made, _) -> molded one first second made bound >>= kept two right
+        (_, Just made) -> kept one left bound >>= molded two second first made
+        _ -> kept one left bound >>= kept two right
       where
-        kept :: Meta -> Meta -> Expression -> Subst -> IO Subst
-        kept meta source term held = do
-          ctx._saveEval (EvBound ctx._nesting meta._spelling (ExMeta source._name) term)
+        kept :: Meta -> Expression -> Subst -> IO Subst
+        kept meta term held = do
+          ctx._saveEval (EvBound ctx._nesting (ExMeta meta._name) term)
           bind meta (MvExpression term) held
         molded :: Meta -> Meta -> Meta -> Expression -> Subst -> IO Subst
         molded meta source shape made held = do
-          ctx._saveEval (EvCast ctx._nesting meta._spelling source._spelling shape._spelling made)
+          ctx._saveEval (EvCast ctx._nesting meta._spelling (ExMeta source._name) (ExMeta shape._name) made)
           bind meta (MvExpression made) held
     still :: (Expression -> IO Expression) -> State -> Expression -> IO (Expression, State)
     still change state' term = (,state') <$> change term
@@ -230,7 +230,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     evaluated ctx ending (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
       (answer, state'') <- kindled ctx ending (ExMeta source._name) state' term
-      ctx._saveEval (EvTerm ctx._nesting meta._spelling Evaluation (ExMeta source._name) answer)
+      ctx._saveEval
+        ( if answer == term
+            then EvBound ctx._nesting (ExMeta meta._name) term
+            else EvTerm ctx._nesting meta._spelling Evaluation (ExMeta source._name) answer
+        )
       bound' <- bind meta (MvExpression answer) bound
       pure (bound', state'')
     kindled :: ReduceContext -> Ending -> Expression -> State -> Expression -> IO (Expression, State)
@@ -291,7 +295,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       bind meta (MvExpression answer) bound
       where
         kept :: Expression -> IO Expression
-        kept term = term <$ ctx._saveEval (EvBound ctx._nesting meta._spelling (ExMeta source._name) term)
+        kept term = term <$ ctx._saveEval (EvBound ctx._nesting (ExMeta meta._name) term)
     postponing :: ReduceContext -> State -> Expression -> Expression -> IO (Maybe Expression)
     postponing ctx state' site (ExFormation bds)
       | copied bds = do
@@ -373,12 +377,12 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         Right (term, made, spent') -> do
           writeIORef ctx._minted spent'
           mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair)) made
-          ctx._saveEval (EvTaken ctx._nesting [left, right] term)
-          pure (Joined (left, right) term, state''')
+          ctx._saveEval (EvTaken ctx._nesting term)
+          pure (Joined term, state''')
         Left path -> case maybe (Left Unnamed) (\name -> forked name condition one two) fallback of
           Right term -> do
             ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) term)
-            pure (Joined (left, right) term, state''')
+            pure (Joined term, state''')
           Left refusal -> do
             ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two) path refusal)
             throwIO (Diverged func)

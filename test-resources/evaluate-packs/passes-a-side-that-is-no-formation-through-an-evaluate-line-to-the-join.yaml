@@ -49,7 +49,5 @@ protocol: |
         morphed 𝑛·1·2 := Φ.j:φ
       𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
       𝑛3·1 := Φ.k  # rewrite(𝑛1)
-      𝑛5·1 := Φ.k  # 𝔼(𝑛3)
       𝑛4·1 := Φ.j  # rewrite(𝑛2)
-      𝑛6·1 := Φ.j  # 𝔼(𝑛4)
-      diverged 𝑛5·1 vs 𝑛6·1  # the join names no otherwise
+      diverged Φ.k vs Φ.j  # the join names no otherwise

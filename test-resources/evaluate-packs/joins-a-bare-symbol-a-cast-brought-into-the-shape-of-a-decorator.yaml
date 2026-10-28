@@ -11,8 +11,8 @@
 # two sides differ in their symbols alone and the join makes one term of them.
 # The cast mints no symbol. The protocol writes the line of '𝑛20', which took
 # the cast, as 'cast 𝑛20·1 := …' with the meta it read and the meta whose
-# shape it took, and the line of '𝑛19', which binds its term as it is, with
-# '𝑛13' alone.
+# shape it took. The line of '𝑛19' binds its term as it is and writes
+# nothing (#2192).
 symbolic: |
   - λ: L_fork
     dataize:
@@ -43,8 +43,7 @@ protocol: |
       𝕄(ξ.right🌵):
         morphed 𝑛·1·2 := 𝜎3:λ
       𝑛14·1 := 𝑛·1·2  # 𝕄(ξ.right🌵)
-      𝑛19·1 := 𝑛13·1  # 𝑛13
       cast 𝑛20·1 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎3:λ ⟧  # 𝑛14·1 up to 𝑛13·1
       joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
-      𝑛·1·3 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎4:λ ⟧  # 𝑛19, 𝑛20
+      𝑛·1·3 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎4:λ ⟧
     morphed 𝑛·0·1 := 𝜎4:λ
