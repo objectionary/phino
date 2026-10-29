@@ -13,6 +13,7 @@ import Data.Text qualified as T
 import Lining (LineFormat (..), toSingleLine)
 import Margin (withLines, withMargin)
 import Render (render)
+import Sugar (SugarType (SALTY), withSugarType)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe)
 import Text.Printf (printf)
 
@@ -93,6 +94,32 @@ precomposed =
     , BiTau (AtLabel "c") (ExFormation [])
     ]
 
+voidsFormation :: Expression
+voidsFormation =
+  ExFormation
+    [ BiTau
+        (AtLabel "aVeryLongAttributeNameNumberOne")
+        ( ExFormation
+            [ BiVoid (AtLabel "queen")
+            , BiVoid (AtLabel "king")
+            , BiVoid (AtLabel "rook")
+            , BiVoid (AtLabel "knight")
+            ]
+        )
+    , BiVoid (AtLabel "b")
+    ]
+
+narrowVoidsFormation :: Expression
+narrowVoidsFormation =
+  ExFormation
+    [ BiTau (AtLabel "jjjjjjjj") (ExFormation [BiVoid (AtLabel "eeeeee"), BiVoid (AtLabel "ccc")])
+    , BiVoid (AtLabel "k")
+    ]
+
+smallVoidsFormation :: Expression
+smallVoidsFormation =
+  ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid (AtLabel "a"), BiVoid (AtLabel "b")])]
+
 spec :: Spec
 spec = do
   describe "withMargin on EX_FORMATION" $ do
@@ -114,6 +141,23 @@ spec = do
         )
       ]
       (\(desc, margin, expression, expected) -> it desc (render (withMargin margin (expressionToCST expression)) `shouldBe` expected))
+
+  describe "withMargin on a salty formation of only voids" $ do
+    it "splits the nested formation one void per line when it does not fit the margin" $
+      render (withMargin 80 (withSugarType SALTY (expressionToCST voidsFormation)))
+        `shouldBe` "⟦\n  aVeryLongAttributeNameNumberOne ↦ ⟦\n    queen ↦ ∅,\n    king ↦ ∅,\n    rook ↦ ∅,\n    knight ↦ ∅\n  ⟧,\n  b ↦ ∅\n⟧"
+    it "splits the nested formation the same way at a narrow margin" $
+      render (withMargin 20 (withSugarType SALTY (expressionToCST narrowVoidsFormation)))
+        `shouldBe` "⟦\n  jjjjjjjj ↦ ⟦\n    eeeeee ↦ ∅,\n    ccc ↦ ∅\n  ⟧,\n  k ↦ ∅\n⟧"
+    it "keeps the nested formation of voids on one line when it fits the margin" $
+      render (withMargin 85 (withSugarType SALTY (expressionToCST voidsFormation)))
+        `shouldBe` "⟦\n  aVeryLongAttributeNameNumberOne ↦ ⟦ queen ↦ ∅, king ↦ ∅, rook ↦ ∅, knight ↦ ∅ ⟧,\n  b ↦ ∅\n⟧"
+    it "keeps a formation of voids on one line with spaces when it fits" $
+      render (withMargin 80 (withSugarType SALTY (expressionToCST smallVoidsFormation)))
+        `shouldBe` "⟦ x ↦ ⟦ a ↦ ∅, b ↦ ∅ ⟧ ⟧"
+    it "keeps the sweet form of a formation of voids tight" $
+      render (withMargin 80 (expressionToCST smallVoidsFormation))
+        `shouldBe` "⟦ x(a, b) ↦ ⟦⟧ ⟧"
 
   describe "withMargin leaves data primitives untouched" $ do
     it "a number literal is never wrapped" $
