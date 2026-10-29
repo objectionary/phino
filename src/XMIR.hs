@@ -27,7 +27,7 @@ module XMIR
 where
 
 import AST
-import Bytes (btsIsUtf8, btsSize, btsToNum, btsToStr, bytesToBts)
+import Bytes (btsIsUtf8, btsSize, btsToNum, btsToStr)
 import Control.Exception (Exception (displayException), throwIO)
 import Control.Monad (unless, when)
 import Data.Bifunctor (bimap)
@@ -44,7 +44,7 @@ import Data.Time.Format (defaultTimeLocale, formatTime)
 import Data.Version (showVersion)
 import Development.GitRev (gitHash)
 import Misc
-import Parser (parseAttribute)
+import Parser (parseAttribute, parseBytes)
 import Paths_phino (version)
 import Printer
 import Text.Printf (printf)
@@ -564,7 +564,11 @@ xmirToFormation derived cur fqn = do
     nested node = not (null (C.element (toName "o") node))
     binding :: [C.Cursor] -> IO [Binding]
     binding [node] | nested node = pure <$> xmirToFormationBinding derived node fqn
-    binding nodes = pure [BiDelta (bytesToBts (T.unpack text)) | not (T.null text)]
+    binding nodes
+      | T.null text = pure []
+      | otherwise = case parseBytes (T.unpack text) of
+          Right bts -> pure [BiDelta bts]
+          Left _ -> throwIO (InvalidXMIRFormat (printf "The data '%s' is not a sequence of bytes, such as '01-AB'" text) cur)
       where
         text :: T.Text
         text = T.strip (T.concat [content | NodeContent content <- map C.node nodes])
