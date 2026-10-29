@@ -197,6 +197,20 @@ spec = do
         , [ExXi]
         , ExFormation [BiDelta BtEmpty, BiTau (AtLabel "b") ExXi]
         )
+      ,
+        ( "an outer match left as it is keeps the nested match"
+        , ExFormation [BiTau (AtLabel "s") ExXi, BiTau (AtLabel "k") (ExFormation [BiTau (AtLabel "s") ExRoot])]
+        , [ExFormation [BiTau (AtLabel "s") ExXi, BiTau (AtLabel "k") (ExFormation [BiTau (AtLabel "s") ExRoot])], ExFormation [BiTau (AtLabel "s") ExRoot]]
+        , [ExFormation [BiTau (AtLabel "s") ExXi, BiTau (AtLabel "k") (ExFormation [BiTau (AtLabel "s") ExRoot])], ExTermination]
+        , ExFormation [BiTau (AtLabel "s") ExXi, BiTau (AtLabel "k") ExTermination]
+        )
+      ,
+        ( "an outer match that changes still drops the nested match"
+        , ExFormation [BiTau (AtLabel "s") ExXi, BiTau (AtLabel "k") (ExFormation [BiTau (AtLabel "s") ExRoot])]
+        , [ExFormation [BiTau (AtLabel "s") ExXi, BiTau (AtLabel "k") (ExFormation [BiTau (AtLabel "s") ExRoot])], ExFormation [BiTau (AtLabel "s") ExRoot]]
+        , [ExDispatch ExRoot (AtLabel "z"), ExTermination]
+        , ExDispatch ExRoot (AtLabel "z")
+        )
       ]
 
   describe "replace expression fast: ([Expression], [Expression]) => Expression" $
