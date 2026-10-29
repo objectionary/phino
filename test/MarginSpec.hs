@@ -122,6 +122,19 @@ smallVoidsFormation :: Expression
 smallVoidsFormation =
   ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid (AtLabel "a"), BiVoid (AtLabel "b")])]
 
+deepVoidsFormation :: Expression
+deepVoidsFormation =
+  ExFormation
+    [ BiTau
+        (AtLabel "outer")
+        ( ExFormation
+            [ BiTau
+                (AtLabel "aVeryLongAttributeNameNumberOne")
+                (ExFormation [BiVoid (AtLabel "queen"), BiVoid (AtLabel "king")])
+            ]
+        )
+    ]
+
 spec :: Spec
 spec = do
   describe "withMargin on deep overflowing subtrees" $ do
@@ -176,6 +189,9 @@ spec = do
     it "keeps the sweet form of a formation of voids tight" $
       render (withMargin 80 (expressionToCST smallVoidsFormation))
         `shouldBe` "⟦ x(a, b) ↦ ⟦⟧ ⟧"
+    it "indents a formation of voids by the depth it sits at" $
+      render (withMargin 40 (withSugarType SALTY (expressionToCST deepVoidsFormation)))
+        `shouldBe` "⟦\n  outer ↦ ⟦\n    aVeryLongAttributeNameNumberOne ↦ ⟦\n      queen ↦ ∅,\n      king ↦ ∅\n    ⟧\n  ⟧\n⟧"
 
   describe "withMargin leaves data primitives untouched" $ do
     it "a number literal is never wrapped" $
