@@ -28,7 +28,7 @@ import AST
 import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
-import Data.Char (isAscii, ord)
+import Data.Char (isAlphaNum, isAscii, ord)
 import Data.List (intercalate, nub, zipWith4)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
@@ -251,7 +251,16 @@ expressionToLaTeX ex ctx =
     ]
 
 piped :: T.Text -> T.Text
-piped str = "|" <> toLaTeX str <> "|"
+piped str = "|" <> T.concat (zipWith3 guarded (' ' : chars) chars (drop 1 chars ++ " ")) <> "|"
+  where
+    chars :: String
+    chars = T.unpack str
+    word :: Char -> Bool
+    word ch = isAscii ch && isAlphaNum ch
+    guarded :: Char -> Char -> Char -> T.Text
+    guarded prev ch next
+      | ch `elem` ("QTDL" :: String) && not (word prev) && not (word next) = T.pack (printf "\\char%d{}" (ord ch))
+      | otherwise = toLaTeX (T.singleton ch)
 
 class ToLaTeX a where
   toLaTeX :: a -> a
