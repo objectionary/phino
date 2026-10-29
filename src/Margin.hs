@@ -5,7 +5,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Margin (defaultMargin, withMargin, withLines, WithMargin) where
+module Margin (defaultMargin, withMargin, withLines, WithMargin (..)) where
 
 import CST
 import Data.Char (GeneralCategory (..), generalCategory)
