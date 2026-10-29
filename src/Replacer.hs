@@ -40,19 +40,23 @@ replaceArgument (ArAlpha alpha expr, ptns, repls) func =
 replaceExpression' :: ReplaceExpressionFunc'
 replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls))
   | inert expr && not (inert ptn) = state
+  | expr == ptn && repl expr == expr = descend (expr, _ptns, _repls)
   | expr == ptn = let (ptns', repls') = swallowed expr (_ptns, _repls) in replaceExpression' (repl expr, ptns', repls')
-  | otherwise = case expr of
+  | otherwise = descend state
+  where
+    descend :: ReplaceState Expression -> ReplaceState Expression
+    descend current@(term, pending, replacements) = case term of
       ExDispatch inner attr ->
-        let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls)
+        let (expr', ptns', repls') = replaceExpression' (inner, pending, replacements)
          in (ExDispatch expr' attr, ptns', repls')
       ExApplication inner arg ->
-        let (expr', ptns', repls') = replaceExpression' (inner, ptns, repls)
+        let (expr', ptns', repls') = replaceExpression' (inner, pending, replacements)
             (arg', ptns'', repls'') = replaceArgument (arg, ptns', repls') replaceExpression'
          in (ExApplication expr' arg', ptns'', repls'')
       ExFormation bds ->
-        let (bds', ptns', repls') = replaceBindings (bds, ptns, repls) replaceExpression'
+        let (bds', ptns', repls') = replaceBindings (bds, pending, replacements) replaceExpression'
          in (ExFormation bds', ptns', repls')
-      _ -> state
+      _ -> current
 replaceExpression' state = state
 
 replaceBindingsFast :: Expression -> ReplaceState [Binding] -> ReplaceState [Binding]
