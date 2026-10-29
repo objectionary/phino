@@ -356,6 +356,18 @@ spec = do
         , (SWEET, UNICODE, MULTILINE, defaultMargin)
         , "a >> 1\n------\nb >> 2"
         )
+      ,
+        ( "counts the prefix of an expression value against the margin"
+        , [Subst (Map.singleton (Named "e") (MvExpression (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "x") (ExDispatch ExRoot (AtLabel "yy"))))))]
+        , (SWEET, UNICODE, MULTILINE, 18)
+        , "e >> Φ.f(\n  x ↦ Φ.yy\n)"
+        )
+      ,
+        ( "counts the prefix of a bindings value against the margin"
+        , [Subst (Map.singleton (Named "bnd") (MvBindings [BiTau (AtLabel "a") (ExDispatch ExRoot (AtLabel "b")), BiTau (AtLabel "c") (ExDispatch ExRoot (AtLabel "d"))]))]
+        , (SWEET, UNICODE, MULTILINE, 22)
+        , "bnd >> ⟦\n  a ↦ Φ.b,\n  c ↦ Φ.d\n⟧"
+        )
       , ("an empty substitution list renders the dashed placeholder", [], (SWEET, UNICODE, SINGLELINE, defaultMargin), "------")
       ,
         ( "picks the encoding from its PrintConfig for an attribute meta value (ASCII rho)"
