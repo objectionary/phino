@@ -38,7 +38,7 @@ replaceArgument (ArAlpha alpha expr, ptns, repls) func =
    in (ArAlpha alpha expr', ptns', repls')
 
 replaceExpression' :: ReplaceExpressionFunc'
-replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls))
+replaceExpression' state@(expr, ptn : _ptns, repl : _repls)
   | inert expr && not (inert ptn) = state
   | expr == ptn && repl expr == expr = descend (expr, _ptns, _repls)
   | expr == ptn = let (ptns', repls') = swallowed expr (_ptns, _repls) in replaceExpression' (repl expr, ptns', repls')
