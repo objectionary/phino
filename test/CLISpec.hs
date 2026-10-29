@@ -3165,6 +3165,22 @@ spec = do
           records <- readProtocol path
           length (filter (isInfixOf "<dataize at=\"Φ.a🌵0\">") (lines records)) `shouldBe` 1
 
+      it "keeps opening the block of a judgment nested in the universe it aims inside" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin universe $
+            testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+          records <- readProtocol path
+          take 3 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝕄(Φ.a🌵0):", "    𝑛·0·1 := 5.0"]
+
+      it "opens a single morph element in the XML protocol it aims inside" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ app ↦ ⟦ x ↦ ∅, φ ↦ ξ.x ⟧ ⟧" $
+            testCLISucceeded ["morph", "--inside=Φ.app( x ↦ ⟦ Δ ⤍ 02- ⟧ )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+          records <- readProtocol path
+          length (filter (isInfixOf "<morph at=\"Φ.a🌵0\">") (lines records)) `shouldBe` 1
+
       it "cannot be used together with --locator" $
         withStdin universe $
           testCLIFailed ["dataize", "--inside=Q.@", "--locator=Q.@"] ["--inside and --locator cannot be used together"]
