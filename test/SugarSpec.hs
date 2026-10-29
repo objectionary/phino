@@ -709,10 +709,10 @@ spec = do
     it "a ρ applied straight to a number literal keeps its place when salted" $
       printExpression' (applied (ArTau AtRho ExTermination) (ArTau (AtLabel "x") ExXi)) (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) )( ρ ↦ ⊥ )( x ↦ ξ )"
     it "salts a call of many positional arguments in linear time" $ do
-      let call = foldl (\expr idx -> ExApplication expr (ArAlpha (Alpha idx) (ExDispatch ExXi (AtLabel "a")))) (ExDispatch ExXi (AtLabel "f")) [0 .. 15999]
+      let call = foldl (\callee position -> ExApplication callee (ArAlpha (Alpha position) (ExDispatch ExXi (AtLabel "a")))) (ExDispatch ExXi (AtLabel "f")) [0 .. 15999]
       printed <- timeout 5000000 (evaluate (length (printExpression' call (config SALTY))))
       printed `shouldSatisfy` (== Just 244893)
     it "salts a call of many named arguments in linear time" $ do
-      let call = foldl (\expr idx -> ExApplication expr (ArTau (AtLabel (T.pack ("a" ++ show idx))) ExXi)) (ExDispatch ExXi (AtLabel "f")) [0 .. 15999 :: Int]
+      let call = foldl (\callee position -> ExApplication callee (ArTau (AtLabel (T.pack ("a" ++ show position))) ExXi)) (ExDispatch ExXi (AtLabel "f")) [0 .. 15999 :: Int]
       printed <- timeout 5000000 (evaluate (length (printExpression' call (config SALTY))))
       printed `shouldSatisfy` (== Just 212893)
