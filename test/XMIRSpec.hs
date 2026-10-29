@@ -347,6 +347,20 @@ spec = do
         , ["XMIR does not support such expression", "a ↦ Φ.y"]
         )
       ,
+        ( "refuses a meta attribute of an application argument"
+        , do
+            expr <- parseExpressionThrows "[[ a -> Q.f(!t -> $) ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such expression", "𝜏 ↦ ξ"]
+        )
+      ,
+        ( "refuses a dispatch of a meta attribute"
+        , do
+            expr <- parseExpressionThrows "[[ a -> Q.f.!t1 ]]"
+            try (void (expressionToXMIR expr defaultXmirContext)) :: IO (Either SomeException ())
+        , ["XMIR does not support such expression", "Φ.f.𝜏1"]
+        )
+      ,
         ( "names the attribute that is empty"
         , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"\"/></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
         , ["The attribute 'base' is not expected to be empty"]
