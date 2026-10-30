@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: MIT
 ---
 # yamllint disable rule:line-length
-# The right side ends its φ chain in a bare symbol, but it holds another one
-# under 'ke', off that chain. A cast would copy that symbol into the left side
-# too, as if the left branch knew it, so a 'cast' block casts nothing here and
-# binds both metas to their terms as they are. The join then diverges as it
-# would with no 'cast' block at all (#2187).
+# The right side ends its φ chain in a bare symbol, and it holds another one
+# under 'ke', off that chain. What the right side holds does not matter to a
+# 'cast' block, which used to cast nothing here (#2187): it casts the bare
+# symbol on the left into a copy of the right side with 𝜎2 in place of 𝜎3,
+# keeping 𝜎4 under 'ke' (#2223). The two sides then differ in their φ alone,
+# and the join makes one term of them with 𝜎5 standing for that φ.
 symbolic: |
   - λ: L_fork
     dataize:
@@ -23,7 +24,7 @@ symbolic: |
       right: 𝑛4
 location: 'Q.y'
 input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, ke ↦ ⟦ λ ⤍ 𝜎4 ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
-fails: "No entry of --symbolic answers the λ function 'L_fork'"
+result: '𝜎5:λ'
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
@@ -36,4 +37,7 @@ protocol: |
       𝕄(ξ.b):
         morphed 𝑛·1·2 := ⟦ φ ↦ 𝜎3:λ, ke ↦ 𝜎4:λ ⟧
       𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
-      diverged 𝜎2:λ vs 𝑛2·1  # cannot join: at .λ the left side has λ ⤍ 𝜎2 and the right side has no λ; cannot fabricate: the join names no otherwise
+      cast 𝑛3·1 := ⟦ φ ↦ 𝜎2:λ, ke ↦ 𝜎4:λ ⟧  # 𝑛1·1 up to 𝑛2·1
+      joined 𝜎5 := 𝛿1·1 ? 𝜎2 : 𝜎3
+      𝑛·1·3 := ⟦ φ ↦ 𝜎5:λ, ke ↦ 𝜎4:λ ⟧
+    morphed 𝑛·0·1 := 𝜎5:λ

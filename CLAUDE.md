@@ -206,12 +206,15 @@ and an operand a pass changed writes `# undress(…)` (`EvReshaped`). The
 operands reading `$` join the key of the memo as those of `morph` do. A
 `cast` block holds exactly two lines, read as one line binding both metas
 (`Cast` of `Line`, #2187). Where one of its two terms is a bare
-`⟦ λ ⤍ 𝜎1 ⟧` and the φ chain of the other ends in the only symbol that
-other holds, `cast` of `Lambdas.hs` copies the other with `𝜎1` at the end
-of its chain, and `casting` of `Evaluate.hs` binds the meta of the bare
-symbol to that copy and the other meta to its term as it is, so a join sees
-a branch that reached its data and one a decorator short of it differ in
-their symbols alone. The cast mints no symbol: it writes the meta it bound
+`⟦ λ ⤍ 𝜎1 ⟧` and the other is a formation binding φ, whatever else it
+holds, `cast` of `Lambdas.hs` copies the other with `𝜎1` in place of the
+term its φ chain ends in, the first one down the chain that is no formation
+binding φ, such as another fork (#2223), and `casting` of `Evaluate.hs`
+binds the meta of the bare symbol to that copy and the other meta to its
+term as it is, so a join sees a branch that reached its data and one a
+decorator short of it differ only where that chain ends, and joins them or,
+under `otherwise`, fabricates a formation of them. The cast mints no
+symbol: it writes the meta it bound
 as `cast 𝑛20·1 := …  # 𝑛14·1 up to 𝑛13·1` (`EvCast`), naming the meta it
 read and the meta whose shape it took, and the markup as `<cast>`. A line
 of `evaluate`, `defer`, `stay`, `rewrite`, `symbolize`, `cast` or `undress`
