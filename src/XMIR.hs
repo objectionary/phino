@@ -183,8 +183,14 @@ namedBinding name expr ctx = do
   pure (object [("name", name), ("base", base)] children)
 
 nestedBindings :: [Binding] -> XmirContext -> IO [Node]
-nestedBindings bds ctx@XmirContext{..} = catMaybes <$> mapM (`formationBinding` ctx) bds'
+nestedBindings bds ctx@XmirContext{..} = catMaybes <$> mapM (\bd -> fmap (typed bd) <$> formationBinding bd ctx) bds'
   where
+    typed :: Binding -> Node -> Node
+    typed (BiVoid (AtLabel label)) (NodeElement (Element name attrs kids)) =
+      NodeElement (Element name (M.union attrs (M.fromList [(toName key, T.pack value) | fn <- lambda, key <- ["type", "args"], Just value <- [M.lookup (voidKey fn label key) _atoms]])) kids)
+    typed _ node = node
+    lambda :: [T.Text]
+    lambda = [fn | BiLambda (Function fn) <- bds]
     bds' :: [Binding]
     bds' = if _hideRho then filter (not . isRho) bds else bds
     isRho :: Binding -> Bool
@@ -309,7 +315,13 @@ xmirTime stamp =
 
 renameAtoms :: [(T.Text, T.Text)] -> XmirContext -> XmirContext
 renameAtoms renames ctx@XmirContext{..} =
-  ctx{_atoms = M.fromList [(new, atom) | (old, new) <- renames, Just atom <- [M.lookup old _atoms]]}
+  ctx{_atoms = M.fromList [(new <> rest, atom) | (old, new) <- renames, (key, atom) <- M.toList _atoms, Just rest <- [owned old key]]}
+  where
+    owned :: T.Text -> T.Text -> Maybe T.Text
+    owned old key = T.stripPrefix old key >>= \rest -> if T.null rest || T.isPrefixOf "." rest then Just rest else Nothing
+
+voidKey :: T.Text -> T.Text -> String -> T.Text
+voidKey fn label key = fn <> "." <> label <> "@" <> T.pack key
 
 escapeXML :: String -> String
 escapeXML = concatMap escapeChar
@@ -539,21 +551,28 @@ lambdaPath cur =
   ]
 
 xmirAtoms :: Document -> IO Atoms
-xmirAtoms xmir = M.fromList <$> mapM entry markers
+xmirAtoms xmir = M.fromList . concat <$> mapM entries markers
   where
     markers :: [C.Cursor]
     markers =
       C.fromDocument xmir
         C.$// C.element (toName "o")
         C.>=> C.attributeIs (toName "name") "λ"
-        C.>=> C.check (hasAttr "atom")
     derived :: Derived
     derived = derivedNames xmir
-    entry :: C.Cursor -> IO (T.Text, String)
-    entry cur = do
+    entries :: C.Cursor -> IO [(T.Text, String)]
+    entries cur = do
       name <- lambdaName derived cur (lambdaPath cur)
-      atom <- getAttr "atom" cur
-      pure (name, atom)
+      atom <- if hasAttr "atom" cur then (\value -> [(name, value)]) <$> getAttr "atom" cur else pure []
+      pure
+        ( atom
+            ++ [ (voidKey name label key, T.unpack value)
+               | void <- (C.parent C.>=> C.child C.>=> C.element (toName "o") C.>=> C.attributeIs (toName "base") "∅") cur
+               , label <- C.attribute (toName "name") void
+               , key <- ["type", "args"]
+               , value <- C.attribute (toName key) void
+               ]
+        )
 
 xmirToFormation :: Derived -> C.Cursor -> [String] -> IO Expression
 xmirToFormation derived cur fqn = do
