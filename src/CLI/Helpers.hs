@@ -340,10 +340,33 @@ validateRewriteRule rule =
    in case filter (\fn -> fn `notElem` (buildFunctions ++ execFunctions)) used of
         (fn : _) -> invalidCLIArguments (printf "Function '%s' in rule '%s' is not supported" fn rule.name)
         [] -> case filter (`elem` execFunctions) used of
-          [] -> pure rule
+          [] -> case filter (\extra -> returned (Y.function extra) /= kind (Y.meta extra)) (fromMaybe [] rule.where_) of
+            [] -> pure rule
+            (extra : _) ->
+              invalidCLIArguments
+                ( printf
+                    "Function '%s' in rule '%s' returns %s, but its meta '%s' is %s"
+                    (Y.function extra)
+                    rule.name
+                    (returned (Y.function extra))
+                    (P.printExtraArg (Y.meta extra))
+                    (kind (Y.meta extra))
+                )
           (fn : _) ->
             invalidCLIArguments
               (printf "Function '%s' in rule '%s' is available only for dataization and morphing, not for rewriting" fn rule.name)
+  where
+    returned :: String -> String
+    returned "random-tau" = "an attribute"
+    returned "tau" = "an attribute"
+    returned "join" = "bindings"
+    returned "dataize" = "bytes"
+    returned _ = "an expression"
+    kind :: Y.ExtraArgument -> String
+    kind (Y.ArgAttribute _) = "an attribute"
+    kind (Y.ArgBinding _) = "bindings"
+    kind (Y.ArgBytes _) = "bytes"
+    kind (Y.ArgExpression _) = "an expression"
 
 printOut :: Maybe FilePath -> String -> IO ()
 printOut target content = case target of
