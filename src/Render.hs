@@ -322,6 +322,10 @@ instance Render EXTRA where
     where
       macro :: String -> Text
       macro "evaluate" = "\\phinoEvaluate"
+      macro "number" = "\\phinoNumber"
+      macro "string" = "\\phinoString"
+      macro "sum" = "\\phinoSum"
+      macro "tau" = "\\phinoTau"
       macro name = "\\" <> T.concat (zipWith camel [0 :: Int ..] (T.splitOn "-" (T.pack name)))
       camel :: Int -> Text -> Text
       camel 0 part = part
