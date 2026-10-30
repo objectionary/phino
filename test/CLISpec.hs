@@ -680,6 +680,19 @@ spec = do
           ["rewrite", rule "evaluate-in-rewrite.yaml"]
           ["Function 'evaluate' in rule 'uses-evaluate' is available only for dataization and morphing, not for rewriting"]
 
+    forM_
+      [ ("kind-tau-to-expression.yaml", "Function 'random-tau' in rule 'tau-to-expression' returns an attribute, but its meta '𝑒2' is an expression")
+      , ("kind-size-to-attribute.yaml", "Function 'size' in rule 'size-to-attribute' returns an expression, but its meta '𝜏2' is an attribute")
+      , ("kind-dataize-to-expression.yaml", "Function 'dataize' in rule 'dataize-to-expression' returns bytes, but its meta '𝑒2' is an expression")
+      ]
+      ( \(file, message) ->
+          it ("refuses " ++ file ++ " at load time, before the pattern matches") $
+            withStdin "⟦ bar ↦ ⟦⟧ ⟧" (testCLIFailed ["rewrite", rule file] [message])
+      )
+
+    it "accepts a where step whose function returns the kind of its meta" $
+      withStdin "⟦ bar ↦ ⟦⟧ ⟧" (testCLISucceeded ["rewrite", rule "kind-tau-to-attribute.yaml"] ["bar ↦ ⟦⟧"])
+
     it "names the join function in the error message" $
       withStdin "⟦⟧" $
         testCLIFailed
