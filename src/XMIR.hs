@@ -249,6 +249,7 @@ documentWith :: XmirContext -> [String] -> Expression -> IO [Node] -> IO Documen
 documentWith XmirContext{..} pckg expr rootsIO = do
   started <- getCurrentTime
   roots <- rootsIO
+  mapM_ (\value -> throwIO (userError (printf "XML can't hold U+FFFE or U+FFFF, but they are in '%s'" (T.unpack value)))) (take 1 (filter forbidden (concatMap values roots)))
   now <- getCurrentTime
   let text = _listing expr
       listing =
@@ -302,6 +303,13 @@ documentWith XmirContext{..} pckg expr rootsIO = do
             ]
         )
 
+values :: Node -> [T.Text]
+values (NodeElement (Element _ attrs nodes)) = M.elems attrs ++ concatMap values nodes
+values _ = []
+
+forbidden :: T.Text -> Bool
+forbidden = T.any (`elem` ['\xFFFE', '\xFFFF'])
+
 xmirTime :: UTCTime -> String
 xmirTime stamp =
   formatTime defaultTimeLocale "%Y-%m-%dT%H:%M:%S" stamp
@@ -329,6 +337,8 @@ escapeXMLText = concatMap escapeChar
     escapeChar '&' = "&amp;"
     escapeChar '<' = "&lt;"
     escapeChar '>' = "&gt;"
+    escapeChar '\xFFFE' = "\\uFFFE"
+    escapeChar '\xFFFF' = "\\uFFFF"
     escapeChar ch = [ch]
 
 indent :: Int -> TB.Builder
