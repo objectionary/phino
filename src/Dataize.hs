@@ -20,7 +20,7 @@ import Deps (Evaluation (..), Judgment (..), State (..), resited)
 import Engine (Engine (..))
 import qualified Inference as In
 import Locator (locatedExpression)
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, carried, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed)
 import Rewriter (Rewritten)
 
 type Dataized = (Bytes, [Rewritten])
@@ -54,11 +54,12 @@ dataize universe state ctx@ReduceContext{..} = do
       pure (Residual residue, reverse (NE.toList seq), parked)
 
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
-dataize' (start, seq) univ state caller = do
-  (expr, entered) <- severing start univ state =<< parking seq state (universed univ caller{_judgment = Dataization})
+dataize' (start, seq) univ held caller = do
+  let (state, aware) = carried held caller
+  (expr, entered) <- severing start univ state =<< parking seq state (universed univ aware{_judgment = Dataization})
   ctx <- opening Dataization =<< deeper entered
   parking seq state $ case unknown expr of
-    Just idx -> manufactured idx ctx
+    Just idx -> manufactured idx state ctx
     Nothing -> do
       reached <- inferred expr univ state ctx ctx._engine._dataization
       case reached of
@@ -81,8 +82,8 @@ dataize' (start, seq) univ state caller = do
     unknown :: Expression -> Maybe Int
     unknown (ExFormation bds) = listToMaybe [idx | BiLambda (FnSymbol idx) <- bds]
     unknown _ = Nothing
-    manufactured :: Int -> ReduceContext -> IO (Dataized, State)
-    manufactured idx ctx = do
+    manufactured :: Int -> State -> ReduceContext -> IO (Dataized, State)
+    manufactured idx state ctx = do
       ctx._saveEval (EvManufactured ctx._nesting idx)
       seq' <- leadsTo seq (Dataization, "symbol") (ExBytes datum) ctx
       pure ((datum, NE.toList seq'), state{_manufactured = Just idx})
