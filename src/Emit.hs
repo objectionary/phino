@@ -676,7 +676,7 @@ refuse reason = Emitting (const (Left reason))
 variable :: Meta -> String
 variable (Named meta) = case T.unpack meta of
   first : rest | all isDigit rest -> toLower first : rest
-  name -> "m_" ++ map (\char -> if isAlphaNum char then char else '_') name
+  name -> "m_" ++ concatMap (\char -> if isAlphaNum char then [char] else printf "_%d_" (fromEnum char)) name
 variable (Anon (Slot kind offset)) = printf "a_%s%d" (T.unpack kind) offset
 
 single :: String -> String
