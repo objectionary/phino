@@ -387,7 +387,42 @@ spec = do
           `shouldBe` "ξ \\coloneqq \\phinoEvaluate{ n }"
       )
     it
-      "any other function becomes its own backslash macro"
+      "any other function becomes a backslash macro prefixed with phino"
       ( render (EXTRA (ARG_EXPR xiExpr) "dataize" [ARG_ATTR (AT_LABEL "n")])
-          `shouldBe` "ξ \\coloneqq \\dataize{ n }"
+          `shouldBe` "ξ \\coloneqq \\phinoDataize{ n }"
+      )
+    it
+      "number function does not collide with TeX primitive"
+      ( render (EXTRA (ARG_EXPR xiExpr) "number" [ARG_ATTR (AT_LABEL "e_1")])
+          `shouldBe` "ξ \\coloneqq \\phinoNumber{ e_1 }"
+      )
+    it
+      "string function does not collide with TeX primitive"
+      ( render (EXTRA (ARG_EXPR xiExpr) "string" [ARG_ATTR (AT_LABEL "e_1")])
+          `shouldBe` "ξ \\coloneqq \\phinoString{ e_1 }"
+      )
+    it
+      "sum function does not collide with TeX symbol"
+      ( render (EXTRA (ARG_EXPR xiExpr) "sum" [ARG_ATTR (AT_LABEL "e_1"), ARG_ATTR (AT_LABEL "e_2")])
+          `shouldBe` "ξ \\coloneqq \\phinoSum{ e_1, e_2 }"
+      )
+    it
+      "tau function does not collide with TeX symbol"
+      ( render (EXTRA (ARG_EXPR xiExpr) "tau" [ARG_ATTR (AT_LABEL "e_1")])
+          `shouldBe` "ξ \\coloneqq \\phinoTau{ e_1 }"
+      )
+    it
+      "kebab-case function becomes camelCase with phino prefix"
+      ( render (EXTRA (ARG_EXPR xiExpr) "random-tau" [ARG_ATTR (AT_LABEL "e_1")])
+          `shouldBe` "ξ \\coloneqq \\phinoRandomTau{ e_1 }"
+      )
+    it
+      "multi-segment kebab function becomes camelCase with phino prefix"
+      ( render (EXTRA (ARG_EXPR xiExpr) "foo-bar-baz" [ARG_ATTR (AT_LABEL "x")])
+          `shouldBe` "ξ \\coloneqq \\phinoFooBarBaz{ x }"
+      )
+    it
+      "function without arguments renders empty parameter braces"
+      ( render (EXTRA (ARG_EXPR xiExpr) "custom-fn" [])
+          `shouldBe` "ξ \\coloneqq \\phinoCustomFn{  }"
       )
