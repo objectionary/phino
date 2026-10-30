@@ -8,7 +8,7 @@
 
 module XMIRSpec where
 
-import AST (Attribute (AtLabel, AtRho), Binding (BiMeta, BiTau, BiVoid), Expression (ExFormation))
+import AST (Attribute (AtLabel, AtRho), Binding (BiMeta, BiTau, BiVoid), Expression (ExDispatch, ExFormation, ExRoot))
 import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_, unless, void)
 import Data.Aeson
@@ -26,7 +26,7 @@ import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
-import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirTime, xmirToPhi)
+import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, escapeXMLText, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirTime, xmirToPhi)
 
 data ParsePack = ParsePack
   { failure :: Maybe Bool
@@ -386,6 +386,19 @@ spec = do
   describe "escapeXML" $
     it "escapes an apostrophe alongside the other reserved characters" $
       escapeXML "it's a & <b> \"quote\"" `shouldBe` "it&apos;s a &amp; &lt;b&gt; &quot;quote&quot;"
+
+  describe "XMIR characters that XML can't hold" $ do
+    it "refuses U+FFFE in the name of a formation" $
+      expressionToXMIR (ExFormation [BiTau (AtLabel "a\xFFFE") (ExFormation [])]) defaultXmirContext `shouldThrow` anyException
+    it "refuses U+FFFF in the name of a void" $
+      expressionToXMIR (ExFormation [BiTau (AtLabel "x") (ExFormation [BiVoid (AtLabel "b\xFFFF")])]) defaultXmirContext `shouldThrow` anyException
+    it "refuses U+FFFE in a dispatched attribute of a base" $
+      expressionToXMIR (ExFormation [BiTau (AtLabel "x") (ExDispatch ExRoot (AtLabel "c\xFFFE"))]) defaultXmirContext `shouldThrow` anyException
+    it "writes U+FFFE and U+FFFF of the listing as escapes" $
+      escapeXMLText "x\xFFFEy\xFFFFz" `shouldBe` "x\\uFFFEy\\uFFFFz"
+    it "still writes a name without them" $ do
+      doc <- expressionToXMIR (ExFormation [BiTau (AtLabel "a\xFFFD") (ExFormation [])]) defaultXmirContext
+      printXMIR doc `shouldContain` "name=\"a\xFFFD\""
 
   describe "XMIR document structure" $ do
     it "produces an empty prologue and epilogue" $ do
