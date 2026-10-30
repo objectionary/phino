@@ -98,21 +98,52 @@ every λ function comes from a YAML file, one entry per name:
   𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
 ```
 
+Here is `sum.phi`:
+
 ```bash
-phino dataize --symbolic=atoms.yaml sum.phi
+$ cat sum.phi
+⟦
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  φ ↦ 5.plus( 6 )
+⟧
+$ phino dataize --symbolic=atoms.yaml --sweet --hide-rho sum.phi
+40-45-00-00-00-00-00-00
 ```
 
 `morph` reduces as far as the object model allows without asking for data,
 and stops at the first formation it reaches:
 
 ```bash
-phino morph --symbolic=atoms.yaml --locator=Q.φ sum.phi
+$ cat two.phi
+⟦
+  bytes ↦ ⟦ φ ↦ ∅ ⟧,
+  number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
+  φ ↦ 5.plus( 6 ).plus( 7 )
+⟧
+$ phino morph --symbolic=atoms.yaml --locator=Q.φ --sweet --hide-rho two.phi
+⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧
 ```
 
 `merge` joins the top level formations of several expressions into one:
 
 ```bash
-phino merge bytes.phi number.phi minus.phi
+$ cat bytes.phi
+⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧ ⟧
+$ cat number.phi
+⟦
+  number ↦ ⟦
+    φ ↦ ∅,
+    plus(x) ↦ ⟦ λ ⤍ L_number_plus ⟧
+  ⟧
+⟧
+$ cat minus.phi
+⟦ number ↦ ⟦ minus(x) ↦ ⟦ λ ⤍ L_number_minus ⟧ ⟧ ⟧
+$ phino merge bytes.phi number.phi minus.phi --sweet
+⟦
+  bytes(φ) ↦ ⟦⟧,
+  number(φ) ↦ ⟦ plus(x) ↦ L_number_plus:λ, minus(x) ↦ L_number_minus:λ ⟧
+⟧
 ```
 
 `match` tests an expression against a rule pattern and prints the matched
