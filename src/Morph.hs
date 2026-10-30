@@ -36,7 +36,7 @@ import Must (Must (..))
 import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
-import Rule (RuleContext (RuleContext))
+import Rule (RuleContext (RuleContext), xiFree)
 import System.Timeout (timeout)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
@@ -365,10 +365,20 @@ argued univ ctx state site bds = go
     named _ _ = False
     figured :: Expression -> Expression -> IO Expression
     figured place placed = unparked $ do
-      (normal, morphed) <- settled placed univ state =<< opening Morphing ctx{_site = place}
-      case normal of
-        ExFormation _ -> fst <$> fired univ ctx place morphed normal
-        _ -> pure normal
+      (answer, state') <- worked place placed state
+      if hanging answer
+        then fst <$> worked (ExDispatch place AtPhi) (ExDispatch answer AtPhi) state'
+        else pure answer
+      where
+        worked :: Expression -> Expression -> State -> IO (Expression, State)
+        worked place' placed' state' = do
+          (normal, morphed) <- settled placed' univ state' =<< opening Morphing ctx{_site = place'}
+          case normal of
+            ExFormation _ -> fired univ ctx place' morphed normal
+            _ -> pure (normal, morphed)
+        hanging :: Expression -> Bool
+        hanging (ExFormation bds) = not (any isLambda bds) && or [not (xiFree body) | BiTau AtPhi body <- bds]
+        hanging _ = False
 
 admitted :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) ReduceContext)
 admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
