@@ -11,7 +11,8 @@ module CST where
 
 import AST
 import Bytes (NonFinite, btsIsUtf8, btsSize, btsToNonFinite, btsToNum, btsToStr)
-import Data.Maybe (isJust)
+import Data.List (find)
+import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Text as T
 import qualified Yaml as Y
 
@@ -468,9 +469,11 @@ instance ToCST [Binding] BINDINGS where
 
 instance ToCST Binding PAIR where
   toCST (BiTau attr exp@(ExFormation bds)) ctx =
-    let (others, after) = span (\bd -> positionless bd && not (isVoid bd)) bds
-        (head', rest) = span (\bd -> positionless bd && isVoid bd) after
+    let (run, after) = span positionless bds
+        cut = fromMaybe (length run) (find (between . (`splitAt` run)) [0 .. length run - 1])
+        (head', rest) = (take cut run, drop cut run ++ after)
         voids' = [void | BiVoid void <- head']
+        others = filter (not . isVoid) head'
         attr' = toCST attr ctx
      in if null voids'
           then PA_TAU attr' ARROW (toCST exp ctx)
@@ -488,6 +491,11 @@ instance ToCST Binding PAIR where
       positionless BiLambda{} = True
       positionless BiDelta{} = True
       positionless _ = False
+      between :: ([Binding], [Binding]) -> Bool
+      between (before, bd : later) = not (isVoid bd) && any named before && any named later
+      between _ = False
+      named :: Binding -> Bool
+      named bd = isVoid bd && bd /= BiVoid AtRho
       isVoid :: Binding -> Bool
       isVoid BiVoid{} = True
       isVoid _ = False
