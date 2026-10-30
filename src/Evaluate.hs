@@ -151,7 +151,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (bound', state'')
     brought :: ReduceContext -> Subst -> State -> Meta -> Expression -> Expression -> IO (Either Int Bytes, Subst, State)
     brought ctx bound state' meta origin term = do
-      (value, state'') <- unparked (ctx._reduce univ ctx{_site = origin} term state'{_manufactured = Nothing, _stuck = Nothing})
+      (value, came) <- unparked (ctx._reduce univ ctx{_site = origin} term state'{_manufactured = Nothing, _stuck = Nothing, _copies = []})
+      let state'' = came{_copies = state'._copies}
       case value of
         Nothing -> throwIO (Stuck (fromMaybe func state''._stuck))
         Just bytes -> do

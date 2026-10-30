@@ -46,6 +46,7 @@ type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 data State = State
   { _manufactured :: Maybe Int
   , _stuck :: Maybe T.Text
+  , _copies :: [Expression]
   }
 
 type BuildTermMethodS = [ExtraArgument] -> Subst -> IO (Term, State)
