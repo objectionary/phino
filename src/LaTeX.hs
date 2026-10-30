@@ -28,7 +28,7 @@ import AST
 import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
-import Data.Char (isAscii, ord)
+import Data.Char (isAscii, isAsciiLower, isAsciiUpper, isDigit, ord)
 import Data.List (intercalate, nub, zipWith4)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
@@ -163,7 +163,7 @@ body comments printed toLatex =
                     ( \(judgment, name) ->
                         if judgment `elem` [Contextualization, Evaluation]
                           then printf "%s %s" opening (relation judgment)
-                          else printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) (escaped name)
+                          else printf "%s %s[\\nameref{r:%s}]" opening (relation judgment) (keyed name)
                     )
                     rule
         )
@@ -497,6 +497,14 @@ inference env name label cond premises conclusion =
       ++ maybe [] (\rendered -> ["  \\phinoCondition{ " ++ rendered ++ " }"]) (conditionInLatex cond)
       ++ map (\premise -> "  \\phinoPremise{ " ++ premise ++ " }") premises
       ++ ["  \\phinoConclusion{ " ++ conclusion ++ " }", "\\end{" ++ env ++ "}"]
+
+keyed :: String -> String
+keyed = concatMap key
+  where
+    key :: Char -> String
+    key ch
+      | isAsciiUpper ch || isAsciiLower ch || isDigit ch || ch `elem` ("-:/+" :: String) = [ch]
+      | otherwise = printf "-%x-" (ord ch)
 
 escaped :: String -> String
 escaped = T.unpack . toLaTeX . T.pack
