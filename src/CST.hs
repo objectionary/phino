@@ -468,9 +468,9 @@ instance ToCST [Binding] BINDINGS where
 
 instance ToCST Binding PAIR where
   toCST (BiTau attr exp@(ExFormation bds)) ctx =
-    let (head', rest) = span positionless bds
+    let (others, after) = span (\bd -> positionless bd && not (isVoid bd)) bds
+        (head', rest) = span (\bd -> positionless bd && isVoid bd) after
         voids' = [void | BiVoid void <- head']
-        others = filter (not . isVoid) head'
         attr' = toCST attr ctx
      in if null voids'
           then PA_TAU attr' ARROW (toCST exp ctx)
