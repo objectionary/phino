@@ -29,7 +29,7 @@ import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
 import Data.Char (isAscii, isAsciiLower, isAsciiUpper, isDigit, ord)
-import Data.List (intercalate, nub, zipWith4)
+import Data.List (intercalate, isInfixOf, nub, zipWith4)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
 import Deps (Judgment (..))
@@ -275,7 +275,14 @@ instance ToLaTeX EXPRESSION where
   toLaTeX expr = expr
 
 plain :: String -> Bool
-plain str = not (null str) && all (\ch -> alnum ch || ch == ' ') str && not (any (`elem` ["Q", "T", "D", "L"]) (words str))
+plain str =
+  not (null str)
+    && not (any (`elem` ("?|\">" :: String)) str)
+    && not (any (`isInfixOf` str) ["<<", "==", ":=", "[[", "]]"])
+    && not (any letter (zip3 (' ' : str) str (drop 1 str ++ " ")))
+  where
+    letter :: (Char, Char, Char) -> Bool
+    letter (before, ch, after) = ch `elem` ("QTDL" :: String) && not (alnum before) && not (alnum after)
 
 alnum :: Char -> Bool
 alnum ch = isAsciiUpper ch || isAsciiLower ch || isDigit ch
