@@ -12,6 +12,7 @@ import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression 
 import Builder (buildExpressionThrows)
 import Control.Monad
 import Data.Aeson
+import Data.List (isInfixOf)
 import Data.Yaml qualified as Y
 import Engine (Engine (_normal))
 import Files (allPathsIn)
@@ -266,9 +267,20 @@ spec = do
           context = RuleContext buildTerm Nothing (_normal linked)
       it "logs an unbound meta in 'part-of' and treats the condition as not met" $ do
         expr <- parseExpressionThrows "[[ x -> Q.y ]]"
-        let [subst] = matchExpressionDeep (ExFormation [BiTau (AtLabel "x") (ExMeta "e1")]) expr
+        let substs = matchExpressionDeep (ExFormation [BiTau (AtLabel "x") (ExMeta "e1")]) expr
             cond = Yaml.PartOf (ExMeta "e1") (BiMeta "B1")
+        length substs `shouldBe` 1
         setLogConfig DEBUG 25
-        (captured, met) <- hCapture [stderr] (meetCondition cond [subst] context)
+        (captured, met) <- hCapture [stderr] (meetCondition cond substs context)
         met `shouldBe` []
-        captured `shouldSatisfy` not . null
+        "Condition part-of(" `isInfixOf` captured `shouldBe` True
+      it "logs an unbound meta in 'matches' and treats the condition as not met" $ do
+        expr <- parseExpressionThrows "[[ x -> Q.y ]]"
+        nested <- parseExpressionThrows "Q.x.!t9"
+        let substs = matchExpressionDeep (ExFormation [BiTau (AtLabel "x") (ExMeta "e1")]) expr
+            cond = Yaml.Matches "Q" nested
+        length substs `shouldBe` 1
+        setLogConfig DEBUG 25
+        (captured, met) <- hCapture [stderr] (meetCondition cond substs context)
+        met `shouldBe` []
+        "Condition matches(" `isInfixOf` captured `shouldBe` True
