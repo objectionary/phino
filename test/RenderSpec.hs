@@ -393,10 +393,10 @@ spec = do
       , ("tau", "\\phinoTau{ n }")
       , ("random-tau", "\\randomTau{ n }")
       ]
-      ( \(func, expected) ->
+      ( \(fn, expected) ->
           it
-            (func ++ " does not collide with a TeX primitive or symbol")
-            (render (EXTRA (ARG_EXPR xiExpr) func [ARG_ATTR (AT_LABEL "n")]) `shouldBe` "ξ \\coloneqq " <> expected)
+            (fn ++ " does not collide with a TeX primitive or symbol")
+            (render (EXTRA (ARG_EXPR xiExpr) fn [ARG_ATTR (AT_LABEL "n")]) `shouldBe` "ξ \\coloneqq " <> expected)
       )
     it
       "any other function becomes its own backslash macro"
