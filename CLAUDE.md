@@ -323,7 +323,7 @@ with no entry of the file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it binds
 fresh symbol and writes `deferred …` (`EvDeferred`), naming the call the copy
 stands for by the object of the world it was made of, the way the record of
 0.0.153 did (#1892); any other term is bound as it is. Before the line is
-written, `argued` of `Evaluate.hs` works out every argument of the call that
+written, `argued` of `Morph.hs` works out every argument of the call that
 is no bare symbol: it morphs the argument in the copy, at a site such as
 `𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluate` line
 does, and writes every step to the protocol, so the markup names the argument
@@ -431,12 +431,14 @@ The step budget `--max-steps` is what ends that recursion, and the only thing
 that does unless `morph` or `dataize` is given `--acyclic=<mode>`: the option
 has every 𝕄 and every 𝔻 frame remember the formations its ancestors have
 entered (`entering` and `enter` in `Morph.hs`, one store for both judgments,
-since only `box` and `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line, `fire` of
-`evaluated` in `Evaluate.hs`, enter one, and the line spends a step of
-`deeper` as a frame does, #1882) and park the site the moment a frame is about
-to enter one of them again, the way `--partial`
-parks a λ that cannot
-fire. The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
+since only `box` and `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line, `fired`
+of `Morph.hs`, enter one, and the line spends a step of `deeper` as a frame
+does, #1882) and park the site the moment a frame is about to enter one of
+them again, the way `--partial` parks a λ that cannot fire. Where `box` of 𝔻
+or an `evaluate` line is about to enter a copy, binding φ and holding no λ,
+that `called` of `Morph.hs` names by the object of the world it was made of,
+`sever` answers the copy with a fresh symbol, and the run goes on (#2226).
+The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
 default. Under `proven` two formations are the same up to a renaming of their
 symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
 every round and never repeats a term (#1420). Under `plausible` the earlier one
@@ -476,7 +478,10 @@ through `morph''` told it owns nothing, since it stands in the block of the
 rule. A cut is a line too,
 `looped …` (`EvLooped`), written by `enter` where the refused frame would have
 opened, carrying the formation its ancestor entered (#1434) and naming the mode
-that cut it.
+that cut it. A copy `sever` answered writes the symbol and the call the copy
+stands for, `looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # …, repeats 𝑛·0·3`, with
+every argument worked out by `argued` as for `defer`, and the markup writes
+`<looped symbol="𝜎1" … object="Φ.down">` holding a `<with>` (#2226).
 Three records say why a firing gave no answer (#1524): `stuck …` closes a
 firing that got stuck, other than a join that could not join, which
 `diverged …` or `unripe …` closes, `stall …` stands under one the memo

@@ -262,7 +262,9 @@ It takes every option of `dataize`.
 `--max-steps` runs out.
 The `--acyclic=<mode>` option makes the run notice a loop instead.
 When a reduction is about to enter a formation it is already inside, the run
-stops there and leaves the term in place, as `--partial` does.
+answers a copy of an object binding φ with a fresh symbol and goes on, and
+stops at any other formation and leaves the term in place, as `--partial`
+does.
 The mode says when two formations are the same:
 
 * `proven` means equal up to a renaming of symbols;
@@ -274,8 +276,8 @@ Under `plausible`, a formation is fired only once, and a later firing of it
 takes the answer of the first one.
 The `--max-loops=<n>` option lets a reduction enter such a formation `n` more
 times before it is cut.
-`dataize` takes `--acyclic` too, and fails on a cut unless `--partial` is
-given, since a cut term holds no data to print.
+`dataize` takes `--acyclic` too, and fails on a term left in place unless
+`--partial` is given, since such a term holds no data to print.
 
 ## Protocol
 
@@ -347,7 +349,8 @@ A protocol may hold these lines:
 * `unanswered …` is a λ name no entry answers.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
-* `looped …` is where `--acyclic` cut a loop.
+* `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
+  the call of the object it answered with that symbol.
 * `starved …`, `spent …` and `timeout …` are where `--max-steps`,
   `--max-firings` and `--max-seconds` ran out.
 * `msec …`, `firings …` and `fps …` close the file, and the listing above

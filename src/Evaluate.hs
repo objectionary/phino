@@ -12,7 +12,7 @@ import AST
 import Builder (buildExpressionThrows)
 import Control.Exception (throwIO, try)
 import Control.Monad (foldM, unless)
-import Data.IORef (atomicModifyIORef', readIORef, writeIORef)
+import Data.IORef (readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Maybe (fromMaybe, listToMaybe)
@@ -22,7 +22,7 @@ import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), awaited, boxed, charged, counted, deeper, ended, enter, expired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -135,7 +135,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (ended answer, state)
     told (Looped term) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
-      mapM_ (\mode -> caller._saveEval (EvLooped (caller._nesting + 1) caller._judgment mode term caller._site)) caller._acyclic
+      mapM_ (\mode -> caller._saveEval (EvLooped (caller._nesting + 1) caller._judgment mode term caller._site Nothing)) caller._acyclic
       throwIO (Looping term)
     told (Stalled name _) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -244,50 +244,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     kindled ctx _ site state' term = fire ctx site state' term
     fire :: ReduceContext -> Expression -> State -> Expression -> IO (Expression, State)
     fire _ _ state' ExTermination = pure (ExTermination, state')
-    fire ctx site state' term@(ExFormation _) = do
-      entered <- deeper =<< enter term ctx{_judgment = Evaluation, _site = site}
-      evaluation entered state' term univ
+    fire ctx site state' term@(ExFormation _) = fired univ ctx site state' term
     fire _ _ _ _ = throwIO (Stuck func)
-    figured :: ReduceContext -> State -> Expression -> Expression -> IO Expression
-    figured ctx state' site placed = unparked $ do
-      (normal, morphed) <- settled placed univ state' =<< opening Morphing ctx{_site = site}
-      fst <$> fire ctx site morphed normal
     named :: Attribute -> Binding -> Bool
     named attr (BiTau attr' _) = attr == attr'
     named _ _ = False
-    called :: [Binding] -> Maybe Expression
-    called known = uncurry (applied known) <$> origin known
-    applied :: [Binding] -> Expression -> [Binding] -> Expression
-    applied known path declared = foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` declared]
-    origin :: [Binding] -> Maybe (Expression, [Binding])
-    origin known = do
-      parent <- case filter ((== Just AtRho) . attributeFromBinding) known of
-        [] -> Just ExRoot
-        [BiTau AtRho (ExFormation outer)] -> fst <$> origin outer
-        [BiTau AtRho path] -> Just (erased path)
-        _ -> Nothing
-      ExFormation siblings <- located parent (fromMaybe univ caller._universe)
-      chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
-      where
-        fits :: [Binding] -> Bool
-        fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- known, attributeFromBinding bd /= Just AtRho]
-        chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
-        chosen [] = Nothing
-        chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
-          [one] -> Just one
-          _ -> Nothing
-        agreed :: (Expression, [Binding]) -> (Int, Int)
-        agreed (_, declared) = (length [attr | BiTau attr _ <- known, BiVoid attr `elem` declared], length (filter (`elem` declared) known))
-    located :: Expression -> Expression -> Maybe Expression
-    located ExRoot whole = Just whole
-    located (ExDispatch path attr) whole = case located path whole of
-      Just (ExFormation siblings) -> listToMaybe [body | BiTau attr' body <- siblings, attr' == attr]
-      _ -> Nothing
-    located _ _ = Nothing
-    erased :: Expression -> Expression
-    erased (ExApplication target _) = erased target
-    erased (ExDispatch target attr) = ExDispatch (erased target) attr
-    erased other = other
     deferred :: ReduceContext -> State -> Meta -> Meta -> Subst -> IO Subst
     deferred ctx state' meta source bound = do
       term <- buildExpressionThrows (ExMeta source._name) bound
@@ -332,26 +293,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         reading = ctx{_symbolic = emptyLambdas, _memo = Nothing, _tally = Nothing, _acyclic = Nothing, _saveStep = dontSaveStep, _saveEval = dontSaveEval}
         postponed :: [Binding] -> IO Expression
         postponed known = do
-          call <- argued ctx state' site known
-          fresh <- coined
+          call <- traverse (argued univ ctx state' site known) (called univ ctx known)
+          fresh <- coined caller
           ctx._saveEval (EvDeferred ctx._nesting fresh Morphing (ExFormation known) call (ExDispatch site AtPhi))
           pure (ExFormation [BiLambda (FnSymbol fresh)])
     postponing _ _ _ _ = pure Nothing
-    argued :: ReduceContext -> State -> Expression -> [Binding] -> IO (Maybe Expression)
-    argued ctx state' site bds = traverse go (called bds)
-      where
-        go :: Expression -> IO Expression
-        go (ExApplication target (ArTau attr body)) = do
-          target' <- go target
-          ExApplication target' . ArTau attr <$> reckoned attr body
-        go call = pure call
-        reckoned :: Attribute -> Expression -> IO Expression
-        reckoned _ body@(ExFormation [BiLambda (FnSymbol _)]) = pure body
-        reckoned attr body = do
-          placed <- ctx._engine._contextualize body (ExFormation (filter (not . named attr) bds))
-          figured ctx state' (ExDispatch site attr) placed
-    coined :: IO Int
-    coined = atomicModifyIORef' caller._minted (\count -> (succ count, succ count))
     concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     concluded ctx entry operands bound state' = case entry._ending of
       Answering template -> answered ctx template operands bound state'

@@ -20,7 +20,7 @@ import Deps (Evaluation (..), Judgment (..), State (..), resited)
 import Engine (Engine (..))
 import qualified Inference as In
 import Locator (locatedExpression)
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, entering, inferred, insideUniverse, leadsTo, onward, opening, parking, universed)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed)
 import Rewriter (Rewritten)
 
 type Dataized = (Bytes, [Rewritten])
@@ -54,8 +54,9 @@ dataize universe state ctx@ReduceContext{..} = do
       pure (Residual residue, reverse (NE.toList seq), parked)
 
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
-dataize' (expr, seq) univ state caller = do
-  ctx <- opening Dataization =<< deeper =<< entering expr =<< parking seq state (universed univ caller{_judgment = Dataization})
+dataize' (start, seq) univ state caller = do
+  (expr, entered) <- severing start univ state =<< parking seq state (universed univ caller{_judgment = Dataization})
+  ctx <- opening Dataization =<< deeper entered
   parking seq state $ case unknown expr of
     Just idx -> manufactured idx ctx
     Nothing -> do
