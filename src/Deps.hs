@@ -132,7 +132,7 @@ data Evaluation
   | EvManufactured Int Int
   | EvBoxed Int Expression
   | EvUndressed Int Expression
-  | EvLooped Int Judgment Acyclic Expression Expression
+  | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Expression))
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
@@ -171,7 +171,7 @@ resited from to = record
     record :: Evaluation -> Evaluation
     record (EvFiring depth key judgment site) = EvFiring depth key judgment (moved site)
     record (EvStarted depth judgment site) = EvStarted depth judgment (moved site)
-    record (EvLooped depth judgment mode self site) = EvLooped depth judgment mode self (moved site)
+    record (EvLooped depth judgment mode self site answered) = EvLooped depth judgment mode self (moved site) answered
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (moved site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (moved site)
     record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (moved site)
@@ -196,7 +196,7 @@ tier (EvDelta depth _) = depth
 tier (EvManufactured depth _) = depth
 tier (EvBoxed depth _) = depth
 tier (EvUndressed depth _) = depth
-tier (EvLooped depth _ _ _ _) = depth
+tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
 tier (EvStuckOn depth _) = depth
@@ -382,10 +382,16 @@ saveEval handle cursor printed printed' report = do
       pure (protocol', Just (indented at (printf "%s := %s" naming datum)))
     written at (EvBoxed _ term) protocol = taking at "boxed" term protocol
     written at (EvUndressed _ term) protocol = taking at "undressed" term protocol
-    written at (EvLooped _ judgment mode self site) protocol = do
+    written at (EvLooped _ judgment mode self site answered) protocol = do
       form <- render self
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "looped %s" form) (remarks ++ [certainty mode]))))
+      (line, notes) <- maybe (pure (printf "looped %s" form, [])) (severed form) answered
+      pure (protocol, Just (indented at (remarked line (remarks ++ certainty mode : notes))))
+      where
+        severed :: String -> (Int, Expression) -> IO (String, [String])
+        severed form (symbol, call) = do
+          made <- printed (abbreviatedInside protocol._made call)
+          pure (printf "looped %s := %s" (printFunction (FnSymbol symbol)) made, [printf "repeats %s" form])
     written at (EvStuck _ key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented at (printf "unanswered %s  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -661,11 +667,17 @@ saveEvalXml handle cursor printed report = do
         pending :: [(Int, Judgment, Expression)]
         pending = dropWhile (\(level, _, _) -> level > at) nesting._pending
         (kept, closers) = closed at nesting._closing
-    elements at (EvLooped depth judgment mode self site) nesting =
+    elements at (EvLooped depth judgment mode self site Nothing) nesting =
       placed at nesting $ do
         locator <- located depth site
         origin <- sole depth self
         pure (enclosed "looped" (printf "<looped by=\"%s\" match=\"%s\" at=\"%s\"" (opened judgment) (certainty mode) (escapeXML locator)) origin)
+    elements at (EvLooped depth judgment mode self site (Just (symbol, call))) nesting =
+      placed at nesting $ do
+        locator <- located depth site
+        origin <- leaf depth self
+        (object, given) <- called depth call
+        pure (printf "<looped symbol=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\">%s</looped>" (sigma symbol) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) given)
     elements at (EvStuck depth key judgment self) nesting =
       placed at nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
     elements at (EvStall _ key) nesting =

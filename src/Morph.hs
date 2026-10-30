@@ -4,25 +4,26 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 {-# OPTIONS_GHC -Wno-unused-record-wildcards #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, awaited, boxed, charged, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, catch, evaluate, throwIO, try)
 import Control.Monad (when)
-import Data.IORef (IORef, modifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (isJust, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Engine (Engine (..))
@@ -274,8 +275,96 @@ enter form ctx = admitted form ctx >>= either (refused form ctx) pure
 
 refused :: Expression -> ReduceContext -> (Acyclic, Expression) -> IO a
 refused form ctx (mode, before) = do
-  ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site)
+  ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site Nothing)
   throwIO (Looping form)
+
+severing :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, ReduceContext)
+severing term univ state ctx = case entrance ctx._judgment term of
+  Just form -> either (,ctx) (term,) <$> sever form univ state ctx
+  Nothing -> pure (term, ctx)
+
+sever :: Expression -> Expression -> State -> ReduceContext -> IO (Either Expression ReduceContext)
+sever form univ state ctx = admitted form ctx >>= either severed (pure . Right)
+  where
+    severed :: (Acyclic, Expression) -> IO (Either Expression ReduceContext)
+    severed (mode, before) = case form of
+      ExFormation bds
+        | boxed bds
+        , Just call <- called univ ctx bds -> do
+            reckoned <- argued univ ctx state form bds call
+            fresh <- coined ctx
+            ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
+            pure (Left (ExFormation [BiLambda (FnSymbol fresh)]))
+      _ -> refused form ctx (mode, before)
+
+coined :: ReduceContext -> IO Int
+coined ctx = atomicModifyIORef' ctx._minted (\count -> (succ count, succ count))
+
+fired :: Expression -> ReduceContext -> Expression -> State -> Expression -> IO (Expression, State)
+fired univ ctx site state form = sever form univ state ctx{_judgment = Evaluation, _site = site} >>= either (pure . (,state)) kindled
+  where
+    kindled :: ReduceContext -> IO (Expression, State)
+    kindled entered = do
+      deep <- deeper entered
+      deep._evaluate deep state form univ
+
+called :: Expression -> ReduceContext -> [Binding] -> Maybe Expression
+called univ ctx known = uncurry applied <$> origin known
+  where
+    applied :: Expression -> [Binding] -> Expression
+    applied path declared = foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` declared]
+    origin :: [Binding] -> Maybe (Expression, [Binding])
+    origin bds = do
+      parent <- case filter ((== Just AtRho) . attributeFromBinding) bds of
+        [] -> Just ExRoot
+        [BiTau AtRho (ExFormation outer)] -> fst <$> origin outer
+        [BiTau AtRho path] -> Just (erased path)
+        _ -> Nothing
+      ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
+      chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
+      where
+        fits :: [Binding] -> Bool
+        fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- bds, attributeFromBinding bd /= Just AtRho]
+        chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
+        chosen [] = Nothing
+        chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
+          [one] -> Just one
+          _ -> Nothing
+        agreed :: (Expression, [Binding]) -> (Int, Int)
+        agreed (_, declared) = (length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
+    located :: Expression -> Expression -> Maybe Expression
+    located ExRoot whole = Just whole
+    located (ExDispatch path attr) whole = case located path whole of
+      Just (ExFormation siblings) -> listToMaybe [body | BiTau attr' body <- siblings, attr' == attr]
+      _ -> Nothing
+    located _ _ = Nothing
+    erased :: Expression -> Expression
+    erased (ExApplication target _) = erased target
+    erased (ExDispatch target attr) = ExDispatch (erased target) attr
+    erased other = other
+
+argued :: Expression -> ReduceContext -> State -> Expression -> [Binding] -> Expression -> IO Expression
+argued univ ctx state site bds = go
+  where
+    go :: Expression -> IO Expression
+    go (ExApplication target (ArTau attr body)) = do
+      target' <- go target
+      ExApplication target' . ArTau attr <$> reckoned attr body
+    go call = pure call
+    reckoned :: Attribute -> Expression -> IO Expression
+    reckoned _ body@(ExFormation [BiLambda (FnSymbol _)]) = pure body
+    reckoned attr body = do
+      placed <- ctx._engine._contextualize body (ExFormation (filter (not . named attr) bds))
+      figured (ExDispatch site attr) placed
+    named :: Attribute -> Binding -> Bool
+    named attr (BiTau attr' _) = attr == attr'
+    named _ _ = False
+    figured :: Expression -> Expression -> IO Expression
+    figured place placed = unparked $ do
+      (normal, morphed) <- settled placed univ state =<< opening Morphing ctx{_site = place}
+      case normal of
+        ExFormation _ -> fst <$> fired univ ctx place morphed normal
+        _ -> pure normal
 
 admitted :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) ReduceContext)
 admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic

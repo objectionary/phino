@@ -6,21 +6,22 @@
 # every round 𝕄 stops at a formation of its own and only 𝔻 — 'box'
 # contextualizing that body and 'norm' morphing what comes out — comes back to
 # the term it started from. Before #1290 the guard of '--acyclic' was 𝕄's alone
-# and this went round until the step budget ran out; now 𝔻 asks it too, and the
-# spine around the firing parks with the term it had reached when the firing
-# started, exactly as it does for a loop 𝕄 catches.
+# and this went round until the step budget ran out; now 𝔻 asks it too. The box
+# step answers the copy of 'cyc' it would enter again with a fresh symbol
+# (#2226), so the operand comes down to the datum of that symbol and the firing
+# answers.
 symbolic: |
   - λ: L_outer
     dataize:
       𝛿1: ξ.arg
-    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+    𝑛: ⟦ bar ↦ ⟦ λ ⤍ 𝜎 ⟧ ⟧
 location: 'Q.x'
 acyclic: proven
 steps: 250
 input: >
   ⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧,
     x ↦ ⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧.bar ⟧
-result: '⟦ arg ↦ Φ.cyc( ⟦⟧ ), λ ⤍ L_outer ⟧.bar'
+result: '𝜎2:λ'
 protocol: |
   𝕄(Φ.x):
     𝔼(L_outer):
@@ -34,4 +35,13 @@ protocol: |
           𝑛·1·5 := Φ.cyc( x ↦ ⟦⟧ )
           𝑛·1·6 := ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧
           morphed 𝑛·1·7 := 𝑛·1·6
-        looped 𝑛·1·7  # 𝔻(𝑛·1·4), proven
+        𝕄(𝑛·1·7.x):
+          morphed 𝑛·1·8 := ⟦⟧
+        looped 𝜎1 := Φ.cyc( x ↦ 𝑛·1·8 )  # 𝔻(𝑛·1·4), proven, repeats 𝑛·1·7
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.arg)
+      𝑛·1·9 := 𝜎2:λ:bar  # 𝑛
+      𝕄(𝑛·1·9):
+        morphed 𝑛·1·10 := 𝜎2:λ:bar
+      𝑛·1·11 := 𝑛·1·10  # 𝕄(𝑛·1·9)
+    morphed 𝑛·0·1 := 𝜎2:λ

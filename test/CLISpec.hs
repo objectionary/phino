@@ -1480,17 +1480,17 @@ spec = do
             ["dataize", "--locator=Q.t", "--max-steps=40"]
             ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
-      it "names the term it came back to with the flag" $
+      it "answers the copy it came back to with a symbol with the flag" $
         withStdin circling $
-          testCLIFailed
+          testCLISucceeded
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-steps=4000"]
-            ["[ERROR]: Reduction entered a formation it is already inside:"]
+            ["40-45-00-00-00-00-00-00"]
 
-      it "prints the residue and exits successfully with --partial" $
+      it "answers the same with --partial" $
         withStdin circling $
           testCLISucceeded
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
-            ["Φ.cyc( α0 ↦ ⟦⟧ )"]
+            ["40-45-00-00-00-00-00-00"]
 
       it "writes the cut to the protocol where the formation would have opened" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1511,7 +1511,10 @@ spec = do
                        , "    𝑛·0·5 := Φ.cyc( x ↦ ⟦⟧ )"
                        , "    𝑛·0·6 := ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
                        , "    morphed 𝑛·0·7 := 𝑛·0·6"
-                       , "  looped 𝑛·0·7  # 𝔻(𝑛·0·4), proven"
+                       , "  𝕄(𝑛·0·7.x):"
+                       , "    morphed 𝑛·0·8 := ⟦⟧"
+                       , "  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·8 )  # 𝔻(𝑛·0·4), proven, repeats 𝑛·0·7"
+                       , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
                        ]
 
       it "writes the cut to the XML protocol with the formation in an element of its own" $
@@ -1537,7 +1540,11 @@ spec = do
                        , "    <formed meta=\"𝑛·0·6\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></formed>"
                        , "    <morphed meta=\"𝑛·0·7\">𝑛·0·6</morphed>"
                        , "  </morph>"
-                       , "  <looped by=\"dataize\" match=\"proven\" at=\"𝑛·0·4\" of=\"𝑛·0·7\"/>"
+                       , "  <morph at=\"𝑛·0·7.x\">"
+                       , "    <morphed meta=\"𝑛·0·8\">𝑒·0·1</morphed>"
+                       , "  </morph>"
+                       , "  <looped symbol=\"𝜎1\" by=\"dataize\" match=\"proven\" at=\"𝑛·0·4\" of=\"𝑛·0·7\" object=\"Φ.cyc\"><with><meta attr=\"x\">𝑛·0·8</meta></with></looped>"
+                       , "  <manufactured meta=\"𝛿·0·1\">𝜎1</manufactured>"
                        , "</dataize>"
                        ]
 
@@ -1549,7 +1556,7 @@ spec = do
               ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readProtocol path
-          lines records `shouldContain` ["  looped 𝑛·0·7  # 𝔻(𝑛·0·4), plausible"]
+          lines records `shouldContain` ["  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·8 )  # 𝔻(𝑛·0·4), plausible, repeats 𝑛·0·7"]
 
       it "refuses the flag without a mode" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
@@ -1567,9 +1574,9 @@ spec = do
       let once = "⟦ f ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.again ⟧, start ↦ ⟦ again ↦ Φ.f( x ↦ Φ.stop( v ↦ Φ.start ) ) ⟧, stop ↦ ⟦ v ↦ ∅, again ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, t ↦ Φ.f( x ↦ Φ.start ) ⟧"
       it "cuts a recursion that stops after one round without the flag" $
         withStdin once $
-          testCLIFailed
+          testCLISucceeded
             ["dataize", "--locator=Q.t", "--acyclic=plausible"]
-            ["[ERROR]: Reduction entered a formation it is already inside:"]
+            ["40-45-00-00-00-00-00-00"]
 
       it "dataizes a recursion that stops after one round with --max-loops=1" $
         withStdin once $
@@ -1577,9 +1584,9 @@ spec = do
 
       it "cuts a recursion that never stops with --max-loops=1" $
         withStdin "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧" $
-          testCLIFailed
+          testCLISucceeded
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-loops=1", "--max-steps=4000"]
-            ["[ERROR]: Reduction entered a formation it is already inside:"]
+            ["40-45-00-00-00-00-00-00"]
 
       it "refuses a negative count" $
         withStdin once $
@@ -1588,6 +1595,30 @@ spec = do
       it "refuses the flag without --acyclic" $
         withStdin once $
           testCLIFailed ["dataize", "--locator=Q.t", "--max-loops=1"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
+
+    describe "--acyclic at a recursive call" $ do
+      let recursive = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.call( a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ) ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
+          calling = T.pack "- λ: L_call\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n"
+          recorded :: String -> IO [String]
+          recorded name =
+            withTempFile name $ \(path, stream) -> do
+              hClose stream
+              withLambdasOf calling $ \file ->
+                withStdin recursive $
+                  testCLISucceeded
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    []
+              lines <$> readProtocol path
+      it "answers the recursive call it cuts with a fresh symbol and goes on" $
+        withLambdasOf calling $ \file ->
+          withStdin recursive $
+            testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible"] ["40-45-00-00-00-00-00-00"]
+
+      it "writes the recursive call it cuts to the protocol as a call of the object" $
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["    looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # 𝔼(𝑛1), plausible, repeats 𝑛·0·3"])
+
+      it "writes the recursive call it cuts to the XML protocol with the object and the metas of its arguments" $
+        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["    <looped symbol=\"𝜎1\" by=\"evaluate\" match=\"plausible\" at=\"𝑛1\" of=\"𝑛·0·3\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·1·6</meta></with></looped>"])
 
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
