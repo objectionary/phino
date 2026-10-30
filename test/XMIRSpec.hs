@@ -226,6 +226,26 @@ spec = do
       doc <- parseXMIRThrows "<object><o name=\"top\"><o name=\"as-int\"><o atom=\"Φ.number\" name=\"λ\"/></o><o name=\"as_int\"><o atom=\"Φ.string\" name=\"λ\"/></o></o></object>"
       xmirAtoms doc `shouldReturn` M.fromList [("L_top_as_int", "Φ.number"), ("L_top_as_int_2", "Φ.string")]
 
+    describe "stays unique when two λ markers sit under the same inner path" $ do
+      let apps :: String
+          apps = "<object><o name=\"app\"><o name=\"m\" base=\"Φ.f\"><o as=\"x\"><o name=\"y\"><o name=\"λ\" atom=\"Φ.a\"/></o></o></o><o name=\"n\" base=\"Φ.f\"><o as=\"x\"><o name=\"y\"><o name=\"λ\" atom=\"Φ.b\"/></o></o></o></o></object>"
+          mixed :: String
+          mixed = "<object><o name=\"app\"><o name=\"m\" base=\"Φ.f\"><o as=\"x\"><o name=\"y\"><o name=\"λ\" atom=\"Φ.a\"/></o></o></o><o name=\"y\"><o name=\"λ\" atom=\"Φ.b\"/></o></o></object>"
+      it "names the atoms of two arguments apart" $
+        (parseXMIRThrows apps >>= xmirAtoms) `shouldReturn` M.fromList [("L_app_y", "Φ.a"), ("L_app_y_2", "Φ.b")]
+      it "names an atom of an argument apart from a formation of the same path" $
+        (parseXMIRThrows mixed >>= xmirAtoms) `shouldReturn` M.fromList [("L_app_y", "Φ.a"), ("L_app_y_2", "Φ.b")]
+      it "keeps the @atom of each marker in xmir output" $ do
+        doc <- parseXMIRThrows apps
+        expr <- xmirToPhi doc
+        atoms <- xmirAtoms doc
+        printed <- printXMIR <$> expressionToXMIR expr (XmirContext True True False (const "") atoms)
+        printed `shouldContain` "atom=\"Φ.a\""
+        printed `shouldContain` "atom=\"Φ.b\""
+      it "prints both names in 𝜑" $ do
+        printed <- printExpression <$> (parseXMIRThrows apps >>= xmirToPhi)
+        printed `shouldContain` "L_app_y_2"
+
   describe "atom result types in XMIR" $ do
     let atom :: String
         atom = "<object><o name=\"number\"><o name=\"plus\"><o base=\"∅\" name=\"b\"/><o atom=\"Φ.number\" name=\"λ\"/></o></o></object>"
