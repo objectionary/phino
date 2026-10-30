@@ -8,6 +8,7 @@
 module ParserSpec where
 
 import AST
+import Bytes (numToBts)
 import Control.Exception (SomeException, displayException, try)
 import Control.Monad (forM_)
 import Data.Either (fromLeft, isLeft, isRight)
@@ -50,6 +51,16 @@ renderFailure action = do
 
 spec :: Spec
 spec = do
+  describe "parse a label with a leading sign, the way EO names a test" $
+    test
+      parseExpression
+      [ ("⟦ +foo ↦ Φ.x ⟧", Just (ExFormation [BiTau (AtLabel "+foo") (ExDispatch ExRoot (AtLabel "x"))]))
+      , ("⟦ -bar ↦ ∅ ⟧", Just (ExFormation [BiVoid (AtLabel "-bar")]))
+      , ("⟦ x ↦ ξ.+foo ⟧", Just (ExFormation [BiTau (AtLabel "x") (ExDispatch ExXi (AtLabel "+foo"))]))
+      , ("⟦ x ↦ -5 ⟧", Just (ExFormation [BiTau (AtLabel "x") (DataNumber (numToBts (-5)))]))
+      , ("⟦ +Foo ↦ Φ.x ⟧", Nothing)
+      ]
+
   describe "parse expression" $
     test
       parseExpression
