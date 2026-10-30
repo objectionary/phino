@@ -272,6 +272,14 @@ spec = do
       , ("[[ y -> 5, x -> Q.z(} ]]", "expression:1:21:")
       ]
 
+  describe "points at the typo inside a list of named arguments instead of its first arrow" $
+    fails
+      parseExpression
+      [ ("⟦ a ↦ Φ.foo( x ↦ 1, y ↦ ) ⟧", "expression:1:25:")
+      , ("⟦ a ↦ Φ.foo( x ↦ 1, 2 ) ⟧", "expression:1:21:")
+      , ("⟦\n  app ↦ Φ.io.stdout(\n    text ↦ Φ.string(\n      ⟦ Δ ⤍ 48-65-6C-6C-6F ⟧\n    ),\n    size ↦ Φ.number( ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧,\n    mode ↦ ⟦⟧\n  )\n⟧", "expression:7:10:")
+      ]
+
   describe "tells what a binding prefix may be followed by" $
     fails
       parseExpression
@@ -579,6 +587,8 @@ spec = do
       , ("[[]](~!i1 -> $)", Just (ExApplication (ExFormation []) (ArAlpha (AlMeta "i1") ExXi)))
       , ("[[]](α𝑖1 -> Q)", Just (ExApplication (ExFormation []) (ArAlpha (AlMeta "i1") ExRoot)))
       , ("Q.foo(a1 -> Q.y)", Just (ExApplication (ExDispatch ExRoot (AtLabel "foo")) (ArTau (AtLabel "a1") (ExDispatch ExRoot (AtLabel "y")))))
+      , ("Q.f(b(c), d)", Just (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArAlpha (Alpha 0) (ExApplication (ExDispatch ExXi (AtLabel "b")) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "c")))))) (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "d")))))
+      , ("Q.f(b(c) -> [[]])", Just (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "b") (ExFormation [BiVoid (AtLabel "c")]))))
       ]
 
   describe "parse meta expressions" $
