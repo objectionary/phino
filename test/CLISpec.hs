@@ -421,6 +421,12 @@ spec = do
           , ["--in-place and --hide-rho cannot be used together"]
           )
         ,
+          ( "when --headers is used without --sequence"
+          , "[[ ]]"
+          , ["rewrite", "--headers"]
+          , ["The option --headers requires --sequence, since only the intermediate steps get headers"]
+          )
+        ,
           ( "with --depth-sensitive"
           , "[[ x -> \"x\"]]"
           , ["rewrite", "--depth-sensitive", "--max-depth=1", "--max-cycles=1", rule "infinite.yaml"]
@@ -921,11 +927,11 @@ spec = do
               ]
           ]
 
-    it "ignores --headers without --sequence" $
+    it "refuses --headers without --sequence" $
       withStdin "[[ x -> \"foo\" ]]" $
-        testCLISucceeded
+        testCLIFailed
           ["rewrite", rule "simple.yaml", "--headers", "--sweet", "--flat"]
-          ["\"bar\":x"]
+          ["The option --headers requires --sequence, since only the intermediate steps get headers"]
 
     it "emits step headers as LaTeX comments with --headers" $
       withStdin "[[ x -> \"foo\" ]]" $
@@ -1789,6 +1795,42 @@ spec = do
       it "refuses to cut the data in morph without --abridged" $
         withStdin wide $
           testCLIFailed ["morph", "--locator=Q.t", "--protocol=daten.xml", "--abridged-data"] ["The option --abridged-data requires --abridged"]
+
+    describe "--headers" $ do
+      it "refuses --headers without --sequence in rewrite" $
+        withStdin "[[ ]]" $
+          testCLIFailed
+            ["rewrite", "--headers"]
+            ["The option --headers requires --sequence, since only the intermediate steps get headers"]
+      it "refuses --headers without --sequence in dataize" $
+        withStdin "[[ ]]" $
+          testCLIFailed
+            ["dataize", "--locator=Q.t", "--headers"]
+            ["The option --headers requires --sequence, since only the intermediate steps get headers"]
+      it "refuses --headers without --sequence in morph" $
+        withStdin "[[ ]]" $
+          testCLIFailed
+            ["morph", "--locator=Q.t", "--headers"]
+            ["The option --headers requires --sequence, since only the intermediate steps get headers"]
+      it "refuses --headers without --sequence when --sweet is used" $
+        withStdin "[[ ]]" $
+          testCLIFailed
+            ["rewrite", "--headers", "--sweet"]
+            ["The option --headers requires --sequence, since only the intermediate steps get headers"]
+      it "refuses --headers without --sequence in dataize with --partial" $
+        withStdin "[[ ]]" $
+          testCLIFailed
+            ["dataize", "--locator=Q.t", "--headers", "--partial"]
+            ["The option --headers requires --sequence, since only the intermediate steps get headers"]
+      it "accepts --headers with --sequence in rewrite" $
+        withStdin "[[ ]]" $
+          testCLISucceeded ["rewrite", "--headers", "--sequence"] ["=== Step #1"]
+      it "accepts --headers with --sequence in dataize" $
+        withStdin "[[ D> 01- ]]" $
+          testCLISucceeded ["dataize", "--headers", "--sequence"] ["=== Step #1"]
+      it "accepts --headers with --sequence in morph" $
+        withStdin "[[ D> 01- ]]" $
+          testCLISucceeded ["morph", "--headers", "--sequence"] ["=== Step #1"]
 
     describe "--protocol" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
