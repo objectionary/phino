@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-# Binds the attribute that random-tau returns to an attribute meta, which is right.
+# Binds the attribute that random-tau returns to an attribute meta.
 name: tau-to-attribute
 pattern: "⟦ foo ↦ 𝑒1 ⟧"
 result: "⟦ 𝜏2 ↦ 𝑒1 ⟧"
