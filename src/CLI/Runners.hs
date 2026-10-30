@@ -100,6 +100,7 @@ runRewrite OptsRewrite{..} = do
       when (_update && isNothing _targetFile) (invalidCLIArguments "The option --update requires --target")
       when (_update && isNothing _inputFile) (invalidCLIArguments "The option --update requires an input file")
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
+      when (_headers && not _sequence) (invalidCLIArguments "The option --headers requires --sequence, since only the intermediate steps get headers")
       validateLatexOptions
         _outputFormat
         [(_nonumber, "nonumber"), (_compress, "compress")]
@@ -214,6 +215,7 @@ runDataize args OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
+      when (_headers && not _sequence) (invalidCLIArguments "The option --headers requires --sequence, since only the intermediate steps get headers")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
@@ -305,6 +307,7 @@ runMorph args OptsMorph{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
+      when (_headers && not _sequence) (invalidCLIArguments "The option --headers requires --sequence, since only the intermediate steps get headers")
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
