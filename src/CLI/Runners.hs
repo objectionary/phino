@@ -17,10 +17,10 @@ import Control.Exception
 import Control.Monad (unless, when)
 import Data.Foldable (traverse_)
 import Data.IORef (newIORef)
-import Data.List (intercalate)
+import Data.List (find, intercalate)
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromJust, isJust, isNothing, listToMaybe)
+import Data.Maybe (fromJust, fromMaybe, isJust, isNothing, listToMaybe)
 import qualified Data.Text as T
 import Dataize
 import Deps (Judgment (..), dontSaveMade)
@@ -367,11 +367,11 @@ runMerge OptsMerge{..} = do
   validateOpts
   inputs' <- traverse (readInput . Just) _inputs
   setStdGen (mkStdGen _seed)
-  (exprs, atoms) <- unzip <$> traverse (\input -> parseInputWithAtoms input _inputFormat _monoform) inputs'
+  (exprs, atoms) <- apart <$> traverse (\input -> parseInputWithAtoms input _inputFormat _monoform) inputs'
   expr <- merge exprs
   validateXmirTopLevel _outputFormat expr
   let listing = const (escapeXMLText (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin)))
-      xmirCtx = XmirContext _omitListing _omitComments False listing (Map.unions atoms)
+      xmirCtx = XmirContext _omitListing _omitComments False listing atoms
       printCtx = toPrintCtx xmirCtx
   expr' <- printInFormat printCtx expr
   printOut _targetFile expr'
@@ -380,6 +380,31 @@ runMerge OptsMerge{..} = do
     validateOpts = do
       when (null _inputs) (throwIO (InvalidCLIArguments "At least one input file must be specified for 'merge' command"))
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] "Q"
+    apart :: [(Expression, Atoms)] -> ([Expression], Atoms)
+    apart = foldl step ([], Map.empty)
+      where
+        step :: ([Expression], Atoms) -> (Expression, Atoms) -> ([Expression], Atoms)
+        step (done, seen) (expr, own) =
+          let clashing = [name | (name, atom) <- Map.toList own, maybe False (/= atom) (Map.lookup name seen)]
+              renames = Map.fromList (zip clashing (fresh (Map.keys seen ++ Map.keys own) clashing))
+              renamed name = Map.findWithDefault name name renames
+           in (done ++ [relabel renamed expr], Map.union seen (Map.mapKeys renamed own))
+        fresh :: [T.Text] -> [T.Text] -> [T.Text]
+        fresh _ [] = []
+        fresh taken (name : rest) =
+          let free = fromMaybe name (find (`notElem` taken) [name <> T.pack ('_' : show n) | n <- [2 :: Int ..]])
+           in free : fresh (free : taken) rest
+    relabel :: (T.Text -> T.Text) -> Expression -> Expression
+    relabel renamed (ExFormation bds) = ExFormation (map binding bds)
+      where
+        binding :: Binding -> Binding
+        binding (BiLambda (Function name)) = BiLambda (Function (renamed name))
+        binding (BiTau attr expr) = BiTau attr (relabel renamed expr)
+        binding bd = bd
+    relabel renamed (ExApplication expr (ArTau attr arg)) = ExApplication (relabel renamed expr) (ArTau attr (relabel renamed arg))
+    relabel renamed (ExApplication expr (ArAlpha alpha arg)) = ExApplication (relabel renamed expr) (ArAlpha alpha (relabel renamed arg))
+    relabel renamed (ExDispatch expr attr) = ExDispatch (relabel renamed expr) attr
+    relabel _ expr = expr
     toPrintCtx :: XmirContext -> PrintContext
     toPrintCtx xmirCtx =
       PrintCtx
