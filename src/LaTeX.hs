@@ -28,7 +28,7 @@ import AST
 import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
-import Data.Char (isAscii, ord)
+import Data.Char (isAscii, isAsciiLower, isAsciiUpper, isDigit, ord)
 import Data.List (intercalate, nub, zipWith4)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
@@ -268,9 +268,24 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_NONFINITE{..} = EX_DISPATCH (EX_GLOBAL global) SPACE (toLaTeX (AT_LABEL (nonFiniteName nonfinite)))
   toLaTeX EX_BYTES{..} = EX_BYTES (toLaTeX bytes)
   toLaTeX EX_SINGLE{..} = EX_SINGLE (toLaTeX pair) SPACE (toLaTeX formation)
-  toLaTeX EX_STRING{..} = EX_STRING (T.unpack (toLaTeX (T.pack str))) tab rhos
+  toLaTeX EX_STRING{..}
+    | plain str = EX_STRING (T.unpack (toLaTeX (T.pack str))) tab rhos
+    | otherwise = EX_ATTR (AT_LABEL (T.pack ("|\\char34{}" ++ concatMap protected str ++ "\\char34{}|")))
   toLaTeX num@EX_NUMBER{} = EX_ATTR (toLaTeX (AT_LABEL (render num)))
   toLaTeX expr = expr
+
+plain :: String -> Bool
+plain str = not (null str) && all (\ch -> alnum ch || ch == ' ') str && not (any (`elem` ["Q", "T", "D", "L"]) (words str))
+
+alnum :: Char -> Bool
+alnum ch = isAsciiUpper ch || isAsciiLower ch || isDigit ch
+
+protected :: Char -> String
+protected ch
+  | alnum ch && ch `notElem` ("QTDL" :: String) = [ch]
+  | ch == ' ' = "\\space{}"
+  | isAscii ch = printf "\\char%d{}" (ord ch)
+  | otherwise = concatMap protected (printf "[U+%04X]" (ord ch) :: String)
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL{..} = AT_LABEL (piped label)
