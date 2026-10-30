@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The deferral of #1892 over a copy with two arguments: 'x' reads to the bare
+# symbol '𝜎1', so the 'defer' line defers the copy, and 'w' is a call of
+# 'Φ.hang'. Its morph stops at a formation with no λ whose φ reads 'ξ.x', so
+# the line morphs that φ and fires it once more, the way a branch whose φ reads
+# its own object is worked out in #1885. The line then names 'w' by a meta
+# leading to a formation whose φ ends in a symbol, instead of leaving a '?'
+# in '<with>' (#1919).
+symbolic: |
+  - λ: L_inc
+    dataize:
+      𝛿1: $.x
+    𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    defer:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    join:
+      on: 𝛿1
+      left: 𝑛3
+      right: 𝑛4
+location: 'Q.y'
+input: '⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, done ↦ ⟦⟧, hang(x) ↦ ⟦ φ ↦ ξ.x ⟧, num(φ) ↦ ⟦⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ x ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ λ ⤍ 𝜎3 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.hang( Φ.num( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ) ), λ ⤍ L_fork ⟧, λ ⤍ L_inc ⟧.φ ⟧'
+result: '𝜎7:λ'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_inc):
+      𝔻(ξ.x):
+        𝔼(L_fork):
+          𝔻(ξ.c):
+            𝛿·2·1 := 𝔻(𝜎2:λ)
+          𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.c)
+          𝕄(ξ.a):
+            morphed 𝑛·2·1 := 𝜎3:λ
+          𝑛1·2 := 𝑛·2·1  # 𝕄(ξ.a)
+          𝕄(ξ.b):
+            𝑛·2·2 := Φ.box( x ↦ Φ.items.tail )
+            𝑛·2·3 := ⟦ x ↦ Φ.items.tail, w ↦ ∅, φ ↦ x.next ⟧
+            𝑛·2·4 := 𝑛·2·2( w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ) )
+            𝑛·2·5 := ⟦ x ↦ Φ.items.tail, w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ), φ ↦ x.next ⟧
+            morphed 𝑛·2·6 := 𝑛·2·5
+          𝑛2·2 := 𝑛·2·6  # 𝕄(ξ.b)
+          𝕄(𝑛2.w):
+            𝑛·2·7 := Φ.hang( x ↦ Φ.num( φ ↦ 𝜎4:λ ) )
+            𝑛·2·8 := ⟦ x ↦ Φ.num( φ ↦ 𝜎4:λ ), φ ↦ x ⟧
+            morphed 𝑛·2·9 := 𝑛·2·8
+          𝕄(𝑛2.w.φ):
+            𝑛·2·10 := Φ.num( φ ↦ 𝜎4:λ )
+            𝑛·2·11 := 𝜎4:λ:φ
+            morphed 𝑛·2·12 := 𝑛·2·11
+          deferred 𝜎5 := Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·12 )  # 𝕄(𝑛2.φ)
+          joined 𝜎6 := 𝛿1·2 ? 𝜎3 : 𝜎5
+          𝑛·2·13 := 𝜎6:λ
+        𝛿·1·1 := 𝔻(𝜎6:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
+      𝑛·1·1 := Φ.num( φ ↦ 𝜎7:λ )  # 𝑛
+      𝕄(𝑛·1·1):
+        𝑛·1·2 := Φ.num( φ ↦ 𝜎7:λ )
+        𝑛·1·3 := 𝜎7:λ:φ
+        morphed 𝑛·1·4 := 𝑛·1·3
+      𝑛·1·5 := 𝑛·1·4  # 𝕄(𝑛·1·1)
+    morphed 𝑛·0·1 := 𝜎7:λ
