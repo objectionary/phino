@@ -572,14 +572,28 @@ spec = do
       cast bare shape `shouldBe` Just made
 
     forM_
+      [ ("a decorator whose φ is a fork" :: String, "⟦ kq ↦ ⟦⟧, φ ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧, right🌵 ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧ ⟧ ⟧", "⟦ kq ↦ ⟦⟧, φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧")
+      , ("a decorator two steps down to a fork", "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧ ⟧, if ↦ ξ.ty ⟧, and ↦ ∅ ⟧", "⟦ φ ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, if ↦ ξ.ty ⟧, and ↦ ∅ ⟧")
+      , ("a decorator whose φ chain ends in no symbol", "⟦ φ ↦ Φ.kq ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧")
+      , ("a decorator whose φ chain ends in a datum", "⟦ φ ↦ ⟦ Δ ⤍ 1F- ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧")
+      , ("a decorator whose φ chain ends in a symbol beside other bindings", "⟦ φ ↦ ⟦ λ ⤍ 𝜎6, zv ↦ ∅ ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧")
+      , ("a decorator holding a symbol off its φ chain", "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, zv ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, zv ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧")
+      , ("a decorator holding the symbol of its φ chain once more off it", "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, zv ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, zv ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧")
+      , ("a decorator whose φ chain runs through an application", "⟦ φ ↦ Φ.kq( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ) ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧")
+      ]
+      ( \(desc, into, expected) ->
+          it ("casts a bare symbol into a copy of " ++ desc) $ do
+            bare <- parseExpressionThrows "⟦ λ ⤍ 𝜎3 ⟧"
+            shape <- parseExpressionThrows into
+            made <- parseExpressionThrows expected
+            cast bare shape `shouldBe` Just made
+      )
+
+    forM_
       [ ("another bare symbol" :: String, "⟦ λ ⤍ 𝜎3 ⟧", "⟦ λ ⤍ 𝜎4 ⟧")
-      , ("a term whose φ chain ends in no symbol", "⟦ λ ⤍ 𝜎3 ⟧", "⟦ φ ↦ Φ.kq ⟧")
-      , ("a term whose φ chain ends in a datum", "⟦ λ ⤍ 𝜎3 ⟧", "⟦ φ ↦ ⟦ Δ ⤍ 1F- ⟧ ⟧")
+      , ("a formation binding no φ", "⟦ λ ⤍ 𝜎3 ⟧", "⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ⟧ ⟧")
+      , ("a term that is no formation", "⟦ λ ⤍ 𝜎3 ⟧", "Φ.kq( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ )")
       , ("a term whose φ is void", "⟦ λ ⤍ 𝜎3 ⟧", "⟦ φ ↦ ∅, zv ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧")
-      , ("a term whose φ chain ends in a symbol beside other bindings", "⟦ λ ⤍ 𝜎3 ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎6, zv ↦ ∅ ⟧ ⟧")
-      , ("a term holding a symbol off its φ chain", "⟦ λ ⤍ 𝜎3 ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, zv ↦ ⟦ λ ⤍ 𝜎7 ⟧ ⟧")
-      , ("a term holding the symbol of its φ chain once more off it", "⟦ λ ⤍ 𝜎3 ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧, zv ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧")
-      , ("a term whose φ chain runs through an application", "⟦ λ ⤍ 𝜎3 ⟧", "⟦ φ ↦ Φ.kq( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ) ⟧")
       , ("a decorator from a term that is no bare symbol", "⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ⟧", "⟦ φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧")
       ]
       ( \(desc, from, into) ->

@@ -442,17 +442,17 @@ stayed = goExpr
 
 cast :: Expression -> Expression -> Maybe Expression
 cast bare@(ExFormation [BiLambda (FnSymbol _)]) shape
-  | length (symbols shape) == 1 = goExpr shape
+  | decorating shape = Just (goExpr shape)
   where
-    goExpr :: Expression -> Maybe Expression
-    goExpr (ExFormation bds) = case [body | BiTau AtPhi body <- bds] of
-      [ExFormation [BiLambda (FnSymbol _)]] -> Just (ExFormation (map (placed bare) bds))
-      [body] -> (\made -> ExFormation (map (placed made) bds)) <$> goExpr body
-      _ -> Nothing
-    goExpr _ = Nothing
-    placed :: Expression -> Binding -> Binding
-    placed made (BiTau AtPhi _) = BiTau AtPhi made
-    placed _ bd = bd
+    goExpr :: Expression -> Expression
+    goExpr body@(ExFormation bds) | decorating body = ExFormation (map placed bds)
+    goExpr _ = bare
+    placed :: Binding -> Binding
+    placed (BiTau AtPhi body) = BiTau AtPhi (goExpr body)
+    placed bd = bd
+    decorating :: Expression -> Bool
+    decorating (ExFormation bds) = AtPhi `elem` [attr | BiTau attr _ <- bds]
+    decorating _ = False
 cast _ _ = Nothing
 
 rewritten :: RuleContext -> [Y.Rule] -> Expression -> IO Expression

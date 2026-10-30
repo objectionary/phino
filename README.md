@@ -158,9 +158,9 @@ file:
   rules under `rules` applied and nothing normalized afterwards.
   The rules are written as in a [rule file](#rule-structure).
 * `cast` holds exactly two lines and binds their two metas as one pair.
-  When one term is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and the φ chain of the other
-  ends in the only symbol it holds, the bare symbol becomes a copy of the other
-  term with `𝜎1` at the end of that chain.
+  When one term is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and the other is a formation
+  binding φ, the bare symbol becomes a copy of the other term with `𝜎1` in
+  place of the term its φ chain ends in, whatever that term is.
 * `𝑛` is the term the entry answers with.
   A bare `𝜎` in it stands for a fresh symbol, and no `𝛿` may appear in it.
 * `join` answers with one term made of two sides, in place of `𝑛`.
