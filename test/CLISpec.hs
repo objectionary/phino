@@ -680,11 +680,25 @@ spec = do
           ["rewrite", rule "evaluate-in-rewrite.yaml"]
           ["Function 'evaluate' in rule 'uses-evaluate' is available only for dataization and morphing, not for rewriting"]
 
+    forM_
+      [ ("args-contextualize-one.yaml", "Function 'contextualize' in rule 'contextualize-one' takes 2 expressions")
+      , ("args-random-tau-one.yaml", "Function 'random-tau' in rule 'random-tau-one' takes no arguments")
+      , ("args-size-expression.yaml", "Function 'size' in rule 'size-expression' takes 1 binding meta")
+      , ("args-tau-two.yaml", "Function 'tau' in rule 'tau-two' takes 1 expression")
+      ]
+      ( \(file, message) ->
+          it ("refuses " ++ file ++ " before any input matches its pattern") $
+            withStdin "⟦ bar ↦ ⟦⟧ ⟧" (testCLIFailed ["rewrite", rule file] [message])
+      )
+
+    it "accepts a where step with the arguments its function expects" $
+      withStdin "⟦ bar ↦ ⟦⟧ ⟧" (testCLISucceeded ["rewrite", rule "args-contextualize-two.yaml"] ["bar ↦ ⟦⟧"])
+
     it "names the join function in the error message" $
       withStdin "⟦⟧" $
         testCLIFailed
           ["rewrite", rule "join-broken.yaml"]
-          ["Function join() can work with bindings only"]
+          ["Function 'join' in rule 'uses-join-on-non-binding' takes bindings"]
 
     it "reports a broken rule file in plain text with its path" $
       withStdin "⟦⟧" $

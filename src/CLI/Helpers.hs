@@ -340,7 +340,7 @@ validateArguments rule =
     [] -> pure rule
     ((extra, expected) : _) ->
       invalidCLIArguments
-        (printf "Function '%s' in rule '%s' expects %s as its arguments" (Y.function extra) rule.name expected)
+        (printf "Function '%s' in rule '%s' takes %s" (Y.function extra) rule.name expected)
   where
     mismatch :: String -> [Y.ExtraArgument] -> Maybe String
     mismatch fn args = case fn of

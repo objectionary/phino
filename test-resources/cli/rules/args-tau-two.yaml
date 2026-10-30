@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Calls tau with two arguments instead of one.
+name: tau-two
+pattern: "⟦ foo ↦ 𝑒1 ⟧"
+result: "⟦ 𝜏2 ↦ 𝑒1 ⟧"
+where:
+  - meta: "𝜏2"
+    function: tau
+    args:
+      - "𝑒1"
+      - "𝑒1"

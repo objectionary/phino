@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Calls contextualize with one argument instead of two.
+name: contextualize-one
+pattern: "⟦ foo ↦ 𝑒1 ⟧"
+result: "⟦ foo ↦ 𝑒2 ⟧"
+where:
+  - meta: "𝑒2"
+    function: contextualize
+    args:
+      - "𝑒1"
