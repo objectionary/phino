@@ -26,7 +26,7 @@ import System.FilePath (makeRelative)
 import Test.Hspec (Spec, anyException, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotContain, shouldReturn, shouldThrow)
 import Text.XML (Document (..), Element (..), Node (NodeElement), Prologue (..))
 import Text.XML.Cursor qualified as C
-import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, toName, xmirAtoms, xmirTime, xmirToPhi)
+import XMIR (XmirContext (XmirContext), defaultXmirContext, escapeXML, expressionToXMIR, parseXMIRThrows, printXMIR, renameAtoms, toName, xmirAtoms, xmirTime, xmirToPhi)
 
 data ParsePack = ParsePack
   { failure :: Maybe Bool
@@ -225,6 +225,28 @@ spec = do
     it "stays unique when two paths spell alike, and keeps the type of each atom" $ do
       doc <- parseXMIRThrows "<object><o name=\"top\"><o name=\"as-int\"><o atom=\"Φ.number\" name=\"λ\"/></o><o name=\"as_int\"><o atom=\"Φ.string\" name=\"λ\"/></o></o></object>"
       xmirAtoms doc `shouldReturn` M.fromList [("L_top_as_int", "Φ.number"), ("L_top_as_int_2", "Φ.string")]
+
+  describe "types of the voids of an atom in XMIR" $ do
+    let alloc :: String
+        alloc = "<object><o name=\"alloc\"><o base=\"∅\" name=\"size\" type=\"Φ.number\"/><o args=\"Φ.chunk\" base=\"∅\" name=\"scope\"/><o base=\"∅\" name=\"free\"/><o atom=\"Φ.bytes\" name=\"λ\"/></o></object>"
+        printed :: IO String
+        printed = do
+          doc <- parseXMIRThrows alloc
+          expr <- xmirToPhi doc
+          atoms <- xmirAtoms doc
+          printXMIR <$> expressionToXMIR expr (XmirContext True True False (const "") atoms)
+    it "keeps @type of a void through a round trip" $
+      printed >>= (`shouldContain` "<o base=\"∅\" name=\"size\" type=\"Φ.number\"/>")
+    it "keeps @args of a void through a round trip" $
+      printed >>= (`shouldContain` "<o args=\"Φ.chunk\" base=\"∅\" name=\"scope\"/>")
+    it "adds nothing to a void without a type" $
+      printed >>= (`shouldContain` "<o base=\"∅\" name=\"free\"/>")
+    it "keeps the type when the λ function is renamed" $ do
+      doc <- parseXMIRThrows alloc
+      atoms <- xmirAtoms doc
+      expr <- parseExpressionThrows "⟦ alloc ↦ ⟦ size ↦ ∅, scope ↦ ∅, free ↦ ∅, λ ⤍ Fn1 ⟧ ⟧"
+      result <- expressionToXMIR expr (renameAtoms [("L_alloc", "Fn1")] (XmirContext True True False (const "") atoms))
+      printXMIR result `shouldContain` "<o base=\"∅\" name=\"size\" type=\"Φ.number\"/>"
 
   describe "atom result types in XMIR" $ do
     let atom :: String
