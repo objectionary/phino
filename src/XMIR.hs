@@ -249,7 +249,9 @@ documentWith :: XmirContext -> [String] -> Expression -> IO [Node] -> IO Documen
 documentWith XmirContext{..} pckg expr rootsIO = do
   started <- getCurrentTime
   roots <- rootsIO
-  mapM_ (\value -> throwIO (userError (printf "XML can't hold U+FFFE or U+FFFF, but they are in '%s'" (T.unpack value)))) (take 1 (filter forbidden (concatMap values roots)))
+  case concatMap (filter forbidden . values) roots of
+    value : _ -> throwIO (userError (printf "XML can't hold U+FFFE or U+FFFF, but they are in '%s'" (T.unpack value)))
+    [] -> pure ()
   now <- getCurrentTime
   let text = _listing expr
       listing =
