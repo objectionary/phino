@@ -7,7 +7,7 @@ module TauSpec where
 
 import AST
 import Control.Monad (forM_, replicateM)
-import Tau (freshTau, seedTaus)
+import Tau (freshTau, reserveTaus, seedTaus)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
@@ -31,6 +31,14 @@ spec = describe "Tau" $ do
       )
     names <- replicateM 2 freshTau
     names `shouldBe` ["a🌵1", "a🌵3"]
+  it "reserves introduced labels without forgetting minted names or resetting the cursor" $ do
+    seedTaus (ExFormation [])
+    first <- freshTau
+    reserveTaus (ExFormation [BiTau (AtLabel "a🌵1") ExRoot])
+    second <- freshTau
+    reserveTaus (ExFormation [])
+    third <- freshTau
+    [first, second, third] `shouldBe` ["a🌵0", "a🌵2", "a🌵3"]
   forM_
     [ ("scans labels through an ExPhiMeet wrapper", ExPhiMeet Nothing 1)
     , ("scans labels through an ExPhiAgain wrapper", ExPhiAgain Nothing 1)
