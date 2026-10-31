@@ -67,10 +67,11 @@ validateNoOverlap showOpt shown hideOpt hidden =
 validateLatexOptions :: IOFormat -> [(Bool, String)] -> [(Maybe String, String)] -> [(Maybe Int, String)] -> IO ()
 validateLatexOptions LATEX _ strings _ = forM_ strings validateLatexString
   where
-    validateLatexString (Just label, "label") =
-      unless (all safeLabelCharacter label) $
-        invalidCLIArguments
-          "The --label option must contain only letters, numbers, colons, periods, underscores, and hyphens"
+    validateLatexString (Just value, opt)
+      | opt `elem` ["label", "meet-prefix"] =
+          unless (all safeLabelCharacter value) $
+            invalidCLIArguments
+              (printf "The --%s option must contain only letters, numbers, colons, periods, underscores, and hyphens" opt)
     validateLatexString _ = pure ()
     safeLabelCharacter character = isAlphaNum character || character `elem` ":._-"
 validateLatexOptions _ bools strings ints = do
