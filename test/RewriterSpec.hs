@@ -310,6 +310,12 @@ spec = do
     it "holds for a formation rewritten between the same two meta bindings" $
       fast (ExFormation [BiMeta "B1", BiVoid (AtLabel "j"), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "k"), BiMeta "B2"])
         `shouldBe` True
+    it "fails for a pattern using its first meta binding once more inside" $
+      fast (ExFormation [BiMeta "B1", BiTau (AtLabel "x") (ExFormation [BiMeta "B1"]), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiTau (AtLabel "y") (ExFormation [BiMeta "B1"]), BiMeta "B2"])
+        `shouldBe` False
+    it "fails for a pattern with the same meta binding at both ends" $
+      fast (ExFormation [BiMeta "B1", BiVoid (AtLabel "j"), BiMeta "B1"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "k"), BiMeta "B1"])
+        `shouldBe` False
     it "fails for a formation rewritten into a dispatch" $
       fast (ExFormation [BiMeta "B1", BiVoid (AtLabel "j"), BiMeta "B2"]) (ExDispatch ExXi (AtLabel "k"))
         `shouldBe` False

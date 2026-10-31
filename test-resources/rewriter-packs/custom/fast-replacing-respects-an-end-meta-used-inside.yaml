@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  [[
+    a -> [[ q -> [[ ]], x -> [[ z -> [[ ]] ]] ]],
+    b -> [[ z -> [[ ]], x -> [[ z -> [[ ]] ]] ]]
+  ]]
+output: |-
+  ⟦
+    a ↦ ⟦ q ↦ ⟦⟧, x ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧,
+    b ↦ ⟦ z ↦ ⟦⟧, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧
+  ⟧
+rules:
+  custom:
+    - name: rename-x-holding-what-stands-before
+      pattern: '[[ !B1, x -> [[ !B1 ]], !B2 ]]'
+      result: '[[ !B1, y -> [[ !B1 ]], !B2 ]]'
