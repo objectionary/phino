@@ -427,6 +427,22 @@ spec = do
           it tight (parseExpression tight `shouldBe` parseExpression spaced)
       )
 
+  describe "a whitespace ends an attribute name" $
+    forM_
+      [ ("⟦ a\x00A0↦ ∅, b ↦ ξ.a ⟧", "⟦ a ↦ ∅, b ↦ ξ.a ⟧")
+      , ("⟦ a\f↦ ∅ ⟧", "⟦ a ↦ ∅ ⟧")
+      , ("⟦ x ↦ ξ.a\x00A0⟧", "⟦ x ↦ ξ.a ⟧")
+      , ("⟦ x ↦ ∅:a\x00A0⟧", "⟦ x ↦ ∅:a ⟧")
+      ]
+      ( \(tight, spaced) ->
+          it tight $ do
+            parseExpression spaced `shouldSatisfy` isRight
+            parseExpression tight `shouldBe` parseExpression spaced
+      )
+
+  it "rejects a control character in an attribute name" $
+    parseAttribute "a\NULb" `shouldSatisfy` isLeft
+
   describe "an arrow ends a meta variable" $
     forM_
       [ ("[[ !t1->$ ]]", "[[ !t1 -> $ ]]")
