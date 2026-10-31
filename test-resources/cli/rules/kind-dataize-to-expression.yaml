@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Binds the bytes that dataize returns to an expression meta.
+name: dataize-to-expression
+pattern: "⟦ foo ↦ 𝑒1 ⟧"
+result: "⟦ foo ↦ 𝑒2 ⟧"
+where:
+  - meta: "𝑒2"
+    function: dataize
+    args:
+      - "𝑒1"
