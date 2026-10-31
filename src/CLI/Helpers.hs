@@ -198,7 +198,7 @@ aimed printCtx judgment header (Just src) expr@(ExFormation _) ctx = do
   ctx._saveEval (EvHeader header aiming._locator target)
   heading ctx._saveEval printCtx judgment aiming._locator
   mapM_ (ctx._saveEval . resited ctx._site aiming._locator) . reverse =<< readIORef held
-  pure (universe, aiming{_site = aiming._locator, _saveEval = ctx._saveEval})
+  pure (universe, aiming{_site = aiming._locator, _opened = Just (ctx._nesting, judgment, aiming._locator), _saveEval = ctx._saveEval})
 aimed _ _ _ (Just _) expr _ =
   invalidCLIArguments
     (printf "The option --inside requires the input expression to be a formation, but given: %s" (P.printExpression expr))
