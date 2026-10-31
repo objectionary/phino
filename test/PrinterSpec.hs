@@ -455,6 +455,11 @@ spec = do
       , ("⟦ x ↦ ⟦ a ↦ ∅, 𝜏1 ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ∅:𝜏1 ⟧")
       , ("⟦ x ↦ ⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧:x")
       , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, Δ ⤍ 00-, b ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ⟦ Δ ⤍ 00-, b ↦ ∅ ⟧ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, Δ ⤍ 00-, b ↦ ∅ ⟧ ⟧", SALTY, UNICODE, "⟦ x ↦ ⟦ a ↦ ∅, Δ ⤍ 00-, b ↦ ∅ ⟧ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, λ ⤍ Fn, b ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ⟦ λ ⤍ Fn, b ↦ ∅ ⟧ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, ρ ↦ ∅, Δ ⤍ 00-, b ↦ ∅, c ↦ ξ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a, ρ) ↦ ⟦ Δ ⤍ 00-, b ↦ ∅, c ↦ ξ ⟧ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, b ↦ ∅, Δ ⤍ 00- ⟧ ⟧", SWEET, UNICODE, "⟦ x(a, b) ↦ 00-:Δ ⟧")
       , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA ]]")
       ]
       ( \(src, sugar, encoding, expected) ->
