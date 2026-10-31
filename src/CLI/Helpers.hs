@@ -324,7 +324,7 @@ getRules normalize shuffle rules = do
       | otherwise = do
           logDebug (printf "Using rules from files: [%s]" (intercalate ", " rules))
           yamls <- mapM ensuredFile (nub rules)
-          mapM (loadRule >=> validateRewriteRule) yamls
+          mapM (loadRule >=> validateRewriteRule >=> validateArguments) yamls
 
 loadRule :: FilePath -> IO Y.Rule
 loadRule file =
@@ -333,6 +333,48 @@ loadRule file =
     reportInvalidRule :: Yaml.ParseException -> IO Y.Rule
     reportInvalidRule err =
       invalidCLIArguments (printf "Could not load rule from '%s'\n%s" file (Y.shiftYamlError (Yaml.prettyPrintParseException err)))
+
+validateArguments :: Y.Rule -> IO Y.Rule
+validateArguments rule =
+  case [(extra, expected) | extra <- fromMaybe [] rule.where_, Just expected <- [mismatch (Y.function extra) (Y.args extra)]] of
+    [] -> pure rule
+    ((extra, expected) : _) ->
+      invalidCLIArguments
+        (printf "Function '%s' in rule '%s' takes %s" (Y.function extra) rule.name expected)
+  where
+    mismatch :: String -> [Y.ExtraArgument] -> Maybe String
+    mismatch fn args = case fn of
+      "contextualize" -> exactly 2 expression "2 expressions"
+      "random-tau" -> exactly 0 (const False) "no arguments"
+      "dataize" -> exactly 1 datum "1 expression or bytes"
+      "random-string" -> exactly 1 datum "1 expression or bytes"
+      "tau" -> exactly 1 expression "1 expression"
+      "number" -> exactly 1 expression "1 expression"
+      "named" -> exactly 1 expression "1 expression"
+      "string" -> exactly 1 (\arg -> expression arg || attribute arg) "1 expression or attribute"
+      "size" -> exactly 1 binding "1 binding meta"
+      "sed" -> least 2 datum "at least 2 expressions or bytes"
+      "sum" -> least 1 datum "at least 1 expression or bytes"
+      "concat" -> least 0 datum "expressions or bytes"
+      "join" -> least 0 binding "bindings"
+      _ -> Nothing
+      where
+        exactly :: Int -> (Y.ExtraArgument -> Bool) -> String -> Maybe String
+        exactly count fits expected = if length args == count && all fits args then Nothing else Just expected
+        least :: Int -> (Y.ExtraArgument -> Bool) -> String -> Maybe String
+        least count fits expected = if length args >= count && all fits args then Nothing else Just expected
+    expression :: Y.ExtraArgument -> Bool
+    expression (Y.ArgExpression _) = True
+    expression _ = False
+    attribute :: Y.ExtraArgument -> Bool
+    attribute (Y.ArgAttribute _) = True
+    attribute _ = False
+    binding :: Y.ExtraArgument -> Bool
+    binding (Y.ArgBinding _) = True
+    binding _ = False
+    datum :: Y.ExtraArgument -> Bool
+    datum (Y.ArgBytes _) = True
+    datum arg = expression arg
 
 validateRewriteRule :: Y.Rule -> IO Y.Rule
 validateRewriteRule rule =
