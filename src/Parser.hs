@@ -27,7 +27,7 @@ where
 import AST
 import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
-import Control.Monad (guard, when)
+import Control.Monad (guard, void, when)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, put)
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.Scientific (scientific, toRealFloat)
@@ -509,7 +509,7 @@ exTail expr =
                 _ <- symbol "("
                 bds <-
                   choice
-                    [ try $ argument `sepBy1` symbol ","
+                    [ lookAhead (try named) >> argument `sepBy1` symbol ","
                     , do
                         exprs <- expression `sepBy1` symbol ","
                         return (zipWith (ArAlpha . Alpha) [0 ..] exprs)
@@ -524,6 +524,12 @@ exTail expr =
         exTail next
     , return expr
     ]
+  where
+    named :: Parser String
+    named = do
+      _ <- choice [void (try alpha), void attribute]
+      _ <- option [] (between (symbol "(") (symbol ")") (void' `sepBy` symbol ","))
+      arrow
 
 expression :: Parser Expression
 expression = do
