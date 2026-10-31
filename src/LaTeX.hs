@@ -28,8 +28,8 @@ import AST
 import Bytes (nonFiniteName)
 import CST
 import Canonizer (canonize, canonizeExpr)
-import Data.Char (isAscii, ord)
-import Data.List (intercalate, nub, zipWith4)
+import Data.Char (isAscii, isAsciiLower, isAsciiUpper, isDigit, ord)
+import Data.List (intercalate, isInfixOf, nub, zipWith4)
 import Data.Maybe (isJust)
 import qualified Data.Text as T
 import Deps (Judgment (..))
@@ -268,9 +268,31 @@ instance ToLaTeX EXPRESSION where
   toLaTeX EX_NONFINITE{..} = EX_DISPATCH (EX_GLOBAL global) SPACE (toLaTeX (AT_LABEL (nonFiniteName nonfinite)))
   toLaTeX EX_BYTES{..} = EX_BYTES (toLaTeX bytes)
   toLaTeX EX_SINGLE{..} = EX_SINGLE (toLaTeX pair) SPACE (toLaTeX formation)
-  toLaTeX EX_STRING{..} = EX_STRING (T.unpack (toLaTeX (T.pack str))) tab rhos
+  toLaTeX EX_STRING{..}
+    | plain str = EX_STRING (T.unpack (toLaTeX (T.pack str))) tab rhos
+    | otherwise = EX_ATTR (AT_LABEL (T.pack ("|\\char34{}" ++ concatMap protected str ++ "\\char34{}|")))
   toLaTeX num@EX_NUMBER{} = EX_ATTR (toLaTeX (AT_LABEL (render num)))
   toLaTeX expr = expr
+
+plain :: String -> Bool
+plain str =
+  not (null str)
+    && not (any (`elem` ("?|\">" :: String)) str)
+    && not (any (`isInfixOf` str) ["<<", "==", ":=", "[[", "]]"])
+    && not (any letter (zip3 (' ' : str) str (drop 1 str ++ " ")))
+  where
+    letter :: (Char, Char, Char) -> Bool
+    letter (before, ch, after) = ch `elem` ("QTDL" :: String) && not (alnum before) && not (alnum after)
+
+alnum :: Char -> Bool
+alnum ch = isAsciiUpper ch || isAsciiLower ch || isDigit ch
+
+protected :: Char -> String
+protected ch
+  | alnum ch && ch `notElem` ("QTDL" :: String) = [ch]
+  | ch == ' ' = "\\space{}"
+  | isAscii ch = printf "\\char%d{}" (ord ch)
+  | otherwise = concatMap protected (printf "[U+%04X]" (ord ch) :: String)
 
 instance ToLaTeX ATTRIBUTE where
   toLaTeX AT_LABEL{..} = AT_LABEL (piped label)
