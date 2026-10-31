@@ -498,12 +498,15 @@ xmirToFormationBinding derived cur fqn
           expr <- xmirToExpression derived cur fqn
           pure (BiTau attr expr)
 
-type Derived = M.Map [String] T.Text
+type Derived = M.Map [Int] T.Text
 
 lambdaName :: Derived -> C.Cursor -> [String] -> IO T.Text
 lambdaName derived cur fqn
   | hasText cur = T.strip . T.pack <$> getText cur
-  | otherwise = pure (M.findWithDefault (spelled fqn) fqn derived)
+  | otherwise = pure (M.findWithDefault (spelled fqn) (spot cur) derived)
+
+spot :: C.Cursor -> [Int]
+spot cur = map (length . C.precedingSibling) (cur : C.ancestor cur)
 
 spelled :: [String] -> T.Text
 spelled fqn = T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn)))
@@ -512,22 +515,21 @@ spelled fqn = T.pack (intercalate "_" ("L" : map (map spell) (reverse fqn)))
     spell ch = if isDigit ch || isAsciiLower ch || ch == '_' || ch == 'φ' then ch else '_'
 
 derivedNames :: Document -> Derived
-derivedNames xmir = snd (foldl assign ([], M.empty) paths)
+derivedNames xmir = snd (foldl assign ([], M.empty) markers)
   where
-    paths :: [[String]]
-    paths =
-      nub
-        [ lambdaPath cur
-        | cur <- C.fromDocument xmir C.$// C.element (toName "o") C.>=> C.attributeIs (toName "name") "λ"
-        , not (hasText cur)
-        ]
+    markers :: [C.Cursor]
+    markers =
+      [ cur
+      | cur <- C.fromDocument xmir C.$// C.element (toName "o") C.>=> C.attributeIs (toName "name") "λ"
+      , not (hasText cur)
+      ]
     bases :: [T.Text]
-    bases = map spelled paths
-    assign :: ([T.Text], Derived) -> [String] -> ([T.Text], Derived)
-    assign (used, names) path =
-      let base = spelled path
+    bases = nub (map (spelled . lambdaPath) markers)
+    assign :: ([T.Text], Derived) -> C.Cursor -> ([T.Text], Derived)
+    assign (used, names) cur =
+      let base = spelled (lambdaPath cur)
           name = fromMaybe base (find (\candidate -> candidate `notElem` used && (candidate == base || candidate `notElem` bases)) (base : [base <> T.pack ('_' : show n) | n <- [2 :: Int ..]]))
-       in (name : used, M.insert path name names)
+       in (name : used, M.insert (spot cur) name names)
 
 lambdaPath :: C.Cursor -> [String]
 lambdaPath cur =
