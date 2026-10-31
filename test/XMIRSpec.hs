@@ -509,6 +509,9 @@ spec = do
       void (parseXMIRThrows "<object><o name=\"app\"><o name=\"+works\"/></o></object>" >>= xmirToPhi)
     it "accepts a formation named with a minus, the way EO names a test that must fail" $
       void (parseXMIRThrows "<object><o name=\"app\"><o name=\"-stops\"/></o></object>" >>= xmirToPhi)
+    it "prints 𝜑 of a test name that reads back the same" $ do
+      expr <- parseXMIRThrows "<object><o name=\"app\"><o name=\"+works\" base=\"Φ.x\"/><o name=\"-stops\"/></o></object>" >>= xmirToPhi
+      parseExpressionThrows (printExpression expr) `shouldReturn` expr
     it "still refuses the rest of the name when it is not a label" $
       (parseXMIRThrows "<object><o name=\"app\"><o name=\"+Works\"/></o></object>" >>= xmirToPhi)
         `shouldThrow` anyException
