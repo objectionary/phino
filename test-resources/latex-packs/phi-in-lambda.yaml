@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+# yamllint disable rule:line-length
+---
+expression: |
+  [[ xρ -> [[ L> Fφ ]] ]]
+result: |-
+  \begin{phiquation}
+  |F[U+03C6]| : L : |x[U+03C1]|{.}
+  \end{phiquation}
