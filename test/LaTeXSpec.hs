@@ -257,7 +257,21 @@ spec = do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
       step2 <- parseExpressionThrows "[[ x -> Q.z ]]"
       latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just (Normalization, "my_rule%1"))], False) defaultLatexContext
-      latex `shouldContain` "\\nameref{r:my\\char95{}rule\\char37{}1}"
+      latex `shouldContain` "\\nameref{r:my-5f-rule-25-1}"
+
+    forM_
+      [ ("a.b", "a-2e-b")
+      , ("my rule x", "my-20-rule-20-x")
+      , ("a(1)?", "a-28-1-29--3f-")
+      , ("my-rule:a/b+c", "my-rule:a/b+c")
+      ]
+      ( \(name, key) ->
+          it ("writes the reference key of '" ++ name ++ "' with characters pdflatex can expand") $ do
+            step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
+            step2 <- parseExpressionThrows "[[ x -> Q.z ]]"
+            latex <- rewrittensToLatex ([(step1, Nothing), (step2, Just (Normalization, name))], False) defaultLatexContext
+            latex `shouldContain` ("\\nameref{r:" ++ key ++ "}")
+      )
 
     it "escapes the name of the rule it explains" $ do
       ptn <- parseExpressionThrows "Q.x"
