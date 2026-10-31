@@ -4085,6 +4085,12 @@ spec = do
           ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B2),1)"]
           ["[ERROR]: The --when condition reads the meta '!B2' it never binds, since neither --pattern binds it"]
 
+    it "accepts the disjoint condition in --when" $
+      withStdin "[[ a -> [[ b -> ? ]] ]]" $
+        testCLISucceeded
+          ["match", "--pattern=[[ !B1 ]]", "--when=disjoint(zzz, !B1)"]
+          ["B1 >>"]
+
     it "fails on parsing --when condition" $
       withStdin "[[]]" $
         testCLIFailed
