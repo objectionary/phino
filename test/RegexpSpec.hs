@@ -10,6 +10,7 @@ import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import Regexp qualified as R
+import System.Timeout (timeout)
 import Test.Hspec (Spec, anyException, describe, it, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
 
 utf8 :: String -> ByteString
@@ -138,7 +139,15 @@ spec = do
           result `shouldBe` utf8 expected
       )
 
-  describe "replaceAll" $
+  describe "replaceAll" $ do
+    it "replaces many matches in linear time" $ do
+      regex <- R.compile (utf8 "a")
+      result <- timeout 10000000 (R.replaceAll regex (utf8 "bb") (utf8 (replicate 200000 'a')))
+      result `shouldSatisfy` (== Just (utf8 (replicate 400000 'b')))
+    it "replaces many empty matches in linear time" $ do
+      regex <- R.compile (utf8 "")
+      result <- timeout 10000000 (R.replaceAll regex (utf8 "-") (utf8 (replicate 200000 'a')))
+      result `shouldSatisfy` (== Just (utf8 ('-' : concat (replicate 200000 "a-"))))
     forM_
       [ ("replaces all occurrences", "a", "X", "banana", "bXnXnX")
       , ("returns input when no match", "xyz", "abc", "hello world", "hello world")
