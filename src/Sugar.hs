@@ -166,12 +166,12 @@ instance ToSalty EXPRESSION where
   toSalty EX_APPLICATION{argument = AA_TAUS taus, ..} =
     foldl
       toApplication
-      expr
+      (toSalty expr)
       (tauToPairs taus)
     where
       toApplication :: EXPRESSION -> PAIR -> EXPRESSION
       toApplication exp pair =
-        EX_APPLICATION (toSalty exp) space EOL (TAB indent) (AA_TAU (APP_BINDING (toSalty pair))) EOL (TAB (indent - 1)) indent
+        EX_APPLICATION exp space EOL (TAB indent) (AA_TAU (APP_BINDING (toSalty pair))) EOL (TAB (indent - 1)) indent
       tauToPairs :: BINDING -> [PAIR]
       tauToPairs BI_PAIR{..} = pair : tausToPairs bindings
       tauToPairs BI_EMPTY{} = []
