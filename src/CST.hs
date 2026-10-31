@@ -467,7 +467,7 @@ instance ToCST [Binding] BINDINGS where
   toCST (bd : bds) ctx@(tabs, eol) = BDS_PAIR eol (TAB tabs) (toCST bd ctx) (toCST bds ctx)
 
 instance ToCST Binding PAIR where
-  toCST (BiTau attr exp@(ExFormation bds)) ctx =
+  toCST (BiTau attr exp@(ExFormation bds)) ctx@(tabs, eol) =
     let (head', rest) = span positionless bds
         voids' = [void | BiVoid void <- head']
         others = filter (not . isVoid) head'
@@ -479,8 +479,13 @@ instance ToCST Binding PAIR where
               attr'
               (map (`toCST` ctx) voids')
               ARROW
-              (toCST (ExFormation (others ++ rest)) ctx)
+              (body (others ++ rest))
     where
+      body :: [Binding] -> EXPRESSION
+      body [] = EX_FORMATION LSB eol next (BI_EMPTY next) eol (TAB tabs) RSB
+        where
+          next = TAB (tabs + 1)
+      body bds' = toCST (ExFormation bds') ctx
       positionless :: Binding -> Bool
       positionless (BiVoid (AtLabel _)) = True
       positionless (BiVoid AtPhi) = True
