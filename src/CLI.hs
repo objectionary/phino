@@ -5,7 +5,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module CLI (runCLI) where
+module CLI (prepareIO, runCLI) where
 
 import CLI.Parsers
 import CLI.Runners
@@ -15,13 +15,20 @@ import Data.Char (isSpace)
 import Data.List (dropWhileEnd)
 import Data.Version (showVersion)
 import Files (ensuredFile)
+import GHC.IO.Encoding (setFileSystemEncoding, setLocaleEncoding)
 import GHC.IO.Exception (IOErrorType (ResourceVanished))
 import Logger
 import Options.Applicative
 import Paths_phino (version)
 import System.Exit (ExitCode (..), exitFailure, exitWith)
-import System.IO (hPutStrLn, stderr)
+import System.IO (hPutStrLn, hSetEncoding, stderr, utf8)
 import System.IO.Error (ioeGetErrorType)
+
+prepareIO :: IO ()
+prepareIO =
+  setLocaleEncoding utf8
+    >> setFileSystemEncoding utf8
+    >> hSetEncoding stderr utf8
 
 runCLI :: [String] -> IO ()
 runCLI args = handle handler $ do

@@ -6,7 +6,7 @@
 
 module CLISpec (spec) where
 
-import CLI (runCLI)
+import CLI (prepareIO, runCLI)
 import CLI.Types (CmdException (..), IOFormat (..))
 import Control.Concurrent (threadDelay)
 import Control.Exception
@@ -19,6 +19,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
 import Files (allPathsIn)
 import Fixtures (explainPack, lambdasFile, loopingLambdas, readProtocol, readUtf8, withLambdasOf)
+import GHC.IO.Encoding (TextEncoding (textEncodingName), getFileSystemEncoding)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, makeAbsolute, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime, withCurrentDirectory)
@@ -4166,3 +4167,13 @@ spec = do
         testCLISucceeded ["merge", "--monoform", path] ["⟦ x ↦ ∅ ⟧"]
     it "rewrite names --monoform in its help" $
       testCLISucceeded ["rewrite", "--help"] ["--monoform"]
+
+  describe "prepareIO" $ do
+    it "forces UTF-8 on the file system encoding, whatever the locale" $ do
+      prepareIO
+      enc <- getFileSystemEncoding
+      textEncodingName enc `shouldBe` "UTF-8"
+    it "forces UTF-8 on stderr, whatever the locale" $ do
+      prepareIO
+      enc <- hGetEncoding stderr
+      maybe (expectationFailure "stderr has no encoding") (("UTF-8" `shouldBe`) . textEncodingName) enc

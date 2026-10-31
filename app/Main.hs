@@ -3,9 +3,8 @@
 
 module Main where
 
-import CLI (runCLI)
-import GHC.IO.Encoding (setLocaleEncoding, utf8)
+import CLI (prepareIO, runCLI)
 import System.Environment (getArgs)
 
 main :: IO ()
-main = setLocaleEncoding utf8 >> getArgs >>= runCLI
+main = prepareIO >> getArgs >>= runCLI
