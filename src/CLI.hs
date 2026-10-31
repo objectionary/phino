@@ -24,8 +24,6 @@ import System.Exit (ExitCode (..), exitFailure, exitWith)
 import System.IO (hPutStrLn, hSetEncoding, stderr, utf8)
 import System.IO.Error (ioeGetErrorType)
 
--- Force UTF-8 whatever the locale: getArgs decodes argv with the file system
--- encoding, and stderr keeps the startup locale encoding (see issue #2222)
 prepareIO :: IO ()
 prepareIO =
   setLocaleEncoding utf8
