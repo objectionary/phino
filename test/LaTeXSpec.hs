@@ -251,7 +251,7 @@ spec = do
     it "renders a 'where' function with a hyphen as a valid macro" $ do
       ptn <- parseExpressionThrows "Q.x"
       explainRules [Y.Rule "rt" Nothing Nothing ptn ptn Nothing (Just [Y.Extra (Y.ArgAttribute (AtMeta "t1")) "random-tau" []]) Nothing]
-        `shouldContain` "\\randomTau{"
+        `shouldContain` "\\phinoRandomTau{"
 
     it "escapes the name of the rule it refers to" $ do
       step1 <- parseExpressionThrows "[[ x -> Q.y ]]"
@@ -375,7 +375,7 @@ spec = do
           , "{ n }"
           , "{ n }"
           , "{ \\isnormal{ n } \\phiText{and} \\phinoIsFormation{ n } }"
-          , "{ \\phiTerminal{\\rho} \\coloneqq \\foo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } \\phiText{and} @ \\coloneqq \\bar{ n } }"
+          , "{ \\phiTerminal{\\rho} \\coloneqq \\phinoFoo{ n, \\phiTerminal{\\rho} -> ?, 01-02- } \\phiText{and} @ \\coloneqq \\phinoBar{ n } }"
           ]
         )
       ,

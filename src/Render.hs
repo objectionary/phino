@@ -321,8 +321,4 @@ instance Render EXTRA where
   render EXTRA{..} = render meta <> " \\coloneqq " <> macro func <> "{ " <> T.intercalate ", " (map render args) <> " }"
     where
       macro :: String -> Text
-      macro "evaluate" = "\\phinoEvaluate"
-      macro name = "\\" <> T.concat (zipWith camel [0 :: Int ..] (T.splitOn "-" (T.pack name)))
-      camel :: Int -> Text -> Text
-      camel 0 part = part
-      camel _ part = T.toTitle part
+      macro name = "\\phino" <> T.concat (map T.toTitle (T.splitOn "-" (T.pack name)))
