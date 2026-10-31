@@ -3914,6 +3914,35 @@ spec = do
           ["merge", "--input=xmir", "--output=xmir", file]
           ["<o atom=\"Φ.number\" name=\"λ\">L_number_plus</o>"]
 
+    describe "keeps the type of atoms that share a λ name in two files" $ do
+      let packaged :: String -> String -> String
+          packaged pckg atom = "<object><metas><meta><head>package</head><tail>" ++ pckg ++ "</tail><part>" ++ pckg ++ "</part></meta></metas><o name=\"a\"><o atom=\"" ++ atom ++ "\" name=\"λ\"/></o></object>"
+      it "writes the atom of the second file under its own name" $
+        withTempFileContent "phino-x.xmir" (packaged "org.x" "Φ.bytes") $ \first ->
+          withTempFileContent "phino-y.xmir" (packaged "org.y" "Φ.number") $ \second ->
+            testCLISucceeded
+              ["merge", "--input=xmir", "--output=xmir", first, second]
+              ["<o atom=\"Φ.bytes\" name=\"λ\">L_a</o>", "<o atom=\"Φ.number\" name=\"λ\">L_a_2</o>"]
+      it "renames the clashing λ in 𝜑 output too" $
+        withTempFileContent "phino-x.xmir" (packaged "org.x" "Φ.bytes") $ \first ->
+          withTempFileContent "phino-y.xmir" (packaged "org.y" "Φ.number") $ \second ->
+            testCLISucceeded
+              ["merge", "--input=xmir", "--sweet", "--flat", first, second]
+              ["a ↦ L_a:λ", "a ↦ L_a_2:λ"]
+      it "keeps one name for the same atom in two files" $
+        withTempFileContent "phino-x.xmir" (packaged "org.x" "Φ.bytes") $ \first ->
+          withTempFileContent "phino-z.xmir" (packaged "org.z" "Φ.bytes") $ \second ->
+            testCLISucceeded
+              ["merge", "--input=xmir", "--sweet", "--flat", first, second]
+              ["⟦ x ↦ ⟦ a ↦ L_a:λ, λ ⤍ Package ⟧, z ↦ ⟦ a ↦ L_a:λ, λ ⤍ Package ⟧, λ ⤍ Package ⟧:org"]
+      it "gives a third clashing atom the next suffix" $
+        withTempFileContent "phino-x.xmir" (packaged "org.x" "Φ.bytes") $ \first ->
+          withTempFileContent "phino-y.xmir" (packaged "org.y" "Φ.number") $ \second ->
+            withTempFileContent "phino-w.xmir" (packaged "org.w" "Φ.string") $ \third ->
+              testCLISucceeded
+                ["merge", "--input=xmir", "--output=xmir", first, second, third]
+                ["<o atom=\"Φ.number\" name=\"λ\">L_a_2</o>", "<o atom=\"Φ.string\" name=\"λ\">L_a_3</o>"]
+
     it "keeps the type of an atom of XMIR under --canonize" $ do
       let xmir = "<object><o name=\"number\"><o name=\"plus\"><o base=\"∅\" name=\"b\"/><o atom=\"Φ.number\" name=\"λ\"/></o></o></object>"
       withTempFileContent "phino-canonized-atom.xmir" xmir $ \file ->
