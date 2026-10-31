@@ -482,6 +482,7 @@ xmirToFormationBinding derived cur fqn
         ('+' : test) -> toAttr test cur >> BiTau (AtLabel (T.pack name)) <$> xmirToFormation derived cur (name : fqn)
         ('-' : test) -> toAttr test cur >> BiTau (AtLabel (T.pack name)) <$> xmirToFormation derived cur (name : fqn)
         _ -> toAttr name cur >>= \attr -> BiTau attr <$> xmirToFormation derived cur (name : fqn)
+  | hasText cur = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" cur)
   | otherwise = do
       name <- getAttr "name" cur
       base <- getAttr "base" cur
@@ -493,7 +494,9 @@ xmirToFormationBinding derived cur fqn
         ('-' : test) -> toAttr test cur >> pure (AtLabel (T.pack name))
         _ -> toAttr name cur
       case base of
-        "∅" -> pure (BiVoid attr)
+        "∅"
+          | null (cur C.$/ C.element (toName "o")) -> pure (BiVoid attr)
+          | otherwise -> throwIO (InvalidXMIRFormat "Element with @base='∅' can't have children" cur)
         _ -> do
           expr <- xmirToExpression derived cur fqn
           pure (BiTau attr expr)

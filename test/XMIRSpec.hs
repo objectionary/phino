@@ -347,6 +347,16 @@ spec = do
         , ["XMIR does not support such expression", "a ↦ Φ.y"]
         )
       ,
+        ( "refuses data inside a named binding with @base"
+        , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"Φ.x\">AB-CD</o></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["It's illegal in XMIR to have @base and text() at the same time"]
+        )
+      ,
+        ( "refuses children inside a void"
+        , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"∅\"><o name=\"b\"/></o></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["Element with @base='∅' can't have children"]
+        )
+      ,
         ( "names the attribute that is empty"
         , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"\"/></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
         , ["The attribute 'base' is not expected to be empty"]
