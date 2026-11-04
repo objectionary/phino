@@ -448,8 +448,16 @@ spec = do
           , ["rewrite", "--nonumber", "--output=xmir"]
           , ["The --nonumber option can stay together with --output=latex only"]
           )
-        , ("with --omit-listing and --output != xmir", ["rewrite", "--omit-listing", "--output=phi"], ["--omit-listing"])
-        , ("with --omit-comments and --output != xmir", ["rewrite", "--omit-comments", "--output=phi"], ["--omit-comments"])
+        ,
+          ( "with --omit-listing and --output != xmir"
+          , ["rewrite", "--omit-listing", "--output=phi"]
+          , ["The --omit-listing option can be used only with --output=xmir"]
+          )
+        ,
+          ( "with --omit-comments and --output != xmir"
+          , ["rewrite", "--omit-comments", "--output=phi"]
+          , ["The --omit-comments option can be used only with --output=xmir"]
+          )
         ,
           ( "with --expression and --output != latex"
           , ["rewrite", "--expression=foo", "--output=phi"]
@@ -3233,13 +3241,25 @@ spec = do
         withStdin "" $
           testCLIFailed
             ["dataize", "--omit-listing", "--output=phi"]
-            ["--omit-listing"]
+            ["The --omit-listing option can be used only with --output=xmir"]
 
       it "with --omit-comments and --output != xmir" $
         withStdin "" $
           testCLIFailed
             ["dataize", "--omit-comments", "--output=phi"]
-            ["--omit-comments"]
+            ["The --omit-comments option can be used only with --output=xmir"]
+
+      it "with --omit-listing and --output = latex" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--omit-listing", "--output=latex"]
+            ["The --omit-listing option can be used only with --output=xmir"]
+
+      it "with --omit-comments and --output = latex" $
+        withStdin "" $
+          testCLIFailed
+            ["dataize", "--omit-comments", "--output=latex"]
+            ["The --omit-comments option can be used only with --output=xmir"]
 
       it "with --expression and --output != latex" $
         withStdin "" $
@@ -3741,6 +3761,30 @@ spec = do
           testCLIFailed
             ["morph", "--nonumber", "--output=xmir"]
             ["The --nonumber option can stay together with --output=latex only"]
+
+      it "with --omit-listing and --output != xmir" $
+        withStdin "" $
+          testCLIFailed
+            ["morph", "--omit-listing", "--output=phi"]
+            ["The --omit-listing option can be used only with --output=xmir"]
+
+      it "with --omit-comments and --output != xmir" $
+        withStdin "" $
+          testCLIFailed
+            ["morph", "--omit-comments", "--output=phi"]
+            ["The --omit-comments option can be used only with --output=xmir"]
+
+      it "with --omit-listing and --output = latex" $
+        withStdin "" $
+          testCLIFailed
+            ["morph", "--omit-listing", "--output=latex"]
+            ["The --omit-listing option can be used only with --output=xmir"]
+
+      it "with --omit-comments and --output = latex" $
+        withStdin "" $
+          testCLIFailed
+            ["morph", "--omit-comments", "--output=latex"]
+            ["The --omit-comments option can be used only with --output=xmir"]
 
       it "with --show used more than once" $
         withStdin "" $

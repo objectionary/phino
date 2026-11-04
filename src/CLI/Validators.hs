@@ -91,7 +91,7 @@ validateXmirOptions XMIR _ focus = do
   when (parsed /= ExRoot) (invalidCLIArguments "Only --focus=Q is allowed to be used with --output=xmir")
 validateXmirOptions _ bools _ =
   let (bools', opts) = unzip bools
-   in validateBoolOpts (zip bools' (map (printf "The --%s can be used only with --output=xmir") opts))
+   in validateBoolOpts (zip bools' (map (printf "The --%s option can be used only with --output=xmir") opts))
 
 validateXmirTopLevel :: IOFormat -> Expression -> IO ()
 validateXmirTopLevel XMIR (ExFormation (_ : _)) = pure ()
