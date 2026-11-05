@@ -22,7 +22,7 @@ import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, origin, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -259,9 +259,18 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (bound', state'')
     kindled :: ReduceContext -> Ending -> Expression -> State -> Expression -> IO (Expression, State)
     kindled _ _ _ state' term@(ExFormation [BiLambda (FnSymbol _)]) = pure (term, state')
+    kindled ctx _ _ state' term@(ExFormation bds)
+      | owned ctx bds = pure (term, state')
     kindled ctx _ site state' term@(ExFormation _) = fire ctx site state' term
     kindled _ Joining{} _ state' term = pure (term, state')
     kindled ctx _ site state' term = fire ctx site state' term
+    owned :: ReduceContext -> [Binding] -> Bool
+    owned ctx bds = any (`notElem` (AtRho : declared ctx bds)) [attr | BiTau attr _ <- bds, not (cactus attr)]
+    declared :: ReduceContext -> [Binding] -> [Attribute]
+    declared ctx bds = maybe [] (\(_, voids) -> [attr | BiVoid attr <- voids]) (origin univ ctx bds)
+    cactus :: Attribute -> Bool
+    cactus (AtLabel label) = "🌵" `T.isSuffixOf` label
+    cactus _ = False
     fire :: ReduceContext -> Expression -> State -> Expression -> IO (Expression, State)
     fire _ _ state' ExTermination = pure (ExTermination, state')
     fire ctx site state' term@(ExFormation _) = fired univ ctx site state' term
