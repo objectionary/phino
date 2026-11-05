@@ -22,7 +22,7 @@ import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, origin, recalled, remember, remembered, retained, settled, starved, unparked, vacated)
+import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, origin, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -259,15 +259,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (bound', state'')
     kindled :: ReduceContext -> Ending -> Expression -> State -> Expression -> IO (Expression, State)
     kindled _ _ _ state' term@(ExFormation [BiLambda (FnSymbol _)]) = pure (term, state')
-    kindled ctx _ site state' term@(ExFormation bds) = do
-      voids <- declared ctx bds
-      if owned voids bds then pure (term, state') else fire ctx site state' term
+    kindled ctx _ _ state' term@(ExFormation bds)
+      | owned ctx bds = pure (term, state')
+    kindled ctx _ site state' term@(ExFormation _) = fire ctx site state' term
     kindled _ Joining{} _ state' term = pure (term, state')
     kindled ctx _ site state' term = fire ctx site state' term
-    owned :: [Attribute] -> [Binding] -> Bool
-    owned voids bds = any (`notElem` (AtRho : voids)) [attr | BiTau attr _ <- bds, not (cactus attr)]
-    declared :: ReduceContext -> [Binding] -> IO [Attribute]
-    declared ctx bds = maybe (vacated ctx bds) (\(_, voids) -> pure [attr | BiVoid attr <- voids]) (origin univ ctx bds)
+    owned :: ReduceContext -> [Binding] -> Bool
+    owned ctx bds = maybe False (\(_, voids) -> any (`notElem` (AtRho : [attr | BiVoid attr <- voids])) [attr | BiTau attr _ <- bds, not (cactus attr)]) (origin univ ctx bds)
     cactus :: Attribute -> Bool
     cactus (AtLabel label) = "🌵" `T.isSuffixOf` label
     cactus _ = False
