@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -313,29 +313,30 @@ fired univ ctx site state form = sever form univ state ctx{_judgment = Evaluatio
       deep._evaluate deep state form univ
 
 called :: Expression -> ReduceContext -> [Binding] -> Maybe Expression
-called univ ctx known = uncurry applied <$> origin known
+called univ ctx known = uncurry applied <$> origin univ ctx known
   where
     applied :: Expression -> [Binding] -> Expression
     applied path declared = foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` declared]
-    origin :: [Binding] -> Maybe (Expression, [Binding])
-    origin bds = do
-      parent <- case filter ((== Just AtRho) . attributeFromBinding) bds of
-        [] -> Just ExRoot
-        [BiTau AtRho (ExFormation outer)] -> fst <$> origin outer
-        [BiTau AtRho path] -> Just (erased path)
-        _ -> Nothing
-      ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
-      chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
-      where
-        fits :: [Binding] -> Bool
-        fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- bds, attributeFromBinding bd /= Just AtRho]
-        chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
-        chosen [] = Nothing
-        chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
-          [one] -> Just one
-          _ -> Nothing
-        agreed :: (Expression, [Binding]) -> (Int, Int)
-        agreed (_, declared) = (length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
+
+origin :: Expression -> ReduceContext -> [Binding] -> Maybe (Expression, [Binding])
+origin univ ctx bds = do
+  parent <- case filter ((== Just AtRho) . attributeFromBinding) bds of
+    [] -> Just ExRoot
+    [BiTau AtRho (ExFormation outer)] -> fst <$> origin univ ctx outer
+    [BiTau AtRho path] -> Just (erased path)
+    _ -> Nothing
+  ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
+  chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
+  where
+    fits :: [Binding] -> Bool
+    fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- bds, attributeFromBinding bd /= Just AtRho]
+    chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
+    chosen [] = Nothing
+    chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
+      [one] -> Just one
+      _ -> Nothing
+    agreed :: (Expression, [Binding]) -> (Int, Int)
+    agreed (_, declared) = (length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
     located :: Expression -> Expression -> Maybe Expression
     located ExRoot whole = Just whole
     located (ExDispatch path attr) whole = case located path whole of
