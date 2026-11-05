@@ -170,6 +170,10 @@ file:
   meta.
   It may hold `otherwise`, a λ name that joins two formations of different
   shapes one attribute at a time, and the file must answer that name too.
+* `terminators` lists λ names that only raise, as in `[L_throw]`.
+  A term holding one of them, or an application of one, passes every line
+  as it is, and `join` takes it for a side that raises, as it takes `⊥`.
+  No entry of the file may answer such a name.
 
 An entry holds either `𝑛` or `join`, never both.
 The lines of all blocks run in the order of the metas they read, not in the

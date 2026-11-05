@@ -234,6 +234,14 @@ reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
+An entry may list under `terminators` the λ functions that only raise, such
+as the `L_throw` of EO, which no key of the file may match (#2263). A line
+reading a meta bound to a formation holding one of them, or to an application
+of one (`thrown` of `Lambdas.hs`), binds its own meta to that term as it is,
+never firing or walking it, and `merged` of `Evaluate.hs` hands such a side
+to `joined` as ⊥ when the other side does not raise, so the `joined` record
+names it under `raised`.
+
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
 among them (#1999). The block names the condition under `on`, a bytes meta of
