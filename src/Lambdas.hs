@@ -23,6 +23,7 @@ module Lambdas
   , stayed
   , symbolized
   , taken
+  , thrown
   )
 where
 
@@ -84,6 +85,7 @@ data Lambda = Lambda
   , _morphed :: [(Meta, Expression)]
   , _undressed :: [(Meta, Expression)]
   , _lines :: [Line]
+  , _terminators :: [Text]
   , _ending :: Ending
   }
 
@@ -108,6 +110,7 @@ instance FromJSON Lambda where
     lambda <-
       Lambda key dataized morphed undressed
         <$> (written (T.unpack key) entry >>= ordered (T.unpack key) (map (_name . fst) (morphed ++ undressed)) . ((weighing ++ reading ++ peeling) ++))
+        <*> entry .:? "terminators" .!= []
         <*> pure ending
     once (T.unpack key) lambda
     mapM_ (metaless (T.unpack key) "dataize" "a path from '$' or a meta alone") lambda._dataized
@@ -122,7 +125,7 @@ instance FromJSON Lambda where
         name : _ -> fail (printf "The key '%s' of λ function '%s' is none of the keys an entry reads: %s" (T.unpack name) key (T.unpack (T.intercalate ", " known)))
         where
           known :: [Text]
-          known = ["λ", "dataize", "morph", "undress", "evaluate", "defer", "stay", "rewrite", "symbolize", "cast", "join", "𝑛"]
+          known = ["λ", "dataize", "morph", "undress", "evaluate", "defer", "stay", "rewrite", "symbolize", "cast", "join", "terminators", "𝑛"]
       concluded :: String -> [(Meta, Expression)] -> Object -> Yaml.Parser Ending
       concluded key dataized entry = do
         answer <- entry .:? "𝑛"
@@ -365,6 +368,7 @@ readLambdas path = do
   mapM_ (unique entries) entries
   registered <- mapM keyed entries
   overlaps path registered
+  mapM_ (answering registered) entries
   logDebug (printf "Loaded %d λ function(s) from '%s'" (length entries) path)
   pure (Lambdas registered)
   where
@@ -381,6 +385,10 @@ readLambdas path = do
     unreadable :: Text -> (a, String) -> IO b
     unreadable key (_, failure) =
       throwIO (BrokenLambdas path (printf "the key '%s' is not a regular expression: %s" (T.unpack key) failure))
+    answering :: [(Regex, Lambda)] -> Lambda -> IO ()
+    answering registered entry = case [(name, other) | name <- entry._terminators, Just other <- [matched (Lambdas registered) name]] of
+      [] -> pure ()
+      (name, other) : _ -> throwIO (BrokenLambdas path (printf "the terminator '%s' of the key '%s' is answered by the key '%s'" (T.unpack name) (T.unpack entry._key) (T.unpack other._key)))
     overlaps :: FilePath -> [(Regex, Lambda)] -> IO ()
     overlaps _ [_] = pure ()
     overlaps file registered = mapM (spoken . snd) registered >>= check
@@ -413,6 +421,11 @@ minted answer spent = (zip fresh [FnSymbol idx | idx <- [spent + 1 ..]], spent +
   where
     fresh :: [Slot]
     fresh = [slot | slot@(Slot kind _) <- slots answer, kind == "S"]
+
+thrown :: [Text] -> Expression -> Bool
+thrown names (ExApplication expr _) = thrown names expr
+thrown names (ExFormation bds) = or [name `elem` names | BiLambda (Function name) <- bds]
+thrown _ _ = False
 
 taken :: Expression -> Int
 taken program = maximum (0 : symbols program)
