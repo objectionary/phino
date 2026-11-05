@@ -136,8 +136,8 @@ spec = do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ke ↦ ⟦ ev ↦ ∅, jo ↦ ∅ ⟧ ⟧, right🌵 ↦ ⟦ φ ↦ Φ.ty ⟧, ke ↦ ⟦ ρ ↦ ∅, λ ⤍ L_pu, ev ↦ ∅, jo ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 5C- ⟧, left🌵 ↦ ξ.ρ.left🌵.ke( ev ↦ ξ.ev, jo ↦ ξ.jo ), right🌵 ↦ ξ.ρ.right🌵.ke( ev ↦ ξ.ev, jo ↦ ξ.jo ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_pu, on🌵 ↦ ⟦ Δ ⤍ 5C- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_pu" (Right (BtOne "5C")) "⟦ ke ↦ ⟦ ev ↦ ∅, jo ↦ ∅ ⟧ ⟧" "⟦ φ ↦ Φ.ty ⟧" >>= (`shouldBe` Right expected)
     it "keeps an attribute both sides bind to the same attribute of the fabricated formation" $ do
-      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ wa ↦ ⟦ ot ↦ ∅, φ ↦ ξ.ot ⟧, ky ↦ ξ.wa ⟧, right🌵 ↦ ⟦ wa ↦ ⟦ ot ↦ ∅, iz ↦ ∅, φ ↦ ξ.iz ⟧, ky ↦ ξ.wa ⟧, wa ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ko, ot ↦ ∅, iz ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎14 ⟧, left🌵 ↦ ξ.ρ.left🌵.wa( ot ↦ ξ.ot ), right🌵 ↦ ξ.ρ.right🌵.wa( ot ↦ ξ.ot, iz ↦ ξ.iz ) ⟧, ky ↦ ξ.wa ⟧"
-      fork "L_ko" (Left 14) "⟦ wa ↦ ⟦ ot ↦ ∅, φ ↦ ξ.ot ⟧, ky ↦ ξ.wa ⟧" "⟦ wa ↦ ⟦ ot ↦ ∅, iz ↦ ∅, φ ↦ ξ.iz ⟧, ky ↦ ξ.wa ⟧" >>= (`shouldBe` Right expected)
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ wa ↦ ⟦ ov ↦ ∅, φ ↦ ξ.ov ⟧, ky ↦ ξ.wa ⟧, right🌵 ↦ ⟦ wa ↦ ⟦ ov ↦ ∅, ip ↦ ∅, φ ↦ ξ.ip ⟧, ky ↦ ξ.wa ⟧, wa ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ko, ov ↦ ∅, ip ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎14 ⟧, left🌵 ↦ ξ.ρ.left🌵.wa( ov ↦ ξ.ov ), right🌵 ↦ ξ.ρ.right🌵.wa( ov ↦ ξ.ov, ip ↦ ξ.ip ) ⟧, ky ↦ ξ.wa ⟧"
+      fork "L_ko" (Left 14) "⟦ wa ↦ ⟦ ov ↦ ∅, φ ↦ ξ.ov ⟧, ky ↦ ξ.wa ⟧" "⟦ wa ↦ ⟦ ov ↦ ∅, ip ↦ ∅, φ ↦ ξ.ip ⟧, ky ↦ ξ.wa ⟧" >>= (`shouldBe` Right expected)
     it "asks the copies of both sides for an attribute both bind to an attribute the fabricated formation lacks" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ky ↦ ξ.ub ⟧, right🌵 ↦ ⟦ ky ↦ ξ.ub ⟧, ky ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ex, on🌵 ↦ ⟦ Δ ⤍ 2A- ⟧, left🌵 ↦ ξ.ρ.left🌵.ky, right🌵 ↦ ξ.ρ.right🌵.ky ⟧ ⟧"
       fork "L_ex" (Right (BtOne "2A")) "⟦ ky ↦ ξ.ub ⟧" "⟦ ky ↦ ξ.ub ⟧" >>= (`shouldBe` Right expected)
