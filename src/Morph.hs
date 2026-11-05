@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, vacated) where
+module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -23,7 +23,7 @@ import Data.List (find, partition)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
 import Engine (Engine (..))
@@ -94,7 +94,6 @@ data ReduceContext = ReduceContext
   , _steps :: Steps
   , _tally :: Maybe Tally
   , _minted :: IORef Int
-  , _vacated :: IORef (Store [Attribute])
   , _deadline :: Maybe Deadline
   , _memo :: Maybe Memo
   , _nesting :: Int
@@ -246,16 +245,6 @@ remember Nothing _ _ = pure ()
 remember (Just (Memo _ firings answers _)) firing answer = do
   modifyIORef' firings (Map.insert firing answer)
   modifyIORef' answers (+ 1)
-
-vacate :: Expression -> ReduceContext -> Expression -> Expression -> IO ()
-vacate univ ctx (ExApplication (ExFormation head') _) made@(ExFormation _)
-  | isNothing (origin univ ctx head') = do
-      known <- vacated ctx head'
-      modifyIORef' ctx._vacated (Map.insertWith (++) (hashExpression made) [(made, known <> [attr | BiVoid attr <- head', attr /= AtRho])])
-vacate _ _ _ _ = pure ()
-
-vacated :: ReduceContext -> [Binding] -> IO [Attribute]
-vacated ctx bds = maybe [] snd . find ((== ExFormation bds) . fst) . Map.findWithDefault [] (hashExpression (ExFormation bds)) <$> readIORef ctx._vacated
 
 parking :: NonEmpty Rewritten -> State -> IO a -> IO a
 parking seq state action = action `catch` rethrow
@@ -522,7 +511,7 @@ normalized expr seq ctx@ReduceContext{..} = do
   where
     rewriteContext :: ReduceContext -> RewriteContext
     rewriteContext ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (\redex object -> vacate expr ctx redex object >> _saveEval (EvApplied _nesting _judgment (called _universe redex) object _site))
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (\redex object -> _saveEval (EvApplied _nesting _judgment (called _universe redex) object _site))
     called :: Maybe Expression -> Expression -> Expression
     called universe (ExApplication head' arg) = ExApplication (nameIn universe head') arg
     called _ redex = redex

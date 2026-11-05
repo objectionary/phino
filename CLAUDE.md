@@ -167,10 +167,10 @@ attribute other than ρ, a name ending with 🌵 or a void of the object of the
 world it copies (`origin` of `Morph.hs`), such as the `tag` of a copy of
 `box(v) ↦ ⟦ tag ↦ ξ.v, λ ⤍ L_box ⟧`, since its λ stands for its φ alone and a
 later dispatch on `tag` must find it (`owned` of `Evaluate.hs`, #2265). A
-formation written in place copies no object of the world, so where an argument
-fills a void of one, `vacate` of `Morph.hs` keeps the voids it had in
-`_vacated` of `ReduceContext`, and `vacated` hands them over when `origin`
-finds nothing, as for `⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )` (#2267). Any
+formation `origin` finds no object of the world for, such as one written in
+place as `⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )`, holds no attribute of its own, so
+the line fires it (#2267), since what it does depends on the term and the
+world alone, never on what happened to the term before (#2270). Any
 other term, such as one `--partial` parked, gets the line stuck, unless the
 entry joins, where `kindled` of `Evaluate.hs` passes it on as it is, since a
 join compares any two terms (#1999). A `stay` line binds its meta to the term
