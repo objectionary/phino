@@ -166,7 +166,11 @@ another call takes another line. It leaves as it is a formation binding an
 attribute other than ρ, a name ending with 🌵 or a void of the object of the
 world it copies (`origin` of `Morph.hs`), such as the `tag` of a copy of
 `box(v) ↦ ⟦ tag ↦ ξ.v, λ ⤍ L_box ⟧`, since its λ stands for its φ alone and a
-later dispatch on `tag` must find it (`owned` of `Evaluate.hs`, #2265). Any
+later dispatch on `tag` must find it (`owned` of `Evaluate.hs`, #2265). A
+formation written in place copies no object of the world, so where an argument
+fills a void of one, `vacate` of `Morph.hs` keeps the voids it had in
+`_vacated` of `ReduceContext`, and `vacated` hands them over when `origin`
+finds nothing, as for `⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )` (#2267). Any
 other term, such as one `--partial` parked, gets the line stuck, unless the
 entry joins, where `kindled` of `Evaluate.hs` passes it on as it is, since a
 join compares any two terms (#1999). A `stay` line binds its meta to the term

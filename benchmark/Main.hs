@@ -62,8 +62,8 @@ rewriteCtx =
     dontSaveStep
     dontSaveMade
 
-symbolicCtx :: Acyclic -> Maybe Memo -> IORef Int -> Lambdas -> Expression -> ReduceContext
-symbolicCtx acyclic memo minted lambdas locator =
+symbolicCtx :: Acyclic -> Maybe Memo -> IORef Int -> IORef (Map.Map Int [(Expression, [Attribute])]) -> Lambdas -> Expression -> ReduceContext
+symbolicCtx acyclic memo minted voids lambdas locator =
   ReduceContext
     locator
     locator
@@ -73,6 +73,7 @@ symbolicCtx acyclic memo minted lambdas locator =
     (Steps 1000 0)
     Nothing
     minted
+    voids
     Nothing
     memo
     1
@@ -195,7 +196,8 @@ main = do
       seedTaus universe
       memo <- memoized (Just acyclic)
       minted <- newIORef 0
-      let ctx = symbolicCtx acyclic memo minted lambdas locator
+      voids <- newIORef Map.empty
+      let ctx = symbolicCtx acyclic memo minted voids lambdas locator
       started universe ctx
       (answer, _, _) <- morph universe emptyState ctx
       pure (hashExpression answer)
