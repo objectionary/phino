@@ -454,6 +454,8 @@ spec = do
       , ("⟦ x ↦ ξ.a, y ↦ ∅ ⟧", SWEET, UNICODE, "⟦ x ↦ a, y ↦ ∅ ⟧")
       , ("⟦ x ↦ ⟦ a ↦ ∅, 𝜏1 ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ∅:𝜏1 ⟧")
       , ("⟦ x ↦ ⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧:x")
+      , ("Φ.bool(v ↦ ⟦ x ↦ ∅, λ ⤍ L_fork ⟧)", SWEET, UNICODE, "Φ.bool( v ↦ ⟦ x ↦ ∅, λ ⤍ L_fork ⟧ )")
+      , ("Φ.bool(α0 ↦ ⟦ x ↦ ∅, y ↦ ξ ⟧)", SWEET, UNICODE, "Φ.bool( ⟦ x ↦ ∅, y ↦ ξ ⟧ )")
       , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a ⟧")
       , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA ]]")
       ]
