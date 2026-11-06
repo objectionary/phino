@@ -162,10 +162,22 @@ line is bound to and binding a meta of its own to the answer (`evaluated` of
 `Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
 formation with no λ, a bare symbol `⟦ λ ⤍ 𝜎1 ⟧`, which no entry answers
 (#2036), and ⊥ as they are, and never fires its answer again, so
-another call takes another line. Any other term, such as one `--partial`
-parked, gets the line stuck, unless the entry joins, where `kindled` of
-`Evaluate.hs` passes it on as it is, since a join compares any two terms
-(#1999). A `stay` line binds its meta to the term
+another call takes another line. It leaves as it is a formation binding an
+attribute other than ρ, a name ending with 🌵 or a void of the object of the
+world it copies (`origin` of `Morph.hs`), such as the `tag` of a copy of
+`box(v) ↦ ⟦ tag ↦ ξ.v, λ ⤍ L_box ⟧`, since its λ stands for its φ alone and a
+later dispatch on `tag` must find it (`owned` of `Evaluate.hs`, #2265). A
+formation `origin` finds no object of the world for, such as one written in
+place as `⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )`, holds no attribute of its own, so
+the line fires it (#2267), since what it does depends on the term and the
+world alone, never on what happened to the term before (#2270). Of the
+objects a formation fits, `origin` takes one whose bindings it repeats
+exactly before one whose voids it fills, so a copy of
+`p ↦ ⟦ φ ↦ Φ.bool(…).if(…) ⟧` is placed as `Φ.p` and not as a `Φ.num`
+holding that φ, and a loop cut at it is named `looped 𝜎5 := Φ.p` (#2281). Any
+other term, such as one `--partial` parked, gets the line stuck, unless the
+entry joins, where `kindled` of `Evaluate.hs` passes it on as it is, since a
+join compares any two terms (#1999). A `stay` line binds its meta to the term
 another meta is bound to with every `( ρ ↦ … )` applied to a dispatch dropped
 (`stayed` of `Lambdas.hs`, #1967), which `stay` or `skip` of normalization
 drops anyway. A `symbolize` line binds its meta to the term another meta is
@@ -234,6 +246,14 @@ reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
+An entry may list under `terminators` the λ functions that only raise, such
+as the `L_throw` of EO, which no key of the file may match (#2263). A line
+reading a meta bound to a formation holding one of them, or to an application
+of one (`thrown` of `Lambdas.hs`), binds its own meta to that term as it is,
+never firing or walking it, and `merged` of `Evaluate.hs` hands such a side
+to `joined` as ⊥ when the other side does not raise, so the `joined` record
+names it under `raised`.
+
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
 among them (#1999). The block names the condition under `on`, a bytes meta of
@@ -280,8 +300,10 @@ these names apart from any attribute of a side, such as the `left` and
 attribute to, the left side's first, and asks a side binding the attribute to
 a formation for it applied to the voids of that formation alone, as
 `ρ.left🌵.a( x ↦ ξ.x )`, and any other side for it applied to every void, so
-a method of the fabricated formation takes its arguments (#2031). The firing
-writes
+a method of the fabricated formation takes its arguments (#2031). An
+attribute both sides bind to the same `ξ.f`, where `f` is an attribute of
+either side, stays that alias, so `g ↦ ξ.f` reaches the copy of `f` and its
+voids (`aliased`, #2260). The firing writes
 `fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ … ⟧` (`EvFabricated`), naming the
 sides as `diverged` does and spelling the formation out in the comment, and
 answers that formation as `Joined` of `Answer`. The entry of `L_join` reads
@@ -438,6 +460,23 @@ them again, the way `--partial` parks a λ that cannot fire. Where `box` of 𝔻
 or an `evaluate` line is about to enter a copy, binding φ and holding no λ,
 that `called` of `Morph.hs` names by the object of the world it was made of,
 `sever` answers the copy with a fresh symbol, and the run goes on (#2226).
+Where 𝔻 or an `evaluate` line is about to enter a copy holding a λ, such as
+one of an atom whose operand dataizes the call again, `sever` answers it the
+same way (#2272, #2275). A formation holding a λ that no object of the world
+was made of, such as the φ of a formation a join fabricated, is answered
+the same way, named after the nearest copy the frames above it entered that
+`origin` places (`_placed` of `ReduceContext`, #2278, #2285), whatever fork
+stands between them, so the cut is named after that call, as
+`looped 𝜎6 := Φ.p`.
+The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
+such a copy the same way where the operand comes to one that repeats the
+formations above it more often than `--max-loops` lets through, since a
+recursion through a fork reaches the copy of every round only as a side of
+the fork and never boxes it (#2228). That side is morphed in a
+context of its own, gone once the firing answers, so `morphing` hands a copy
+it lets through while it repeats one above back in `_copies` of `State`, and
+the next frame of the 𝔻 chain that fired the entry adds it to the formations
+it remembers (`carried` of `Morph.hs`), which `--max-loops` counts.
 The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
 default. Under `proven` two formations are the same up to a renaming of their
 symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
@@ -478,7 +517,7 @@ through `morph''` told it owns nothing, since it stands in the block of the
 rule. A cut is a line too,
 `looped …` (`EvLooped`), written by `enter` where the refused frame would have
 opened, carrying the formation its ancestor entered (#1434) and naming the mode
-that cut it. A copy `sever` answered writes the symbol and the call the copy
+that cut it. A copy `severed` answered writes the symbol and the call the copy
 stands for, `looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # …, repeats 𝑛·0·3`, with
 every argument worked out by `argued` as for `defer`, and the markup writes
 `<looped symbol="𝜎1" … object="Φ.down">` holding a `<with>` (#2226).
