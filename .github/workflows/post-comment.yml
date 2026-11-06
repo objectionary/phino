@@ -27,10 +27,17 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Read PR number
+        id: report
         run: |
-          PR_NUMBER=$(cat pr-number/pr-number)
-          echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
+          if [ -f pr-number/pr-number ] && [ -f benchmark-comment/benchmark-comment.md ]; then
+            PR_NUMBER=$(cat pr-number/pr-number)
+            echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No complete benchmark report was produced; skipping comment."
+          fi
       - name: Post or update sticky comment
+        if: steps.report.outputs.available == 'true'
         uses: mshick/add-pr-comment@v3
         with:
           issue: ${{ env.PR_NUMBER }}
