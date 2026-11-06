@@ -11,7 +11,7 @@ module Evaluate (evaluation) where
 import AST
 import Builder (buildExpressionThrows)
 import Control.Exception (throwIO, try)
-import Control.Monad (foldM, unless)
+import Control.Monad (foldM, unless, when)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -22,7 +22,7 @@ import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, origin, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, noted, opening, origin, recalled, remember, remembered, remembering, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -75,7 +75,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         (bound'', undressed, normals') <- foldM (through ctx "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
         firing <- Firing func (reverse conditions) . (reverse normals' ++) <$> sides entry._ending
         known <- remembered caller._memo firing
-        maybe (worked ctx entry firing bound'' undressed) (\answer -> (answer, undressed) <$ shown ctx._nesting answer) known
+        maybe (worked ctx entry firing bound'' undressed) (\answer -> (answer, undressed) <$ recited ctx._nesting answer) known
       case outcome of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
@@ -90,7 +90,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (lined, state'') <- foldM (passing ctx entry) (bound, state') entry._lines
       (answer, state''') <- concluded ctx entry operands lined state''
       remember caller._memo firing answer
+      known <- remembering caller._facts form
+      when (known && spoken (ended answer)) (noted ctx (ended answer) form)
       pure (answer, state''')
+    spoken :: Expression -> Bool
+    spoken (ExFormation [BiLambda _]) = False
+    spoken (ExFormation _) = True
+    spoken _ = False
     sides :: Ending -> IO [Expression]
     sides (Answering _) = pure []
     sides (Joining _ left right _) = traverse keyed [left, right]
@@ -150,7 +156,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     told :: Kept -> IO (Expression, State)
     told (Answered answer) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
-      shown (caller._nesting + 1) answer
+      recited (caller._nesting + 1) answer
       pure (ended answer, state)
     told (Looped term) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -160,6 +166,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       caller._saveEval (EvStall (caller._nesting + 1) name)
       throwIO (Stuck name)
+    recited :: Int -> Answer -> IO ()
+    recited depth answer = do
+      caller._saveEval (EvRecalled depth form (ended answer))
+      shown depth answer
     down :: ReduceContext -> (Subst, State, [Either Int Bytes]) -> (Meta, Expression) -> IO (Subst, State, [Either Int Bytes])
     down ctx (bound, state', conditions) (meta, term) = do
       (datum, bound', state'') <- brought ctx bound state' meta term =<< operand term

@@ -308,8 +308,10 @@ $ phino morph --symbolic=down.yaml --locator=Q.y --acyclic=proven \
 ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧.φ
 $ cat down.txt
 𝕄(Φ.y):
-  𝑛·0·1 := Φ.down( x ↦ 𝜎1:λ )
-  𝑛·0·2 := ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
+  remembered 𝑛·0·1 ≡ Φ.down  # ⟦ x ↦ ∅, λ ⤍ L_down ⟧
+  𝑛·0·2 := Φ.down( x ↦ 𝜎1:λ )
+  𝑛·0·3 := ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
+  remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ 𝜎1:λ )
   𝔼(L_down):
     𝔻(ξ.x):
       𝛿·1·1 := 𝔻(𝜎1:λ)
@@ -318,9 +320,11 @@ $ cat down.txt
     𝕄(𝑛·1·1):
       𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
       𝑛·1·3 := ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
+      remembered 𝑛·1·3 ≡ 𝑛·0·1( x ↦ 𝜎2:λ )
       morphed 𝑛·1·4 := 𝑛·1·3
     𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
-  looped 𝑛·0·2  # proven
+    remembered 𝑛·1·3 ≡ 𝑛·0·3
+  looped 𝑛·0·3  # proven
 ```
 
 In a name such as `𝑛·1·2`, the first number counts the firings, `0` outside
@@ -353,8 +357,13 @@ A protocol may hold these lines:
 * `unanswered …` is a λ name no entry answers.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
+* `remembered 𝑛·0·1 ≡ Φ.down` is a fact `--acyclic` keeps: the term on the
+  left is the one on the right, a path or a call of the world, or the answer
+  of the formation on the right.
+* `recalled 𝑛·0·8 ⇒ 𝑛·0·6` is the memo mapping the term on the left to the
+  term on the right, an earlier answer or the call a loop is cut at.
 * `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
-  the call of the object it answered with that symbol.
+  the call of the object it answered with that symbol, when a fact names it.
 * `starved …`, `spent …` and `timeout …` are where `--max-steps`,
   `--max-firings` and `--max-seconds` ran out.
 * `msec …`, `firings …` and `fps …` close the file, and the listing above

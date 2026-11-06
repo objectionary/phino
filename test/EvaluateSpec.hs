@@ -27,7 +27,7 @@ import Lambdas (readLambdas)
 import Lining (LineFormat (SINGLELINE))
 import Margin (defaultMargin)
 import Matcher (substEmpty)
-import Morph (Deadline (..), ReduceContext (..), Steps (..), emptyState, execBuildTerm, memoized, morph, tallied)
+import Morph (Deadline (..), ReduceContext (..), Steps (..), emptyState, execBuildTerm, factual, memoized, morph, tallied)
 import Parser (Form (MONOFORM), parseExpressionThrows')
 import Printer (printExpression, printExpression', printExpressionHidingRho')
 import Sugar (SugarType (SWEET))
@@ -67,6 +67,7 @@ testSymbols pth = do
     (_, written) <- recorded' hidden $ \record -> do
       let mode = named <$> acyclic
       cells <- memoized mode
+      facts <- factual mode
       tally <- tallied firings
       base <- defaultReduceContext loc
       let ctx =
@@ -74,6 +75,7 @@ testSymbols pth = do
               { _partial = partial == Just True
               , _acyclic = mode
               , _memo = cells
+              , _facts = facts
               , _steps = Steps (fromMaybe 250 steps) 0
               , _tally = tally
               , _symbolic = known

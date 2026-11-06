@@ -11,15 +11,15 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, catch, evaluate, throwIO, try)
-import Control.Monad (when)
+import Control.Monad (forM_, guard, unless, when)
 import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (find, partition)
+import Data.List (find, partition, sortOn)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
@@ -85,6 +85,8 @@ data Kept
 
 type Store answer = Map.Map Int [(Expression, answer)]
 
+type Facts = IORef (Store Expression)
+
 data ReduceContext = ReduceContext
   { _locator :: Expression
   , _site :: Expression
@@ -106,7 +108,7 @@ data ReduceContext = ReduceContext
   , _judgment :: Judgment
   , _parked :: [T.Text]
   , _entered :: Seen
-  , _placed :: Maybe (Expression, [Binding], Expression)
+  , _facts :: Maybe Facts
   , _symbolic :: Lambdas
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
@@ -285,27 +287,76 @@ severing term univ state ctx = case entrance ctx._judgment term of
   Nothing -> pure (term, ctx)
 
 sever :: Expression -> Expression -> State -> ReduceContext -> IO (Either Expression ReduceContext)
-sever form univ state ctx = admitted form ctx >>= either cut (pure . Right . placing)
+sever form univ state ctx = admitted form ctx >>= either cut (pure . Right)
   where
-    placing :: ReduceContext -> ReduceContext
-    placing entered = case form of
-      ExFormation known -> entered{_placed = maybe entered._placed (Just . (form,known,)) (called univ ctx known)}
-      _ -> entered
     cut :: (Acyclic, Expression) -> IO (Either Expression ReduceContext)
     cut loop = case form of
       ExFormation bds
-        | boxed bds || ctx._judgment `elem` [Dataization, Evaluation]
-        , Just call <- called univ ctx bds ->
-            Left <$> severed univ ctx state form bds call loop
-        | ctx._judgment `elem` [Dataization, Evaluation] -> maybe (refused form ctx loop) (\(copy, known, call) -> Left <$> severed univ ctx state copy known call loop) ctx._placed
+        | boxed bds || ctx._judgment `elem` [Dataization, Evaluation] -> Left <$> severed univ ctx state form bds loop
       _ -> refused form ctx loop
 
-severed :: Expression -> ReduceContext -> State -> Expression -> [Binding] -> Expression -> (Acyclic, Expression) -> IO Expression
-severed univ ctx state form bds call (mode, before) = do
-  reckoned <- argued univ ctx state form bds call
+severed :: Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
+severed univ ctx state form bds (mode, before) = do
+  call <- (<|>) <$> found form <*> found before
+  forM_ call (\(term, named) -> ctx._saveEval (EvRecalled ctx._nesting term named))
+  reckoned <- traverse (argued univ ctx state form bds . snd) call
   fresh <- coined ctx
   ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
   pure (ExFormation [BiLambda (FnSymbol fresh)])
+  where
+    found :: Expression -> IO (Maybe (Expression, Expression))
+    found term = fmap (term,) <$> traced ctx._facts term
+
+factual :: Maybe Acyclic -> IO (Maybe Facts)
+factual Nothing = pure Nothing
+factual (Just _) = Just <$> newIORef Map.empty
+
+noted :: ReduceContext -> Expression -> Expression -> IO ()
+noted ctx object source = forM_ ctx._facts $ \facts -> do
+  known <- (Just source ==) . lookup object . Map.findWithDefault [] (hashExpression object) <$> readIORef facts
+  unless known $ do
+    modifyIORef' facts (Map.insertWith (++) (hashExpression object) [(object, source)])
+    ctx._saveEval (EvRemembered ctx._nesting object source)
+
+remembering :: Maybe Facts -> Expression -> IO Bool
+remembering Nothing _ = pure False
+remembering (Just facts) term = isJust . lookup term . Map.findWithDefault [] (hashExpression term) <$> readIORef facts
+
+traced :: Maybe Facts -> Expression -> IO (Maybe Expression)
+traced Nothing _ = pure Nothing
+traced (Just facts) form = do
+  known <- readIORef facts
+  pure (go known (Map.size known) form)
+  where
+    go :: Store Expression -> Int -> Expression -> Maybe Expression
+    go _ 0 _ = Nothing
+    go known budget term = listToMaybe [named | (path, source) <- sortOn (length . fst) [(path, source) | (object, source) <- concat (Map.elems known), path <- take 1 (lodged term object)], Just named <- [rooted (foldl ExDispatch (resolved known budget source) path)]]
+    resolved :: Store Expression -> Int -> Expression -> Expression
+    resolved known budget source = case lookup source (Map.findWithDefault [] (hashExpression source) known) of
+      Just _ -> fromMaybe source (go known (budget - 1) source)
+      Nothing -> case source of
+        ExApplication target arg -> ExApplication (resolved known budget target) arg
+        ExDispatch target attr -> ExDispatch (resolved known budget target) attr
+        _ -> source
+    rooted :: Expression -> Maybe Expression
+    rooted term = term <$ guard (grounded term)
+    grounded :: Expression -> Bool
+    grounded ExRoot = True
+    grounded (ExDispatch target _) = grounded target
+    grounded (ExApplication target _) = grounded target
+    grounded _ = False
+    lodged :: Expression -> Expression -> [[Attribute]]
+    lodged (ExFormation bds) whole = searched (filter (not . rho) bds) [([], whole)] Map.empty
+    lodged _ _ = []
+    searched :: [Binding] -> [([Attribute], Expression)] -> Store () -> [[Attribute]]
+    searched _ [] _ = []
+    searched own ((path, term@(ExFormation inner)) : rest) seen
+      | isJust (lookup term (Map.findWithDefault [] (hashExpression term) seen)) = searched own rest seen
+      | filter (not . rho) inner == own = reverse path : searched own rest seen
+      | otherwise = searched own (rest ++ [(attr : path, body) | BiTau attr body <- inner, attr /= AtRho]) (Map.insertWith (++) (hashExpression term) [(term, ())] seen)
+    searched own (_ : rest) seen = searched own rest seen
+    rho :: Binding -> Bool
+    rho bd = attributeFromBinding bd == Just AtRho
 
 coined :: ReduceContext -> IO Int
 coined ctx = atomicModifyIORef' ctx._minted (\count -> (succ count, succ count))
@@ -510,16 +561,38 @@ leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
 normalized :: Expression -> NonEmpty Rewritten -> ReduceContext -> IO (Expression, NonEmpty Rewritten)
 normalized expr seq ctx@ReduceContext{..} = do
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
-  (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext ctx)
+  taken <- newIORef Map.empty
+  (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken ctx)
   when exceeded (throwIO (OutOfSteps (Cycles _maxCycles)))
   let (rw :| rws) = NE.reverse rewrittens
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)
   pure (expr', seq')
   where
-    rewriteContext :: ReduceContext -> RewriteContext
-    rewriteContext ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (\redex object -> _saveEval (EvApplied _nesting _judgment (called _universe redex) object _site))
+    rewriteContext :: IORef (Store Expression) -> ReduceContext -> RewriteContext
+    rewriteContext taken whole@ReduceContext{..} =
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (made taken whole)
+    made :: IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
+    made _ whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
+      | attr /= AtRho && object /= head' = do
+          whole._saveEval (EvApplied whole._nesting whole._judgment (called whole._universe redex) object whole._site)
+          known <- remembering whole._facts head'
+          when (known && copied bds) (noted whole object redex)
+    made taken whole redex@(ExApplication _ (ArTau AtRho _)) object@(ExFormation bds)
+      | copied bds = do
+          pending <- readIORef taken
+          forM_ (lookup redex (Map.findWithDefault [] (hashExpression redex) pending)) (noted whole object)
+    made taken whole redex@(ExDispatch _ attr) object@(ExApplication (ExFormation bds) (ArTau AtRho _))
+      | attr /= AtRho && copied bds = forM_ (worldly whole._universe redex) (\path -> modifyIORef' taken (Map.insertWith (++) (hashExpression object) [(object, path)]))
+    made _ whole redex@(ExDispatch _ attr) object@(ExFormation bds)
+      | attr /= AtRho && copied bds = forM_ (worldly whole._universe redex) (noted whole object)
+    made _ _ _ _ = pure ()
+    copied :: [Binding] -> Bool
+    copied bds = boxed bds || isJust (lambda bds)
+    worldly :: Maybe Expression -> Expression -> Maybe Expression
+    worldly universe (ExDispatch target attr) = (`ExDispatch` attr) <$> worldly universe target
+    worldly _ ExRoot = Just ExRoot
+    worldly universe target = ExRoot <$ guard (Just target == universe)
     called :: Maybe Expression -> Expression -> Expression
     called universe (ExApplication head' arg) = ExApplication (nameIn universe head') arg
     called _ redex = redex
@@ -571,11 +644,10 @@ morphing univ ctx expr state = do
     recurring :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
     recurring term@(ExFormation bds) world state' opened
       | Just mode <- opened._acyclic
-      , boxed bds
-      , Just call <- called world opened bds = do
+      , boxed bds = do
           hits <- repeats mode term opened
           case drop opened._maxLoops hits of
-            before : _ -> (,state') <$> severed world opened state' term bds call (mode, before)
+            before : _ -> (,state') <$> severed world opened state' term bds (mode, before)
             []
               | null hits -> pure (term, state')
               | otherwise -> pure (term, state'{_copies = state'._copies ++ [term]})

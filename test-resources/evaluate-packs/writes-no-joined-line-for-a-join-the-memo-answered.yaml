@@ -220,6 +220,7 @@ protocol: |
           𝑛·6·7 := 𝑛·6·5.gt( x ↦ 𝑛·5·5 )
           𝑛·6·8 := ⟦ x ↦ 𝑛·5·5, λ ⤍ L_number_gt ⟧
           𝔼(L_number_gt):
+            recalled 𝑛·6·8 ⇒ 𝑛·2·3
             𝑛·7·1 := 𝑛·2·1  # 𝑛
             𝑛·7·2 := 𝑛·1·21  # 𝕄(𝑛·7·1)
           𝑛·6·9 := 𝑛·2·1.if( then ↦ 𝑛·3·1.plus( 𝑛·3·9 ).plus( 𝑛·5·5 ) )
@@ -228,8 +229,10 @@ protocol: |
           𝑛·6·12 := ⟦ then ↦ 𝑛·3·1.plus( 𝑛·3·9 ).plus( 𝑛·5·5 ), else ↦ 𝑛·4·1.plus( 𝑛·4·9 ).plus( 𝑛·5·5 ), λ ⤍ L_fork ⟧
           morphed 𝑛·6·13 := 𝑛·6·12
         𝔼(L_fork):
+          recalled 𝑛·6·12 ⇒ ⟦ x ↦ 𝑛·5·5, λ ⤍ L_number_plus ⟧
           𝑛·8·1 := ⟦ x ↦ 𝑛·5·5, λ ⤍ L_number_plus ⟧
         𝔼(L_number_plus):
+          recalled ⟦ x ↦ 𝑛·5·5, λ ⤍ L_number_plus ⟧ ⇒ 𝑛·6·3
           𝑛·9·1 := 𝑛·6·1  # 𝑛
           𝑛·9·2 := 𝑛·5·17  # 𝕄(𝑛·9·1)
         boxed 𝑛·6·14 := 𝑛·9·2.φ

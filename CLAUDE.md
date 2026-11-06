@@ -379,10 +379,11 @@ names a line by counting.
 
 An application writes a line too, `𝑛·1·1 := …` (`EvApplied`, #1745). A `Step`
 answers the term it made and the pairs of redex and result it replaced, and
-`rewrite'` hands every pair where an application became a formation other than
-its head, which of the built-in rules only `copy` does, to `_saveMade` of
-`RewriteContext`, except one filling ρ, which a dispatch makes. `normalized` of
-`Morph.hs` writes it with the judgment and the site, spelling the call as the
+`rewrite'` hands every pair to `_saveMade` of `RewriteContext`. `normalized`
+of `Morph.hs` writes a line for an application that became a formation other
+than its head, which of the built-in rules only `copy` does, other than one
+filling ρ, which a dispatch makes, with the judgment and the site, spelling the
+call as the
 head, named by `nameIn` of `Builder.hs`, applied to its argument; the `rewrite`
 command saves nothing (`dontSaveMade`). The line names the call, and the line
 right after it, `𝑛·1·2 := ⟦ … ⟧`, names the object the call made, abridged as
@@ -457,17 +458,22 @@ since only `box` and `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line, `fired
 of `Morph.hs`, enter one, and the line spends a step of `deeper` as a frame
 does, #1882) and park the site the moment a frame is about to enter one of
 them again, the way `--partial` parks a λ that cannot fire. Where `box` of 𝔻
-or an `evaluate` line is about to enter a copy, binding φ and holding no λ,
-that `called` of `Morph.hs` names by the object of the world it was made of,
-`sever` answers the copy with a fresh symbol, and the run goes on (#2226).
-Where 𝔻 or an `evaluate` line is about to enter a copy holding a λ, such as
-one of an atom whose operand dataizes the call again, `sever` answers it the
-same way (#2272, #2275). A formation holding a λ that no object of the world
-was made of, such as the φ of a formation a join fabricated, is answered
-the same way, named after the nearest copy the frames above it entered that
-`origin` places (`_placed` of `ReduceContext`, #2278, #2285), whatever fork
-stands between them, so the cut is named after that call, as
-`looped 𝜎6 := Φ.p`.
+or an `evaluate` line is about to enter a formation binding φ and holding no λ,
+`sever` answers it with a fresh symbol, and the run goes on (#2226). Where 𝔻 or
+an `evaluate` line is about to enter a formation holding a λ, such as a copy of
+an atom whose operand dataizes the call again, or the φ of a formation a join
+fabricated, `sever` answers it the same way (#2272, #2275, #2278). The cut is
+named only by the facts the run wrote down (#2287): under `--acyclic` every
+dispatch normalization turns into a copy of an object of the world, every
+application of a copy it knows, and every firing of one, writes `remembered
+𝑛·0·1 ≡ Φ.p` (`EvRemembered`, `noted` of `Morph.hs`), keeping the pair in
+`_facts` of `ReduceContext`, a mapping of a term to the term it is. `traced` of
+`Morph.hs` looks for a fact whose term holds the formation cut, or the one it
+repeats, follows the facts back to a path or a call of `Φ`, and writes `recalled
+𝑛·0·8 ⇒ 𝑛·0·6` (`EvRecalled`) before the cut, so the cut is named after that
+call, as `looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·9 )`. A formation no fact leads to the
+world from, such as a fork written in place, is cut by its symbol alone, as
+`looped 𝜎7  # …`, since nothing guesses which object it stands for.
 The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
 such a copy the same way where the operand comes to one that repeats the
 formations above it more often than `--max-loops` lets through, since a
@@ -547,36 +553,35 @@ comparison or walk after the deadline writes `timeout …` (`EvTimeout`) and thr
 `--partial` and a caller that cannot wait gets a closed protocol ending in the
 timeout instead of killing the process (#1607).
 
-Every use of a binding copies the term bound to it, so one formation is fired
-as many times as the program reads it, and every firing mints symbols of its
-own. A run under `plausible` keeps what every firing answered, by the
-formation it fired (`Memo`, `recalled` and `retained` in `Morph.hs`, made by
-`memoized` for that mode alone and asked and told by `symbol` in
-`Evaluate.hs`), and a later firing of the same formation, ρ and all, takes
-the answer with the symbols the first one minted: it is charged nothing and
-reduces nothing, and it is written to the protocol as a firing at its own
-site carrying that answer and no operand line (#1476). The memo keeps the
-answer by the firing too, the λ name with the data, the symbols and the normal
-forms its operands reading `$` came down to (`Firing`, `remembered` and
-`remember` in `Morph.hs`, asked before any line, a `morph` one among them,
-runs), since an entry answers from its operands alone: a firing of
-another formation, such as one whose operand reads another object holding the
-same datum, brings its operands down, finds the firing answered and takes
-that answer, minting nothing, so one value never gets two names (#1661). A
-join answers from its sides too, so its key carries both sides as its
-formation places them (`sides` of `Evaluate.hs`), and a second join on a
-condition the first one read answers its own sides, not the first one's
-(#1940). A symbol is kept as the symbol it is, not as the datum every symbol
-manufactures, so two firings over two symbols stay two. Such a firing is
-charged to `--max-firings` like one made, since the tally charges a firing as
-it starts bringing its operands down, the only place a recursion widening
-inside its operands can be cut, and a recalled answer counts as nothing new
-to a stall. The store is an
-`IORef` in the context for the reason the tally is. A firing a cut stopped on
-its way to an answer keeps the cut (`Looped` of `Kept`), and a later firing of
-the same formation is cut at its own site without reducing anything (#1480). A
-firing that got stuck keeps the λ function it got stuck on (`Stalled` of
-`Kept`), and a later firing of the same formation gets stuck at its own site
+Every use of a binding copies the term bound to it, so one formation is fired as
+many times as the program reads it, and every firing mints symbols of its own. A
+run under `plausible` keeps what every firing answered, by the formation it
+fired (`Memo`, `recalled` and `retained` in `Morph.hs`, made by `memoized` for
+that mode alone and asked and told by `symbol` in `Evaluate.hs`), and a later
+firing of the same formation, ρ and all, takes the answer with the symbols the
+first one minted: it is charged nothing and reduces nothing, and it is written
+to the protocol as a firing at its own site carrying that answer, `recalled
+𝑛·1·18 ⇒ 𝑛·3·3`, the formation fired and the answer the memo mapped it to, and
+no operand line (#1476, #2287). The memo keeps the answer by the firing too, the
+λ name with the data, the symbols and the normal forms its operands reading `$`
+came down to (`Firing`, `remembered` and `remember` in `Morph.hs`, asked before
+any line, a `morph` one among them, runs), since an entry answers from its
+operands alone: a firing of another formation, such as one whose operand reads
+another object holding the same datum, brings its operands down, finds the
+firing answered and takes that answer, minting nothing, so one value never gets
+two names (#1661). A join answers from its sides too, so its key carries both
+sides as its formation places them (`sides` of `Evaluate.hs`), and a second join
+on a condition the first one read answers its own sides, not the first
+one's (#1940). A symbol is kept as the symbol it is, not as the datum every symbol
+manufactures, so two firings over two symbols stay two. Such a firing is charged
+to `--max-firings` like one made, since the tally charges a firing as it starts
+bringing its operands down, the only place a recursion widening inside its
+operands can be cut, and a recalled answer counts as nothing new to a stall. The
+store is an `IORef` in the context for the reason the tally is. A firing a cut
+stopped on its way to an answer keeps the cut (`Looped` of `Kept`), and a later
+firing of the same formation is cut at its own site without reducing
+anything (#1480). A firing that got stuck keeps the λ function it got stuck on (`Stalled`
+of `Kept`), and a later firing of the same formation gets stuck at its own site
 the same way (#1493), but only while the memo has answered nothing since the
 stuck firing began, as the count of answers kept beside the stall tells: an
 operand that could not be brought down may come down once something new was
