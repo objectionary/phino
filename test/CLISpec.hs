@@ -876,32 +876,32 @@ spec = do
           ["\"bar\":x"]
 
     it "prints many expressions with --sequence" $
-      withStdin "[[ x -> \"foo\" ]]" $
+      withStdin "[[ x -> \"0\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
           , rule "second.yaml"
           , "--max-depth=1"
-          , "--max-cycles=2"
+          , "--max-cycles=1"
           , "--sequence"
           , "--sweet"
           , "--flat"
           ]
           [ unlines
-              [ "\"foo\":x"
-              , "Φ.x( y ↦ \"foo\" )"
-              , "\"foo\":x"
+              [ "\"0\":x"
+              , "Φ.x( y ↦ \"1\" )"
+              , "\"1\":x"
               ]
           ]
 
     it "prefixes every step with a header when --headers is on" $
-      withStdin "[[ x -> \"foo\" ]]" $
+      withStdin "[[ x -> \"0\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
           , rule "second.yaml"
           , "--max-depth=1"
-          , "--max-cycles=2"
+          , "--max-cycles=1"
           , "--sequence"
           , "--headers"
           , "--sweet"
@@ -911,13 +911,13 @@ spec = do
               "\n"
               [ ""
               , "=== Step #1"
-              , "\"foo\":x"
+              , "\"0\":x"
               , ""
               , "=== Step #2, Rule 'first', 23t -> 26t"
-              , "Φ.x( y ↦ \"foo\" )"
+              , "Φ.x( y ↦ \"1\" )"
               , ""
               , "=== Step #3, Rule 'second', 26t -> 23t"
-              , "\"foo\":x"
+              , "\"1\":x"
               ]
           ]
 
@@ -928,13 +928,13 @@ spec = do
           ["\"bar\":x"]
 
     it "emits step headers as LaTeX comments with --headers" $
-      withStdin "[[ x -> \"foo\" ]]" $
+      withStdin "[[ x -> \"0\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
           , rule "second.yaml"
           , "--max-depth=1"
-          , "--max-cycles=2"
+          , "--max-cycles=1"
           , "--sequence"
           , "--headers"
           , "--sweet"
@@ -944,23 +944,24 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "% === Step #1"
-              , "\"foo\" : |x| \\phiNormalize[\\nameref{r:first}]"
+              , "\"0\" : |x| \\phiNormalize[\\nameref{r:first}]"
               , "% === Step #2, Rule 'first', 23t -> 26t"
-              , "  \\phiNormalize Q . |x| ( |y| -> \"foo\" ) \\phiNormalize[\\nameref{r:second}]"
+              , "  \\phiNormalize Q . |x| ( |y| -> \"1\" ) \\phiNormalize[\\nameref{r:second}]"
               , "% === Step #3, Rule 'second', 26t -> 23t"
-              , "  \\phiNormalize \"foo\" : |x|{.}"
+              , "  \\phiNormalize \"1\" : |x| \\phiNormalize"
+              , "  \\phiNormalize \\dots"
               , "\\end{phiquation}"
               ]
           ]
 
     it "prints only one latex preamble with --sequence" $
-      withStdin "[[ x -> \"foo\" ]]" $
+      withStdin "[[ x -> \"0\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
           , rule "second.yaml"
           , "--max-depth=1"
-          , "--max-cycles=2"
+          , "--max-cycles=1"
           , "--sequence"
           , "--sweet"
           , "--flat"
@@ -968,9 +969,10 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\"foo\" : |x| \\phiNormalize[\\nameref{r:first}]"
-              , "  \\phiNormalize Q . |x| ( |y| -> \"foo\" ) \\phiNormalize[\\nameref{r:second}]"
-              , "  \\phiNormalize \"foo\" : |x|{.}"
+              , "\"0\" : |x| \\phiNormalize[\\nameref{r:first}]"
+              , "  \\phiNormalize Q . |x| ( |y| -> \"1\" ) \\phiNormalize[\\nameref{r:second}]"
+              , "  \\phiNormalize \"1\" : |x| \\phiNormalize"
+              , "  \\phiNormalize \\dots"
               , "\\end{phiquation}"
               ]
           ]
