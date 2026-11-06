@@ -458,7 +458,14 @@ that `called` of `Morph.hs` names by the object of the world it was made of,
 `sever` answers the copy with a fresh symbol, and the run goes on (#2226).
 Where 𝔻 or an `evaluate` line is about to enter a copy holding a λ, such as
 one of an atom whose operand dataizes the call again, `sever` answers it the
-same way (#2272, #2275).
+same way (#2272, #2275). A formation holding a λ that no object of the world
+was made of, such as the φ of a formation a join fabricated, is answered
+the same way when the memo knows what its ρ stands for (`vouched` of
+`Morph.hs`, #2278): a join vouches that the formation it fabricates stands for
+the copy it fired or for what that copy stands for, and a firing vouches that
+the normal form of an operand stands for the path of the world or the copy
+its path from `$` leads to, so the cut is named after that call, as
+`looped 𝜎6 := Φ.p`.
 The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
 such a copy the same way where the operand comes to one that repeats the
 formations above it more often than `--max-loops` lets through, since a
