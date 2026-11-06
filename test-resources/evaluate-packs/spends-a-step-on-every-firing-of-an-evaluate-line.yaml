@@ -11,21 +11,21 @@
 symbolic: |
   - λ: L_loop
     morph:
-      𝑛1: $.next
+      𝑛1: $.next🌵
     evaluate:
       𝑛2: 𝑛1
     𝑛: 𝑛2
 location: 'Q.app'
 steps: 6
 firings: 20
-input: '⟦ loop ↦ ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧, app ↦ Φ.loop.φ ⟧'
+input: '⟦ loop ↦ ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧, app ↦ Φ.loop.φ ⟧'
 fails: 'reaching the limit of steps'
 protocol: |
   𝕄(Φ.app):
     𝔼(L_loop):
-      𝕄(ξ.next):
-        morphed 𝑛·1·1 := ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧
-      𝑛1·1 := ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝕄(ξ.next)
+      𝕄(ξ.next🌵):
+        morphed 𝑛·1·1 := ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧
+      𝑛1·1 := ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝕄(ξ.next🌵)
       𝔼(L_loop):  # 𝔼(𝑛1)
-        𝕄(ξ.next):
+        𝕄(ξ.next🌵):
           starved 6

@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -48,7 +48,7 @@ type ReductionFunc = Expression -> ReduceContext -> Expression -> State -> IO (M
 type EvaluationFunc = ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
 
 emptyState :: State
-emptyState = State Nothing Nothing
+emptyState = State Nothing Nothing []
 
 data Steps = Steps
   { _limit :: Int
@@ -106,6 +106,7 @@ data ReduceContext = ReduceContext
   , _judgment :: Judgment
   , _parked :: [T.Text]
   , _entered :: Seen
+  , _placed :: Maybe (Expression, [Binding], Expression)
   , _symbolic :: Lambdas
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
@@ -284,18 +285,27 @@ severing term univ state ctx = case entrance ctx._judgment term of
   Nothing -> pure (term, ctx)
 
 sever :: Expression -> Expression -> State -> ReduceContext -> IO (Either Expression ReduceContext)
-sever form univ state ctx = admitted form ctx >>= either severed (pure . Right)
+sever form univ state ctx = admitted form ctx >>= either cut (pure . Right . placing)
   where
-    severed :: (Acyclic, Expression) -> IO (Either Expression ReduceContext)
-    severed (mode, before) = case form of
+    placing :: ReduceContext -> ReduceContext
+    placing entered = case form of
+      ExFormation known -> entered{_placed = maybe entered._placed (Just . (form,known,)) (called univ ctx known)}
+      _ -> entered
+    cut :: (Acyclic, Expression) -> IO (Either Expression ReduceContext)
+    cut loop = case form of
       ExFormation bds
-        | boxed bds
-        , Just call <- called univ ctx bds -> do
-            reckoned <- argued univ ctx state form bds call
-            fresh <- coined ctx
-            ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
-            pure (Left (ExFormation [BiLambda (FnSymbol fresh)]))
-      _ -> refused form ctx (mode, before)
+        | boxed bds || ctx._judgment `elem` [Dataization, Evaluation]
+        , Just call <- called univ ctx bds ->
+            Left <$> severed univ ctx state form bds call loop
+        | ctx._judgment `elem` [Dataization, Evaluation] -> maybe (refused form ctx loop) (\(copy, known, call) -> Left <$> severed univ ctx state copy known call loop) ctx._placed
+      _ -> refused form ctx loop
+
+severed :: Expression -> ReduceContext -> State -> Expression -> [Binding] -> Expression -> (Acyclic, Expression) -> IO Expression
+severed univ ctx state form bds call (mode, before) = do
+  reckoned <- argued univ ctx state form bds call
+  fresh <- coined ctx
+  ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
+  pure (ExFormation [BiLambda (FnSymbol fresh)])
 
 coined :: ReduceContext -> IO Int
 coined ctx = atomicModifyIORef' ctx._minted (\count -> (succ count, succ count))
@@ -309,29 +319,32 @@ fired univ ctx site state form = sever form univ state ctx{_judgment = Evaluatio
       deep._evaluate deep state form univ
 
 called :: Expression -> ReduceContext -> [Binding] -> Maybe Expression
-called univ ctx known = uncurry applied <$> origin known
+called univ ctx known = uncurry applied <$> origin univ ctx known
   where
     applied :: Expression -> [Binding] -> Expression
     applied path declared = foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` declared]
-    origin :: [Binding] -> Maybe (Expression, [Binding])
-    origin bds = do
-      parent <- case filter ((== Just AtRho) . attributeFromBinding) bds of
-        [] -> Just ExRoot
-        [BiTau AtRho (ExFormation outer)] -> fst <$> origin outer
-        [BiTau AtRho path] -> Just (erased path)
-        _ -> Nothing
-      ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
-      chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
-      where
-        fits :: [Binding] -> Bool
-        fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- bds, attributeFromBinding bd /= Just AtRho]
-        chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
-        chosen [] = Nothing
-        chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
-          [one] -> Just one
-          _ -> Nothing
-        agreed :: (Expression, [Binding]) -> (Int, Int)
-        agreed (_, declared) = (length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
+
+origin :: Expression -> ReduceContext -> [Binding] -> Maybe (Expression, [Binding])
+origin univ ctx bds = do
+  parent <- case filter ((== Just AtRho) . attributeFromBinding) bds of
+    [] -> Just ExRoot
+    [BiTau AtRho (ExFormation outer)] -> fst <$> origin univ ctx outer
+    [BiTau AtRho path] -> Just (erased path)
+    _ -> Nothing
+  ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
+  chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
+  where
+    fits :: [Binding] -> Bool
+    fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- bds, attributeFromBinding bd /= Just AtRho]
+    chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
+    chosen [] = Nothing
+    chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
+      [one] -> Just one
+      _ -> Nothing
+    agreed :: (Expression, [Binding]) -> (Bool, Int, Int)
+    agreed (_, declared) = (all (`elem` declared) own && length own == length declared, length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
+    own :: [Binding]
+    own = filter ((/= Just AtRho) . attributeFromBinding) bds
     located :: Expression -> Expression -> Maybe Expression
     located ExRoot whole = Just whole
     located (ExDispatch path attr) whole = case located path whole of
@@ -370,15 +383,20 @@ admitted :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) Redu
 admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
   where
     remembered :: Acyclic -> IO (Either (Acyclic, Expression) ReduceContext)
-    remembered mode =
-      maybe (Right ctx{_entered = seenInsert (digest mode form) form ctx._entered}) (\before -> Left (mode, before))
-        <$> awaited ctx (evaluate (listToMaybe (drop ctx._maxLoops (filter (repeated mode form) (Map.findWithDefault [] (digest mode form) ctx._entered)))))
-    digest :: Acyclic -> Expression -> Int
-    digest Proven = hashShape
-    digest Plausible = hashSkeleton
-    repeated :: Acyclic -> Expression -> Expression -> Bool
-    repeated Proven form before = alike form before
-    repeated Plausible form before = within before form
+    remembered mode = maybe (Right ctx{_entered = seenInsert (digest mode form) form ctx._entered}) (\before -> Left (mode, before)) . listToMaybe . drop ctx._maxLoops <$> repeats mode form ctx
+
+repeats :: Acyclic -> Expression -> ReduceContext -> IO [Expression]
+repeats mode form ctx = awaited ctx (evaluate (length hits `seq` hits))
+  where
+    hits :: [Expression]
+    hits = take (succ ctx._maxLoops) (filter (repeated mode) (Map.findWithDefault [] (digest mode form) ctx._entered))
+    repeated :: Acyclic -> Expression -> Bool
+    repeated Proven before = alike form before
+    repeated Plausible before = within before form
+
+digest :: Acyclic -> Expression -> Int
+digest Proven = hashShape
+digest Plausible = hashSkeleton
 
 entrance :: Judgment -> Expression -> Maybe Expression
 entrance Dataization term@(ExFormation bds)
@@ -546,8 +564,25 @@ morphing univ ctx expr state = do
   (universe, aiming) <- insideUniverse expr univ ctx
   normal <- locatedExpression aiming._locator universe
   unparked $ do
-    ((morphed, _), state') <- morph' (normal, (universe, Nothing) :| []) universe state =<< opening Morphing =<< universed universe aiming
-    pure (morphed, state')
+    opened <- opening Morphing =<< universed universe aiming
+    ((morphed, _), state') <- morph' (normal, (universe, Nothing) :| []) universe state{_copies = []} opened
+    recurring morphed universe state'{_copies = state._copies ++ state'._copies} opened
+  where
+    recurring :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+    recurring term@(ExFormation bds) world state' opened
+      | Just mode <- opened._acyclic
+      , boxed bds
+      , Just call <- called world opened bds = do
+          hits <- repeats mode term opened
+          case drop opened._maxLoops hits of
+            before : _ -> (,state') <$> severed world opened state' term bds call (mode, before)
+            []
+              | null hits -> pure (term, state')
+              | otherwise -> pure (term, state'{_copies = state'._copies ++ [term]})
+    recurring term _ state' _ = pure (term, state')
+
+carried :: State -> ReduceContext -> (State, ReduceContext)
+carried state ctx = (state{_copies = []}, maybe ctx (\mode -> ctx{_entered = foldr (\form -> seenInsert (digest mode form) form) ctx._entered state._copies}) ctx._acyclic)
 
 execBuildTerm :: Expression -> ReduceContext -> BuildTermFunc
 execBuildTerm _ ctx "evaluate" = evaluated ctx

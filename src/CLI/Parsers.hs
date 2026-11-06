@@ -264,7 +264,8 @@ optSymbolic =
               \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", the terms \
               \it rewrites with rules spelled as in a rule file under \"rewrite\", the terms it keeps with \
               \every datum they hold turned into a fresh symbol under \"symbolize\", the pair of terms whose \
-              \bare symbol it casts into the shape of the other under \"cast\", and \
+              \bare symbol it casts into the shape of the other under \"cast\", the λ functions that only \
+              \raise, whose objects pass every line as they are and join as ⊥, under \"terminators\", and \
               \answering with the term under \"𝑛\", or joining under \"join\" the two sides of a datum of \
               \\"dataize\" into one term, with a fresh symbol where they differ"
         )
