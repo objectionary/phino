@@ -263,7 +263,8 @@ It takes every option of `dataize`.
 ### Acyclic morphing
 
 `phino` stops no recursion by itself, so a run that never ends fails once
-`--max-steps` runs out.
+`--max-steps` runs out, with `Morphing did not finish before reaching the
+limit of steps: --max-steps=<n>`.
 The `--acyclic=<mode>` option makes the run notice a loop instead.
 When a reduction is about to enter a formation it is already inside, the run
 answers a copy of an object binding φ with a fresh symbol and goes on, and
