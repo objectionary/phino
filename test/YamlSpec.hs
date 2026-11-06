@@ -33,6 +33,18 @@ failsAsRedundant = failsWith "redundant"
 
 spec :: Spec
 spec = do
+  describe "rejects unknown keys of inference rules" $ do
+    it "fails when a morphing rule spells when as whenn" $
+      failsWith
+        "Unknown key"
+        (decodeYaml' "name: ma\nmatch: 𝑛\nuniverse: 𝑈\nconclusion: 𝑛\nwhenn:\n  formation: 𝑛" :: Either Yaml.ParseException MorphRule)
+        `shouldBe` True
+    it "fails when a dataization rule carries an unexpected field" $
+      failsWith
+        "Unknown key"
+        (decodeYaml' "name: box\nmatch: 𝑛\nuniverse: 𝑈\nconclusion: 01-\nextra: true" :: Either Yaml.ParseException DataizeRule)
+        `shouldBe` True
+
   describe "validates rewriting rule keys" $ do
     it "accepts rule labels and descriptions" $
       (decodeYaml' "name: foo\nlabel: foo-label\ndescription: A rule\npattern: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\nresult: '𝑒1'" :: Either Yaml.ParseException Rule)
