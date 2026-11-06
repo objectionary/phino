@@ -13,7 +13,7 @@ import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
 import Functions (buildTerm)
-import Lambdas (Ending (..), Lambda (..), Lambdas, Line (..), Meta (..), cast, emptyLambdas, matched, minted, readLambdas, rewritten, stayed, symbolized, taken)
+import Lambdas (Ending (..), Lambda (..), Lambdas, Line (..), Meta (..), cast, emptyLambdas, matched, minted, readLambdas, rewritten, stayed, symbolized, taken, thrown)
 import Parser (parseExpressionThrows)
 import Rule (RuleContext (..), normal)
 import System.Mem.StableName (makeStableName)
@@ -501,7 +501,9 @@ spec = do
       , ("an 'unfold' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unfold:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The key 'unfold' of λ function 'L_fork' is none of the keys an entry reads")
       , ("an 'unbox' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  unbox:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n", "The key 'unbox' of λ function 'L_fork' is none of the keys an entry reads")
       , ("an 'upcast' block, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  upcast:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: 𝑛3\n", "The key 'upcast' of λ function 'L_fork' is none of the keys an entry reads")
-      , ("a 'terminators' key, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: [L_throw]\n  𝑛: 𝑛1\n", "The key 'terminators' of λ function 'L_fork' is none of the keys an entry reads")
+      , ("a terminator another entry answers", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: [L_throw]\n  𝑛: 𝑛1\n- λ: L_th.*\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "the terminator 'L_throw' of the key 'L_fork' is answered by the key 'L_th.*'")
+      , ("a terminator its own entry answers", "- λ: L_.*\n  morph:\n    𝑛1: $.a\n  terminators: [L_throw]\n  𝑛: 𝑛1\n", "the terminator 'L_throw' of the key 'L_.*' is answered by the key 'L_.*'")
+      , ("a 'terminators' key holding no list", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  terminators: L_throw\n  𝑛: 𝑛1\n", "terminators")
       , ("a 'lenient' key, which is gone", "- λ: L_fork\n  morph:\n    𝑛1: $.a\n  lenient: []\n  𝑛: 𝑛1\n", "The key 'lenient' of λ function 'L_fork' is none of the keys an entry reads")
       , ("a misspelled 'dataize' block", "- λ: L_pair\n  datize:\n    𝛿1: $.ρ\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n", "The key 'datize' of λ function 'L_pair' is none of the keys an entry reads")
       , ("a 'defer' key saying a flag instead of holding lines", "- λ: L_hold\n  morph:\n    𝑛1: $.a\n  defer: true\n  𝑛: 𝑛1\n", "defer: parsing")
@@ -510,6 +512,23 @@ spec = do
           it ("cannot read " ++ desc) $
             lambdasOf text `shouldThrow` (\err -> reason `isInfixOf` show (err :: SomeException))
       )
+
+  describe "thrown" $ do
+    it "tells a formation holding a terminator raises" $ do
+      term <- parseExpressionThrows "⟦ notiz ↦ \"schlecht\", λ ⤍ L_wurf ⟧"
+      thrown ["L_wurf"] term `shouldBe` True
+
+    it "tells an application of a formation holding a terminator raises" $ do
+      term <- parseExpressionThrows "⟦ notiz ↦ ∅, λ ⤍ L_wurf ⟧( notiz ↦ \"schlecht\" )"
+      thrown ["L_wurf"] term `shouldBe` True
+
+    it "tells a formation holding another λ function does not raise" $ do
+      term <- parseExpressionThrows "⟦ notiz ↦ \"schlecht\", λ ⤍ L_fang ⟧"
+      thrown ["L_wurf"] term `shouldBe` False
+
+    it "tells a dispatch off a formation holding a terminator does not raise" $ do
+      term <- parseExpressionThrows "⟦ λ ⤍ L_wurf ⟧.notiz"
+      thrown ["L_wurf"] term `shouldBe` False
 
   describe "stayed" $ do
     it "drops the ρ a dispatch is applied to" $ do
