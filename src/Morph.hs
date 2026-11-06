@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, memoized, morph, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, vouch, vouched, settled, severing, starved, tallied, timed, universed, unparked) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -65,7 +65,7 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IORef Int) (IORef Int)
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IORef Int) (IORef Int) (IORef (Store Expression))
 
 data Answer
   = Answer Expression Expression
@@ -163,7 +163,7 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   where
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
-    starve (Just (Memo _ _ _ exhausted)) = modifyIORef' exhausted (+ 1)
+    starve (Just (Memo _ _ _ exhausted _)) = modifyIORef' exhausted (+ 1)
 
 tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
@@ -205,12 +205,12 @@ awaited ctx action = case ctx._deadline of
     maybe (expired ctx cap) pure =<< timeout (ceiling (max 0 (due - now) * 1000000)) action
 
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0)
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> newIORef Map.empty)
 memoized _ = pure Nothing
 
 recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
 recalled Nothing _ _ = pure Nothing
-recalled (Just (Memo store _ answers _)) form spent = do
+recalled (Just (Memo store _ answers _ _)) form spent = do
   kept <- readIORef store
   count <- readIORef answers
   let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
@@ -225,24 +225,33 @@ recalled (Just (Memo store _ answers _)) form spent = do
 
 counted :: Maybe Memo -> IO Int
 counted Nothing = pure 0
-counted (Just (Memo _ _ answers _)) = readIORef answers
+counted (Just (Memo _ _ answers _ _)) = readIORef answers
 
 starved :: Maybe Memo -> IO Int
 starved Nothing = pure 0
-starved (Just (Memo _ _ _ exhausted)) = readIORef exhausted
+starved (Just (Memo _ _ _ exhausted _)) = readIORef exhausted
 
 retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
 retained Nothing _ _ _ = pure ()
-retained (Just (Memo store _ _ _)) form stamp kept =
+retained (Just (Memo store _ _ _ _)) form stamp kept =
   modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
 
 remembered :: Maybe Memo -> Firing -> IO (Maybe Answer)
 remembered Nothing _ = pure Nothing
-remembered (Just (Memo _ firings _ _)) firing = Map.lookup firing <$> readIORef firings
+remembered (Just (Memo _ firings _ _ _)) firing = Map.lookup firing <$> readIORef firings
+
+vouch :: Maybe Memo -> Expression -> Expression -> IO ()
+vouch Nothing _ _ = pure ()
+vouch (Just (Memo _ _ _ _ stands)) term stand =
+  modifyIORef' stands (Map.insertWith (++) (hashExpression term) [(term, stand)])
+
+vouched :: Maybe Memo -> Expression -> IO (Maybe Expression)
+vouched Nothing _ = pure Nothing
+vouched (Just (Memo _ _ _ _ stands)) term = lookup term . Map.findWithDefault [] (hashExpression term) <$> readIORef stands
 
 remember :: Maybe Memo -> Firing -> Answer -> IO ()
 remember Nothing _ _ = pure ()
-remember (Just (Memo _ firings answers _)) firing answer = do
+remember (Just (Memo _ firings answers _ _)) firing answer = do
   modifyIORef' firings (Map.insert firing answer)
   modifyIORef' answers (+ 1)
 
@@ -292,7 +301,17 @@ sever form univ state ctx = admitted form ctx >>= either cut (pure . Right)
         | boxed bds || ctx._judgment `elem` [Dataization, Evaluation]
         , Just call <- called univ ctx bds ->
             Left <$> severed univ ctx state form bds call loop
+        | ctx._judgment `elem` [Dataization, Evaluation] -> stood bds >>= maybe (refused form ctx loop) (\(copy, known, call) -> Left <$> severed univ ctx state copy known call loop)
       _ -> refused form ctx loop
+    stood :: [Binding] -> IO (Maybe (Expression, [Binding], Expression))
+    stood bds = case [outer | BiTau AtRho outer@(ExFormation held) <- bds, [stripped inner | BiTau AtPhi (ExFormation inner) <- held] == [stripped bds]] of
+      [outer] -> (>>= named) <$> vouched ctx._memo outer
+      _ -> pure Nothing
+    named :: Expression -> Maybe (Expression, [Binding], Expression)
+    named copy@(ExFormation known) = (copy,known,) <$> called univ ctx known
+    named path = Just (path, [], path)
+    stripped :: [Binding] -> [Binding]
+    stripped = filter ((/= Just AtRho) . attributeFromBinding)
 
 severed :: Expression -> ReduceContext -> State -> Expression -> [Binding] -> Expression -> (Acyclic, Expression) -> IO Expression
 severed univ ctx state form bds call (mode, before) = do

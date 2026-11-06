@@ -1676,6 +1676,32 @@ spec = do
           withStdin recursive $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
+    describe "--acyclic at a fork the memo fabricated" $ do
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.p, Φ.q ) ⟧"
+          forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+          recorded :: IO [String]
+          recorded =
+            withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+              hClose stream
+              withLambdasOf forking $ \file ->
+                withStdin recursive $
+                  testCLISucceeded
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    []
+              lines <$> readProtocol path
+      it "answers the fork it cuts inside a formation the memo fabricated with a fresh symbol and goes on" $
+        withLambdasOf forking $ \file ->
+          withStdin recursive $
+            testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
+
+      it "writes the fork it cuts inside a fabricated formation as a call of the object it stands for" $
+        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.p  #"))
+
+      it "answers the fork it cuts inside a formation fabricated from a fork of the world with a fresh symbol and goes on" $
+        withLambdasOf forking $ \file ->
+          withStdin "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.fork( Φ.p, Φ.q ) ⟧" $
+            testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
+
     it "dataizes with --sequence" $
       withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
         testCLISucceeded

@@ -15,14 +15,14 @@ import Control.Monad (foldM, unless)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, origin, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, origin, recalled, remember, remembered, retained, settled, starved, unparked, vouch, vouched)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -184,6 +184,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       placed <- operand term
       (normal, state'') <- morphing univ ctx{_site = term} placed state'
       (shaped, state''') <- change state'' normal
+      mapM_ (vouch caller._memo shaped) =<< standing form term
       ctx._saveEval
         ( if shaped == normal
             then EvTerm ctx._nesting meta._spelling Morphing term normal
@@ -361,6 +362,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           pure (Joined term, state''')
         Left path -> case maybe (Left Unnamed) (\name -> forked name condition one two) fallback of
           Right term -> do
+            mapM_ (vouch caller._memo term) =<< stands
             ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) term)
             pure (Joined term, state''')
           Left (Unripe side attr) -> do
@@ -369,6 +371,33 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           Left refusal -> do
             ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two) path refusal)
             throwIO (Diverged func)
+    stands :: IO (Maybe Expression)
+    stands = case form of
+      ExFormation bds | isJust (called univ caller bds) -> pure (Just form)
+      _ -> vouched caller._memo form
+    standing :: Expression -> Expression -> IO (Maybe Expression)
+    standing holder (ExDispatch base attr) = case resolved holder base of
+      Just outer@(ExFormation bds)
+        | attr == AtPhi -> vouched caller._memo outer >>= maybe (maybe (pure (outer <$ called univ caller bds)) (standing outer) (bound attr bds)) (pure . Just)
+        | otherwise -> maybe (pure Nothing) (\body -> if rooted body then pure (Just body) else standing outer body) (bound attr bds)
+      _ -> pure Nothing
+    standing holder term = case resolved holder term of
+      Just found@(ExFormation bds) -> vouched caller._memo found >>= maybe (pure (found <$ called univ caller bds)) (pure . Just)
+      _ -> pure Nothing
+    resolved :: Expression -> Expression -> Maybe Expression
+    resolved holder ExXi = Just holder
+    resolved _ found@(ExFormation _) = Just found
+    resolved holder (ExDispatch base attr) = do
+      outer@(ExFormation bds) <- resolved holder base
+      bound attr bds >>= resolved outer
+    resolved _ _ = Nothing
+    bound :: Attribute -> [Binding] -> Maybe Expression
+    bound attr bds = listToMaybe [body | BiTau attr' body <- bds, attr' == attr]
+    rooted :: Expression -> Bool
+    rooted (ExDispatch ExRoot _) = True
+    rooted (ExDispatch base _) = rooted base
+    rooted (ExApplication base _) = rooted base
+    rooted _ = False
     weighed :: [(T.Text, Either Int Bytes)] -> Either Meta Expression -> IO (Either Int Bytes)
     weighed operands (Left meta) =
       maybe
