@@ -146,6 +146,18 @@ spec = describe "Functions" $ do
         , \term -> expectExpression term (DataString (strToBts "HellO"))
         )
       ,
+        ( "sed puts the group a back reference names into the replacement"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "Hello, 2025")), ArgExpression (DataString (strToBts "s/([0-9]+)/\\1!/g"))]
+        , \term -> expectExpression term (DataString (strToBts "Hello, 2025!"))
+        )
+      ,
+        ( "sed keeps a digit after an escaped backslash in the replacement"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "a")), ArgExpression (DataString (strToBts "s/a/\\\\1/"))]
+        , \term -> expectExpression term (DataString (strToBts "\\1"))
+        )
+      ,
         ( "random-string returns a literal pattern with no specials unchanged"
         , "random-string"
         , [ArgExpression (DataString (strToBts "static-name"))]
