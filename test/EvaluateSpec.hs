@@ -67,7 +67,7 @@ testSymbols pth = do
     (_, written) <- recorded' hidden $ \record -> do
       let mode = named <$> acyclic
       cells <- memoized mode
-      facts <- factual mode
+      facts <- factual
       tally <- tallied firings
       base <- defaultReduceContext loc
       let ctx =
@@ -75,7 +75,7 @@ testSymbols pth = do
               { _partial = partial == Just True
               , _acyclic = mode
               , _memo = cells
-              , _facts = facts
+              , _facts = Just facts
               , _steps = Steps (fromMaybe 250 steps) 0
               , _tally = tally
               , _symbolic = known

@@ -163,18 +163,13 @@ line is bound to and binding a meta of its own to the answer (`evaluated` of
 formation with no λ, a bare symbol `⟦ λ ⤍ 𝜎1 ⟧`, which no entry answers
 (#2036), and ⊥ as they are, and never fires its answer again, so
 another call takes another line. It leaves as it is a formation binding an
-attribute other than ρ, a name ending with 🌵 or a void of the object of the
-world it copies (`origin` of `Morph.hs`), such as the `tag` of a copy of
-`box(v) ↦ ⟦ tag ↦ ξ.v, λ ⤍ L_box ⟧`, since its λ stands for its φ alone and a
-later dispatch on `tag` must find it (`owned` of `Evaluate.hs`, #2265). A
-formation `origin` finds no object of the world for, such as one written in
-place as `⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )`, holds no attribute of its own, so
-the line fires it (#2267), since what it does depends on the term and the
-world alone, never on what happened to the term before (#2270). Of the
-objects a formation fits, `origin` takes one whose bindings it repeats
-exactly before one whose voids it fills, so a copy of
-`p ↦ ⟦ φ ↦ Φ.bool(…).if(…) ⟧` is placed as `Φ.p` and not as a `Φ.num`
-holding that φ, and a loop cut at it is named `looped 𝜎5 := Φ.p` (#2281). Any
+attribute other than ρ, a name ending with 🌵 or a void of the first object
+the facts lead it back to (`voided` of `Morph.hs`), such as the `tag` of a
+copy of `box(v) ↦ ⟦ tag ↦ ξ.v, λ ⤍ L_box ⟧`, since its λ stands for its φ
+alone and a later dispatch on `tag` must find it (`owned` of
+`Evaluate.hs`, #2265). A formation no fact holds, such as one written in place as
+`⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )`, holds no attribute of its own, so the
+line fires it (#2267). Any
 other term, such as one `--partial` parked, gets the line stuck, unless the
 entry joins, where `kindled` of `Evaluate.hs` passes it on as it is, since a
 join compares any two terms (#1999). A `stay` line binds its meta to the term
@@ -343,8 +338,9 @@ A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 code in φ, whatever its φ reads: it reduces every argument other than φ and ρ
 with no entry of the file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it binds a
 fresh symbol and writes `deferred …` (`EvDeferred`), naming the call the copy
-stands for by the object of the world it was made of, the way the record of
-0.0.153 did (#1892); any other term is bound as it is. Before the line is
+stands for by the path of the world the facts lead it back to (`declared` and
+`called` of `Morph.hs`), the way the record of 0.0.153 did (#1892); any other
+term is bound as it is. Before the line is
 written, `argued` of `Morph.hs` works out every argument of the call that
 is no bare symbol: it morphs the argument in the copy, at a site such as
 `𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluate` line
@@ -463,7 +459,7 @@ or an `evaluate` line is about to enter a formation binding φ and holding no λ
 an `evaluate` line is about to enter a formation holding a λ, such as a copy of
 an atom whose operand dataizes the call again, or the φ of a formation a join
 fabricated, `sever` answers it the same way (#2272, #2275, #2278). The cut is
-named only by the facts the run wrote down (#2287): under `--acyclic` every
+named only by the facts the run wrote down (#2287): in every run, each
 dispatch normalization turns into a copy of an object of the world, every
 application of a copy it knows, and every firing of one, writes `remembered
 𝑛·0·1 ≡ Φ.p` (`EvRemembered`, `noted` of `Morph.hs`), keeping the pair in
@@ -474,6 +470,9 @@ repeats, follows the facts back to a path or a call of `Φ`, and writes `recalle
 call, as `looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·9 )`. A formation no fact leads to the
 world from, such as a fork written in place, is cut by its symbol alone, as
 `looped 𝜎7  # …`, since nothing guesses which object it stands for.
+A dispatch off a copy the facts hold leaves that copy without the attribute
+it took, and `normalized` keeps that copy as an alias of the one it came
+from (`peeled`), so a copy made of it later is traced back all the same.
 The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
 such a copy the same way where the operand comes to one that repeats the
 formations above it more often than `--max-loops` lets through, since a

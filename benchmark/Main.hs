@@ -195,7 +195,7 @@ main = do
     symbolic acyclic universe lambdas locator = do
       seedTaus universe
       memo <- memoized (Just acyclic)
-      facts <- factual (Just acyclic)
+      facts <- Just <$> factual
       minted <- newIORef 0
       let ctx = symbolicCtx acyclic memo facts minted lambdas locator
       started universe ctx

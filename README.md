@@ -357,7 +357,7 @@ A protocol may hold these lines:
 * `unanswered …` is a λ name no entry answers.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
-* `remembered 𝑛·0·1 ≡ Φ.down` is a fact `--acyclic` keeps: the term on the
+* `remembered 𝑛·0·1 ≡ Φ.down` is a fact the run keeps: the term on the
   left is the one on the right, a path or a call of the world, or the answer
   of the formation on the right.
 * `recalled 𝑛·0·8 ⇒ 𝑛·0·6` is the memo mapping the term on the left to the

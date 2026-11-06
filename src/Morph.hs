@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, origin, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked) where
+module Morph (Answer (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, voided) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -307,9 +307,8 @@ severed univ ctx state form bds (mode, before) = do
     found :: Expression -> IO (Maybe (Expression, Expression))
     found term = fmap (term,) <$> traced ctx._facts term
 
-factual :: Maybe Acyclic -> IO (Maybe Facts)
-factual Nothing = pure Nothing
-factual (Just _) = Just <$> newIORef Map.empty
+factual :: IO Facts
+factual = newIORef Map.empty
 
 noted :: ReduceContext -> Expression -> Expression -> IO ()
 noted ctx object source = forM_ ctx._facts $ \facts -> do
@@ -369,38 +368,46 @@ fired univ ctx site state form = sever form univ state ctx{_judgment = Evaluatio
       deep <- deeper entered
       deep._evaluate deep state form univ
 
-called :: Expression -> ReduceContext -> [Binding] -> Maybe Expression
-called univ ctx known = uncurry applied <$> origin univ ctx known
+voided :: ReduceContext -> Expression -> IO (Maybe [Attribute])
+voided ReduceContext{_facts = Nothing} _ = pure Nothing
+voided ctx@ReduceContext{_facts = Just facts} form@(ExFormation bds) = do
+  known <- readIORef facts
+  case lookup form (Map.findWithDefault [] (hashExpression form) known) of
+    Just source -> do
+      ctx._saveEval (EvRecalled ctx._nesting form source)
+      pure (placed known (Map.size known) bds source)
+    Nothing -> pure Nothing
+  where
+    placed :: Store Expression -> Int -> [Binding] -> Expression -> Maybe [Attribute]
+    placed known budget _ (ExApplication head' _) = headed known budget head'
+    placed _ _ own (ExDispatch _ _) = Just [attr | BiVoid attr <- own]
+    placed _ _ _ _ = Nothing
+    headed :: Store Expression -> Int -> Expression -> Maybe [Attribute]
+    headed known budget (ExApplication head' _) = headed known budget head'
+    headed known budget head'@(ExFormation inner) = case lookup head' (Map.findWithDefault [] (hashExpression head') known) of
+      Just source | budget > 0 -> placed known (budget - 1) inner source
+      _ -> Just [attr | BiVoid attr <- inner]
+    headed _ _ _ = Nothing
+voided _ _ = pure Nothing
+
+called :: Expression -> ReduceContext -> Expression -> [Binding] -> IO (Maybe Expression)
+called univ ctx form known = fmap (uncurry applied) <$> declared univ ctx form
   where
     applied :: Expression -> [Binding] -> Expression
-    applied path declared = foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` declared]
+    applied path voids = foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` voids]
 
-origin :: Expression -> ReduceContext -> [Binding] -> Maybe (Expression, [Binding])
-origin univ ctx bds = do
-  parent <- case filter ((== Just AtRho) . attributeFromBinding) bds of
-    [] -> Just ExRoot
-    [BiTau AtRho (ExFormation outer)] -> fst <$> origin univ ctx outer
-    [BiTau AtRho path] -> Just (erased path)
-    _ -> Nothing
-  ExFormation siblings <- located parent (fromMaybe univ ctx._universe)
-  chosen [(ExDispatch parent attr, declared) | BiTau attr (ExFormation declared) <- siblings, attr /= AtRho, fits declared]
+declared :: Expression -> ReduceContext -> Expression -> IO (Maybe (Expression, [Binding]))
+declared univ ctx form = traced ctx._facts form >>= maybe (pure Nothing) recited
   where
-    fits :: [Binding] -> Bool
-    fits declared = all (`elem` map attributeFromBinding declared) [attributeFromBinding bd | bd <- bds, attributeFromBinding bd /= Just AtRho]
-    chosen :: [(Expression, [Binding])] -> Maybe (Expression, [Binding])
-    chosen [] = Nothing
-    chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
-      [one] -> Just one
-      _ -> Nothing
-    agreed :: (Expression, [Binding]) -> (Bool, Int, Int)
-    agreed (_, declared) = (all (`elem` declared) own && length own == length declared, length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
-    own :: [Binding]
-    own = filter ((/= Just AtRho) . attributeFromBinding) bds
-    located :: Expression -> Expression -> Maybe Expression
-    located ExRoot whole = Just whole
+    recited :: Expression -> IO (Maybe (Expression, [Binding]))
+    recited call = do
+      ctx._saveEval (EvRecalled ctx._nesting form call)
+      pure ((erased call,) <$> located (erased call) (fromMaybe univ ctx._universe))
+    located :: Expression -> Expression -> Maybe [Binding]
+    located ExRoot (ExFormation bds) = Just bds
     located (ExDispatch path attr) whole = case located path whole of
-      Just (ExFormation siblings) -> listToMaybe [body | BiTau attr' body <- siblings, attr' == attr]
-      _ -> Nothing
+      Just siblings -> listToMaybe [inner | BiTau attr' (ExFormation inner) <- siblings, attr' == attr]
+      Nothing -> Nothing
     located _ _ = Nothing
     erased :: Expression -> Expression
     erased (ExApplication target _) = erased target
@@ -562,31 +569,54 @@ normalized :: Expression -> NonEmpty Rewritten -> ReduceContext -> IO (Expressio
 normalized expr seq ctx@ReduceContext{..} = do
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
   taken <- newIORef Map.empty
-  (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken ctx)
+  peeled <- newIORef Map.empty
+  (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken peeled ctx)
   when exceeded (throwIO (OutOfSteps (Cycles _maxCycles)))
   let (rw :| rws) = NE.reverse rewrittens
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)
   pure (expr', seq')
   where
-    rewriteContext :: IORef (Store Expression) -> ReduceContext -> RewriteContext
-    rewriteContext taken whole@ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (made taken whole)
-    made :: IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
-    made _ whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
+    rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
+    rewriteContext taken peeled whole@ReduceContext{..} =
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (made taken peeled whole)
+    made :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
+    made _ _ whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
       | attr /= AtRho && object /= head' = do
           whole._saveEval (EvApplied whole._nesting whole._judgment (called whole._universe redex) object whole._site)
           known <- remembering whole._facts head'
           when (known && copied bds) (noted whole object redex)
-    made taken whole redex@(ExApplication _ (ArTau AtRho _)) object@(ExFormation bds)
+    made taken _ whole redex@(ExApplication _ (ArTau AtRho _)) object@(ExFormation bds)
       | copied bds = do
           pending <- readIORef taken
           forM_ (lookup redex (Map.findWithDefault [] (hashExpression redex) pending)) (noted whole object)
-    made taken whole redex@(ExDispatch _ attr) object@(ExApplication (ExFormation bds) (ArTau AtRho _))
-      | attr /= AtRho && copied bds = forM_ (worldly whole._universe redex) (\path -> modifyIORef' taken (Map.insertWith (++) (hashExpression object) [(object, path)]))
-    made _ whole redex@(ExDispatch _ attr) object@(ExFormation bds)
-      | attr /= AtRho && copied bds = forM_ (worldly whole._universe redex) (noted whole object)
-    made _ _ _ _ = pure ()
+    made taken peeled whole redex@(ExDispatch target attr) object
+      | attr /= AtRho = do
+          stripped peeled whole target attr
+          dispatched taken peeled whole redex object
+    made _ _ _ _ _ = pure ()
+    stripped :: IORef (Store Expression) -> ReduceContext -> Expression -> Attribute -> IO ()
+    stripped peeled whole target@(ExFormation bds) attr = do
+      known <- remembering whole._facts target
+      when known (modifyIORef' peeled (Map.insertWith (++) (hashExpression (left bds)) [(left bds, target)]))
+      where
+        left :: [Binding] -> Expression
+        left inner = ExFormation [bd | bd <- inner, attributeFromBinding bd /= Just attr]
+    stripped _ _ _ _ = pure ()
+    dispatched :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
+    dispatched taken peeled whole redex object@(ExApplication (ExFormation bds) (ArTau AtRho _))
+      | copied bds = sourced peeled whole redex >>= mapM_ (\path -> modifyIORef' taken (Map.insertWith (++) (hashExpression object) [(object, path)]))
+    dispatched _ peeled whole redex object@(ExFormation bds)
+      | copied bds = sourced peeled whole redex >>= mapM_ (noted whole object)
+    dispatched _ _ _ _ _ = pure ()
+    sourced :: IORef (Store Expression) -> ReduceContext -> Expression -> IO (Maybe Expression)
+    sourced peeled whole redex@(ExDispatch target attr) = case worldly whole._universe redex of
+      Just path -> pure (Just path)
+      Nothing -> do
+        known <- remembering whole._facts target
+        held <- readIORef peeled
+        pure (if known then Just redex else (`ExDispatch` attr) <$> lookup target (Map.findWithDefault [] (hashExpression target) held))
+    sourced _ _ _ = pure Nothing
     copied :: [Binding] -> Bool
     copied bds = boxed bds || isJust (lambda bds)
     worldly :: Maybe Expression -> Expression -> Maybe Expression

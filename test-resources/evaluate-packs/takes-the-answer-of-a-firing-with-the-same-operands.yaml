@@ -51,6 +51,7 @@ protocol: |
         remembered 𝑛·1·6 ≡ 𝑛·1·1( target ↦ Φ.y )
         morphed 𝑛·1·7 := 𝑛·1·6
       𝑛2·1 := 𝑛·1·6  # 𝕄(ξ.b)
+      recalled 𝑛·1·3 ⇒ 𝑛·1·1( target ↦ Φ.x )
       𝔼(L_dataized):  # 𝔼(𝑛1)
         𝔻(ξ.target):
           𝕄(ξ.target):
@@ -62,6 +63,7 @@ protocol: |
           morphed 𝑛·2·3 := 𝜎1:λ
         𝑛·2·4 := 𝑛·2·3  # 𝕄(𝑛·2·2)
       𝑛3·1 := 𝑛·2·4  # 𝔼(𝑛1)
+      recalled 𝑛·1·6 ⇒ 𝑛·1·1( target ↦ Φ.y )
       𝔼(L_dataized):  # 𝔼(𝑛2)
         𝔻(ξ.target):
           𝕄(ξ.target):

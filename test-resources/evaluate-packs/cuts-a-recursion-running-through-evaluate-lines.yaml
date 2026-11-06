@@ -32,6 +32,7 @@ protocol: |
         morphed 𝑛·1·1 := 𝑛·0·1
       𝑛1·1 := 𝑛·0·1  # 𝕄(ξ.next🌵)
       recalled 𝑛·0·1 ⇒ Φ.loop
+      recalled 𝑛·0·1 ⇒ Φ.loop
       looped 𝜎1 := Φ.loop  # 𝔼(𝑛1), proven, repeats 𝑛·0·1
       𝑛2·1 := 𝜎1:λ  # 𝔼(𝑛1)
       𝑛·1·2 := 𝑛2·1  # 𝑛
