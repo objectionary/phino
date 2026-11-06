@@ -289,7 +289,7 @@ sever form univ state ctx = admitted form ctx >>= either cut (pure . Right)
     cut :: (Acyclic, Expression) -> IO (Either Expression ReduceContext)
     cut loop = case form of
       ExFormation bds
-        | boxed bds || ctx._judgment == Dataization
+        | boxed bds || ctx._judgment `elem` [Dataization, Evaluation]
         , Just call <- called univ ctx bds ->
             Left <$> severed univ ctx state form bds call loop
       _ -> refused form ctx loop

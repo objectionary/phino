@@ -456,8 +456,9 @@ them again, the way `--partial` parks a λ that cannot fire. Where `box` of 𝔻
 or an `evaluate` line is about to enter a copy, binding φ and holding no λ,
 that `called` of `Morph.hs` names by the object of the world it was made of,
 `sever` answers the copy with a fresh symbol, and the run goes on (#2226).
-Where 𝔻 is about to enter a copy holding a λ, such as one of an atom whose
-operand dataizes the call again, `sever` answers it the same way (#2272).
+Where 𝔻 or an `evaluate` line is about to enter a copy holding a λ, such as
+one of an atom whose operand dataizes the call again, `sever` answers it the
+same way (#2272, #2275).
 The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
 such a copy the same way where the operand comes to one that repeats the
 formations above it more often than `--max-loops` lets through, since a
