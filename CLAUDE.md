@@ -170,7 +170,11 @@ later dispatch on `tag` must find it (`owned` of `Evaluate.hs`, #2265). A
 formation `origin` finds no object of the world for, such as one written in
 place as `⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )`, holds no attribute of its own, so
 the line fires it (#2267), since what it does depends on the term and the
-world alone, never on what happened to the term before (#2270). Any
+world alone, never on what happened to the term before (#2270). Of the
+objects a formation fits, `origin` takes one whose bindings it repeats
+exactly before one whose voids it fills, so a copy of
+`p ↦ ⟦ φ ↦ Φ.bool(…).if(…) ⟧` is placed as `Φ.p` and not as a `Φ.num`
+holding that φ, and a loop cut at it is named `looped 𝜎5 := Φ.p` (#2281). Any
 other term, such as one `--partial` parked, gets the line stuck, unless the
 entry joins, where `kindled` of `Evaluate.hs` passes it on as it is, since a
 join compares any two terms (#1999). A `stay` line binds its meta to the term

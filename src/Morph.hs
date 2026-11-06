@@ -354,8 +354,10 @@ origin univ ctx bds = do
     chosen candidates = case [candidate | candidate <- candidates, agreed candidate == maximum (map agreed candidates)] of
       [one] -> Just one
       _ -> Nothing
-    agreed :: (Expression, [Binding]) -> (Int, Int)
-    agreed (_, declared) = (length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
+    agreed :: (Expression, [Binding]) -> (Bool, Int, Int)
+    agreed (_, declared) = (all (`elem` declared) own && length own == length declared, length [attr | BiTau attr _ <- bds, BiVoid attr `elem` declared], length (filter (`elem` declared) bds))
+    own :: [Binding]
+    own = filter ((/= Just AtRho) . attributeFromBinding) bds
     located :: Expression -> Expression -> Maybe Expression
     located ExRoot whole = Just whole
     located (ExDispatch path attr) whole = case located path whole of
