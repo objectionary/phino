@@ -113,7 +113,15 @@ forked func condition left right = do
         voids :: [Attribute]
         voids = nub (vacant one ++ vacant two)
         branch :: Attribute -> Binding
-        branch attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" one attr, ask "right🌵" two attr]))
+        branch attr = maybe (forking attr) (BiTau attr) (aliased attr)
+        aliased :: Attribute -> Maybe Expression
+        aliased attr = case (bound one attr, bound two attr) of
+          (Just term@(ExDispatch ExXi name), Just other) | term == other && name `elem` attributes one ++ attributes two -> Just term
+          _ -> Nothing
+        bound :: [Binding] -> Attribute -> Maybe Expression
+        bound bds attr = listToMaybe [term | BiTau label term <- bds, label == attr]
+        forking :: Attribute -> Binding
+        forking attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" one attr, ask "right🌵" two attr]))
         inner :: Attribute -> [Attribute]
         inner attr = nub (concat (mapMaybe (`held` attr) [one, two]))
         ask :: Text -> [Binding] -> Attribute -> Binding
