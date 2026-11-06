@@ -10,6 +10,7 @@ module EvaluateSpec (spec) where
 
 import AST
 import CLI.Helpers (started)
+import Control.Applicative ((<|>))
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON (parseJSON), camelTo2, defaultOptions, fieldLabelModifier, genericParseJSON)
@@ -107,8 +108,8 @@ testRecalls pth = do
   where
     orphans :: [String] -> [(String, String)] -> [String]
     orphans [] _ = []
-    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
-      (Just fact, _) -> orphans rest (paired " ≡ " (fst (T.breakOn "  # " fact)) : facts)
+    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line) <|> T.stripPrefix "memoized " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
+      (Just fact, _) -> orphans rest ([paired arrow (fst (T.breakOn "  # " fact)) | arrow <- [" ≡ ", " ⇛ "], arrow `T.isInfixOf` fact] ++ facts)
       (_, Just recall)
         | paired " ⇒ " recall `elem` facts -> orphans rest facts
         | otherwise -> line : orphans rest facts

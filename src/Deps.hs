@@ -158,6 +158,7 @@ data Evaluation
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int Expression
   | EvRemembered Int Expression Expression
+  | EvMemoized Int Expression Expression
   | EvRecalled Int Expression Expression
   | EvWorld Expression
   | EvHeader Header Expression Expression
@@ -224,6 +225,7 @@ tier (EvUnripe depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
 tier (EvTaken depth _) = depth
 tier (EvRemembered depth _ _) = depth
+tier (EvMemoized depth _ _) = depth
 tier (EvRecalled depth _ _) = depth
 tier EvWorld{} = maxBound
 tier EvHeader{} = 0
@@ -359,6 +361,19 @@ saveEval handle cursor printed printed' report = do
     saved line = do
       hPutStrLn handle line
       logDebug (printf "Saved one line of the protocol: %s" (dropWhile (== ' ') line))
+    stating :: Int -> String -> String -> Expression -> Expression -> Protocol -> IO (Protocol, Maybe String)
+    stating at word arrow object source protocol = do
+      origin <- render source
+      case namedLookup object protocol._made of
+        Just _ -> do
+          known <- render object
+          pure (protocol{_stated = stated object source known origin protocol._stated}, Just (indented at (printf "%s %s %s %s" word known arrow origin)))
+        Nothing -> do
+          let (index, counted) = numbered protocol
+              naming :: String
+              naming = printf "%s·%d" (labelled protocol answer) index
+          body <- printed (abbreviatedInside protocol._made object)
+          pure (counted{_made = namedInsert object (alias (opener protocol) index) counted._made, _stated = stated object source naming origin counted._stated}, Just (indented at (printf "%s %s %s %s  # %s" word naming arrow origin body)))
     written :: Int -> Evaluation -> Protocol -> IO (Protocol, Maybe String)
     written _ (EvRun judgment locator) protocol =
       pure (protocol{_begun = True, _blocks = [(0, Just (judgment, heading), heading ++ ":", True)]}, Just (heading ++ ":"))
@@ -510,18 +525,8 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- valued counted naming term
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s" naming value)))
-    written at (EvRemembered _ object source) protocol = do
-      origin <- render source
-      case namedLookup object protocol._made of
-        Just _ -> do
-          known <- render object
-          pure (protocol{_stated = stated object source known origin protocol._stated}, Just (indented at (printf "remembered %s ≡ %s" known origin)))
-        Nothing -> do
-          let (index, counted) = numbered protocol
-              naming :: String
-              naming = printf "%s·%d" (labelled protocol answer) index
-          body <- printed (abbreviatedInside protocol._made object)
-          pure (counted{_made = namedInsert object (alias (opener protocol) index) counted._made, _stated = stated object source naming origin counted._stated}, Just (indented at (printf "remembered %s ≡ %s  # %s" naming origin body)))
+    written at (EvRemembered _ object source) protocol = stating at "remembered" "≡" object source protocol
+    written at (EvMemoized _ form reply) protocol = stating at "memoized" "⇛" form reply protocol
     written at (EvRecalled _ term reply) protocol = do
       (known, given) <- maybe ((,) <$> render term <*> render reply) pure (statement term reply protocol._stated)
       pure (protocol, Just (indented at (printf "recalled %s ⇒ %s" known given)))
@@ -809,18 +814,8 @@ saveEvalXml handle cursor printed report = do
         (naming, _) <- counted
         pure (printf "<fabricated meta=\"%s\" left=\"%s\" right=\"%s\">%s</fabricated>" (escapeXML naming) (escapeXML one) (escapeXML two) (escapeXMLText body))
     elements at (EvTaken depth term) nesting = placed at nesting (concluded "answered" depth term)
-    elements at (EvRemembered depth object source) nesting =
-      placed at nesting $ do
-        origin <- leaf depth source
-        case namedLookup object nesting._objects of
-          Just _ -> do
-            kept <- leaf depth object
-            modify (first (\nesting' -> nesting'{_attested = stated object source kept origin nesting'._attested}))
-            pure (printf "<remembered of=\"%s\" as=\"%s\"/>" (escapeXML kept) (escapeXML origin))
-          Nothing -> do
-            (naming, aliased) <- counted
-            modify (first (\nesting' -> nesting'{_objects = namedInsert object aliased nesting'._objects, _attested = stated object source naming origin nesting'._attested}))
-            pure (printf "<remembered meta=\"%s\" as=\"%s\"/>" (escapeXML naming) (escapeXML origin))
+    elements at (EvRemembered depth object source) nesting = placed at nesting (attesting "remembered" depth nesting object source)
+    elements at (EvMemoized depth form reply) nesting = placed at nesting (attesting "memoized" depth nesting form reply)
     elements at (EvRecalled depth term reply) nesting =
       placed at nesting $ do
         (asked, given) <- maybe ((,) <$> leaf depth term <*> leaf depth reply) pure (statement term reply nesting._attested)
@@ -859,6 +854,18 @@ saveEvalXml handle cursor printed report = do
       where
         index :: Int
         index = maybe 1 (+ 1) (Map.lookup (opener nesting) nesting._numbered)
+    attesting :: String -> Int -> Nesting -> Expression -> Expression -> Naming String
+    attesting word depth nesting object source = do
+      origin <- leaf depth source
+      case namedLookup object nesting._objects of
+        Just _ -> do
+          kept <- leaf depth object
+          modify (first (\nesting' -> nesting'{_attested = stated object source kept origin nesting'._attested}))
+          pure (printf "<%s of=\"%s\" as=\"%s\"/>" word (escapeXML kept) (escapeXML origin))
+        Nothing -> do
+          (naming, aliased) <- counted
+          modify (first (\nesting' -> nesting'{_objects = namedInsert object aliased nesting'._objects, _attested = stated object source naming origin nesting'._attested}))
+          pure (printf "<%s meta=\"%s\" as=\"%s\"/>" word (escapeXML naming) (escapeXML origin))
     counted :: Naming (String, Expression)
     counted = do
       (nesting, records) <- get

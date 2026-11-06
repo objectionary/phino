@@ -75,11 +75,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         (bound'', undressed, normals') <- foldM (through ctx "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
         firing <- Firing func (reverse conditions) . (reverse normals' ++) <$> sides entry._ending
         known <- remembered caller._memo firing
-        maybe (worked ctx entry firing bound'' undressed) (\(first, answer) -> (answer, undressed) <$ reused ctx._nesting first answer) known
+        maybe (worked ctx entry firing bound'' undressed) (\(first, answer) -> (answer, undressed) <$ recited ctx._nesting first answer) known
       case outcome of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
-          when (isJust caller._memo) (caller._saveEval (EvRemembered (caller._nesting + 1) form (ended answer)))
+          when (isJust caller._memo) (caller._saveEval (EvMemoized (caller._nesting + 1) form (ended answer)))
           pure (ended answer, state')
         Left failure -> do
           exhausted' <- starved caller._memo
@@ -171,10 +171,6 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     recited depth term answer = do
       caller._saveEval (EvRecalled depth term (ended answer))
       shown depth answer
-    reused :: Int -> Expression -> Answer -> IO ()
-    reused depth first answer = do
-      unless (first == form) (caller._saveEval (EvRemembered depth form first))
-      recited depth first answer
     down :: ReduceContext -> (Subst, State, [Either Int Bytes]) -> (Meta, Expression) -> IO (Subst, State, [Either Int Bytes])
     down ctx (bound, state', conditions) (meta, term) = do
       (datum, bound', state'') <- brought ctx bound state' meta term =<< operand term

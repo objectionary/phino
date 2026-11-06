@@ -358,10 +358,12 @@ A protocol may hold these lines:
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
 * `remembered 𝑛·0·1 ≡ Φ.down` is a fact the run keeps: the term on the
-  left is the one on the right, a path or a call of the world, the answer
-  of the formation on the right, or the answer a firing of it gave.
-* `recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )` is a fact used again, spelled as its
-  `remembered` line spelled it.
+  left came from the one on the right, a path or a call of the world, or
+  a formation it was the answer of.
+* `memoized 𝑛·0·5 ⇛ 𝑛·1·9` is what `--acyclic=plausible` keeps: the
+  formation on the left fired to the term on the right.
+* `recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )` is a fact or a memo entry used again,
+  spelled as its `remembered` or `memoized` line spelled it.
 * `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
   the call of the object it answered with that symbol, when a fact names it.
 * `starved …`, `spent …` and `timeout …` are where `--max-steps`,

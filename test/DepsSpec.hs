@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvHeader, EvJoined, EvLooped, EvManufactured, EvMorphed, EvRecalled, EvRemembered, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvRecalled, EvRemembered, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -267,6 +267,12 @@ spec = do
     it "recalls a fact by the names its remembered line gave both sides, after a morphed line renamed the term" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvRemembered 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]) (ExDispatch ExRoot (AtLabel "пихта")), EvMorphed 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]), EvRecalled 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]) (ExDispatch ExRoot (AtLabel "пихта"))])
       last (lines written) `shouldBe` "  recalled 𝑛·0·1 ⇒ Φ.пихта"
+    it "writes the answer the memo keeps for a formation as a memoized line" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvMemoized 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 8)])])
+      last (lines written) `shouldBe` "    memoized 𝑛·1·1 ⇛ 𝜎8:λ  # Φ.налим"
+    it "recalls an answer the memo kept as its remembered line spelled it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvMemoized 2 (ExFormation [BiTau (AtLabel "лещ") (ExFormation [])]) (ExFormation [BiLambda (FnSymbol 8)]), EvMorphed 2 (ExFormation [BiTau (AtLabel "лещ") (ExFormation [])]), EvRecalled 2 (ExFormation [BiTau (AtLabel "лещ") (ExFormation [])]) (ExFormation [BiLambda (FnSymbol 8)])])
+      last (lines written) `shouldBe` "    recalled 𝑛·1·1 ⇒ 𝜎8:λ"
     it "writes what the memo mapped a term to beside the term" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_сом" Dataization ExRoot, EvRecalled 2 (ExDispatch ExRoot (AtLabel "окунь")) (ExDispatch ExRoot (AtLabel "щука"))])
       last (lines written) `shouldBe` "    recalled Φ.окунь ⇒ Φ.щука"
@@ -637,6 +643,9 @@ spec = do
     it "recalls a fact as an element naming both sides the way its remembered element did, after a morphed element renamed the term" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvRemembered 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]) (ExDispatch ExRoot (AtLabel "пихта")), EvMorphed 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]), EvRecalled 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]) (ExDispatch ExRoot (AtLabel "пихта"))])
       lines written `shouldContain` ["  <recalled of=\"𝑛·0·1\" as=\"Φ.пихта\"/>"]
+    it "writes the answer the memo keeps for a formation as a memoized element" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvMemoized 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 8)])])
+      lines written `shouldContain` ["    <memoized meta=\"𝑛·1·1\" as=\"𝜎8\"/>"]
     it "writes what the memo mapped a term to as an element naming both" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_сом" Dataization ExRoot, EvRecalled 2 (ExDispatch ExRoot (AtLabel "окунь")) (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldContain` ["    <recalled of=\"Φ.окунь\" as=\"Φ.щука\"/>"]
