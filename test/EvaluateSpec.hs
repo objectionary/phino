@@ -100,6 +100,22 @@ testSymbols pth = do
     spelled hidden term =
       (if hidden then printExpressionHidingRho' else printExpression') term (SWEET, UNICODE, SINGLELINE, defaultMargin)
 
+testRecalls :: FilePath -> Expectation
+testRecalls pth = do
+  pack <- Decode.decodeFileThrow pth
+  orphans (map (dropWhile (== ' ')) (lines (protocol (pack :: SymbolPack)))) [] `shouldBe` []
+  where
+    orphans :: [String] -> [(String, String)] -> [String]
+    orphans [] _ = []
+    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
+      (Just fact, _) -> orphans rest (paired " ≡ " (fst (T.breakOn "  # " fact)) : facts)
+      (_, Just recall)
+        | paired " ⇒ " recall `elem` facts -> orphans rest facts
+        | otherwise -> line : orphans rest facts
+      _ -> orphans rest facts
+    paired :: T.Text -> T.Text -> (String, String)
+    paired arrow text = let (left, right) = T.breakOn arrow text in (T.unpack left, T.unpack (T.drop (T.length arrow) right))
+
 spec :: Spec
 spec = do
   known <- runIO fixtureLambdas
@@ -108,6 +124,11 @@ spec = do
     let resources = "test-resources/evaluate-packs"
     packs <- runIO (allPathsIn resources)
     forM_ packs (\pth -> it (makeRelative resources pth) (testSymbols pth))
+
+  describe "recalls only what the protocol of a pack remembered above" $ do
+    let resources = "test-resources/evaluate-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_ packs (\pth -> it (makeRelative resources pth) (testRecalls pth))
 
   describe "execBuildTerm 'evaluate'" $ do
     let univ = ExFormation []

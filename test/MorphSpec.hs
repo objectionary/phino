@@ -21,7 +21,7 @@ import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (Acyclic (..), Evaluation (EvMorphed, EvWorld), Judgment (..), State, Term (TeExpression))
+import Deps (Acyclic (..), Evaluation (EvMorphed, EvRecalled, EvWorld), Judgment (..), State, Term (TeExpression))
 import Engine (Engine (_normal))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives)
@@ -308,6 +308,16 @@ spec = do
       base <- defaultReduceContext ExRoot
       fmap fst <$> declared (ExFormation [BiTau (AtLabel "nq") (ExFormation [BiVoid AtPhi]), BiTau (AtLabel "kel") (ExFormation [BiTau AtPhi body])]) base{_facts = Just facts} (ExFormation [BiTau AtPhi body])
         `shouldReturn` Just (ExDispatch ExRoot (AtLabel "nq"))
+    it "recalls every fact it follows on its way to the world, one by one" $ do
+      let head' = ExFormation [BiVoid (AtLabel "ru"), BiTau AtPhi (ExDispatch ExXi (AtLabel "ru"))]
+          copy = ExFormation [BiTau (AtLabel "ru") (ExFormation [BiLambda (FnSymbol 6)]), BiTau AtPhi (ExDispatch ExXi (AtLabel "ru"))]
+          applied = ExApplication head' (ArTau (AtLabel "ru") (ExFormation [BiLambda (FnSymbol 6)]))
+      facts <- newIORef (Map.fromListWith (++) [(hashExpression term, [(term, source)]) | (term, source) <- [(head', ExDispatch ExRoot (AtLabel "vex")), (copy, applied)]])
+      told <- newIORef []
+      base <- defaultReduceContext ExRoot
+      _ <- declared (ExFormation [BiTau (AtLabel "vex") head']) base{_facts = Just facts, _saveEval = \record -> modifyIORef' told (record :)} copy
+      records <- readIORef told
+      reverse [(term, reply) | EvRecalled _ term reply <- records] `shouldBe` [(copy, applied), (head', ExDispatch ExRoot (AtLabel "vex"))]
     it "answers the voids of the first head a chain of remembered copies was applied to" $ do
       let head' = ExFormation [BiVoid (AtLabel "ka"), BiVoid (AtLabel "mu"), BiLambda (Function "L_ozu")]
           half = ExFormation [BiTau (AtLabel "ka") (ExFormation [BiLambda (FnSymbol 4)]), BiVoid (AtLabel "mu"), BiLambda (Function "L_ozu")]

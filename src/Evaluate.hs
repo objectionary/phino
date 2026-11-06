@@ -15,7 +15,7 @@ import Control.Monad (foldM, unless, when)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
@@ -75,10 +75,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         (bound'', undressed, normals') <- foldM (through ctx "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
         firing <- Firing func (reverse conditions) . (reverse normals' ++) <$> sides entry._ending
         known <- remembered caller._memo firing
-        maybe (worked ctx entry firing bound'' undressed) (\answer -> (answer, undressed) <$ recited ctx._nesting answer) known
+        maybe (worked ctx entry firing bound'' undressed) (\(first, answer) -> (answer, undressed) <$ reused ctx._nesting first answer) known
       case outcome of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
+          when (isJust caller._memo) (caller._saveEval (EvRemembered (caller._nesting + 1) form (ended answer)))
           pure (ended answer, state')
         Left failure -> do
           exhausted' <- starved caller._memo
@@ -89,7 +90,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     worked ctx entry firing@(Firing _ operands _) bound state' = do
       (lined, state'') <- foldM (passing ctx entry) (bound, state') entry._lines
       (answer, state''') <- concluded ctx entry operands lined state''
-      remember caller._memo firing answer
+      remember caller._memo firing form answer
       known <- remembering caller._facts form
       when (known && spoken (ended answer)) (noted ctx (ended answer) form)
       pure (answer, state''')
@@ -156,7 +157,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     told :: Kept -> IO (Expression, State)
     told (Answered answer) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
-      recited (caller._nesting + 1) answer
+      recited (caller._nesting + 1) form answer
       pure (ended answer, state)
     told (Looped term) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -166,10 +167,14 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       caller._saveEval (EvStall (caller._nesting + 1) name)
       throwIO (Stuck name)
-    recited :: Int -> Answer -> IO ()
-    recited depth answer = do
-      caller._saveEval (EvRecalled depth form (ended answer))
+    recited :: Int -> Expression -> Answer -> IO ()
+    recited depth term answer = do
+      caller._saveEval (EvRecalled depth term (ended answer))
       shown depth answer
+    reused :: Int -> Expression -> Answer -> IO ()
+    reused depth first answer = do
+      unless (first == form) (caller._saveEval (EvRemembered depth form first))
+      recited depth first answer
     down :: ReduceContext -> (Subst, State, [Either Int Bytes]) -> (Meta, Expression) -> IO (Subst, State, [Either Int Bytes])
     down ctx (bound, state', conditions) (meta, term) = do
       (datum, bound', state'') <- brought ctx bound state' meta term =<< operand term

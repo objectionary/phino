@@ -264,6 +264,9 @@ spec = do
     it "writes a fact about a named copy by its name alone" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ива")) (ArTau (AtLabel "у") ExRoot)) (ExFormation [BiTau AtPhi (ExDispatch ExXi (AtLabel "у"))]) ExRoot, EvRemembered 1 (ExFormation [BiTau AtPhi (ExDispatch ExXi (AtLabel "у"))]) (ExApplication (ExDispatch ExRoot (AtLabel "ива")) (ArTau (AtLabel "у") ExRoot))])
       last (lines written) `shouldBe` "  remembered 𝑛·0·2 ≡ 𝑛·0·1"
+    it "recalls a fact by the names its remembered line gave both sides, after a morphed line renamed the term" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvRemembered 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]) (ExDispatch ExRoot (AtLabel "пихта")), EvMorphed 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]), EvRecalled 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]) (ExDispatch ExRoot (AtLabel "пихта"))])
+      last (lines written) `shouldBe` "  recalled 𝑛·0·1 ⇒ Φ.пихта"
     it "writes what the memo mapped a term to beside the term" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_сом" Dataization ExRoot, EvRecalled 2 (ExDispatch ExRoot (AtLabel "окунь")) (ExDispatch ExRoot (AtLabel "щука"))])
       last (lines written) `shouldBe` "    recalled Φ.окунь ⇒ Φ.щука"
@@ -631,6 +634,9 @@ spec = do
     it "writes a fact about a named copy as an element naming both sides" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ива")) (ArTau (AtLabel "у") ExRoot)) (ExFormation [BiTau AtPhi (ExDispatch ExXi (AtLabel "у"))]) ExRoot, EvRemembered 1 (ExFormation [BiTau AtPhi (ExDispatch ExXi (AtLabel "у"))]) (ExDispatch ExRoot (AtLabel "ива"))])
       lines written `shouldContain` ["  <remembered of=\"𝑛·0·2\" as=\"Φ.ива\"/>"]
+    it "recalls a fact as an element naming both sides the way its remembered element did, after a morphed element renamed the term" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvRemembered 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]) (ExDispatch ExRoot (AtLabel "пихта")), EvMorphed 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]), EvRecalled 1 (ExFormation [BiTau (AtLabel "ель") (ExFormation []), BiTau AtPhi (ExDispatch ExXi (AtLabel "ель"))]) (ExDispatch ExRoot (AtLabel "пихта"))])
+      lines written `shouldContain` ["  <recalled of=\"𝑛·0·1\" as=\"Φ.пихта\"/>"]
     it "writes what the memo mapped a term to as an element naming both" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_сом" Dataization ExRoot, EvRecalled 2 (ExDispatch ExRoot (AtLabel "окунь")) (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldContain` ["    <recalled of=\"Φ.окунь\" as=\"Φ.щука\"/>"]

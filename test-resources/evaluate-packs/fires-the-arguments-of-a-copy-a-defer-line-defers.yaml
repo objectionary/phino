@@ -52,7 +52,9 @@ protocol: |
             remembered 𝑛·2·6 ≡ 𝑛·2·4( w ↦ Φ.inc( 2A-:Δ ) )
             morphed 𝑛·2·7 := 𝑛·2·6
           𝑛2·2 := 𝑛·2·7  # 𝕄(ξ.b)
-          recalled 𝑛·2·7 ⇒ 𝑛·2·5
+          recalled 𝑛·2·6 ⇒ 𝑛·2·4( w ↦ Φ.inc( 2A-:Δ ) )
+          recalled 𝑛·2·4 ⇒ 𝑛·2·2( x ↦ Φ.items.tail )
+          recalled 𝑛·2·2 ⇒ Φ.box
           𝕄(𝑛2.w):
             𝑛·2·8 := Φ.inc( x ↦ 2A-:Δ )
             𝑛·2·9 := ⟦ x ↦ 2A-:Δ, λ ⤍ L_inc ⟧

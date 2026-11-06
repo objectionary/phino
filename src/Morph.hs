@@ -18,6 +18,7 @@ import Builder (buildExpressionThrows, nameIn)
 import Control.Applicative ((<|>))
 import Control.Exception (Exception, catch, evaluate, throwIO, try)
 import Control.Monad (forM_, guard, unless, when)
+import Data.Bifunctor (first, second)
 import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition, sortOn)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -65,7 +66,7 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing Answer)) (IORef Int) (IORef Int)
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression, Answer))) (IORef Int) (IORef Int)
 
 data Answer
   = Answer Expression Expression
@@ -239,14 +240,14 @@ retained Nothing _ _ _ = pure ()
 retained (Just (Memo store _ _ _)) form stamp kept =
   modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
 
-remembered :: Maybe Memo -> Firing -> IO (Maybe Answer)
+remembered :: Maybe Memo -> Firing -> IO (Maybe (Expression, Answer))
 remembered Nothing _ = pure Nothing
 remembered (Just (Memo _ firings _ _)) firing = Map.lookup firing <$> readIORef firings
 
-remember :: Maybe Memo -> Firing -> Answer -> IO ()
-remember Nothing _ _ = pure ()
-remember (Just (Memo _ firings answers _)) firing answer = do
-  modifyIORef' firings (Map.insert firing answer)
+remember :: Maybe Memo -> Firing -> Expression -> Answer -> IO ()
+remember Nothing _ _ _ = pure ()
+remember (Just (Memo _ firings answers _)) firing form answer = do
+  modifyIORef' firings (Map.insert firing (form, answer))
   modifyIORef' answers (+ 1)
 
 parking :: NonEmpty Rewritten -> State -> IO a -> IO a
@@ -297,15 +298,15 @@ sever form univ state ctx = admitted form ctx >>= either cut (pure . Right)
 
 severed :: Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
 severed univ ctx state form bds (mode, before) = do
-  call <- (<|>) <$> found form <*> found before
-  forM_ call (\(term, named) -> ctx._saveEval (EvRecalled ctx._nesting term named))
-  reckoned <- traverse (argued univ ctx state form bds . snd) call
+  call <- (<|>) <$> traced ctx._facts form <*> traced ctx._facts before
+  forM_ call (recited ctx . snd)
+  reckoned <- traverse (argued univ ctx state form bds . fst) call
   fresh <- coined ctx
   ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
   pure (ExFormation [BiLambda (FnSymbol fresh)])
-  where
-    found :: Expression -> IO (Maybe (Expression, Expression))
-    found term = fmap (term,) <$> traced ctx._facts term
+
+recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
+recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
 
 factual :: IO Facts
 factual = newIORef Map.empty
@@ -321,22 +322,22 @@ remembering :: Maybe Facts -> Expression -> IO Bool
 remembering Nothing _ = pure False
 remembering (Just facts) term = isJust . lookup term . Map.findWithDefault [] (hashExpression term) <$> readIORef facts
 
-traced :: Maybe Facts -> Expression -> IO (Maybe Expression)
+traced :: Maybe Facts -> Expression -> IO (Maybe (Expression, [(Expression, Expression)]))
 traced Nothing _ = pure Nothing
 traced (Just facts) form = do
   known <- readIORef facts
   pure (go known (Map.size known) form)
   where
-    go :: Store Expression -> Int -> Expression -> Maybe Expression
+    go :: Store Expression -> Int -> Expression -> Maybe (Expression, [(Expression, Expression)])
     go _ 0 _ = Nothing
-    go known budget term = listToMaybe [named | (path, source) <- sortOn (length . fst) [(path, source) | (object, source) <- concat (Map.elems known), path <- take 1 (lodged term object)], Just named <- [rooted (foldl ExDispatch (resolved known budget source) path)]]
-    resolved :: Store Expression -> Int -> Expression -> Expression
+    go known budget term = listToMaybe [(named, (object, source) : hops) | (path, object, source) <- sortOn (\(path, _, _) -> length path) [(path, object, source) | (object, source) <- concat (Map.elems known), path <- take 1 (lodged term object)], let (base, hops) = resolved known budget source, Just named <- [rooted (foldl ExDispatch base path)]]
+    resolved :: Store Expression -> Int -> Expression -> (Expression, [(Expression, Expression)])
     resolved known budget source = case lookup source (Map.findWithDefault [] (hashExpression source) known) of
-      Just _ -> fromMaybe source (go known (budget - 1) source)
+      Just _ -> fromMaybe (source, []) (go known (budget - 1) source)
       Nothing -> case source of
-        ExApplication target arg -> ExApplication (resolved known budget target) arg
-        ExDispatch target attr -> ExDispatch (resolved known budget target) attr
-        _ -> source
+        ExApplication target arg -> first (`ExApplication` arg) (resolved known budget target)
+        ExDispatch target attr -> first (`ExDispatch` attr) (resolved known budget target)
+        _ -> (source, [])
     rooted :: Expression -> Maybe Expression
     rooted term = term <$ guard (grounded term)
     grounded :: Expression -> Bool
@@ -374,20 +375,21 @@ voided ctx@ReduceContext{_facts = Just facts} form@(ExFormation bds) = do
   known <- readIORef facts
   case lookup form (Map.findWithDefault [] (hashExpression form) known) of
     Just source -> do
-      ctx._saveEval (EvRecalled ctx._nesting form source)
-      pure (placed known (Map.size known) bds source)
+      let (voids, hops) = placed known (Map.size known) bds source
+      recited ctx ((form, source) : hops)
+      pure voids
     Nothing -> pure Nothing
   where
-    placed :: Store Expression -> Int -> [Binding] -> Expression -> Maybe [Attribute]
+    placed :: Store Expression -> Int -> [Binding] -> Expression -> (Maybe [Attribute], [(Expression, Expression)])
     placed known budget _ (ExApplication head' _) = headed known budget head'
-    placed _ _ own (ExDispatch _ _) = Just [attr | BiVoid attr <- own]
-    placed _ _ _ _ = Nothing
-    headed :: Store Expression -> Int -> Expression -> Maybe [Attribute]
+    placed _ _ own (ExDispatch _ _) = (Just [attr | BiVoid attr <- own], [])
+    placed _ _ _ _ = (Nothing, [])
+    headed :: Store Expression -> Int -> Expression -> (Maybe [Attribute], [(Expression, Expression)])
     headed known budget (ExApplication head' _) = headed known budget head'
     headed known budget head'@(ExFormation inner) = case lookup head' (Map.findWithDefault [] (hashExpression head') known) of
-      Just source | budget > 0 -> placed known (budget - 1) inner source
-      _ -> Just [attr | BiVoid attr <- inner]
-    headed _ _ _ = Nothing
+      Just source | budget > 0 -> second ((head', source) :) (placed known (budget - 1) inner source)
+      _ -> (Just [attr | BiVoid attr <- inner], [])
+    headed _ _ _ = (Nothing, [])
 voided _ _ = pure Nothing
 
 called :: Expression -> ReduceContext -> Expression -> [Binding] -> IO (Maybe Expression)
@@ -397,11 +399,11 @@ called univ ctx form known = fmap (uncurry applied) <$> declared univ ctx form
     applied path voids = foldl ExApplication path [ArTau attr value | BiTau attr value <- known, attr /= AtRho, BiVoid attr `elem` voids]
 
 declared :: Expression -> ReduceContext -> Expression -> IO (Maybe (Expression, [Binding]))
-declared univ ctx form = traced ctx._facts form >>= maybe (pure Nothing) recited
+declared univ ctx form = traced ctx._facts form >>= maybe (pure Nothing) placed
   where
-    recited :: Expression -> IO (Maybe (Expression, [Binding]))
-    recited call = do
-      ctx._saveEval (EvRecalled ctx._nesting form call)
+    placed :: (Expression, [(Expression, Expression)]) -> IO (Maybe (Expression, [Binding]))
+    placed (call, hops) = do
+      recited ctx hops
       pure ((erased call,) <$> located (erased call) (fromMaybe univ ctx._universe))
     located :: Expression -> Expression -> Maybe [Binding]
     located ExRoot (ExFormation bds) = Just bds

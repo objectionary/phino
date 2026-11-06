@@ -273,10 +273,11 @@ data Protocol = Protocol
   , _blocks :: [(Int, Maybe (Judgment, String), String, Bool)]
   , _answered :: [(Int, Expression, String)]
   , _unwritten :: Map.Map Int (Named Expression)
+  , _stated :: Named [(Expression, (String, String))]
   }
 
 emptyProtocol :: Protocol
-emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty Map.empty Nothing [] [] Map.empty
+emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty Map.empty Nothing [] [] Map.empty Map.empty
 
 data Nesting = Nesting
   { _fires :: Int
@@ -294,12 +295,19 @@ data Nesting = Nesting
   , _shapes :: Map.Map [Maybe Attribute] [(Expression, [Binding])]
   , _opaque :: Int
   , _unmarked :: Map.Map Int (Named Expression)
+  , _attested :: Named [(Expression, (String, String))]
   }
 
 type Naming = StateT (Nesting, [String]) IO
 
 emptyNesting :: Nesting
-emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Map.empty Nothing [] [] [] Map.empty Map.empty 0 Map.empty
+emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Map.empty Nothing [] [] [] Map.empty Map.empty 0 Map.empty Map.empty
+
+stated :: Expression -> Expression -> String -> String -> Named [(Expression, (String, String))] -> Named [(Expression, (String, String))]
+stated object source left right facts = namedInsert object ((source, (left, right)) : fromMaybe [] (namedLookup object facts)) facts
+
+statement :: Expression -> Expression -> Named [(Expression, (String, String))] -> Maybe (String, String)
+statement object source facts = namedLookup object facts >>= lookup source
 
 saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
 saveEval handle cursor printed printed' report = do
@@ -507,14 +515,15 @@ saveEval handle cursor printed printed' report = do
       case namedLookup object protocol._made of
         Just _ -> do
           known <- render object
-          pure (protocol, Just (indented at (printf "remembered %s ≡ %s" known origin)))
+          pure (protocol{_stated = stated object source known origin protocol._stated}, Just (indented at (printf "remembered %s ≡ %s" known origin)))
         Nothing -> do
           let (index, counted) = numbered protocol
+              naming :: String
+              naming = printf "%s·%d" (labelled protocol answer) index
           body <- printed (abbreviatedInside protocol._made object)
-          pure (counted{_made = namedInsert object (alias (opener protocol) index) counted._made}, Just (indented at (printf "remembered %s·%d ≡ %s  # %s" (labelled protocol answer) index origin body)))
+          pure (counted{_made = namedInsert object (alias (opener protocol) index) counted._made, _stated = stated object source naming origin counted._stated}, Just (indented at (printf "remembered %s ≡ %s  # %s" naming origin body)))
     written at (EvRecalled _ term reply) protocol = do
-      known <- render term
-      given <- render reply
+      (known, given) <- maybe ((,) <$> render term <*> render reply) pure (statement term reply protocol._stated)
       pure (protocol, Just (indented at (printf "recalled %s ⇒ %s" known given)))
     written _ (EvWorld world) protocol = pure (protocol{_made = namedInsert world ExRoot protocol._made}, Nothing)
     written _ (EvHeader (Header release revision dated command (World file count size tops bindings) table) locator expression) protocol = do
@@ -806,15 +815,15 @@ saveEvalXml handle cursor printed report = do
         case namedLookup object nesting._objects of
           Just _ -> do
             kept <- leaf depth object
+            modify (first (\nesting' -> nesting'{_attested = stated object source kept origin nesting'._attested}))
             pure (printf "<remembered of=\"%s\" as=\"%s\"/>" (escapeXML kept) (escapeXML origin))
           Nothing -> do
             (naming, aliased) <- counted
-            modify (first (\nesting' -> nesting'{_objects = namedInsert object aliased nesting'._objects}))
+            modify (first (\nesting' -> nesting'{_objects = namedInsert object aliased nesting'._objects, _attested = stated object source naming origin nesting'._attested}))
             pure (printf "<remembered meta=\"%s\" as=\"%s\"/>" (escapeXML naming) (escapeXML origin))
     elements at (EvRecalled depth term reply) nesting =
       placed at nesting $ do
-        asked <- leaf depth term
-        given <- leaf depth reply
+        (asked, given) <- maybe ((,) <$> leaf depth term <*> leaf depth reply) pure (statement term reply nesting._attested)
         pure (printf "<recalled of=\"%s\" as=\"%s\"/>" (escapeXML asked) (escapeXML given))
     elements _ (EvWorld world) nesting = pure (known world nesting, [])
     prologue :: Nesting -> [String]

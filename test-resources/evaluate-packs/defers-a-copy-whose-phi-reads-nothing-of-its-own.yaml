@@ -27,7 +27,8 @@ protocol: |
         remembered 𝑛·1·3 ≡ 𝑛·1·1( tup ↦ Φ.items.tail )
         morphed 𝑛·1·4 := 𝑛·1·3
       𝑛1·1 := 𝑛·1·4  # 𝕄(ξ.b)
-      recalled 𝑛·1·4 ⇒ 𝑛·1·2
+      recalled 𝑛·1·3 ⇒ 𝑛·1·1( tup ↦ Φ.items.tail )
+      recalled 𝑛·1·1 ⇒ Φ.step
       deferred 𝜎2 := Φ.step( tup ↦ 𝜎1:λ )  # 𝕄(𝑛1.φ)
       𝑛·1·5 := 𝜎2:λ:φ  # 𝑛
       𝕄(𝑛·1·5):

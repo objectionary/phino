@@ -465,14 +465,20 @@ application of a copy it knows, and every firing of one, writes `remembered
 𝑛·0·1 ≡ Φ.p` (`EvRemembered`, `noted` of `Morph.hs`), keeping the pair in
 `_facts` of `ReduceContext`, a mapping of a term to the term it is. `traced` of
 `Morph.hs` looks for a fact whose term holds the formation cut, or the one it
-repeats, follows the facts back to a path or a call of `Φ`, and writes `recalled
-𝑛·0·8 ⇒ 𝑛·0·6` (`EvRecalled`) before the cut, so the cut is named after that
+repeats, follows the facts back to a path or a call of `Φ`, and writes one
+`recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )` (`EvRecalled`, `recited` of `Morph.hs`)
+per fact it followed before the cut, so the cut is named after that
 call, as `looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·9 )`. A formation no fact leads to the
 world from, such as a fork written in place, is cut by its symbol alone, as
 `looped 𝜎7  # …`, since nothing guesses which object it stands for.
 A dispatch off a copy the facts hold leaves that copy without the attribute
 it took, and `normalized` keeps that copy as an alias of the one it came
 from (`peeled`), so a copy made of it later is traced back all the same.
+Every `recalled` line repeats both sides of a `remembered` line above it:
+both writers keep the text they wrote for every fact (`_stated` of
+`Protocol`, `_attested` of `Nesting`) and recall a fact by that text, though
+a later line names the term anew, and `EvaluateSpec.hs` checks it on every
+pack.
 The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
 such a copy the same way where the operand comes to one that repeats the
 formations above it more often than `--max-loops` lets through, since a
@@ -558,17 +564,20 @@ run under `plausible` keeps what every firing answered, by the formation it
 fired (`Memo`, `recalled` and `retained` in `Morph.hs`, made by `memoized` for
 that mode alone and asked and told by `symbol` in `Evaluate.hs`), and a later
 firing of the same formation, ρ and all, takes the answer with the symbols the
-first one minted: it is charged nothing and reduces nothing, and it is written
-to the protocol as a firing at its own site carrying that answer, `recalled
-𝑛·1·18 ⇒ 𝑛·3·3`, the formation fired and the answer the memo mapped it to, and
-no operand line (#1476, #2287). The memo keeps the answer by the firing too, the
+first one minted: it is charged nothing and reduces nothing. A firing that
+answers writes `remembered 𝑛·1·3 ≡ 𝜎1:λ`, the formation fired and its answer,
+and a later one taking the answer is written to the protocol as a firing at
+its own site carrying `recalled 𝑛·1·3 ⇒ 𝜎1:λ`, and no operand line
+(#1476, #2287). The memo keeps the answer by the firing too, the
 λ name with the data, the symbols and the normal forms its operands reading `$`
 came down to (`Firing`, `remembered` and `remember` in `Morph.hs`, asked before
 any line, a `morph` one among them, runs), since an entry answers from its
 operands alone: a firing of another formation, such as one whose operand reads
 another object holding the same datum, brings its operands down, finds the
 firing answered and takes that answer, minting nothing, so one value never gets
-two names (#1661). A join answers from its sides too, so its key carries both
+two names (#1661); it writes `remembered 𝑛·1·6 ≡ 𝑛·1·3`, the formation it
+fires and the one the memo first fired, before it recalls the answer of that
+one. A join answers from its sides too, so its key carries both
 sides as its formation places them (`sides` of `Evaluate.hs`), and a second join
 on a condition the first one read answers its own sides, not the first
 one's (#1940). A symbol is kept as the symbol it is, not as the datum every symbol
