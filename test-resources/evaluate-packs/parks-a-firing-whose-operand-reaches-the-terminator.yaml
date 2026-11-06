@@ -58,8 +58,10 @@ protocol: |
       𝕄(ξ.v.φ):
         𝑛·1·9 := Φ.block( buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ) )
         𝑛·1·10 := ⟦ data ↦ ∅, buffer ↦ Φ.bytes( φ ↦ 𝜎1:λ ), read ↦ Φ.dataized( target ↦ ρ.data.size ).as-bytes:φ ⟧
-        𝑛·1·11 := Φ.dataized( target ↦ ⊥ )
-        𝑛·1·12 := ⟦ target ↦ ⊥, λ ⤍ L_dataized ⟧
+        remembered 𝑛·1·11 ≡ Φ.dataized  # ⟦ target ↦ ∅, λ ⤍ L_dataized ⟧
+        𝑛·1·12 := Φ.dataized( target ↦ ⊥ )
+        𝑛·1·13 := ⟦ target ↦ ⊥, λ ⤍ L_dataized ⟧
+        remembered 𝑛·1·13 ≡ 𝑛·1·11( target ↦ ⊥ )
         𝔼(L_dataized):
           unanswered ⊥  # 𝔻(⊥)
           stuck ⊥
