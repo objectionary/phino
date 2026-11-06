@@ -20,9 +20,9 @@ import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), forked, joined)
-import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized)
+import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, recalled, remember, remembered, retained, settled, starved, unparked)
+import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, opening, origin, recalled, remember, remembered, retained, settled, starved, unparked)
 import Printer (printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -87,7 +87,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           throwIO (escaped failure)
     worked :: ReduceContext -> Lambda -> Firing -> Subst -> State -> IO (Answer, State)
     worked ctx entry firing@(Firing _ operands _) bound state' = do
-      (lined, state'') <- foldM (line ctx entry._ending) (bound, state') entry._lines
+      (lined, state'') <- foldM (passing ctx entry) (bound, state') entry._lines
       (answer, state''') <- concluded ctx entry operands lined state''
       remember caller._memo firing answer
       pure (answer, state''')
@@ -97,6 +97,25 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     keyed :: Expression -> IO Expression
     keyed side@(ExMeta _) = pure side
     keyed side = operand side
+    passing :: ReduceContext -> Lambda -> (Subst, State) -> Line -> IO (Subst, State)
+    passing ctx entry held@(bound, state') item = case sourced item of
+      Just (meta, source) -> do
+        term <- buildExpressionThrows (ExMeta source._name) bound
+        if thrown entry._terminators term
+          then do
+            ctx._saveEval (EvBound ctx._nesting (ExMeta meta._name) term)
+            (,state') <$> bind meta (MvExpression term) bound
+          else line ctx entry._ending held item
+      Nothing -> line ctx entry._ending held item
+    sourced :: Line -> Maybe (Meta, Meta)
+    sourced (Morphed meta source) = Just (meta, source)
+    sourced (Undressed meta source) = Just (meta, source)
+    sourced (Evaluated meta source) = Just (meta, source)
+    sourced (Deferred meta source) = Just (meta, source)
+    sourced (Stayed meta source) = Just (meta, source)
+    sourced (Rewritten meta source _) = Just (meta, source)
+    sourced (Symbolized meta source) = Just (meta, source)
+    sourced _ = Nothing
     line :: ReduceContext -> Ending -> (Subst, State) -> Line -> IO (Subst, State)
     line ctx _ held (Dataized meta source) = lowered ctx held meta source
     line ctx _ held (Morphed meta source) = reduced ctx held meta source
@@ -151,7 +170,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (bound', state'')
     brought :: ReduceContext -> Subst -> State -> Meta -> Expression -> Expression -> IO (Either Int Bytes, Subst, State)
     brought ctx bound state' meta origin term = do
-      (value, state'') <- unparked (ctx._reduce univ ctx{_site = origin} term state'{_manufactured = Nothing, _stuck = Nothing})
+      (value, came) <- unparked (ctx._reduce univ ctx{_site = origin} term state'{_manufactured = Nothing, _stuck = Nothing, _copies = []})
+      let state'' = came{_copies = state'._copies}
       case value of
         Nothing -> throwIO (Stuck (fromMaybe func state''._stuck))
         Just bytes -> do
@@ -239,9 +259,16 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       pure (bound', state'')
     kindled :: ReduceContext -> Ending -> Expression -> State -> Expression -> IO (Expression, State)
     kindled _ _ _ state' term@(ExFormation [BiLambda (FnSymbol _)]) = pure (term, state')
+    kindled ctx _ _ state' term@(ExFormation bds)
+      | owned ctx bds = pure (term, state')
     kindled ctx _ site state' term@(ExFormation _) = fire ctx site state' term
     kindled _ Joining{} _ state' term = pure (term, state')
     kindled ctx _ site state' term = fire ctx site state' term
+    owned :: ReduceContext -> [Binding] -> Bool
+    owned ctx bds = maybe False (\(_, voids) -> any (`notElem` (AtRho : [attr | BiVoid attr <- voids])) [attr | BiTau attr _ <- bds, not (cactus attr)]) (origin univ ctx bds)
+    cactus :: Attribute -> Bool
+    cactus (AtLabel label) = "🌵" `T.isSuffixOf` label
+    cactus _ = False
     fire :: ReduceContext -> Expression -> State -> Expression -> IO (Expression, State)
     fire _ _ state' ExTermination = pure (ExTermination, state')
     fire ctx site state' term@(ExFormation _) = fired univ ctx site state' term
@@ -301,7 +328,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     concluded :: ReduceContext -> Lambda -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     concluded ctx entry operands bound state' = case entry._ending of
       Answering template -> answered ctx template operands bound state'
-      Joining on left right fallback -> merged ctx bound (zip (map (_name . fst) entry._dataized) operands) on left right fallback state'
+      Joining on left right fallback -> merged ctx entry._terminators bound (zip (map (_name . fst) entry._dataized) operands) on left right fallback state'
     answered :: ReduceContext -> Expression -> [Either Int Bytes] -> Subst -> State -> IO (Answer, State)
     answered ctx template operands bound state' = do
       (fresh, spent) <- minted template <$> readIORef ctx._minted
@@ -313,16 +340,23 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (normal, state'') <- settled built univ state' =<< opening Morphing ctx{_saveEval = ctx._saveEval . resited ctx._site built}
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (Answer built normal, state'')
-    merged :: ReduceContext -> Subst -> [(T.Text, Either Int Bytes)] -> Either Meta Expression -> Expression -> Expression -> Maybe Function -> State -> IO (Answer, State)
-    merged ctx bound operands on left right fallback state' = do
+    merged :: ReduceContext -> [T.Text] -> Subst -> [(T.Text, Either Int Bytes)] -> Either Meta Expression -> Expression -> Expression -> Maybe Function -> State -> IO (Answer, State)
+    merged ctx terminators bound operands on left right fallback state' = do
       condition <- weighed operands on
       (one, state'') <- reached ctx bound left state'
       (two, state''') <- reached ctx bound right state''
       spent <- readIORef ctx._minted
-      case joined one two spent of
+      let raised = case filter (thrown terminators) [one, two] of
+            [side] -> Just side
+            _ -> Nothing
+          stopped :: Expression -> Expression
+          stopped side
+            | Just side == raised = ExTermination
+            | otherwise = side
+      case joined (stopped one) (stopped two) spent of
         Right (term, made, bottom, spent') -> do
           writeIORef ctx._minted spent'
-          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair bottom)) made
+          mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair bottom raised)) made
           ctx._saveEval (EvTaken ctx._nesting term)
           pure (Joined term, state''')
         Left path -> case maybe (Left Unnamed) (\name -> forked name condition one two) fallback of
