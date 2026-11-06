@@ -10,6 +10,7 @@ module EvaluateSpec (spec) where
 
 import AST
 import CLI.Helpers (started)
+import Control.Applicative ((<|>))
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON (parseJSON), camelTo2, defaultOptions, fieldLabelModifier, genericParseJSON)
@@ -21,16 +22,18 @@ import Deps (Acyclic, Evaluation (EvRun), Judgment (Morphing), Term (TeExpressio
 import Encoding (Encoding (UNICODE))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, recorded, recorded', withLambdas, withLambdasOf)
+import GHC.Clock (getMonotonicTime)
 import GHC.Generics (Generic)
 import Lambdas (readLambdas)
 import Lining (LineFormat (SINGLELINE))
 import Margin (defaultMargin)
 import Matcher (substEmpty)
-import Morph (ReduceContext (..), Steps (..), emptyState, execBuildTerm, memoized, morph, tallied)
+import Morph (Deadline (..), ReduceContext (..), Steps (..), emptyState, execBuildTerm, factual, memoized, morph, tallied)
 import Parser (Form (MONOFORM), parseExpressionThrows')
 import Printer (printExpression, printExpression', printExpressionHidingRho')
 import Sugar (SugarType (SWEET))
 import System.FilePath (makeRelative)
+import System.Timeout (timeout)
 import Tau (seedTaus)
 import Test.Hspec
 import Yaml (ExtraArgument (..))
@@ -65,6 +68,7 @@ testSymbols pth = do
     (_, written) <- recorded' hidden $ \record -> do
       let mode = named <$> acyclic
       cells <- memoized mode
+      facts <- factual
       tally <- tallied firings
       base <- defaultReduceContext loc
       let ctx =
@@ -72,6 +76,7 @@ testSymbols pth = do
               { _partial = partial == Just True
               , _acyclic = mode
               , _memo = cells
+              , _facts = Just facts
               , _steps = Steps (fromMaybe 250 steps) 0
               , _tally = tally
               , _symbolic = known
@@ -96,6 +101,22 @@ testSymbols pth = do
     spelled hidden term =
       (if hidden then printExpressionHidingRho' else printExpression') term (SWEET, UNICODE, SINGLELINE, defaultMargin)
 
+testRecalls :: FilePath -> Expectation
+testRecalls pth = do
+  pack <- Decode.decodeFileThrow pth
+  orphans (map (dropWhile (== ' ')) (lines (protocol (pack :: SymbolPack)))) [] `shouldBe` []
+  where
+    orphans :: [String] -> [(String, String)] -> [String]
+    orphans [] _ = []
+    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line) <|> T.stripPrefix "memoized " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
+      (Just fact, _) -> orphans rest ([paired arrow (fst (T.breakOn "  # " fact)) | arrow <- [" ≡ ", " ⇛ "], arrow `T.isInfixOf` fact] ++ facts)
+      (_, Just recall)
+        | paired " ⇒ " recall `elem` facts -> orphans rest facts
+        | otherwise -> line : orphans rest facts
+      _ -> orphans rest facts
+    paired :: T.Text -> T.Text -> (String, String)
+    paired arrow text = let (left, right) = T.breakOn arrow text in (T.unpack left, T.unpack (T.drop (T.length arrow) right))
+
 spec :: Spec
 spec = do
   known <- runIO fixtureLambdas
@@ -104,6 +125,11 @@ spec = do
     let resources = "test-resources/evaluate-packs"
     packs <- runIO (allPathsIn resources)
     forM_ packs (\pth -> it (makeRelative resources pth) (testSymbols pth))
+
+  describe "recalls only what the protocol of a pack remembered above" $ do
+    let resources = "test-resources/evaluate-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_ packs (\pth -> it (makeRelative resources pth) (testRecalls pth))
 
   describe "execBuildTerm 'evaluate'" $ do
     let univ = ExFormation []
@@ -159,3 +185,13 @@ spec = do
       case result of
         TeExpression expr -> expr `shouldBe` ExFormation [BiDelta (BtOne "FF")]
         _ -> expectationFailure "expected TeExpression"
+
+  describe "stops a line by the clock of --max-seconds" $
+    it "fails a rewrite line that outlasts the deadline" $ do
+      let wide = iterate (\half -> ExFormation [BiTau (AtLabel "lo") half, BiTau (AtLabel "hi") half]) (ExFormation []) !! 18
+          program = ExFormation [BiTau (AtLabel "y") (ExDispatch (ExFormation [BiTau (AtLabel "x") wide, BiLambda (Function "L_wide")]) AtPhi)]
+      table <- withLambdasOf ("- λ: L_wide\n  morph:\n    𝑛1: $.x\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n" <> T.concat (map (\idx -> "        - name: never" <> T.pack (show idx) <> "\n          pattern: 𝑒1.qz\n          result: 𝑒1\n") [1 .. 2000 :: Int]) <> "  𝑛: 𝑛2\n") readLambdas
+      due <- (+ 0.2) <$> getMonotonicTime
+      ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
+      timeout 10000000 (morph program emptyState ctx{_deadline = Just (Deadline 37 due)})
+        `shouldThrow` (\e -> "--max-seconds=37" `isInfixOf` show (e :: SomeException))

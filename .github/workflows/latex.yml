@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   cabal:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - id: setup
@@ -25,7 +25,7 @@ jobs:
         with:
           ghc-version: '9.6.7'
           cabal-version: '3.12.1.0'
-      - uses: zauguin/install-texlive@v4.4.0
+      - uses: zauguin/install-texlive@v4.5.0
         with:
           packages: scheme-basic eolang mathtools was
           texlive_version: 2026

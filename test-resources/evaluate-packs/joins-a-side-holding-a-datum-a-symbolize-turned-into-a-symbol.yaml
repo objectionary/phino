@@ -8,9 +8,9 @@
 # value alone, yet no join makes one term of a datum and a symbol (#1968). A
 # 'symbolize' line turns every datum of a term into a fresh symbol, so '𝑛3'
 # holds 𝜎4 where '𝑛1' held the datum, and the protocol writes that 𝜎4 stands
-# for that datum. The line of '𝑛4', whose term holds no datum, is commented
-# with '𝑛2' alone. The join takes the metas the 'symbolize' lines bound and
-# joins 𝜎4 with 𝜎2 into one fresh symbol 𝜎5.
+# for that datum. The line of '𝑛4', whose term holds no datum, writes nothing
+# (#2192). The join takes the metas the 'symbolize' lines bound and joins 𝜎4
+# with 𝜎2 into one fresh symbol 𝜎5.
 symbolic: |
   - λ: L_fork
     dataize:
@@ -42,9 +42,8 @@ protocol: |
       𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
       symbolized 𝜎4 := 3F-F0-00-00-00-00-00-00  # 1.0
       𝑛3·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ) ):φ  # symbolize(𝑛1)
-      𝑛4·1 := 𝑛2·1  # 𝑛2
       joined 𝜎5 := 𝛿1·1 ? 𝜎4 : 𝜎2
-      𝑛·1·3 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎5:λ ) ):φ  # 𝑛3, 𝑛4
+      𝑛·1·3 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎5:λ ) ):φ
     𝑛·0·1 := Φ.number( φ ↦ Φ.bytes( φ ↦ 𝜎5:λ ) )
     𝑛·0·2 := Φ.bytes( φ ↦ 𝜎5:λ ):φ
     morphed 𝑛·0·3 := 𝑛·0·2

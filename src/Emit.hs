@@ -10,7 +10,7 @@ module Emit (emitted) where
 import AST
 import Control.Monad (zipWithM)
 import Data.Char (isAlphaNum, isDigit, toLower, toUpper)
-import Data.List (intercalate, nub)
+import Data.List (intercalate, mapAccumL, nub)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, isNothing)
 import qualified Data.Set as Set
@@ -173,12 +173,21 @@ emitted builtin custom contextual morphs dataizes sources = do
     isUpperStart [] = False
 
 named :: [String] -> [String]
-named names = zipWith unique [0 :: Int ..] (map camel names)
+named names = snd (mapAccumL unique (Set.fromList stems) (zip [0 :: Int ..] stems))
   where
-    unique :: Int -> String -> String
-    unique idx name
-      | length (filter (== name) (map camel names)) > 1 = name ++ show idx
-      | otherwise = name
+    stems :: [String]
+    stems = map camel names
+    unique :: Set.Set String -> (Int, String) -> (Set.Set String, String)
+    unique taken (idx, name)
+      | length (filter (== name) stems) > 1 =
+          let chosen = available (name ++ show idx)
+           in (Set.insert chosen taken, chosen)
+      | otherwise = (taken, name)
+      where
+        available :: String -> String
+        available candidate
+          | candidate `Set.member` taken = available (candidate ++ "_")
+          | otherwise = candidate
     camel :: String -> String
     camel name = case filter isAlphaNum (concatMap upper (words (map (\char -> if isAlphaNum char then char else ' ') name))) of
       [] -> "Rule"

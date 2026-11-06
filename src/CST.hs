@@ -508,7 +508,7 @@ instance ToCST Binding PAIR where
   toCST (BiAny _) _ = error "An anonymous meta binding cannot be converted to PAIR"
 
 instance ToCST Argument PAIR where
-  toCST (ArTau attr exp) ctx = toCST (BiTau attr exp) ctx
+  toCST (ArTau attr exp) ctx = PA_TAU (toCST attr ctx) ARROW (toCST exp ctx)
   toCST (ArAlpha alpha exp) ctx = PA_ALPHA (toCST alpha ctx) ARROW (toCST exp ctx)
 
 instance ToCST [Argument] BINDING where
