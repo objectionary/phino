@@ -46,6 +46,7 @@ type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 data State = State
   { _manufactured :: Maybe Int
   , _stuck :: Maybe T.Text
+  , _copies :: [Expression]
   }
 
 type BuildTermMethodS = [ExtraArgument] -> Subst -> IO (Term, State)
@@ -132,7 +133,7 @@ data Evaluation
   | EvManufactured Int Int
   | EvBoxed Int Expression
   | EvUndressed Int Expression
-  | EvLooped Int Judgment Acyclic Expression Expression
+  | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Expression))
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
@@ -151,7 +152,7 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvMorphed Int Expression
-  | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int)
+  | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int) (Maybe Expression)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvUnripe Int (Expression, Expression) (Expression, Expression) Side Attribute
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
@@ -171,7 +172,7 @@ resited from to = record
     record :: Evaluation -> Evaluation
     record (EvFiring depth key judgment site) = EvFiring depth key judgment (moved site)
     record (EvStarted depth judgment site) = EvStarted depth judgment (moved site)
-    record (EvLooped depth judgment mode self site) = EvLooped depth judgment mode self (moved site)
+    record (EvLooped depth judgment mode self site answered) = EvLooped depth judgment mode self (moved site) answered
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (moved site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (moved site)
     record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (moved site)
@@ -196,7 +197,7 @@ tier (EvDelta depth _) = depth
 tier (EvManufactured depth _) = depth
 tier (EvBoxed depth _) = depth
 tier (EvUndressed depth _) = depth
-tier (EvLooped depth _ _ _ _) = depth
+tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
 tier (EvStuckOn depth _) = depth
@@ -215,7 +216,7 @@ tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
-tier (EvJoined depth _ _ _ _) = depth
+tier (EvJoined depth _ _ _ _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
 tier (EvUnripe depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
@@ -382,10 +383,16 @@ saveEval handle cursor printed printed' report = do
       pure (protocol', Just (indented at (printf "%s := %s" naming datum)))
     written at (EvBoxed _ term) protocol = taking at "boxed" term protocol
     written at (EvUndressed _ term) protocol = taking at "undressed" term protocol
-    written at (EvLooped _ judgment mode self site) protocol = do
+    written at (EvLooped _ judgment mode self site answered) protocol = do
       form <- render self
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "looped %s" form) (remarks ++ [certainty mode]))))
+      (line, notes) <- maybe (pure (printf "looped %s" form, [])) (severed form) answered
+      pure (protocol, Just (indented at (remarked line (remarks ++ certainty mode : notes))))
+      where
+        severed :: String -> (Int, Expression) -> IO (String, [String])
+        severed form (symbol, call) = do
+          made <- printed (abbreviatedInside protocol._made call)
+          pure (printf "looped %s := %s" (printFunction (FnSymbol symbol)) made, [printf "repeats %s" form])
     written at (EvStuck _ key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented at (printf "unanswered %s  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -465,10 +472,11 @@ saveEval handle cursor printed printed' report = do
         (Nothing, Nothing) -> valued counted naming term
         _ -> (,) counted <$> borrowed protocol term
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "morphed %s := %s" naming value)))
-    written at (EvJoined _ condition symbol (left, right) bottom) protocol = do
+    written at (EvJoined _ condition symbol (left, right) bottom raised) protocol = do
       on <- either (pure . labelled protocol) salted condition
       termination <- render ExTermination
-      pure (protocol, Just (indented at (remarked (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right))) [printf "where %s is %s" (printFunction (FnSymbol idx)) termination | Just idx <- [bottom], idx `elem` [left, right]])))
+      raiser <- traverse salted raised
+      pure (protocol, Just (indented at (remarked (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right))) [printf "where %s is %s%s" (printFunction (FnSymbol idx)) termination (maybe "" (printf " raised by %s") raiser :: String) | Just idx <- [bottom], idx `elem` [left, right]])))
     written at (EvDiverged _ left right path refusal) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -661,11 +669,17 @@ saveEvalXml handle cursor printed report = do
         pending :: [(Int, Judgment, Expression)]
         pending = dropWhile (\(level, _, _) -> level > at) nesting._pending
         (kept, closers) = closed at nesting._closing
-    elements at (EvLooped depth judgment mode self site) nesting =
+    elements at (EvLooped depth judgment mode self site Nothing) nesting =
       placed at nesting $ do
         locator <- located depth site
         origin <- sole depth self
         pure (enclosed "looped" (printf "<looped by=\"%s\" match=\"%s\" at=\"%s\"" (opened judgment) (certainty mode) (escapeXML locator)) origin)
+    elements at (EvLooped depth judgment mode self site (Just (symbol, call))) nesting =
+      placed at nesting $ do
+        locator <- located depth site
+        origin <- leaf depth self
+        (object, given) <- called depth call
+        pure (printf "<looped symbol=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\">%s</looped>" (sigma symbol) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) given)
     elements at (EvStuck depth key judgment self) nesting =
       placed at nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
     elements at (EvStall _ key) nesting =
@@ -739,10 +753,11 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
     elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
-    elements at (EvJoined _ condition symbol (left, right) bottom) nesting =
+    elements at (EvJoined depth condition symbol (left, right) bottom raised) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
-        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"%s/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right) (concat [printf " terminator=\"%s\"" (sigma idx) :: String | Just idx <- [bottom], idx `elem` [left, right]]))
+        raiser <- traverse (leaf depth) [term | Just idx <- [bottom], idx `elem` [left, right], Just term <- [raised]]
+        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"%s%s/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right) (concat [printf " terminator=\"%s\"" (sigma idx) :: String | Just idx <- [bottom], idx `elem` [left, right]]) (concat [printf " raised=\"%s\"" (escapeXML name) :: String | name <- raiser]))
     elements at (EvDiverged depth left right path refusal) nesting =
       placed at nesting $ do
         one <- sided depth nesting left
