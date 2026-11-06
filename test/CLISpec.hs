@@ -731,6 +731,52 @@ spec = do
           ["rewrite", "--sweet"]
           ["5.0:x"]
 
+    describe "--margin on a formation of only voids" $ do
+      it "splits the nested formation one void per line at the default margin" $
+        withStdin "⟦ aVeryLongAttributeNameNumberOne ↦ ⟦ queen ↦ ∅, king ↦ ∅, rook ↦ ∅, knight ↦ ∅ ⟧, b ↦ ∅ ⟧" $
+          testCLISucceeded
+            ["rewrite"]
+            [ unlines
+                [ "⟦"
+                , "  aVeryLongAttributeNameNumberOne ↦ ⟦"
+                , "    queen ↦ ∅,"
+                , "    king ↦ ∅,"
+                , "    rook ↦ ∅,"
+                , "    knight ↦ ∅"
+                , "  ⟧,"
+                , "  b ↦ ∅"
+                , "⟧"
+                ]
+            ]
+      it "splits the nested formation at a narrow margin" $
+        withStdin "⟦ jjjjjjjj ↦ ⟦ eeeeee ↦ ∅, ccc ↦ ∅ ⟧, k ↦ ∅ ⟧" $
+          testCLISucceeded
+            ["rewrite", "--margin=20"]
+            [ unlines
+                [ "⟦"
+                , "  jjjjjjjj ↦ ⟦"
+                , "    eeeeee ↦ ∅,"
+                , "    ccc ↦ ∅"
+                , "  ⟧,"
+                , "  k ↦ ∅"
+                , "⟧"
+                ]
+            ]
+      it "keeps the nested formation on one line when it fits the margin" $
+        withStdin "⟦ aVeryLongAttributeNameNumberOne ↦ ⟦ queen ↦ ∅, king ↦ ∅, rook ↦ ∅, knight ↦ ∅ ⟧, b ↦ ∅ ⟧" $
+          testCLISucceeded
+            ["rewrite", "--margin=85"]
+            ["⟦\n  aVeryLongAttributeNameNumberOne ↦ ⟦ queen ↦ ∅, king ↦ ∅, rook ↦ ∅, knight ↦ ∅ ⟧,\n  b ↦ ∅\n⟧"]
+      it "keeps a formation of voids on one line when it fits" $
+        withStdin "⟦ x ↦ ⟦ a ↦ ∅, b ↦ ∅ ⟧ ⟧" $
+          testCLISucceeded ["rewrite"] ["⟦ x ↦ ⟦ a ↦ ∅, b ↦ ∅ ⟧ ⟧"]
+      it "keeps the sweet sugar and the empty body of a formation of voids" $
+        withStdin "⟦ x ↦ ⟦ a ↦ ∅, b ↦ ∅ ⟧ ⟧" $
+          testCLISucceeded ["rewrite", "--sweet"] ["⟦ x(a, b) ↦ ⟦⟧ ⟧"]
+      it "still prints an empty formation tight" $
+        withStdin "⟦⟧" $
+          testCLISucceeded ["rewrite", "--sweet"] ["⟦⟧"]
+
     it "rewrites as XMIR" $
       withStdin "[[ x -> Q.y ]]" $
         testCLISucceeded
