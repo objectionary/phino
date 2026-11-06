@@ -162,15 +162,29 @@ line is bound to and binding a meta of its own to the answer (`evaluated` of
 `Evaluate.hs`, #1874); and the answer under `𝑛`. An `evaluate` line leaves a
 formation with no λ, a bare symbol `⟦ λ ⤍ 𝜎1 ⟧`, which no entry answers
 (#2036), and ⊥ as they are, and never fires its answer again, so
-another call takes another line. Any other term, such as one `--partial`
-parked, gets the line stuck, unless the entry joins, where `kindled` of
-`Evaluate.hs` passes it on as it is, since a join compares any two terms
-(#1999). A `stay` line binds its meta to the term
+another call takes another line. It leaves as it is a formation binding an
+attribute other than ρ, a name ending with 🌵 or a void of the object of the
+world it copies (`origin` of `Morph.hs`), such as the `tag` of a copy of
+`box(v) ↦ ⟦ tag ↦ ξ.v, λ ⤍ L_box ⟧`, since its λ stands for its φ alone and a
+later dispatch on `tag` must find it (`owned` of `Evaluate.hs`, #2265). A
+formation `origin` finds no object of the world for, such as one written in
+place as `⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )`, holds no attribute of its own, so
+the line fires it (#2267), since what it does depends on the term and the
+world alone, never on what happened to the term before (#2270). Of the
+objects a formation fits, `origin` takes one whose bindings it repeats
+exactly before one whose voids it fills, so a copy of
+`p ↦ ⟦ φ ↦ Φ.bool(…).if(…) ⟧` is placed as `Φ.p` and not as a `Φ.num`
+holding that φ, and a loop cut at it is named `looped 𝜎5 := Φ.p` (#2281). Any
+other term, such as one `--partial` parked, gets the line stuck, unless the
+entry joins, where `kindled` of `Evaluate.hs` passes it on as it is, since a
+join compares any two terms (#1999). A `stay` line binds its meta to the term
 another meta is bound to with every `( ρ ↦ … )` applied to a dispatch dropped
 (`stayed` of `Lambdas.hs`, #1967), which `stay` or `skip` of normalization
 drops anyway. A `symbolize` line binds its meta to the term another meta is
-bound to with every datum it holds, in any binding, argument or dispatch,
-turned into a fresh symbol (`symbolized` of `Lambdas.hs`, #1968, #2008), and
+bound to with every datum it holds in a φ, an argument, a dispatch or any
+binding of an atom turned into a fresh symbol, leaving alone the ρ and the
+methods of a formation holding no λ, since they hold the code of a library
+object, not its value (`symbolized` of `Lambdas.hs`, #1968, #2008, #2131), and
 writes `symbolized 𝜎4 := …` (`EvSymbolized`) per symbol it minted with the
 datum it stands for. A line of either that changed its term writes
 `# stay(𝑛1)` or `# symbolize(𝑛1)` to the text protocol (`EvReshaped`), and the
@@ -179,15 +193,49 @@ markup binds it as any other. A
 rule file and read as `Rule` of `Yaml.hs`, and binds its meta to that term
 with the rules applied (`rewritten` of `Lambdas.hs`, #2005): every position
 is tried, the outermost first, the first rule matching it rewrites it, what
-a rule made is not walked into again, and nothing is normalized. A rule
+a rule made is not walked into again, and nothing is normalized. A position
+no rule changed is handed back as the very term it was, so a term sharing its
+parts, as the formation a join fabricates does, stays shared (#2196). A rule
 writing a symbol such as `𝜎4` into its result is refused, and a line that
 changed its term writes `# rewrite(𝑛1)` (`EvReshaped`) as `stay` does. An
 operand of `morph` naming a meta alone, such as `𝑛4: 𝑛3`, is a line too
 (`Morphed` of `Line`, `reduced` of `Evaluate.hs`, #2016): it morphs the term
 the meta is bound to through `morphing`, as it stands and not read against the
 formation fired, and writes `# 𝕄(𝑛3)`, while `_morphed` keeps the operands
-reading `$` alone, which run before every line. The lines of `morph`,
-`evaluate`, `defer`, `stay`, `rewrite` and `symbolize` are one list,
+reading `$` alone, which run before every line. An operand of `dataize`
+naming a meta alone, such as `𝛿2: 𝑛1`, is a line the same way (`Dataized` of
+`Line`, `lowered` of `Evaluate.hs`, #2139): it brings the term down through
+`_reduce`, as it stands, and writes `# 𝔻(𝑛1)`, while `_dataized` keeps the
+operands reading `$`, which alone make the `on` of a join and the data of
+`<minted>`. An operand of `undress`, a path from `$` or a meta alone
+(`_undressed` of `Lambda`, `Undressed` of `Line`, `peeled` of `Evaluate.hs`),
+is morphed as one of `morph` is, and then, while the term is a formation
+binding φ alone beside its ρ, gets φ dispatched off it and morphed again,
+never its body taken out, so ξ keeps its meaning (#2174). Every pass spends a
+step of `deeper` and writes `undressed 𝑛·1·5 := 𝑛·1·4.φ` (`EvUndressed`),
+counted and named as `boxed` is, so the 𝕄 after it is named after that meta,
+and an operand a pass changed writes `# undress(…)` (`EvReshaped`). The
+operands reading `$` join the key of the memo as those of `morph` do. A
+`cast` block holds exactly two lines, read as one line binding both metas
+(`Cast` of `Line`, #2187). Where one of its two terms is a bare
+`⟦ λ ⤍ 𝜎1 ⟧` and the other is a formation binding φ, whatever else it
+holds, `cast` of `Lambdas.hs` copies the other with `𝜎1` in place of the
+term its φ chain ends in, the first one down the chain that is no formation
+binding φ, such as another fork (#2223), and `casting` of `Evaluate.hs`
+binds the meta of the bare symbol to that copy and the other meta to its
+term as it is, so a join sees a branch that reached its data and one a
+decorator short of it differ only where that chain ends, and joins them or,
+under `otherwise`, fabricates a formation of them. The cast mints no
+symbol: it writes the meta it bound
+as `cast 𝑛20·1 := …  # 𝑛14·1 up to 𝑛13·1` (`EvCast`), naming the meta it
+read and the meta whose shape it took, and the markup as `<cast>`. A line
+of `evaluate`, `defer`, `stay`, `rewrite`, `symbolize`, `cast` or `undress`
+reading a meta that leaves its term as it was writes nothing (`EvBound`), in
+the text and the markup alike, and a later record naming that meta, in a site,
+a comment, a cast or a side of a join, names the term the meta holds instead
+(`_unwritten` of `Protocol`, `_unmarked` of `Nesting`, #2192). The
+lines of `dataize`, `morph`, `undress`,
+`evaluate`, `defer`, `stay`, `rewrite`, `symbolize` and `cast` are one list,
 `_lines` of `Lambda`, which `ordered` of `Lambdas.hs` sorts by the metas each
 line reads, keeping the order of the blocks where no meta decides, and refuses
 a line reading what nothing binds or what it binds itself (#1903). No
@@ -198,20 +246,29 @@ reference (#1440). Firing an entry is 𝔼's business and lives in `Evaluate.hs`
 which reaches the judgments an operand is reduced with through `Morph.hs`,
 using the same `insideUniverse` trick the `--inside` option exposes.
 
+An entry may list under `terminators` the λ functions that only raise, such
+as the `L_throw` of EO, which no key of the file may match (#2263). A line
+reading a meta bound to a formation holding one of them, or to an application
+of one (`thrown` of `Lambdas.hs`), binds its own meta to that term as it is,
+never firing or walking it, and `merged` of `Evaluate.hs` hands such a side
+to `joined` as ⊥ when the other side does not raise, so the `joined` record
+names it under `raised`.
+
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
 among them (#1999). The block names the condition under `on`, a bytes meta of
 `dataize` or a path from `$`, and the two sides under `left` and `right`, each
-a path from `$` or a meta `morph`, `evaluate`, `stay`, `rewrite`, `symbolize`
-or `defer` binds.
+a path from `$` or a meta `morph`, `undress`, `evaluate`, `stay`, `rewrite`,
+`symbolize`, `cast` or `defer` binds.
 `merged` of `Evaluate.hs` first takes the condition (`weighed`), its bytes or
 the symbol they were manufactured for: a meta as its `dataize` operand came
 down, and a path off the formation fired, walking its bindings with no 𝔻, so
 a firing of the `L_join` below brings no condition down again; a path leading
 to neither a datum nor a symbol gets the firing stuck. It then brings
 both sides down (`reached`): it morphs
-a path where it stands in the universe through `insideUniverse`, so the
-protocol sites it as `Φ.a🌵N`, and takes a meta as it is bound. The join
+a path where it stands in the universe through `insideUniverse`, which moves
+the locator alone, so the protocol sites it as the side, such as `ξ.left`
+(#2145), and takes a meta as it is bound. The join
 defers nothing by itself: an entry that wants a side deferred says so with a
 `defer` line, which works as in an entry that computes (#1982). Two sides
 that are the same, or differ only in the symbols at their leaves, are one
@@ -219,6 +276,12 @@ term: `joined` of `Forks.hs` mints a fresh symbol per pair of symbols, the
 firing writes `joined …` (`EvJoined`) per fresh symbol, naming a condition read
 off a path by that path, as `ξ.on🌵`, and answers the joined term (`Joined`
 of `Answer`, written by `EvTaken`) with no decision (#1954).
+Where one side is ⊥ and the other holds a symbol, `joined` keeps the shape of
+the other side, mints one symbol to stand for ⊥ and a fresh symbol per symbol
+the other side holds, paired with it, so the firing writes
+`joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥` and the markup
+`right="𝜎3" terminator="𝜎3"`, naming the side that raises (#2195); a side holding
+no symbol has nothing to stand for ⊥ and does not join.
 Two formations of other shapes, neither holding a datum nor a λ (#2041), are
 joined attribute by attribute when the block names a λ function under
 `otherwise` (#2024):
@@ -237,21 +300,36 @@ these names apart from any attribute of a side, such as the `left` and
 attribute to, the left side's first, and asks a side binding the attribute to
 a formation for it applied to the voids of that formation alone, as
 `ρ.left🌵.a( x ↦ ξ.x )`, and any other side for it applied to every void, so
-a method of the fabricated formation takes its arguments (#2031). The firing
-writes
+a method of the fabricated formation takes its arguments (#2031). An
+attribute both sides bind to the same `ξ.f`, where `f` is an attribute of
+either side, stays that alias, so `g ↦ ξ.f` reaches the copy of `f` and its
+voids (`aliased`, #2260). The firing writes
 `fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ … ⟧` (`EvFabricated`), naming the
 sides as `diverged` does and spelling the formation out in the comment, and
 answers that formation as `Joined` of `Answer`. The entry of `L_join` reads
 `on: $.on🌵`, so the copy it fires decides by that condition.
 Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
-naming each side by the line that bound it and commenting where they differ
-and why nothing was fabricated of them, as in
-`# they differ at .φ, and the left side has λ` (#2043). `joined` answers the
+naming each side by the line that bound it. Its comment tells the two steps
+apart (#2043, #2204): `cannot join:` says what each side binds where they
+differ, as in `at .λ the left side has λ ⤍ 𝜎2 and the right side has no λ`,
+or what each side is where they differ at the top, and `cannot fabricate:`
+says why nothing was fabricated of them, as in `the left side is an atom`.
+`lodged` of `Deps.hs` walks a side down the path to what it binds there, and
+the markup writes that inside `<diverged>` as `<left λ="𝜎2"/><right/>`, the
+way `<formed>` writes a binding, or each whole side as `<left>Φ.k</left>`
+where the path is empty. `joined` answers the
 path of attributes through the formations both sides share down to the first
 one they bind differently, cut short at an application or a dispatch, and
 `forked` answers a `Refusal`, `Unformed` or `Holding` a Δ or a λ, the left
 side first, while `merged` of `Evaluate.hs` hands over `Unnamed` for a block
-with no `otherwise`. The firing then throws `Diverged`, which the
+with no `otherwise`. `forked` answers `Unripe` too, the left side first, where
+one side leaves void an attribute the other one binds, since that side is
+applied further and a formation leaving the attribute void would hand a void
+to whoever takes it there; the firing writes it as
+`unripe 𝑛1·2 vs 𝑛2·2  # k is void on the left and attached on the right`
+(`EvUnripe`) in place of `diverged`, and the markup as
+`<unripe left="𝑛·2·1" right="𝑛·2·2" at="k"/>` (#2202). The firing then
+throws `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around
 it write `stuck` as for a λ function no entry answers. A side or an operand
 whose morph throws fails the firing with what it threw, so a run never
@@ -267,7 +345,7 @@ with no entry of the file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it binds
 fresh symbol and writes `deferred …` (`EvDeferred`), naming the call the copy
 stands for by the object of the world it was made of, the way the record of
 0.0.153 did (#1892); any other term is bound as it is. Before the line is
-written, `argued` of `Evaluate.hs` works out every argument of the call that
+written, `argued` of `Morph.hs` works out every argument of the call that
 is no bare symbol: it morphs the argument in the copy, at a site such as
 `𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluate` line
 does, and writes every step to the protocol, so the markup names the argument
@@ -306,32 +384,44 @@ its head, which of the built-in rules only `copy` does, to `_saveMade` of
 `RewriteContext`, except one filling ρ, which a dispatch makes. `normalized` of
 `Morph.hs` writes it with the judgment and the site, spelling the call as the
 head, named by `nameIn` of `Builder.hs`, applied to its argument; the `rewrite`
-command saves nothing (`dontSaveMade`). The name of the object is counted with
-`built` and `answer` of the innermost open firing, which both writers keep as
-a stack every record prunes by its depth (`tier`), and from then on
-`abbreviated` writes the object, and the call too, since `copy` makes the same
-object of the same call, by that name wherever a later line holds it whole.
-The line itself goes through `abbreviatedInside`, which names the head and
-each argument and never the call as a whole, so an application made again is
-spelled out again (#1756). The
-markup writes the head in `of` and the argument by name in an element named
+command saves nothing (`dontSaveMade`). The line names the call, and the line
+right after it, `𝑛·1·2 := ⟦ … ⟧`, names the object the call made, abridged as
+any formation is, each by a name of its own counted with `built` and `answer`
+of the innermost open firing, which both writers keep as a stack every record
+prunes by its depth (`tier`), and from then on `abbreviated` writes each by its
+name wherever a later line holds it whole (#2165). The markup writes the object
+as a `<formed>` record with that name right after the `<applied>` one (`made`
+of `saveEvalXml`), so both formats count the same names.
+Either line goes through `abbreviatedInside`, which names the head and each
+argument of a call, or each binding of an object, and never the term as a
+whole, so an application made again is spelled out again, and so is the object
+it made (#1756). Both writers name the formation an answer binds
+the same way (`namedFormation`), even when a line named it before, unless it
+holds λ or Δ, so the box step after a firing writes `boxed 𝑛·0·2 := 𝑛·1·2.φ`
+with the meta of the answer rather than the whole answer again (#2151, #2158).
+The markup writes the head in `of` and the argument by name in an element named
 after the kind of its value, `<symbol>`, `<datum>`, `<meta>`, `<ref>` for a
 path or an empty `<bottom>` for ⊥ (`attributed` of `saveEvalXml`), and so does
 every binding of `<formed>` and `<with>` (#1961). Under `--inside` the
 universe is normalized before the heading, so `aimed` of `CLI/Helpers.hs`
-holds those records back and writes them after it.
+holds those records back and writes them after it. Before the heading, `aimed`
+writes `EvHeader`, which `headerOf` builds: the phino that wrote the protocol,
+the time, the command, the size of the world, the λ functions, the locator and
+the term it points at. The text writes it as `# …` lines and an empty line, and
+the markup as elements of `<protocol>`, leaving the term out (#2163).
 
 The markup is read by programs and never writes a term (#1924): every value is
 a symbol, a datum, a meta, a path off `Φ`, `ξ`, `ρ` or a meta, a name, or `⊥`.
 `leaf` of `saveEvalXml` names any other term before the record that holds it
 and by that name from then on: an application by an `<applied>` record with no
 `by` and `at`, a formation by a `<formed>` one, and anything else by an
-expression meta, `𝑒1`, which nothing defines. A `<formed>` record names in `of`
-the object of the world the formation copies and holds only the attributes it
-binds anew (`copied`); the world is the normalized universe, which `universed`
-of `Morph.hs` hands to the writers as `EvWorld` and the text writer ignores.
-Since the markup names terms the text writes out, the two count their metas
-apart, and an `𝑛` of one may be another `𝑛` of the other.
+expression meta, `𝑒1`, which nothing defines. The first two are named
+`𝑒·1·1` (`recorded`), counted per firing apart from the `𝑛` of the steps, so
+the markup and the text of one run give every step the same `𝑛` (#2152). A
+`<formed>` record names in `of` the object of the world the formation copies
+and holds only the attributes it binds anew (`copied`); the world is the
+normalized universe, which `universed` of `Morph.hs` hands to the writers as
+`EvWorld` and the text writer ignores.
 
 ### Dependency inversion for circular imports
 
@@ -363,12 +453,31 @@ The step budget `--max-steps` is what ends that recursion, and the only thing
 that does unless `morph` or `dataize` is given `--acyclic=<mode>`: the option
 has every 𝕄 and every 𝔻 frame remember the formations its ancestors have
 entered (`entering` and `enter` in `Morph.hs`, one store for both judgments,
-since only `box` and `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line, `fire` of
-`evaluated` in `Evaluate.hs`, enter one, and the line spends a step of
-`deeper` as a frame does, #1882) and park the site the moment a frame is about
-to enter one of them again, the way `--partial`
-parks a λ that cannot
-fire. The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
+since only `box` and `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line, `fired`
+of `Morph.hs`, enter one, and the line spends a step of `deeper` as a frame
+does, #1882) and park the site the moment a frame is about to enter one of
+them again, the way `--partial` parks a λ that cannot fire. Where `box` of 𝔻
+or an `evaluate` line is about to enter a copy, binding φ and holding no λ,
+that `called` of `Morph.hs` names by the object of the world it was made of,
+`sever` answers the copy with a fresh symbol, and the run goes on (#2226).
+Where 𝔻 or an `evaluate` line is about to enter a copy holding a λ, such as
+one of an atom whose operand dataizes the call again, `sever` answers it the
+same way (#2272, #2275). A formation holding a λ that no object of the world
+was made of, such as the φ of a formation a join fabricated, is answered
+the same way, named after the nearest copy the frames above it entered that
+`origin` places (`_placed` of `ReduceContext`, #2278, #2285), whatever fork
+stands between them, so the cut is named after that call, as
+`looped 𝜎6 := Φ.p`.
+The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
+such a copy the same way where the operand comes to one that repeats the
+formations above it more often than `--max-loops` lets through, since a
+recursion through a fork reaches the copy of every round only as a side of
+the fork and never boxes it (#2228). That side is morphed in a
+context of its own, gone once the firing answers, so `morphing` hands a copy
+it lets through while it repeats one above back in `_copies` of `State`, and
+the next frame of the 𝔻 chain that fired the entry adds it to the formations
+it remembers (`carried` of `Morph.hs`), which `--max-loops` counts.
+The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
 default. Under `proven` two formations are the same up to a renaming of their
 symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
 every round and never repeats a term (#1420). Under `plausible` the earlier one
@@ -385,25 +494,38 @@ the block it stands in is the same judgment at the same site (`_opened` of
 `ReduceContext`). Both writers print a block only once a line stands in it,
 merge two sibling blocks of one heading, and drop the comment of a line that
 repeats the innermost block; a firing is a block with no heading, so a line in
-it keeps its comment. The morphing of an answer is named after the answer
-(`resited`), as `𝕄(𝑛·1·5):`. The datum `delta` finds closes a `𝔻` block as
-`𝛿·1·1 := …` (`EvDelta`), commented with the double eight bytes hold (`ieee`,
-the `number` of `<dataized>` in the markup), and the operand line right after
-names it. The symbol a `𝔻` comes down to closes the block in the markup alone,
-as `<manufactured>` (`EvManufactured`, #1962), counted with the data, and the
-`<bound>` right after names it the same way. The term a `𝕄` came to closes
-its block in the markup alone too, as `<morphed>` (`EvMorphed`, #1984), counted
-with the metas of `<answered>`. Only the chain that opened the block writes it:
-`detached` runs a premise of a rule of 𝕄 through `morph''` told it owns
-nothing, since it stands in the block of the rule. A cut is a line too,
+it keeps its comment. The `box` rule of 𝔻 binds the term it goes on with to a
+meta of its own, `boxed 𝑛·1·2 := 𝑛·1·1.φ` (`EvBoxed`, #2134), counted with the
+metas of the firing, and the rest of that 𝔻 is sited at that term (`resited` in
+`dataize'`, #2144): the morphing that follows is named after the meta, as
+`𝕄(𝑛·1·2):`, and opens a block of its own, and a firing or a cut the 𝔻 makes
+there names the meta in its comment, as `# 𝔻(𝑛·1·2)`. The text writer names
+the world `EvWorld` hands it `Φ`, as the markup does. The morphing of an answer
+is named after the answer (`resited`), as `𝕄(𝑛·1·5):`. The datum `delta` finds
+closes a `𝔻` block as `𝛿·1·1 := …` (`EvDelta`), commented with the double
+eight bytes hold (`ieee`, the `number` of `<dataized>` in the markup), and the
+operand line right after names it. The symbol a `𝔻` comes down to closes the
+block the same way, as `𝛿·1·2 := 𝔻(𝜎1:λ)` (`EvManufactured`, #2150), and as
+`<manufactured>` in the markup (#1962), counted with the data. The term a `𝕄`
+came to closes its block too, as `morphed 𝑛·1·2 := 𝑛·1·1`
+(`EvMorphed`, #2153), and as `<morphed>` in the markup (#1984), counted with
+the metas of the firing, and both writers name that term by the meta from then
+on (`namedFormation`), even when a line named it before, unless it holds λ or
+Δ, so the box step after it writes `boxed 𝑛·1·3 := 𝑛·1·2.φ` (#2158). Only the
+chain that opened the block writes it: `detached` runs a premise of a rule of 𝕄
+through `morph''` told it owns nothing, since it stands in the block of the
+rule. A cut is a line too,
 `looped …` (`EvLooped`), written by `enter` where the refused frame would have
 opened, carrying the formation its ancestor entered (#1434) and naming the mode
-that cut it.
+that cut it. A copy `severed` answered writes the symbol and the call the copy
+stands for, `looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # …, repeats 𝑛·0·3`, with
+every argument worked out by `argued` as for `defer`, and the markup writes
+`<looped symbol="𝜎1" … object="Φ.down">` holding a `<with>` (#2226).
 Three records say why a firing gave no answer (#1524): `stuck …` closes a
 firing that got stuck, other than a join that could not join, which
-`diverged …` closes, `stall …` stands under one the memo answered with a
-kept stall, and `starved …` is written by `deeper` where the step budget runs
-out, with the site it stood at rather than its term (#1531).
+`diverged …` or `unripe …` closes, `stall …` stands under one the memo
+answered with a kept stall, and `starved …` is written by `deeper` where the
+step budget runs out, with the site it stood at rather than its term (#1531).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the
@@ -416,8 +538,11 @@ state it started from and would refund the firings made inside it (#1472).
 by `charged` at every firing, since a run may spend its time rewriting terms
 that fire nothing (#1619), and by `enter` while it compares formations, since
 under `plausible` one comparison by `within` may outlast the whole run, so a
-timer cuts that comparison where it stands (#1622). The first step, firing or
-comparison after the deadline writes `timeout …` (`EvTimeout`) and throws
+timer cuts that comparison where it stands (#1622). The same timer
+(`awaited` of `Morph.hs`) cuts the walk of a `rewrite` line, which takes no
+step either (#2196). It wraps no work that steps or writes a record, so the
+clock of the steps keeps the place of the timeout. The first step, firing,
+comparison or walk after the deadline writes `timeout …` (`EvTimeout`) and throws
 `OutOfTime`, which no frame parks, so the run fails with or without
 `--partial` and a caller that cannot wait gets a closed protocol ending in the
 timeout instead of killing the process (#1607).

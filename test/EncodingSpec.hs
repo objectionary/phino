@@ -81,7 +81,7 @@ spec = do
 
     it "leaves every other constructor untouched" $ do
       toASCII (EX_STRING "hi" (TAB 1) []) `shouldBe` EX_STRING "hi" (TAB 1) []
-      toASCII (EX_NUMBER (Left 5) (TAB 1) []) `shouldBe` EX_NUMBER (Left 5) (TAB 1) []
+      toASCII (EX_NUMBER 5 (TAB 1) []) `shouldBe` EX_NUMBER 5 (TAB 1) []
       toASCII (EX_BYTES BT_EMPTY) `shouldBe` EX_BYTES BT_EMPTY
 
   describe "toASCII on APP_BINDING" $

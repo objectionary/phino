@@ -14,6 +14,7 @@ import Lining (LineFormat (..), toSingleLine)
 import Margin (withLines, withMargin)
 import Render (render)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe)
+import Text.Printf (printf)
 
 bigLabel :: Attribute
 bigLabel = AtLabel "aVeryLongAttributeNameThatWontFitOnOneLine"
@@ -273,6 +274,20 @@ spec = do
       rows marks `shouldBe` rows precomposed
     it "keeps that string on one line within the margin" $
       rows marks `shouldBe` 1
+  describe "withMargin counts the comma after a binding" $
+    it "wraps a binding that fits only without its trailing comma" $
+      render (withMargin 30 (expressionToCST commaFormation))
+        `shouldBe` "⟦\n  a ↦ Φ.f(\n    x ↦ Φ.xxxxxxxxxxx\n  ),\n  b ↦ ⊥\n⟧"
+
+  describe "withMargin counts the attribute after a dispatch" $
+    it "wraps a call that does not fit with its attribute" $
+      render (withMargin 30 (expressionToCST dispatchedHead))
+        `shouldBe` "Φ.fff(\n  aaaaa ↦ Φ.ccccc\n).dddddd"
+
+  describe "withMargin counts the opening parenthesis of a split argument" $
+    it "keeps every line of a chain of calls within the margin" $
+      all ((<= 40) . T.length) (T.lines (render (withMargin 40 (expressionToCST chained))))
+        `shouldBe` True
   where
     terms :: [(String, Expression)]
     terms =
@@ -288,6 +303,26 @@ spec = do
       ]
     margins :: [Int]
     margins = [0, 1, 40, 80, 1000]
+
+    commaFormation :: Expression
+    commaFormation =
+      ExFormation
+        [ BiTau (AtLabel "a") (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "x") (ExDispatch ExRoot (AtLabel "xxxxxxxxxxx"))))
+        , BiTau (AtLabel "b") ExTermination
+        ]
+
+    dispatchedHead :: Expression
+    dispatchedHead =
+      ExDispatch
+        (ExApplication (ExDispatch ExRoot (AtLabel "fff")) (ArTau (AtLabel "aaaaa") (ExDispatch ExRoot (AtLabel "ccccc"))))
+        (AtLabel "dddddd")
+
+    chained :: Expression
+    chained =
+      foldl
+        (\acc i -> ExApplication acc (ArTau (AtLabel (T.pack (printf "a%d" i))) (ExDispatch ExRoot (AtLabel (T.pack (printf "v%d" i))))))
+        (ExDispatch ExRoot (AtLabel "f"))
+        [0 .. 6 :: Int]
 
     rows :: Expression -> Int
     rows expression = length (T.lines (render (withMargin 30 (expressionToCST expression))))

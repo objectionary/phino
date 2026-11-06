@@ -56,7 +56,7 @@ import XMIR (defaultXmirContext)
 defaultReduceContext :: Expression -> IO ReduceContext
 defaultReduceContext loc = do
   minted <- newIORef 0
-  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty Nothing emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
 
 linked :: Engine
 linked = fromMaybe yaml compiled
@@ -177,7 +177,12 @@ readProtocol path = sansTotals <$> readUtf8 path
     sansTotals :: String -> String
     sansTotals
       | map toLower (takeExtension path) == ".xml" = withoutWrapper
-      | otherwise = withoutTotals
+      | otherwise = withoutTotals . withoutHeader
+
+withoutHeader :: String -> String
+withoutHeader text = case span ("# " `isPrefixOf`) (lines text) of
+  (_ : _, "" : rest) -> unlines rest
+  _ -> text
 
 withoutTotals :: String -> String
 withoutTotals text
@@ -193,9 +198,11 @@ withoutTotals text
 withoutWrapper :: String -> String
 withoutWrapper text = case lines text of
   (decl : "<protocol>" : rest)
-    | Just kept <- withoutRunTotals rest -> unlines (decl : map dedented kept)
+    | Just kept <- withoutRunTotals (dropWhile told rest) -> unlines (decl : map dedented kept)
   _ -> text
   where
+    told :: String -> Bool
+    told line = any (`isPrefixOf` line) ["  <written ", "  <command>", "  <world ", "  <symbolic ", "  <locator>"]
     withoutRunTotals :: [String] -> Maybe [String]
     withoutRunTotals rest = case reverse rest of
       (closing : fps : firings : msec : kept)

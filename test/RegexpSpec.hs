@@ -55,6 +55,9 @@ spec = do
       , ("handles alternation", "cat|dog", "I have a dog", True)
       , ("handles unicode input", "日本語", "これは日本語です", True)
       , ("handles case sensitive match", "Hello", "hello", False)
+      , ("matches non-ASCII letters with \\w", "^\\w+$", "héllo", True)
+      , ("matches non-ASCII digits with \\d", "^\\d+$", "١٢٣", True)
+      , ("matches non-ASCII letters with [[:alpha:]]", "^[[:alpha:]]+$", "héllo", True)
       ]
       (\(desc, pattern, input, expected) -> it desc $ R.match (utf8 pattern) (utf8 input) `shouldReturn` expected)
 
@@ -85,6 +88,19 @@ spec = do
         , ["only"]
         , "$999999999999999999999999999999999999999999"
         )
+      ,
+        ( "keeps a group reference that wraps to group one literal"
+        , "$18446744073709551617"
+        , ["only", "a"]
+        , "$18446744073709551617"
+        )
+      ,
+        ( "keeps a group reference that wraps to group zero literal"
+        , "$18446744073709551616"
+        , ["only", "a"]
+        , "$18446744073709551616"
+        )
+      , ("substitutes the highest existing group", "$1", ["only", "a"], "a")
       , ("handles replacement without group references", "plain", ["x"], "plain")
       , ("handles empty replacement", "", ["x"], "")
       , ("handles empty groups list with reference", "$0", [], "$0")
@@ -134,6 +150,12 @@ spec = do
       , ("replaces overlapping potential matches correctly", "aa", "X", "aaaa", "XX")
       , ("handles single character replacement", ".", "*", "abc", "***")
       , ("handles word boundary", "\\bword\\b", "WORD", "word in a word", "WORD in a WORD")
+      , ("keeps lookbehind context across matches", "(?<=a)a", "X", "aaa", "aXX")
+      , ("does not invent word boundaries after a match", "\\ba", "X", "aaa", "Xaa")
+      , ("does not restart an absolute-start assertion", "\\Aa", "X", "aaa", "Xaa")
+      , ("keeps captured lookbehind text after previous matches", "(?<=(a))a", "$1X", "aaa", "aaXaX")
+      , ("keeps Unicode lookbehind context", "(?<=é)é", "X", "ééé", "éXX")
+      , ("keeps context after an empty match", "\\b", "X", "éé", "XééX")
       , ("terminates on an empty-match pattern (anchored ^)", "^", "X", "hello", "Xhello")
       , ("terminates on an empty regex pattern", "", "X", "hello", "XhXeXlXlXoX")
       , ("keeps UTF-8 characters together after an empty match", "(?=.)", "X", "é", "Xé")

@@ -29,7 +29,7 @@ import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
 import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
-import Morph (Deadline (..), ReduceContext (..), emptyState, enter, execBuildTerm, inferred, insideUniverse, morph, morph')
+import Morph (Deadline (..), ReduceContext (..), emptyState, enter, execBuildTerm, inferred, insideUniverse, morph, morph', origin)
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -213,6 +213,12 @@ spec = do
     it "normalizes what it is handed before 𝔻 sees it" $ do
       value <- reduced "[[ x -> [[ D> 01- ]] ]].x"
       value `shouldBe` Dataized (BtOne "01")
+    it "keeps the site the caller names what it reduces by" $ do
+      univ <- parseExpressionThrows universe
+      target <- parseExpressionThrows "Q.y"
+      ctx <- defaultReduceContext ExRoot
+      (_, aiming) <- insideUniverse target univ ctx{_site = ExDispatch ExXi (AtLabel "ψ")}
+      aiming._site `shouldBe` ExDispatch ExXi (AtLabel "ψ")
     it "refuses a universe which is not a formation" $ do
       target <- parseExpressionThrows "Q.y"
       (insideUniverse target ExRoot =<< defaultReduceContext ExRoot)
@@ -293,3 +299,10 @@ spec = do
       base <- defaultReduceContext ExRoot
       (enter (formation 7) =<< enter (formation 6) =<< enter (formation 5) base{_acyclic = Just Plausible, _maxLoops = 1})
         `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
+
+  describe "places a formation among the objects of the world" $
+    it "places a formation repeating the bindings of an object by that object, not by one whose void it fills" $ do
+      let body = ExApplication (ExDispatch ExRoot (AtLabel "zuq")) (ArTau (AtLabel "wo") (ExFormation [BiLambda (FnSymbol 7)]))
+      base <- defaultReduceContext ExRoot
+      fst <$> origin (ExFormation [BiTau (AtLabel "nq") (ExFormation [BiVoid AtPhi]), BiTau (AtLabel "kel") (ExFormation [BiTau AtPhi body])]) base [BiTau AtPhi body]
+        `shouldBe` Just (ExDispatch ExRoot (AtLabel "kel"))

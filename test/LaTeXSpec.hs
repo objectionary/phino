@@ -164,6 +164,11 @@ spec = do
       expressionToLaTeX bts defaultLatexContext
         `shouldBe` "\\begin{phiquation}\n\\delta_7 : D{.}\n\\end{phiquation}"
 
+    it "renders a two-digit index of a meta as a whole subscript" $ do
+      metas <- parseExpressionThrows "[[ !B12, !B3, x -> !e10 ]]"
+      expressionToLaTeX metas defaultLatexContext
+        `shouldBe` "\\begin{phiquation}\n[[ B_{12}, B_3, |x| -> e_{10} ]]{.}\n\\end{phiquation}"
+
     it "escapes '@' and '^' in an attribute label, same as '$' and '_'" $ do
       let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot]
       expressionToLaTeX weird defaultLatexContext

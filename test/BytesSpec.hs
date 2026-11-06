@@ -50,15 +50,15 @@ spec = do
 
   describe "numToBts/btsToNum round trip" $
     forM_
-      [ ("normal integer", 42, (== Left 42))
-      , ("normal fraction", 3.5, (== Right 3.5))
-      , ("zero", 0.0, (== Left 0))
-      , ("negative integer", -2, (== Left (-2)))
-      , ("negative fraction", -0.25, (== Right (-0.25)))
-      , ("NaN", 0 / 0, either (const False) isNaN)
-      , ("positive infinity", 1 / 0, either (const False) (\num -> isInfinite num && num > 0))
-      , ("negative infinity", -(1 / 0), either (const False) (\num -> isInfinite num && num < 0))
-      , ("negative zero", -0.0, either (const False) isNegativeZero)
+      [ ("normal integer", 42, (== 42))
+      , ("normal fraction", 3.5, (== 3.5))
+      , ("zero", 0.0, (== 0))
+      , ("negative integer", -2, (== -2))
+      , ("negative fraction", -0.25, (== -0.25))
+      , ("NaN", 0 / 0, isNaN)
+      , ("positive infinity", 1 / 0, \num -> isInfinite num && num > 0)
+      , ("negative infinity", -(1 / 0), \num -> isInfinite num && num < 0)
+      , ("negative zero", -0.0, isNegativeZero)
       ]
       (\(desc, num, predicate) -> it desc (btsToNum (numToBts num) `shouldSatisfy` predicate))
 
@@ -92,9 +92,9 @@ spec = do
 
   describe "btsToNum on the named non-finite patterns" $
     forM_
-      [ ("NaN", NfNan, either (const False) isNaN)
-      , ("positive infinity", NfPinf, either (const False) (\num -> isInfinite num && num > 0))
-      , ("negative infinity", NfNinf, either (const False) (\num -> isInfinite num && num < 0))
+      [ ("NaN", NfNan, isNaN)
+      , ("positive infinity", NfPinf, \num -> isInfinite num && num > 0)
+      , ("negative infinity", NfNinf, \num -> isInfinite num && num < 0)
       ]
       (\(desc, value, predicate) -> it desc (btsToNum (nonFiniteBts value) `shouldSatisfy` predicate))
 

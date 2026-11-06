@@ -7,22 +7,33 @@
 # fired from, and its 'evaluate' line fires that formation again. The line
 # enters the formation the way 'ml' does, so the second firing is cut before
 # it opens and writes a 'looped' line where its block would have stood
-# (#1882). The budget of firings is there only to end the run if the cut
-# is ever lost again.
+# (#1882). The formation is a copy of 'Φ.loop', so the cut answers it with a
+# fresh symbol (#2275), and the dispatch of φ off that symbol is parked. The
+# budget of firings is there only to end the run if the cut is ever lost
+# again.
 symbolic: |
   - λ: L_loop
     morph:
-      𝑛1: $.next
+      𝑛1: $.next🌵
     evaluate:
       𝑛2: 𝑛1
     𝑛: 𝑛2
 location: 'Q.app'
 acyclic: proven
+partial: true
 firings: 5
-input: '⟦ loop ↦ ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧, app ↦ Φ.loop.φ ⟧'
-result: '⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧.φ'
+input: '⟦ loop ↦ ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧, app ↦ Φ.loop.φ ⟧'
+result: '𝜎1:λ.φ'
 protocol: |
   𝕄(Φ.app):
     𝔼(L_loop):
-      𝑛1·1 := ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝕄(ξ.next)
-      looped ⟦ next ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝔼(𝑛1), proven
+      𝕄(ξ.next🌵):
+        morphed 𝑛·1·1 := ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧
+      𝑛1·1 := ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧  # 𝕄(ξ.next🌵)
+      looped 𝜎1 := Φ.loop  # 𝔼(𝑛1), proven, repeats ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧
+      𝑛2·1 := 𝜎1:λ  # 𝔼(𝑛1)
+      𝑛·1·2 := 𝑛2·1  # 𝑛
+      𝕄(𝑛·1·2):
+        morphed 𝑛·1·3 := 𝑛2·1
+      𝑛·1·4 := 𝑛2·1  # 𝕄(𝑛·1·2)
+    unanswered 𝜎1  # 𝕄(𝜎1:λ)

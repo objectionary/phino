@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+xmir: |
+  <object>
+    <o name="x" base="Φ.f">
+      <o as="α9223372036854775807" base="Φ.y"/>
+    </o>
+  </object>
+phi: '⟦ x ↦ Φ.f( α9223372036854775807 ↦ Φ.y ) ⟧'

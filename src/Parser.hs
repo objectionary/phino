@@ -160,7 +160,7 @@ ascii letter = lexeme (try (pure <$> char letter <* notFollowedBy (satisfy named
     lambdaOf = whiteSpace >> char ':' >> whiteSpace >> oneOf ['L', 'λ']
 
 metaSuffix :: Parser String
-metaSuffix = lexeme (many (oneOf ('_' : '-' : ['0' .. '9'] ++ ['a' .. 'z'] ++ ['A' .. 'Z']) <?> "meta suffix"))
+metaSuffix = lexeme (many (choice [try (char '-' <* notFollowedBy (char '>')), oneOf ('_' : ['0' .. '9'] ++ ['a' .. 'z'] ++ ['A' .. 'Z'])] <?> "meta suffix"))
 
 metaVar :: Char -> String -> Parser (Either Slot T.Text)
 metaVar ch uni = do
@@ -427,8 +427,8 @@ alpha = do
 argument :: Parser Argument
 argument =
   choice
-    [ ArAlpha <$> try alpha <*> tauValue
-    , ArTau <$> attribute <*> tauValue
+    [ ArAlpha <$> try alpha <* arrow <*> expression
+    , ArTau <$> attribute <* arrow <*> expression
     ]
     <?> "argument"
 

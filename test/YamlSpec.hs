@@ -105,12 +105,17 @@ spec = do
   describe "rejects a meta that nothing binds" $
     forM_
       [ ("in 'when'", "name: w\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ y ↦ 𝑒1 ⟧'\nwhen:\n  not:\n    eq: ['𝑒9', '𝑒1']", "'e9'")
+      , ("in 'when', which runs before the 'where' step that binds it", "name: l\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ y ↦ 𝑒1 ⟧'\nwhen:\n  not:\n    eq: ['𝑒2', '𝑒1']\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    args: ['𝑒1']", "'e2'")
       , ("in 'result'", "name: r\npattern: '⟦ x ↦ 𝑒1, 𝐵1 ⟧'\nresult: '⟦ y ↦ 𝑒9, 𝐵1 ⟧'", "'e9'")
       , ("in a 'where' argument", "name: a\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒2 ⟧'\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    args: ['𝑒7']", "'e7'")
       ]
       ( \(desc, yaml, meta) ->
           it desc ((decodeYaml' yaml :: Either Yaml.ParseException Rule) `shouldSatisfy` failsWith ("reads the meta " ++ meta))
       )
+
+  it "accepts a meta in 'having' that a 'where' step binds" $
+    (decodeYaml' "name: l\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ y ↦ 𝑒1 ⟧'\nhaving:\n  not:\n    eq: ['𝑒2', '𝑒1']\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    args: ['𝑒1']" :: Either Yaml.ParseException Rule)
+      `shouldSatisfy` isRight
 
   it "accepts a meta that an earlier 'where' step binds" $
     (decodeYaml' "name: ok\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ x ↦ 𝑒3 ⟧'\nwhere:\n  - meta: '𝑒2'\n    function: concat\n    args: ['𝑒1']\n  - meta: '𝑒3'\n    function: concat\n    args: ['𝑒2']" :: Either Yaml.ParseException Rule)

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -78,6 +79,7 @@ runRewrite OptsRewrite{..} = do
   save <- saveStepFunc _stepsDir printCtx included excluded
   let steps = map (stepOf linked) rules
   (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save dontSaveMade)
+  when (isJust _breakpoint && NE.length rewrittens == 1) (clearedStepsDir _stepsDir)
   rewrittens' <- exclude (if _sequence then NE.toList rewrittens else [NE.last rewrittens]) >>= include
   logDebug (printf "Printing rewritten 𝜑-expression as %s" (show _outputFormat))
   exprs <- printRewrittens printCtx (rewrittens', exceeded)
@@ -160,8 +162,8 @@ runRewrite OptsRewrite{..} = do
         _meetPrefix
         _outputFormat
 
-runDataize :: OptsDataize -> IO ()
-runDataize OptsDataize{..} = do
+runDataize :: [String] -> OptsDataize -> IO ()
+runDataize args OptsDataize{..} = do
   validateOpts
   deadline <- timed _maxSeconds
   lambdas <- lambdasOf _symbolic
@@ -182,18 +184,19 @@ runDataize OptsDataize{..} = do
   minted <- newIORef 0
   memo <- memoized _acyclic
   linked <- engine
-  (outcome, chain, _) <-
+  header <- headerOf args _inputFile input expr _symbolic lambdas
+  ((outcome, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty lambdas (building linked) reduction evaluation save record linked
-          (universe, aiming) <- aimed printCtx Dataization _inside expr ctx
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty Nothing lambdas (building linked) reduction evaluation save record linked
+          (universe, aiming) <- aimed printCtx Dataization header _inside expr ctx
           started universe aiming
-          dataize universe emptyState aiming
+          (,universe,aiming._locator) <$> dataize universe emptyState aiming
       )
   when _sequence (exclude chain >>= include >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (\residue -> F.exclude' residue excluded >>= (`F.include'` included)) outcome >>= putStrLn)
+  unless _quiet (printOutcome printCtx (filteredAt aim universe excluded included) outcome >>= putStrLn)
   where
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
@@ -214,9 +217,11 @@ runDataize OptsDataize{..} = do
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
-      when
-        (isJust _inside && _locator /= "Q")
-        (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
+      when (isJust _inside) $ do
+        parsed <- parseExpressionThrows _locator
+        when
+          (parsed /= ExRoot)
+          (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
     toPrintCtx :: Atoms -> Expression -> PrintContext
     toPrintCtx atoms focus =
       PrintCtx
@@ -242,8 +247,8 @@ runDataize OptsDataize{..} = do
     listing :: Expression -> String
     listing e = escapeXMLText (P.printExpression' e (_sugarType, UNICODE, _flat, _margin))
 
-runMorph :: OptsMorph -> IO ()
-runMorph OptsMorph{..} = do
+runMorph :: [String] -> OptsMorph -> IO ()
+runMorph args OptsMorph{..} = do
   validateOpts
   deadline <- timed _maxSeconds
   lambdas <- lambdasOf _symbolic
@@ -264,21 +269,25 @@ runMorph OptsMorph{..} = do
   minted <- newIORef 0
   memo <- memoized _acyclic
   linked <- engine
-  (morphed, chain, _) <-
+  header <- headerOf args _inputFile input expr _symbolic lambdas
+  ((morphed, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty lambdas (building linked) reduction evaluation save record linked
-          (universe, aiming) <- aimed printCtx Morphing _inside expr ctx
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty Nothing lambdas (building linked) reduction evaluation save record linked
+          (universe, aiming) <- aimed printCtx Morphing header _inside expr ctx
           started universe aiming
-          morph universe emptyState aiming
+          (,universe,aiming._locator) <$> morph universe emptyState aiming
       )
   printed <-
     if _quiet
       then pure Nothing
       else do
-        answer <- F.exclude' (if foc == ExRoot then morphed else maybe morphed fst (lastMaybe chain)) excluded >>= (`F.include'` included)
+        answer <-
+          if foc == ExRoot
+            then filteredAt aim universe excluded included morphed
+            else F.exclude' (maybe morphed fst (lastMaybe chain)) excluded >>= (`F.include'` included)
         validateXmirTopLevel _outputFormat answer
         Just <$> printAnswer printCtx answer
   when _sequence (exclude chain >>= include >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
@@ -299,9 +308,11 @@ runMorph OptsMorph{..} = do
       when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
-      when
-        (isJust _inside && _locator /= "Q")
-        (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
+      when (isJust _inside) $ do
+        parsed <- parseExpressionThrows _locator
+        when
+          (parsed /= ExRoot)
+          (invalidCLIArguments "The options --inside and --locator cannot be used together, since --inside aims the run at the binding it mints")
     toPrintCtx :: Atoms -> Expression -> PrintContext
     toPrintCtx atoms focus =
       PrintCtx

@@ -639,7 +639,7 @@ spec = do
               , indent = 1
               }
           exString = EX_STRING{str = "hi", tab = TAB 0, rhos = []}
-          exNumber = EX_NUMBER{num = Left 5, tab = TAB 0, rhos = []}
+          exNumber = EX_NUMBER{num = 5, tab = TAB 0, rhos = []}
           exNonFinite = EX_NONFINITE{global = Φ, nonfinite = NfNan, tab = TAB 0, rhos = []}
           exMeta = EX_META{meta = metaVal}
           exPhiMeet = EX_PHI_MEET{prefix = Just "p", idx = 1, expr = exGlobal}
@@ -669,7 +669,7 @@ spec = do
       exString.str `shouldBe` "hi"
       exString.tab `shouldBe` TAB 0
       exString.rhos `shouldBe` []
-      exNumber.num `shouldBe` Left 5
+      exNumber.num `shouldBe` 5
       exNumber.tab `shouldBe` TAB 0
       exNumber.rhos `shouldBe` []
       exNonFinite.global `shouldBe` Φ

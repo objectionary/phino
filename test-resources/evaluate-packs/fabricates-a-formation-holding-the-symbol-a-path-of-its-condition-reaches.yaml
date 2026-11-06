@@ -21,4 +21,9 @@ result: '⟦ λ ⤍ L_join, on🌵 ↦ ⟦ λ ⤍ 𝜎5 ⟧, left🌵 ↦ ρ.lef
 protocol: |
   𝕄(Φ.y):
     𝔼(L_join):
-      fabricated 𝑛·1·1 := Φ.jo:φ and ⟦ φ ↦ Φ.ma, tu ↦ Φ.ip ⟧  # ⟦ left🌵 ↦ Φ.jo:φ, right🌵 ↦ ⟦ φ ↦ Φ.ma, tu ↦ Φ.ip ⟧, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎5:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, tu ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎5:λ, left🌵 ↦ ρ.left🌵.tu, right🌵 ↦ ρ.right🌵.tu ⟧ ⟧
+      𝕄(ξ.left🌵):
+        morphed 𝑛·1·1 := Φ.jo:φ
+      𝕄(ξ.right🌵):
+        morphed 𝑛·1·2 := ⟦ φ ↦ Φ.ma, tu ↦ Φ.ip ⟧
+      fabricated 𝑛·1·3 := 𝑛·1·1 and 𝑛·1·2  # ⟦ left🌵 ↦ 𝑛·1·1, right🌵 ↦ 𝑛·1·2, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎5:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, tu ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎5:λ, left🌵 ↦ ρ.left🌵.tu, right🌵 ↦ ρ.right🌵.tu ⟧ ⟧
+    morphed 𝑛·0·1 := ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎5:λ, left🌵 ↦ ρ.left🌵.tu, right🌵 ↦ ρ.right🌵.tu ⟧

@@ -82,21 +82,12 @@ toHex w = [digit (w `shiftR` 4), digit (w .&. 0x0F)]
       | n < 10 = chr (fromIntegral n + ord '0')
       | otherwise = chr (fromIntegral n + ord 'A' - 10)
 
-btsToNum :: Bytes -> Either Int Double
+btsToNum :: Bytes -> Double
 btsToNum hx =
   let bytes = btsToWord8 hx
    in if length bytes /= 8
         then throw (InvalidNumberLength (length bytes))
-        else
-          let word = toWord64BE bytes
-              val = wordToDouble word
-           in if isNaN val || isInfinite val || isNegativeZero val
-                then Right val
-                else case properFraction val :: (Integer, Double) of
-                  (n, 0.0)
-                    | n >= toInteger (minBound :: Int) && n <= toInteger (maxBound :: Int) ->
-                        Left (fromInteger n)
-                  _ -> Right val
+        else wordToDouble (toWord64BE bytes)
   where
     toWord64BE :: [Word8] -> Word64
     toWord64BE [a, b, c, d, e, f, g, h] =

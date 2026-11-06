@@ -16,11 +16,11 @@ import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import Data.Maybe (listToMaybe)
 import qualified Data.Text as T
-import Deps (Evaluation (..), Judgment (..), State (..))
+import Deps (Evaluation (..), Judgment (..), State (..), resited)
 import Engine (Engine (..))
 import qualified Inference as In
 import Locator (locatedExpression)
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, deeper, entering, inferred, insideUniverse, leadsTo, onward, opening, parking, universed)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, carried, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed)
 import Rewriter (Rewritten)
 
 type Dataized = (Bytes, [Rewritten])
@@ -41,18 +41,25 @@ dataize universe state ctx@ReduceContext{..} = do
     Left (StuckAt func seq parked) | _partial -> residual seq parked{_stuck = Just func}
     Left (OutOfStepsAt _ seq parked) | _partial -> residual seq parked
     Left (LoopingAt _ seq parked) | _partial -> residual seq parked
+    Left (Undataizable term seq parked) | _partial -> do
+      unless (dead `elem` _parked) (_saveEval (EvStuck _nesting dead Dataization term))
+      residual seq parked{_stuck = Just dead}
     Left failure -> throwIO (failure :: ReduceException)
   where
+    dead :: T.Text
+    dead = "⊥"
     residual :: NonEmpty Rewritten -> State -> IO (Outcome, [Rewritten], State)
     residual seq parked = do
       residue <- locatedExpression _locator (fst (NE.head seq))
       pure (Residual residue, reverse (NE.toList seq), parked)
 
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)
-dataize' (expr, seq) univ state caller = do
-  ctx <- opening Dataization =<< deeper =<< entering expr =<< parking seq state (universed univ caller{_judgment = Dataization})
+dataize' (start, seq) univ held caller = do
+  let (state, aware) = carried held caller
+  (expr, entered) <- severing start univ state =<< parking seq state (universed univ aware{_judgment = Dataization})
+  ctx <- opening Dataization =<< deeper entered
   parking seq state $ case unknown expr of
-    Just idx -> manufactured idx ctx
+    Just idx -> manufactured idx state ctx
     Nothing -> do
       reached <- inferred expr univ state ctx ctx._engine._dataization
       case reached of
@@ -61,15 +68,22 @@ dataize' (expr, seq) univ state caller = do
           seq' <- leadsTo seq step (ExBytes bts) ctx
           pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
         Just (In.Onward way built world, state') -> do
-          (dataizable, state'') <- onward seq state' way built ctx
-          dataize' dataizable world state'' ctx
-        Nothing -> throwIO (Undataizable expr state)
+          ctx' <- boxing way built ctx
+          (dataizable, state'') <- onward seq state' way built ctx'
+          dataize' dataizable world state'' ctx'
+        Nothing -> throwIO (Undataizable expr seq state)
   where
+    boxing :: In.Way -> Expression -> ReduceContext -> IO ReduceContext
+    boxing way built ctx
+      | way == In.Normalized (Dataization, "box") = do
+          ctx._saveEval (EvBoxed ctx._nesting built)
+          pure ctx{_saveEval = ctx._saveEval . resited ctx._site built}
+      | otherwise = pure ctx
     unknown :: Expression -> Maybe Int
     unknown (ExFormation bds) = listToMaybe [idx | BiLambda (FnSymbol idx) <- bds]
     unknown _ = Nothing
-    manufactured :: Int -> ReduceContext -> IO (Dataized, State)
-    manufactured idx ctx = do
+    manufactured :: Int -> State -> ReduceContext -> IO (Dataized, State)
+    manufactured idx state ctx = do
       ctx._saveEval (EvManufactured ctx._nesting idx)
       seq' <- leadsTo seq (Dataization, "symbol") (ExBytes datum) ctx
       pure ((datum, NE.toList seq'), state{_manufactured = Just idx})
@@ -77,16 +91,9 @@ dataize' (expr, seq) univ state caller = do
 reduction :: ReductionFunc
 reduction univ ctx expr state = do
   (universe, aiming) <- insideUniverse expr univ ctx
-  result <- try (dataize universe state aiming)
-  case result of
-    Right (outcome, _, state') -> pure (reached outcome, state')
-    Left (Undataizable term state') | ctx._partial -> do
-      unless (dead `elem` ctx._parked) (ctx._saveEval (EvStuck ctx._nesting dead Dataization term))
-      pure (Nothing, state'{_stuck = Just dead})
-    Left failure -> throwIO failure
+  (outcome, _, state') <- dataize universe state aiming
+  pure (reached outcome, state')
   where
-    dead :: T.Text
-    dead = "⊥"
     reached :: Outcome -> Maybe Bytes
     reached (Dataized bytes) = Just bytes
     reached (Residual _) = Nothing

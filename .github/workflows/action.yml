@@ -38,7 +38,7 @@ jobs:
         run: test "$(phino --version | tr -d '[:space:]')" = 0.0.150
   reads:
     timeout-minutes: 15
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - run: printf '\n  0.0.149 \n' > phino-version.txt
