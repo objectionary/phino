@@ -3323,7 +3323,7 @@ spec = do
             testCLISucceeded ["morph", "--inside=Φ.app( x ↦ ⟦ Δ ⤍ 02- ⟧ )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           length (filter ("𝕄(Φ.a🌵0):" `isInfixOf`) (lines records)) `shouldBe` 1
-          take 2 (drop 1 (lines records)) `shouldBe` ["  𝑛·0·1 := Φ.app( x ↦ 02-:Δ )", "  𝑛·0·2 := ⟦ x ↦ 02-:Δ, φ ↦ x ⟧"]
+          take 2 (drop 1 (lines records)) `shouldBe` ["  remembered 𝑛·0·1 ≡ Φ.app  # ⟦ x ↦ ∅, φ ↦ x ⟧", "  𝑛·0·2 := Φ.app( x ↦ 02-:Δ )"]
 
       it "opens a single dataize element in the XML protocol it aims inside" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
