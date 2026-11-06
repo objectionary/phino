@@ -4097,7 +4097,7 @@ spec = do
     it "refuses a rule it cannot compile" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
-        writeFile (dir </> "having.yaml") "name: hv\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ !B1 ]]'\nhaving:\n  eq: ['!e1', 'Q']\n"
+        writeFile (dir </> "having.yaml") "name: hv\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ !B1 ]]'\nhaving:\n  eq: ['!e1', '!e1']\n"
         withCurrentDirectory dir (testCLIFailed ["compile", "--rule=having.yaml", "--target=Compiled.hs"] ["The rule 'hv' cannot be compiled, since it has a 'having' condition"])
 
   describe "match" $ do
@@ -4155,9 +4155,9 @@ spec = do
       withStdin "[[ x -> Q.x, y -> Q.y ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
 
-    it "does not match a length against a literal that wraps around Int" $
+    it "refuses a length compared with a literal that does not fit into Int" $
       withStdin "[[ a -> $, b -> Q ]]" $
-        testCLIFailed ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),18446744073709551618)"] ["no substitutions are built"]
+        testCLIFailed ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),18446744073709551618)"] ["compares a number with an expression"]
 
     it "builds substitutions with conditions" $
       withStdin "[[ x -> Q.y ]].x" $

@@ -11,7 +11,7 @@ import Control.Exception (SomeException)
 import Control.Monad (forM_)
 import Data.Either (isLeft, isRight)
 import Data.List (isInfixOf)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy, shouldThrow)
+import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe, shouldSatisfy, shouldThrow)
 import Yaml qualified as Y
 
 spec :: Spec
@@ -39,7 +39,6 @@ spec = do
       , ("eq(!i1,length(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i1")) (Y.CmpNum (Y.Length (BiMeta "B1"))))
       , ("eq(!i2,domain(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i2")) (Y.CmpNum (Y.Domain (BiMeta "B1"))))
       , ("gt(domain(!B1),!i1)", Y.Gt (Y.CmpNum (Y.Domain (BiMeta "B1"))) (Y.CmpNum (Y.MetaIndex "i1")))
-      , ("eq(!t1, !e2)", Y.Eq (Y.CmpAttr (AtMeta "t1")) (Y.CmpExpr (ExMeta "e2")))
       , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExRoot (AtLabel "x"))])
       , ("and(matches(\"hi\", !e1),part-of(!e1, !B1))", Y.And [Y.Matches "hi" (ExMeta "e1"), Y.PartOf (ExMeta "e1") (BiMeta "B1")])
       , ("not(formation(!n1))", Y.Not (Y.IsFormation (ExMeta "n1")))
@@ -54,8 +53,17 @@ spec = do
       [ "some()"
       , "in(!t, !t)"
       , "or(or(), or())"
+      , "eq(!t1, !e2)"
       ]
       (\expr -> it expr (parseCondition expr `shouldSatisfy` isLeft))
+
+  describe "refuses a condition that compares different kinds" $ do
+    it "names the two kinds it cannot compare" $
+      case parseCondition "eq(!e1, 5)" of
+        Left err -> "compares an expression with a number" `isInfixOf` err `shouldBe` True
+        Right _ -> expectationFailure "expected a refusal"
+    it "accepts a quoted argument as an expression" $
+      parseCondition "eq(!e1, \"5\")" `shouldSatisfy` isRight
 
   describe "parseConditionThrows" $
     it "throws with a descriptive message on unparsable input" $
