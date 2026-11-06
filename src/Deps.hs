@@ -19,7 +19,7 @@ import Data.Either (lefts, rights)
 import Data.IORef (IORef, readIORef, writeIORef)
 import Data.List (intercalate, sortOn)
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
+import Data.Maybe (fromMaybe, listToMaybe, mapMaybe, maybeToList)
 import qualified Data.Text as T
 import Data.Time (ZonedTime, defaultTimeLocale, formatTime)
 import Files (overwrite)
@@ -27,7 +27,7 @@ import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
 import Logger (logDebug, logInfo)
 import Matcher
-import Printer (printAlpha, printAttribute, printFunction)
+import Printer (printAlpha, printAttribute, printBinding, printFunction)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
 import System.IO (Handle, hPutStrLn)
@@ -46,6 +46,7 @@ type BuildTermMethod = [ExtraArgument] -> Subst -> IO Term
 data State = State
   { _manufactured :: Maybe Int
   , _stuck :: Maybe T.Text
+  , _copies :: [Expression]
   }
 
 type BuildTermMethodS = [ExtraArgument] -> Subst -> IO (Term, State)
@@ -106,7 +107,11 @@ refused :: Refusal -> String
 refused refusal = case refusal of
   Unnamed -> "the join names no otherwise"
   Unformed side -> printf "the %s side is no formation" (handed side)
+  Holding side AtLambda -> printf "the %s side is an atom" (handed side)
+  Holding side AtDelta -> printf "the %s side is a datum" (handed side)
   Holding side attr -> printf "the %s side has %s" (handed side) (printAttribute attr)
+  Unripe Lefthand attr -> printf "%s is void on the left and attached on the right" (printAttribute attr)
+  Unripe Righthand attr -> printf "%s is void on the right and attached on the left" (printAttribute attr)
   where
     handed :: Side -> String
     handed Lefthand = "left"
@@ -114,6 +119,11 @@ refused refusal = case refusal of
 
 dotted :: [Attribute] -> String
 dotted = concatMap (('.' :) . printAttribute)
+
+lodged :: [Attribute] -> Expression -> Maybe Binding
+lodged [attr] (ExFormation bds) = listToMaybe [bd | bd <- bds, attributeFromBinding bd == Just attr]
+lodged (attr : path) (ExFormation bds) = listToMaybe [inner | BiTau attr' inner <- bds, attr' == attr] >>= lodged path
+lodged _ _ = Nothing
 
 data Evaluation
   = EvRun Judgment T.Text
@@ -123,7 +133,7 @@ data Evaluation
   | EvManufactured Int Int
   | EvBoxed Int Expression
   | EvUndressed Int Expression
-  | EvLooped Int Judgment Acyclic Expression Expression
+  | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Expression))
   | EvStuck Int T.Text Judgment Expression
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
@@ -142,8 +152,9 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvMorphed Int Expression
-  | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int)
+  | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int) (Maybe Expression)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
+  | EvUnripe Int (Expression, Expression) (Expression, Expression) Side Attribute
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
   | EvTaken Int Expression
   | EvWorld Expression
@@ -161,7 +172,7 @@ resited from to = record
     record :: Evaluation -> Evaluation
     record (EvFiring depth key judgment site) = EvFiring depth key judgment (moved site)
     record (EvStarted depth judgment site) = EvStarted depth judgment (moved site)
-    record (EvLooped depth judgment mode self site) = EvLooped depth judgment mode self (moved site)
+    record (EvLooped depth judgment mode self site answered) = EvLooped depth judgment mode self (moved site) answered
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (moved site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (moved site)
     record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (moved site)
@@ -186,7 +197,7 @@ tier (EvDelta depth _) = depth
 tier (EvManufactured depth _) = depth
 tier (EvBoxed depth _) = depth
 tier (EvUndressed depth _) = depth
-tier (EvLooped depth _ _ _ _) = depth
+tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvStall depth _) = depth
 tier (EvStuckOn depth _) = depth
@@ -205,8 +216,9 @@ tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
-tier (EvJoined depth _ _ _ _) = depth
+tier (EvJoined depth _ _ _ _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
+tier (EvUnripe depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
 tier (EvTaken depth _) = depth
 tier EvWorld{} = maxBound
@@ -371,10 +383,16 @@ saveEval handle cursor printed printed' report = do
       pure (protocol', Just (indented at (printf "%s := %s" naming datum)))
     written at (EvBoxed _ term) protocol = taking at "boxed" term protocol
     written at (EvUndressed _ term) protocol = taking at "undressed" term protocol
-    written at (EvLooped _ judgment mode self site) protocol = do
+    written at (EvLooped _ judgment mode self site answered) protocol = do
       form <- render self
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "looped %s" form) (remarks ++ [certainty mode]))))
+      (line, notes) <- maybe (pure (printf "looped %s" form, [])) (severed form) answered
+      pure (protocol, Just (indented at (remarked line (remarks ++ certainty mode : notes))))
+      where
+        severed :: String -> (Int, Expression) -> IO (String, [String])
+        severed form (symbol, call) = do
+          made <- printed (abbreviatedInside protocol._made call)
+          pure (printf "looped %s := %s" (printFunction (FnSymbol symbol)) made, [printf "repeats %s" form])
     written at (EvStuck _ key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented at (printf "unanswered %s  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -454,14 +472,20 @@ saveEval handle cursor printed printed' report = do
         (Nothing, Nothing) -> valued counted naming term
         _ -> (,) counted <$> borrowed protocol term
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "morphed %s := %s" naming value)))
-    written at (EvJoined _ condition symbol (left, right) bottom) protocol = do
+    written at (EvJoined _ condition symbol (left, right) bottom raised) protocol = do
       on <- either (pure . labelled protocol) salted condition
       termination <- render ExTermination
-      pure (protocol, Just (indented at (remarked (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right))) [printf "where %s is %s" (printFunction (FnSymbol idx)) termination | Just idx <- [bottom], idx `elem` [left, right]])))
+      raiser <- traverse salted raised
+      pure (protocol, Just (indented at (remarked (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right))) [printf "where %s is %s%s" (printFunction (FnSymbol idx)) termination (maybe "" (printf " raised by %s") raiser :: String) | Just idx <- [bottom], idx `elem` [left, right]])))
     written at (EvDiverged _ left right path refusal) protocol = do
       one <- sided protocol left
       two <- sided protocol right
-      pure (protocol, Just (indented at (printf "diverged %s vs %s  # %s" one two (explained path refusal))))
+      differed <- explained protocol path (snd left) (snd right)
+      pure (protocol, Just (indented at (printf "diverged %s vs %s  # cannot join: %s; cannot fabricate: %s" one two differed (refused refusal))))
+    written at (EvUnripe _ left right side attr) protocol = do
+      one <- sided protocol left
+      two <- sided protocol right
+      pure (protocol, Just (indented at (printf "unripe %s vs %s  # %s" one two (refused (Unripe side attr)))))
     written at (EvFabricated _ left right term) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -503,9 +527,19 @@ saveEval handle cursor printed printed' report = do
     borrowed protocol term = case namedLookup term protocol._named of
       Nothing -> render term
       Just naming -> pure (T.unpack naming)
-    explained :: [Attribute] -> Refusal -> String
-    explained [] refusal = refused refusal
-    explained path refusal = printf "they differ at %s, and %s" (dotted path) (refused refusal)
+    explained :: Protocol -> [Attribute] -> Expression -> Expression -> IO String
+    explained protocol path one two = case reverse path of
+      [] -> printf "the left side is %s and the right side is %s" <$> borrowed protocol one <*> borrowed protocol two
+      attr : _ -> printf "at %s the left side %s and the right side %s" (dotted path) <$> had one <*> had two
+        where
+          had :: Expression -> IO String
+          had side = maybe (pure (printf "has no %s" (printAttribute attr))) (fmap ("has " ++) . bound) (lodged path side)
+          bound :: Binding -> IO String
+          bound (BiTau attr' term) = printf "%s ↦ %s" (printAttribute attr') <$> borrowed protocol term
+          bound (BiVoid attr') = pure (printf "%s ↦ ∅" (printAttribute attr'))
+          bound (BiDelta bytes) = printf "Δ ⤍ %s" <$> render (ExBytes bytes)
+          bound (BiLambda func) = pure (printf "λ ⤍ %s" (printFunction func))
+          bound bd = pure (printBinding bd)
     sided :: Protocol -> (Expression, Expression) -> IO String
     sided _ (_, term@(ExFormation [BiLambda (FnSymbol _)])) = render term
     sided protocol (side@(ExMeta _), _) = spoken protocol side
@@ -635,11 +669,17 @@ saveEvalXml handle cursor printed report = do
         pending :: [(Int, Judgment, Expression)]
         pending = dropWhile (\(level, _, _) -> level > at) nesting._pending
         (kept, closers) = closed at nesting._closing
-    elements at (EvLooped depth judgment mode self site) nesting =
+    elements at (EvLooped depth judgment mode self site Nothing) nesting =
       placed at nesting $ do
         locator <- located depth site
         origin <- sole depth self
         pure (enclosed "looped" (printf "<looped by=\"%s\" match=\"%s\" at=\"%s\"" (opened judgment) (certainty mode) (escapeXML locator)) origin)
+    elements at (EvLooped depth judgment mode self site (Just (symbol, call))) nesting =
+      placed at nesting $ do
+        locator <- located depth site
+        origin <- leaf depth self
+        (object, given) <- called depth call
+        pure (printf "<looped symbol=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\">%s</looped>" (sigma symbol) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) given)
     elements at (EvStuck depth key judgment self) nesting =
       placed at nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
     elements at (EvStall _ key) nesting =
@@ -713,15 +753,22 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
     elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
-    elements at (EvJoined _ condition symbol (left, right) bottom) nesting =
+    elements at (EvJoined depth condition symbol (left, right) bottom raised) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
-        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"%s/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right) (concat [printf " terminator=\"%s\"" (sigma idx) :: String | Just idx <- [bottom], idx `elem` [left, right]]))
+        raiser <- traverse (leaf depth) [term | Just idx <- [bottom], idx `elem` [left, right], Just term <- [raised]]
+        pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"%s%s/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right) (concat [printf " terminator=\"%s\"" (sigma idx) :: String | Just idx <- [bottom], idx `elem` [left, right]]) (concat [printf " raised=\"%s\"" (escapeXML name) :: String | name <- raiser]))
     elements at (EvDiverged depth left right path refusal) nesting =
       placed at nesting $ do
         one <- sided depth nesting left
         two <- sided depth nesting right
-        pure (printf "<diverged left=\"%s\" right=\"%s\"%s reason=\"%s\"/>" (escapeXML one) (escapeXML two) (if null path then "" else printf " at=\"%s\"" (escapeXML (dotted path)) :: String) (escapeXML (refused refusal)))
+        places <- mapM (uncurry (lodging depth path)) [("left", snd left), ("right", snd right)]
+        pure (printf "<diverged left=\"%s\" right=\"%s\"%s reason=\"%s\">%s</diverged>" (escapeXML one) (escapeXML two) (if null path then "" else printf " at=\"%s\"" (escapeXML (dotted path)) :: String) (escapeXML (refused refusal)) (concat places))
+    elements at (EvUnripe depth left right _ attr) nesting =
+      placed at nesting $ do
+        one <- sided depth nesting left
+        two <- sided depth nesting right
+        pure (printf "<unripe left=\"%s\" right=\"%s\" at=\"%s\"/>" (escapeXML one) (escapeXML two) (escapeXML (printAttribute attr)))
     elements at (EvFabricated depth left right term) nesting =
       placed at nesting $ do
         one <- sided depth nesting left
@@ -844,9 +891,19 @@ saveEvalXml handle cursor printed report = do
     anonymous :: Int -> [Binding] -> Naming (String -> String)
     anonymous depth bds = do
       parts <- mapM (part depth) bds
-      let marks = concat (lefts parts)
-          inner = concat (rights parts)
-      pure (\naming -> if null inner then printf "<formed meta=\"%s\"%s/>" naming marks else printf "<formed meta=\"%s\"%s>%s</formed>" naming marks inner)
+      pure (\naming -> gathered "formed" (printf "formed meta=\"%s\"" naming) parts)
+    lodging :: Int -> [Attribute] -> String -> Expression -> Naming String
+    lodging depth [] tag side = (\body -> printf "<%s>%s</%s>" tag (escapeXMLText body) tag) <$> leaf depth side
+    lodging depth path tag side = gathered tag tag <$> mapM (part depth) (maybeToList (lodged path side))
+    gathered :: String -> String -> [Either String String] -> String
+    gathered tag opening parts
+      | null inner = printf "<%s%s/>" opening marks
+      | otherwise = printf "<%s%s>%s</%s>" opening marks inner tag
+      where
+        marks :: String
+        marks = concat (lefts parts)
+        inner :: String
+        inner = concat (rights parts)
     part :: Int -> Binding -> Naming (Either String String)
     part depth (BiTau attr value) = Right <$> (titled depth value >>= lift . attributed (printAttribute attr))
     part _ (BiVoid attr) = pure (Right (printf "<void attr=\"%s\"/>" (escapeXML (printAttribute attr))))

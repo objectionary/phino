@@ -435,11 +435,16 @@ xmirToPhi xmir =
               o <- case doc C.$/ C.element (toName "o") of
                 [single] -> pure single
                 _ -> throwIO (InvalidXMIRFormat "Expected single <o> element in <object>" doc)
-              let pckg =
-                    [ T.unpack t
+              let packages =
+                    [ meta
                     | meta <- doc C.$/ C.element (toName "metas") C.&/ C.element (toName "meta")
                     , let heads = meta C.$/ C.element (toName "head") C.&/ C.content
                     , heads == ["package"]
+                    ]
+              when (length packages > 1) (throwIO (InvalidXMIRFormat "A <metas> can hold only one package meta" doc))
+              let pckg =
+                    [ T.unpack t
+                    | meta <- packages
                     , tail' <- meta C.$/ C.element (toName "tail") C.&/ C.content
                     , t <- T.splitOn "." (T.strip tail')
                     ]
@@ -617,16 +622,10 @@ xmirToApplication derived = xmirToApplication' 0
       let app
             | hasAttr "name" arg = throwIO (InvalidXMIRFormat "Application argument can't have @name attribute" arg)
             | hasAttr "base" arg && hasText arg = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" arg)
-            | not (hasAttr "base" arg) && not (hasText arg) = do
-                bds <- mapM (\node -> xmirToFormationBinding derived node fqn) (arg C.$/ C.element (toName "o"))
+            | not (hasAttr "base" arg) = do
                 key <- asToKey arg idx
-                pure (ExApplication expr (mkArg key (ExFormation bds)))
-            | not (hasAttr "base" arg) && hasText arg = do
-                key <- asToKey arg idx
-                bytes <- getText arg
-                bds <- mapM (\node -> xmirToFormationBinding derived node fqn) (arg C.$/ C.element (toName "o"))
-                let delta = BiDelta (bytesToBts (T.unpack (T.strip (T.pack bytes))))
-                pure (ExApplication expr (mkArg key (ExFormation (delta : bds))))
+                arg' <- xmirToFormation derived arg fqn
+                pure (ExApplication expr (mkArg key arg'))
             | otherwise = do
                 key <- asToKey arg idx
                 arg' <- xmirToExpression derived arg fqn

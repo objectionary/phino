@@ -25,6 +25,7 @@ data Refusal
   = Unnamed
   | Unformed Side
   | Holding Side Attribute
+  | Unripe Side Attribute
   deriving (Eq, Show)
 
 joined :: Expression -> Expression -> Int -> Either [Attribute] (Expression, [(Int, (Int, Int))], Maybe Int, Int)
@@ -98,7 +99,10 @@ joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse 
       Nothing -> (succ spent', (succ spent', bottom, Map.insert pair (succ spent') names, (succ spent', pair) : made))
 
 forked :: Function -> Either Int Bytes -> Expression -> Expression -> Either Refusal Expression
-forked func condition left right = fabricated <$> formed Lefthand left <*> formed Righthand right
+forked func condition left right = do
+  one <- formed Lefthand left
+  two <- formed Righthand right
+  maybe (Right (fabricated one two)) Left (listToMaybe (unripe Lefthand one two ++ unripe Righthand two one))
   where
     formed :: Side -> Expression -> Either Refusal [Binding]
     formed side (ExFormation bds) = maybe (Right bds) (Left . Holding side) (listToMaybe [attr | Just attr <- map attributeFromBinding bds, attr == AtDelta || attr == AtLambda])
@@ -109,11 +113,21 @@ forked func condition left right = fabricated <$> formed Lefthand left <*> forme
         voids :: [Attribute]
         voids = nub (vacant one ++ vacant two)
         branch :: Attribute -> Binding
-        branch attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" one attr, ask "right🌵" two attr]))
+        branch attr = maybe (forking attr) (BiTau attr) (aliased attr)
+        aliased :: Attribute -> Maybe Expression
+        aliased attr = case (bound one attr, bound two attr) of
+          (Just term@(ExDispatch ExXi name), Just other) | term == other && name `elem` attributes one ++ attributes two -> Just term
+          _ -> Nothing
+        bound :: [Binding] -> Attribute -> Maybe Expression
+        bound bds attr = listToMaybe [term | BiTau label term <- bds, label == attr]
+        forking :: Attribute -> Binding
+        forking attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" one attr, ask "right🌵" two attr]))
         inner :: Attribute -> [Attribute]
         inner attr = nub (concat (mapMaybe (`held` attr) [one, two]))
         ask :: Text -> [Binding] -> Attribute -> Binding
         ask name bds attr = BiTau (AtLabel name) (applied (ExDispatch (ExDispatch (ExDispatch ExXi AtRho) (AtLabel name)) attr) (fromMaybe (inner attr) (held bds attr)))
+    unripe :: Side -> [Binding] -> [Binding] -> [Refusal]
+    unripe side bds others = [Unripe side attr | attr <- vacant bds, attr `elem` [label | BiTau label _ <- others]]
     vacant :: [Binding] -> [Attribute]
     vacant bds = [attr | BiVoid attr <- bds, own attr]
     attributes :: [Binding] -> [Attribute]
