@@ -101,4 +101,4 @@ protocol: |
         𝑛·2·12 := 𝑛·2·10.plus( x ↦ 4.0 )
         𝑛·2·13 := ⟦ x ↦ 4.0, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·14 := 𝑛·2·13
-      diverged 𝑛·2·8 vs 𝑛·2·13  # they differ at .ρ, and the join names no otherwise
+      diverged 𝑛·2·8 vs 𝑛·2·13  # cannot join: at .ρ the left side has ρ ↦ 𝑛·2·5 and the right side has ρ ↦ 𝑛·2·10; cannot fabricate: the join names no otherwise

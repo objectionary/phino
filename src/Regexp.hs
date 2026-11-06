@@ -10,6 +10,7 @@ import Data.Char (isDigit, ord)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import qualified Text.Regex.PCRE.ByteString as R
+import qualified Text.Regex.PCRE.Wrap as W
 
 data Regex = Regex R.Regex R.Regex
 
@@ -87,28 +88,27 @@ replaceFirst (Regex regex _) rep input = do
       return $ B.concat [before, replacement, after]
 
 replaceAll :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
-replaceAll (Regex first continuation) rep input = go True input B.empty
+replaceAll (Regex first _) rep input = go 0 B.empty
   where
-    go :: Bool -> B.ByteString -> B.ByteString -> IO B.ByteString
-    go initial bs acc = do
-      let regex = if initial then first else continuation
-      result <- R.execute regex bs
+    go :: Int -> B.ByteString -> IO B.ByteString
+    go cursor acc = do
+      result <- B.useAsCStringLen input (W.wrapMatch cursor first)
       case result of
         Left err -> regexExecutionFailed err
-        Right Nothing -> return $ B.append acc bs
-        Right (Just arr) -> do
-          let (off, len) = arr ! 0
-              (before, rest1) = B.splitAt off bs
-              (_, rest2) = B.splitAt len rest1
-          groups <- extractGroupsWith regex bs
-          let replacement = substituteGroups rep groups
+        Right (Just offsets@((off, end) : _)) -> do
+          let len = end - off
+              before = B.take (off - cursor) (B.drop cursor input)
+              rest = B.drop end input
+              groups = [if start < 0 then B.empty else B.take (finish - start) (B.drop start input) | (start, finish) <- offsets]
+              replacement = substituteGroups rep groups
           if len == 0
             then
-              let next = B.take (utf8Width rest2) rest2
+              let next = B.take (utf8Width rest) rest
                in if B.null next
                     then return $ B.concat [acc, before, replacement]
-                    else go False (B.drop (B.length next) rest2) (B.concat [acc, before, replacement, next])
-            else go False rest2 (B.concat [acc, before, replacement])
+                    else go (end + B.length next) (B.concat [acc, before, replacement, next])
+            else go end (B.concat [acc, before, replacement])
+        Right _ -> return $ B.append acc (B.drop cursor input)
     utf8Width :: B.ByteString -> Int
     utf8Width bytes =
       case B.uncons bytes of
