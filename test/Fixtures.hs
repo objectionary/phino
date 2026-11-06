@@ -18,6 +18,7 @@ module Fixtures
   , recorded'
   , recordedWhole
   , recordedXml
+  , symbolicReduceContext
   , withLambdas
   , withLambdasOf
   , withTemp
@@ -57,6 +58,11 @@ defaultReduceContext :: Expression -> IO ReduceContext
 defaultReduceContext loc = do
   minted <- newIORef 0
   pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty Nothing emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+
+symbolicReduceContext :: Expression -> IO ReduceContext
+symbolicReduceContext loc = do
+  minted <- newIORef 0
+  pure (ReduceContext loc loc Nothing 25 25 (Steps 1000 0) Nothing minted Nothing Nothing 1 Nothing False False True Nothing 0 Morphing [] Map.empty Nothing emptyLambdas (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
 
 linked :: Engine
 linked = fromMaybe yaml compiled
