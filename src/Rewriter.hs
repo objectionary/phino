@@ -263,7 +263,7 @@ applicable expression (rule : rest) ctx@RewriteContext{..} = do
 rewrite :: Expression -> [Step] -> RewriteContext -> IO Rewrittens
 rewrite expr rules ctx@RewriteContext{..} = do
   located <- locatedExpression _locator expr
-  (rewrittens, exceeded) <- _rewrite ((expr, Nothing) :| [], located, Map.empty, False, Nothing) 0
+  (rewrittens, exceeded) <- _rewrite ((expr, Nothing) :| [], located, seenInsert (hashExpression located) located Map.empty, False, Nothing) 0
   pure (NE.reverse rewrittens, exceeded)
   where
     _rewrite :: RewriteState -> Int -> IO Rewrittens
