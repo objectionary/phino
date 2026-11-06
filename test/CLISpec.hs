@@ -208,6 +208,30 @@ spec = do
           ["--pin=" ++ showVersion version, "--pin-file=" ++ file, "rewrite"]
           ["[ERROR]: Invalid option `--pin-file=" ++ file ++ "'"]
 
+  it "fails when --pin doesn't match even with --version" $
+    testCLIFailed
+      ["--pin=9.9.9.9", "--version"]
+      ["Version mismatch: --pin requires '9.9.9.9', but this is phino " ++ showVersion version]
+
+  it "fails when --pin doesn't match even with --help" $
+    testCLIFailed
+      ["--pin=9.9.9.9", "--help"]
+      ["Version mismatch: --pin requires '9.9.9.9', but this is phino " ++ showVersion version]
+
+  it "fails when --pin-file doesn't match even with --version" $
+    withTempDirectory "phino-pin-version" $ \dir -> do
+      createDirectoryIfMissing True dir
+      let file = dir </> "pinned.txt"
+      writeFile file "7.3.0.41\n"
+      testCLIFailed
+        ["--pin-file=" ++ file, "--version"]
+        ["Version mismatch: --pin requires '7.3.0.41', but this is phino " ++ showVersion version]
+
+  it "prints version when --pin matches" $
+    testCLISucceeded
+      ["--pin=" ++ showVersion version, "--version"]
+      [showVersion version]
+
   describe "--hide-rho" $
     forM_
       [

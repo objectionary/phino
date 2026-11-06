@@ -12,7 +12,7 @@ import CLI.Runners
 import CLI.Types
 import Control.Exception.Base (SomeException, fromException, handle, throwIO)
 import Data.Char (isSpace)
-import Data.List (dropWhileEnd)
+import Data.List (dropWhileEnd, isPrefixOf)
 import Data.Version (showVersion)
 import Files (ensuredFile)
 import GHC.IO.Exception (IOErrorType (ResourceVanished))
@@ -32,6 +32,9 @@ runCLI args = handle handler $ do
       let (msg, code) = renderFailure failure "phino"
       case code of
         ExitSuccess -> do
+          -- simpleVersioner / helper leave via ExitSuccess before Success, so
+          -- honour --pin / --pin-file here the same way a subcommand does.
+          checkPin (pinFromArgs args)
           putStrLn msg
           exitWith code
         _ -> do
@@ -80,3 +83,20 @@ runCLI args = handle handler $ do
       | otherwise = throwIO (VersionMismatch expected actual)
       where
         actual = showVersion version
+    -- Read --pin / --pin-file from argv when the parser never returns Success
+    -- (--version, --help). Mutual exclusion of the two flags is enforced on the
+    -- Success path only; here the first one wins.
+    pinFromArgs :: [String] -> Maybe Pin
+    pinFromArgs = go
+      where
+        go [] = Nothing
+        go (a : as)
+          | a == "--pin" = case as of
+              (v : _) -> Just (PinVersion v)
+              [] -> Just (PinVersion "")
+          | "--pin=" `isPrefixOf` a = Just (PinVersion (drop 6 a))
+          | a == "--pin-file" = case as of
+              (f : _) -> Just (PinFile f)
+              [] -> Just (PinFile "")
+          | "--pin-file=" `isPrefixOf` a = Just (PinFile (drop 11 a))
+          | otherwise = go as
