@@ -85,6 +85,7 @@ symbolicCtx acyclic memo minted lambdas locator =
     Morphing
     []
     Map.empty
+    Nothing
     lambdas
     (building linked)
     reduction

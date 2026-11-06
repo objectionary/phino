@@ -23,7 +23,7 @@ import Dataize (Outcome (..), dataize)
 import Deps (Acyclic (..), Evaluation (EvMorphed, EvWorld), Judgment (..), State, Term (TeExpression))
 import Engine (Engine (_normal))
 import Files (allPathsIn)
-import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives)
+import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives, symbolicReduceContext)
 import GHC.Clock (getMonotonicTime)
 import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
@@ -300,9 +300,63 @@ spec = do
       (enter (formation 7) =<< enter (formation 6) =<< enter (formation 5) base{_acyclic = Just Plausible, _maxLoops = 1})
         `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
 
-  describe "places a formation among the objects of the world" $
+  describe "places a formation among the objects of the world" $ do
     it "places a formation repeating the bindings of an object by that object, not by one whose void it fills" $ do
       let body = ExApplication (ExDispatch ExRoot (AtLabel "zuq")) (ArTau (AtLabel "wo") (ExFormation [BiLambda (FnSymbol 7)]))
       base <- defaultReduceContext ExRoot
       fst <$> origin (ExFormation [BiTau (AtLabel "nq") (ExFormation [BiVoid AtPhi]), BiTau (AtLabel "kel") (ExFormation [BiTau AtPhi body])]) base [BiTau AtPhi body]
         `shouldBe` Just (ExDispatch ExRoot (AtLabel "kel"))
+    it "initializes _placed to Nothing in default and symbolic contexts" $ do
+      ctxDefault <- defaultReduceContext ExRoot
+      case ctxDefault._placed of
+        Nothing -> pure ()
+        Just _ -> expectationFailure "expected default _placed to be Nothing"
+      ctxSymbolic <- symbolicReduceContext ExRoot
+      case ctxSymbolic._placed of
+        Nothing -> pure ()
+        Just _ -> expectationFailure "expected symbolic _placed to be Nothing"
+    it "remembers the nearest placed formation in _placed when entering" $ do
+      let inner = ExFormation [BiLambda (FnSymbol 5)]
+          placed = ExFormation [BiTau (AtLabel "bar") (ExFormation [BiLambda (FnSymbol 3)])]
+          world = ExFormation [BiTau (AtLabel "foo") placed]
+      base <- defaultReduceContext world
+      case base._placed of
+        Nothing -> pure ()
+        Just _ -> expectationFailure "expected initial _placed to be Nothing"
+      let ctx = base{_universe = Just world, _acyclic = Just Plausible}
+      entered <- enter placed ctx
+      case entered._placed of
+        Just (form, bds, call) -> do
+          form `shouldBe` placed
+          bds `shouldBe` [BiTau (AtLabel "bar") (ExFormation [BiLambda (FnSymbol 3)])]
+          call `shouldBe` ExDispatch ExRoot (AtLabel "foo")
+        Nothing -> expectationFailure "expected _placed to be populated upon entering placed formation"
+      nested <- enter inner entered
+      case nested._placed of
+        Just (form, _, _) -> form `shouldBe` placed
+        Nothing -> expectationFailure "expected _placed to be preserved from the placed formation"
+    it "keeps _placed as Nothing when entering formations without a universe" $ do
+      let placed = ExFormation [BiTau (AtLabel "bar") (ExFormation [BiLambda (FnSymbol 3)])]
+      base <- defaultReduceContext ExRoot
+      enteredWithoutUniv <- enter placed base{_universe = Nothing, _acyclic = Just Plausible}
+      case enteredWithoutUniv._placed of
+        Nothing -> pure ()
+        Just _ -> expectationFailure "expected _placed to remain Nothing without a universe"
+    it "updates _placed to the new placed formation when entering a second placed formation" $ do
+      let placedOne = ExFormation [BiTau (AtLabel "one") (ExFormation [BiLambda (FnSymbol 1)])]
+          placedTwo = ExFormation [BiTau (AtLabel "two") (ExFormation [BiLambda (FnSymbol 2)])]
+          world = ExFormation [BiTau (AtLabel "f1") placedOne, BiTau (AtLabel "f2") placedTwo]
+      base <- defaultReduceContext world
+      let ctx = base{_universe = Just world, _acyclic = Just Plausible}
+      enteredFirst <- enter placedOne ctx
+      case enteredFirst._placed of
+        Just (form, _, call) -> do
+          form `shouldBe` placedOne
+          call `shouldBe` ExDispatch ExRoot (AtLabel "f1")
+        Nothing -> expectationFailure "expected first _placed to be populated"
+      enteredSecond <- enter placedTwo enteredFirst
+      case enteredSecond._placed of
+        Just (form, _, call) -> do
+          form `shouldBe` placedTwo
+          call `shouldBe` ExDispatch ExRoot (AtLabel "f2")
+        Nothing -> expectationFailure "expected second _placed to update to second placed formation"
