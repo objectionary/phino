@@ -1,3 +1,4 @@
+successfully downloaded text file (SHA: 8b86ca6d2528a6c5767800428dc211aa29875c89)
 <!--
 SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 SPDX-License-Identifier: MIT
@@ -24,7 +25,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.160
+cabal install --overwrite-policy=always phino-0.0.161
 phino --version
 ```
 
@@ -43,7 +44,7 @@ In a [GitHub Actions][gha] workflow, one step downloads the binary for the
 runner and puts it on the `PATH`:
 
 ```yaml
-- uses: objectionary/phino@0.0.160
+- uses: objectionary/phino@0.0.161
   with:
     version-file: phino-version.txt
 - run: phino --version
