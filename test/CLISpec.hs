@@ -1503,17 +1503,21 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ.t):"
                        , "  𝕄(Φ.t):"
-                       , "    𝑛·0·1 := Φ.cyc( x ↦ ⟦⟧ )"
-                       , "    𝑛·0·2 := ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
-                       , "    morphed 𝑛·0·3 := 𝑛·0·2"
-                       , "  boxed 𝑛·0·4 := 𝑛·0·3.φ"
-                       , "  𝕄(𝑛·0·4):"
-                       , "    𝑛·0·5 := Φ.cyc( x ↦ ⟦⟧ )"
-                       , "    𝑛·0·6 := ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
-                       , "    morphed 𝑛·0·7 := 𝑛·0·6"
-                       , "  𝕄(𝑛·0·7.x):"
-                       , "    morphed 𝑛·0·8 := ⟦⟧"
-                       , "  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·8 )  # 𝔻(𝑛·0·4), proven, repeats 𝑛·0·7"
+                       , "    remembered 𝑛·0·1 ≡ Φ.cyc  # ⟦ x ↦ ∅, φ ↦ Φ.cyc( x ) ⟧"
+                       , "    𝑛·0·2 := Φ.cyc( x ↦ ⟦⟧ )"
+                       , "    𝑛·0·3 := ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
+                       , "    remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ ⟦⟧ )"
+                       , "    morphed 𝑛·0·4 := 𝑛·0·3"
+                       , "  boxed 𝑛·0·5 := 𝑛·0·4.φ"
+                       , "  𝕄(𝑛·0·5):"
+                       , "    𝑛·0·6 := Φ.cyc( x ↦ ⟦⟧ )"
+                       , "    𝑛·0·7 := ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
+                       , "    morphed 𝑛·0·8 := 𝑛·0·7"
+                       , "  recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )"
+                       , "  recalled 𝑛·0·1 ⇒ Φ.cyc"
+                       , "  𝕄(𝑛·0·8.x):"
+                       , "    morphed 𝑛·0·9 := ⟦⟧"
+                       , "  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·9 )  # 𝔻(𝑛·0·5), proven, repeats 𝑛·0·8"
                        , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
                        ]
 
@@ -1529,21 +1533,26 @@ spec = do
             `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                        , "<dataize at=\"Φ.t\">"
                        , "  <morph at=\"Φ.t\">"
+                       , "    <remembered meta=\"𝑛·0·1\" as=\"Φ.cyc\"/>"
                        , "    <formed meta=\"𝑒·0·1\"/>"
-                       , "    <applied meta=\"𝑛·0·1\" by=\"morph\" at=\"Φ.t\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></applied>"
-                       , "    <formed meta=\"𝑛·0·2\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></formed>"
-                       , "    <morphed meta=\"𝑛·0·3\">𝑛·0·2</morphed>"
+                       , "    <applied meta=\"𝑛·0·2\" by=\"morph\" at=\"Φ.t\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></applied>"
+                       , "    <formed meta=\"𝑛·0·3\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></formed>"
+                       , "    <applied meta=\"𝑒·0·2\" of=\"𝑛·0·1\"><meta attr=\"x\">𝑒·0·1</meta></applied>"
+                       , "    <remembered of=\"𝑛·0·3\" as=\"𝑒·0·2\"/>"
+                       , "    <morphed meta=\"𝑛·0·4\">𝑛·0·3</morphed>"
                        , "  </morph>"
-                       , "  <boxed meta=\"𝑛·0·4\">𝑛·0·3.φ</boxed>"
-                       , "  <morph at=\"𝑛·0·4\">"
-                       , "    <applied meta=\"𝑛·0·5\" by=\"morph\" at=\"𝑛·0·4\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></applied>"
-                       , "    <formed meta=\"𝑛·0·6\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></formed>"
-                       , "    <morphed meta=\"𝑛·0·7\">𝑛·0·6</morphed>"
+                       , "  <boxed meta=\"𝑛·0·5\">𝑛·0·4.φ</boxed>"
+                       , "  <morph at=\"𝑛·0·5\">"
+                       , "    <applied meta=\"𝑛·0·6\" by=\"morph\" at=\"𝑛·0·5\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></applied>"
+                       , "    <formed meta=\"𝑛·0·7\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></formed>"
+                       , "    <morphed meta=\"𝑛·0·8\">𝑛·0·7</morphed>"
                        , "  </morph>"
-                       , "  <morph at=\"𝑛·0·7.x\">"
-                       , "    <morphed meta=\"𝑛·0·8\">𝑒·0·1</morphed>"
+                       , "  <recalled of=\"𝑛·0·3\" as=\"𝑒·0·2\"/>"
+                       , "  <recalled of=\"𝑛·0·1\" as=\"Φ.cyc\"/>"
+                       , "  <morph at=\"𝑛·0·8.x\">"
+                       , "    <morphed meta=\"𝑛·0·9\">𝑒·0·1</morphed>"
                        , "  </morph>"
-                       , "  <looped symbol=\"𝜎1\" by=\"dataize\" match=\"proven\" at=\"𝑛·0·4\" of=\"𝑛·0·7\" object=\"Φ.cyc\"><with><meta attr=\"x\">𝑛·0·8</meta></with></looped>"
+                       , "  <looped symbol=\"𝜎1\" by=\"dataize\" match=\"proven\" at=\"𝑛·0·5\" of=\"𝑛·0·8\" object=\"Φ.cyc\"><with><meta attr=\"x\">𝑛·0·9</meta></with></looped>"
                        , "  <manufactured meta=\"𝛿·0·1\">𝜎1</manufactured>"
                        , "</dataize>"
                        ]
@@ -1556,7 +1565,7 @@ spec = do
               ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readProtocol path
-          lines records `shouldContain` ["  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·8 )  # 𝔻(𝑛·0·4), plausible, repeats 𝑛·0·7"]
+          lines records `shouldContain` ["  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·9 )  # 𝔻(𝑛·0·5), plausible, repeats 𝑛·0·8"]
 
       it "refuses the flag without a mode" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
@@ -1615,10 +1624,10 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible"] ["40-45-00-00-00-00-00-00"]
 
       it "writes the recursive call it cuts to the protocol as a call of the object" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["      looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # plausible, repeats 𝑛·0·3"])
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["      looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # plausible, repeats 𝑛·0·4"])
 
       it "writes the recursive call it cuts to the XML protocol with the object and the metas of its arguments" $
-        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["      <looped symbol=\"𝜎1\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·0·3\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·1·6</meta></with></looped>"])
+        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["      <looped symbol=\"𝜎1\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·1·6</meta></with></looped>"])
 
     describe "--acyclic at a recursive call through a fork" $ do
       let recursive = "⟦ if(c, a, b) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ξ.c, left🌵 ↦ ξ.a, right🌵 ↦ ξ.b ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.if( c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ), b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
@@ -1639,13 +1648,13 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=1"] ["40-45-00-00-00-00-00-00"]
 
       it "writes the copy it cuts in a side of a fork to the protocol as a call of the object" $
-        recorded "1" "protocolXXXXXX.txt" >>= (`shouldContain` ["        looped 𝜎3 := Φ.down( i ↦ 𝑛·3·6 )  # plausible, repeats 𝑛·0·3"])
+        recorded "1" "protocolXXXXXX.txt" >>= (`shouldContain` ["        looped 𝜎3 := Φ.down( i ↦ 𝑛·3·6 )  # plausible, repeats 𝑛·0·4"])
 
       it "writes the copy it cuts in a side of a fork to the XML protocol with the object and the metas of its arguments" $
-        recorded "1" "protocolXXXXXX.xml" >>= (`shouldContain` ["        <looped symbol=\"𝜎3\" by=\"morph\" match=\"plausible\" at=\"ξ.left🌵\" of=\"𝑛·0·3\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·3·6</meta></with></looped>"])
+        recorded "1" "protocolXXXXXX.xml" >>= (`shouldContain` ["        <looped symbol=\"𝜎3\" by=\"morph\" match=\"plausible\" at=\"ξ.left🌵\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·3·6</meta></with></looped>"])
 
       it "counts the copies the sides of earlier rounds of a fork made under --max-loops=2" $
-        recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          looped 𝜎3 := Φ.down( i ↦ 𝑛·6·6 )  # plausible, repeats 𝑛·0·3"])
+        recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          looped 𝜎3 := Φ.down( i ↦ 𝑛·6·6 )  # plausible, repeats 𝑛·0·4"])
 
     describe "--acyclic at a copy holding a λ" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, down(i) ↦ ⟦ φ ↦ Φ.dataized( Φ.fork( Φ.dataized( Φ.down( ⟦ λ ⤍ 𝜎2 ⟧ ) ), ⟦ λ ⤍ 𝜎3 ⟧ ) ) ⟧, x ↦ Φ.down( ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧"
@@ -1694,8 +1703,8 @@ spec = do
           withStdin recursive $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
-      it "writes the fork it cuts inside a fabricated formation as a call of the object it stands for" $
-        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.p  #"))
+      it "writes the fork it cuts inside a fabricated formation by its symbol alone, since no fact names it" $
+        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6  # 𝔻("))
 
       it "answers the fork it cuts inside a formation fabricated from a fork of the world with a fresh symbol and goes on" $
         withLambdasOf forking $ \file ->
@@ -1739,8 +1748,8 @@ spec = do
                     ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
-      it "writes the loop it cuts inside the nested fork as a call of the nearest object the loop passes through" $
-        recorded >>= (`shouldSatisfy` any (isInfixOf ":= Φ.p  # 𝔻(𝑛·9·10), plausible"))
+      it "writes the loop it cuts inside the nested fork by its symbol alone, since no fact names it" $
+        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎7  # 𝔻(𝑛·9·10), plausible"))
 
       it "dont get stuck above the nested fork it cuts" $
         recorded >>= (`shouldNotSatisfy` any (isInfixOf "stuck L_dataized"))
@@ -2067,21 +2076,24 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ.e):"
                        , "  𝕄(Φ.e):"
-                       , "    morphed 𝑛·0·1 := Φ.make:φ"
-                       , "  boxed 𝑛·0·2 := 𝑛·0·1.φ"
-                       , "  𝕄(𝑛·0·2):"
-                       , "    morphed 𝑛·0·3 := L_make:λ"
-                       , "  𝔼(L_make):  # 𝔻(𝑛·0·2)"
+                       , "    remembered 𝑛·0·1 ≡ Φ.foo  # Φ.make:φ"
+                       , "    morphed 𝑛·0·2 := 𝑛·0·1"
+                       , "  boxed 𝑛·0·3 := 𝑛·0·2.φ"
+                       , "  𝕄(𝑛·0·3):"
+                       , "    remembered 𝑛·0·4 ≡ Φ.make  # L_make:λ"
+                       , "    morphed 𝑛·0·5 := 𝑛·0·4"
+                       , "  𝔼(L_make):  # 𝔻(𝑛·0·3)"
                        , "    𝑛·1·1 := Φ.bytes( φ ↦ 𝜎1:λ ):φ  # 𝑛"
                        , "    𝕄(𝑛·1·1):"
                        , "      morphed 𝑛·1·2 := Φ.bytes( φ ↦ 𝜎1:λ ):φ"
                        , "    𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)"
-                       , "  boxed 𝑛·0·4 := 𝑛·1·3.φ"
-                       , "  𝕄(𝑛·0·4):"
-                       , "    𝑛·0·5 := Φ.bytes( φ ↦ 𝜎1:λ )"
-                       , "    𝑛·0·6 := 𝜎1:λ:φ"
-                       , "    morphed 𝑛·0·7 := 𝑛·0·6"
-                       , "  boxed 𝑛·0·8 := 𝑛·0·7.φ"
+                       , "    remembered 𝑛·1·3 ≡ 𝑛·0·4"
+                       , "  boxed 𝑛·0·6 := 𝑛·1·3.φ"
+                       , "  𝕄(𝑛·0·6):"
+                       , "    𝑛·0·7 := Φ.bytes( φ ↦ 𝜎1:λ )"
+                       , "    𝑛·0·8 := 𝜎1:λ:φ"
+                       , "    morphed 𝑛·0·9 := 𝑛·0·8"
+                       , "  boxed 𝑛·0·10 := 𝑛·0·9.φ"
                        , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
                        ]
 
@@ -3717,11 +3729,16 @@ spec = do
                      , "    </morph>"
                      , "    <bound meta=\"𝑛1·1\">01-</bound>"
                      , "    <morph at=\"ξ.b\">"
-                     , "      <applied meta=\"𝑛·1·2\" by=\"morph\" at=\"ξ.b\" of=\"Φ.step\"><ref attr=\"tup\">Φ.items.tail</ref></applied>"
-                     , "      <formed meta=\"𝑛·1·3\" of=\"Φ.step\"><ref attr=\"tup\">Φ.items.tail</ref></formed>"
-                     , "      <morphed meta=\"𝑛·1·4\">𝑛·1·3</morphed>"
+                     , "      <remembered meta=\"𝑛·1·2\" as=\"Φ.step\"/>"
+                     , "      <applied meta=\"𝑛·1·3\" by=\"morph\" at=\"ξ.b\" of=\"Φ.step\"><ref attr=\"tup\">Φ.items.tail</ref></applied>"
+                     , "      <formed meta=\"𝑛·1·4\" of=\"Φ.step\"><ref attr=\"tup\">Φ.items.tail</ref></formed>"
+                     , "      <applied meta=\"𝑒·1·1\" of=\"𝑛·1·2\"><ref attr=\"tup\">Φ.items.tail</ref></applied>"
+                     , "      <remembered of=\"𝑛·1·4\" as=\"𝑒·1·1\"/>"
+                     , "      <morphed meta=\"𝑛·1·5\">𝑛·1·4</morphed>"
                      , "    </morph>"
-                     , "    <bound meta=\"𝑛2·1\">𝑛·1·4</bound>"
+                     , "    <bound meta=\"𝑛2·1\">𝑛·1·5</bound>"
+                     , "    <recalled of=\"𝑛·1·4\" as=\"𝑒·1·1\"/>"
+                     , "    <recalled of=\"𝑛·1·2\" as=\"Φ.step\"/>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol attr=\"tup\">𝜎1</symbol></with></deferred>"
                      , "    <diverged left=\"01-\" right=\"𝜎3\" at=\".Δ\" reason=\"the join names no otherwise\"><left Δ=\"01-\"/><right/></diverged>"
                      , "  </evaluate>"
@@ -3734,7 +3751,7 @@ spec = do
 
       it "names an argument of a deferred copy that is no bare symbol by the meta its morph bound, though an element formed it" $ do
         records <- deferred [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ ⟦ z ↦ Φ ⟧ ), λ ⤍ L_fork ⟧ ⟧"
-        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·1·7</meta></with></deferred>"]
+        records `shouldContain` ["    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·1·8</meta></with></deferred>"]
 
       it "names a deferred copy of a formation the world does not declare by the element that formed it" $ do
         records <- deferred [] "⟦ wrap(v) ↦ ⟦⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.wrap( v ↦ ⟦ inner(x) ↦ ⟦ φ ↦ x.next ⟧ ⟧ ).v.inner( x ↦ Φ.items.tail ), λ ⤍ L_fork ⟧ ⟧"
