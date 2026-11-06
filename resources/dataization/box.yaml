@@ -2,16 +2,20 @@
 # SPDX-License-Identifier: MIT
 ---
 name: box
-match: ⟦𝐵1, φ ↦ 𝑒2, 𝐵2⟧
+match: ⟦𝐵1⟧
 universe: 𝑒1
 conclusion: 𝛿1
 when:
-  disjoint:
-    - [Δ, λ]
-    - [𝐵1, 𝐵2]
+  and:
+    - in:
+        - φ
+        - 𝐵1
+    - disjoint:
+        - [Δ, λ]
+        - [𝐵1]
 premises:
   - n-result: 𝑛1
-    normalize: ⟦𝐵1, φ ↦ 𝑒2, 𝐵2⟧.φ
+    normalize: ⟦𝐵1⟧.φ
   - d-result: 𝛿1
     dataize:
       - 𝑛1

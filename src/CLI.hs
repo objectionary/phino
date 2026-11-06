@@ -42,8 +42,8 @@ runCLI args = handle handler $ do
   setLogger _command
   case _command of
     CmdRewrite opts -> runRewrite opts
-    CmdDataize opts -> runDataize opts
-    CmdMorph opts -> runMorph opts
+    CmdDataize opts -> runDataize args opts
+    CmdMorph opts -> runMorph args opts
     CmdExplain opts -> runExplain opts
     CmdMerge opts -> runMerge opts
     CmdMatch opts -> runMatch opts

@@ -12,7 +12,6 @@ module Sugar (toSalty, withSugarType, withoutRho, revealXi, SugarType (..), ToSa
 import AST
 import Bytes (nonFiniteBts, numToBts, strToBts, unescapeStr)
 import CST
-import Misc (toDouble)
 
 withSugarType :: (ToSalty a) => SugarType -> a -> a
 withSugarType SWEET node = node
@@ -39,6 +38,9 @@ withoutRho sugar = goExpr
     goExpr EX_SINGLE{..}
       | isRho pair = goExpr formation
       | otherwise = EX_SINGLE (goPair pair) space (goExpr formation)
+    goExpr EX_NUMBER{..} = EX_NUMBER num tab (filter (not . isRhoArgument) rhos)
+    goExpr EX_STRING{..} = EX_STRING str tab (filter (not . isRhoArgument) rhos)
+    goExpr EX_NONFINITE{..} = EX_NONFINITE global nonfinite tab (filter (not . isRhoArgument) rhos)
     goExpr expr = expr
     goBinding :: BINDING -> BINDING
     goBinding empty@BI_EMPTY{} = empty
@@ -115,6 +117,9 @@ withoutRho sugar = goExpr
     isRho PA_TAU{attr = AT_RHO _} = True
     isRho PA_FORMATION{attr = AT_RHO _} = True
     isRho _ = False
+    isRhoArgument :: Argument -> Bool
+    isRhoArgument (ArTau AtRho _) = True
+    isRhoArgument _ = False
 
 revealXi :: SugarType -> EXPRESSION -> EXPRESSION
 revealXi _ = goExpr
@@ -189,7 +194,7 @@ instance ToSalty EXPRESSION where
     saltifyPrimitive
       (toCST (BaseObject "number") (indent + 1, EOL))
       (toCST (BaseObject "bytes") (indent + 2, EOL))
-      (toCST (ExFormation [BiDelta (numToBts (either toDouble id num))]) (indent + 2, EOL))
+      (toCST (ExFormation [BiDelta (numToBts num)]) (indent + 2, EOL))
       tab
       rhos
   toSalty EX_NONFINITE{nonfinite, tab = tab@TAB{..}, rhos} =

@@ -40,7 +40,7 @@ spec = do
     it "answers with the data the rule 'delta' finds" $
       snd <$> dataizationSpine (dataizationRule "delta") `shouldBe` Right (Answered (Dataization, "delta") (BtMeta "d1"))
     it "labels the step of the rule 'box' by its own name" $
-      snd <$> dataizationSpine (dataizationRule "box") `shouldBe` Right (Onward (Normalized (Dataization, "box")) (ExDispatch (ExFormation [BiMeta "B1", BiTau AtPhi (ExMeta "e2"), BiMeta "B2"]) AtPhi) (ExMeta "e1"))
+      snd <$> dataizationSpine (dataizationRule "box") `shouldBe` Right (Onward (Normalized (Dataization, "box")) (ExDispatch (ExFormation [BiMeta "B1"]) AtPhi) (ExMeta "e1"))
     it "labels the step of the rule 'fire' by its 'evaluate'" $
       snd <$> dataizationSpine (dataizationRule "fire") `shouldBe` Right (Onward (Taken (Evaluation, "evaluate")) (ExMeta "n1") (ExMeta "e1"))
     it "labels the step of the rule 'none' by its 'dataize'" $

@@ -235,7 +235,7 @@ optPartial :: Parser Bool
 optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on a λ function that cannot fire (no entry of the --symbolic file answers it), leave it in place and print the residual 𝜑-program")
 
 optAcyclic :: Parser (Maybe Acyclic)
-optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again) instead of going round until --max-steps runs out, and leave the term in place the way --partial leaves a λ function that cannot fire; 'proven' takes it for the same one up to a renaming of symbols, 'plausible' also when it holds the earlier one under wrappers it gained, such as a growing accumulator"))
+optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again) instead of going round until --max-steps runs out, answering a copy of an object binding φ with a fresh symbol and leaving any other term in place the way --partial leaves a λ function that cannot fire; 'proven' takes it for the same one up to a renaming of symbols, 'plausible' also when it holds the earlier one under wrappers it gained, such as a growing accumulator"))
   where
     parseAcyclic :: ReadM Acyclic
     parseAcyclic = eitherReader $ \mode -> case filter ((== map toLower mode) . certainty) [minBound .. maxBound] of
@@ -257,11 +257,15 @@ optSymbolic =
             <> help
               "Path to the YAML file of λ functions this run may fire, each entry keyed by a regular expression \
               \over λ names under \"λ\", naming the operands it brings down to data under \"dataize\", the ones \
-              \it reduces to a normal form under \"morph\", the terms it fires through 𝔼 under \"evaluate\", \
+              \it reduces to a normal form under \"morph\", the ones it reduces to a normal form and takes the \
+              \φ of while it is a formation binding φ alone under \"undress\", the terms it fires through 𝔼 \
+              \under \"evaluate\", \
               \the copies one of whose arguments reads to a bare symbol it answers with a fresh symbol under \
               \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", the terms \
               \it rewrites with rules spelled as in a rule file under \"rewrite\", the terms it keeps with \
-              \every datum they hold turned into a fresh symbol under \"symbolize\", and \
+              \every datum they hold turned into a fresh symbol under \"symbolize\", the pair of terms whose \
+              \bare symbol it casts into the shape of the other under \"cast\", the λ functions that only \
+              \raise, whose objects pass every line as they are and join as ⊥, under \"terminators\", and \
               \answering with the term under \"𝑛\", or joining under \"join\" the two sides of a datum of \
               \\"dataize\" into one term, with a fresh symbol where they differ"
         )
@@ -305,7 +309,9 @@ optAbridged =
               \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', while every byte string \
               \it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
         )
-        <|> option auto (long "abridged" <> metavar "WIDTH" <> internal)
+        <|> option
+          (boundedIntOption >>= validateIntOption (> 0) "--abridged must be positive")
+          (long "abridged" <> metavar "WIDTH" <> internal)
     )
 
 optAbridgedData :: Parser Bool
@@ -323,7 +329,7 @@ optShuffle = switch (long "shuffle" <> help "Shuffle rules before applying")
 optSeed :: Parser Int
 optSeed =
   option
-    auto
+    boundedIntOption
     ( long "seed"
         <> metavar "SEED"
         <> help "Seed for the random generator that mints fresh synthetic names, making output reproducible across runs"

@@ -21,7 +21,6 @@ import qualified Data.Text.Encoding.Error as T
 import Deps
 import Logger (logDebug)
 import Matcher
-import Misc
 import Parser (ParserException (CouldNotParseAttribute), parseAttributeThrows, parseNumberThrows)
 import Printer (printAttribute, printExpression, printExtraArg)
 import Random (randomString)
@@ -67,11 +66,23 @@ argToString :: Y.ExtraArgument -> Subst -> IO String
 argToString arg subst = argToBytes arg subst <&> btsToUnescapedStr
 
 argToNumber :: Y.ExtraArgument -> Subst -> IO Double
-argToNumber arg subst = do
-  bts <- argToBytes arg subst
-  case btsSize bts of
-    8 -> pure (either toDouble id (btsToNum bts))
-    _ -> throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
+argToNumber (Y.ArgBytes bytes) subst = buildBytesThrows bytes subst >>= number
+argToNumber arg@(Y.ArgExpression expr) subst = do
+  expr' <- buildExpressionThrows expr subst
+  case expr' of
+    DataNumber _ -> dataized
+    DataObject "bytes" _ -> dataized
+    _ -> throwIO (userError "Only numbers and bytes are supported by 'sum' function")
+  where
+    dataized = do
+      TeBytes bts <- _dataize [arg] subst
+      number bts
+argToNumber arg _ = throwIO (userError (printf "Can't extract a number from given argument: %s" (printExtraArg arg)))
+
+number :: Bytes -> IO Double
+number bts = case btsSize bts of
+  8 -> pure (btsToNum bts)
+  _ -> throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
 
 _contextualize :: BuildTermMethod
 _contextualize = contextualizing contextualize
@@ -147,11 +158,10 @@ _sed args subst = do
           let (pat, rest, separator) = nextUntilSlash body B.empty False
            in if separator
                 then
-                  let (rep, flag, _) = nextUntilSlash rest B.empty True
-                   in case flag of
-                        "g" -> pure (pat, rep, True)
-                        "" -> pure (pat, rep, False)
-                        _ -> throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
+                  let (rep, flag, sealed) = nextUntilSlash rest B.empty True
+                   in if sealed && flag `elem` ["", "g"]
+                        then pure (pat, rep, flag == "g")
+                        else throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
                 else throwIO (userError "sed pattern must be in format s/pat/rep/[g]")
         _ -> throwIO (userError "sed pattern must start with s/")
     nextUntilSlash :: B.ByteString -> B.ByteString -> Bool -> (B.ByteString, B.ByteString, Bool)
@@ -196,7 +206,7 @@ _string [Y.ArgExpression expr] subst = do
     DataNumber bts
       | btsSize bts /= 8 ->
           throwIO (userError (printf "Expected 8 bytes for a number, got %d" (btsSize bts)))
-      | otherwise -> pure (DataString (strToBts (either show show (btsToNum bts))))
+      | otherwise -> pure (DataString (strToBts (spelled (btsToNum bts))))
     DataString bts -> pure (DataString bts)
     ex ->
       throwIO
@@ -207,6 +217,13 @@ _string [Y.ArgExpression expr] subst = do
             )
         )
   pure (TeExpression str)
+  where
+    spelled :: Double -> String
+    spelled num
+      | isNaN num || isInfinite num || isNegativeZero num = show num
+      | otherwise = case properFraction num :: (Integer, Double) of
+          (whole, 0.0) | whole >= toInteger (minBound :: Int) && whole <= toInteger (maxBound :: Int) -> show whole
+          _ -> show num
 _string [Y.ArgAttribute attr] subst = do
   attr' <- buildAttributeThrows attr subst
   pure (TeExpression (DataString (strToBts (printAttribute attr'))))

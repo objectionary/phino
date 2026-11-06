@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The operand of 'morph' comes to a formation binding φ alone, whose φ is a
+# formation binding φ alone too, so one dispatch of φ would leave it one φ
+# short of what it wraps (#2174). A line of 'undress' reading that meta
+# dispatches φ off the term and morphs that, and does it again while the term
+# is such a formation, so it stops at the formation binding 't'. The protocol
+# writes an 'undressed' line and a 𝕄 block named after it for each pass.
+symbolic: |
+  - λ: L_peel
+    morph:
+      𝑛1: $.x
+    undress:
+      𝑛2: 𝑛1
+    𝑛: 𝑛2
+location: 'Q.y'
+input: '⟦ z ↦ ⟦ t ↦ ⟦ k ↦ ∅ ⟧ ⟧, y ↦ ⟦ λ ⤍ L_peel, x ↦ ⟦ φ ↦ ⟦ φ ↦ Φ.z ⟧ ⟧ ⟧.t ⟧'
+result: '⟦ k ↦ ∅ ⟧'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_peel):
+      𝕄(ξ.x):
+        morphed 𝑛·1·1 := Φ.z:φ:φ
+      𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.x)
+      undressed 𝑛·1·2 := 𝑛·1·1.φ
+      𝕄(𝑛·1·2):
+        morphed 𝑛·1·3 := Φ.z:φ
+      undressed 𝑛·1·4 := 𝑛·1·3.φ
+      𝕄(𝑛·1·4):
+        morphed 𝑛·1·5 := ⟦ t(k) ↦ ⟦⟧ ⟧
+      𝑛2·1 := 𝑛·1·5  # undress(𝑛1)
+      𝑛·1·6 := 𝑛·1·5  # 𝑛
+      𝕄(𝑛·1·6):
+        morphed 𝑛·1·7 := 𝑛·1·5
+      𝑛·1·8 := 𝑛·1·7  # 𝕄(𝑛·1·6)
+    morphed 𝑛·0·1 := ∅:k

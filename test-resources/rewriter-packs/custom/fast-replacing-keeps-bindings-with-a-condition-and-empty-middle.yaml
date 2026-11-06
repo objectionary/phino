@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '[[ a -> [[ ]], b -> [[ ]] ]]'
+output: '⟦ y ↦ ξ, a ↦ ⟦⟧, b ↦ ⟦⟧ ⟧'
+rules:
+  custom:
+    - name: insert-y
+      pattern: '[[ !B1, !B2 ]]'
+      result: '[[ !B1, y -> $, !B2 ]]'
+      when:
+        eq: [1, 1]

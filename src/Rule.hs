@@ -17,7 +17,7 @@ import Builder
   , buildExpressionThrows
   )
 import Bytes (btsToUnescapedStr)
-import Control.Exception (Exception (displayException))
+import Control.Exception (Exception (displayException), throwIO)
 import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
 import Data.Foldable (foldlM)
@@ -95,12 +95,18 @@ normalHeld _ (ExAny _) = False
 normalHeld test expr = test expr
 
 _or :: [Y.Condition] -> Subst -> RuleContext -> IO [Subst]
-_or [] _ _ = pure []
-_or (cond : rest) subst ctx = do
-  met <- meetCondition' cond subst ctx
-  if null met
-    then _or rest subst ctx
-    else pure met
+_or conds subst ctx = loop Nothing conds
+  where
+    loop :: Maybe SomeException -> [Y.Condition] -> IO [Subst]
+    loop raised [] = maybe (pure []) throwIO raised
+    loop raised (cond : rest) = do
+      met <- try (meetCondition' cond subst ctx) :: IO (Either SomeException [Subst])
+      case met of
+        Right [] -> loop raised rest
+        Right mets -> pure mets
+        Left err -> do
+          logDebug (printf "Condition %s raised and was treated as not met: %s" (show cond) (displayException err))
+          loop (Just err) rest
 
 _and :: [Y.Condition] -> Subst -> RuleContext -> IO [Subst]
 _and [] subst _ = pure [subst]

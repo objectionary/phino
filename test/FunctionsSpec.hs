@@ -164,6 +164,12 @@ spec = describe "Functions" $ do
         , \term -> expectExpression term (DataString (strToBts "5"))
         )
       ,
+        ( "string keeps the fraction of a number"
+        , "string"
+        , [ArgExpression (DataNumber (numToBts (-0.375)))]
+        , \term -> expectExpression term (DataString (strToBts "-0.375"))
+        )
+      ,
         ( "string keeps a string expression as is"
         , "string"
         , [ArgExpression (DataString (strToBts "already"))]
@@ -221,6 +227,12 @@ spec = describe "Functions" $ do
         , "sed pattern must be in format s/pat/rep/[g]"
         )
       ,
+        ( "sed fails when the replacement has no closing separator"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/a/b"))]
+        , "sed pattern must be in format s/pat/rep/[g]"
+        )
+      ,
         ( "sed fails when the pattern is only a delimiter"
         , "sed"
         , [ArgExpression (DataString (strToBts "hello")), ArgExpression (DataString (strToBts "s/"))]
@@ -267,6 +279,12 @@ spec = describe "Functions" $ do
         , "sum"
         , [ArgExpression (DataNumber (BtMany ["68", "65", "6C", "6C", "6F"]))]
         , "Expected 8 bytes for a number, got 5"
+        )
+      ,
+        ( "sum fails on a string even if it is 8 bytes long"
+        , "sum"
+        , [ArgExpression (DataString (strToBts "abcdefgh"))]
+        , "Only numbers and bytes are supported by 'sum' function"
         )
       , ("sum fails on an empty argument list", "sum", [], "sum() requires at least 1 argument")
       ,

@@ -22,5 +22,11 @@ result: '⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧
 protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
-      𝛿1·1 := 𝔻(𝜎1:λ)  # 𝔻(ξ.c)
-      diverged 01-:Δ:φ vs 02-:Δ:φ  # they differ at .φ.Δ, and the join names no otherwise
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
+      𝕄(ξ.a):
+        morphed 𝑛·1·1 := 01-:Δ:φ
+      𝕄(ξ.b):
+        morphed 𝑛·1·2 := 02-:Δ:φ
+      diverged 𝑛·1·1 vs 𝑛·1·2  # cannot join: at .φ.Δ the left side has Δ ⤍ 01- and the right side has Δ ⤍ 02-; cannot fabricate: the join names no otherwise

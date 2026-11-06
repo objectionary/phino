@@ -5,4 +5,4 @@
 expression: |
   [[ x(y) -> [[ a -> 42 ]] ]]
 result: |-
-  ⟦ x(y) ↦ 42:a ⟧
+  ⟦ x(y) ↦ 42.0:a ⟧

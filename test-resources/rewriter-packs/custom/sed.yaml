@@ -33,7 +33,7 @@ rules:
           args: ['!e10', '"s/([0-9]+)/$1!/g"']
         - meta: '!e21'
           function: sed
-          args: ['!e11', '"s/(hi) \\((jeff)\\)/$2 $1"']
+          args: ['!e11', '"s/(hi) \\((jeff)\\)/$2 $1/"']
         - meta: '!e5'
           function: sed
           args: ['!e1', '"s/\\s/(/g"']
