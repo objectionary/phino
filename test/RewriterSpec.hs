@@ -218,8 +218,8 @@ spec = do
           [ direct "ab" False (\_ expr -> [ExFormation [BiTau (AtLabel "b") ExXi] | ExFormation [BiTau (AtLabel "a") ExXi] <- [expr]])
           , direct "ba" False (\_ expr -> [ExFormation [BiTau (AtLabel "a") ExXi] | ExFormation [BiTau (AtLabel "b") ExXi] <- [expr]])
           ]
-        context locator some =
-          RewriteContext locator 25 25 False Nothing (building linked) (_normal linked) (every some) MtDisabled Nothing dontSaveStep dontSaveMade
+        context cycles locator some =
+          RewriteContext locator 25 cycles False Nothing (building linked) (_normal linked) (every some) MtDisabled Nothing dontSaveStep dontSaveMade
         looping exc = "looping" `isInfixOf` show (exc :: SomeException)
     it "catches a loop that comes back to the term the run started from" $ do
       forM_
@@ -228,11 +228,11 @@ spec = do
         , ("⟦ a ↦ ξ ⟧", ExFormation [BiTau (AtLabel "a") ExXi], reverse steps)
         , ("⟦ b ↦ ξ ⟧", ExFormation [BiTau (AtLabel "b") ExXi], reverse steps)
         ]
-        (\(_, start, some) -> rewrite start some (context ExRoot some) `shouldThrow` looping)
+        (\(_, start, some) -> rewrite start some (context 25 ExRoot some) `shouldThrow` looping)
       rewrite
         (ExFormation [BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "a") ExXi])])
         steps
-        (context (ExDispatch ExRoot (AtLabel "x")) steps)
+        (context 1 (ExDispatch ExRoot (AtLabel "x")) steps)
         `shouldThrow` looping
 
   describe "rewrite packs" $ do
