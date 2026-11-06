@@ -428,8 +428,8 @@ alpha = do
 argument :: Parser Argument
 argument =
   choice
-    [ ArAlpha <$> try alpha <*> tauValue
-    , ArTau <$> attribute <*> tauValue
+    [ ArAlpha <$> try alpha <* arrow <*> expression
+    , ArTau <$> attribute <* arrow <*> expression
     ]
     <?> "argument"
 
