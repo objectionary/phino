@@ -170,7 +170,11 @@ later dispatch on `tag` must find it (`owned` of `Evaluate.hs`, #2265). A
 formation `origin` finds no object of the world for, such as one written in
 place as `⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2 )`, holds no attribute of its own, so
 the line fires it (#2267), since what it does depends on the term and the
-world alone, never on what happened to the term before (#2270). Any
+world alone, never on what happened to the term before (#2270). Of the
+objects a formation fits, `origin` takes one whose bindings it repeats
+exactly before one whose voids it fills, so a copy of
+`p ↦ ⟦ φ ↦ Φ.bool(…).if(…) ⟧` is placed as `Φ.p` and not as a `Φ.num`
+holding that φ, and a loop cut at it is named `looped 𝜎5 := Φ.p` (#2281). Any
 other term, such as one `--partial` parked, gets the line stuck, unless the
 entry joins, where `kindled` of `Evaluate.hs` passes it on as it is, since a
 join compares any two terms (#1999). A `stay` line binds its meta to the term
@@ -460,11 +464,9 @@ Where 𝔻 or an `evaluate` line is about to enter a copy holding a λ, such as
 one of an atom whose operand dataizes the call again, `sever` answers it the
 same way (#2272, #2275). A formation holding a λ that no object of the world
 was made of, such as the φ of a formation a join fabricated, is answered
-the same way when the memo knows what its ρ stands for (`vouched` of
-`Morph.hs`, #2278): a join vouches that the formation it fabricates stands for
-the copy it fired or for what that copy stands for, and a firing vouches that
-the normal form of an operand stands for the path of the world or the copy
-its path from `$` leads to, so the cut is named after that call, as
+the same way, named after the nearest copy the frames above it entered that
+`origin` places (`_placed` of `ReduceContext`, #2278, #2285), whatever fork
+stands between them, so the cut is named after that call, as
 `looped 𝜎6 := Φ.p`.
 The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
 such a copy the same way where the operand comes to one that repeats the
