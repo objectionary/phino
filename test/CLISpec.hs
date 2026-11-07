@@ -461,6 +461,16 @@ spec = do
           , ["--label option can stay together with --output=latex only"]
           )
         ,
+          ( "with a '%' in --meet-prefix and --output=latex"
+          , ["rewrite", "--meet-prefix=a%b", "--output=latex"]
+          , ["The --meet-prefix option must contain only letters, numbers, colons, periods, underscores, and hyphens"]
+          )
+        ,
+          ( "with a '}' in --meet-prefix and --output=latex"
+          , ["rewrite", "--meet-prefix=a}b", "--output=latex"]
+          , ["The --meet-prefix option must contain only letters, numbers, colons, periods, underscores, and hyphens"]
+          )
+        ,
           ( "with an unsafe --label and --output=latex"
           , ["rewrite", "--label=eq:bad%tag", "--output=latex"]
           , ["The --label option must contain only letters, numbers, colons, periods, underscores, and hyphens"]
