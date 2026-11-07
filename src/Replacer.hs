@@ -40,7 +40,7 @@ replaceArgument (ArAlpha alpha expr, ptns, repls) func =
 replaceExpression' :: ReplaceExpressionFunc'
 replaceExpression' state@(expr, ptn : _ptns, repl : _repls)
   | inert expr && not (inert ptn) = state
-  | expr == ptn && repl expr == expr = descend (expr, _ptns, _repls)
+  | expr == ptn && repl expr == expr = replaceExpression' (expr, _ptns, _repls)
   | expr == ptn = let (ptns', repls') = swallowed expr (_ptns, _repls) in replaceExpression' (repl expr, ptns', repls')
   | otherwise = descend state
   where

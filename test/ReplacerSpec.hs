@@ -211,6 +211,13 @@ spec = do
         , [ExDispatch ExRoot (AtLabel "z"), ExTermination]
         , ExDispatch ExRoot (AtLabel "z")
         )
+      ,
+        ( "a match left as it is still lets the next match at the same place change it"
+        , ExFormation []
+        , [ExFormation [], ExFormation []]
+        , [ExFormation [], ExRoot]
+        , ExRoot
+        )
       ]
 
   describe "replace expression fast: ([Expression], [Expression]) => Expression" $
