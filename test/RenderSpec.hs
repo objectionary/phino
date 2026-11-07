@@ -386,6 +386,18 @@ spec = do
       ( render (EXTRA (ARG_EXPR xiExpr) "evaluate" [ARG_ATTR (AT_LABEL "n")])
           `shouldBe` "ξ \\coloneqq \\phinoEvaluate{ n }"
       )
+    forM_
+      [ ("number", "\\phinoNumber{ n }")
+      , ("string", "\\phinoString{ n }")
+      , ("sum", "\\phinoSum{ n }")
+      , ("tau", "\\phinoTau{ n }")
+      , ("random-tau", "\\randomTau{ n }")
+      ]
+      ( \(fn, expected) ->
+          it
+            (fn ++ " does not collide with a TeX primitive or symbol")
+            (render (EXTRA (ARG_EXPR xiExpr) fn [ARG_ATTR (AT_LABEL "n")]) `shouldBe` "ξ \\coloneqq " <> expected)
+      )
     it
       "any other function becomes its own backslash macro"
       ( render (EXTRA (ARG_EXPR xiExpr) "dataize" [ARG_ATTR (AT_LABEL "n")])
