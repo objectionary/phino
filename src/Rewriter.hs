@@ -24,6 +24,7 @@ import Deps
 import Locator (locatedExpression, withLocatedExpression)
 import Logger (logDebug)
 import Matcher (Subst, sites)
+import Metas (Metas (..))
 import Must (Must (..), exceedsUpperBound, inRange)
 import Printer (printExpression)
 import Replacer (ReplaceExpressionFunc, replaceExpression, replaceExpressionFast)
@@ -135,7 +136,12 @@ fast (ExFormation _pbds@(pbd : pbds)) (ExFormation _rbds@(rbd : rbds)) =
     && last pbds == last rbds
     && not (hasMetaBindings (init pbds))
     && not (hasMetaBindings (init rbds))
+    && not (repeated pbd)
+    && not (repeated (last pbds))
   where
+    repeated :: Binding -> Bool
+    repeated (BiMeta name) = length (filter (== name) (metas _pbds)) > 1
+    repeated _ = False
     startsAndEndsWithMeta :: [Binding] -> Bool
     startsAndEndsWithMeta [] = False
     startsAndEndsWithMeta bds@(bd : _) =

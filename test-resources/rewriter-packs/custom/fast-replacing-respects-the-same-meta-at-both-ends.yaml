@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '[[ a -> [[ ]], x -> [[ ]], k -> [[ x -> [[ ]] ]] ]]'
+output: |-
+  ⟦
+    a ↦ ⟦⟧,
+    x ↦ ⟦⟧,
+    k ↦ ⟦ y ↦ ⟦⟧ ⟧
+  ⟧
+rules:
+  custom:
+    - name: rename-x-between-equal-sides
+      pattern: '[[ !B1, x -> !e1, !B1 ]]'
+      result: '[[ !B1, y -> !e1, !B1 ]]'
