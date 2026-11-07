@@ -1,12 +1,13 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
 module YamlSpec where
 
-import AST (Alpha, Attribute, Binding, Bytes, Expression (ExMeta, ExRoot))
+import AST (Alpha, Attribute (AtLabel), Binding (BiMeta), Bytes, Expression (ExMeta, ExRoot))
 import Control.Exception (Exception (displayException), SomeException)
 import Control.Monad
 import Data.Either (isLeft, isRight)
@@ -265,6 +266,12 @@ spec = do
     it "decodes 'formation: <expr>' into IsFormation" $
       case (decodeYaml' "formation: 'Q'" :: Either Yaml.ParseException Condition) of
         Right cond -> cond `shouldBe` IsFormation ExRoot
+        Left err -> expectationFailure (Yaml.prettyPrintParseException err)
+
+  describe "parses a 'disjoint' condition with a single binding" $
+    it "decodes a bare binding the way 'in' does" $
+      case (decodeYaml' "disjoint: [[zzz], '!B1']" :: Either Yaml.ParseException Condition) of
+        Right cond -> cond `shouldBe` Disjoint [AtLabel "zzz"] [BiMeta "B1"]
         Left err -> expectationFailure (Yaml.prettyPrintParseException err)
 
   describe "rejects a condition object naming no known key" $

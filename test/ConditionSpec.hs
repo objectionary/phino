@@ -28,6 +28,8 @@ spec = do
       , "matches(\"hello(\\\"\\u0000)\", !e)"
       , "part-of ( [[ x -> 1 ]] , !B ) "
       , "not(formation(!n1))"
+      , "disjoint(zzz, !B1)"
+      , "disjoint([zzz, www], !B1)"
       ]
       (\expr -> it expr (parseCondition expr `shouldSatisfy` isRight))
 
@@ -46,6 +48,8 @@ spec = do
       , ("in(Δ, !B1)", Y.In [AtDelta] [BiMeta "B1"])
       , ("in(λ, !B1)", Y.In [AtLambda] [BiMeta "B1"])
       , ("in([Δ, λ], [!B1, !B2])", Y.In [AtDelta, AtLambda] [BiMeta "B1", BiMeta "B2"])
+      , ("disjoint(zzz, !B1)", Y.Disjoint [AtLabel "zzz"] [BiMeta "B1"])
+      , ("disjoint([zzz], [!B1])", Y.Disjoint [AtLabel "zzz"] [BiMeta "B1"])
       ]
       (\(expr, res) -> it expr (parseCondition expr `shouldBe` Right res))
 
