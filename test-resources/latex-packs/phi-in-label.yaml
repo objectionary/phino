@@ -6,5 +6,5 @@ expression: |
   [[ nameφ -> Q ]]
 result: |-
   \begin{phiquation}
-  Q : |name\phiTerminal{\varphi}|{.}
+  Q : |name[U+03C6]|{.}
   \end{phiquation}
