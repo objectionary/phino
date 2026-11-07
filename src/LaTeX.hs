@@ -503,7 +503,7 @@ keyed = concatMap key
   where
     key :: Char -> String
     key ch
-      | isAsciiUpper ch || isAsciiLower ch || isDigit ch || ch `elem` ("-:/+" :: String) = [ch]
+      | isAsciiUpper ch || isAsciiLower ch || isDigit ch || ch `elem` (":/+" :: String) = [ch]
       | otherwise = printf "-%x-" (ord ch)
 
 escaped :: String -> String
