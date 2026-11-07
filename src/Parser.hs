@@ -117,9 +117,10 @@ twofold ascii' unicode' = get >>= spelled
 
 label' :: Parser T.Text
 label' = lexeme $ do
+  sign <- optional (try (oneOf ['+', '-'] <* lookAhead (oneOf ['a' .. 'z'])))
   first <- oneOf ['a' .. 'z']
   rest <- many (choice [try (char '-' <* notFollowedBy (char '>')), satisfy (`notElem` " \r\n\t,.|':;!?][}{)(⟧⟦-↦⤍>\"ξΦ⊥")] <?> "allowed character")
-  return (T.pack (first : rest))
+  return (T.pack (maybe id (:) sign (first : rest)))
 
 function :: Parser String
 function =
@@ -217,7 +218,7 @@ bytes =
 
 number :: Parser Expression
 number = do
-  sign <- optional (choice [char '-', char '+'])
+  sign <- optional (try (choice [char '-', char '+'] <* lookAhead digitChar))
   unsigned <- lexeme magnitude
   return
     ( DataNumber
