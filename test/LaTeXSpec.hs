@@ -35,7 +35,7 @@ import LaTeX
 import Lining (LineFormat (MULTILINE))
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import System.FilePath (makeRelative, (<.>), (</>))
-import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldContain)
+import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldContain, shouldNotBe)
 import Yaml qualified as Y
 
 data LatexPack = LatexPack
