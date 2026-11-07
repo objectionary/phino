@@ -347,6 +347,16 @@ spec = do
         , ["XMIR does not support such expression", "a ↦ Φ.y"]
         )
       ,
+        ( "refuses data that is not a sequence of bytes"
+        , try (void (parseXMIRThrows "<object><o name=\"x\"><o name=\"y\">hello</o></o></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["The data 'hello' is not a sequence of bytes"]
+        )
+      ,
+        ( "refuses data with a trailing separator"
+        , try (void (parseXMIRThrows "<object><o name=\"x\"><o name=\"y\">01-02-</o></o></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["The data '01-02-' is not a sequence of bytes"]
+        )
+      ,
         ( "names the attribute that is empty"
         , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"\"/></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
         , ["The attribute 'base' is not expected to be empty"]
@@ -426,8 +436,8 @@ spec = do
       printXMIR xmir' `shouldContain` "<!-- \"foo\" -->"
 
     it "keeps text on both sides of a comment inside an object" $ do
-      split <- parseXMIRThrows "<object><o name=\"x\">foo<!-- note -->bar</o></object>"
-      joined <- parseXMIRThrows "<object><o name=\"x\">foobar</o></object>"
+      split <- parseXMIRThrows "<object><o name=\"x\">01<!-- note -->-02</o></object>"
+      joined <- parseXMIRThrows "<object><o name=\"x\">01-02</o></object>"
       actual <- xmirToPhi split
       expected <- xmirToPhi joined
       actual `shouldBe` expected
