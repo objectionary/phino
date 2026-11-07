@@ -8,6 +8,7 @@ import Data.Array (bounds, (!))
 import qualified Data.ByteString.Char8 as B
 import Data.Char (isDigit, ord)
 import Data.Maybe (fromMaybe)
+import Foreign.C.String (CStringLen)
 import Text.Read (readMaybe)
 import qualified Text.Regex.PCRE.ByteString as R
 import qualified Text.Regex.PCRE.Wrap as W
@@ -17,7 +18,7 @@ data Regex = Regex R.Regex R.Regex
 compile :: B.ByteString -> IO Regex
 compile pat = do
   first <- compileWith R.execBlank
-  continuation <- compileWith R.execNotBOL
+  continuation <- compileWith R.execNoUTF8Check
   pure (Regex first continuation)
   where
     compileWith option = do
@@ -88,11 +89,11 @@ replaceFirst (Regex regex _) rep input = do
       return $ B.concat [before, replacement, after]
 
 replaceAll :: Regex -> B.ByteString -> B.ByteString -> IO B.ByteString
-replaceAll (Regex first _) rep input = go 0 B.empty
+replaceAll (Regex first continuation) rep input = B.useAsCStringLen input (\cstring -> go first cstring 0 [])
   where
-    go :: Int -> B.ByteString -> IO B.ByteString
-    go cursor acc = do
-      result <- B.useAsCStringLen input (W.wrapMatch cursor first)
+    go :: R.Regex -> CStringLen -> Int -> [B.ByteString] -> IO B.ByteString
+    go regex cstring cursor acc = do
+      result <- W.wrapMatch cursor regex cstring
       case result of
         Left err -> regexExecutionFailed err
         Right (Just offsets@((off, end) : _)) -> do
@@ -105,10 +106,10 @@ replaceAll (Regex first _) rep input = go 0 B.empty
             then
               let next = B.take (utf8Width rest) rest
                in if B.null next
-                    then return $ B.concat [acc, before, replacement]
-                    else go (end + B.length next) (B.concat [acc, before, replacement, next])
-            else go end (B.concat [acc, before, replacement])
-        Right _ -> return $ B.append acc (B.drop cursor input)
+                    then return $ B.concat (reverse (replacement : before : acc))
+                    else go continuation cstring (end + B.length next) (next : replacement : before : acc)
+            else go continuation cstring end (replacement : before : acc)
+        Right _ -> return $ B.concat (reverse (B.drop cursor input : acc))
     utf8Width :: B.ByteString -> Int
     utf8Width bytes =
       case B.uncons bytes of
