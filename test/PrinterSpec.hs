@@ -9,6 +9,7 @@ import AST
 import Bytes (numToBts)
 import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
+import Data.Text qualified as T
 import Encoding (Encoding (..))
 import Grown (Grown (..))
 import Lining (LineFormat (..))
@@ -61,6 +62,13 @@ spec = do
       ( \(desc, expr, expected) ->
           it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
+
+  it "prints a formation of many named voids in linear time" $ do
+    let voids = [BiVoid (AtLabel (T.pack ("a" ++ show i))) | i <- [1 .. 50000 :: Int]]
+    printExpression'
+      (ExFormation [BiTau (AtLabel "x") (ExFormation voids)])
+      (SWEET, ASCII, SINGLELINE, defaultMargin)
+      `shouldContain` "a50000"
 
   describe "printExpression with ASCII reads a bytes meta back" $
     forM_
