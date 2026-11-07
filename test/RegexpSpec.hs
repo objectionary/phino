@@ -109,6 +109,10 @@ spec = do
       , ("handles unicode in replacement", "結果: $1", ["all", "データ"], "結果: データ")
       , ("handles dollar at end of string", "test$", ["x"], "test$")
       , ("handles double dollar", "$$1", ["x", "y"], "$y")
+      , ("substitutes a group named by a back reference", "<\\1>", ["full", "a"], "<a>")
+      , ("reads a back reference as a single digit", "\\10", ["full", "a"], "a0")
+      , ("keeps an out of bounds back reference literal", "\\9", ["only"], "\\9")
+      , ("keeps a digit after an escaped backslash literal", "\\\\1", ["full", "a"], "\\1")
       ]
       ( \(desc, template, groups, expected) ->
           it desc $ R.substituteGroups (utf8 template) (map utf8 groups) `shouldBe` utf8 expected

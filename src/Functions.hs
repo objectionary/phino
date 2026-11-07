@@ -12,6 +12,7 @@ import Contextualize (contextualize)
 import Control.Exception (throwIO)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
+import Data.Char (isDigit)
 import Data.Functor
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -169,10 +170,12 @@ _sed args subst = do
       Nothing -> (acc, B.empty, False)
       Just (h, rest)
         | h == '\\' -> case B.uncons rest of
-            Just (h', rest') -> nextUntilSlash rest' ((if escape then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
+            Just (h', rest') -> nextUntilSlash rest' ((if escape && not (referring h') then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
             Nothing -> (if escape then acc else B.snoc acc '\\', B.empty, False)
         | h == '/' -> (acc, rest, True)
         | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
+    referring :: Char -> Bool
+    referring char = isDigit char || char == '\\'
 
 _randomString :: BuildTermMethod
 _randomString [arg] subst = do
