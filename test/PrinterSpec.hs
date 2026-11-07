@@ -9,6 +9,7 @@ import AST
 import Bytes (numToBts)
 import Control.Monad (forM_)
 import Data.Map.Strict qualified as Map
+import Data.Text qualified as T
 import Encoding (Encoding (..))
 import Grown (Grown (..))
 import Lining (LineFormat (..))
@@ -61,6 +62,13 @@ spec = do
       ( \(desc, expr, expected) ->
           it desc (printExpression' expr (SWEET, ASCII, SINGLELINE, defaultMargin) `shouldBe` expected)
       )
+
+  it "prints a formation of many named voids in linear time" $ do
+    let voids = [BiVoid (AtLabel (T.pack ("a" ++ show i))) | i <- [1 .. 50000 :: Int]]
+    printExpression'
+      (ExFormation [BiTau (AtLabel "x") (ExFormation voids)])
+      (SWEET, ASCII, SINGLELINE, defaultMargin)
+      `shouldContain` "a50000"
 
   describe "printExpression with ASCII reads a bytes meta back" $
     forM_
@@ -457,6 +465,11 @@ spec = do
       , ("Φ.bool(v ↦ ⟦ x ↦ ∅, λ ⤍ L_fork ⟧)", SWEET, UNICODE, "Φ.bool( v ↦ ⟦ x ↦ ∅, λ ⤍ L_fork ⟧ )")
       , ("Φ.bool(α0 ↦ ⟦ x ↦ ∅, y ↦ ξ ⟧)", SWEET, UNICODE, "Φ.bool( ⟦ x ↦ ∅, y ↦ ξ ⟧ )")
       , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, Δ ⤍ 00-, b ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ⟦ Δ ⤍ 00-, b ↦ ∅ ⟧ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, Δ ⤍ 00-, b ↦ ∅ ⟧ ⟧", SALTY, UNICODE, "⟦ x ↦ ⟦ a ↦ ∅, Δ ⤍ 00-, b ↦ ∅ ⟧ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, λ ⤍ Fn, b ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ⟦ λ ⤍ Fn, b ↦ ∅ ⟧ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, ρ ↦ ∅, Δ ⤍ 00-, b ↦ ∅, c ↦ ξ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a, ρ) ↦ ⟦ Δ ⤍ 00-, b ↦ ∅, c ↦ ξ ⟧ ⟧")
+      , ("⟦ x ↦ ⟦ a ↦ ∅, b ↦ ∅, Δ ⤍ 00- ⟧ ⟧", SWEET, UNICODE, "⟦ x(a, b) ↦ 00-:Δ ⟧")
       , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA ]]")
       ]
       ( \(src, sugar, encoding, expected) ->
