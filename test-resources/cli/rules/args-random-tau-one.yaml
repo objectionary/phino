@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Calls random-tau, which takes nothing, with one argument.
+name: random-tau-one
+pattern: "⟦ foo ↦ 𝑒1 ⟧"
+result: "⟦ 𝜏2 ↦ 𝑒1 ⟧"
+where:
+  - meta: "𝜏2"
+    function: random-tau
+    args:
+      - "𝑒1"
