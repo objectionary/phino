@@ -700,119 +700,119 @@ entries of `benchmark/demo.phi` symbolically, one case per entry.
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      1654259.743 μs
-  avg:        165425.974 μs
-  min:        145644.045 μs
-  max:        199744.046 μs
-  std dev:    21841.101 μs
+  total:      2386259.884 μs
+  avg:        238625.988 μs
+  min:        214721.833 μs
+  max:        276390.126 μs
+  std dev:    23256.892 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      7532890.217 μs
-  avg:        753289.022 μs
-  min:        697330.791 μs
-  max:        828942.148 μs
-  std dev:    48864.855 μs
+  total:      9544996.599 μs
+  avg:        954499.660 μs
+  min:        895524.786 μs
+  max:        1042172.399 μs
+  std dev:    51633.197 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      27.452 μs
-  avg:        2.745 μs
-  min:        1.362 μs
-  max:        12.369 μs
-  std dev:    3.217 μs
+  total:      20.299 μs
+  avg:        2.030 μs
+  min:        1.683 μs
+  max:        2.535 μs
+  std dev:    0.269 μs
 === print/sweet/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      4716656.706 μs
-  avg:        471665.671 μs
-  min:        429856.404 μs
-  max:        506384.818 μs
-  std dev:    26407.702 μs
+  total:      5509494.680 μs
+  avg:        550949.468 μs
+  min:        513902.059 μs
+  max:        589857.114 μs
+  std dev:    23394.112 μs
 === print/sweet/flat ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      632043.782 μs
-  avg:        63204.378 μs
-  min:        55929.134 μs
-  max:        73390.539 μs
-  std dev:    7940.675 μs
+  total:      668182.164 μs
+  avg:        66818.216 μs
+  min:        59723.512 μs
+  max:        81533.947 μs
+  std dev:    9235.342 μs
 === print/salty/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      15143233.760 μs
-  avg:        1514323.376 μs
-  min:        1440993.541 μs
-  max:        1553100.546 μs
-  std dev:    34720.849 μs
+  total:      18145025.974 μs
+  avg:        1814502.597 μs
+  min:        1779657.244 μs
+  max:        1869531.248 μs
+  std dev:    31184.800 μs
 === morph/symbolic/demo/e1 ===
   warmup:     3 iterations
-  batches:    10 x 12
-  total:      9157.418 μs
-  avg:        76.312 μs
-  min:        74.647 μs
-  max:        84.939 μs
-  std dev:    2.921 μs
+  batches:    10 x 9
+  total:      12052.814 μs
+  avg:        133.920 μs
+  min:        128.755 μs
+  max:        139.724 μs
+  std dev:    3.127 μs
 === morph/symbolic/demo/e2 ===
   warmup:     3 iterations
-  batches:    10 x 203
-  total:      152158.633 μs
-  avg:        74.955 μs
-  min:        74.005 μs
-  max:        76.320 μs
-  std dev:    0.622 μs
+  batches:    10 x 117
+  total:      156077.227 μs
+  avg:        133.399 μs
+  min:        132.060 μs
+  max:        134.689 μs
+  std dev:    0.872 μs
 === morph/symbolic/demo/e3 ===
   warmup:     3 iterations
-  batches:    10 x 195
-  total:      146936.196 μs
-  avg:        75.352 μs
-  min:        74.971 μs
-  max:        75.875 μs
-  std dev:    0.269 μs
+  batches:    10 x 125
+  total:      169543.392 μs
+  avg:        135.635 μs
+  min:        133.483 μs
+  max:        137.195 μs
+  std dev:    1.074 μs
 === morph/symbolic/demo/e4 ===
   warmup:     3 iterations
-  batches:    10 x 199
-  total:      147976.285 μs
-  avg:        74.360 μs
-  min:        73.897 μs
-  max:        74.797 μs
-  std dev:    0.308 μs
+  batches:    10 x 118
+  total:      159641.456 μs
+  avg:        135.289 μs
+  min:        134.132 μs
+  max:        136.716 μs
+  std dev:    0.697 μs
 === morph/symbolic/demo/e5 ===
   warmup:     3 iterations
-  batches:    10 x 193
-  total:      145661.822 μs
-  avg:        75.472 μs
-  min:        74.477 μs
-  max:        76.355 μs
-  std dev:    0.556 μs
+  batches:    10 x 123
+  total:      169355.591 μs
+  avg:        137.687 μs
+  min:        136.801 μs
+  max:        139.373 μs
+  std dev:    0.745 μs
 === morph/symbolic/native/e5 ===
   warmup:     3 iterations
-  batches:    10 x 4
-  total:      40998.154 μs
-  avg:        1024.954 μs
-  min:        908.056 μs
-  max:        1312.004 μs
-  std dev:    109.742 μs
+  batches:    10 x 5
+  total:      68453.460 μs
+  avg:        1369.069 μs
+  min:        1170.129 μs
+  max:        1902.335 μs
+  std dev:    195.482 μs
 === morph/symbolic/accum/0 ===
   warmup:     3 iterations
-  batches:    10 x 110
-  total:      67418.542 μs
-  avg:        61.290 μs
-  min:        60.356 μs
-  max:        63.552 μs
-  std dev:    0.815 μs
+  batches:    10 x 84
+  total:      96818.128 μs
+  avg:        115.260 μs
+  min:        113.588 μs
+  max:        117.502 μs
+  std dev:    1.161 μs
 === morph/symbolic/accum/400 ===
   warmup:     3 iterations
-  batches:    10 x 95
-  total:      73122.056 μs
-  avg:        76.971 μs
-  min:        76.276 μs
-  max:        79.419 μs
-  std dev:    0.863 μs
+  batches:    10 x 66
+  total:      88241.951 μs
+  avg:        133.700 μs
+  min:        131.290 μs
+  max:        137.394 μs
+  std dev:    2.041 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-11-06 at 20:44,
+on 2026-11-08 at 13:23,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -855,4 +855,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/42290262794
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/42484338521
