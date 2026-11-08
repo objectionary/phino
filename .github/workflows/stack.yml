@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-15, ubuntu-24.04, windows-2022]
-        ghc: ['9.6.7']
+        ghc: ['9.10.3']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
