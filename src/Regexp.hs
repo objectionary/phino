@@ -6,7 +6,7 @@ module Regexp where
 import Control.Exception
 import Data.Array (bounds, (!))
 import qualified Data.ByteString.Char8 as B
-import Data.Char (isDigit, ord)
+import Data.Char (digitToInt, isDigit, ord)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import qualified Text.Regex.PCRE.ByteString as R
@@ -67,6 +67,9 @@ substituteGroups rep groups = B.concat (go (B.unpack rep))
                     Nothing -> B.pack ('$' : digits)
                     Just idx -> fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
                in val : go afterDigits
+    go ('\\' : '\\' : rest) = B.singleton '\\' : go rest
+    go ('\\' : digit : rest)
+      | isDigit digit = fromMaybe (B.pack ['\\', digit]) (safeIndex (toInteger (digitToInt digit)) groups) : go rest
     go (c : rest) = B.singleton c : go rest
     safeIndex :: Integer -> [B.ByteString] -> Maybe B.ByteString
     safeIndex i xs
