@@ -112,6 +112,7 @@ data ReduceContext = ReduceContext
   , _facts :: Maybe Facts
   , _symbolic :: Lambdas
   , _raising :: [T.Text]
+  , _reckoning :: Bool
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
@@ -308,7 +309,9 @@ severed taken univ ctx state form bds (mode, before) = do
   where
     spelled :: Maybe Attribute -> Expression -> IO Expression
     spelled (Just attr) found = pure (ExDispatch found attr)
-    spelled Nothing found = argued univ ctx state form bds found
+    spelled Nothing found
+      | ctx._reckoning = pure found
+      | otherwise = argued univ ctx{_reckoning = True} state form bds found
 
 recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))

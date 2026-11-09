@@ -543,6 +543,10 @@ that cut it. A copy `severed` answered writes the symbol and the call the copy
 stands for, `looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # …, repeats 𝑛·0·3`, with
 every argument worked out by `argued` as for `defer`, and the markup writes
 `<looped symbol="𝜎1" … object="Φ.down">` holding a `<with>` (#2226).
+An argument `argued` works out may come to a copy that repeats one above
+too, which is cut in turn; that inner cut, told by `_reckoning` of
+`ReduceContext`, writes the call the facts trace as it is, with no argument
+worked out, since working it out runs into the same loop again (#2313).
 A call ending with attributes over its last application, such as
 `Φ.fork( … )( … ).φ`, keeps them on top: `argued` and the markup step over
 them (`dispatched` of `Deps.hs`), so the object stays a path of the world,

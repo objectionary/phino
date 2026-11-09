@@ -1720,6 +1720,25 @@ spec = do
       it "writes the copy it cuts to the XML protocol with the object, the metas of its arguments and the attribute it ends with" $
         recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·1</meta></with></looped>"))
 
+    describe "--acyclic at a copy whose argument repeats the same loop" $ do
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, times(b) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ) ) ⟧"
+          atoms = T.pack "- λ: L_times\n  dataize:\n    𝛿1: $.b\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+      it "ends the run with an answer once it cuts the loop" $
+        withLambdasOf atoms $ \file ->
+          withStdin recursive $
+            testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30"] ["40-45-00-00-00-00-00-00"]
+
+      it "writes the cut of the argument inside the cut of the call to the protocol" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf atoms $ \file ->
+            withStdin recursive $
+              testCLISucceeded
+                ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                []
+          records <- readProtocol path
+          filter (isInfixOf "looped") (lines records) `shouldBe` ["                          looped 𝜎1 := Φ.dataized( target ↦ Φ.x )  # 𝔼(𝑛·6·2.b), plausible, repeats 𝑛·6·5", "                          looped 𝜎2 := Φ.times( b ↦ 𝜎1:λ )  # plausible, repeats 𝑛·6·2"]
+
     describe "--acyclic at a fork the memo fabricated" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.p, Φ.q ) ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
