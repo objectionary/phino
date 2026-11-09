@@ -535,6 +535,10 @@ that cut it. A copy `severed` answered writes the symbol and the call the copy
 stands for, `looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # …, repeats 𝑛·0·3`, with
 every argument worked out by `argued` as for `defer`, and the markup writes
 `<looped symbol="𝜎1" … object="Φ.down">` holding a `<with>` (#2226).
+A call ending with attributes over its last application, such as
+`Φ.fork( … )( … ).φ`, keeps them on top: `argued` and the markup step over
+them (`dispatched` of `Deps.hs`), so the object stays a path of the world,
+and the markup writes them as `dispatch="φ"` beside `object` (#2305).
 Three records say why a firing gave no answer (#1524): `stuck …` closes a
 firing that got stuck, other than a join that could not join, which
 `diverged …` or `unripe …` closes, `stall …` stands under one the memo

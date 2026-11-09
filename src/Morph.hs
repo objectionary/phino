@@ -26,7 +26,7 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dontSaveStep)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep)
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
@@ -417,13 +417,16 @@ declared univ ctx form = traced ctx._facts form >>= maybe (pure Nothing) placed
     erased other = other
 
 argued :: Expression -> ReduceContext -> State -> Expression -> [Binding] -> Expression -> IO Expression
-argued univ ctx state site bds = go
+argued univ ctx state site bds call = foldl ExDispatch <$> go inner <*> pure attrs
   where
+    attrs :: [Attribute]
+    inner :: Expression
+    (attrs, inner) = dispatched call
     go :: Expression -> IO Expression
     go (ExApplication target (ArTau attr body)) = do
       target' <- go target
       ExApplication target' . ArTau attr <$> reckoned attr body
-    go call = pure call
+    go term = pure term
     reckoned :: Attribute -> Expression -> IO Expression
     reckoned _ body@(ExFormation [BiLambda (FnSymbol _)]) = pure body
     reckoned attr body = do
