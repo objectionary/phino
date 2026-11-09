@@ -7,7 +7,7 @@
 
 SHELL := bash
 
-JNA_VERSION := 5.15.0
+JNA_VERSION := 5.19.1
 JEO_VERSION := 0.15.3
 ifeq ($(OS),Windows_NT)
   MVNW := $(CURDIR)/benchmark/mvnw.cmd
