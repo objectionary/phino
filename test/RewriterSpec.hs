@@ -293,10 +293,10 @@ spec = do
     it "asks the matching again once a step changed the term" $
       (fst . NE.last . fst <$> rewrite ExXi [direct "xr" False (\_ expr -> [ExRoot | ExXi <- [expr]]), direct "rt" False (\_ expr -> [ExTermination | ExRoot <- [expr]])] (RewriteContext ExRoot 25 1 False Nothing (building linked) (_normal linked) (\_ expr -> Set.fromList [idx | (idx, ptn) <- [(0, ExXi), (1, ExRoot)], ptn == expr]) MtDisabled Nothing dontSaveStep dontSaveMade))
         `shouldReturn` ExTermination
-  describe "every" $
-    it "names each of the steps it is handed" $
-      every [Step "wd" (\_ _ -> pure Nothing), Step "ok" (\_ _ -> pure Nothing), Step "wd" (\_ _ -> pure Nothing)] Nothing (ExDispatch ExXi (AtLabel "pz"))
-        `shouldBe` Set.fromList [0, 1, 2]
+  describe "every"
+    $ it "names each of the steps it is handed"
+    $ every [Step "wd" (\_ _ -> pure Nothing), Step "ok" (\_ _ -> pure Nothing), Step "wd" (\_ _ -> pure Nothing)] Nothing (ExDispatch ExXi (AtLabel "pz"))
+      `shouldBe` Set.fromList [0, 1, 2]
   describe "direct" $ do
     it "rewrites every place the function matches at" $
       fmap fst <$> _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch (ExApplication ExXi (ArTau (AtLabel "o") ExXi)) (AtLabel "m"))

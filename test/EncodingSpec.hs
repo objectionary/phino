@@ -84,9 +84,9 @@ spec = do
       toASCII (EX_NUMBER 5 (TAB 1) []) `shouldBe` EX_NUMBER 5 (TAB 1) []
       toASCII (EX_BYTES BT_EMPTY) `shouldBe` EX_BYTES BT_EMPTY
 
-  describe "toASCII on APP_BINDING" $
-    it "recurses into the pair" $
-      toASCII (APP_BINDING (PA_TAU (AT_PHI PHI) ARROW leafExpr)) `shouldBe` APP_BINDING (PA_TAU (AT_PHI AT) ARROW' leafExprASCII)
+  describe "toASCII on APP_BINDING"
+    $ it "recurses into the pair"
+    $ toASCII (APP_BINDING (PA_TAU (AT_PHI PHI) ARROW leafExpr)) `shouldBe` APP_BINDING (PA_TAU (AT_PHI AT) ARROW' leafExprASCII)
 
   describe "toASCII on BINDING" $
     forM_
@@ -132,10 +132,10 @@ spec = do
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-  describe "toASCII on APP_ARG" $
-    it "recurses through both fields" $
-      toASCII (APP_ARG leafExpr (AAS_EXPR EOL (TAB 1) leafExpr AAS_EMPTY))
-        `shouldBe` APP_ARG leafExprASCII (AAS_EXPR EOL (TAB 1) leafExprASCII AAS_EMPTY)
+  describe "toASCII on APP_ARG"
+    $ it "recurses through both fields"
+    $ toASCII (APP_ARG leafExpr (AAS_EXPR EOL (TAB 1) leafExpr AAS_EMPTY))
+      `shouldBe` APP_ARG leafExprASCII (AAS_EXPR EOL (TAB 1) leafExprASCII AAS_EMPTY)
 
   describe "toASCII on APP_ARGS" $
     forM_
@@ -296,10 +296,10 @@ spec = do
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-  describe "toASCII on EXTRA" $
-    it "recurses through meta and every arg, keeping func untouched" $
-      toASCII (EXTRA (ARG_ATTR (AT_PHI PHI)) "func" [ARG_EXPR leafExpr, ARG_BYTES BT_EMPTY])
-        `shouldBe` EXTRA (ARG_ATTR (AT_PHI AT)) "func" [ARG_EXPR leafExprASCII, ARG_BYTES BT_EMPTY]
+  describe "toASCII on EXTRA"
+    $ it "recurses through meta and every arg, keeping func untouched"
+    $ toASCII (EXTRA (ARG_ATTR (AT_PHI PHI)) "func" [ARG_EXPR leafExpr, ARG_BYTES BT_EMPTY])
+      `shouldBe` EXTRA (ARG_ATTR (AT_PHI AT)) "func" [ARG_EXPR leafExprASCII, ARG_BYTES BT_EMPTY]
 
   describe "withEncoding" $ do
     it "UNICODE is the identity" $ withEncoding UNICODE biPair `shouldBe` biPair

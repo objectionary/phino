@@ -57,7 +57,7 @@ spec = do
       ]
       (\expr -> it expr (parseCondition expr `shouldSatisfy` isLeft))
 
-  describe "parseConditionThrows" $
-    it "throws with a descriptive message on unparsable input" $
-      parseConditionThrows "some()"
-        `shouldThrow` (\exc -> "Couldn't parse given condition" `isInfixOf` show (exc :: SomeException))
+  describe "parseConditionThrows"
+    $ it "throws with a descriptive message on unparsable input"
+    $ parseConditionThrows "some()"
+      `shouldThrow` (\exc -> "Couldn't parse given condition" `isInfixOf` show (exc :: SomeException))
