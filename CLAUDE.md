@@ -247,7 +247,10 @@ reading a meta bound to a formation holding one of them, or to an application
 of one (`thrown` of `Lambdas.hs`), binds its own meta to that term as it is,
 never firing or walking it, and `merged` of `Evaluate.hs` hands such a side
 to `joined` as ⊥ when the other side does not raise, so the `joined` record
-names it under `raised`.
+names it under `raised`. A firing hands its terminators to every 𝕄 it runs
+in (`_raising` of `ReduceContext`), which answers a dispatch off a formation
+holding one of them with that formation, never firing it, so a side such as
+`Φ.throw( 𝜎2 ).q` raises the way `Φ.throw( 𝜎2 )` does (#2308).
 
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
@@ -540,6 +543,12 @@ that cut it. A copy `severed` answered writes the symbol and the call the copy
 stands for, `looped 𝜎1 := Φ.down( i ↦ 𝑛·1·6 )  # …, repeats 𝑛·0·3`, with
 every argument worked out by `argued` as for `defer`, and the markup writes
 `<looped symbol="𝜎1" … object="Φ.down">` holding a `<with>` (#2226).
+An argument `argued` works out may come to a copy that repeats one above
+too, which is cut in turn; that inner cut, told by `_reckoning` of
+`ReduceContext`, writes the call the facts trace as it is, with no argument
+worked out, since working it out runs into the same loop again (#2313).
+An argument that comes to a copy of a terminator of the entry, as
+`Φ.throw( 𝜎1 )`, is written as that copy and never fired (#2316).
 A call ending with attributes over its last application, such as
 `Φ.fork( … )( … ).φ`, keeps them on top: `argued` and the markup step over
 them (`dispatched` of `Deps.hs`), so the object stays a path of the world,
@@ -549,6 +558,8 @@ firing that got stuck, other than a join that could not join, which
 `diverged …` or `unripe …` closes, `stall …` stands under one the memo
 answered with a kept stall, and `starved …` is written by `deeper` where the
 step budget runs out, with the site it stood at rather than its term (#1531).
+`exceeded …` (`EvExceeded`) is written by `normalized` of `Morph.hs` where
+normalization reaches `--max-cycles`, with the site the same way (#2309).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the

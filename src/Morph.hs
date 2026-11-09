@@ -30,7 +30,7 @@ import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judg
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
-import Lambdas (Lambdas)
+import Lambdas (Lambdas, thrown)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
 import Must (Must (..))
@@ -111,6 +111,8 @@ data ReduceContext = ReduceContext
   , _entered :: Seen
   , _facts :: Maybe Facts
   , _symbolic :: Lambdas
+  , _raising :: [T.Text]
+  , _reckoning :: Bool
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
@@ -307,7 +309,9 @@ severed taken univ ctx state form bds (mode, before) = do
   where
     spelled :: Maybe Attribute -> Expression -> IO Expression
     spelled (Just attr) found = pure (ExDispatch found attr)
-    spelled Nothing found = argued univ ctx state form bds found
+    spelled Nothing found
+      | ctx._reckoning = pure found
+      | otherwise = argued univ ctx{_reckoning = True} state form bds found
 
 recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
@@ -450,7 +454,9 @@ argued univ ctx state site bds call = foldl ExDispatch <$> go inner <*> pure att
         worked place' placed' state' = do
           (normal, morphed) <- settled placed' univ state' =<< opening Morphing ctx{_site = place'}
           case normal of
-            ExFormation _ -> fired univ ctx place' morphed normal
+            ExFormation _
+              | thrown ctx._raising normal -> pure (normal, morphed)
+              | otherwise -> fired univ ctx place' morphed normal
             _ -> pure (normal, morphed)
         hanging :: Expression -> Bool
         hanging (ExFormation bds) = not (any isLambda bds) && or [not (xiFree body) | BiTau AtPhi body <- bds]
@@ -514,7 +520,7 @@ morph'' owner start univ state entry = go start univ state entry
       (term, entered) <- severing expr univ state =<< parking seq state (universed univ caller{_judgment = Morphing})
       ctx <- opening Morphing =<< deeper entered
       parking seq state $ do
-        reached <- inferred term univ state ctx ctx._engine._morphing
+        reached <- maybe (inferred term univ state ctx ctx._engine._morphing) (\raise -> pure (Just (In.Answered (Morphing, "raise") raise, state))) (raised term)
         case reached of
           Just (In.Answered step built, state') -> do
             when owner (ctx._saveEval (EvMorphed ctx._nesting built))
@@ -524,6 +530,11 @@ morph'' owner start univ state entry = go start univ state entry
             (morphed, state'') <- onward seq state' way built ctx
             go morphed world state'' ctx
           Nothing -> throwIO (Unmorphable term)
+      where
+        raised :: Expression -> Maybe Expression
+        raised (ExDispatch target@(ExFormation _) _)
+          | thrown caller._raising target = Just target
+        raised _ = Nothing
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do
@@ -591,7 +602,9 @@ normalized expr seq ctx@ReduceContext{..} = do
   taken <- newIORef Map.empty
   peeled <- newIORef Map.empty
   (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken peeled ctx)
-  when exceeded (throwIO (OutOfSteps (Cycles _maxCycles)))
+  when exceeded $ do
+    _saveEval (EvExceeded _nesting _maxCycles _judgment _site)
+    throwIO (OutOfSteps (Cycles _maxCycles))
   let (rw :| rws) = NE.reverse rewrittens
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)

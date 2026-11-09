@@ -42,7 +42,7 @@ where
 
 import Data.Bits (xor)
 import qualified Data.IntMap.Strict as IntMap
-import Data.List (foldl')
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Maybe (isJust, isNothing, listToMaybe)
 import Data.Text (Text)
@@ -248,7 +248,7 @@ layer symbol child = goExpr fnvOffset
     hashText :: Int -> Text -> Int
     hashText = T.foldl' (\h c -> step h (fromEnum c))
     hashString :: Int -> String -> Int
-    hashString = foldl' (\h c -> step h (fromEnum c))
+    hashString = List.foldl' (\h c -> step h (fromEnum c))
     goSlot :: Int -> Slot -> Int
     goSlot h (Slot kind idx) = step (hashText h kind) idx
     hashMaybeString :: Int -> Maybe String -> Int
@@ -256,7 +256,7 @@ layer symbol child = goExpr fnvOffset
     hashMaybeString h (Just s) = hashString (step h 1) s
     goExpr :: Int -> Expression -> Int
     goExpr h = \case
-      ExFormation bds -> foldl' goBinding (step h 1) bds
+      ExFormation bds -> List.foldl' goBinding (step h 1) bds
       ExXi -> step h 2
       ExRoot -> step h 3
       ExTermination -> step h 4
@@ -279,7 +279,7 @@ layer symbol child = goExpr fnvOffset
     goBytes h = \case
       BtEmpty -> step h 17
       BtOne s -> hashString (step h 18) s
-      BtMany ss -> foldl' hashString (step h 19) ss
+      BtMany ss -> List.foldl' hashString (step h 19) ss
       BtMeta t -> hashText (step h 20) t
       BtAny slot -> goSlot (step h 34) slot
     goAttribute :: Int -> Attribute -> Int
