@@ -597,7 +597,9 @@ normalized expr seq ctx@ReduceContext{..} = do
   taken <- newIORef Map.empty
   peeled <- newIORef Map.empty
   (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken peeled ctx)
-  when exceeded (throwIO (OutOfSteps (Cycles _maxCycles)))
+  when exceeded $ do
+    _saveEval (EvExceeded _nesting _maxCycles _judgment _site)
+    throwIO (OutOfSteps (Cycles _maxCycles))
   let (rw :| rws) = NE.reverse rewrittens
       seq' = rw :| rws <> NE.tail seq
   expr' <- locatedExpression _locator (fst rw)
