@@ -6,7 +6,7 @@
 
 module CLISpec (spec) where
 
-import CLI (runCLI)
+import CLI (prepareIO, runCLI)
 import CLI.Types (CmdException (..), IOFormat (..))
 import Control.Concurrent (threadDelay)
 import Control.Exception
@@ -19,6 +19,7 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
 import Files (allPathsIn)
 import Fixtures (explainPack, lambdasFile, loopingLambdas, readProtocol, readUtf8, withLambdasOf)
+import GHC.IO.Encoding (TextEncoding (textEncodingName), getFileSystemEncoding)
 import GHC.IO.Handle
 import Paths_phino (version)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, getTemporaryDirectory, listDirectory, makeAbsolute, removeDirectoryRecursive, removeFile, removePathForcibly, setModificationTime, withCurrentDirectory)
@@ -680,6 +681,19 @@ spec = do
           ["rewrite", rule "evaluate-in-rewrite.yaml"]
           ["Function 'evaluate' in rule 'uses-evaluate' is available only for dataization and morphing, not for rewriting"]
 
+    forM_
+      [ ("kind-tau-to-expression.yaml", "Function 'random-tau' in rule 'tau-to-expression' returns an attribute, but its meta '𝑒2' is an expression")
+      , ("kind-size-to-attribute.yaml", "Function 'size' in rule 'size-to-attribute' returns an expression, but its meta '𝜏2' is an attribute")
+      , ("kind-dataize-to-expression.yaml", "Function 'dataize' in rule 'dataize-to-expression' returns bytes, but its meta '𝑒2' is an expression")
+      ]
+      ( \(file, message) ->
+          it ("refuses " ++ file ++ " at load time, before the pattern matches") $
+            withStdin "⟦ bar ↦ ⟦⟧ ⟧" (testCLIFailed ["rewrite", rule file] [message])
+      )
+
+    it "accepts a where step whose function returns the kind of its meta" $
+      withStdin "⟦ bar ↦ ⟦⟧ ⟧" (testCLISucceeded ["rewrite", rule "kind-tau-to-attribute.yaml"] ["bar ↦ ⟦⟧"])
+
     it "names the join function in the error message" $
       withStdin "⟦⟧" $
         testCLIFailed
@@ -876,32 +890,32 @@ spec = do
           ["\"bar\":x"]
 
     it "prints many expressions with --sequence" $
-      withStdin "[[ x -> \"foo\" ]]" $
+      withStdin "[[ x -> \"0\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
           , rule "second.yaml"
           , "--max-depth=1"
-          , "--max-cycles=2"
+          , "--max-cycles=1"
           , "--sequence"
           , "--sweet"
           , "--flat"
           ]
           [ unlines
-              [ "\"foo\":x"
-              , "Φ.x( y ↦ \"foo\" )"
-              , "\"foo\":x"
+              [ "\"0\":x"
+              , "Φ.x( y ↦ \"1\" )"
+              , "\"1\":x"
               ]
           ]
 
     it "prefixes every step with a header when --headers is on" $
-      withStdin "[[ x -> \"foo\" ]]" $
+      withStdin "[[ x -> \"0\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
           , rule "second.yaml"
           , "--max-depth=1"
-          , "--max-cycles=2"
+          , "--max-cycles=1"
           , "--sequence"
           , "--headers"
           , "--sweet"
@@ -911,13 +925,13 @@ spec = do
               "\n"
               [ ""
               , "=== Step #1"
-              , "\"foo\":x"
+              , "\"0\":x"
               , ""
               , "=== Step #2, Rule 'first', 23t -> 26t"
-              , "Φ.x( y ↦ \"foo\" )"
+              , "Φ.x( y ↦ \"1\" )"
               , ""
               , "=== Step #3, Rule 'second', 26t -> 23t"
-              , "\"foo\":x"
+              , "\"1\":x"
               ]
           ]
 
@@ -928,13 +942,13 @@ spec = do
           ["\"bar\":x"]
 
     it "emits step headers as LaTeX comments with --headers" $
-      withStdin "[[ x -> \"foo\" ]]" $
+      withStdin "[[ x -> \"0\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
           , rule "second.yaml"
           , "--max-depth=1"
-          , "--max-cycles=2"
+          , "--max-cycles=1"
           , "--sequence"
           , "--headers"
           , "--sweet"
@@ -944,23 +958,24 @@ spec = do
           [ unlines
               [ "\\begin{phiquation}"
               , "% === Step #1"
-              , "\"foo\" : |x| \\phiNormalize[\\nameref{r:first}]"
+              , "\"0\" : |x| \\phiNormalize[\\nameref{r:first}]"
               , "% === Step #2, Rule 'first', 23t -> 26t"
-              , "  \\phiNormalize Q . |x| ( |y| -> \"foo\" ) \\phiNormalize[\\nameref{r:second}]"
+              , "  \\phiNormalize Q . |x| ( |y| -> \"1\" ) \\phiNormalize[\\nameref{r:second}]"
               , "% === Step #3, Rule 'second', 26t -> 23t"
-              , "  \\phiNormalize \"foo\" : |x|{.}"
+              , "  \\phiNormalize \"1\" : |x| \\phiNormalize"
+              , "  \\phiNormalize \\dots"
               , "\\end{phiquation}"
               ]
           ]
 
     it "prints only one latex preamble with --sequence" $
-      withStdin "[[ x -> \"foo\" ]]" $
+      withStdin "[[ x -> \"0\" ]]" $
         testCLISucceeded
           [ "rewrite"
           , rule "first.yaml"
           , rule "second.yaml"
           , "--max-depth=1"
-          , "--max-cycles=2"
+          , "--max-cycles=1"
           , "--sequence"
           , "--sweet"
           , "--flat"
@@ -968,9 +983,10 @@ spec = do
           ]
           [ unlines
               [ "\\begin{phiquation}"
-              , "\"foo\" : |x| \\phiNormalize[\\nameref{r:first}]"
-              , "  \\phiNormalize Q . |x| ( |y| -> \"foo\" ) \\phiNormalize[\\nameref{r:second}]"
-              , "  \\phiNormalize \"foo\" : |x|{.}"
+              , "\"0\" : |x| \\phiNormalize[\\nameref{r:first}]"
+              , "  \\phiNormalize Q . |x| ( |y| -> \"1\" ) \\phiNormalize[\\nameref{r:second}]"
+              , "  \\phiNormalize \"1\" : |x| \\phiNormalize"
+              , "  \\phiNormalize \\dots"
               , "\\end{phiquation}"
               ]
           ]
@@ -1684,6 +1700,25 @@ spec = do
         withLambdasOf forking $ \file ->
           withStdin recursive $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
+
+    describe "--acyclic at a copy whose call ends with an attribute" $ do
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ), Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.x ) ) ) ) ⟧"
+          forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+          recorded :: String -> IO [String]
+          recorded name =
+            withTempFile name $ \(path, stream) -> do
+              hClose stream
+              withLambdasOf forking $ \file ->
+                withStdin recursive $
+                  testCLISucceeded
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    []
+              lines <$> readProtocol path
+      it "writes the copy it cuts to the protocol as a call of the object with the attribute it ends with" $
+        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·9·9, right ↦ 𝑛·11·1 ).φ  # 𝔻(𝑛·9·6)"))
+
+      it "writes the copy it cuts to the XML protocol with the object, the metas of its arguments and the attribute it ends with" $
+        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·1</meta></with></looped>"))
 
     describe "--acyclic at a fork the memo fabricated" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.p, Φ.q ) ⟧"
@@ -3815,12 +3850,12 @@ spec = do
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--max-steps=40"]
               ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
-      it "prints the residue and exits successfully with the flag" $
+      it "answers the looping dispatch with a symbol and exits successfully with the flag" $
         loopingLambdas $ \endless ->
           withStdin looping $
             testCLISucceeded
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
-              ["⟦ λ ⤍ L_loop ⟧.foo"]
+              ["⟦ λ ⤍ 𝜎1 ⟧"]
 
       it "answers a terminating program the same way with the flag" $
         withStdin chained $
@@ -4097,7 +4132,7 @@ spec = do
     it "refuses a rule it cannot compile" $
       withTempDirectory "phino-compile" $ \dir -> do
         createDirectoryIfMissing True dir
-        writeFile (dir </> "having.yaml") "name: hv\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ !B1 ]]'\nhaving:\n  eq: ['!e1', 'Q']\n"
+        writeFile (dir </> "having.yaml") "name: hv\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ !B1 ]]'\nhaving:\n  eq: ['!e1', '!e1']\n"
         withCurrentDirectory dir (testCLIFailed ["compile", "--rule=having.yaml", "--target=Compiled.hs"] ["The rule 'hv' cannot be compiled, since it has a 'having' condition"])
 
   describe "match" $ do
@@ -4155,9 +4190,9 @@ spec = do
       withStdin "[[ x -> Q.x, y -> Q.y ]]" $
         testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
 
-    it "does not match a length against a literal that wraps around Int" $
+    it "refuses a length compared with a literal that does not fit into Int" $
       withStdin "[[ a -> $, b -> Q ]]" $
-        testCLIFailed ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),18446744073709551618)"] ["no substitutions are built"]
+        testCLIFailed ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),18446744073709551618)"] ["compares a number with an expression"]
 
     it "builds substitutions with conditions" $
       withStdin "[[ x -> Q.y ]].x" $
@@ -4281,3 +4316,13 @@ spec = do
         testCLISucceeded ["merge", "--monoform", path] ["⟦ x ↦ ∅ ⟧"]
     it "rewrite names --monoform in its help" $
       testCLISucceeded ["rewrite", "--help"] ["--monoform"]
+
+  describe "prepareIO" $ do
+    it "forces UTF-8 on the file system encoding, whatever the locale" $ do
+      prepareIO
+      enc <- getFileSystemEncoding
+      textEncodingName enc `shouldBe` "UTF-8"
+    it "forces UTF-8 on stderr, whatever the locale" $ do
+      prepareIO
+      enc <- hGetEncoding stderr
+      maybe (expectationFailure "stderr has no encoding") (("UTF-8" `shouldBe`) . textEncodingName) enc

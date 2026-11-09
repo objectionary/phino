@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '[[ price -> 5, count -> 7 ]]'
+output: |-
+  ⟦
+    price ↦ ⊥,
+    count ↦ 7
+  ⟧
+rules:
+  custom:
+    - name: eq-expression-with-a-quoted-number
+      pattern: '⟦ 𝜏1 ↦ 𝑒1, 𝐵1 ⟧'
+      result: '⟦ 𝜏1 ↦ ⊥, 𝐵1 ⟧'
+      when:
+        eq:
+          - '𝑒1'
+          - '5'
