@@ -19,6 +19,8 @@ import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Aeson.Types (formatRelativePath)
 import qualified Data.ByteString as BS
+import Data.Conduit ((.|))
+import qualified Data.Conduit.List as CL
 import Data.FileEmbed (embedDir)
 import Data.Maybe (fromMaybe)
 import Data.Scientific (isInteger)
@@ -26,11 +28,12 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
-import Data.Yaml.Internal (Warning (DuplicateKey))
+import Data.Yaml.Internal (Warning (DuplicateKey), decodeHelper_)
 import GHC.Generics (Generic)
 import Metas
 import Parser
 import Slots
+import qualified Text.Libyaml as Libyaml
 import Text.Printf (printf)
 import Text.Regex.PCRE ((=~))
 
@@ -532,11 +535,17 @@ normalizationRules = map decodeRule $(embedDir "resources/normalize")
 
 yamlRule :: FilePath -> IO Rule
 yamlRule path = do
-  decoded <- Yaml.decodeFileWithWarnings path
+  decoded <- decodeHelper_ (Libyaml.decodeFile path .| CL.map worded)
   case decoded of
     Left err -> throwIO err
     Right (warnings, rule) -> rule <$ mapM_ reportDuplicateKey warnings
   where
+    worded :: Libyaml.Event -> Libyaml.Event
+    worded (Libyaml.EventScalar value Libyaml.NoTag style anchor)
+      | value `elem` spelled = Libyaml.EventScalar value Libyaml.StrTag style anchor
+    worded event = event
+    spelled :: [BS.ByteString]
+    spelled = ["y", "Y", "yes", "Yes", "YES", "n", "N", "no", "No", "NO", "on", "On", "ON", "off", "Off", "OFF"]
     reportDuplicateKey :: Warning -> IO ()
     reportDuplicateKey (DuplicateKey jsonPath) =
       fail (printf "The key '%s' is repeated in the rule file '%s', only the last value is kept" (formatRelativePath jsonPath) path)

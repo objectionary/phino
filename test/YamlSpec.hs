@@ -7,16 +7,19 @@
 module YamlSpec where
 
 import AST (Alpha, Attribute, Binding, Bytes, Expression (ExMeta, ExRoot))
-import Control.Exception (Exception (displayException), SomeException)
+import Control.Exception (Exception (displayException), SomeException, bracket)
 import Control.Monad
+import Data.ByteString qualified as BS
 import Data.Either (isLeft, isRight)
-import Data.List (isInfixOf, nub, sort, (\\))
+import Data.List (intercalate, isInfixOf, nub, sort, (\\))
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
+import System.Directory (getTemporaryDirectory, removeFile)
 import System.FilePath
+import System.IO (hClose, openTempFile)
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldSatisfy, shouldThrow)
 import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Number, Operation (..), Premise (..), Rule, contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
@@ -55,6 +58,25 @@ spec = do
     forM_
       packs
       (\pth -> it (makeRelative resources pth) (void (yamlRule pth)))
+
+  it "reads a bare y, n, yes, no, on and off in a rule file as the attributes they spell" $ do
+    let written :: (String -> String) -> String
+        written spelled = "name: bare-words\npattern: ⟦ 𝜏1 ↦ 𝑒1, 𝐵1 ⟧\nresult: ⟦ 𝐵1 ⟧\nwhen:\n  and:\n    - eq: [𝜏1, " ++ spelled "n" ++ "]\n    - in: [" ++ spelled "y" ++ ", 𝐵1]\n    - disjoint: [[" ++ intercalate ", " (map spelled ["yes", "no", "on", "off"]) ++ "], [𝐵1]]"
+    tmp <- getTemporaryDirectory
+    bare <-
+      bracket
+        (openTempFile tmp "bare-words.yaml")
+        (\(path, handle) -> hClose handle >> removeFile path)
+        ( \(path, handle) -> do
+            BS.hPut handle (encodeUtf8 (T.pack (written id)))
+            hClose handle
+            yamlRule path
+        )
+    show bare
+      `shouldBe` either
+        Yaml.prettyPrintParseException
+        (show :: Rule -> String)
+        (decodeYaml' (written (\word -> "'" ++ word ++ "'")))
 
   describe "fails on yaml typos" $ do
     let resources = "test-resources/yaml-typos"
