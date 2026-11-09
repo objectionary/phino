@@ -30,7 +30,7 @@ import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judg
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import qualified Inference as In
-import Lambdas (Lambdas)
+import Lambdas (Lambdas, thrown)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
 import Must (Must (..))
@@ -111,6 +111,7 @@ data ReduceContext = ReduceContext
   , _entered :: Seen
   , _facts :: Maybe Facts
   , _symbolic :: Lambdas
+  , _raising :: [T.Text]
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
@@ -514,7 +515,7 @@ morph'' owner start univ state entry = go start univ state entry
       (term, entered) <- severing expr univ state =<< parking seq state (universed univ caller{_judgment = Morphing})
       ctx <- opening Morphing =<< deeper entered
       parking seq state $ do
-        reached <- inferred term univ state ctx ctx._engine._morphing
+        reached <- maybe (inferred term univ state ctx ctx._engine._morphing) (\raise -> pure (Just (In.Answered (Morphing, "raise") raise, state))) (raised term)
         case reached of
           Just (In.Answered step built, state') -> do
             when owner (ctx._saveEval (EvMorphed ctx._nesting built))
@@ -524,6 +525,11 @@ morph'' owner start univ state entry = go start univ state entry
             (morphed, state'') <- onward seq state' way built ctx
             go morphed world state'' ctx
           Nothing -> throwIO (Unmorphable term)
+      where
+        raised :: Expression -> Maybe Expression
+        raised (ExDispatch target@(ExFormation _) _)
+          | thrown caller._raising target = Just target
+        raised _ = Nothing
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do

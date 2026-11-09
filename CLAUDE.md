@@ -247,7 +247,10 @@ reading a meta bound to a formation holding one of them, or to an application
 of one (`thrown` of `Lambdas.hs`), binds its own meta to that term as it is,
 never firing or walking it, and `merged` of `Evaluate.hs` hands such a side
 to `joined` as ⊥ when the other side does not raise, so the `joined` record
-names it under `raised`.
+names it under `raised`. A firing hands its terminators to every 𝕄 it runs
+in (`_raising` of `ReduceContext`), which answers a dispatch off a formation
+holding one of them with that formation, never firing it, so a side such as
+`Φ.throw( 𝜎2 ).q` raises the way `Φ.throw( 𝜎2 )` does (#2308).
 
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
