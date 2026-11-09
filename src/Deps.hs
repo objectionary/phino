@@ -262,6 +262,11 @@ abbreviatedInside names (ExApplication expr (ArAlpha alpha arg)) = ExApplication
 abbreviatedInside names (ExDispatch expr attr) = ExDispatch (abbreviated names expr) attr
 abbreviatedInside _ term = term
 
+dispatched :: Expression -> ([Attribute], Expression)
+dispatched (ExDispatch term attr)
+  | (attrs, call@(ExApplication _ _)) <- dispatched term = (attrs ++ [attr], call)
+dispatched term = ([], term)
+
 data Protocol = Protocol
   { _fired :: Int
   , _named :: Named T.Text
@@ -716,7 +721,7 @@ saveEvalXml handle cursor printed report = do
         locator <- located depth site
         origin <- leaf depth self
         (object, given) <- called depth call
-        pure (printf "<looped symbol=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\">%s</looped>" (sigma symbol) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) given)
+        pure (printf "<looped symbol=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\"%s>%s</looped>" (sigma symbol) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) (trailed call) given)
     elements at (EvStuck depth key judgment self) nesting =
       placed at nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
     elements at (EvStall _ key) nesting =
@@ -1002,9 +1007,16 @@ saveEvalXml handle cursor printed report = do
     enclosed :: String -> String -> (String, String) -> String
     enclosed _ opening (origin, "") = printf "%s of=\"%s\"/>" opening (escapeXML origin)
     enclosed tag opening (origin, inner) = printf "%s of=\"%s\">%s</%s>" opening (escapeXML origin) inner tag
+    trailed :: Expression -> String
+    trailed call = case fst (dispatched call) of
+      [] -> ""
+      attrs -> printf " dispatch=\"%s\"" (escapeXML (intercalate "." (map printAttribute attrs)))
     invoked :: Expression -> (Expression, [(Attribute, Expression)])
-    invoked (ExApplication term (ArTau attr value)) = second (++ [(attr, value)]) (invoked term)
-    invoked term = (term, [])
+    invoked = applied . snd . dispatched
+      where
+        applied :: Expression -> (Expression, [(Attribute, Expression)])
+        applied (ExApplication term (ArTau attr value)) = second (++ [(attr, value)]) (applied term)
+        applied term = (term, [])
     passed :: (Attribute, Expression) -> Naming String
     passed (attr, value) = valued value >>= lift . attributed (printAttribute attr)
     valued :: Expression -> Naming Expression

@@ -331,6 +331,49 @@ spec = do
     $ it "fails on a fraction instead of silently rounding it"
     $ (decodeYaml' "2.5" :: Either Yaml.ParseException Number) `shouldSatisfy` isLeft
 
+  describe "refuses a condition that compares different kinds" $ do
+    forM_
+      [
+        ( "an expression with a number in 'eq'"
+        , "eq: [𝑒1, 5]"
+        , "The 'eq' condition compares an expression with a number, while it can compare only two numbers, two attributes or two expressions"
+        )
+      ,
+        ( "an expression with an integral number in 'eq'"
+        , "eq: [𝑒1, 5.0]"
+        , "The 'eq' condition compares an expression with a number"
+        )
+      ,
+        ( "an expression with a number in 'gt'"
+        , "gt: [𝑒1, 3]"
+        , "The 'gt' condition compares an expression with a number, while it can compare only two numbers"
+        )
+      ,
+        ( "an expression with an attribute in 'eq'"
+        , "eq: [𝑒1, 𝜏1]"
+        , "The 'eq' condition compares an expression with an attribute"
+        )
+      ,
+        ( "an attribute with an attribute in 'gt'"
+        , "gt: ['!t1', '!t2']"
+        , "The 'gt' condition compares an attribute with an attribute, while it can compare only two numbers"
+        )
+      ,
+        ( "a nested 'not' that compares an expression with a number"
+        , "not: {eq: ['!e1', 5]}"
+        , "compares an expression with a number"
+        )
+      ]
+      (\(desc, yaml, message) -> it ("rejects " ++ desc) ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` failsWith message))
+    it "rejects a rule whose 'having' compares an expression with a number" $
+      (decodeYaml' "name: hv\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ ⟧'\nhaving:\n  eq: ['!e1', 5]" :: Either Yaml.ParseException Rule)
+        `shouldSatisfy` failsWith "compares an expression with a number"
+    it "rejects a morphing rule whose 'when' compares an expression with a number" $
+      (decodeYaml' "name: mv\nmatch: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\nuniverse: '⟦ ⟧'\nconclusion: '⟦ ⟧'\nwhen:\n  eq: ['𝑒1', 5]" :: Either Yaml.ParseException MorphRule)
+        `shouldSatisfy` failsWith "compares an expression with a number"
+    it "accepts a quoted number as an expression" $
+      (decodeYaml' "eq: ['𝑒1', '5']" :: Either Yaml.ParseException Condition) `shouldSatisfy` isRight
+
   describe "rejects an empty 'and' condition"
     $ it "fails on 'and: []'"
     $ (decodeYaml' "and: []" :: Either Yaml.ParseException Condition) `shouldSatisfy` isLeft

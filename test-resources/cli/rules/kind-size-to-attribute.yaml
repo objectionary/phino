@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Binds the number that size returns to an attribute meta.
+name: size-to-attribute
+pattern: "⟦ 𝐵1, foo ↦ 𝑒1 ⟧"
+result: "⟦ 𝜏2 ↦ 𝑒1 ⟧"
+where:
+  - meta: "𝜏2"
+    function: size
+    args:
+      - "𝐵1"

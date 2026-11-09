@@ -11,7 +11,7 @@ module Rule (RuleContext (..), Step (..), domainOf, isFormation, isNF, matchExpr
 import AST
 import Builder
   ( buildAttribute
-  , buildBindingThrows
+  , buildBinding
   , buildBindingUnchecked
   , buildExpression
   , buildExpressionThrows
@@ -233,17 +233,24 @@ _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   Just (MvExpression expr) -> _matches pat expr (Subst mp) ctx
   _ -> pure []
-_matches pat expr subst ctx = do
-  (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression expr] subst
-  matched <- match (T.encodeUtf8 (T.pack pat)) (T.encodeUtf8 (T.pack (btsToUnescapedStr tgt)))
-  pure [subst | matched]
+_matches pat expr subst ctx = case buildExpression expr subst of
+  Right built -> do
+    (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression built] subst
+    matched <- match (T.encodeUtf8 (T.pack pat)) (T.encodeUtf8 (T.pack (btsToUnescapedStr tgt)))
+    pure [subst | matched]
+  Left err -> do
+    logDebug (printf "Condition matches(%s, %s) can't be built and was treated as not met: %s" (printExpression expr) pat err)
+    pure []
 
 _partOf :: Expression -> Binding -> Subst -> RuleContext -> IO [Subst]
-_partOf exp bd subst _ = do
-  exp' <- buildExpressionThrows exp subst
-  bds <- buildBindingThrows bd subst
-  pure [subst | partOf exp' bds]
+_partOf exp bd subst _ = case (buildExpression exp subst, buildBinding bd subst) of
+  (Right exp', Right bds) -> pure [subst | partOf exp' bds]
+  (_, Left err) -> unbuilt err
+  (Left err, _) -> unbuilt err
   where
+    unbuilt err = do
+      logDebug (printf "Condition part-of(%s, %s) can't be built and was treated as not met: %s" (printExpression exp) (printBinding bd) err)
+      pure []
     partOf :: Expression -> [Binding] -> Bool
     partOf _ [] = False
     partOf expr (BiTau _ (ExFormation bds) : rest) = expr == ExFormation bds || partOf expr bds || partOf expr rest

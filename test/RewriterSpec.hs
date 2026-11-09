@@ -217,6 +217,28 @@ spec = do
       rewrite expr [] (RewriteContext (ExDispatch ExRoot (AtLabel "w")) 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep dontSaveMade)
         `shouldThrow` (\exc -> "Can't find object by locator" `isInfixOf` show (exc :: SomeException))
 
+  describe "catches a loop that comes back to the term the run started from" $ do
+    let steps =
+          [ direct "a-to-b" False (\_ expr -> [ExFormation [BiTau (AtLabel "b") ExXi] | ExFormation [BiTau (AtLabel "a") ExXi] <- [expr]])
+          , direct "b-to-a" False (\_ expr -> [ExFormation [BiTau (AtLabel "a") ExXi] | ExFormation [BiTau (AtLabel "b") ExXi] <- [expr]])
+          ]
+        context cycles locator some =
+          RewriteContext locator 25 cycles False Nothing (building linked) (_normal linked) (every some) MtDisabled Nothing dontSaveStep dontSaveMade
+        looping exc = "looping" `isInfixOf` show (exc :: SomeException)
+    it "catches a loop that comes back to the term the run started from" $ do
+      forM_
+        [ (ExFormation [BiTau (AtLabel "a") ExXi], steps)
+        , (ExFormation [BiTau (AtLabel "b") ExXi], steps)
+        , (ExFormation [BiTau (AtLabel "a") ExXi], reverse steps)
+        , (ExFormation [BiTau (AtLabel "b") ExXi], reverse steps)
+        ]
+        (\(start, some) -> rewrite start some (context 25 ExRoot some) `shouldThrow` looping)
+      rewrite
+        (ExFormation [BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "a") ExXi])])
+        steps
+        (context 1 (ExDispatch ExRoot (AtLabel "x")) steps)
+        `shouldThrow` looping
+
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
     packs <- runIO (allPathsIn resources)
