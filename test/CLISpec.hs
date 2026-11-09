@@ -2397,6 +2397,17 @@ spec = do
           lines records `shouldContain` ["      <starved limit=\"3\" by=\"dataize\" at=\"𝑛·1·2\"/>"]
 
       forM_
+        [("XMLXXXXXX.xml", "<exceeded limit=\"7\" by=\"dataize\" at="), ("textXXXXXX.txt", "exceeded 7  # 𝔻(")]
+        $ \(template, record) ->
+          it ("writes the reached --max-cycles to the protocol " ++ template) $
+            withTempFile template $ \(path, stream) -> do
+              hClose stream
+              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-cycles=7", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              records <- readProtocol path
+              any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
+
+      forM_
         [("XMLXXXXXX.xml", "<spent limit=\"5\" by="), ("textXXXXXX.txt", "  spent 5")]
         ( \(template, record) ->
             it ("writes a spent firing budget to the protocol as " ++ record) $

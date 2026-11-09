@@ -552,6 +552,8 @@ firing that got stuck, other than a join that could not join, which
 `diverged …` or `unripe …` closes, `stall …` stands under one the memo
 answered with a kept stall, and `starved …` is written by `deeper` where the
 step budget runs out, with the site it stood at rather than its term (#1531).
+`exceeded …` (`EvExceeded`) is written by `normalized` of `Morph.hs` where
+normalization reaches `--max-cycles`, with the site the same way (#2309).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the
