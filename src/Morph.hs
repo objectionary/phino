@@ -454,7 +454,9 @@ argued univ ctx state site bds call = foldl ExDispatch <$> go inner <*> pure att
         worked place' placed' state' = do
           (normal, morphed) <- settled placed' univ state' =<< opening Morphing ctx{_site = place'}
           case normal of
-            ExFormation _ -> fired univ ctx place' morphed normal
+            ExFormation _
+              | thrown ctx._raising normal -> pure (normal, morphed)
+              | otherwise -> fired univ ctx place' morphed normal
             _ -> pure (normal, morphed)
         hanging :: Expression -> Bool
         hanging (ExFormation bds) = not (any isLambda bds) && or [not (xiFree body) | BiTau AtPhi body <- bds]
