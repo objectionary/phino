@@ -547,6 +547,8 @@ An argument `argued` works out may come to a copy that repeats one above
 too, which is cut in turn; that inner cut, told by `_reckoning` of
 `ReduceContext`, writes the call the facts trace as it is, with no argument
 worked out, since working it out runs into the same loop again (#2313).
+An argument that comes to a copy of a terminator of the entry, as
+`Φ.throw( 𝜎1 )`, is written as that copy and never fired (#2316).
 A call ending with attributes over its last application, such as
 `Φ.fork( … )( … ).φ`, keeps them on top: `argued` and the markup step over
 them (`dispatched` of `Deps.hs`), so the object stays a path of the world,
