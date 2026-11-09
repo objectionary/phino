@@ -33,7 +33,7 @@ jobs:
           ghc-version: ${{ matrix.ghc }}
           enable-stack: true
           stack-no-global: true
-          stack-version: '3.5.1'
+          stack-version: '3.11.1'
       - uses: actions/cache@v6
         with:
           path: |
