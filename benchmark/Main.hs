@@ -87,6 +87,8 @@ symbolicCtx acyclic memo facts minted lambdas locator =
     Map.empty
     facts
     lambdas
+    []
+    False
     (building linked)
     reduction
     evaluation
