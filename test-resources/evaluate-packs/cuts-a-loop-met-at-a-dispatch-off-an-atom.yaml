@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A loop found where 𝕄 is about to dispatch 'q' off a copy of the atom
+# 'L_times', under '--acyclic=plausible'. The operand of 'L_dataized' reads
+# 'Φ.x.q' again, so the dispatch repeats the one above it. The cut answers the
+# whole dispatch with a fresh symbol, named after the call the facts trace with
+# 'q' on top, and leaves the argument of the call as it is, since working it
+# out would run into the same loop again (#2307). Both firings then answer.
+symbolic: |
+  - λ: L_times
+    dataize:
+      𝛿1: $.b
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_dataized
+    dataize:
+      𝛿1: $.target
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+location: 'Q.y'
+acyclic: plausible
+partial: true
+input: >
+  ⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧,
+    times(b) ↦ ⟦ λ ⤍ L_times ⟧,
+    x ↦ Φ.times( Φ.dataized( Φ.x.q ) ),
+    y ↦ Φ.x.q ⟧
+result: '𝜎3:λ.q'
+protocol: |
+  𝕄(Φ.y):
+    remembered 𝑛·0·1 ≡ Φ.times  # ⟦ b ↦ ∅, λ ⤍ L_times ⟧
+    𝑛·0·2 := Φ.times( b ↦ Φ.dataized( Φ.x.q ) )
+    𝑛·0·3 := ⟦ b ↦ Φ.dataized( Φ.x.q ), λ ⤍ L_times ⟧
+    remembered 𝑛·0·3 ≡ 𝑛·0·1( b ↦ Φ.dataized( Φ.x.q ) )
+    𝔼(L_times):
+      𝔻(ξ.b):
+        𝕄(ξ.b):
+          remembered 𝑛·1·1 ≡ Φ.dataized  # ⟦ target ↦ ∅, λ ⤍ L_dataized ⟧
+          𝑛·1·2 := Φ.dataized( target ↦ Φ.x.q )
+          𝑛·1·3 := ⟦ target ↦ Φ.x.q, λ ⤍ L_dataized ⟧
+          remembered 𝑛·1·3 ≡ 𝑛·1·1( target ↦ Φ.x.q )
+          morphed 𝑛·1·4 := 𝑛·1·3
+        𝔼(L_dataized):
+          𝔻(ξ.target):
+            𝕄(ξ.target):
+              𝑛·2·1 := Φ.times( b ↦ Φ.dataized( Φ.x.q ) )
+              𝑛·2·2 := ⟦ b ↦ Φ.dataized( Φ.x.q ), λ ⤍ L_times ⟧
+              recalled 𝑛·0·3 ⇒ 𝑛·0·1( b ↦ Φ.dataized( Φ.x.q ) )
+              recalled 𝑛·0·1 ⇒ Φ.times
+              looped 𝜎1 := 𝑛·2·1.q  # plausible, repeats 𝑛·2·2
+              morphed 𝑛·2·3 := 𝜎1:λ
+            𝛿·2·1 := 𝔻(𝜎1:λ)
+          𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.target)
+          𝑛·2·4 := 𝜎2:λ  # 𝑛
+          𝕄(𝑛·2·4):
+            morphed 𝑛·2·5 := 𝜎2:λ
+          𝑛·2·6 := 𝑛·2·5  # 𝕄(𝑛·2·4)
+          memoized 𝑛·1·3 ⇛ 𝜎2:λ
+        𝛿·1·1 := 𝔻(𝜎2:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.b)
+      𝑛·1·5 := 𝜎3:λ  # 𝑛
+      𝕄(𝑛·1·5):
+        morphed 𝑛·1·6 := 𝜎3:λ
+      𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
+      memoized 𝑛·2·2 ⇛ 𝜎3:λ
+    unanswered 𝜎3  # 𝕄(𝜎3:λ)
