@@ -35,7 +35,7 @@ jobs:
       - uses: haskell-actions/setup@v2.12.1
         with:
           ghc-version: ${{ env.GHC_VERSION }}
-          cabal-version: '3.12.1.0'
+          cabal-version: '3.18.2.0'
       - run: cabal update
       - run: cabal haddock --haddock-hyperlink-source
       - uses: JamesIves/github-pages-deploy-action@v4
