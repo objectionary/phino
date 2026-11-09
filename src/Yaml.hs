@@ -127,7 +127,9 @@ instance FromJSON Comparable where
   parseJSON _ = fail "An argument of 'eq' or 'gt' is a number, an attribute, an expression, or an object of 'length' or 'domain'"
 
 instance FromJSON Condition where
-  parseJSON = withObject "Condition" parseCondition
+  parseJSON = withObject "Condition" $ \v -> do
+    cond <- parseCondition v
+    cond <$ either fail pure (wellCompared cond)
 
 parseCondition :: Object -> Parser Condition
 parseCondition v = do
@@ -183,6 +185,28 @@ parseCondition v = do
   where
     several :: FromJSON a => Value -> Parser [a]
     several val = parseJSON val <|> (pure <$> parseJSON val)
+
+kindOf :: Comparable -> String
+kindOf (CmpNum _) = "a number"
+kindOf (CmpAttr _) = "an attribute"
+kindOf (CmpExpr _) = "an expression"
+
+wellCompared :: Condition -> Either String ()
+wellCompared = \case
+  And conds -> mapM_ wellCompared conds
+  Or conds -> mapM_ wellCompared conds
+  Not cond -> wellCompared cond
+  Eq left right
+    | kindOf left == kindOf right -> Right ()
+    | otherwise -> mismatch "eq" "two numbers, two attributes or two expressions" left right
+  Gt left right
+    | kindOf left == "a number" && kindOf right == "a number" -> Right ()
+    | otherwise -> mismatch "gt" "two numbers" left right
+  _ -> Right ()
+  where
+    mismatch :: String -> String -> Comparable -> Comparable -> Either String ()
+    mismatch verb allowed left right =
+      Left (printf "The '%s' condition compares %s with %s, while it can compare only %s" verb (kindOf left) (kindOf right) allowed)
 
 instance FromJSON ExtraArgument where
   parseJSON v@(String _) =
