@@ -68,7 +68,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       stamp <- counted caller._memo
       exhausted <- starved caller._memo
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
-      let ctx = caller{_nesting = caller._nesting + 1}
+      let ctx = caller{_nesting = caller._nesting + 1, _raising = entry._terminators}
       outcome <- try $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
         (bound', morphed, normals) <- foldM (through ctx "morph" (still pure)) (bound, dataized, []) entry._morphed
