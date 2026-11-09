@@ -3834,12 +3834,12 @@ spec = do
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--max-steps=40"]
               ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
-      it "prints the residue and exits successfully with the flag" $
+      it "answers the looping dispatch with a symbol and exits successfully with the flag" $
         loopingLambdas $ \endless ->
           withStdin looping $
             testCLISucceeded
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
-              ["⟦ λ ⤍ L_loop ⟧.foo"]
+              ["⟦ λ ⤍ 𝜎1 ⟧"]
 
       it "answers a terminating program the same way with the flag" $
         withStdin chained $

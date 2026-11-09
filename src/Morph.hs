@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, entering, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, voided) where
+module Morph (Answer (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, voided) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -268,9 +268,6 @@ unparked action = action `catch` rethrow
     rethrow (LoopingAt term _ _) = throwIO (Looping term)
     rethrow failure = throwIO failure
 
-entering :: Expression -> ReduceContext -> IO ReduceContext
-entering term ctx = maybe (pure ctx) (`enter` ctx) (entrance ctx._judgment term)
-
 admitting :: Expression -> ReduceContext -> IO (Either (Acyclic, Expression) ReduceContext)
 admitting term ctx = maybe (pure (Right ctx)) (`admitted` ctx) (entrance ctx._judgment term)
 
@@ -284,26 +281,33 @@ refused form ctx (mode, before) = do
 
 severing :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, ReduceContext)
 severing term univ state ctx = case entrance ctx._judgment term of
-  Just form -> either (,ctx) (term,) <$> sever form univ state ctx
+  Just form -> either (,ctx) (term,) <$> sever (over term) form univ state ctx
   Nothing -> pure (term, ctx)
+  where
+    over :: Expression -> Maybe Attribute
+    over (ExDispatch _ attr) = Just attr
+    over _ = Nothing
 
-sever :: Expression -> Expression -> State -> ReduceContext -> IO (Either Expression ReduceContext)
-sever form univ state ctx = admitted form ctx >>= either cut (pure . Right)
+sever :: Maybe Attribute -> Expression -> Expression -> State -> ReduceContext -> IO (Either Expression ReduceContext)
+sever taken form univ state ctx = admitted form ctx >>= either cut (pure . Right)
   where
     cut :: (Acyclic, Expression) -> IO (Either Expression ReduceContext)
     cut loop = case form of
-      ExFormation bds
-        | boxed bds || ctx._judgment `elem` [Dataization, Evaluation] -> Left <$> severed univ ctx state form bds loop
+      ExFormation bds -> Left <$> severed taken univ ctx state form bds loop
       _ -> refused form ctx loop
 
-severed :: Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
-severed univ ctx state form bds (mode, before) = do
+severed :: Maybe Attribute -> Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
+severed taken univ ctx state form bds (mode, before) = do
   call <- (<|>) <$> traced ctx._facts form <*> traced ctx._facts before
   forM_ call (recited ctx . snd)
-  reckoned <- traverse (argued univ ctx state form bds . fst) call
+  reckoned <- traverse (spelled taken . fst) call
   fresh <- coined ctx
   ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
   pure (ExFormation [BiLambda (FnSymbol fresh)])
+  where
+    spelled :: Maybe Attribute -> Expression -> IO Expression
+    spelled (Just attr) found = pure (ExDispatch found attr)
+    spelled Nothing found = argued univ ctx state form bds found
 
 recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
@@ -362,7 +366,7 @@ coined :: ReduceContext -> IO Int
 coined ctx = atomicModifyIORef' ctx._minted (\count -> (succ count, succ count))
 
 fired :: Expression -> ReduceContext -> Expression -> State -> Expression -> IO (Expression, State)
-fired univ ctx site state form = sever form univ state ctx{_judgment = Evaluation, _site = site} >>= either (pure . (,state)) kindled
+fired univ ctx site state form = sever Nothing form univ state ctx{_judgment = Evaluation, _site = site} >>= either (pure . (,state)) kindled
   where
     kindled :: ReduceContext -> IO (Expression, State)
     kindled entered = do
@@ -497,9 +501,10 @@ morph'' owner start univ state entry = go start univ state entry
   where
     go :: Morphed -> Expression -> State -> ReduceContext -> IO (Morphed, State)
     go (expr, seq) univ state caller = do
-      ctx <- opening Morphing =<< deeper =<< entering expr =<< parking seq state (universed univ caller{_judgment = Morphing})
+      (term, entered) <- severing expr univ state =<< parking seq state (universed univ caller{_judgment = Morphing})
+      ctx <- opening Morphing =<< deeper entered
       parking seq state $ do
-        reached <- inferred expr univ state ctx ctx._engine._morphing
+        reached <- inferred term univ state ctx ctx._engine._morphing
         case reached of
           Just (In.Answered step built, state') -> do
             when owner (ctx._saveEval (EvMorphed ctx._nesting built))
@@ -508,7 +513,7 @@ morph'' owner start univ state entry = go start univ state entry
           Just (In.Onward way built world, state') -> do
             (morphed, state'') <- onward seq state' way built ctx
             go morphed world state'' ctx
-          Nothing -> throwIO (Unmorphable expr)
+          Nothing -> throwIO (Unmorphable term)
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do
@@ -682,7 +687,7 @@ morphing univ ctx expr state = do
       , boxed bds = do
           hits <- repeats mode term opened
           case drop opened._maxLoops hits of
-            before : _ -> (,state') <$> severed world opened state' term bds (mode, before)
+            before : _ -> (,state') <$> severed Nothing world opened state' term bds (mode, before)
             []
               | null hits -> pure (term, state')
               | otherwise -> pure (term, state'{_copies = state'._copies ++ [term]})
