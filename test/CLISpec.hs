@@ -2439,13 +2439,13 @@ spec = do
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
 
       forM_
-        [("XMLXXXXXX.xml", "<oversized limit=\"120\" by=\"morph\" at="), ("textXXXXXX.txt", "oversized 120")]
+        [("XMLXXXXXX.xml", "<oversized limit=\"60\" by=\"morph\" at="), ("textXXXXXX.txt", "oversized 60")]
         $ \(template, record) ->
           it ("writes the reached --max-nodes to the protocol " ++ template) $
             withTempFile template $ \(path, stream) -> do
               hClose stream
               withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
-                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=120", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
               records <- readProtocol path
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
 
@@ -3715,14 +3715,18 @@ spec = do
       it "fails once the term grows over --max-nodes" $
         withStdin growing $
           testCLIFailed
-            ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=120", "--locator=Q.x"]
-            ["[ERROR]: Evaluation did not finish before reaching the limit of nodes: --max-nodes=120"]
+            ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--locator=Q.x"]
+            ["[ERROR]: Evaluation did not finish before reaching the limit of nodes: --max-nodes=60"]
 
       it "ends the growing term with --partial" $
         withStdin growing $
           testCLISucceeded
-            ["morph", "--acyclic=plausible", "--max-loops=2", "--max-nodes=120", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
+            ["morph", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
             ["Φ.m( 𝜎1:λ )"]
+
+      it "passes a small run in a large program under --max-nodes" $
+        withStdin ("⟦ x ↦ ⟦ φ ↦ ⟦ y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧.y ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
+          testCLISucceeded ["dataize", "--max-nodes=50", "--locator=Q.x"] ["05-"]
 
     describe "--max-memory" $ do
       let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
