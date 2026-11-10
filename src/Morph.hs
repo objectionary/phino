@@ -26,9 +26,10 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep, sized)
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
+import GHC.Stats (GCDetails (..), RTSStats (..), getRTSStats, getRTSStatsEnabled)
 import qualified Inference as In
 import Lambdas (Lambdas, thrown)
 import Locator (locatedExpression, withLocatedExpression)
@@ -71,10 +72,12 @@ data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression,
 data Answer
   = Answer Expression Expression
   | Joined Expression
+  | Raised
 
 ended :: Answer -> Expression
 ended (Answer _ normal) = normal
 ended (Joined normal) = normal
+ended Raised = ExTermination
 
 data Firing = Firing T.Text [Either Int Bytes] [Expression]
   deriving (Eq, Ord)
@@ -94,6 +97,8 @@ data ReduceContext = ReduceContext
   , _universe :: Maybe Expression
   , _maxDepth :: Int
   , _maxCycles :: Int
+  , _maxNodes :: Maybe Int
+  , _maxMemory :: Maybe Int
   , _steps :: Steps
   , _tally :: Maybe Tally
   , _minted :: IORef Int
@@ -125,6 +130,8 @@ data Budget
   = Depth Judgment Int
   | Firings Int
   | Cycles Int
+  | Nodes Int
+  | Memory Int
 
 data ReduceException
   = OutOfSteps Budget
@@ -146,6 +153,10 @@ instance Show ReduceException where
     printf "Evaluation did not finish before reaching the limit of firings: --max-firings=%d" limit
   show (OutOfSteps (Cycles limit)) =
     printf "Normalization did not finish before reaching the limit of cycles: --max-cycles=%d" limit
+  show (OutOfSteps (Nodes limit)) =
+    printf "Evaluation did not finish before reaching the limit of nodes: --max-nodes=%d" limit
+  show (OutOfSteps (Memory limit)) =
+    printf "Evaluation did not finish before reaching the limit of memory: --max-memory=%s" (sized limit)
   show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
   show (OutOfTime limit) =
     printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
@@ -170,6 +181,21 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
     starve (Just (Memo _ _ _ exhausted)) = modifyIORef' exhausted (+ 1)
+
+measured :: ReduceContext -> Expression -> IO ()
+measured ctx term = do
+  forM_ ctx._maxNodes $ \cap ->
+    when (countNodes term > cap) (overflown (EvOversized ctx._nesting cap ctx._judgment ctx._site) (Nodes cap))
+  forM_ ctx._maxMemory $ \cap -> do
+    enabled <- getRTSStatsEnabled
+    unless enabled (ioError (userError "--max-memory needs the statistics of the runtime, which this binary was linked without"))
+    stats <- getRTSStats
+    when (toInteger (gcdetails_live_bytes (gc stats)) > toInteger cap) (overflown (EvBlown ctx._nesting cap ctx._judgment ctx._site) (Memory cap))
+  where
+    overflown :: Evaluation -> Budget -> IO ()
+    overflown record budget = do
+      ctx._saveEval record
+      throwIO (OutOfSteps budget)
 
 tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
@@ -598,6 +624,7 @@ leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
 
 normalized :: Expression -> NonEmpty Rewritten -> ReduceContext -> IO (Expression, NonEmpty Rewritten)
 normalized expr seq ctx@ReduceContext{..} = do
+  measured ctx expr
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
   taken <- newIORef Map.empty
   peeled <- newIORef Map.empty
@@ -612,7 +639,7 @@ normalized expr seq ctx@ReduceContext{..} = do
   where
     rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
     rewriteContext taken peeled whole@ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (made taken peeled whole)
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled whole)
     made :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
     made _ _ whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
       | attr /= AtRho && object /= head' = do
@@ -663,7 +690,7 @@ normalized expr seq ctx@ReduceContext{..} = do
 universed :: Expression -> ReduceContext -> IO ReduceContext
 universed _ ctx@ReduceContext{_universe = Just _} = pure ctx
 universed univ ctx = do
-  (normal, _) <- normalized univ ((univ, Nothing) :| []) ctx{_locator = ExRoot, _saveStep = dontSaveStep}
+  (normal, _) <- normalized univ ((univ, Nothing) :| []) ctx{_locator = ExRoot, _maxNodes = Nothing, _saveStep = dontSaveStep}
   ctx._saveEval (EvWorld normal)
   pure ctx{_universe = Just normal}
 

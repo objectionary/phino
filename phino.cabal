@@ -136,7 +136,7 @@ library
 executable phino
   import: warnings
   main-is: Main.hs
-  ghc-options: -threaded
+  ghc-options: -threaded "-with-rtsopts=-T"
   hs-source-dirs: app
   build-depends:
     base,
@@ -150,7 +150,7 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Main.hs
   hs-source-dirs: test
-  ghc-options: -threaded
+  ghc-options: -threaded "-with-rtsopts=-T"
   other-modules:
     AbridgeSpec
     ASTSpec

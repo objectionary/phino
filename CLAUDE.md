@@ -250,7 +250,11 @@ to `joined` as ⊥ when the other side does not raise, so the `joined` record
 names it under `raised`. A firing hands its terminators to every 𝕄 it runs
 in (`_raising` of `ReduceContext`), which answers a dispatch off a formation
 holding one of them with that formation, never firing it, so a side such as
-`Φ.throw( 𝜎2 ).q` raises the way `Φ.throw( 𝜎2 )` does (#2308).
+`Φ.throw( 𝜎2 ).q` raises the way `Φ.throw( 𝜎2 )` does (#2308). An operand
+of `dataize`, a path from `$` or a meta alone, that holds one of them makes
+the firing answer ⊥ (`raising` of `Evaluate.hs`, `Raised` of `Answer`),
+never firing the terminator, since data that comes from a raise is the same
+raise, so a join takes such a side for one that raises (#2330).
 
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
@@ -560,6 +564,18 @@ answered with a kept stall, and `starved …` is written by `deeper` where the
 step budget runs out, with the site it stood at rather than its term (#1531).
 `exceeded …` (`EvExceeded`) is written by `normalized` of `Morph.hs` where
 normalization reaches `--max-cycles`, with the site the same way (#2309).
+`oversized …` (`EvOversized`) is written by `measured` of `Morph.hs` where the
+term `normalized` starts from, or any step of it, holds more nodes than
+`--max-nodes` (`_maxNodes` of `ReduceContext`, off unless given), since a term
+may grow until it takes all memory long before any other limit runs out
+(#2320). It counts only the term at the locator, never the program around it,
+and never the world `universed` normalizes, so attributes the run never
+touches cannot push it over the limit (#2324). The count spells a part shared
+in memory again every time it appears, so `blown …` (`EvBlown`) is written by
+`measured` at the same places where the live bytes of the last collection of
+the garbage collector pass `--max-memory` (`_maxMemory` of `ReduceContext`),
+read by `getRTSStats`, which both the binary and the specs enable with
+`-with-rtsopts=-T` (#2323).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the
@@ -587,7 +603,9 @@ run under `plausible` keeps what every firing answered, by the formation it
 fired (`Memo`, `recalled` and `retained` in `Morph.hs`, made by `memoized` for
 that mode alone and asked and told by `symbol` in `Evaluate.hs`), and a later
 firing of the same formation, ρ and all, takes the answer with the symbols the
-first one minted: it is charged nothing and reduces nothing. A firing that
+first one minted: it reduces nothing, but is charged to `--max-firings` and
+reads the clock of `--max-seconds` as one made, so a run of memo hits still
+stops on its limits (#2328). A firing that
 answers writes `memoized 𝑛·1·3 ⇛ 𝜎1:λ` (`EvMemoized`), the formation fired
 and its answer, and a later one taking the answer is written to the protocol
 as a firing at its own site carrying `recalled 𝑛·1·3 ⇒ 𝜎1:λ`, and no operand
