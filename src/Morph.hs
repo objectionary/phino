@@ -622,8 +622,8 @@ leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
 
 normalized :: Expression -> NonEmpty Rewritten -> ReduceContext -> IO (Expression, NonEmpty Rewritten)
 normalized expr seq ctx@ReduceContext{..} = do
+  measured ctx expr
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
-  measured ctx whole
   taken <- newIORef Map.empty
   peeled <- newIORef Map.empty
   (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken peeled ctx)
@@ -637,7 +637,7 @@ normalized expr seq ctx@ReduceContext{..} = do
   where
     rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
     rewriteContext taken peeled whole@ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> measured whole term >> _saveStep term) (made taken peeled whole)
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled whole)
     made :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
     made _ _ whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
       | attr /= AtRho && object /= head' = do
@@ -688,7 +688,7 @@ normalized expr seq ctx@ReduceContext{..} = do
 universed :: Expression -> ReduceContext -> IO ReduceContext
 universed _ ctx@ReduceContext{_universe = Just _} = pure ctx
 universed univ ctx = do
-  (normal, _) <- normalized univ ((univ, Nothing) :| []) ctx{_locator = ExRoot, _saveStep = dontSaveStep}
+  (normal, _) <- normalized univ ((univ, Nothing) :| []) ctx{_locator = ExRoot, _maxNodes = Nothing, _saveStep = dontSaveStep}
   ctx._saveEval (EvWorld normal)
   pure ctx{_universe = Just normal}
 
