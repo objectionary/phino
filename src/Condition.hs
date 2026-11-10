@@ -98,6 +98,13 @@ condition =
         _ <- rparen
         return (Y.In attrs bds)
     , do
+        _ <- symbol "disjoint" >> lparen
+        attrs <- several (choice [AtLambda <$ symbol "λ", AtDelta <$ symbol "Δ", _attribute phiParser])
+        _ <- comma
+        bds <- several (_binding phiParser)
+        _ <- rparen
+        return (Y.Disjoint attrs bds)
+    , do
         _ <- symbol "not" >> lparen
         cond <- condition
         _ <- rparen
