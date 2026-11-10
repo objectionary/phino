@@ -206,13 +206,16 @@ forall e a. Exception e =&gt; e -&gt; IO a
 </span><a href="#local-6989586621679696533"><span class="hs-identifier hs-var">func</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-61"></span><span>  </span><span class="annot"><a href="file:///Users/runner/.ghcup/ghc/9.6.7/lib/ghc-9.6.7/lib/../../../share/doc/ghc-9.6.7/html/libraries/base-4.18.3.0/src/GHC.Maybe.html#Just"><span class="hs-identifier hs-type">Just</span></a></span><span> </span><span id="local-6989586621679696539"><span class="annot"><span class="annottext">Lambda
 </span><a href="#local-6989586621679696539"><span class="hs-identifier hs-var">entry</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-62"></span><span>    </span><span id="local-6989586621679696540"><span class="annot"><span class="annottext">Maybe Kept
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">ReduceContext -&gt; IO ()
+</span><a href="Morph.html#charged"><span class="hs-identifier hs-var">charged</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
+</span><a href="#local-6989586621679696538"><span class="hs-identifier hs-var">caller</span></a></span><span>
+</span><span id="line-63"></span><span>    </span><span id="local-6989586621679696540"><span class="annot"><span class="annottext">Maybe Kept
 </span><a href="#local-6989586621679696540"><span class="hs-identifier hs-var">known</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe Memo -&gt; Expression -&gt; Int -&gt; IO (Maybe Kept)
 </span><a href="Morph.html#recalled"><span class="hs-identifier hs-var">recalled</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679696538"><span class="hs-identifier hs-var">caller</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_memo</span><span> </span><span class="annot"><span class="annottext">Expression
 </span><a href="#local-6989586621679696534"><span class="hs-identifier hs-var">form</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
 </span><a href="#local-6989586621679696538"><span class="hs-identifier hs-var">caller</span></a></span><span class="hs-operator">.</span><span class="hs-identifier">_steps</span><span class="hs-operator">.</span><span class="hs-identifier">_spent</span><span>
-</span><span id="line-63"></span><span>    </span><span class="annot"><span class="annottext">IO (Expression, State)
+</span><span id="line-64"></span><span>    </span><span class="annot"><span class="annottext">IO (Expression, State)
 -&gt; (Kept -&gt; IO (Expression, State))
 -&gt; Maybe Kept
 -&gt; IO (Expression, State)
@@ -222,14 +225,11 @@ forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
 </span><a href="#local-6989586621679696539"><span class="hs-identifier hs-var">entry</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Kept -&gt; IO (Expression, State)
 </span><a href="#local-6989586621679696543"><span class="hs-identifier hs-var">told</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe Kept
 </span><a href="#local-6989586621679696540"><span class="hs-identifier hs-var">known</span></a></span><span>
-</span><span id="line-64"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-65"></span><span>    </span><span class="annot"><a href="#local-6989586621679696542"><span class="hs-identifier hs-type">made</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.ghcup/ghc/9.6.7/lib/ghc-9.6.7/lib/../../../share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#IO"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-type">State</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-66"></span><span>    </span><span id="local-6989586621679696542"><span class="annot"><span class="annottext">made :: Lambda -&gt; IO (Expression, State)
+</span><span id="line-65"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><a href="#local-6989586621679696542"><span class="hs-identifier hs-type">made</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Lambdas.html#Lambda"><span class="hs-identifier hs-type">Lambda</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="file:///Users/runner/.ghcup/ghc/9.6.7/lib/ghc-9.6.7/lib/../../../share/doc/ghc-9.6.7/html/libraries/ghc-prim-0.10.0/src/GHC.Types.html#IO"><span class="hs-identifier hs-type">IO</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="AST.html#Expression"><span class="hs-identifier hs-type">Expression</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Deps.html#State"><span class="hs-identifier hs-type">State</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-67"></span><span>    </span><span id="local-6989586621679696542"><span class="annot"><span class="annottext">made :: Lambda -&gt; IO (Expression, State)
 </span><a href="#local-6989586621679696542"><span class="hs-identifier hs-var hs-var">made</span></a></span></span><span> </span><span id="local-6989586621679696544"><span class="annot"><span class="annottext">Lambda
 </span><a href="#local-6989586621679696544"><span class="hs-identifier hs-var">entry</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-67"></span><span>      </span><span class="annot"><span class="annottext">ReduceContext -&gt; IO ()
-</span><a href="Morph.html#charged"><span class="hs-identifier hs-var">charged</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
-</span><a href="#local-6989586621679696538"><span class="hs-identifier hs-var">caller</span></a></span><span>
 </span><span id="line-68"></span><span>      </span><span id="local-6989586621679696545"><span class="annot"><span class="annottext">Int
 </span><a href="#local-6989586621679696545"><span class="hs-identifier hs-var">stamp</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Maybe Memo -&gt; IO Int
 </span><a href="Morph.html#counted"><span class="hs-identifier hs-var">counted</span></a></span><span> </span><span class="annot"><span class="annottext">ReduceContext
