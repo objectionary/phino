@@ -250,7 +250,11 @@ to `joined` as ⊥ when the other side does not raise, so the `joined` record
 names it under `raised`. A firing hands its terminators to every 𝕄 it runs
 in (`_raising` of `ReduceContext`), which answers a dispatch off a formation
 holding one of them with that formation, never firing it, so a side such as
-`Φ.throw( 𝜎2 ).q` raises the way `Φ.throw( 𝜎2 )` does (#2308).
+`Φ.throw( 𝜎2 ).q` raises the way `Φ.throw( 𝜎2 )` does (#2308). An operand
+of `dataize`, a path from `$` or a meta alone, that holds one of them makes
+the firing answer ⊥ (`raising` of `Evaluate.hs`, `Raised` of `Answer`),
+never firing the terminator, since data that comes from a raise is the same
+raise, so a join takes such a side for one that raises (#2330).
 
 An entry ends in an `𝑛` or in a `join` block (`Ending` of `Lambdas.hs`),
 never both (#1938), and a joining entry may hold every other block, `evaluate`
