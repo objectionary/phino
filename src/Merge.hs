@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
@@ -50,51 +49,62 @@ locator :: [Attribute] -> String
 locator [] = "Φ"
 locator path = printf "Φ.%s" (intercalate "." (map printAttribute path))
 
-mergeBinding :: [Attribute] -> (FilePath, Binding) -> (FilePath, Binding) -> IO (FilePath, Binding)
-mergeBinding path first@(firstFile, one) second@(secondFile, two)
-  | one == two = pure first
+data Located = Located FilePath Binding [Located]
+
+place :: FilePath -> Binding -> Located
+place file binding = case binding of
+  BiTau _ (ExFormation bindings) -> Located file binding (map (place file) bindings)
+  _ -> Located file binding []
+
+bindingOf :: Located -> Binding
+bindingOf (Located _ (BiTau attr (ExFormation _)) children) = BiTau attr (ExFormation (map bindingOf children))
+bindingOf (Located _ binding _) = binding
+
+mergeBinding :: [Attribute] -> Located -> Located -> IO Located
+mergeBinding path first@(Located firstFile one xs) second@(Located secondFile two ys)
+  | bindingOf first == bindingOf second = pure first
   | otherwise = case (one, two) of
-      (BiTau a (ExFormation xs), BiTau b (ExFormation ys))
+      (BiTau a (ExFormation _), BiTau b (ExFormation _))
         | a == b ->
             mergeBindings
               (path <> [a])
-              (map (firstFile,) xs)
-              (map (secondFile,) ys)
-              <&> \united -> (firstFile, BiTau a (ExFormation (map snd united)))
-      _ -> throwIO (CanNotMergeBinding path first second)
+              xs
+              ys
+              <&> \united -> Located firstFile (BiTau a (ExFormation (map bindingOf united))) united
+      _ -> throwIO (CanNotMergeBinding path (firstFile, one) (secondFile, two))
 
-mergeBindings :: [Attribute] -> [(FilePath, Binding)] -> [(FilePath, Binding)] -> IO [(FilePath, Binding)]
+mergeBindings :: [Attribute] -> [Located] -> [Located] -> IO [Located]
 mergeBindings path xs ys = unmarked <$> anchored xs ys
   where
-    anchored :: [(FilePath, Binding)] -> [(FilePath, Binding)] -> IO [(FilePath, Binding)]
+    anchored :: [Located] -> [Located] -> IO [Located]
     anchored [] rest = pure rest
     anchored (x : more) rest = case break (same x) rest of
       (before, y : after) -> do
-        let later = attributesFromBindings' (map snd more)
+        let later = attributesFromBindings' (map bindingOf more)
             (pending, ahead) =
-              ( filter ((`elem` later) . attributeFromBinding . snd) before
-              , filter ((`notElem` later) . attributeFromBinding . snd) before
+              ( filter ((`elem` later) . attributeFromBinding . bindingOf) before
+              , filter ((`notElem` later) . attributeFromBinding . bindingOf) before
               )
         united <- mergeBinding path x y
         (ahead <>) . (united :) <$> anchored more (pending <> after)
       (_, []) -> (x :) <$> anchored more rest
-    same :: (FilePath, Binding) -> (FilePath, Binding) -> Bool
-    same x y = attributeFromBinding (snd x) == attributeFromBinding (snd y)
-    unmarked :: [(FilePath, Binding)] -> [(FilePath, Binding)]
+    same :: Located -> Located -> Bool
+    same x y = attributeFromBinding (bindingOf x) == attributeFromBinding (bindingOf y)
+    unmarked :: [Located] -> [Located]
     unmarked bindings
-      | any (marker . snd) xs == any (marker . snd) ys = bindings
-      | otherwise = filter (not . marker . snd) bindings
+      | any (marker . bindingOf) xs == any (marker . bindingOf) ys = bindings
+      | otherwise = filter (not . marker . bindingOf) bindings
     marker :: Binding -> Bool
     marker (BiLambda (Function "Package")) = True
     marker _ = False
 
-merge' :: [(FilePath, Expression)] -> IO [(FilePath, Binding)]
+merge' :: [(FilePath, Expression)] -> IO [Located]
 merge' [] = throwIO EmptyExpressionList
-merge' [(file, ExFormation bindings)] = pure (map (file,) bindings)
+merge' [(file, ExFormation bindings)] = pure (map (place file) bindings)
 merge' ((file, ExFormation bindings) : rest) = do
   united <- merge' rest
-  mergeBindings [] united (map (file,) bindings)
+  mergeBindings [] united (map (place file) bindings)
 merge' ((_, expr) : _) = throwIO (WrongExpressionFormat expr)
 
 merge :: [(FilePath, Expression)] -> IO Expression
-merge exprs = merge' (reverse exprs) <&> ExFormation . map snd
+merge exprs = merge' (reverse exprs) <&> ExFormation . map bindingOf

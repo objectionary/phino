@@ -114,3 +114,20 @@ spec = do
           show err `shouldContain` "three.phi"
           show err `shouldNotContain` "two.phi"
         Right merged -> expectationFailure (printf "Merge united the sides into %s, while the third file clashes with the first" (printExpression merged))
+
+    it "names the file that holds the clashing binding, not the file of the union" $ do
+      left <- parseExpressionThrows "[[ x -> [[ p -> 1 ]] ]]"
+      one <- parseExpressionThrows "[[ x -> [[ q -> 2 ]] ]]"
+      two <- parseExpressionThrows "[[ x -> [[ q -> 3 ]] ]]"
+      let orders =
+            [ zip ["a.phi", "b.phi", "c.phi"] [left, one, two]
+            , zip ["a.phi", "c.phi", "b.phi"] [left, two, one]
+            ]
+      forM_ orders $ \ordered -> do
+        thrown <- try (merge ordered) :: IO (Either SomeException Expression)
+        case thrown of
+          Left err -> do
+            show err `shouldContain` "at Φ.x"
+            show err `shouldContain` "b.phi"
+            show err `shouldNotContain` "a.phi"
+          Right merged -> expectationFailure (printf "Merge united the sides into %s, while the last two sides clash inside x" (printExpression merged))
