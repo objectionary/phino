@@ -59,12 +59,12 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
+    charged caller
     known <- recalled caller._memo form caller._steps._spent
     maybe (made entry) told known
   where
     made :: Lambda -> IO (Expression, State)
     made entry = do
-      charged caller
       stamp <- counted caller._memo
       exhausted <- starved caller._memo
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)

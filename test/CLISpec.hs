@@ -3928,11 +3928,18 @@ spec = do
               ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=proven", "--max-firings=4"]
               ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=4"]
 
-      it "charges a formation once for the run under plausible" $
+      it "charges a firing the memo answers under plausible" $
+        withLambdasOf pairs $ \file ->
+          withStdin twins $
+            testCLIFailed
+              ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-firings=3"]
+              ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=3"]
+
+      it "answers every firing within the budget under plausible" $
         withLambdasOf pairs $ \file ->
           withStdin twins $
             testCLISucceeded
-              ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-firings=3", "--flat", "--hide-rho", "--sweet"]
+              ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-firings=4", "--flat", "--hide-rho", "--sweet"]
               ["b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"]
 
       it "reduces the operands of a formation once per argument spelling it under proven" $
