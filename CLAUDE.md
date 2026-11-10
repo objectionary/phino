@@ -560,6 +560,11 @@ answered with a kept stall, and `starved …` is written by `deeper` where the
 step budget runs out, with the site it stood at rather than its term (#1531).
 `exceeded …` (`EvExceeded`) is written by `normalized` of `Morph.hs` where
 normalization reaches `--max-cycles`, with the site the same way (#2309).
+`oversized …` (`EvOversized`) is written by `measured` of `Morph.hs` where the
+term `normalized` starts from, or any step of it, holds more nodes than
+`--max-nodes` (`_maxNodes` of `ReduceContext`, off unless given), since a term
+may grow until it takes all memory long before any other limit runs out
+(#2320).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the

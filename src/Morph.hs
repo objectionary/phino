@@ -94,6 +94,7 @@ data ReduceContext = ReduceContext
   , _universe :: Maybe Expression
   , _maxDepth :: Int
   , _maxCycles :: Int
+  , _maxNodes :: Maybe Int
   , _steps :: Steps
   , _tally :: Maybe Tally
   , _minted :: IORef Int
@@ -125,6 +126,7 @@ data Budget
   = Depth Judgment Int
   | Firings Int
   | Cycles Int
+  | Nodes Int
 
 data ReduceException
   = OutOfSteps Budget
@@ -146,6 +148,8 @@ instance Show ReduceException where
     printf "Evaluation did not finish before reaching the limit of firings: --max-firings=%d" limit
   show (OutOfSteps (Cycles limit)) =
     printf "Normalization did not finish before reaching the limit of cycles: --max-cycles=%d" limit
+  show (OutOfSteps (Nodes limit)) =
+    printf "Evaluation did not finish before reaching the limit of nodes: --max-nodes=%d" limit
   show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
   show (OutOfTime limit) =
     printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
@@ -170,6 +174,12 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
     starve (Just (Memo _ _ _ exhausted)) = modifyIORef' exhausted (+ 1)
+
+measured :: ReduceContext -> Expression -> IO ()
+measured ctx term = forM_ ctx._maxNodes $ \cap ->
+  when (countNodes term > cap) $ do
+    ctx._saveEval (EvOversized ctx._nesting cap ctx._judgment ctx._site)
+    throwIO (OutOfSteps (Nodes cap))
 
 tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
@@ -599,6 +609,7 @@ leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
 normalized :: Expression -> NonEmpty Rewritten -> ReduceContext -> IO (Expression, NonEmpty Rewritten)
 normalized expr seq ctx@ReduceContext{..} = do
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
+  measured ctx whole
   taken <- newIORef Map.empty
   peeled <- newIORef Map.empty
   (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken peeled ctx)
@@ -612,7 +623,7 @@ normalized expr seq ctx@ReduceContext{..} = do
   where
     rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
     rewriteContext taken peeled whole@ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing _saveStep (made taken peeled whole)
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> measured whole term >> _saveStep term) (made taken peeled whole)
     made :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
     made _ _ whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
       | attr /= AtRho && object /= head' = do

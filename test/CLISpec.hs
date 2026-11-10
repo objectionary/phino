@@ -2439,6 +2439,17 @@ spec = do
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
 
       forM_
+        [("XMLXXXXXX.xml", "<oversized limit=\"120\" by=\"morph\" at="), ("textXXXXXX.txt", "oversized 120")]
+        $ \(template, record) ->
+          it ("writes the reached --max-nodes to the protocol " ++ template) $
+            withTempFile template $ \(path, stream) -> do
+              hClose stream
+              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=120", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              records <- readProtocol path
+              any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
+
+      forM_
         [("XMLXXXXXX.xml", "<spent limit=\"5\" by="), ("textXXXXXX.txt", "  spent 5")]
         ( \(template, record) ->
             it ("writes a spent firing budget to the protocol as " ++ record) $
@@ -3683,6 +3694,24 @@ spec = do
                 []
             records <- readProtocol path
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
+
+    describe "--max-nodes" $ do
+      let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
+      it "fails with non-positive --max-nodes" $
+        withStdin growing $
+          testCLIFailed ["dataize", "--max-nodes=0"] ["--max-nodes must be positive"]
+
+      it "fails once the term grows over --max-nodes" $
+        withStdin growing $
+          testCLIFailed
+            ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=120", "--locator=Q.x"]
+            ["[ERROR]: Evaluation did not finish before reaching the limit of nodes: --max-nodes=120"]
+
+      it "ends the growing term with --partial" $
+        withStdin growing $
+          testCLISucceeded
+            ["morph", "--acyclic=plausible", "--max-loops=2", "--max-nodes=120", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
+            ["Φ.m( 𝜎1:λ )"]
 
     describe "--max-seconds" $ do
       let ladder = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: ξ.n.foo\n    𝑛2: ξ.n.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")

@@ -226,15 +226,16 @@ $ phino dataize --symbolic=atoms.yaml --inside='5.plus( 6 )' universe.phi
 
 ### Limits
 
-Three options stop a run that goes on for too long:
+Four options stop a run that goes on for too long:
 
 * `--max-steps` bounds how deep morphing and dataization may nest,
   `1000` by default;
 * `--max-firings` bounds how many λ functions the whole run may fire;
-* `--max-seconds` bounds how many seconds the whole run may take.
+* `--max-seconds` bounds how many seconds the whole run may take;
+* `--max-nodes` bounds how many nodes the term of the run may grow to.
 
-`--partial` leaves a site in place when it runs out of steps or firings, but
-a run out of time always fails.
+`--partial` leaves a site in place when it runs out of steps, firings or
+nodes, but a run out of time always fails.
 
 ## Morph
 
@@ -367,8 +368,8 @@ A protocol may hold these lines:
   spelled as its `remembered` or `memoized` line spelled it.
 * `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
   the call of the object it answered with that symbol, when a fact names it.
-* `starved …`, `spent …` and `timeout …` are where `--max-steps`,
-  `--max-firings` and `--max-seconds` ran out.
+* `starved …`, `spent …`, `timeout …` and `oversized …` are where
+  `--max-steps`, `--max-firings`, `--max-seconds` and `--max-nodes` ran out.
 * `msec …`, `firings …` and `fps …` close the file, and the listing above
   leaves them and the `# …` lines out, since they differ from run to run.
 
