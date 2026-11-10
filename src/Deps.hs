@@ -141,6 +141,8 @@ data Evaluation
   | EvTimeout Int Int Judgment Expression
   | EvSpent Int Int Judgment Expression
   | EvExceeded Int Int Judgment Expression
+  | EvOversized Int Int Judgment Expression
+  | EvBlown Int Int Judgment Expression
   | EvData Int T.Text Expression (Either Int Bytes)
   | EvTerm Int T.Text Judgment Expression Expression
   | EvBound Int Expression Expression
@@ -181,6 +183,8 @@ resited from to = record
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (moved site)
     record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (moved site)
     record (EvExceeded depth limit judgment site) = EvExceeded depth limit judgment (moved site)
+    record (EvOversized depth limit judgment site) = EvOversized depth limit judgment (moved site)
+    record (EvBlown depth limit judgment site) = EvBlown depth limit judgment (moved site)
     record (EvDeferred depth sym judgment copy call site) = EvDeferred depth sym judgment copy call (moved site)
     record (EvApplied depth judgment call object site) = EvApplied depth judgment call object (moved site)
     record other = other
@@ -210,6 +214,8 @@ tier (EvStarved depth _ _ _) = depth
 tier (EvTimeout depth _ _ _) = depth
 tier (EvSpent depth _ _ _) = depth
 tier (EvExceeded depth _ _ _) = depth
+tier (EvOversized depth _ _ _) = depth
+tier (EvBlown depth _ _ _) = depth
 tier (EvData depth _ _ _) = depth
 tier (EvTerm depth _ _ _ _) = depth
 tier (EvBound depth _ _) = depth
@@ -264,6 +270,9 @@ abbreviatedInside names (ExApplication expr (ArTau attr arg)) = ExApplication (a
 abbreviatedInside names (ExApplication expr (ArAlpha alpha arg)) = ExApplication (abbreviated names expr) (ArAlpha alpha (abbreviated names arg))
 abbreviatedInside names (ExDispatch expr attr) = ExDispatch (abbreviated names expr) attr
 abbreviatedInside _ term = term
+
+sized :: Int -> String
+sized bytes = fromMaybe (show bytes) (listToMaybe [printf "%d%c" (div bytes scale) unit | (unit, scale) <- reverse (zip "KMGT" (iterate (* 1024) 1024)), mod bytes scale == 0])
 
 dispatched :: Expression -> ([Attribute], Expression)
 dispatched (ExDispatch term attr)
@@ -447,6 +456,12 @@ saveEval handle cursor printed printed' report = do
     written at (EvExceeded _ limit judgment site) protocol = do
       remarks <- context protocol judgment site
       pure (protocol, Just (indented at (remarked (printf "exceeded %d" limit) remarks)))
+    written at (EvOversized _ limit judgment site) protocol = do
+      remarks <- context protocol judgment site
+      pure (protocol, Just (indented at (remarked (printf "oversized %d" limit) remarks)))
+    written at (EvBlown _ limit judgment site) protocol = do
+      remarks <- context protocol judgment site
+      pure (protocol, Just (indented at (remarked (printf "blown %s" (sized limit)) remarks)))
     written at (EvData _ spelling operand value) protocol = do
       datum <- maybe (spelt value) pure (found value protocol._found)
       line <- commented protocol (printf "%s := %s" (labelled protocol spelling) datum) Dataization operand
@@ -742,6 +757,10 @@ saveEvalXml handle cursor printed report = do
       placed at nesting (printf "<spent limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
     elements at (EvExceeded depth limit judgment site) nesting =
       placed at nesting (printf "<exceeded limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
+    elements at (EvOversized depth limit judgment site) nesting =
+      placed at nesting (printf "<oversized limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
+    elements at (EvBlown depth limit judgment site) nesting =
+      placed at nesting (printf "<blown limit=\"%s\" by=\"%s\" at=\"%s\"/>" (sized limit) (opened judgment) . escapeXML <$> located depth site)
     elements at (EvDelta _ bytes) nesting = do
       datum <- printed (ExBytes bytes)
       let (naming, nesting') = stored (Right bytes) nesting

@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
@@ -10,7 +12,7 @@ module Evaluate (evaluation) where
 
 import AST
 import Builder (buildExpressionThrows)
-import Control.Exception (throwIO, try)
+import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM, unless, when)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (partition)
@@ -53,23 +55,27 @@ evaluation ctx state form univ = case form of
         name :: T.Text
         name = T.pack (printFunction (FnSymbol idx))
 
+data Raise = Raise
+  deriving stock (Show)
+  deriving anyclass (Exception)
+
 symbol :: T.Text -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
 symbol func form self univ state caller = case matched caller._symbolic func of
   Nothing -> do
     unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
     throwIO (Stuck func)
   Just entry -> do
+    charged caller
     known <- recalled caller._memo form caller._steps._spent
     maybe (made entry) told known
   where
     made :: Lambda -> IO (Expression, State)
     made entry = do
-      charged caller
       stamp <- counted caller._memo
       exhausted <- starved caller._memo
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       let ctx = caller{_nesting = caller._nesting + 1, _raising = entry._terminators}
-      outcome <- try $ do
+      outcome <- try $ raised ctx $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
         (bound', morphed, normals) <- foldM (through ctx "morph" (still pure)) (bound, dataized, []) entry._morphed
         (bound'', undressed, normals') <- foldM (through ctx "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
@@ -138,6 +144,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       caller._saveEval (EvBuilt depth built)
       caller._saveEval (EvAnswer depth normal)
     shown depth (Joined normal) = caller._saveEval (EvTaken depth normal)
+    shown depth Raised = caller._saveEval (EvTaken depth ExTermination)
+    raised :: ReduceContext -> IO (Answer, State) -> IO (Answer, State)
+    raised ctx work = catch work (\Raise -> (Raised, state) <$ shown ctx._nesting Raised)
+    raising :: ReduceContext -> Expression -> IO ()
+    raising ctx term = when (maybe False (thrown ctx._raising) (walked term)) (throwIO Raise)
     kept :: Bool -> ReduceException -> Maybe Kept
     kept _ (Looping term) = Just (Looped term)
     kept _ (LoopingAt term _ _) = Just (Looped term)
@@ -173,11 +184,15 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       shown depth answer
     down :: ReduceContext -> (Subst, State, [Either Int Bytes]) -> (Meta, Expression) -> IO (Subst, State, [Either Int Bytes])
     down ctx (bound, state', conditions) (meta, term) = do
-      (datum, bound', state'') <- brought ctx bound state' meta term =<< operand term
+      placed <- operand term
+      raising ctx placed
+      (datum, bound', state'') <- brought ctx bound state' meta term placed
       pure (bound', state'', datum : conditions)
     lowered :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     lowered ctx (bound, state') meta source = do
-      (_, bound', state'') <- brought ctx bound state' meta (ExMeta source._name) =<< buildExpressionThrows (ExMeta source._name) bound
+      term <- buildExpressionThrows (ExMeta source._name) bound
+      raising ctx term
+      (_, bound', state'') <- brought ctx bound state' meta (ExMeta source._name) term
       pure (bound', state'')
     brought :: ReduceContext -> Subst -> State -> Meta -> Expression -> Expression -> IO (Either Int Bytes, Subst, State)
     brought ctx bound state' meta origin term = do
@@ -392,11 +407,11 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         held term = case walked term of
           Just (ExFormation bds) -> listToMaybe ([Left idx | BiLambda (FnSymbol idx) <- bds] ++ [Right bytes | BiDelta bytes <- bds])
           _ -> Nothing
-        walked :: Expression -> Maybe Expression
-        walked (ExDispatch base attr) = case walked base of
-          Just (ExFormation bds) -> listToMaybe [term | BiTau attr' term <- bds, attr' == attr]
-          _ -> Nothing
-        walked term = Just term
+    walked :: Expression -> Maybe Expression
+    walked (ExDispatch base attr) = case walked base of
+      Just (ExFormation bds) -> listToMaybe [term | BiTau attr' term <- bds, attr' == attr]
+      _ -> Nothing
+    walked term = Just term
     reached :: ReduceContext -> Subst -> Expression -> State -> IO (Expression, State)
     reached _ bound (ExMeta name) state' = (,state') <$> buildExpressionThrows (ExMeta name) bound
     reached ctx _ side state' = (\placed -> morphing univ ctx{_site = side} placed state') =<< operand side

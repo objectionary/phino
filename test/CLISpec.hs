@@ -2439,6 +2439,28 @@ spec = do
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
 
       forM_
+        [("XMLXXXXXX.xml", "<oversized limit=\"60\" by=\"morph\" at="), ("textXXXXXX.txt", "oversized 60")]
+        $ \(template, record) ->
+          it ("writes the reached --max-nodes to the protocol " ++ template) $
+            withTempFile template $ \(path, stream) -> do
+              hClose stream
+              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              records <- readProtocol path
+              any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
+
+      forM_
+        [("XMLXXXXXX.xml", "<blown limit=\"1K\" by="), ("textXXXXXX.txt", "blown 1K")]
+        $ \(template, record) ->
+          it ("writes the reached --max-memory to the protocol " ++ template) $
+            withTempFile template $ \(path, stream) -> do
+              hClose stream
+              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              records <- readProtocol path
+              any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
+
+      forM_
         [("XMLXXXXXX.xml", "<spent limit=\"5\" by="), ("textXXXXXX.txt", "  spent 5")]
         ( \(template, record) ->
             it ("writes a spent firing budget to the protocol as " ++ record) $
@@ -3684,6 +3706,54 @@ spec = do
             records <- readProtocol path
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
 
+    describe "--max-nodes" $ do
+      let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
+      it "fails with non-positive --max-nodes" $
+        withStdin growing $
+          testCLIFailed ["dataize", "--max-nodes=0"] ["--max-nodes must be positive"]
+
+      it "fails once the term grows over --max-nodes" $
+        withStdin growing $
+          testCLIFailed
+            ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--locator=Q.x"]
+            ["[ERROR]: Evaluation did not finish before reaching the limit of nodes: --max-nodes=60"]
+
+      it "ends the growing term with --partial" $
+        withStdin growing $
+          testCLISucceeded
+            ["morph", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
+            ["Φ.m( 𝜎1:λ )"]
+
+      it "passes a small run in a large program under --max-nodes" $
+        withStdin ("⟦ x ↦ ⟦ φ ↦ ⟦ y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧.y ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
+          testCLISucceeded ["dataize", "--max-nodes=50", "--locator=Q.x"] ["05-"]
+
+    describe "--max-memory" $ do
+      let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
+      it "fails with non-positive --max-memory" $
+        withStdin growing $
+          testCLIFailed ["dataize", "--max-memory=0G"] ["--max-memory must be positive"]
+
+      it "fails with --max-memory of an unknown unit" $
+        withStdin growing $
+          testCLIFailed ["dataize", "--max-memory=8Q"] ["--max-memory must be a number of bytes, optionally ending with K, M, G or T"]
+
+      it "fails once the heap grows over --max-memory" $
+        withStdin growing $
+          testCLIFailed
+            ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--locator=Q.x"]
+            ["[ERROR]: Evaluation did not finish before reaching the limit of memory: --max-memory=1K"]
+
+      it "ends the growing term with --partial under --max-memory" $
+        withStdin growing $
+          testCLISucceeded
+            ["morph", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
+            ["Φ.m( 𝜎1:λ )"]
+
+      it "passes a small run in a large program under --max-memory" $
+        withStdin ("⟦ x ↦ ⟦ φ ↦ ⟦ y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧.y ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
+          testCLISucceeded ["dataize", "--max-memory=1G", "--locator=Q.x"] ["05-"]
+
     describe "--max-seconds" $ do
       let ladder = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: ξ.n.foo\n    𝑛2: ξ.n.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
           rungs = "⟦ " ++ intercalate ", " [printf "l%d ↦ ⟦ λ ⤍ L_split, n ↦ Φ.l%d ⟧" rung (rung + 1) | rung <- [0 .. 23 :: Int]] ++ ", l24 ↦ ⟦⟧, x ↦ Φ.l0.foo ⟧"
@@ -3858,11 +3928,18 @@ spec = do
               ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=proven", "--max-firings=4"]
               ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=4"]
 
-      it "charges a formation once for the run under plausible" $
+      it "charges a firing the memo answers under plausible" $
+        withLambdasOf pairs $ \file ->
+          withStdin twins $
+            testCLIFailed
+              ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-firings=3"]
+              ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=3"]
+
+      it "answers every firing within the budget under plausible" $
         withLambdasOf pairs $ \file ->
           withStdin twins $
             testCLISucceeded
-              ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-firings=3", "--flat", "--hide-rho", "--sweet"]
+              ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-firings=4", "--flat", "--hide-rho", "--sweet"]
               ["b ↦ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"]
 
       it "reduces the operands of a formation once per argument spelling it under proven" $
