@@ -599,7 +599,9 @@ run under `plausible` keeps what every firing answered, by the formation it
 fired (`Memo`, `recalled` and `retained` in `Morph.hs`, made by `memoized` for
 that mode alone and asked and told by `symbol` in `Evaluate.hs`), and a later
 firing of the same formation, ρ and all, takes the answer with the symbols the
-first one minted: it is charged nothing and reduces nothing. A firing that
+first one minted: it reduces nothing, but is charged to `--max-firings` and
+reads the clock of `--max-seconds` as one made, so a run of memo hits still
+stops on its limits (#2328). A firing that
 answers writes `memoized 𝑛·1·3 ⇛ 𝜎1:λ` (`EvMemoized`), the formation fired
 and its answer, and a later one taking the answer is written to the protocol
 as a firing at its own site carrying `recalled 𝑛·1·3 ⇒ 𝜎1:λ`, and no operand
