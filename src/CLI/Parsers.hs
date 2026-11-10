@@ -4,7 +4,7 @@
 module CLI.Parsers where
 
 import CLI.Types
-import Data.Char (toLower, toUpper)
+import Data.Char (isDigit, toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
 import Deps (Acyclic, certainty)
@@ -123,6 +123,25 @@ optMaxNodes =
         (boundedIntOption >>= validateIntOption (> 0) "--max-nodes must be positive")
         (long "max-nodes" <> metavar "NODES" <> help "Maximum number of nodes the term of the run may grow to, unlimited unless given")
     )
+
+optMaxMemory :: Parser (Maybe Int)
+optMaxMemory =
+  optional
+    ( option
+        (eitherReader bytes >>= validateIntOption (> 0) "--max-memory must be positive")
+        (long "max-memory" <> metavar "BYTES" <> help "Maximum size of the live heap the run may grow to, such as 512M or 8G, unlimited unless given")
+    )
+  where
+    bytes :: String -> Either String Int
+    bytes spelling = case span isDigit spelling of
+      (digits@(_ : _), unit) -> maybe malformed (bounded . (read digits *)) (lookup (map toUpper unit) (zip ["", "K", "M", "G", "T"] (iterate (* 1024) 1)))
+      _ -> malformed
+    bounded :: Integer -> Either String Int
+    bounded num
+      | num > toInteger (maxBound :: Int) = Left (printf "--max-memory must not exceed %d bytes" (maxBound :: Int))
+      | otherwise = Right (fromInteger num)
+    malformed :: Either String Int
+    malformed = Left "--max-memory must be a number of bytes, optionally ending with K, M, G or T"
 
 optMargin :: Parser Int
 optMargin =
@@ -431,6 +450,7 @@ dataizeParser =
             <*> optMaxFirings
             <*> optMaxSeconds
             <*> optMaxNodes
+            <*> optMaxMemory
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -482,6 +502,7 @@ morphParser =
             <*> optMaxFirings
             <*> optMaxSeconds
             <*> optMaxNodes
+            <*> optMaxMemory
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength

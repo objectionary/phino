@@ -26,9 +26,10 @@ import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep, sized)
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
+import GHC.Stats (GCDetails (..), RTSStats (..), getRTSStats, getRTSStatsEnabled)
 import qualified Inference as In
 import Lambdas (Lambdas, thrown)
 import Locator (locatedExpression, withLocatedExpression)
@@ -95,6 +96,7 @@ data ReduceContext = ReduceContext
   , _maxDepth :: Int
   , _maxCycles :: Int
   , _maxNodes :: Maybe Int
+  , _maxMemory :: Maybe Int
   , _steps :: Steps
   , _tally :: Maybe Tally
   , _minted :: IORef Int
@@ -127,6 +129,7 @@ data Budget
   | Firings Int
   | Cycles Int
   | Nodes Int
+  | Memory Int
 
 data ReduceException
   = OutOfSteps Budget
@@ -150,6 +153,8 @@ instance Show ReduceException where
     printf "Normalization did not finish before reaching the limit of cycles: --max-cycles=%d" limit
   show (OutOfSteps (Nodes limit)) =
     printf "Evaluation did not finish before reaching the limit of nodes: --max-nodes=%d" limit
+  show (OutOfSteps (Memory limit)) =
+    printf "Evaluation did not finish before reaching the limit of memory: --max-memory=%s" (sized limit)
   show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
   show (OutOfTime limit) =
     printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
@@ -176,10 +181,19 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
     starve (Just (Memo _ _ _ exhausted)) = modifyIORef' exhausted (+ 1)
 
 measured :: ReduceContext -> Expression -> IO ()
-measured ctx term = forM_ ctx._maxNodes $ \cap ->
-  when (countNodes term > cap) $ do
-    ctx._saveEval (EvOversized ctx._nesting cap ctx._judgment ctx._site)
-    throwIO (OutOfSteps (Nodes cap))
+measured ctx term = do
+  forM_ ctx._maxNodes $ \cap ->
+    when (countNodes term > cap) (overflown (EvOversized ctx._nesting cap ctx._judgment ctx._site) (Nodes cap))
+  forM_ ctx._maxMemory $ \cap -> do
+    enabled <- getRTSStatsEnabled
+    unless enabled (ioError (userError "--max-memory needs the statistics of the runtime, which this binary was linked without"))
+    stats <- getRTSStats
+    when (toInteger (gcdetails_live_bytes (gc stats)) > toInteger cap) (overflown (EvBlown ctx._nesting cap ctx._judgment ctx._site) (Memory cap))
+  where
+    overflown :: Evaluation -> Budget -> IO ()
+    overflown record budget = do
+      ctx._saveEval record
+      throwIO (OutOfSteps budget)
 
 tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
