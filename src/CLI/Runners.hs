@@ -370,7 +370,7 @@ runMerge OptsMerge{..} = do
   inputs' <- traverse (readInput . Just) _inputs
   setStdGen (mkStdGen _seed)
   (exprs, atoms) <- unzip <$> traverse (\input -> parseInputWithAtoms input _inputFormat _monoform) inputs'
-  expr <- merge exprs
+  expr <- merge (zip _inputs exprs)
   validateXmirTopLevel _outputFormat expr
   let listing = const (escapeXMLText (P.printExpression' expr (_sugarType, UNICODE, _flat, _margin)))
       xmirCtx = XmirContext _omitListing _omitComments False listing (Map.unions atoms)
