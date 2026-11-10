@@ -564,7 +564,11 @@ normalization reaches `--max-cycles`, with the site the same way (#2309).
 term `normalized` starts from, or any step of it, holds more nodes than
 `--max-nodes` (`_maxNodes` of `ReduceContext`, off unless given), since a term
 may grow until it takes all memory long before any other limit runs out
-(#2320).
+(#2320). The count spells a part shared in memory again every time it
+appears, so `blown …` (`EvBlown`) is written by `measured` at the same places
+where the live bytes of the last collection of the garbage collector pass
+`--max-memory` (`_maxMemory` of `ReduceContext`), read by `getRTSStats`,
+which both the binary and the specs enable with `-with-rtsopts=-T` (#2323).
 
 `--max-steps` bounds the depth of one branch, so a recursion that widens the
 term instead of nesting it fires forever inside it. `--max-firings` bounds the

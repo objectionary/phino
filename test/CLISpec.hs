@@ -2450,6 +2450,17 @@ spec = do
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
 
       forM_
+        [("XMLXXXXXX.xml", "<blown limit=\"1K\" by="), ("textXXXXXX.txt", "blown 1K")]
+        $ \(template, record) ->
+          it ("writes the reached --max-memory to the protocol " ++ template) $
+            withTempFile template $ \(path, stream) -> do
+              hClose stream
+              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              records <- readProtocol path
+              any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
+
+      forM_
         [("XMLXXXXXX.xml", "<spent limit=\"5\" by="), ("textXXXXXX.txt", "  spent 5")]
         ( \(template, record) ->
             it ("writes a spent firing budget to the protocol as " ++ record) $
@@ -3712,6 +3723,32 @@ spec = do
           testCLISucceeded
             ["morph", "--acyclic=plausible", "--max-loops=2", "--max-nodes=120", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
             ["Φ.m( 𝜎1:λ )"]
+
+    describe "--max-memory" $ do
+      let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
+      it "fails with non-positive --max-memory" $
+        withStdin growing $
+          testCLIFailed ["dataize", "--max-memory=0G"] ["--max-memory must be positive"]
+
+      it "fails with --max-memory of an unknown unit" $
+        withStdin growing $
+          testCLIFailed ["dataize", "--max-memory=8Q"] ["--max-memory must be a number of bytes, optionally ending with K, M, G or T"]
+
+      it "fails once the heap grows over --max-memory" $
+        withStdin growing $
+          testCLIFailed
+            ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--locator=Q.x"]
+            ["[ERROR]: Evaluation did not finish before reaching the limit of memory: --max-memory=1K"]
+
+      it "ends the growing term with --partial under --max-memory" $
+        withStdin growing $
+          testCLISucceeded
+            ["morph", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
+            ["Φ.m( 𝜎1:λ )"]
+
+      it "passes a small run in a large program under --max-memory" $
+        withStdin ("⟦ x ↦ ⟦ φ ↦ ⟦ y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧.y ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
+          testCLISucceeded ["dataize", "--max-memory=1G", "--locator=Q.x"] ["05-"]
 
     describe "--max-seconds" $ do
       let ladder = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: ξ.n.foo\n    𝑛2: ξ.n.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")

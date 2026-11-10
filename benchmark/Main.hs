@@ -70,6 +70,8 @@ symbolicCtx acyclic memo facts minted lambdas locator =
     Nothing
     25
     25
+    Nothing
+    Nothing
     (Steps 1000 0)
     Nothing
     minted
