@@ -65,7 +65,7 @@ spec = do
     it "accepts a quoted argument as an expression" $
       parseCondition "eq(!e1, \"5\")" `shouldSatisfy` isRight
 
-  describe "parseConditionThrows"
-    $ it "throws with a descriptive message on unparsable input"
-    $ parseConditionThrows "some()"
-      `shouldThrow` (\exc -> "Couldn't parse given condition" `isInfixOf` show (exc :: SomeException))
+  describe "parseConditionThrows" $
+    it "throws with a descriptive message on unparsable input" $
+      parseConditionThrows "some()"
+        `shouldThrow` (\exc -> "Couldn't parse given condition" `isInfixOf` show (exc :: SomeException))

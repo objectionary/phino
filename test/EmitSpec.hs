@@ -90,10 +90,10 @@ spec = do
     it "compiles a rule rewriting a formation into a formation the fast way, when it has a 'when' condition" $
       fromRight "" (emitted [] [Y.Rule "fw" Nothing Nothing (ExFormation [BiMeta "B1", BiVoid (AtLabel "x"), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "y"), BiMeta "B2"]) (Just (Y.In [AtLabel "z"] [BiMeta "B1"])) Nothing Nothing] [] [] [] [])
         `shouldSatisfy` ("stepFw ::" `isInfixOf`)
-  describe "emitted refuses a rule of contextualization"
-    $ it "with a premise that is no contextualization"
-    $ emitted [] [] [Y.ContextualizeRule "cm" Nothing (ExMeta "n1") (ExMeta "k1") (ExMeta "n2") [Y.Premise "n2" (Y.OpNormalize (ExMeta "n1"))]] [] [] []
-      `shouldBe` Left "The contextualization rule 'cm' cannot be compiled, since its premise 'n2' is not a contextualization"
+  describe "emitted refuses a rule of contextualization" $
+    it "with a premise that is no contextualization" $
+      emitted [] [] [Y.ContextualizeRule "cm" Nothing (ExMeta "n1") (ExMeta "k1") (ExMeta "n2") [Y.Premise "n2" (Y.OpNormalize (ExMeta "n1"))]] [] [] []
+        `shouldBe` Left "The contextualization rule 'cm' cannot be compiled, since its premise 'n2' is not a contextualization"
   describe "emitted refuses a rule of morphing" $ do
     it "whose conclusion no 'morph' produces" $
       emitted [] [] [] [Y.MorphRule "hq" Nothing ExXi (ExMeta "e1") (ExMeta "n2") Nothing [Y.Premise "n2" (Y.OpNormalize ExXi)]] [] []
@@ -104,10 +104,10 @@ spec = do
     it "whose premise binds a meta its pattern bound" $
       emitted [] [] [] [Y.MorphRule "bb" Nothing (ExMeta "n2") (ExMeta "e1") (ExMeta "n3") Nothing [Y.Premise "n2" (Y.OpMorph ExXi (ExMeta "e1")), Y.Premise "n3" (Y.OpMorph (ExMeta "n2") (ExMeta "e1"))]] [] []
         `shouldBe` Left "The morphing rule 'bb' cannot be compiled, since its premise 'n2' binds a meta bound already"
-  describe "emitted refuses a rule of dataization"
-    $ it "whose data no 'dataize' produces"
-    $ emitted [] [] [] [] [Y.DataizeRule "jr" Nothing ExXi (ExMeta "e1") (BtMeta "d2") Nothing [Y.Premise "d2" (Y.OpNormalize ExXi)]] []
-      `shouldBe` Left "The dataization rule 'jr' cannot be compiled, since it concludes with no 'dataize' premise"
+  describe "emitted refuses a rule of dataization" $
+    it "whose data no 'dataize' produces" $
+      emitted [] [] [] [] [Y.DataizeRule "jr" Nothing ExXi (ExMeta "e1") (BtMeta "d2") Nothing [Y.Premise "d2" (Y.OpNormalize ExXi)]] []
+        `shouldBe` Left "The dataization rule 'jr' cannot be compiled, since it concludes with no 'dataize' premise"
   describe "emitted refuses" $
     forM_
       [

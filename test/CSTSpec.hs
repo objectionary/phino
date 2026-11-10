@@ -148,17 +148,17 @@ spec = do
           render ascii `shouldBe` result pack
       )
 
-  describe "expressionToCSTFrom lays out a formation from a given base indent"
-    $ it "nests the body one level below the given tabs and closes at it"
-    $ expressionToCSTFrom 2 (ExFormation [BiTau (AtLabel "x") ExRoot, BiVoid (AtLabel "y")])
-      `shouldBe` EX_FORMATION
-        LSB
-        EOL
-        (TAB 3)
-        (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_PAIR EOL (TAB 3) (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 3))) (TAB 3))
-        EOL
-        (TAB 2)
-        RSB
+  describe "expressionToCSTFrom lays out a formation from a given base indent" $
+    it "nests the body one level below the given tabs and closes at it" $
+      expressionToCSTFrom 2 (ExFormation [BiTau (AtLabel "x") ExRoot, BiVoid (AtLabel "y")])
+        `shouldBe` EX_FORMATION
+          LSB
+          EOL
+          (TAB 3)
+          (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_GLOBAL Φ)) (BDS_PAIR EOL (TAB 3) (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 3))) (TAB 3))
+          EOL
+          (TAB 2)
+          RSB
 
   describe "sweetNumber" $
     forM_

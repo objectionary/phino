@@ -261,33 +261,33 @@ spec = do
         it ("wraps " ++ desc ++ " at margin " ++ show margin ++ " as the margin pass does") $
           withLines MULTILINE margin (expressionToCST expression)
             `shouldBe` withMargin margin (expressionToCST expression)
-  describe "withMargin measures the last line of a call by display width"
-    $ it "breaks the argument of a call whose callee ends in wide characters"
-    $ rows wide `shouldBe` rows narrow
+  describe "withMargin measures the last line of a call by display width" $
+    it "breaks the argument of a call whose callee ends in wide characters" $
+      rows wide `shouldBe` rows narrow
 
-  describe "withMargin measures every wide character as two columns"
-    $ it "wraps a string of wide characters the way it wraps the same count of CJK ones"
-    $ rows blocks `shouldBe` rows wideStringFormation
+  describe "withMargin measures every wide character as two columns" $
+    it "wraps a string of wide characters the way it wraps the same count of CJK ones" $
+      rows blocks `shouldBe` rows wideStringFormation
 
   describe "withMargin gives a zero-width character no column" $ do
     it "keeps a string of combining marks on one line, as its precomposed twin stays" $
       rows marks `shouldBe` rows precomposed
     it "keeps that string on one line within the margin" $
       rows marks `shouldBe` 1
-  describe "withMargin counts the comma after a binding"
-    $ it "wraps a binding that fits only without its trailing comma"
-    $ render (withMargin 30 (expressionToCST commaFormation))
-      `shouldBe` "⟦\n  a ↦ Φ.f(\n    x ↦ Φ.xxxxxxxxxxx\n  ),\n  b ↦ ⊥\n⟧"
+  describe "withMargin counts the comma after a binding" $
+    it "wraps a binding that fits only without its trailing comma" $
+      render (withMargin 30 (expressionToCST commaFormation))
+        `shouldBe` "⟦\n  a ↦ Φ.f(\n    x ↦ Φ.xxxxxxxxxxx\n  ),\n  b ↦ ⊥\n⟧"
 
-  describe "withMargin counts the attribute after a dispatch"
-    $ it "wraps a call that does not fit with its attribute"
-    $ render (withMargin 30 (expressionToCST dispatchedHead))
-      `shouldBe` "Φ.fff(\n  aaaaa ↦ Φ.ccccc\n).dddddd"
+  describe "withMargin counts the attribute after a dispatch" $
+    it "wraps a call that does not fit with its attribute" $
+      render (withMargin 30 (expressionToCST dispatchedHead))
+        `shouldBe` "Φ.fff(\n  aaaaa ↦ Φ.ccccc\n).dddddd"
 
-  describe "withMargin counts the opening parenthesis of a split argument"
-    $ it "keeps every line of a chain of calls within the margin"
-    $ all ((<= 40) . T.length) (T.lines (render (withMargin 40 (expressionToCST chained))))
-      `shouldBe` True
+  describe "withMargin counts the opening parenthesis of a split argument" $
+    it "keeps every line of a chain of calls within the margin" $
+      all ((<= 40) . T.length) (T.lines (render (withMargin 40 (expressionToCST chained))))
+        `shouldBe` True
   where
     terms :: [(String, Expression)]
     terms =

@@ -91,9 +91,9 @@ spec = do
           it desc $ (lhs == rhs) `shouldBe` expected
       )
 
-  describe "Attribute Ord instance orders correctly"
-    $ it "sorts attributes by constructor order"
-    $ let attrs = [AtMeta "z", AtDelta, AtLambda, AtRho, AtPhi, AtLabel "a"]
+  describe "Attribute Ord instance orders correctly" $
+    it "sorts attributes by constructor order" $
+      let attrs = [AtMeta "z", AtDelta, AtLambda, AtRho, AtPhi, AtLabel "a"]
           first : _ = sort attrs
           isLabel (AtLabel _) = True
           isLabel _ = False
@@ -123,9 +123,9 @@ spec = do
           it desc $ (lhs == rhs) `shouldBe` expected
       )
 
-  describe "Bytes Ord instance orders correctly"
-    $ it "sorts bytes by constructor order"
-    $ let bytes = [BtMeta "z", BtMany ["00"], BtOne "FF", BtEmpty]
+  describe "Bytes Ord instance orders correctly" $
+    it "sorts bytes by constructor order" $
+      let bytes = [BtMeta "z", BtMany ["00"], BtOne "FF", BtEmpty]
           first : _ = sort bytes
        in first `shouldBe` BtEmpty
 
@@ -159,9 +159,9 @@ spec = do
           it desc $ (lhs == rhs) `shouldBe` expected
       )
 
-  describe "Binding Ord instance orders correctly"
-    $ it "sorts bindings by constructor order"
-    $ let bindings = [BiLambda (FnMeta "Z"), BiLambda (Function "A"), BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExRoot]
+  describe "Binding Ord instance orders correctly" $
+    it "sorts bindings by constructor order" $
+      let bindings = [BiLambda (FnMeta "Z"), BiLambda (Function "A"), BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExRoot]
           first : _ = sort bindings
           isTau (BiTau _ _) = True
           isTau _ = False
@@ -194,9 +194,9 @@ spec = do
           it desc $ (lhs == rhs) `shouldBe` expected
       )
 
-  describe "Expression Ord instance orders correctly"
-    $ it "sorts expressions by constructor order"
-    $ let exprs = [ExDispatch ExRoot AtRho, ExApplication ExRoot (ArTau AtRho ExRoot), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
+  describe "Expression Ord instance orders correctly" $
+    it "sorts expressions by constructor order" $
+      let exprs = [ExDispatch ExRoot AtRho, ExApplication ExRoot (ArTau AtRho ExRoot), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
           first : _ = sort exprs
        in first `shouldBe` ExFormation []
 
@@ -355,12 +355,12 @@ spec = do
              in matched `shouldBe` expected
       )
 
-  describe "dataBytes"
-    $ it "builds the bytes-object formation carrying the given bytes"
-    $ dataBytes (BtOne "48")
-      `shouldBe` ExApplication
-        (ExDispatch ExRoot (AtLabel "bytes"))
-        (ArTau AtPhi (ExFormation [BiDelta (BtOne "48")]))
+  describe "dataBytes" $
+    it "builds the bytes-object formation carrying the given bytes" $
+      dataBytes (BtOne "48")
+        `shouldBe` ExApplication
+          (ExDispatch ExRoot (AtLabel "bytes"))
+          (ArTau AtPhi (ExFormation [BiDelta (BtOne "48")]))
 
   describe "DataObject/DataString/DataNumber pattern" $ do
     it "constructs the phi-named, unwrapped form" $
@@ -510,10 +510,10 @@ spec = do
       ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "op"))]
         `shouldNotBe` ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "po"))]
 
-  describe "Expression Show instance"
-    $ it "does not show what a node carries besides its parts"
-    $ show (ExApplication (ExDispatch ExXi (AtLabel "yb")) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho])))
-      `shouldBe` "ExApplication (ExDispatch ExXi yb) (ArAlpha α0 (ExFormation [BiVoid ρ]))"
+  describe "Expression Show instance" $
+    it "does not show what a node carries besides its parts" $
+      show (ExApplication (ExDispatch ExXi (AtLabel "yb")) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho])))
+        `shouldBe` "ExApplication (ExDispatch ExXi yb) (ArAlpha α0 (ExFormation [BiVoid ρ]))"
 
   describe "lifted" $ do
     it "raises every symbol above the floor by the offset" $

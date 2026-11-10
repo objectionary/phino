@@ -87,10 +87,10 @@ spec :: Spec
 spec = do
   known <- runIO fixtureLambdas
 
-  describe "dataize' fails when no dataization rule matches the term"
-    $ it "throws instead of treating the unmatched meta as ⊥"
-    $ (dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
-      `shouldThrow` (\e -> "no dataization rule matched" `isInfixOf` show (e :: SomeException))
+  describe "dataize' fails when no dataization rule matches the term" $
+    it "throws instead of treating the unmatched meta as ⊥" $
+      (dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
+        `shouldThrow` (\e -> "no dataization rule matched" `isInfixOf` show (e :: SomeException))
 
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
     ctx <- runIO (defaultReduceContext ExRoot)

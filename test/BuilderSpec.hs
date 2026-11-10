@@ -208,19 +208,19 @@ spec = do
     it "build formation with duplicates" $
       buildExpression (ExMeta "e") (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]))) `shouldSatisfy` isLeft
 
-  describe "buildExpression"
-    $ it "does not leave an invalid global application around rho"
-    $ buildExpression
-      (ExApplication ExRoot (ArTau AtRho (ExFormation [BiVoid AtRho])))
-      substEmpty
-      `shouldBe` Right ExRoot
+  describe "buildExpression" $
+    it "does not leave an invalid global application around rho" $
+      buildExpression
+        (ExApplication ExRoot (ArTau AtRho (ExFormation [BiVoid AtRho])))
+        substEmpty
+        `shouldBe` Right ExRoot
 
-  describe "pathOf"
-    $ it "names the world itself as Φ"
-    $ pathOf
-      (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
-      (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
-      `shouldBe` ExRoot
+  describe "pathOf" $
+    it "names the world itself as Φ" $
+      pathOf
+        (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
+        (ExFormation [BiTau (AtLabel "qwv") (ExFormation [BiVoid AtRho]), BiLambda (Function "Kzr")])
+        `shouldBe` ExRoot
   describe "formed" $ do
     it "builds the formation of the bindings" $
       formed [BiVoid (AtLabel "qp"), BiDelta (BtOne "0C")] `shouldBe` ExFormation [BiVoid (AtLabel "qp"), BiDelta (BtOne "0C")]

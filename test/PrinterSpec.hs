@@ -82,9 +82,9 @@ spec = do
           it desc (printExpression' expr (sugar, UNICODE, SINGLELINE, defaultMargin) `shouldContain` "𝛿1")
       )
 
-  describe "printExpression with SWEET UNICODE renders the pretty function meta"
-    $ it "meta lambda becomes 𝑓"
-    $ printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "𝑓:λ"
+  describe "printExpression with SWEET UNICODE renders the pretty function meta" $
+    it "meta lambda becomes 𝑓" $
+      printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "𝑓:λ"
 
   describe "printExpression names the non-finite doubles instead of spelling their bytes" $
     forM_
@@ -383,9 +383,9 @@ spec = do
               ]
       printExpressionHidingRho' deep (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦⟧:b:a"
 
-  describe "logPrintConfig"
-    $ it "is a fixed SWEET/UNICODE/SINGLELINE config at the default margin"
-    $ logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE, defaultMargin)
+  describe "logPrintConfig" $
+    it "is a fixed SWEET/UNICODE/SINGLELINE config at the default margin" $
+      logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE, defaultMargin)
 
   describe "printExpression' spells one-binding formations the way the parser reads them back" $
     forM_
