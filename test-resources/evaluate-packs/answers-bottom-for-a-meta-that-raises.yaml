@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The entry 'L_wrap' morphs its operand 'x', a copy of 'throw', and then
+# brings the meta it bound down to data. The λ function 'L_throw' is one of
+# its 'terminators', and data that comes from something that raises is the
+# same raise, so 'L_wrap' answers ⊥ and never fires 'L_throw' (#2330).
+symbolic: |
+  - λ: L_wrap
+    terminators: [L_throw]
+    morph:
+      𝑛1: $.x
+    dataize:
+      𝛿1: 𝑛1
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+location: 'Q.y'
+input: '⟦ wrap(x) ↦ ⟦ λ ⤍ L_wrap ⟧, y ↦ Φ.wrap( ⟦ λ ⤍ L_throw ⟧ ).φ ⟧'
+result: '⊥'
+protocol: |
+  𝕄(Φ.y):
+    remembered 𝑛·0·1 ≡ Φ.wrap  # ⟦ x ↦ ∅, λ ⤍ L_wrap ⟧
+    𝑛·0·2 := Φ.wrap( x ↦ L_throw:λ )
+    𝑛·0·3 := ⟦ x ↦ L_throw:λ, λ ⤍ L_wrap ⟧
+    remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ L_throw:λ )
+    𝔼(L_wrap):
+      𝕄(ξ.x):
+        morphed 𝑛·1·1 := L_throw:λ
+      𝑛1·1 := L_throw:λ  # 𝕄(ξ.x)
+      𝑛·1·2 := ⊥
+    morphed 𝑛·0·4 := ⊥

@@ -72,10 +72,12 @@ data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression,
 data Answer
   = Answer Expression Expression
   | Joined Expression
+  | Raised
 
 ended :: Answer -> Expression
 ended (Answer _ normal) = normal
 ended (Joined normal) = normal
+ended Raised = ExTermination
 
 data Firing = Firing T.Text [Either Int Bytes] [Expression]
   deriving (Eq, Ord)
