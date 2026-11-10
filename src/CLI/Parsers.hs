@@ -116,6 +116,14 @@ optMaxSeconds =
         (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, unlimited unless given")
     )
 
+optMaxNodes :: Parser (Maybe Int)
+optMaxNodes =
+  optional
+    ( option
+        (boundedIntOption >>= validateIntOption (> 0) "--max-nodes must be positive")
+        (long "max-nodes" <> metavar "NODES" <> help "Maximum number of nodes the term of the run may grow to, unlimited unless given")
+    )
+
 optMargin :: Parser Int
 optMargin =
   option
@@ -422,6 +430,7 @@ dataizeParser =
             <*> optMaxSteps
             <*> optMaxFirings
             <*> optMaxSeconds
+            <*> optMaxNodes
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -472,6 +481,7 @@ morphParser =
             <*> optMaxSteps
             <*> optMaxFirings
             <*> optMaxSeconds
+            <*> optMaxNodes
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength

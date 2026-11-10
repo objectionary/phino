@@ -56,7 +56,7 @@ import XMIR (defaultXmirContext)
 defaultReduceContext :: Expression -> IO ReduceContext
 defaultReduceContext loc = do
   minted <- newIORef 0
-  pure (ReduceContext loc loc Nothing 25 25 (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+  pure (ReduceContext loc loc Nothing 25 25 Nothing (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
 
 linked :: Engine
 linked = fromMaybe yaml compiled
