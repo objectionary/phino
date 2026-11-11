@@ -270,12 +270,12 @@ spec = do
       ctx <- defaultReduceContext ExRoot
       morph expr emptyState ctx{_deadline = Just deadline}
         `shouldThrow` (\e -> "--max-seconds=17" `isInfixOf` show (e :: SomeException))
-    it "fails a partial morphing once the deadline has passed" $ do
+    it "leaves a partial morphing in place once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ q -> [[ D> 5A- ]] ]]"
       deadline <- overdue 23
       ctx <- defaultReduceContext ExRoot
-      morph expr emptyState ctx{_deadline = Just deadline, _partial = True}
-        `shouldThrow` (\e -> "--max-seconds=23" `isInfixOf` show (e :: SomeException))
+      (residue, _, _) <- morph expr emptyState ctx{_deadline = Just deadline, _partial = True}
+      residue `shouldBe` expr
 
   describe "stops an entrance by the clock of --max-seconds" $
     it "fails a comparison that outlasts the deadline" $ do

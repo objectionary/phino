@@ -619,9 +619,10 @@ step either (#2196), and the search of the facts `severed` makes to name a
 cut, which may outlast the run on a wide copy (#2349). It wraps no work that
 steps or writes a record, so the clock of the steps keeps the place of the
 timeout. The first step, firing, comparison or walk after the deadline writes
-`timeout …` (`EvTimeout`) and throws `OutOfTime`, which no frame parks, so the
-run fails with or without `--partial` and a caller that cannot wait gets a
-closed protocol ending in the timeout instead of killing the process (#1607).
+`timeout …` (`EvTimeout`) and throws `OutOfSteps (Seconds …)`, so the run
+fails, or under `--partial` prints the residue the way it does for the other
+limits (#2355), and a caller that cannot wait gets a closed protocol ending in
+the timeout instead of killing the process (#1607).
 
 Every use of a binding copies the term bound to it, so one formation is fired as
 many times as the program reads it, and every firing mints symbols of its own. A

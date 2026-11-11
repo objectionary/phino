@@ -41,6 +41,7 @@ dataize universe state ctx@ReduceContext{..} = do
     Right ((bytes, seq), state') -> pure (Dataized bytes, reverse seq, state')
     Left (StuckAt func seq parked) | _partial -> residual seq parked{_stuck = Just func}
     Left (OutOfStepsAt _ seq parked) | _partial -> residual seq parked
+    Left (OutOfSteps _) | _partial -> pure (Residual expr, [(universe, Nothing)], state)
     Left (LoopingAt _ seq parked) | _partial -> residual seq parked
     Left (Undataizable term seq parked) | _partial -> do
       unless (dead `elem` _parked) (_saveEval (EvStuck _nesting dead Dataization term))

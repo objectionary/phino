@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
+module Morph (Answer (..), Budget (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -138,10 +138,10 @@ data Budget
   | Cycles Int
   | Nodes Int
   | Memory Int
+  | Seconds Int
 
 data ReduceException
   = OutOfSteps Budget
-  | OutOfTime Int
   | Stuck T.Text
   | StuckAt T.Text (NonEmpty Rewritten) State
   | OutOfStepsAt Budget (NonEmpty Rewritten) State
@@ -164,9 +164,9 @@ instance Show ReduceException where
     printf "Evaluation did not finish before reaching the limit of nodes: --max-nodes=%d" limit
   show (OutOfSteps (Memory limit)) =
     printf "Evaluation did not finish before reaching the limit of memory: --max-memory=%s" (sized limit)
-  show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
-  show (OutOfTime limit) =
+  show (OutOfSteps (Seconds limit)) =
     printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
+  show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
   show (Diverged func) = printf "The λ function '%s' could not join its two sides" (T.unpack func)
@@ -236,7 +236,7 @@ clocked ctx = mapM_ clock ctx._deadline
 expired :: ReduceContext -> Int -> IO a
 expired ctx cap = do
   ctx._saveEval (EvTimeout ctx._nesting cap ctx._judgment ctx._site)
-  throwIO (OutOfTime cap)
+  throwIO (OutOfSteps (Seconds cap))
 
 awaited :: ReduceContext -> IO a -> IO a
 awaited ctx action = case ctx._deadline of
@@ -625,6 +625,7 @@ morph universe state caller@ReduceContext{..} = do
         Right ((morphed, seq), state') -> pure (morphed, reverse (NE.toList seq), state')
         Left (StuckAt func seq parked) | _partial -> residue seq parked{_stuck = Just func}
         Left (OutOfStepsAt _ seq parked) | _partial -> residue seq parked
+        Left (OutOfSteps _) | _partial -> pure (expr, [(universe, Nothing)], state)
         Left (LoopingAt _ seq parked) -> residue seq parked
         Left failure -> throwIO (failure :: ReduceException)
     residue :: NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
