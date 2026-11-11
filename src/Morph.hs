@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, voided) where
+module Morph (Answer (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -144,6 +144,7 @@ data ReduceException
   | LoopingAt Expression (NonEmpty Rewritten) State
   | Undataizable Expression (NonEmpty Rewritten) State
   | Unmorphable Expression
+  | Abnormal Judgment Expression
   deriving anyclass (Exception)
 
 instance Show ReduceException where
@@ -168,6 +169,8 @@ instance Show ReduceException where
   show (Undataizable ExTermination _ _) = "dataization reached the terminator ⊥, which signals an error and cannot be dataized"
   show (Undataizable term _ _) = printf "no dataization rule matched, while dataization expects a normal form: %s" (printExpression term)
   show (Unmorphable term) = printf "Morphing expects a normal form, but no morphing rule matches: %s" (printExpression term)
+  show (Abnormal Morphing term) = printf "Morphing expects a normal form, but the term at the locator is not one: %s" (printExpression term)
+  show (Abnormal _ term) = printf "Dataization expects a normal form, but the term at the locator is not one: %s" (printExpression term)
 
 deeper :: ReduceContext -> IO ReduceContext
 deeper ctx@ReduceContext{_steps = Steps limit spent} = do
@@ -565,6 +568,7 @@ morph'' owner start univ state entry = go start univ state entry
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
+  vetted Morphing expr caller
   prepared <- try (universed universe caller)
   case prepared of
     Left (OutOfSteps _) | _partial -> pure (expr, [(universe, Nothing)], state)
@@ -584,6 +588,9 @@ morph universe state caller@ReduceContext{..} = do
     residue seq parked = do
       expr <- locatedExpression _locator (fst (NE.head seq))
       pure (expr, reverse (NE.toList seq), parked)
+
+vetted :: Judgment -> Expression -> ReduceContext -> IO ()
+vetted judgment expr ctx = unless (ctx._engine._normal expr) (throwIO (Abnormal judgment expr))
 
 inferred :: Expression -> Expression -> State -> ReduceContext -> [In.Inference value] -> IO (Maybe (In.Conclusion value, State))
 inferred expr univ state ctx rules = do
@@ -628,7 +635,8 @@ normalized expr seq ctx@ReduceContext{..} = do
   whole <- withLocatedExpression _locator expr (fst (NE.head seq))
   taken <- newIORef Map.empty
   peeled <- newIORef Map.empty
-  (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken peeled ctx)
+  copies <- newIORef Map.empty
+  (rewrittens, exceeded) <- rewrite whole _engine._normalization (rewriteContext taken peeled copies ctx)
   when exceeded $ do
     _saveEval (EvExceeded _nesting _maxCycles _judgment _site)
     throwIO (OutOfSteps (Cycles _maxCycles))
@@ -637,24 +645,29 @@ normalized expr seq ctx@ReduceContext{..} = do
   expr' <- locatedExpression _locator (fst rw)
   pure (expr', seq')
   where
-    rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
-    rewriteContext taken peeled whole@ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled whole)
-    made :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
-    made _ _ whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
+    rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
+    rewriteContext taken peeled copies whole@ReduceContext{..} =
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled copies whole)
+    made :: IORef (Store Expression) -> IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
+    made _ _ copies whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
       | attr /= AtRho && object /= head' = do
-          whole._saveEval (EvApplied whole._nesting whole._judgment (called whole._universe redex) object whole._site)
-          known <- remembering whole._facts head'
-          when (known && copied bds) (noted whole object redex)
-    made taken _ whole redex@(ExApplication _ (ArTau AtRho _)) object@(ExFormation bds)
+          made' <- readIORef copies
+          if lookup redex (Map.findWithDefault [] (hashExpression redex) made') == Just object
+            then whole._saveEval (EvRecalled whole._nesting (called whole._universe redex) object)
+            else do
+              modifyIORef' copies (Map.insertWith (++) (hashExpression redex) [(redex, object)])
+              whole._saveEval (EvApplied whole._nesting whole._judgment (called whole._universe redex) object whole._site)
+              known <- remembering whole._facts head'
+              when (known && copied bds) (noted whole object redex)
+    made taken _ _ whole redex@(ExApplication _ (ArTau AtRho _)) object@(ExFormation bds)
       | copied bds = do
           pending <- readIORef taken
           forM_ (lookup redex (Map.findWithDefault [] (hashExpression redex) pending)) (noted whole object)
-    made taken peeled whole redex@(ExDispatch target attr) object
+    made taken peeled _ whole redex@(ExDispatch target attr) object
       | attr /= AtRho = do
           stripped peeled whole target attr
           dispatched taken peeled whole redex object
-    made _ _ _ _ _ = pure ()
+    made _ _ _ _ _ _ = pure ()
     stripped :: IORef (Store Expression) -> ReduceContext -> Expression -> Attribute -> IO ()
     stripped peeled whole target@(ExFormation bds) attr = do
       known <- remembering whole._facts target

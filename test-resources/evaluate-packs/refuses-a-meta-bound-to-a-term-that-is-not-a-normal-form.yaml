@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A meta 𝑛 of an entry may hold only a normal form (#2343). The 'rewrite'
+# line normalizes nothing, and its rule wraps the term into a dispatch off a
+# formation, which 'dot' of normalization would still take, so the firing
+# refuses to bind '𝑛2' to it.
+symbolic: |
+  - λ: L_wrap
+    morph:
+      𝑛1: $.x
+    rewrite:
+      𝑛2:
+        of: 𝑛1
+        rules:
+          - name: wrap
+            pattern: ⟦ 𝐵1 ⟧
+            result: ⟦ k ↦ ⟦ 𝐵1 ⟧ ⟧.k
+    𝑛: 𝑛2
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_wrap ⟧.φ ⟧'
+fails: "The meta '𝑛2' of λ function 'L_wrap' may hold only a normal form"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_wrap):
+      𝕄(ξ.x):
+        morphed 𝑛·1·1 := 01-:Δ
+      𝑛1·1 := 01-:Δ  # 𝕄(ξ.x)
+      𝑛2·1 := 01-:Δ:k.k  # rewrite(𝑛1)

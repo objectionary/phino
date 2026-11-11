@@ -126,10 +126,12 @@ $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho sum.phi
 ```
 
 Dataizing a symbol always gives the same bytes, the number 42, as above.
+Like `morph`, `dataize` fails on a term that is not a normal form.
 
 Inside an entry, `$` is the formation being fired and `Φ` is the universe.
 A meta is a named placeholder: `𝛿1`, `𝛿2` and so on hold bytes, while `𝑛1`,
-`𝑛2` and so on hold terms.
+`𝑛2` and so on hold normal forms, and a line that would bind one to any other
+term fails the run.
 An entry may hold only the keys below, and any other key refuses the whole
 file:
 

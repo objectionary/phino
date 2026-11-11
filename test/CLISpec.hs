@@ -1433,7 +1433,7 @@ spec = do
 
   it "names the term dataization cannot take, and says a normal form is expected" $
     withStdin "⟦ x ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.b ⟧" $
-      testCLIFailed ["dataize", "--locator=Q.x"] ["expects a normal form: 01-:Δ:b.b"]
+      testCLIFailed ["dataize", "--locator=Q.x"] ["Dataization expects a normal form, but the term at the locator is not one: 01-:Δ:b.b"]
 
   describe "--partial parks a universe that --max-cycles stops" $ do
     let heavy = "⟦ simple ↦ ⟦ Δ ⤍ 01- ⟧, heavy ↦ ⟦ a ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧.a.b.c ⟧"
@@ -1821,22 +1821,22 @@ spec = do
         recorded >>= (`shouldNotSatisfy` any (isInfixOf "stuck L_dataized"))
 
     it "dataizes with --sequence" $
-      withStdin "[[ @ -> [[ x -> [[ D> 01-, y -> ? ]](y -> [[ ]]) ]].x ]]" $
+      withStdin "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]" $
         testCLISucceeded
           ["dataize", "--sequence", "--output=latex", "--flat", "--sweet"]
           [ intercalate
               "\n"
               [ "\\begin{phiquation}"
-              , "[[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| : @ \\phiDataize[\\nameref{r:box}]"
-              , "  \\phiDataize [[ D> |01-|, |y| -> ? ]] ( |y| -> [[]] ) : |x| . |x| : @ . @ \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] : |x| . |x| : @ . @ \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> [[ D> |01-|, |y| -> [[]] ]] : |x| ) : @ . @ \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] : @ . @ \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize [[ D> |01-|, |y| -> [[]] ]] \\phiDataize[\\nameref{r:delta}]"
-              , "  \\phiDataize |01-|{.}"
+              , "[[ @ -> |f| ( |y| -> [[]] ), |f|(|y|) -> |00-| : D ]] \\phiDataize[\\nameref{r:box}]"
+              , "  \\phiDataize [[ @ -> |f| ( |y| -> [[]] ), |f|(|y|) -> |00-| : D ]] . @ \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize [[ |f|(|y|) -> |00-| : D ]] . |f| ( |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:dot}]"
+              , "  \\phiNormalize [[ D> |00-|, |y| -> ? ]] ( \\phiTerminal{\\rho} -> [[ |f|(|y|) -> |00-| : D ]], |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize [[ D> |00-|, |y| -> ? ]] ( |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:copy}]"
+              , "  \\phiNormalize [[ D> |00-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:skip}]"
+              , "  \\phiNormalize [[ D> |00-|, |y| -> [[]] ]] \\phiDataize[\\nameref{r:delta}]"
+              , "  \\phiDataize |00-|{.}"
               , "\\end{phiquation}"
-              , "01-"
+              , "00-"
               ]
           ]
 
@@ -3545,7 +3545,7 @@ spec = do
         testCLISucceeded ["dataize", "--max-cycles=1"] ["01-"]
 
     it "reports --max-cycles exceeded when a rule still applies at the limit" $
-      withStdin "[[ @ -> [[ x -> [[ D> 00- ]] ]].x ]]" $
+      withStdin "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]" $
         testCLIFailed
           ["dataize", "--max-cycles=1"]
           ["[ERROR]: Normalization did not finish before reaching the limit of cycles: --max-cycles=1"]
@@ -3769,7 +3769,7 @@ spec = do
             ["Φ.m( 𝜎1:λ )"]
 
       it "passes a small run in a large program under --max-nodes" $
-        withStdin ("⟦ x ↦ ⟦ φ ↦ ⟦ y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧.y ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
+        withStdin ("⟦ x ↦ ⟦ φ ↦ ξ.y, y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
           testCLISucceeded ["dataize", "--max-nodes=50", "--locator=Q.x"] ["05-"]
 
     describe "--max-memory" $ do
@@ -3795,7 +3795,7 @@ spec = do
             ["Φ.m( 𝜎1:λ )"]
 
       it "passes a small run in a large program under --max-memory" $
-        withStdin ("⟦ x ↦ ⟦ φ ↦ ⟦ y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧.y ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
+        withStdin ("⟦ x ↦ ⟦ φ ↦ ξ.y, y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
           testCLISucceeded ["dataize", "--max-memory=1G", "--locator=Q.x"] ["05-"]
 
     describe "--max-seconds" $ do

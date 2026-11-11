@@ -383,20 +383,22 @@ names a line by counting.
 
 An application writes a line too, `𝑛·1·1 := …` (`EvApplied`, #1745). A `Step`
 answers the term it made and the pairs of redex and result it replaced, and
-`rewrite'` hands every pair to `_saveMade` of `RewriteContext`. `normalized`
-of `Morph.hs` writes a line for an application that became a formation other
-than its head, which of the built-in rules only `copy` does, other than one
-filling ρ, which a dispatch makes, with the judgment and the site, spelling the
-call as the
-head, named by `nameIn` of `Builder.hs`, applied to its argument; the `rewrite`
-command saves nothing (`dontSaveMade`). The line names the call, and the line
-right after it, `𝑛·1·2 := ⟦ … ⟧`, names the object the call made, abridged as
-any formation is, each by a name of its own counted with `built` and `answer`
-of the innermost open firing, which both writers keep as a stack every record
-prunes by its depth (`tier`), and from then on `abbreviated` writes each by its
-name wherever a later line holds it whole (#2165). The markup writes the object
-as a `<formed>` record with that name right after the `<applied>` one (`made`
-of `saveEvalXml`), so both formats count the same names.
+`rewrite'` hands every pair to `_saveMade` of `RewriteContext`. `normalized` of
+`Morph.hs` writes a line for an application that became a formation other than
+its head, which of the built-in rules only `copy` does, other than one filling
+ρ, which a dispatch makes, with the judgment and the site, spelling the call as
+the head, named by `nameIn` of `Builder.hs`, applied to its argument; the
+`rewrite` command saves nothing (`dontSaveMade`). One normalization copies one
+call once: `normalized` keeps every copy it made by the call, and a place
+holding the same call again writes `recalled 𝑛·0·1 ⇒ 𝑛·0·2` (`EvRecalled`), the
+call and its copy, instead of copying it again (#2343). The line names the call,
+and the line right after it, `𝑛·1·2 := ⟦ … ⟧`, names the object the call made,
+abridged as any formation is, each by a name of its own counted with `built` and
+`answer` of the innermost open firing, which both writers keep as a stack every
+record prunes by its depth (`tier`), and from then on `abbreviated` writes each
+by its name wherever a later line holds it whole (#2165). The markup writes the
+object as a `<formed>` record with that name right after the `<applied>` one
+(`made` of `saveEvalXml`), so both formats count the same names.
 Either line goes through `abbreviatedInside`, which names the head and each
 argument of a call, or each binding of an object, and never the term as a
 whole, so an application made again is spelled out again, and so is the object
@@ -435,6 +437,15 @@ normalized universe, which `universed` of `Morph.hs` hands to the writers as
 type alias.
 
 ### Morphing, dataization and evaluation
+
+IMPORTANT: 𝕄 and 𝔻 work only with normal forms. Any other term handed to
+them is broken input and must be refused, never normalized first: `vetted` of
+`Morph.hs` throws `Abnormal` from the wrappers `morph` and `dataize` when the
+term at the locator fails the normal-form test of the engine, such as
+`⟦ a ↦ ⟦ x ↦ ∅ ⟧( x ↦ ⟦⟧ ) ⟧`, whose call can still be copied (#2343).
+In the same way, a meta `𝑛` of an entry of `--symbolic`, such as `𝑛2`, may
+hold only a normal form: `bind` of `Evaluate.hs` refuses to bind one to any
+other term, such as what a `rewrite` line made that `dot` would still take.
 
 One module per judgment: `Morph.hs` implements the formal Morphing (M)
 function, `Dataize.hs` the Dataization (D) one and `Evaluate.hs` the

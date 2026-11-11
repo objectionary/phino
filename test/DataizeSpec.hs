@@ -313,7 +313,7 @@ spec = do
       ]
       ( \(flag, reducing, message) ->
           it ("throws once " ++ flag ++ " is exhausted with --depth-sensitive") $ do
-            expr <- parseExpressionThrows "[[ @ -> [[ x -> [[ D> 00- ]] ]].x ]]"
+            expr <- parseExpressionThrows "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]"
             ctx <- reducing <$> newIORef 0
             dataize expr emptyState ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )

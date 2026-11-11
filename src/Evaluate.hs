@@ -25,7 +25,7 @@ import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, noted, opening, recalled, remember, remembered, remembering, retained, settled, starved, unparked, voided)
-import Printer (printFunction)
+import Printer (printExpression, printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
 
@@ -422,6 +422,9 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     operand :: Expression -> IO Expression
     operand term = caller._engine._contextualize term self
     bind :: Meta -> MetaValue -> Subst -> IO Subst
+    bind meta (MvExpression term) _
+      | not (caller._engine._normal term) =
+          throwIO (userError (printf "The meta '%s' of λ function '%s' may hold only a normal form, but got: %s" (T.unpack meta._spelling) (T.unpack func) (printExpression term)))
     bind meta value bound = case combine (substSingle meta._name value) bound of
       Just bound' -> pure bound'
       Nothing ->
