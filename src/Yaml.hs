@@ -19,6 +19,7 @@ import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Aeson.Types (formatRelativePath)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BC
 import Data.Conduit ((.|))
 import qualified Data.Conduit.List as CL
 import Data.FileEmbed (embedDir)
@@ -543,6 +544,8 @@ yamlRule path = do
     worded :: Libyaml.Event -> Libyaml.Event
     worded (Libyaml.EventScalar value Libyaml.NoTag style anchor)
       | value `elem` spelled = Libyaml.EventScalar value Libyaml.StrTag style anchor
+    worded (Libyaml.EventScalar value (Libyaml.UriTag tag@('!' : _)) style anchor)
+      | BS.null value = Libyaml.EventScalar (BC.pack tag) Libyaml.StrTag style anchor
     worded event = event
     spelled :: [BS.ByteString]
     spelled = ["y", "Y", "yes", "Yes", "YES", "n", "N", "no", "No", "NO", "on", "On", "ON", "off", "Off", "OFF"]

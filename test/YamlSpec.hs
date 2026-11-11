@@ -34,6 +34,21 @@ failsWith fragment decoded = case decoded of
 failsAsRedundant :: Either Yaml.ParseException a -> Bool
 failsAsRedundant = failsWith "redundant"
 
+loadedFrom :: String -> String -> IO Rule
+loadedFrom file content = do
+  tmp <- getTemporaryDirectory
+  bracket
+    (openTempFile tmp file)
+    (\(path, handle) -> hClose handle >> removeFile path)
+    ( \(path, handle) -> do
+        BS.hPut handle (encodeUtf8 (T.pack content))
+        hClose handle
+        yamlRule path
+    )
+
+quoted :: String -> String
+quoted word = "'" ++ word ++ "'"
+
 spec :: Spec
 spec = do
   describe "validates rewriting rule keys" $ do
@@ -62,21 +77,22 @@ spec = do
   it "reads a bare y, n, yes, no, on and off in a rule file as the attributes they spell" $ do
     let written :: (String -> String) -> String
         written spelled = "name: bare-words\npattern: ⟦ 𝜏1 ↦ 𝑒1, 𝐵1 ⟧\nresult: ⟦ 𝐵1 ⟧\nwhen:\n  and:\n    - eq: [𝜏1, " ++ spelled "n" ++ "]\n    - in: [" ++ spelled "y" ++ ", 𝐵1]\n    - disjoint: [[" ++ intercalate ", " (map spelled ["yes", "no", "on", "off"]) ++ "], [𝐵1]]"
-    tmp <- getTemporaryDirectory
-    bare <-
-      bracket
-        (openTempFile tmp "bare-words.yaml")
-        (\(path, handle) -> hClose handle >> removeFile path)
-        ( \(path, handle) -> do
-            BS.hPut handle (encodeUtf8 (T.pack (written id)))
-            hClose handle
-            yamlRule path
-        )
+    bare <- loadedFrom "bare-words.yaml" (written id)
     show bare
       `shouldBe` either
         Yaml.prettyPrintParseException
         (show :: Rule -> String)
-        (decodeYaml' (written (\word -> "'" ++ word ++ "'")))
+        (decodeYaml' (written quoted))
+
+  it "reads a bare ASCII meta in a rule file as the meta it spells" $ do
+    let written :: (String -> String) -> String
+        written spelled = "name: bare-metas\npattern: ⟦ φ ↦ !e1, !t1 ↦ !e2, !B1 ⟧.!t2\nresult: " ++ spelled "!e1" ++ "\nwhen:\n  and:\n    - nf: " ++ spelled "!e2" ++ "\n    - not:\n        eq:\n          - " ++ spelled "!t1" ++ "\n          - " ++ spelled "!t2" ++ "\n    - not:\n        in:\n          - " ++ spelled "!t2" ++ "\n          - " ++ spelled "!B1"
+    bare <- loadedFrom "bare-metas.yaml" (written id)
+    show bare
+      `shouldBe` either
+        Yaml.prettyPrintParseException
+        (show :: Rule -> String)
+        (decodeYaml' (written quoted))
 
   describe "fails on yaml typos" $ do
     let resources = "test-resources/yaml-typos"
