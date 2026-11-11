@@ -20,11 +20,12 @@ import Control.Exception (Exception, catch, evaluate, throwIO, try)
 import Control.Monad (forM_, guard, unless, when)
 import Data.Bifunctor (first, second)
 import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (find, partition, sortOn)
+import Data.List (find, foldl', partition, sortOn)
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isJust, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, listToMaybe, maybeToList)
+import qualified Data.Set as Set
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep, sized)
 import Engine (Engine (..))
@@ -89,7 +90,11 @@ data Kept
 
 type Store answer = Map.Map Int [(Expression, answer)]
 
-type Facts = IORef (Store Expression)
+data Facts = Facts (IORef (Store Expression)) (IORef Lodgings)
+
+data Lodging = Lodging [(Expression, Attribute)] [(Attribute, Expression)]
+
+data Lodgings = Lodgings !(Store Lodging) !(Map.Map Int [Expression])
 
 data ReduceContext = ReduceContext
   { _locator :: Expression
@@ -346,34 +351,56 @@ recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
 
 factual :: IO Facts
-factual = newIORef Map.empty
+factual = Facts <$> newIORef Map.empty <*> newIORef (Lodgings Map.empty Map.empty)
 
 noted :: ReduceContext -> Expression -> Expression -> IO ()
-noted ctx object source = forM_ ctx._facts $ \facts -> do
+noted ctx object source = forM_ ctx._facts $ \(Facts facts lodgings) -> do
   known <- (Just source ==) . lookup object . Map.findWithDefault [] (hashExpression object) <$> readIORef facts
   unless known $ do
     modifyIORef' facts (Map.insertWith (++) (hashExpression object) [(object, source)])
+    modifyIORef' lodgings (\index -> fst (lodged Nothing index object))
     ctx._saveEval (EvRemembered ctx._nesting object source)
+  where
+    lodged :: Maybe (Expression, Attribute) -> Lodgings -> Expression -> (Lodgings, Expression)
+    lodged edge index@(Lodgings nodes shapes) term@(ExFormation bds) = case [node | (node, _) <- Map.findWithDefault [] (hashExpression term) nodes, node == term] of
+      node : _ -> (maybe index (\parent -> Lodgings (Map.adjust (map (adopted node parent)) (hashExpression node) nodes) shapes) edge, node)
+      [] -> case foldl' (lodging term) (index, []) [(attr, body) | BiTau attr body@(ExFormation _) <- bds, attr /= AtRho] of
+        (Lodgings inner shapes', kids) -> (Lodgings (Map.insertWith (++) (hashExpression term) [(term, Lodging (maybeToList edge) (reverse kids))] inner) (Map.insertWith (++) (shaped bds) [term] shapes'), term)
+    lodged _ index term = (index, term)
+    lodging :: Expression -> (Lodgings, [(Attribute, Expression)]) -> (Attribute, Expression) -> (Lodgings, [(Attribute, Expression)])
+    lodging parent (index, kids) (attr, body) = case lodged (Just (parent, attr)) index body of
+      (index', kid) -> index' `seq` (index', (attr, kid) : kids)
+    adopted :: Expression -> (Expression, Attribute) -> (Expression, Lodging) -> (Expression, Lodging)
+    adopted node parent (term, Lodging parents kids)
+      | term == node = (term, Lodging (parent : parents) kids)
+      | otherwise = (term, Lodging parents kids)
+
+shaped :: [Binding] -> Int
+shaped bds = hashExpression (ExFormation (rholess bds))
+
+rholess :: [Binding] -> [Binding]
+rholess = filter ((/= Just AtRho) . attributeFromBinding)
 
 remembering :: Maybe Facts -> Expression -> IO Bool
 remembering Nothing _ = pure False
-remembering (Just facts) term = isJust . lookup term . Map.findWithDefault [] (hashExpression term) <$> readIORef facts
+remembering (Just (Facts facts _)) term = isJust . lookup term . Map.findWithDefault [] (hashExpression term) <$> readIORef facts
 
 traced :: Maybe Facts -> Expression -> IO (Maybe (Expression, [(Expression, Expression)]))
 traced Nothing _ = pure Nothing
-traced (Just facts) form = do
+traced (Just (Facts facts lodgings)) form = do
   known <- readIORef facts
-  pure (go known (Map.size known) form)
+  index <- readIORef lodgings
+  pure (go index known (Map.size known) form)
   where
-    go :: Store Expression -> Int -> Expression -> Maybe (Expression, [(Expression, Expression)])
-    go _ 0 _ = Nothing
-    go known budget term = listToMaybe [(named, (object, source) : hops) | (path, object, source) <- sortOn (\(path, _, _) -> length path) [(path, object, source) | (object, source) <- concat (Map.elems known), path <- take 1 (lodged term object)], let (base, hops) = resolved known budget source, Just named <- [rooted (foldl ExDispatch base path)]]
-    resolved :: Store Expression -> Int -> Expression -> (Expression, [(Expression, Expression)])
-    resolved known budget source = case lookup source (Map.findWithDefault [] (hashExpression source) known) of
-      Just _ -> fromMaybe (source, []) (go known (budget - 1) source)
+    go :: Lodgings -> Store Expression -> Int -> Expression -> Maybe (Expression, [(Expression, Expression)])
+    go _ _ 0 _ = Nothing
+    go index known budget term = listToMaybe [(named, (object, source) : hops) | (path, object, source) <- lodged index known term, let (base, hops) = resolved index known budget source, Just named <- [rooted (foldl ExDispatch base path)]]
+    resolved :: Lodgings -> Store Expression -> Int -> Expression -> (Expression, [(Expression, Expression)])
+    resolved index known budget source = case lookup source (Map.findWithDefault [] (hashExpression source) known) of
+      Just _ -> fromMaybe (source, []) (go index known (budget - 1) source)
       Nothing -> case source of
-        ExApplication target arg -> first (`ExApplication` arg) (resolved known budget target)
-        ExDispatch target attr -> first (`ExDispatch` attr) (resolved known budget target)
+        ExApplication target arg -> first (`ExApplication` arg) (resolved index known budget target)
+        ExDispatch target attr -> first (`ExDispatch` attr) (resolved index known budget target)
         _ -> (source, [])
     rooted :: Expression -> Maybe Expression
     rooted term = term <$ guard (grounded term)
@@ -382,18 +409,29 @@ traced (Just facts) form = do
     grounded (ExDispatch target _) = grounded target
     grounded (ExApplication target _) = grounded target
     grounded _ = False
-    lodged :: Expression -> Expression -> [[Attribute]]
-    lodged (ExFormation bds) whole = searched (filter (not . rho) bds) [([], whole)] Map.empty
-    lodged _ _ = []
-    searched :: [Binding] -> [([Attribute], Expression)] -> Store () -> [[Attribute]]
-    searched _ [] _ = []
-    searched own ((path, term@(ExFormation inner)) : rest) seen
-      | isJust (lookup term (Map.findWithDefault [] (hashExpression term) seen)) = searched own rest seen
-      | filter (not . rho) inner == own = reverse path : searched own rest seen
-      | otherwise = searched own (rest ++ [(attr : path, body) | BiTau attr body <- inner, attr /= AtRho]) (Map.insertWith (++) (hashExpression term) [(term, ())] seen)
-    searched own (_ : rest) seen = searched own rest seen
-    rho :: Binding -> Bool
-    rho bd = attributeFromBinding bd == Just AtRho
+    lodged :: Lodgings -> Store Expression -> Expression -> [([Attribute], Expression, Expression)]
+    lodged (Lodgings nodes shapes) known (ExFormation bds) = sortOn (\(path, _, _) -> length path) [(descended distances object, object, source) | digest <- Set.toAscList (Set.fromList (map hashExpression (concatMap (map fst) (Map.elems distances)))), (object, source) <- Map.findWithDefault [] digest known, isJust (lookup object (Map.findWithDefault [] digest distances))]
+      where
+        distances :: Store Int
+        distances = spread 0 matched (Map.fromListWith (++) [(hashExpression node, [(node, 0)]) | node <- matched])
+        matched :: [Expression]
+        matched = [node | node@(ExFormation inner) <- Map.findWithDefault [] (shaped bds) shapes, rholess inner == rholess bds]
+        spread :: Int -> [Expression] -> Store Int -> Store Int
+        spread _ [] reached = reached
+        spread depth frontier reached = uncurry (spread (succ depth)) (foldl' (climbed (succ depth)) ([], reached) [parent | node <- frontier, (parent, _) <- lodging node])
+        climbed :: Int -> ([Expression], Store Int) -> Expression -> ([Expression], Store Int)
+        climbed depth (next, reached) parent
+          | isJust (lookup parent (Map.findWithDefault [] (hashExpression parent) reached)) = (next, reached)
+          | otherwise = (parent : next, Map.insertWith (++) (hashExpression parent) [(parent, depth)] reached)
+        descended :: Store Int -> Expression -> [Attribute]
+        descended reached node = case lookup node (Map.findWithDefault [] (hashExpression node) reached) of
+          Just depth | depth > 0 -> concat (take 1 [attr : descended reached kid | (attr, kid) <- children node, lookup kid (Map.findWithDefault [] (hashExpression kid) reached) == Just (pred depth)])
+          _ -> []
+        lodging :: Expression -> [(Expression, Attribute)]
+        lodging node = maybe [] (\(Lodging parents _) -> parents) (lookup node (Map.findWithDefault [] (hashExpression node) nodes))
+        children :: Expression -> [(Attribute, Expression)]
+        children node = maybe [] (\(Lodging _ kids) -> kids) (lookup node (Map.findWithDefault [] (hashExpression node) nodes))
+    lodged _ _ _ = []
 
 coined :: ReduceContext -> IO Int
 coined ctx = atomicModifyIORef' ctx._minted (\count -> (succ count, succ count))
@@ -408,7 +446,7 @@ fired univ ctx site state form = sever Nothing form univ state ctx{_judgment = E
 
 voided :: ReduceContext -> Expression -> IO (Maybe [Attribute])
 voided ReduceContext{_facts = Nothing} _ = pure Nothing
-voided ctx@ReduceContext{_facts = Just facts} form@(ExFormation bds) = do
+voided ctx@ReduceContext{_facts = Just (Facts facts _)} form@(ExFormation bds) = do
   known <- readIORef facts
   case lookup form (Map.findWithDefault [] (hashExpression form) known) of
     Just source -> do
