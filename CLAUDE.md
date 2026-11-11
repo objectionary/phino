@@ -497,6 +497,11 @@ per fact it followed before the cut, so the cut is named after that
 call, as `looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·9 )`. A formation no fact leads to the
 world from, such as a fork written in place, is cut by its symbol alone, as
 `looped 𝜎7  # …`, since nothing guesses which object it stands for.
+`traced` never walks a fact: `noted` files every formation inside the term
+of a new fact once, by its bindings without ρ, with the formations holding
+it (`Lodgings` of `Morph.hs`), and `traced` climbs from the formation cut to
+the terms of facts, the nearest first, so naming a cut costs the same however
+many facts and however wide (#2351).
 A dispatch off a copy the facts hold leaves that copy without the attribute
 it took, and `normalized` keeps that copy as an alias of the one it came
 from (`peeled`), so a copy made of it later is traced back all the same.
