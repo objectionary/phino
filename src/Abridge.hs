@@ -69,7 +69,7 @@ abridged cut width = goExpr
         goCounts BDS_EMPTY{} = 0
         goCounts BDS_PAIR{..} = 1 + goCounts bindings
         goCounts BDS_META{..} = 1 + goCounts bindings
-    counted (AA_EXPRS APP_ARG{..}) = 1 + goCount args
+    counted (AA_EXPRS APP_ARG{args = rest}) = 1 + goCount rest
       where
         goCount :: APP_ARGS -> Int
         goCount AAS_EMPTY = 0
