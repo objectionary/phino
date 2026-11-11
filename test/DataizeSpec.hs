@@ -188,12 +188,12 @@ spec = do
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
 
   describe "stops a dataization by the clock of --max-seconds" $
-    it "fails a partial dataization once the deadline has passed" $ do
+    it "leaves a partial dataization as a residual once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ @ -> [[ D> 7E- ]] ]]"
       deadline <- overdue 29
       ctx <- defaultReduceContext ExRoot
-      dataize expr emptyState ctx{_deadline = Just deadline, _partial = True}
-        `shouldThrow` (\e -> "--max-seconds=29" `isInfixOf` show (e :: SomeException))
+      (outcome, _, _) <- dataize expr emptyState ctx{_deadline = Just deadline, _partial = True}
+      outcome `shouldBe` Residual expr
 
   describe "partially evaluates around a λ function that cannot fire (--partial)" $ do
     let placeholder = ExFormation [BiLambda (Function "Sym_arg_0")]

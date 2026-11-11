@@ -24,7 +24,7 @@ import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, noted, opening, recalled, remember, remembered, remembering, retained, settled, starved, unparked, voided)
+import Morph (Answer (..), Budget (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, noted, opening, recalled, remember, remembered, remembering, retained, settled, starved, unparked, voided)
 import Printer (printExpression, printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -335,7 +335,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
               outcome <- try (settled placed univ state' reading)
               case outcome of
                 Right (sole@(ExFormation [BiLambda (FnSymbol _)]), _) -> pure (BiTau attr sole)
-                Left (OutOfTime cap) -> expired ctx cap
+                Left (OutOfSteps (Seconds cap)) -> expired ctx cap
+                Left (OutOfStepsAt (Seconds cap) _ _) -> expired ctx cap
                 _ -> pure bd
         resolved bd = pure bd
         reducible :: Expression -> Bool

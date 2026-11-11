@@ -3841,24 +3841,32 @@ spec = do
                 ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
                 ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
 
-      it "fails once the --max-seconds budget is spent with --partial" $
+      it "prints the residue once the --max-seconds budget is spent with --partial" $
         ladder $ \table ->
           bounded $
             withStdin rungs $
-              testCLIFailed
-                ["morph", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial"]
-                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+              testCLISucceeded
+                ["morph", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
+                ["⟦ λ ⤍ L_split, n ↦ Φ.l1 ⟧.foo"]
 
-      forM_ [["--locator=Q.x"], ["--locator=Q.x", "--partial"]] $ \opts ->
+      it "prints the residue of a dataization once the --max-seconds budget is spent with --partial" $
+        ladder $ \table ->
+          bounded $
+            withStdin rungs $
+              testCLISucceeded
+                ["dataize", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
+                ["⟦ λ ⤍ L_split, n ↦ Φ.l1 ⟧.foo"]
+
+      forM_ [(testCLIFailed, ["--max-seconds=1"], ["--locator=Q.x"]), (testCLISucceeded, [], ["--locator=Q.x", "--partial"])] $ \(run, outputs, opts) ->
         it ("writes the timeout as the last line of the protocol with " ++ unwords opts) $
           ladder $ \table ->
             withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
               hClose stream
               bounded $
                 withStdin rungs $
-                  testCLIFailed
+                  run
                     (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--minutes=" ++ path, "--quiet"] ++ opts)
-                    ["--max-seconds=1"]
+                    outputs
               records <- readProtocol path
               dropWhile (== ' ') (last (lines records)) `shouldBe` "timeout 1"
 
@@ -3868,9 +3876,9 @@ spec = do
             hClose stream
             bounded $
               withStdin rungs $
-                testCLIFailed
+                testCLISucceeded
                   ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--partial", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
-                  ["--max-seconds=1"]
+                  []
             records <- readProtocol path
             length (filter (isInfixOf "<timeout limit=\"1\" by=\"morph\" at=\"") (lines records)) `shouldBe` 1
 
