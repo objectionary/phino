@@ -189,6 +189,7 @@ runDataize args OptsDataize{..} = do
   ((outcome, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
+      _minutes
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty (Just facts) lambdas [] False (building linked) reduction evaluation save record linked
@@ -215,7 +216,7 @@ runDataize args OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-      when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (isJust _abridged && isNothing _protocol && isNothing _minutes) (invalidCLIArguments "The option --abridged requires --protocol or --minutes, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when (isJust _inside) $ do
@@ -275,6 +276,7 @@ runMorph args OptsMorph{..} = do
   ((morphed, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
+      _minutes
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty (Just facts) lambdas [] False (building linked) reduction evaluation save record linked
@@ -307,7 +309,7 @@ runMorph args OptsMorph{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-      when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (isJust _abridged && isNothing _protocol && isNothing _minutes) (invalidCLIArguments "The option --abridged requires --protocol or --minutes, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when (isJust _inside) $ do

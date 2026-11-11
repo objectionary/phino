@@ -17,7 +17,7 @@ import Compiled (compiled)
 import Control.Exception
 import Control.Monad (mfilter, when, (>=>))
 import qualified Data.ByteString as BS
-import Data.Char (isDigit, toLower)
+import Data.Char (isDigit)
 import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
@@ -48,7 +48,7 @@ import qualified Random as R
 import Rewriter (Rewrittens', stepHeaders)
 import Sugar (SugarType (SALTY), withoutRho)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, listDirectory, removeFile)
-import System.FilePath (splitExtension, takeDirectory, takeExtension, (</>))
+import System.FilePath (splitExtension, takeDirectory, (</>))
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
 import XMIR (Atoms, expressionToXMIR, gitRevision, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
@@ -96,8 +96,8 @@ saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
         saveStep stepsDir ioToExt render step expr
   pure save
 
-withEvalFunc :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc target ctx action = withEvalFunc' target ctx (tracked >=> action)
+withEvalFunc :: forall a. Maybe FilePath -> Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc xml text ctx action = withEvalFunc' xml text ctx (tracked >=> action)
   where
     tracked :: SaveEvalFunc -> IO SaveEvalFunc
     tracked record = do
@@ -108,29 +108,29 @@ withEvalFunc target ctx action = withEvalFunc' target ctx (tracked >=> action)
           pure (progressed cursor 5 (flattened ctx) record)
         else pure record
 
-withEvalFunc' :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc' Nothing _ action = action dontSaveEval
-withEvalFunc' (Just file) ctx action = do
-  createDirectoryIfMissing True (takeDirectory file)
-  logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as %s" file (if markup then "XML" else "text"))
-  if markup then markedUp else plain
+withEvalFunc' :: forall a. Maybe FilePath -> Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc' xml text ctx action =
+  markedUp xml (\marked -> plain text (\lined -> action (\record -> marked record >> lined record)))
   where
-    markup :: Bool
-    markup = map toLower (takeExtension file) == ".xml"
-    markedUp :: IO a
-    markedUp = do
+    markedUp :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
+    markedUp Nothing go = go dontSaveEval
+    markedUp (Just file) go = do
+      logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as XML" file)
       cursor <- newIORef emptyNesting
       began <- getMonotonicTime
-      bracket opened (\protocol -> endEvalXml protocol cursor began `finally` hClose protocol) $ \protocol ->
-        action (saveEvalXml protocol cursor (flattened ctx))
-    plain :: IO a
-    plain = do
+      bracket (opened file) (\protocol -> endEvalXml protocol cursor began `finally` hClose protocol) $ \protocol ->
+        go (saveEvalXml protocol cursor (flattened ctx))
+    plain :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
+    plain Nothing go = go dontSaveEval
+    plain (Just file) go = do
+      logDebug (printf "The option '--minutes' is specified, every firing will be recorded in '%s' as text" file)
       cursor <- newIORef emptyProtocol
       began <- getMonotonicTime
-      bracket opened (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
-        action (saveEval protocol cursor (flattened ctx) (salted ctx))
-    opened :: IO Handle
-    opened = do
+      bracket (opened file) (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
+        go (saveEval protocol cursor (flattened ctx) (salted ctx))
+    opened :: FilePath -> IO Handle
+    opened file = do
+      createDirectoryIfMissing True (takeDirectory file)
       protocol <- openFile file WriteMode
       hSetEncoding protocol utf8
       pure protocol

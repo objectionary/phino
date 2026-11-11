@@ -18,6 +18,7 @@ module Fixtures
   , recorded'
   , recordedWhole
   , recordedXml
+  , recording
   , withLambdas
   , withLambdasOf
   , withTemp
@@ -112,21 +113,21 @@ recorded = recorded' False
 recorded' :: Bool -> (SaveEvalFunc -> IO a) -> IO (a, String)
 recorded' hidden action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
-    answer <- withEvalFunc (Just path) (printing hidden) action
+    answer <- withEvalFunc Nothing (Just path) (printing hidden) action
     written <- withoutTotals <$> readUtf8 path
     pure (answer, written)
 
 recordedXml :: (SaveEvalFunc -> IO a) -> IO (a, String)
 recordedXml action =
   withTemp "phino-protocol-.xml" BS.empty $ \path -> do
-    answer <- withEvalFunc (Just path) (printing False) action
+    answer <- withEvalFunc (Just path) Nothing (printing False) action
     written <- readProtocol path
     pure (answer, written)
 
 recordedWhole :: (SaveEvalFunc -> IO a) -> IO (a, String)
 recordedWhole action =
   withTemp "phino-protocol-.xml" BS.empty $ \path -> do
-    answer <- withEvalFunc (Just path) (printing False) action
+    answer <- withEvalFunc (Just path) Nothing (printing False) action
     written <- readUtf8 path
     pure (answer, written)
 
@@ -171,13 +172,18 @@ readUtf8 path =
     _ <- evaluate (length content)
     pure content
 
+recording :: FilePath -> String
+recording path
+  | map toLower (takeExtension path) == ".xml" = "--protocol=" ++ path
+  | otherwise = "--minutes=" ++ path
+
 readProtocol :: FilePath -> IO String
 readProtocol path = sansTotals <$> readUtf8 path
   where
     sansTotals :: String -> String
-    sansTotals
-      | map toLower (takeExtension path) == ".xml" = withoutWrapper
-      | otherwise = withoutTotals . withoutHeader
+    sansTotals text
+      | "<?xml" `isPrefixOf` text = withoutWrapper text
+      | otherwise = withoutTotals (withoutHeader text)
 
 withoutHeader :: String -> String
 withoutHeader text = case span ("# " `isPrefixOf`) (lines text) of

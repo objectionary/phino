@@ -289,9 +289,9 @@ times before it is cut.
 ## Protocol
 
 The `--protocol` option writes every λ function the run fired into a file,
-as a tree.
-A file whose name ends in `.xml` gets the tree as XML, for a program to read,
-and any other name gets indented text.
+as a tree in XML, for a program to read.
+The `--minutes` option writes the same tree as indented text, and one run
+may take both.
 Here, `L_down` answers with a call of its own object over a fresh symbol, so
 without `--acyclic` the run would go on until `--max-steps` runs out:
 
@@ -307,7 +307,7 @@ $ cat down.phi
   y ↦ Φ.down( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ
 ⟧
 $ phino morph --symbolic=down.yaml --locator=Q.y --acyclic=proven \
-    --protocol=down.txt --sweet --hide-rho down.phi
+    --minutes=down.txt --sweet --hide-rho down.phi
 ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧.φ
 $ cat down.txt
 𝕄(Φ.y):

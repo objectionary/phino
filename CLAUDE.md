@@ -366,16 +366,17 @@ carries. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
 parks on, and the protocol records it as `unanswered name` either way. What
-fired is written as a tree by `--protocol`
+fired is written as a tree by `--protocol` and `--minutes`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
 the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a
 firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment of a
 line is a judgment applied to a term — the intent the value beside it came
 from: the judgment that asked for a firing and the site it was fired at
 (`_site` of `ReduceContext`), and the one that reduced an operand and the term
-it was reduced from. The extension of the file picks the format:
-`.xml` gets markup (`Nesting` and `saveEvalXml`), anything else the indented
-text. Both carry the same facts and both stream, so
+it was reduced from. The option picks the format, whatever the file is
+named: `--protocol` gets markup (`Nesting` and `saveEvalXml`) and `--minutes`
+the indented text, and one run given both writes both files (`withEvalFunc'`
+of `CLI/Helpers.hs`, #2335). Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
 the symbol it denotes and spells it `𝜎1` as everywhere else, where the text
 names a line by counting.
