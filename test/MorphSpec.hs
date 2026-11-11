@@ -19,6 +19,7 @@ import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Text qualified as T
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
 import Deps (Acyclic (..), Evaluation (EvMorphed, EvRecalled, EvWorld), Judgment (..), State, Term (TeExpression))
@@ -30,7 +31,7 @@ import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
 import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
-import Morph (Deadline (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, inferred, insideUniverse, morph, morph', voided)
+import Morph (Deadline (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, factual, fired, inferred, insideUniverse, morph, morph', noted, voided)
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -286,6 +287,20 @@ spec = do
       ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
       timeout 10000000 (enter (formation ExXi 1700) ctx)
         `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))
+
+  describe "stops naming a cut by the clock of --max-seconds" $
+    it "fails a search of the facts that outlasts the deadline" $ do
+      let wide :: Expression
+          wide = ExFormation [BiTau (AtLabel (T.pack ("w" ++ show index))) (ExFormation [BiTau (AtLabel (T.pack ("v" ++ show index))) (ExFormation [BiDelta (BtOne "5C")])]) | index <- [1 :: Int .. 30000]]
+          looping :: Expression
+          looping = ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "pz"))]
+      facts <- factual
+      base <- defaultReduceContext ExRoot
+      noted base{_facts = Just facts} wide (ExDispatch ExRoot (AtLabel "cq"))
+      due <- (+ 0.3) <$> getMonotonicTime
+      ctx <- enter looping base{_acyclic = Just Plausible, _maxLoops = 0, _facts = Just facts, _deadline = Just (Deadline 43 due)}
+      timeout 10000000 (fired ExRoot ctx ExRoot emptyState looping)
+        `shouldThrow` (\e -> "--max-seconds=43" `isInfixOf` show (e :: SomeException))
 
   describe "enters a formation again as many times as --max-loops allows" $ do
     it "enters a formation holding the one entered above it under --max-loops=1" $ do

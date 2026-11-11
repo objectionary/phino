@@ -329,7 +329,7 @@ sever taken form univ state ctx = admitted form ctx >>= either cut (pure . Right
 
 severed :: Maybe Attribute -> Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
 severed taken univ ctx state form bds (mode, before) = do
-  call <- (<|>) <$> traced ctx._facts form <*> traced ctx._facts before
+  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
   forM_ call (recited ctx . snd)
   reckoned <- traverse (spelled taken . fst) call
   fresh <- coined ctx
