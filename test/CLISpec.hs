@@ -18,7 +18,7 @@ import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.Version (showVersion)
 import Files (allPathsIn)
-import Fixtures (explainPack, lambdasFile, loopingLambdas, readProtocol, readUtf8, withLambdasOf)
+import Fixtures (explainPack, lambdasFile, loopingLambdas, readProtocol, readUtf8, recording, withLambdasOf)
 import GHC.IO.Encoding (TextEncoding (textEncodingName), getFileSystemEncoding)
 import GHC.IO.Handle
 import Paths_phino (version)
@@ -1513,7 +1513,7 @@ spec = do
           hClose stream
           withStdin circling $
             testCLISucceeded
-              ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
+              ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--minutes=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readProtocol path
           lines records
@@ -1578,7 +1578,7 @@ spec = do
           hClose stream
           withStdin circling $
             testCLISucceeded
-              ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--protocol=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
+              ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--minutes=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readProtocol path
           lines records `shouldContain` ["  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·9 )  # 𝔻(𝑛·0·5), plausible, repeats 𝑛·0·8"]
@@ -1631,7 +1631,7 @@ spec = do
               withLambdasOf calling $ \file ->
                 withStdin recursive $
                   testCLISucceeded
-                    ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", recording path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
       it "answers the recursive call it cuts with a fresh symbol and goes on" $
@@ -1655,7 +1655,7 @@ spec = do
               withLambdasOf forking $ \file ->
                 withStdin recursive $
                   testCLISucceeded
-                    ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=" ++ loops, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=" ++ loops, recording path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
       it "answers the copy a side of a fork makes again with a fresh symbol and joins" $
@@ -1682,7 +1682,7 @@ spec = do
               withLambdasOf forking $ \file ->
                 withStdin recursive $
                   testCLISucceeded
-                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", recording path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
       it "answers the copy holding a λ it cuts with a fresh symbol and goes on" $
@@ -1711,7 +1711,7 @@ spec = do
               withLambdasOf forking $ \file ->
                 withStdin recursive $
                   testCLISucceeded
-                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", recording path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
       it "writes the copy it cuts to the protocol as a call of the object with the attribute it ends with" $
@@ -1734,7 +1734,7 @@ spec = do
           withLambdasOf atoms $ \file ->
             withStdin recursive $
               testCLISucceeded
-                ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                 []
           records <- readProtocol path
           filter (isInfixOf "looped") (lines records) `shouldBe` ["                          looped 𝜎1 := Φ.dataized( target ↦ Φ.x )  # 𝔼(𝑛·6·2.b), plausible, repeats 𝑛·6·5", "                          looped 𝜎2 := Φ.times( b ↦ 𝜎1:λ )  # plausible, repeats 𝑛·6·2"]
@@ -1746,7 +1746,7 @@ spec = do
           withLambdasOf (T.pack "- λ: L_times\n  terminators: [L_throw]\n  dataize:\n    𝛿1: $.b\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_dataized\n  terminators: [L_throw]\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \file ->
             withStdin "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, throw(message) ↦ ⟦ λ ⤍ L_throw ⟧, times(b, c) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ), Φ.throw( 𝜎1:λ ) ) ⟧" $
               testCLISucceeded
-                ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                 []
           records <- readProtocol path
           filter (isInfixOf "looped 𝜎3") (lines records) `shouldBe` ["                          looped 𝜎3 := Φ.times( b ↦ 𝜎2:λ, c ↦ 𝑛·6·11 )  # plausible, repeats 𝑛·6·4"]
@@ -1761,7 +1761,7 @@ spec = do
               withLambdasOf forking $ \file ->
                 withStdin recursive $
                   testCLISucceeded
-                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
       it "answers the fork it cuts inside a formation the memo fabricated with a fresh symbol and goes on" $
@@ -1787,7 +1787,7 @@ spec = do
               withLambdasOf forking $ \file ->
                 withStdin recursive $
                   testCLISucceeded
-                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
       it "answers the fork it cuts with a fresh symbol and goes on" $
@@ -1811,7 +1811,7 @@ spec = do
               withLambdasOf forking $ \file ->
                 withStdin recursive $
                   testCLISucceeded
-                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
       it "writes the loop it cuts inside the nested fork by its symbol alone, since no fact names it" $
@@ -1893,7 +1893,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin stuck $
-            testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--minutes=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           lines records `shouldContain` ["  unanswered L_weit  # 𝔻(⟦ λ ⤍ L_weit, +4 ⟧)"]
       it "names a long formation in the XML protocol by its path rather than folding it" $
@@ -1913,7 +1913,7 @@ spec = do
                 hClose stream
                 withLambdasOf (T.pack "- λ: L_outer\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \outer ->
                   withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ Δ ⤍ 01-02-03-04-05-06-07-08-09-0A-0B-0C ⟧, λ ⤍ L_outer ⟧ ⟧" $
-                    testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--abridged", "--abridged-data", "--sweet", "--hide-rho", "--quiet"] []
+                    testCLISucceeded ["dataize", "--symbolic=" ++ outer, "--locator=Q.x", "--partial", recording path, "--abridged", "--abridged-data", "--sweet", "--hide-rho", "--quiet"] []
                 records <- readProtocol path
                 lines records `shouldContain` [line]
         )
@@ -1927,7 +1927,7 @@ spec = do
                 hClose stream
                 withLambdasOf (T.pack "- λ: L_hex\n  dataize:\n    𝛿1: ξ.arg\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \hex ->
                   withStdin "⟦ x ↦ ⟦ arg ↦ ⟦ Δ ⤍ 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46 ⟧, λ ⤍ L_hex ⟧ ⟧" $
-                    testCLISucceeded ["dataize", "--symbolic=" ++ hex, "--locator=Q.x", "--partial", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
+                    testCLISucceeded ["dataize", "--symbolic=" ++ hex, "--locator=Q.x", "--partial", recording path, "--abridged", "--sweet", "--hide-rho", "--quiet"] []
                 records <- readProtocol path
                 lines records `shouldContain` [line]
         )
@@ -1935,14 +1935,14 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin stuck $
-            testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--protocol=" ++ path, "--abridged=64", "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--minutes=" ++ path, "--abridged=64", "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           lines records `shouldContain` ["  unanswered L_weit  # 𝔻(⟦ λ ⤍ L_weit, +4 ⟧)"]
       it "keeps a formation whole under a width it fits in" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin stuck $
-            testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--protocol=" ++ path, "--abridged=200", "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--minutes=" ++ path, "--abridged=200", "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           lines records `shouldContain` ["  unanswered L_weit  # 𝔻(⟦ λ ⤍ L_weit, anfang ↦ schluss, mitte ↦ anfang, schluss ↦ mitte, rand ↦ schluss ⟧)"]
       it "refuses a width that is not a number" $
@@ -1952,7 +1952,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin wide $
-            testCLISucceeded ["morph", "--locator=Q.t", "--protocol=" ++ path, "--abridged", "--sweet", "--hide-rho", "--flat"] ["anfang ↦ schluss, mitte ↦ anfang"]
+            testCLISucceeded ["morph", "--locator=Q.t", "--minutes=" ++ path, "--abridged", "--sweet", "--hide-rho", "--flat"] ["anfang ↦ schluss, mitte ↦ anfang"]
       it "refuses the flag without a protocol" $
         withStdin wide $
           testCLIFailed ["dataize", "--locator=Q.t", "--abridged"] ["The option --abridged requires --protocol"]
@@ -1972,7 +1972,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "[[ D> 01- ]]" $
-            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
           records <- readProtocol path
           records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
 
@@ -1980,7 +1980,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "[[ D> 01- ]]" $
-            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           records `shouldSatisfy` isPrefixOf ("# Written by phino " ++ showVersion version ++ " ")
 
@@ -1988,15 +1988,15 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "[[ D> 01- ]]" $
-            testCLISucceeded ["dataize", "--protocol=" ++ takeFileName path, "--quiet"] []
+            testCLISucceeded ["dataize", "--minutes=" ++ takeFileName path, "--quiet"] []
           records <- readUtf8 path
-          lines records `shouldContain` ["# Command: phino dataize --protocol=" ++ takeFileName path ++ " --quiet"]
+          lines records `shouldContain` ["# Command: phino dataize --minutes=" ++ takeFileName path ++ " --quiet"]
 
       it "writes the world read from the standard input into the header" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
-            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", "--locator=Q.t", "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           lines records `shouldContain` ["# World: stdin, 1 line, 32 bytes, 1 object at the top, 2 bindings"]
 
@@ -2004,7 +2004,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withTempFileContent "worldXXXXXX.phi" "[[\n  t -> [[ D> 01- ]]\n]]\n" $ \world -> do
-            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet", world] []
+            testCLISucceeded ["dataize", "--locator=Q.t", "--minutes=" ++ path, "--quiet", world] []
             records <- readUtf8 path
             lines records `shouldContain` [printf "# World: %s, 3 lines, 26 bytes, 1 object at the top, 2 bindings" world]
 
@@ -2012,7 +2012,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin sum' $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           lines records `shouldContain` [printf "# Symbolic: %s, 5 entries" lambdasFile]
 
@@ -2020,7 +2020,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
-            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", "--locator=Q.t", "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           lines records `shouldContain` ["# Locator: Φ.t"]
 
@@ -2028,7 +2028,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
-            testCLISucceeded ["dataize", "--locator=Q.t", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", "--locator=Q.t", "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           lines records `shouldContain` ["# Expression: ⟦ Δ ⤍ 01- ⟧"]
 
@@ -2036,7 +2036,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "⟦ t ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
-            testCLISucceeded ["morph", "--inside=Φ.t", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["morph", "--inside=Φ.t", "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           lines records `shouldContain` ["# Expression: Φ.t"]
 
@@ -2052,7 +2052,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin sum' $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           (lines records !! (length (lines records) - 3)) `shouldSatisfy` isPrefixOf "msec "
 
@@ -2060,7 +2060,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin sum' $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           lines records `shouldContain` ["firings 1"]
 
@@ -2068,7 +2068,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin sum' $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           last (lines records) `shouldSatisfy` isPrefixOf "fps "
 
@@ -2076,7 +2076,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "[[ D> 01- ]]" $
-            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
           records <- readUtf8 path
           lines records `shouldContain` ["firings 0"]
 
@@ -2084,7 +2084,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin sum' $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
@@ -2137,7 +2137,7 @@ spec = do
           hClose stream
           withLambdasOf (T.pack "- λ: L_make\n  𝑛: ⟦ φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ ) ⟧\n") $ \makes ->
             withStdin "⟦ bytes ↦ ⟦ φ ↦ ∅ ⟧, make ↦ ⟦ λ ⤍ L_make ⟧, foo ↦ ⟦ φ ↦ Φ.make ⟧, e ↦ Φ.foo ⟧" $
-              testCLISucceeded ["dataize", "--symbolic=" ++ makes, "--locator=Q.e", "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              testCLISucceeded ["dataize", "--symbolic=" ++ makes, "--locator=Q.e", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ.e):"
@@ -2167,7 +2167,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin chained $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
@@ -2249,7 +2249,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin mixed $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
@@ -2331,7 +2331,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin nested $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
@@ -2434,7 +2434,7 @@ spec = do
             withTempFile template $ \(path, stream) -> do
               hClose stream
               withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
-                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-cycles=7", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-cycles=7", "--partial", "--locator=Q.x", recording path, "--quiet", "--sweet", "--hide-rho"] []
               records <- readProtocol path
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
 
@@ -2445,7 +2445,7 @@ spec = do
             withTempFile template $ \(path, stream) -> do
               hClose stream
               withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
-                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", recording path, "--quiet", "--sweet", "--hide-rho"] []
               records <- readProtocol path
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
 
@@ -2456,7 +2456,7 @@ spec = do
             withTempFile template $ \(path, stream) -> do
               hClose stream
               withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
-                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+                testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", recording path, "--quiet", "--sweet", "--hide-rho"] []
               records <- readProtocol path
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
 
@@ -2468,7 +2468,7 @@ spec = do
                 hClose stream
                 loopingLambdas $ \endless ->
                   withStdin "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧" $
-                    testCLIFailed ["dataize", "--symbolic=" ++ endless, "--max-steps=400", "--max-firings=5", "--protocol=" ++ path] ["--max-firings=5"]
+                    testCLIFailed ["dataize", "--symbolic=" ++ endless, "--max-steps=400", "--max-firings=5", recording path] ["--max-firings=5"]
                 records <- readProtocol path
                 any (record `isInfixOf`) (lines records) `shouldBe` True
         )
@@ -2478,7 +2478,7 @@ spec = do
           hClose stream
           withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
             testCLIFailed
-              ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+              ["dataize", symbolic, "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
               ["No entry of --symbolic answers the λ function 'L_number_nope'"]
           records <- readProtocol path
           lines records
@@ -2529,7 +2529,7 @@ spec = do
       it "truncates the lines left over from the previous run" $
         withTempFileContent "protocolXXXXXX.txt" "𝔼(L_number_gt)\n" $ \path -> do
           withStdin "[[ D> 01- ]]" $
-            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
           records <- readProtocol path
           records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
 
@@ -2537,7 +2537,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin sum' $
-            testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
+            testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           records `shouldEndWith` "    𝕄(𝑛·1·17):\n      𝑛·1·18 := Φ.number( φ ↦ 𝜎1:λ )\n      𝑛·1·19 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧\n      morphed 𝑛·1·20 := 𝑛·1·19\n    𝑛·1·21 := 𝑛·1·20  # 𝕄(𝑛·1·17)\n  boxed 𝑛·0·7 := 𝑛·1·21.φ\n  𝛿·0·1 := 𝔻(𝜎1:λ)\n"
 
@@ -2547,7 +2547,7 @@ spec = do
             hClose one
             hClose two
             withStdin nested $
-              testCLISucceeded ["dataize", symbolic, "--protocol=" ++ text, "--quiet", "--sweet", "--hide-rho"] []
+              testCLISucceeded ["dataize", symbolic, "--minutes=" ++ text, "--quiet", "--sweet", "--hide-rho"] []
             withStdin nested $
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ xml, "--quiet", "--sweet", "--hide-rho"] []
             lined <- readProtocol text
@@ -3200,13 +3200,57 @@ spec = do
                          , "</morph>"
                          ]
 
-        it "keeps writing text when the file is named anything else" $
-          withTempFile "protocolXXXXXX.xmir" $ \(path, stream) -> do
-            hClose stream
-            withStdin sum' $
-              testCLISucceeded ["dataize", symbolic, "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
-            records <- readProtocol path
-            take 1 (lines records) `shouldBe` ["𝔻(Φ):"]
+      it "writes XML into a file named .txt" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--protocol=" ++ path, "--quiet"] []
+          records <- readUtf8 path
+          records `shouldSatisfy` isPrefixOf "<?xml"
+
+    describe "--minutes" $ do
+      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+      it "writes the indented text into a file named .xml" $
+        withTempFile "minutesXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
+          records <- readProtocol path
+          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
+
+      it "writes the same text beside --protocol as alone" $
+        withTempFile "minutesXXXXXX.txt" $ \(alone, one) ->
+          withTempFile "minutesXXXXXX.txt" $ \(beside, two) ->
+            withTempFile "protocolXXXXXX.xml" $ \(xml, three) -> do
+              mapM_ hClose [one, two, three]
+              withStdin sum' $
+                testCLISucceeded ["dataize", symbolic, "--minutes=" ++ alone, "--quiet", "--sweet", "--hide-rho"] []
+              withStdin sum' $
+                testCLISucceeded ["dataize", symbolic, "--protocol=" ++ xml, "--minutes=" ++ beside, "--quiet", "--sweet", "--hide-rho"] []
+              first <- readProtocol alone
+              second <- readProtocol beside
+              second `shouldBe` first
+
+      it "writes the same XML beside --minutes as alone" $
+        withTempFile "protocolXXXXXX.xml" $ \(alone, one) ->
+          withTempFile "protocolXXXXXX.xml" $ \(beside, two) ->
+            withTempFile "minutesXXXXXX.txt" $ \(text, three) -> do
+              mapM_ hClose [one, two, three]
+              withStdin sum' $
+                testCLISucceeded ["dataize", symbolic, "--protocol=" ++ alone, "--quiet", "--sweet", "--hide-rho"] []
+              withStdin sum' $
+                testCLISucceeded ["dataize", symbolic, "--protocol=" ++ beside, "--minutes=" ++ text, "--quiet", "--sweet", "--hide-rho"] []
+              first <- readProtocol alone
+              second <- readProtocol beside
+              second `shouldBe` first
+
+      it "abridges the text without --protocol" $
+        withTempFile "minutesXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--abridged", "--quiet"] []
+          records <- readProtocol path
+          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
 
     describe "--partial" $ do
       let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
@@ -3234,7 +3278,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin stuck $
-            testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+            testCLISucceeded ["dataize", symbolic, "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
@@ -3369,7 +3413,7 @@ spec = do
           hClose stream
           withLambdasOf joining $ \joins ->
             withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ ⊥, λ ⤍ L_fork ⟧ ⟧" $
-              testCLISucceeded ["dataize", "--symbolic=" ++ joins, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+              testCLISucceeded ["dataize", "--symbolic=" ++ joins, "--locator=Q.y", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
           lines records `shouldContain` ["    joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥"]
 
@@ -3395,7 +3439,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin universe $
-            testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           takeWhile (/= '(') (concat (take 1 (lines records))) `shouldBe` "𝕄"
 
@@ -3411,7 +3455,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin universe $
-            testCLISucceeded ["dataize", "--inside=[[ x -> ? ]]( x -> [[ D> 2A- ]] ).x", "--protocol=" ++ path, "--sweet", "--quiet"] []
+            testCLISucceeded ["dataize", "--inside=[[ x -> ? ]]( x -> [[ D> 2A- ]] ).x", "--minutes=" ++ path, "--sweet", "--quiet"] []
           records <- readProtocol path
           take 2 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝑛·0·1 := ∅:x( x ↦ 2A-:Δ )"]
 
@@ -3596,7 +3640,7 @@ spec = do
       withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
         hClose stream
         withStdin chained $
-          testCLISucceeded ["morph", symbolic, "--locator=Q.@", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
+          testCLISucceeded ["morph", symbolic, "--locator=Q.@", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
         records <- readProtocol path
         lines records
           `shouldBe` [ "𝕄(Φ.φ):"
@@ -3701,7 +3745,7 @@ spec = do
             hClose stream
             withStdin split $
               testCLISucceeded
-                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-firings=64", "--partial", "--protocol=" ++ path, "--quiet"]
+                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-firings=64", "--partial", "--minutes=" ++ path, "--quiet"]
                 []
             records <- readProtocol path
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
@@ -3801,7 +3845,7 @@ spec = do
               bounded $
                 withStdin rungs $
                   testCLIFailed
-                    (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--protocol=" ++ path, "--quiet"] ++ opts)
+                    (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--minutes=" ++ path, "--quiet"] ++ opts)
                     ["--max-seconds=1"]
               records <- readProtocol path
               dropWhile (== ' ') (last (lines records)) `shouldBe` "timeout 1"
@@ -3918,7 +3962,7 @@ spec = do
               withLambdasOf pairs $ \file ->
                 withStdin twins $
                   testCLISucceeded
-                    ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=" ++ mode, "--protocol=" ++ path, "--quiet"]
+                    ["morph", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=" ++ mode, "--minutes=" ++ path, "--quiet"]
                     []
               lines <$> readProtocol path
       it "charges a formation once per argument spelling it under proven" $
@@ -3989,7 +4033,7 @@ spec = do
             hClose stream
             withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧" $
               testCLISucceeded
-                ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-loops=1", "--protocol=" ++ path, "--quiet"]
+                ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-loops=1", "--minutes=" ++ path, "--quiet"]
                 []
             records <- readProtocol path
             length (filter (isInfixOf "𝔼(L_loop)") (lines records)) `shouldBe` 2

@@ -318,10 +318,21 @@ optProtocol =
         ( long "protocol"
             <> metavar "FILE"
             <> help
-              "File to record every λ function fired during the run: the run at the top, one block per firing \
-              \under it, and inside each block the operands it bound and the term it answered with, with a \
-              \firing nested in the reduction of an operand one level deeper again. The name of the file \
-              \decides the format: '.xml' writes XML, every other name writes the same tree as indented text"
+              "File to record every λ function fired during the run as XML, for a program to read: the run at \
+              \the top, one block per firing under it, and inside each block the operands it bound and the term \
+              \it answered with, with a firing nested in the reduction of an operand one level deeper again"
+        )
+    )
+
+optMinutes :: Parser (Maybe FilePath)
+optMinutes =
+  optional
+    ( strOption
+        ( long "minutes"
+            <> metavar "FILE"
+            <> help
+              "File to record the same tree as --protocol does, as indented text for a person to read; \
+              \given together with --protocol, one run writes both files"
         )
     )
 
@@ -332,9 +343,9 @@ optAbridged =
         64
         ( long "abridged"
             <> help
-              "Shorten every 𝜑-expression written to the --protocol file: a formation longer than the width \
-              \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', while every byte string \
-              \it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
+              "Shorten every 𝜑-expression written to the --protocol and --minutes files: a formation longer \
+              \than the width keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', while \
+              \every byte string it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
         )
         <|> option
           (boundedIntOption >>= validateIntOption (> 0) "--abridged must be positive")
@@ -464,6 +475,7 @@ dataizeParser =
             <*> optInside
             <*> optStepsDir
             <*> optProtocol
+            <*> optMinutes
             <*> optAbridged
             <*> optAbridgedData
             <*> optSymbolic
@@ -516,6 +528,7 @@ morphParser =
             <*> optInside
             <*> optStepsDir
             <*> optProtocol
+            <*> optMinutes
             <*> optAbridged
             <*> optAbridgedData
             <*> optSymbolic
