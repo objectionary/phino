@@ -238,7 +238,7 @@ Five options stop a run that goes on for too long:
 * `--max-memory` bounds the live heap of the run, such as `8G`.
 
 `--partial` leaves a site in place when it runs out of steps, firings,
-nodes or memory, but a run out of time always fails.
+seconds, nodes or memory.
 
 ## Morph
 
