@@ -344,7 +344,8 @@ optAbridged =
         ( long "abridged"
             <> help
               "Shorten every 𝜑-expression written to the --protocol and --minutes files: a formation longer \
-              \than the width keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', while \
+              \than the width keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', an \
+              \application longer than the width keeps its head and folds its arguments the same way, while \
               \every byte string it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
         )
         <|> option

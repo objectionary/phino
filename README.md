@@ -377,7 +377,8 @@ A protocol may hold these lines:
 
 The `--abridged` option folds every formation longer than sixty-four
 characters, or than `--abridged=WIDTH`, into its `φ`, `Δ` and `λ` and a count
-of the rest.
+of the rest, and every application that long into its head and a count of its
+arguments.
 The `--abridged-data` option also cuts every byte string longer than eight
 bytes down to its first two bytes and its last two.
 

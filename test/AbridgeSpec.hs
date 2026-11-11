@@ -70,6 +70,34 @@ spec =
         )
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
         `shouldBe` "⟦ λ ⤍ L_weit, φ ↦ ∅, +5 ⟧"
+    it "leaves an application no longer than the width as it is" $
+      printExpressionWith
+        (const (abridged True 64))
+        (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "brücke")) (ArTau (AtLabel "links") ExXi)) (ArTau (AtLabel "rechts") ExRoot))
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "Φ.brücke( links ↦ ξ, rechts ↦ Φ )"
+    it "folds the arguments of an application wider than the width into a count" $
+      printExpressionWith
+        (const (abridged True 64))
+        (foldl (\expr idx -> ExApplication expr (ArTau (AtLabel (T.pack ("strasse-" <> show idx))) ExRoot)) (ExDispatch ExRoot (AtLabel "stadt")) [1 .. 7 :: Int])
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "Φ.stadt( +7 )"
+    it "folds a long application in the φ of a long formation" $
+      printExpressionWith
+        (const (abridged True 64))
+        ( ExFormation
+            [ BiTau (AtLabel "wolke") ExRoot
+            , BiTau AtPhi (foldl (\expr idx -> ExApplication expr (ArTau (AtLabel (T.pack ("regen-" <> show idx))) ExXi)) (ExDispatch ExXi (AtLabel "himmel")) [1 .. 8 :: Int])
+            ]
+        )
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "⟦ φ ↦ himmel( +8 ), +1 ⟧"
+    it "folds a long application its dispatch is made of" $
+      printExpressionWith
+        (const (abridged True 64))
+        (ExDispatch (foldl (\expr idx -> ExApplication expr (ArAlpha (Alpha idx) (ExDispatch ExRoot (AtLabel "langer-name")))) (ExDispatch ExRoot (AtLabel "fluss")) [0 .. 5 :: Int]) (AtLabel "ufer"))
+        (SWEET, UNICODE, SINGLELINE, defaultMargin)
+        `shouldBe` "Φ.fluss( +6 ).ufer"
     it "cuts a long byte string to its first bytes, its last bytes and the count of the bytes between them" $
       printExpressionWith
         (const (abridged True 64))
