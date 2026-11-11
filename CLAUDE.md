@@ -607,12 +607,13 @@ that fire nothing (#1619), and by `enter` while it compares formations, since
 under `plausible` one comparison by `within` may outlast the whole run, so a
 timer cuts that comparison where it stands (#1622). The same timer
 (`awaited` of `Morph.hs`) cuts the walk of a `rewrite` line, which takes no
-step either (#2196). It wraps no work that steps or writes a record, so the
-clock of the steps keeps the place of the timeout. The first step, firing,
-comparison or walk after the deadline writes `timeout …` (`EvTimeout`) and throws
-`OutOfTime`, which no frame parks, so the run fails with or without
-`--partial` and a caller that cannot wait gets a closed protocol ending in the
-timeout instead of killing the process (#1607).
+step either (#2196), and the search of the facts `severed` makes to name a
+cut, which may outlast the run on a wide copy (#2349). It wraps no work that
+steps or writes a record, so the clock of the steps keeps the place of the
+timeout. The first step, firing, comparison or walk after the deadline writes
+`timeout …` (`EvTimeout`) and throws `OutOfTime`, which no frame parks, so the
+run fails with or without `--partial` and a caller that cannot wait gets a
+closed protocol ending in the timeout instead of killing the process (#1607).
 
 Every use of a binding copies the term bound to it, so one formation is fired as
 many times as the program reads it, and every firing mints symbols of its own. A
