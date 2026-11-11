@@ -21,7 +21,8 @@ import Control.Exception (Exception (displayException), throwIO)
 import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
 import Data.Foldable (foldlM)
-import Data.List (foldl', intersect, nub)
+import Data.List (intersect, nub)
+import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
@@ -403,7 +404,7 @@ redex rule = case rule.pattern of
     demanded bds (Y.In attrs metas)
       | all (\meta -> isMeta meta && meta `elem` bds) metas = attrs
     demanded bds (Y.And conds) = concatMap (demanded bds) conds
-    demanded bds (Y.Or (cond : conds)) = foldl' (\attrs cond' -> attrs `intersect` demanded bds cond') (demanded bds cond) conds
+    demanded bds (Y.Or (cond : conds)) = List.foldl' (\attrs cond' -> attrs `intersect` demanded bds cond') (demanded bds cond) conds
     demanded _ _ = []
     isMeta :: Binding -> Bool
     isMeta (BiMeta _) = True
