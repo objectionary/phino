@@ -390,17 +390,16 @@ traced Nothing _ = pure Nothing
 traced (Just (Facts facts lodgings)) form = do
   known <- readIORef facts
   index <- readIORef lodgings
-  pure (go index known (Map.size known) form)
+  pure (go index known [] form)
   where
-    go :: Lodgings -> Store Expression -> Int -> Expression -> Maybe (Expression, [(Expression, Expression)])
-    go _ _ 0 _ = Nothing
-    go index known budget term = listToMaybe [(named, (object, source) : hops) | (path, object, source) <- lodged index known term, let (base, hops) = resolved index known budget source, Just named <- [rooted (foldl ExDispatch base path)]]
-    resolved :: Lodgings -> Store Expression -> Int -> Expression -> (Expression, [(Expression, Expression)])
-    resolved index known budget source = case lookup source (Map.findWithDefault [] (hashExpression source) known) of
-      Just _ -> fromMaybe (source, []) (go index known (budget - 1) source)
+    go :: Lodgings -> Store Expression -> [Expression] -> Expression -> Maybe (Expression, [(Expression, Expression)])
+    go index known passed term = listToMaybe [(named, (object, source) : hops) | (path, object, source) <- lodged index known term, object `notElem` passed, let (base, hops) = resolved index known (object : passed) source, Just named <- [rooted (foldl ExDispatch base path)]]
+    resolved :: Lodgings -> Store Expression -> [Expression] -> Expression -> (Expression, [(Expression, Expression)])
+    resolved index known passed source = case lookup source (Map.findWithDefault [] (hashExpression source) known) of
+      Just _ -> fromMaybe (source, []) (go index known passed source)
       Nothing -> case source of
-        ExApplication target arg -> first (`ExApplication` arg) (resolved index known budget target)
-        ExDispatch target attr -> first (`ExDispatch` attr) (resolved index known budget target)
+        ExApplication target arg -> first (`ExApplication` arg) (resolved index known passed target)
+        ExDispatch target attr -> first (`ExDispatch` attr) (resolved index known passed target)
         _ -> (source, [])
     rooted :: Expression -> Maybe Expression
     rooted term = term <$ guard (grounded term)
