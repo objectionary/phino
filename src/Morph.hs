@@ -20,7 +20,8 @@ import Control.Exception (Exception, catch, evaluate, throwIO, try)
 import Control.Monad (forM_, guard, unless, when)
 import Data.Bifunctor (first, second)
 import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
-import Data.List (find, foldl', partition, sortOn)
+import Data.List (find, partition, sortOn)
+import qualified Data.List as List
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
@@ -364,7 +365,7 @@ noted ctx object source = forM_ ctx._facts $ \(Facts facts lodgings) -> do
     lodged :: Maybe (Expression, Attribute) -> Lodgings -> Expression -> (Lodgings, Expression)
     lodged edge index@(Lodgings nodes shapes) term@(ExFormation bds) = case [node | (node, _) <- Map.findWithDefault [] (hashExpression term) nodes, node == term] of
       node : _ -> (maybe index (\parent -> Lodgings (Map.adjust (map (adopted node parent)) (hashExpression node) nodes) shapes) edge, node)
-      [] -> case foldl' (lodging term) (index, []) [(attr, body) | BiTau attr body@(ExFormation _) <- bds, attr /= AtRho] of
+      [] -> case List.foldl' (lodging term) (index, []) [(attr, body) | BiTau attr body@(ExFormation _) <- bds, attr /= AtRho] of
         (Lodgings inner shapes', kids) -> (Lodgings (Map.insertWith (++) (hashExpression term) [(term, Lodging (maybeToList edge) (reverse kids))] inner) (Map.insertWith (++) (shaped bds) [term] shapes'), term)
     lodged _ index term = (index, term)
     lodging :: Expression -> (Lodgings, [(Attribute, Expression)]) -> (Attribute, Expression) -> (Lodgings, [(Attribute, Expression)])
@@ -390,17 +391,16 @@ traced Nothing _ = pure Nothing
 traced (Just (Facts facts lodgings)) form = do
   known <- readIORef facts
   index <- readIORef lodgings
-  pure (go index known (Map.size known) form)
+  pure (go index known [] form)
   where
-    go :: Lodgings -> Store Expression -> Int -> Expression -> Maybe (Expression, [(Expression, Expression)])
-    go _ _ 0 _ = Nothing
-    go index known budget term = listToMaybe [(named, (object, source) : hops) | (path, object, source) <- lodged index known term, let (base, hops) = resolved index known budget source, Just named <- [rooted (foldl ExDispatch base path)]]
-    resolved :: Lodgings -> Store Expression -> Int -> Expression -> (Expression, [(Expression, Expression)])
-    resolved index known budget source = case lookup source (Map.findWithDefault [] (hashExpression source) known) of
-      Just _ -> fromMaybe (source, []) (go index known (budget - 1) source)
+    go :: Lodgings -> Store Expression -> [Expression] -> Expression -> Maybe (Expression, [(Expression, Expression)])
+    go index known passed term = listToMaybe [(named, (object, source) : hops) | (path, object, source) <- lodged index known term, object `notElem` passed, let (base, hops) = resolved index known (object : passed) source, Just named <- [rooted (foldl ExDispatch base path)]]
+    resolved :: Lodgings -> Store Expression -> [Expression] -> Expression -> (Expression, [(Expression, Expression)])
+    resolved index known passed source = case lookup source (Map.findWithDefault [] (hashExpression source) known) of
+      Just _ -> fromMaybe (source, []) (go index known passed source)
       Nothing -> case source of
-        ExApplication target arg -> first (`ExApplication` arg) (resolved index known budget target)
-        ExDispatch target attr -> first (`ExDispatch` attr) (resolved index known budget target)
+        ExApplication target arg -> first (`ExApplication` arg) (resolved index known passed target)
+        ExDispatch target attr -> first (`ExDispatch` attr) (resolved index known passed target)
         _ -> (source, [])
     rooted :: Expression -> Maybe Expression
     rooted term = term <$ guard (grounded term)
@@ -418,7 +418,7 @@ traced (Just (Facts facts lodgings)) form = do
         matched = [node | node@(ExFormation inner) <- Map.findWithDefault [] (shaped bds) shapes, rholess inner == rholess bds]
         spread :: Int -> [Expression] -> Store Int -> Store Int
         spread _ [] reached = reached
-        spread depth frontier reached = uncurry (spread (succ depth)) (foldl' (climbed (succ depth)) ([], reached) [parent | node <- frontier, (parent, _) <- lodging node])
+        spread depth frontier reached = uncurry (spread (succ depth)) (List.foldl' (climbed (succ depth)) ([], reached) [parent | node <- frontier, (parent, _) <- lodging node])
         climbed :: Int -> ([Expression], Store Int) -> Expression -> ([Expression], Store Int)
         climbed depth (next, reached) parent
           | isJust (lookup parent (Map.findWithDefault [] (hashExpression parent) reached)) = (next, reached)

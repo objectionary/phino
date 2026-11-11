@@ -346,6 +346,21 @@ spec = do
       _ <- declared (ExFormation [BiTau (AtLabel "vex") head']) base{_facts = Just facts, _saveEval = \record -> modifyIORef' told (record :)} copy
       records <- readIORef told
       reverse [(term, reply) | EvRecalled _ term reply <- records] `shouldBe` [(copy, applied), (head', ExDispatch ExRoot (AtLabel "vex"))]
+    it "recalls every fact of a circle of facts once, whatever symbol the copy holds" $ do
+      let recalls :: Int -> IO Int
+          recalls symbol = do
+            let head' = ExFormation [BiVoid (AtLabel "ko"), BiLambda (Function "L_jew")]
+                copy = ExFormation [BiTau (AtLabel "ko") (ExFormation [BiLambda (FnSymbol symbol)]), BiLambda (Function "L_jew")]
+                twin = ExFormation [BiTau (AtLabel "ko") (ExFormation [BiLambda (FnSymbol symbol)]), BiLambda (Function "L_jew"), BiTau AtRho (ExDispatch ExRoot (AtLabel "jew"))]
+                answer = ExFormation [BiTau AtPhi twin]
+            facts <- factual
+            told <- newIORef []
+            base <- defaultReduceContext ExRoot
+            mapM_ (uncurry (noted base{_facts = Just facts})) [(head', ExDispatch ExRoot (AtLabel "jew")), (copy, ExApplication head' (ArTau (AtLabel "ko") (ExFormation [BiLambda (FnSymbol symbol)]))), (answer, copy), (twin, ExDispatch answer AtPhi)]
+            mapM_ (\index -> noted base{_facts = Just facts} (ExFormation [BiLambda (FnSymbol (symbol + index))]) (ExDispatch ExRoot (AtLabel "pad"))) [1 .. 12]
+            _ <- declared (ExFormation [BiTau (AtLabel "jew") head']) base{_facts = Just facts, _saveEval = \record -> modifyIORef' told (record :)} answer
+            (\records -> length [term | EvRecalled _ term _ <- records]) <$> readIORef told
+      mapM recalls [3, 17 .. 700] `shouldReturn` replicate 50 3
     it "answers the voids of the first head a chain of remembered copies was applied to" $ do
       let head' = ExFormation [BiVoid (AtLabel "ka"), BiVoid (AtLabel "mu"), BiLambda (Function "L_ozu")]
           half = ExFormation [BiTau (AtLabel "ka") (ExFormation [BiLambda (FnSymbol 4)]), BiVoid (AtLabel "mu"), BiLambda (Function "L_ozu")]

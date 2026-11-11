@@ -501,7 +501,10 @@ world from, such as a fork written in place, is cut by its symbol alone, as
 of a new fact once, by its bindings without ρ, with the formations holding
 it (`Lodgings` of `Morph.hs`), and `traced` climbs from the formation cut to
 the terms of facts, the nearest first, so naming a cut costs the same however
-many facts and however wide (#2351).
+many facts and however wide (#2351). It follows no fact twice on one path,
+since an answer holding a formation with the bindings of the copy it came
+from leads back to that copy, so a circle of facts is left after one lap
+(#2353).
 A dispatch off a copy the facts hold leaves that copy without the attribute
 it took, and `normalized` keeps that copy as an alias of the one it came
 from (`peeled`), so a copy made of it later is traced back all the same.
