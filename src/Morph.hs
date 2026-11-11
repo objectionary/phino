@@ -504,7 +504,12 @@ repeats mode form ctx = awaited ctx (evaluate (length hits `seq` hits))
     hits = take (succ ctx._maxLoops) (filter (repeated mode) (Map.findWithDefault [] (digest mode form) ctx._entered))
     repeated :: Acyclic -> Expression -> Bool
     repeated Proven before = alike form before
-    repeated Plausible before = within before form
+    repeated Plausible before
+      | atomic form = alike form before
+      | otherwise = within before form
+    atomic :: Expression -> Bool
+    atomic (ExFormation bds) = any isLambda bds
+    atomic _ = False
 
 digest :: Acyclic -> Expression -> Int
 digest Proven = hashShape
