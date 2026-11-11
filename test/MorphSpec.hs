@@ -281,7 +281,7 @@ spec = do
     it "fails a comparison that outlasts the deadline" $ do
       due <- (+ 0.2) <$> getMonotonicTime
       let formation :: Expression -> Int -> Expression
-          formation base depth = ExFormation [BiTau (AtLabel "x") (iterate (`ExDispatch` AtLabel "w") base !! depth), BiLambda (Function "L_q")]
+          formation base depth = ExFormation [BiTau (AtLabel "x") (iterate (`ExDispatch` AtLabel "w") base !! depth), BiTau AtPhi ExRoot]
       base <- defaultReduceContext ExRoot
       ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
       timeout 10000000 (enter (formation ExXi 1700) ctx)
@@ -290,15 +290,25 @@ spec = do
   describe "enters a formation again as many times as --max-loops allows" $ do
     it "enters a formation holding the one entered above it under --max-loops=1" $ do
       let formation :: Int -> Expression
-          formation depth = ExFormation [BiTau (AtLabel "kv") (iterate (`ExDispatch` AtLabel "zu") ExRoot !! depth), BiLambda (Function "L_hop")]
+          formation depth = ExFormation [BiTau (AtLabel "kv") (iterate (`ExDispatch` AtLabel "zu") ExRoot !! depth), BiTau AtPhi ExRoot]
       base <- defaultReduceContext ExRoot
       ctx <- enter (formation 4) =<< enter (formation 3) base{_acyclic = Just Plausible, _maxLoops = 1}
       length (concat ctx._entered) `shouldBe` 2
     it "cuts a formation holding the two entered above it under --max-loops=1" $ do
       let formation :: Int -> Expression
-          formation depth = ExFormation [BiTau (AtLabel "qe") (iterate (`ExDispatch` AtLabel "yo") ExRoot !! depth), BiLambda (Function "L_kit")]
+          formation depth = ExFormation [BiTau (AtLabel "qe") (iterate (`ExDispatch` AtLabel "yo") ExRoot !! depth), BiTau AtPhi ExRoot]
       base <- defaultReduceContext ExRoot
       (enter (formation 7) =<< enter (formation 6) =<< enter (formation 5) base{_acyclic = Just Plausible, _maxLoops = 1})
+        `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
+    it "enters a copy of an atom that only resembles the copy entered above it" $ do
+      base <- defaultReduceContext ExRoot
+      ctx <- enter (ExFormation [BiTau (AtLabel "t") (ExFormation [BiLambda (FnSymbol 4)]), BiLambda (Function "L_vo")]) =<< enter (ExFormation [BiTau (AtLabel "t") (ExDispatch ExRoot (AtLabel "pu")), BiLambda (Function "L_vo")]) base{_acyclic = Just Plausible, _maxLoops = 0}
+      length (concat ctx._entered) `shouldBe` 2
+    it "cuts a copy of an atom that repeats the copy entered above it exactly" $ do
+      let formation :: Expression
+          formation = ExFormation [BiTau (AtLabel "ka") (ExDispatch ExRoot (AtLabel "mi")), BiLambda (Function "L_ru")]
+      base <- defaultReduceContext ExRoot
+      (enter formation =<< enter formation base{_acyclic = Just Plausible, _maxLoops = 0})
         `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
 
   describe "places a formation among the objects of the world" $ do

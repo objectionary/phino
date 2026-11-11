@@ -1673,7 +1673,7 @@ spec = do
         recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          looped 𝜎3 := Φ.down( i ↦ 𝑛·6·6 )  # plausible, repeats 𝑛·0·4"])
 
     describe "--acyclic at a copy holding a λ" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, down(i) ↦ ⟦ φ ↦ Φ.dataized( Φ.fork( Φ.dataized( Φ.down( ⟦ λ ⤍ 𝜎2 ⟧ ) ), ⟦ λ ⤍ 𝜎3 ⟧ ) ) ⟧, x ↦ Φ.down( ⟦ λ ⤍ 𝜎1 ⟧ ) ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, x ↦ Φ.dataized( Φ.fork( Φ.dataized( Φ.x ), ⟦ λ ⤍ 𝜎3 ⟧ ) ) ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
           recorded :: String -> IO [String]
           recorded name =
@@ -1691,7 +1691,7 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
       it "writes the copy holding a λ it cuts to the protocol as a call of the object" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["                      looped 𝜎8 := Φ.dataized( target ↦ 𝜎7:λ )  # 𝔻(𝑛·6·4), plausible, repeats 𝑛·7·2"])
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["                                looped 𝜎6 := Φ.dataized( target ↦ 𝜎5:λ )  # plausible, repeats 𝑛·9·2"])
 
     describe "--acyclic at a copy holding a λ that evaluate fires" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ ⟦ φ ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.x ) ) ) ⟧ ⟧"
@@ -1702,7 +1702,7 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
     describe "--acyclic at a copy whose call ends with an attribute" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ), Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.x ) ) ) ) ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ), Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.x.φ ) ) ) ) ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
           recorded :: String -> IO [String]
           recorded name =
@@ -1715,10 +1715,10 @@ spec = do
                     []
               lines <$> readProtocol path
       it "writes the copy it cuts to the protocol as a call of the object with the attribute it ends with" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·9·9, right ↦ 𝑛·11·1 ).φ  # 𝔻(𝑛·9·6)"))
+        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·13·8, right ↦ 𝑛·15·1 ).right🌵.φ  # plausible"))
 
       it "writes the copy it cuts to the XML protocol with the object, the metas of its arguments and the attribute it ends with" $
-        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·1</meta></with></looped>"))
+        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·13·8</meta><meta attr=\"right\">𝑛·15·1</meta></with></looped>"))
 
     describe "--acyclic at a copy whose argument repeats the same loop" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, times(b) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ) ) ⟧"
@@ -1814,11 +1814,23 @@ spec = do
                     ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
-      it "writes the loop it cuts inside the nested fork by its symbol alone, since no fact names it" $
-        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎7  # 𝔻(𝑛·9·10), plausible"))
+      it "writes the loop it cuts inside the nested fork as a call of the object" $
+        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎7 := Φ.p  # plausible"))
 
       it "dont get stuck above the nested fork it cuts" $
         recorded >>= (`shouldNotSatisfy` any (isInfixOf "stuck L_dataized"))
+
+    describe "--acyclic at copies of one atom called from different places" $
+      it "dont cut a copy of an atom that only resembles the copies open above it" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_d\n  dataize:\n    𝛿1: $.t\n  𝑛: Φ.w( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n") $ \file ->
+            withStdin "⟦ w ↦ ⟦ φ ↦ ∅, me ↦ ξ, you ↦ ξ, x ↦ Φ.d( t ↦ ξ ).me.you ⟧, d(t) ↦ ⟦ λ ⤍ L_d ⟧, e ↦ Φ.d( t ↦ Φ.d( t ↦ Φ.d( t ↦ ⟦ φ ↦ Φ.d( t ↦ ⟦ Δ ⤍ 01- ⟧ ).x ⟧ ) ) ) ⟧" $
+              testCLISucceeded
+                ["dataize", "--symbolic=" ++ file, "--locator=Q.e", "--acyclic=plausible", "--max-loops=2", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
+                []
+          records <- readProtocol path
+          lines records `shouldNotSatisfy` any (isInfixOf "looped")
 
     it "dataizes with --sequence" $
       withStdin "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]" $
