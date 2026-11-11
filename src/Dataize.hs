@@ -20,7 +20,7 @@ import Deps (Evaluation (..), Judgment (..), State (..), resited)
 import Engine (Engine (..))
 import qualified Inference as In
 import Locator (locatedExpression)
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, carried, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, carried, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed, vetted)
 import Rewriter (Rewritten)
 
 type Dataized = (Bytes, [Rewritten])
@@ -35,6 +35,7 @@ data Outcome
 dataize :: Expression -> State -> ReduceContext -> IO (Outcome, [Rewritten], State)
 dataize universe state ctx@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
+  vetted Dataization expr ctx
   result <- try (dataize' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
     Right ((bytes, seq), state') -> pure (Dataized bytes, reverse seq, state')
