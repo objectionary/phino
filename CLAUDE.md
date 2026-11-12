@@ -309,8 +309,11 @@ either side, stays that alias, so `g ↦ ξ.f` reaches the copy of `f` and its
 voids (`aliased`, #2260). The firing writes
 `fabricated 𝑛·2·8 := 𝑛1·1 and 𝑛2·1  # ⟦ … ⟧` (`EvFabricated`), naming the
 sides as `diverged` does and spelling the formation out in the comment, and
-answers that formation as `Joined` of `Answer`. The entry of `L_join` reads
-`on: $.on🌵`, so the copy it fires decides by that condition.
+answers that formation as `Joined` of `Answer`. A side a line of the entry
+wrote, such as `𝑛3·1 := ⟦ … ⟧  # symbolize(𝑛1)`, is named by that line in
+both places, even read through a meta no line writes (`inscribed`, #2364).
+The entry of `L_join` reads `on: $.on🌵`, so the copy it fires decides by
+that condition.
 Any other two sides make the firing write `diverged … vs …` (`EvDiverged`),
 naming each side by the line that bound it. Its comment tells the two steps
 apart (#2043, #2204): `cannot join:` says what each side binds where they

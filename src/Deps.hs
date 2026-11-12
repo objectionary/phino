@@ -471,14 +471,14 @@ saveEval handle cursor printed printed' report = do
       pure (either (const protocol) (\bytes -> protocol{_spelt = Map.insertWith Map.union (opener protocol) (Map.singleton bytes (labelled protocol spelling)) protocol._spelt}) value, Just (indented at line))
     written at (EvTerm _ spelling judgment operand term) protocol = do
       let naming = labelled protocol spelling
-      (protocol', value) <- valued protocol naming term
+      (protocol', value) <- inscribed protocol naming term
       line <- commented protocol (printf "%s := %s" naming value) judgment operand
       pure (protocol', Just (indented at line))
     written _ (EvBound _ meta term) protocol =
       pure (protocol{_unwritten = Map.alter (Just . namedInsert meta term . fromMaybe Map.empty) (opener protocol) protocol._unwritten}, Nothing)
     written at (EvReshaped _ spelling block source term) protocol = do
       let naming = labelled protocol spelling
-      (protocol', value) <- valued protocol naming term
+      (protocol', value) <- inscribed protocol naming term
       line <- printf "%s := %s  # %s(%s)" naming value (T.unpack block) <$> salted (unwritten protocol source)
       pure (protocol', Just (indented at line))
     written at (EvSymbolized _ symbol bytes) protocol = do
@@ -486,7 +486,7 @@ saveEval handle cursor printed printed' report = do
       pure (protocol, Just (indented at (remarked (printf "symbolized %s := %s" (printFunction (FnSymbol symbol)) datum) (catMaybes [Map.lookup (opener protocol) protocol._spelt >>= Map.lookup bytes, ieee bytes]))))
     written at (EvCast _ spelling source model term) protocol = do
       let naming = labelled protocol spelling
-      (protocol', value) <- valued protocol naming term
+      (protocol', value) <- inscribed protocol naming term
       one <- spoken protocol source
       two <- spoken protocol model
       pure (protocol', Just (indented at (printf "cast %s := %s  # %s up to %s" naming value one two)))
@@ -578,10 +578,15 @@ saveEval handle cursor printed printed' report = do
       Just _ -> do
         value <- maybe (render term) (pure . T.unpack) (namedLookup term protocol._named)
         pure (protocol{_named = namedInsert term (T.pack naming) protocol._named}, value)
+    inscribed :: Protocol -> String -> Expression -> IO (Protocol, String)
+    inscribed protocol naming term = do
+      (protocol', value) <- valued protocol naming term
+      pure (maybe protocol'{_made = namedFormation term (ExMeta (T.pack ('n' : drop 1 naming))) protocol'._made} (const protocol') (namedLookup term protocol._made), value)
     borrowed :: Protocol -> Expression -> IO String
-    borrowed protocol term = case namedLookup term protocol._named of
-      Nothing -> render term
-      Just naming -> pure (T.unpack naming)
+    borrowed protocol term = case (namedLookup term protocol._named, namedLookup term protocol._made) of
+      (Just naming, _) -> pure (T.unpack naming)
+      (Nothing, Just meta) -> render meta
+      (Nothing, Nothing) -> render term
     explained :: Protocol -> [Attribute] -> Expression -> Expression -> IO String
     explained protocol path one two = case reverse path of
       [] -> printf "the left side is %s and the right side is %s" <$> borrowed protocol one <*> borrowed protocol two
