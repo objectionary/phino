@@ -303,6 +303,15 @@ spec = do
     it "writes the double eight bytes hold beside the symbol a symbolize line minted for them" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
       last (lines written) `shouldBe` "    symbolized 𝜎6 := C0-09-1E-B8-51-EB-85-1F  # -3.14"
+    it "names the data line of the firing holding the datum a symbolize line minted a symbol for" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "E7"), EvData 2 "𝛿3" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "E7")), EvSymbolized 2 9 (BtOne "E7")])
+      last (lines written) `shouldBe` "    symbolized 𝜎9 := E7-  # 𝛿3·1"
+    it "names the data line before the double eight bytes hold beside the symbol a symbolize line minted" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"]), EvData 2 "𝛿2" (ExDispatch ExXi (AtLabel "ё")) (Right (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])), EvSymbolized 2 4 (BtMany ["C0", "09", "1E", "B8", "51", "EB", "85", "1F"])])
+      last (lines written) `shouldBe` "    symbolized 𝜎4 := C0-09-1E-B8-51-EB-85-1F  # 𝛿2·1, -3.14"
+    it "dont name a data line of another firing beside the symbol a symbolize line minted" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "5C"), EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "5C")), EvFiring 1 "L_з" Dataization ExRoot, EvSymbolized 2 7 (BtOne "5C")])
+      last (lines written) `shouldBe` "    symbolized 𝜎7 := 5C-"
     it "writes the meta a cast bound beside the meta it read and the meta whose shape it took" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvCast 2 "𝑛9" (ExMeta "n2") (ExMeta "n4") (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 7)]), BiTau (AtLabel "щ") (ExDispatch ExRoot (AtLabel "ёж"))])])
       last (lines written) `shouldBe` "    cast 𝑛9·1 := ⟦ φ ↦ 𝜎7:λ, щ ↦ Φ.ёж ⟧  # 𝑛2·1 up to 𝑛4·1"

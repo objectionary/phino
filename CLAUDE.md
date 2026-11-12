@@ -181,9 +181,10 @@ binding of an atom turned into a fresh symbol, leaving alone the ρ and the
 methods of a formation holding no λ, since they hold the code of a library
 object, not its value (`symbolized` of `Lambdas.hs`, #1968, #2008, #2131), and
 writes `symbolized 𝜎4 := …` (`EvSymbolized`) per symbol it minted with the
-datum it stands for. A line of either that changed its term writes
-`# stay(𝑛1)` or `# symbolize(𝑛1)` to the text protocol (`EvReshaped`), and the
-markup binds it as any other. A
+datum it stands for, commented with the data line of the firing holding the
+same bytes, if any, as `# 𝛿1·1` (`_spelt` of `Protocol`, #2360). A line of
+either that changed its term writes `# stay(𝑛1)` or `# symbolize(𝑛1)` to
+the text protocol (`EvReshaped`), and the markup binds it as any other. A
 `rewrite` line holds `of`, the meta it reads, and `rules`, spelled as in a
 rule file and read as `Rule` of `Yaml.hs`, and binds its meta to that term
 with the rules applied (`rewritten` of `Lambdas.hs`, #2005): every position
