@@ -135,9 +135,18 @@ spec = do
     it "hands the voids of a copy of the function to a side that does not bind its attribute" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ke ↦ ⟦ ev ↦ ∅, jo ↦ ∅ ⟧ ⟧, right🌵 ↦ ⟦ φ ↦ Φ.ty ⟧, ke ↦ ⟦ ρ ↦ ∅, λ ⤍ L_pu, ev ↦ ∅, jo ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 5C- ⟧, left🌵 ↦ ξ.ρ.left🌵.ke( ev ↦ ξ.ev, jo ↦ ξ.jo ), right🌵 ↦ ξ.ρ.right🌵.ke( ev ↦ ξ.ev, jo ↦ ξ.jo ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_pu, on🌵 ↦ ⟦ Δ ⤍ 5C- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_pu" (Right (BtOne "5C")) "⟦ ke ↦ ⟦ ev ↦ ∅, jo ↦ ∅ ⟧ ⟧" "⟦ φ ↦ Φ.ty ⟧" >>= (`shouldBe` Right expected)
-    it "keeps an attribute both sides bind to the same attribute of the fabricated formation" $ do
-      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ wa ↦ ⟦ ov ↦ ∅, φ ↦ ξ.ov ⟧, ky ↦ ξ.wa ⟧, right🌵 ↦ ⟦ wa ↦ ⟦ ov ↦ ∅, ip ↦ ∅, φ ↦ ξ.ip ⟧, ky ↦ ξ.wa ⟧, wa ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ko, ov ↦ ∅, ip ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎14 ⟧, left🌵 ↦ ξ.ρ.left🌵.wa( ov ↦ ξ.ov ), right🌵 ↦ ξ.ρ.right🌵.wa( ov ↦ ξ.ov, ip ↦ ξ.ip ) ⟧, ky ↦ ξ.wa ⟧"
+    it "takes the voids of the formation an attribute both sides alias as voids of its copy of the function" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ wa ↦ ⟦ ov ↦ ∅, φ ↦ ξ.ov ⟧, ky ↦ ξ.wa ⟧, right🌵 ↦ ⟦ wa ↦ ⟦ ov ↦ ∅, ip ↦ ∅, φ ↦ ξ.ip ⟧, ky ↦ ξ.wa ⟧, wa ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ko, ov ↦ ∅, ip ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎14 ⟧, left🌵 ↦ ξ.ρ.left🌵.wa( ov ↦ ξ.ov ), right🌵 ↦ ξ.ρ.right🌵.wa( ov ↦ ξ.ov, ip ↦ ξ.ip ) ⟧, ky ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ko, ov ↦ ∅, ip ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎14 ⟧, left🌵 ↦ ξ.ρ.left🌵.ky( ov ↦ ξ.ov ), right🌵 ↦ ξ.ρ.right🌵.ky( ov ↦ ξ.ov, ip ↦ ξ.ip ) ⟧ ⟧"
       fork "L_ko" (Left 14) "⟦ wa ↦ ⟦ ov ↦ ∅, φ ↦ ξ.ov ⟧, ky ↦ ξ.wa ⟧" "⟦ wa ↦ ⟦ ov ↦ ∅, ip ↦ ∅, φ ↦ ξ.ip ⟧, ky ↦ ξ.wa ⟧" >>= (`shouldBe` Right expected)
+    it "takes the voids of the formation an attribute only the left side aliases as voids of its copy of the function" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ fk ↦ ⟦ le ↦ ∅, ri ↦ ∅ ⟧, iz ↦ ξ.fk ⟧, right🌵 ↦ ⟦ φ ↦ Φ.dw ⟧, fk ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vo, le ↦ ∅, ri ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎22 ⟧, left🌵 ↦ ξ.ρ.left🌵.fk( le ↦ ξ.le, ri ↦ ξ.ri ), right🌵 ↦ ξ.ρ.right🌵.fk( le ↦ ξ.le, ri ↦ ξ.ri ) ⟧, iz ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vo, le ↦ ∅, ri ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎22 ⟧, left🌵 ↦ ξ.ρ.left🌵.iz( le ↦ ξ.le, ri ↦ ξ.ri ), right🌵 ↦ ξ.ρ.right🌵.iz( le ↦ ξ.le, ri ↦ ξ.ri ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vo, on🌵 ↦ ⟦ λ ⤍ 𝜎22 ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
+      fork "L_vo" (Left 22) "⟦ fk ↦ ⟦ le ↦ ∅, ri ↦ ∅ ⟧, iz ↦ ξ.fk ⟧" "⟦ φ ↦ Φ.dw ⟧" >>= (`shouldBe` Right expected)
+    it "follows a chain of aliases down to the formation it ends in" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ φ ↦ Φ.gu ⟧, right🌵 ↦ ⟦ ot ↦ ξ.ha, ha ↦ ξ.ym, ym ↦ ⟦ qe ↦ ∅ ⟧ ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_bx, on🌵 ↦ ⟦ Δ ⤍ 4D- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧, ot ↦ ⟦ ρ ↦ ∅, λ ⤍ L_bx, qe ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 4D- ⟧, left🌵 ↦ ξ.ρ.left🌵.ot( qe ↦ ξ.qe ), right🌵 ↦ ξ.ρ.right🌵.ot( qe ↦ ξ.qe ) ⟧, ha ↦ ⟦ ρ ↦ ∅, λ ⤍ L_bx, qe ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 4D- ⟧, left🌵 ↦ ξ.ρ.left🌵.ha( qe ↦ ξ.qe ), right🌵 ↦ ξ.ρ.right🌵.ha( qe ↦ ξ.qe ) ⟧, ym ↦ ⟦ ρ ↦ ∅, λ ⤍ L_bx, qe ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 4D- ⟧, left🌵 ↦ ξ.ρ.left🌵.ym( qe ↦ ξ.qe ), right🌵 ↦ ξ.ρ.right🌵.ym( qe ↦ ξ.qe ) ⟧ ⟧"
+      fork "L_bx" (Right (BtOne "4D")) "⟦ φ ↦ Φ.gu ⟧" "⟦ ot ↦ ξ.ha, ha ↦ ξ.ym, ym ↦ ⟦ qe ↦ ∅ ⟧ ⟧" >>= (`shouldBe` Right expected)
+    it "leaves a circle of aliases as it is" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ec ↦ ξ.ul, ul ↦ ξ.ec ⟧, right🌵 ↦ ⟦ ec ↦ ⟦ ah ↦ ∅ ⟧ ⟧, ec ↦ ⟦ ρ ↦ ∅, λ ⤍ L_jt, ah ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 0E- ⟧, left🌵 ↦ ξ.ρ.left🌵.ec( ah ↦ ξ.ah ), right🌵 ↦ ξ.ρ.right🌵.ec( ah ↦ ξ.ah ) ⟧, ul ↦ ⟦ ρ ↦ ∅, λ ⤍ L_jt, on🌵 ↦ ⟦ Δ ⤍ 0E- ⟧, left🌵 ↦ ξ.ρ.left🌵.ul, right🌵 ↦ ξ.ρ.right🌵.ul ⟧ ⟧"
+      fork "L_jt" (Right (BtOne "0E")) "⟦ ec ↦ ξ.ul, ul ↦ ξ.ec ⟧" "⟦ ec ↦ ⟦ ah ↦ ∅ ⟧ ⟧" >>= (`shouldBe` Right expected)
     it "asks the copies of both sides for an attribute both bind to an attribute the fabricated formation lacks" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ky ↦ ξ.ub ⟧, right🌵 ↦ ⟦ ky ↦ ξ.ub ⟧, ky ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ex, on🌵 ↦ ⟦ Δ ⤍ 2A- ⟧, left🌵 ↦ ξ.ρ.left🌵.ky, right🌵 ↦ ξ.ρ.right🌵.ky ⟧ ⟧"
       fork "L_ex" (Right (BtOne "2A")) "⟦ ky ↦ ξ.ub ⟧" "⟦ ky ↦ ξ.ub ⟧" >>= (`shouldBe` Right expected)
