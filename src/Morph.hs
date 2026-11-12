@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Budget (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
+module Morph (Answer (..), Budget (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, repeats, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
