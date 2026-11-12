@@ -347,7 +347,12 @@ with no entry of the file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it binds
 fresh symbol and writes `deferred …` (`EvDeferred`), naming the call the copy
 stands for by the path of the world the facts lead it back to (`declared` and
 `called` of `Morph.hs`), the way the record of 0.0.153 did (#1892); any other
-term is bound as it is. Before the line is
+term is bound as it is. So is, under `--acyclic`, a copy whose φ comes to a
+formation holding a λ that repeats one the run is inside, such as the copy
+`down( i ↦ 𝜎2 )` the fork in the φ of `down` holds as a side (`recursive` of
+`Evaluate.hs`): it is a round of a recursion, which the cut of `--acyclic`
+ends as `looped`, and a symbol standing for the call would hide it from that
+cut (#2206). Before the line is
 written, `argued` of `Morph.hs` works out every argument of the call that
 is no bare symbol: it morphs the argument in the copy, at a site such as
 `𝑛2.index`, fires what that comes to through 𝔼 the way an `evaluate` line

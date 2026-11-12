@@ -14,6 +14,7 @@ import AST
 import Builder (buildExpressionThrows)
 import Control.Exception (Exception, catch, throwIO, try)
 import Control.Monad (foldM, unless, when)
+import Data.Bool (bool)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
@@ -24,7 +25,7 @@ import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Budget (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, noted, opening, recalled, remember, remembered, remembering, retained, settled, starved, unparked, voided)
+import Morph (Answer (..), Budget (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, noted, opening, recalled, remember, remembered, remembering, repeats, retained, settled, starved, unparked, voided)
 import Printer (printExpression, printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -314,8 +315,21 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     postponing ctx state' site (ExFormation bds)
       | copied bds = do
           known <- mapM resolved bds
-          if any bare known then Just <$> postponed known else pure Nothing
+          if any bare known then bool (Just <$> postponed known) (pure Nothing) =<< recursive else pure Nothing
       where
+        recursive :: IO Bool
+        recursive = case ctx._acyclic of
+          Just mode -> do
+            outcome <- try (settled (ExDispatch (ExFormation bds) AtPhi) univ state' reading{_facts = Nothing})
+            case outcome of
+              Right (body, _) | atomic body -> not . null <$> repeats mode body ctx
+              Left (OutOfSteps (Seconds cap)) -> expired ctx cap
+              Left (OutOfStepsAt (Seconds cap) _ _) -> expired ctx cap
+              _ -> pure False
+          Nothing -> pure False
+        atomic :: Expression -> Bool
+        atomic (ExFormation inner) = any isLambda inner
+        atomic _ = False
         copied :: [Binding] -> Bool
         copied bds = boxed bds && not (any void bds) && or [not (formed body) | BiTau AtPhi body <- bds]
           where

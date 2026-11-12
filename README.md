@@ -151,7 +151,8 @@ file:
   meta holds, through evaluation, 𝔼, as in `𝑛2: 𝑛1`.
 * `defer` binds a term meta to a fresh symbol when another meta holds a copy
   of an object whose argument is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and to that
-  term as it is otherwise.
+  term as it is otherwise, or when under `--acyclic` the φ of the copy
+  repeats a formation the run is inside.
 * `stay` binds a term meta to the term another meta holds, with every
   `( ρ ↦ … )` applied to a dispatch dropped.
 * `symbolize` binds a term meta to the term another meta holds, with every
