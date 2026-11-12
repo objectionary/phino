@@ -70,8 +70,12 @@ spec = do
       apart "⟦ ub ↦ ⊥, xe ↦ ⊥ ⟧" "⟦ ub ↦ ⟦ λ ⤍ 𝜎5 ⟧, xe ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧" >>= (`shouldBe` Right (expected, [(43, (42, 5)), (44, (42, 6))], Just 42, 44))
     it "mints nothing for two sides of ⊥" $
       joined ExTermination ExTermination 4 `shouldBe` Right (ExTermination, [], Nothing, 4)
-    it "tells no attribute of ⊥ and a side holding no symbol to stand for ⊥" $
-      apart "⟦ φ ↦ Φ.ab, ko ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" "⊥" >>= (`shouldBe` Left [])
+    it "keeps as it is a side facing ⊥ that holds no symbol to stand for ⊥" $ do
+      expected <- parseExpressionThrows "⟦ φ ↦ Φ.ab, ko ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
+      apart "⟦ φ ↦ Φ.ab, ko ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" "⊥" >>= (`shouldBe` Right (expected, [], Nothing, 41))
+    it "keeps as it is a side holding no symbol that ⊥ faces from the left" $ do
+      expected <- parseExpressionThrows "⟦ x ↦ ∅, φ ↦ ξ.x.yu ⟧"
+      apart "⊥" "⟦ x ↦ ∅, φ ↦ ξ.x.yu ⟧" >>= (`shouldBe` Right (expected, [], Nothing, 41))
     it "tells the attribute of a formation binding ⊥ where the other one binds no symbol" $
       apart "⟦ φ ↦ ⊥ ⟧" "⟦ φ ↦ Φ.ix ⟧" >>= (`shouldBe` Left [AtPhi])
 

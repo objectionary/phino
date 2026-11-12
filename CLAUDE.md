@@ -283,8 +283,13 @@ Where one side is ⊥ and the other holds a symbol, `joined` keeps the shape of
 the other side, mints one symbol to stand for ⊥ and a fresh symbol per symbol
 the other side holds, paired with it, so the firing writes
 `joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥` and the markup
-`right="𝜎3" terminator="𝜎3"`, naming the side that raises (#2195); a side holding
-no symbol has nothing to stand for ⊥ and does not join.
+`right="𝜎3" terminator="𝜎3"`, naming the side that raises (#2195). Where
+one whole side is ⊥ and the other holds no symbol, `joined` answers the other
+side as it is, since a fork whose branch raises is the other branch under the
+condition, and the firing writes `guarded 𝛿1·1 ? 𝑛1·1 : 𝑛2·1  # where 𝑛2·1
+is ⊥` (`EvGuarded`) and the markup
+`<guarded on="𝛿1·1" left="𝑛1·1" right="𝑛2·1" terminator="right"/>` (#2370).
+A ⊥ deeper inside a side still joins only with a symbol facing it.
 Two formations of other shapes, neither holding a datum nor a λ (#2041), are
 joined attribute by attribute when the block names a λ function under
 `otherwise` (#2024):

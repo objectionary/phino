@@ -29,6 +29,10 @@ data Refusal
   deriving (Eq, Show)
 
 joined :: Expression -> Expression -> Int -> Either [Attribute] (Expression, [(Int, (Int, Int))], Maybe Int, Int)
+joined ExTermination right spent
+  | null (symbols right) = Right (right, [], Nothing, spent)
+joined left ExTermination spent
+  | null (symbols left) = Right (left, [], Nothing, spent)
 joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse made, bottom, spent')) <$> goExpr left right (spent, Nothing, Map.empty, [])
   where
     goExpr :: Expression -> Expression -> Joining -> Either [Attribute] (Expression, Joining)

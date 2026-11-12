@@ -22,7 +22,7 @@ import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Forks (Refusal (Unnamed, Unripe), forked, joined)
+import Forks (Refusal (Unnamed, Unripe), Side (Lefthand, Righthand), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Budget (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, boxed, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, noted, opening, recalled, remember, remembered, remembering, repeats, retained, settled, starved, unparked, voided)
@@ -398,6 +398,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         Right (term, made, bottom, spent') -> do
           writeIORef ctx._minted spent'
           mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair bottom raised)) made
+          mapM_ (\side -> ctx._saveEval (EvGuarded ctx._nesting (either (Left . _spelling) Right on) (left, one) (right, two) side raised)) [side | null made, term /= ExTermination, (side, ExTermination) <- [(Lefthand, stopped one), (Righthand, stopped two)]]
           ctx._saveEval (EvTaken ctx._nesting term)
           pure (Joined term, state''')
         Left path -> case maybe (Left Unnamed) (\name -> forked name condition one two) fallback of
