@@ -183,9 +183,15 @@ spec = do
     it "writes the term a morphing came to as a line binding it to a fresh 𝑛 under the heading of the morphing" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук")), EvMorphed 2 (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.жук):", "    morphed 𝑛·0·1 := Φ.щука"]
-    it "writes the term a normalization came to as a line binding it to a fresh 𝑛" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "лось")), EvNormalized 2 (ExDispatch ExRoot (AtLabel "выпь"))])
-      lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.лось):", "    normalized 𝑛·0·1 := Φ.выпь"]
+    it "writes the term a normalization came to as a line binding it to a fresh 𝑛 and naming what it came from" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "лось")), EvNormalized 2 (ExDispatch (ExDispatch ExRoot (AtLabel "кедр")) (AtLabel "шишка")) (ExDispatch ExRoot (AtLabel "выпь"))])
+      lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.лось):", "    normalized 𝑛·0·1 := Φ.выпь  # Φ.кедр.шишка"]
+    it "names the term a normalization came from by the line that wrote it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "ива")), EvMorphed 2 (ExFormation [BiTau (AtLabel "лист") (ExFormation [])]), EvNormalized 2 (ExApplication (ExFormation [BiTau (AtLabel "лист") (ExFormation [])]) (ArTau (AtLabel "сок") (ExDispatch ExRoot (AtLabel "клён")))) ExTermination])
+      last (lines written) `shouldBe` "    normalized 𝑛·0·2 := ⊥  # 𝑛·0·1( сок ↦ Φ.клён )"
+    it "writes no line for a normalization that came to a term an earlier line named" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "ель")), EvMorphed 2 (ExFormation [BiTau (AtLabel "хвоя") (ExFormation [])]), EvNormalized 2 (ExApplication (ExFormation [BiTau (AtLabel "хвоя") (ExFormation [])]) (ArTau AtRho ExRoot)) (ExFormation [BiTau (AtLabel "хвоя") (ExFormation [])])])
+      lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.ель):", "    morphed 𝑛·0·1 := ⟦⟧:хвоя"]
     it "spells the term a morphing came to by the name of the formation an application made" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvMorphed 2 (ExFormation [BiTau (AtLabel "q") (ExFormation [])])])
       last (lines written) `shouldBe` "    morphed 𝑛·0·3 := 𝑛·0·2"
@@ -559,9 +565,12 @@ spec = do
     it "writes the term a morphing came to as an element with its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvMorphed 1 (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldContain` ["  <morphed meta=\"𝑛·0·1\">Φ.щука</morphed>"]
-    it "writes the term a normalization came to as an element with its name" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvNormalized 1 (ExDispatch ExRoot (AtLabel "сыч"))])
-      lines written `shouldContain` ["  <normalized meta=\"𝑛·0·1\">Φ.сыч</normalized>"]
+    it "writes the term a normalization came to as an element with its name and what it came from" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvNormalized 1 (ExDispatch (ExDispatch ExRoot (AtLabel "бор")) (AtLabel "пень")) (ExDispatch ExRoot (AtLabel "сыч"))])
+      lines written `shouldContain` ["  <normalized meta=\"𝑛·0·1\" of=\"Φ.бор.пень\">Φ.сыч</normalized>"]
+    it "writes no element for a normalization that came to a term an earlier element named" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvMorphed 1 (ExFormation [BiTau (AtLabel "мох") (ExFormation [])]), EvNormalized 1 (ExApplication (ExFormation [BiTau (AtLabel "мох") (ExFormation [])]) (ArTau AtRho ExRoot)) (ExFormation [BiTau (AtLabel "мох") (ExFormation [])])])
+      length [line | line <- lines written, "<normalized" `isInfixOf` line] `shouldBe` 0
     it "writes a morphing that came to a termination as an element holding it" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvMorphed 1 ExTermination])
       lines written `shouldContain` ["  <morphed meta=\"𝑛·0·1\">⊥</morphed>"]

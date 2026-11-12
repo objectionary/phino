@@ -71,7 +71,7 @@ dataize' (start, seq) univ held caller = do
           pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
         Just (In.Onward way built world, state') -> do
           ctx' <- boxing way built ctx
-          (dataizable, state'') <- onward seq state' way built ctx'
+          (dataizable, state'') <- onward seq state' way univ built ctx'
           dataize' dataizable world state'' ctx'
         Nothing -> throwIO (Undataizable expr seq state)
   where

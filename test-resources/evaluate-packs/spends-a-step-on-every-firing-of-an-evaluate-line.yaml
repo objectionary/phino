@@ -23,12 +23,9 @@ fails: 'reaching the limit of steps'
 protocol: |
   𝕄(Φ.app):
     remembered 𝑛·0·1 ≡ Φ.loop  # ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧
-    normalized 𝑛·0·2 := 𝑛·0·1
     𝔼(L_loop):
       𝕄(ξ.next🌵):
-        normalized 𝑛·1·1 := 𝑛·0·1
-        normalized 𝑛·1·2 := 𝑛·0·1
-        morphed 𝑛·1·3 := 𝑛·0·1
+        morphed 𝑛·1·1 := 𝑛·0·1
       𝑛1·1 := 𝑛·0·1  # 𝕄(ξ.next🌵)
       recalled 𝑛·0·1 ⇒ Φ.loop
       𝔼(L_loop):  # 𝔼(𝑛1)

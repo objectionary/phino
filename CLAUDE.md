@@ -575,9 +575,13 @@ on (`namedFormation`), even when a line named it before, unless it holds λ or
 chain that opened the block writes it: `detached` runs a premise of a rule of 𝕄
 through `morph''` told it owns nothing, since it stands in the block of the
 rule. A `normalize` premise of a rule, run by `onward` of `Morph.hs`, writes
-the term it came to the same way, as `normalized 𝑛·1·5 := …`
-(`EvNormalized`, issue #2362), and as `<normalized>` in the markup, but only
-where it changed the term. A cut is a line too,
+the term it came to the same way, as `normalized 𝑛·1·5 := …  # 𝑛·1·4.a`
+(`EvNormalized`, issue #2362), with the term it came from in the comment and
+in `of` of `<normalized>` in the markup, the universe spelled `Φ` (#2366). It
+writes nothing where the term is the one it came from, with or without the
+arguments the normalization dropped, and nothing where the term is one an
+earlier line named, since the line would only repeat that name.
+A cut is a line too,
 `looped …` (`EvLooped`), written by `enter` where the refused frame would have
 opened, carrying the formation its ancestor entered (#1434) and naming the mode
 that cut it. A copy `severed` answered writes the symbol and the call the copy

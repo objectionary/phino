@@ -599,7 +599,7 @@ morph'' owner start univ state entry = go start univ state entry
             seq' <- leadsTo seq step built ctx
             pure ((built, seq'), state')
           Just (In.Onward way built world, state') -> do
-            (morphed, state'') <- onward seq state' way built ctx
+            (morphed, state'') <- onward seq state' way univ built ctx
             go morphed world state'' ctx
           Nothing -> throwIO (Unmorphable term)
       where
@@ -655,19 +655,29 @@ inferred expr univ state ctx rules = do
       next answer >>= premised state''
     premised state' (In.Contextualizes term context next) = ctx._engine._contextualize term context >>= next >>= premised state'
 
-onward :: NonEmpty Rewritten -> State -> In.Way -> Expression -> ReduceContext -> IO (Morphed, State)
-onward seq state (In.Taken step) expr ctx = do
+onward :: NonEmpty Rewritten -> State -> In.Way -> Expression -> Expression -> ReduceContext -> IO (Morphed, State)
+onward seq state (In.Taken step) _ expr ctx = do
   seq' <- leadsTo seq step expr ctx
   pure ((expr, seq'), state)
-onward seq state (In.Normalized step) expr ctx = do
+onward seq state (In.Normalized step) univ expr ctx = do
   labelled <- leadsTo seq step expr ctx
   normal@(term, _) <- normalized expr labelled ctx
-  unless (term == expr) (ctx._saveEval (EvNormalized ctx._nesting term))
+  unless (term `elem` [expr, bare expr]) (ctx._saveEval (EvNormalized ctx._nesting (rooted expr) term))
   pure (normal, state)
-onward seq state (In.Named step) expr ctx = case ctx._universe of
-  Just world -> onward seq state (In.Taken step) world ctx
-  Nothing -> onward seq state (In.Normalized step) expr ctx
-onward seq state (In.Staged stage) expr ctx = morph' (expr, seq) stage state ctx
+  where
+    bare :: Expression -> Expression
+    bare (ExApplication inner _) = bare inner
+    bare inner = inner
+    rooted :: Expression -> Expression
+    rooted inner
+      | inner == univ = ExRoot
+    rooted (ExDispatch inner attr) = ExDispatch (rooted inner) attr
+    rooted (ExApplication inner arg) = ExApplication (rooted inner) arg
+    rooted inner = inner
+onward seq state (In.Named step) univ expr ctx = case ctx._universe of
+  Just world -> onward seq state (In.Taken step) univ world ctx
+  Nothing -> onward seq state (In.Normalized step) univ expr ctx
+onward seq state (In.Staged stage) _ expr ctx = morph' (expr, seq) stage state ctx
 
 leadsTo :: NonEmpty Rewritten -> (Judgment, String) -> Expression -> ReduceContext -> IO (NonEmpty Rewritten)
 leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do

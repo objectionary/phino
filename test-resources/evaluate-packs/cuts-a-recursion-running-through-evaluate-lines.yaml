@@ -27,19 +27,16 @@ result: '𝜎1:λ.φ'
 protocol: |
   𝕄(Φ.app):
     remembered 𝑛·0·1 ≡ Φ.loop  # ⟦ next🌵 ↦ Φ.loop, λ ⤍ L_loop ⟧
-    normalized 𝑛·0·2 := 𝑛·0·1
     𝔼(L_loop):
       𝕄(ξ.next🌵):
-        normalized 𝑛·1·1 := 𝑛·0·1
-        normalized 𝑛·1·2 := 𝑛·0·1
-        morphed 𝑛·1·3 := 𝑛·0·1
+        morphed 𝑛·1·1 := 𝑛·0·1
       𝑛1·1 := 𝑛·0·1  # 𝕄(ξ.next🌵)
       recalled 𝑛·0·1 ⇒ Φ.loop
       recalled 𝑛·0·1 ⇒ Φ.loop
       looped 𝜎1 := Φ.loop  # 𝔼(𝑛1), proven, repeats 𝑛·0·1
       𝑛2·1 := 𝜎1:λ  # 𝔼(𝑛1)
-      𝑛·1·4 := 𝑛2·1  # 𝑛
-      𝕄(𝑛·1·4):
-        morphed 𝑛·1·5 := 𝑛2·1
-      𝑛·1·6 := 𝑛2·1  # 𝕄(𝑛·1·4)
+      𝑛·1·2 := 𝑛2·1  # 𝑛
+      𝕄(𝑛·1·2):
+        morphed 𝑛·1·3 := 𝑛2·1
+      𝑛·1·4 := 𝑛2·1  # 𝕄(𝑛·1·2)
     unanswered 𝜎1  # 𝕄(𝜎1:λ)

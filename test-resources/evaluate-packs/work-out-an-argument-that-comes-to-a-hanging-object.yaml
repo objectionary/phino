@@ -43,47 +43,37 @@ protocol: |
           𝑛1·2 := 𝑛·2·1  # 𝕄(ξ.a)
           𝕄(ξ.b):
             remembered 𝑛·2·2 ≡ Φ.box  # ⟦ x ↦ ∅, w ↦ ∅, φ ↦ x.next ⟧
-            normalized 𝑛·2·3 := 𝑛·2·2
-            𝑛·2·4 := Φ.box( x ↦ Φ.items.tail )
-            𝑛·2·5 := ⟦ x ↦ Φ.items.tail, w ↦ ∅, φ ↦ x.next ⟧
-            remembered 𝑛·2·5 ≡ 𝑛·2·3( x ↦ Φ.items.tail )
-            normalized 𝑛·2·6 := 𝑛·2·5
-            𝑛·2·7 := 𝑛·2·4( w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ) )
-            𝑛·2·8 := ⟦ x ↦ Φ.items.tail, w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ), φ ↦ x.next ⟧
-            remembered 𝑛·2·8 ≡ 𝑛·2·6( w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ) )
-            normalized 𝑛·2·9 := 𝑛·2·8
-            normalized 𝑛·2·10 := 𝑛·2·9
-            morphed 𝑛·2·11 := 𝑛·2·10
-          𝑛2·2 := 𝑛·2·11  # 𝕄(ξ.b)
-          recalled 𝑛·2·8 ⇒ 𝑛·2·6( w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ) )
-          recalled 𝑛·2·5 ⇒ 𝑛·2·3( x ↦ Φ.items.tail )
+            𝑛·2·3 := Φ.box( x ↦ Φ.items.tail )
+            𝑛·2·4 := ⟦ x ↦ Φ.items.tail, w ↦ ∅, φ ↦ x.next ⟧
+            remembered 𝑛·2·4 ≡ 𝑛·2·2( x ↦ Φ.items.tail )
+            𝑛·2·5 := 𝑛·2·3( w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ) )
+            𝑛·2·6 := ⟦ x ↦ Φ.items.tail, w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ), φ ↦ x.next ⟧
+            remembered 𝑛·2·6 ≡ 𝑛·2·4( w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ) )
+            morphed 𝑛·2·7 := 𝑛·2·6
+          𝑛2·2 := 𝑛·2·7  # 𝕄(ξ.b)
+          recalled 𝑛·2·6 ⇒ 𝑛·2·4( w ↦ Φ.hang( Φ.num( φ ↦ 𝜎4:λ ) ) )
+          recalled 𝑛·2·4 ⇒ 𝑛·2·2( x ↦ Φ.items.tail )
           recalled 𝑛·2·2 ⇒ Φ.box
           𝕄(𝑛2.w):
-            normalized 𝑛·2·12 := ⟦ x ↦ ∅, φ ↦ x ⟧
-            𝑛·2·13 := Φ.hang( x ↦ Φ.num( φ ↦ 𝜎4:λ ) )
-            𝑛·2·14 := ⟦ x ↦ Φ.num( φ ↦ 𝜎4:λ ), φ ↦ x ⟧
-            normalized 𝑛·2·15 := 𝑛·2·14
-            morphed 𝑛·2·16 := 𝑛·2·15
+            normalized 𝑛·2·8 := ⟦ x ↦ ∅, φ ↦ x ⟧  # Φ.hang
+            𝑛·2·9 := Φ.hang( x ↦ Φ.num( φ ↦ 𝜎4:λ ) )
+            𝑛·2·10 := ⟦ x ↦ Φ.num( φ ↦ 𝜎4:λ ), φ ↦ x ⟧
+            morphed 𝑛·2·11 := 𝑛·2·10
           𝕄(𝑛2.w.φ):
-            normalized 𝑛·2·17 := ∅:φ
-            𝑛·2·18 := Φ.num( φ ↦ 𝜎4:λ )
-            𝑛·2·19 := 𝜎4:λ:φ
-            normalized 𝑛·2·20 := 𝑛·2·19
-            normalized 𝑛·2·21 := 𝑛·2·20
-            normalized 𝑛·2·22 := 𝑛·2·21
-            morphed 𝑛·2·23 := 𝑛·2·22
-          deferred 𝜎5 := Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·23 )  # 𝕄(𝑛2.φ)
+            normalized 𝑛·2·12 := ∅:φ  # Φ.num
+            𝑛·2·13 := Φ.num( φ ↦ 𝜎4:λ )
+            𝑛·2·14 := 𝜎4:λ:φ
+            morphed 𝑛·2·15 := 𝑛·2·14
+          deferred 𝜎5 := Φ.box( x ↦ 𝜎1:λ, w ↦ 𝑛·2·15 )  # 𝕄(𝑛2.φ)
           joined 𝜎6 := 𝛿1·2 ? 𝜎3 : 𝜎5
-          𝑛·2·24 := 𝜎6:λ
+          𝑛·2·16 := 𝜎6:λ
         𝛿·1·1 := 𝔻(𝜎6:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
       𝑛·1·1 := Φ.num( φ ↦ 𝜎7:λ )  # 𝑛
       𝕄(𝑛·1·1):
-        normalized 𝑛·1·2 := 𝑛·2·17
-        𝑛·1·3 := Φ.num( φ ↦ 𝜎7:λ )
-        𝑛·1·4 := 𝜎7:λ:φ
-        normalized 𝑛·1·5 := 𝑛·1·4
-        morphed 𝑛·1·6 := 𝑛·1·5
-      𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·1)
-    normalized 𝑛·0·1 := 𝜎7:λ
+        𝑛·1·2 := Φ.num( φ ↦ 𝜎7:λ )
+        𝑛·1·3 := 𝜎7:λ:φ
+        morphed 𝑛·1·4 := 𝑛·1·3
+      𝑛·1·5 := 𝑛·1·4  # 𝕄(𝑛·1·1)
+    normalized 𝑛·0·1 := 𝜎7:λ  # 𝑛·1·5.φ
     morphed 𝑛·0·2 := 𝑛·0·1
