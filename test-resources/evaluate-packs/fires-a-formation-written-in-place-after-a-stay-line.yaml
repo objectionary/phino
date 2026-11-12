@@ -30,6 +30,7 @@ protocol: |
     𝑛·0·1 := ⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ Φ.k )
     𝑛·0·2 := ⟦ v ↦ Φ.k, λ ⤍ L_box ⟧
     remembered 𝑛·0·3 ≡ Φ.x  # ⟦ λ ⤍ L_probe, side🌵 ↦ 𝑛·0·2 ⟧
+    normalized 𝑛·0·4 := 𝑛·0·3
     𝔼(L_probe):
       𝕄(ξ.side🌵):
         morphed 𝑛·1·1 := 𝑛·0·2

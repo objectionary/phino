@@ -38,18 +38,28 @@ protocol: |
       𝕄(ξ.b):
         morphed 𝑛·1·2 := Φ.hx( 𝜎3:λ ):φ
       fabricated 𝑛·1·3 := 𝑛·1·1 and 𝑛·1·2  # ⟦ left🌵 ↦ 𝑛·1·1, right🌵 ↦ 𝑛·1·2, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ob ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ob, right🌵 ↦ ρ.right🌵.ob ⟧ ⟧
+    normalized 𝑛·0·1 := ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧
     𝔼(L_join):
       𝕄(ξ.left🌵):
         remembered 𝑛·2·1 ≡ Φ.hx  # ⟦ ke ↦ ∅, φ ↦ ke ⟧
-        𝑛·2·2 := Φ.hx( ke ↦ 𝜎2:λ )
-        𝑛·2·3 := ⟦ ke ↦ 𝜎2:λ, φ ↦ ke ⟧
-        remembered 𝑛·2·3 ≡ 𝑛·2·1( ke ↦ 𝜎2:λ )
-        morphed 𝑛·2·4 := 𝑛·2·3
+        normalized 𝑛·2·2 := 𝑛·2·1
+        𝑛·2·3 := Φ.hx( ke ↦ 𝜎2:λ )
+        𝑛·2·4 := ⟦ ke ↦ 𝜎2:λ, φ ↦ ke ⟧
+        remembered 𝑛·2·4 ≡ 𝑛·2·2( ke ↦ 𝜎2:λ )
+        normalized 𝑛·2·5 := 𝑛·2·4
+        normalized 𝑛·2·6 := 𝑛·2·5
+        normalized 𝑛·2·7 := 𝑛·2·6
+        morphed 𝑛·2·8 := 𝑛·2·7
       𝕄(ξ.right🌵):
-        𝑛·2·5 := Φ.hx( ke ↦ 𝜎3:λ )
-        𝑛·2·6 := ⟦ ke ↦ 𝜎3:λ, φ ↦ ke ⟧
-        remembered 𝑛·2·6 ≡ 𝑛·2·1( ke ↦ 𝜎3:λ )
-        morphed 𝑛·2·7 := 𝑛·2·6
+        normalized 𝑛·2·9 := 𝑛·2·2
+        𝑛·2·10 := Φ.hx( ke ↦ 𝜎3:λ )
+        𝑛·2·11 := ⟦ ke ↦ 𝜎3:λ, φ ↦ ke ⟧
+        remembered 𝑛·2·11 ≡ 𝑛·2·9( ke ↦ 𝜎3:λ )
+        normalized 𝑛·2·12 := 𝑛·2·11
+        normalized 𝑛·2·13 := 𝑛·2·12
+        normalized 𝑛·2·14 := 𝑛·2·13
+        morphed 𝑛·2·15 := 𝑛·2·14
       joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3
-      𝑛·2·8 := ⟦ ke ↦ 𝜎4:λ, φ ↦ ke ⟧
-    morphed 𝑛·0·1 := 𝜎4:λ
+      𝑛·2·16 := ⟦ ke ↦ 𝜎4:λ, φ ↦ ke ⟧
+    normalized 𝑛·0·2 := 𝜎4:λ
+    morphed 𝑛·0·3 := 𝑛·0·2

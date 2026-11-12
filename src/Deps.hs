@@ -155,6 +155,7 @@ data Evaluation
   | EvBuilt Int Expression
   | EvAnswer Int Expression
   | EvMorphed Int Expression
+  | EvNormalized Int Expression
   | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int) (Maybe Expression)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvUnripe Int (Expression, Expression) (Expression, Expression) Side Attribute
@@ -228,6 +229,7 @@ tier (EvApplied depth _ _ _ _) = depth
 tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
+tier (EvNormalized depth _) = depth
 tier (EvJoined depth _ _ _ _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
 tier (EvUnripe depth _ _ _ _) = depth
@@ -518,14 +520,8 @@ saveEval handle cursor printed printed' report = do
           naming = printf "%s·%d" stem index
       (protocol', value) <- valued counted naming term
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
-    written at (EvMorphed _ term) protocol = do
-      let (index, counted) = numbered protocol
-          naming :: String
-          naming = printf "%s·%d" (labelled protocol answer) index
-      (protocol', value) <- case (namedLookup term protocol._made, namedLookup term protocol._named) of
-        (Nothing, Nothing) -> valued counted naming term
-        _ -> (,) counted <$> borrowed protocol term
-      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "morphed %s := %s" naming value)))
+    written at (EvMorphed _ term) protocol = concluding at "morphed" term protocol
+    written at (EvNormalized _ term) protocol = concluding at "normalized" term protocol
     written at (EvJoined _ condition symbol (left, right) bottom raised) protocol = do
       on <- either (pure . labelled protocol) salted condition
       termination <- render ExTermination
@@ -629,6 +625,15 @@ saveEval handle cursor printed printed' report = do
       where
         index :: Int
         index = maybe 1 (+ 1) (Map.lookup (opener protocol) protocol._counted)
+    concluding :: Int -> String -> Expression -> Protocol -> IO (Protocol, Maybe String)
+    concluding at word term protocol = do
+      let (index, counted) = numbered protocol
+          naming :: String
+          naming = printf "%s·%d" (labelled protocol answer) index
+      (protocol', value) <- case (namedLookup term protocol._made, namedLookup term protocol._named) of
+        (Nothing, Nothing) -> valued counted naming term
+        _ -> (,) counted <$> borrowed protocol term
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s %s := %s" word naming value)))
     taking :: Int -> String -> Expression -> Protocol -> IO (Protocol, Maybe String)
     taking at word term protocol = do
       let (index, counted) = numbered protocol
@@ -823,6 +828,7 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<built meta=\"%s\">%s</built>" (escapeXML naming) (escapeXMLText body))
     elements at (EvAnswer depth term) nesting = placed at nesting (concluded "answered" depth term)
     elements at (EvMorphed depth term) nesting = placed at nesting (concluded "morphed" depth term)
+    elements at (EvNormalized depth term) nesting = placed at nesting (concluded "normalized" depth term)
     elements at (EvJoined depth condition symbol (left, right) bottom raised) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition

@@ -661,7 +661,8 @@ onward seq state (In.Taken step) expr ctx = do
   pure ((expr, seq'), state)
 onward seq state (In.Normalized step) expr ctx = do
   labelled <- leadsTo seq step expr ctx
-  normal <- normalized expr labelled ctx
+  normal@(term, _) <- normalized expr labelled ctx
+  unless (term == expr) (ctx._saveEval (EvNormalized ctx._nesting term))
   pure (normal, state)
 onward seq state (In.Named step) expr ctx = case ctx._universe of
   Just world -> onward seq state (In.Taken step) world ctx

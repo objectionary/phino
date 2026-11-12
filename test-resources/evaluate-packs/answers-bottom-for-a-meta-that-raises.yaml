@@ -20,12 +20,15 @@ result: '⊥'
 protocol: |
   𝕄(Φ.y):
     remembered 𝑛·0·1 ≡ Φ.wrap  # ⟦ x ↦ ∅, λ ⤍ L_wrap ⟧
-    𝑛·0·2 := Φ.wrap( x ↦ L_throw:λ )
-    𝑛·0·3 := ⟦ x ↦ L_throw:λ, λ ⤍ L_wrap ⟧
-    remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ L_throw:λ )
+    normalized 𝑛·0·2 := 𝑛·0·1
+    𝑛·0·3 := Φ.wrap( x ↦ L_throw:λ )
+    𝑛·0·4 := ⟦ x ↦ L_throw:λ, λ ⤍ L_wrap ⟧
+    remembered 𝑛·0·4 ≡ 𝑛·0·1( x ↦ L_throw:λ )
+    normalized 𝑛·0·5 := 𝑛·0·4
     𝔼(L_wrap):
       𝕄(ξ.x):
         morphed 𝑛·1·1 := L_throw:λ
       𝑛1·1 := L_throw:λ  # 𝕄(ξ.x)
       𝑛·1·2 := ⊥
-    morphed 𝑛·0·4 := ⊥
+    normalized 𝑛·0·6 := ⊥
+    morphed 𝑛·0·7 := ⊥
