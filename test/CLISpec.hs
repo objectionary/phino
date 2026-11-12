@@ -1718,10 +1718,10 @@ spec = do
                     []
               lines <$> readProtocol path
       it "writes the copy it cuts to the protocol as a call of the object with the attribute it ends with" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·13·9, right ↦ 𝑛·15·1 ).right🌵.φ  # plausible"))
+        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·9·9, right ↦ 𝑛·11·1 ).right🌵.φ  # plausible"))
 
       it "writes the copy it cuts to the XML protocol with the object, the metas of its arguments and the attribute it ends with" $
-        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·13·9</meta><meta attr=\"right\">𝑛·15·1</meta></with></looped>"))
+        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·1</meta></with></looped>"))
 
     describe "--acyclic at a copy whose argument repeats the same loop" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, times(b) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ) ) ⟧"
@@ -1817,8 +1817,8 @@ spec = do
                     ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                     []
               lines <$> readProtocol path
-      it "writes the loop it cuts inside the nested fork as a call of the object" $
-        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎7 := Φ.p  # plausible"))
+      it "writes the loop it cuts at the fabricated fork by its symbol alone, since no fact names it" $
+        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎7  # 𝔻(𝑛·9·12), plausible"))
 
       it "dont get stuck above the nested fork it cuts" $
         recorded >>= (`shouldNotSatisfy` any (isInfixOf "stuck L_dataized"))
@@ -1834,6 +1834,18 @@ spec = do
                 []
           records <- readProtocol path
           lines records `shouldNotSatisfy` any (isInfixOf "looped")
+
+    describe "--acyclic at a fork whose side grows the argument of a copy" $
+      it "cuts the recursion that the side of the fork runs" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  stay:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  evaluate:\n    𝑛5: 𝑛3\n    𝑛6: 𝑛4\n  undress:\n    𝑛15: 𝑛5\n    𝑛16: 𝑛6\n  symbolize:\n    𝑛11: 𝑛15\n    𝑛12: 𝑛16\n  defer:\n    𝑛13: 𝑛11\n    𝑛14: 𝑛12\n  cast:\n    𝑛19: 𝑛13\n    𝑛20: 𝑛14\n  join:\n    on: 𝛿1\n    left: 𝑛19\n    right: 𝑛20\n    otherwise: L_fork\n") $ \file ->
+            withStdin "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, no ↦ Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ 00-:Δ, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ), maybe ↦ Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ), next(x) ↦ ⟦ φ ↦ ξ.x ⟧, down(i) ↦ ⟦ φ ↦ Φ.maybe.if( Φ.no, Φ.down( Φ.next( ξ.i ) ) ) ⟧, l🌵 ↦ ⟦ e1 ↦ Φ.down( i ↦ 𝜎3:λ ).if( FF-:Δ, 00-:Δ ) ⟧ ⟧" $
+              testCLISucceeded
+                ["dataize", "--symbolic=" ++ file, "--locator=Q.l🌵.e1", "--acyclic=plausible", "--max-loops=2", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho", "--max-steps=1000", "--max-seconds=10"]
+                []
+          records <- readProtocol path
+          lines records `shouldSatisfy` any (isInfixOf "looped")
 
     it "dataizes with --sequence" $
       withStdin "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]" $

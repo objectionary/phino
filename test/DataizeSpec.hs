@@ -307,7 +307,7 @@ spec = do
       protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    normalized 𝑛·0·2 := ⊥  # Φ.φ\n  unanswered ⊥  # 𝔻(⊥)\n"
 
   describe "ReduceContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
-    let boxed = "[[ @ -> [[ D> 00- ]] ]]"
+    let wrapped = "[[ @ -> [[ D> 00- ]] ]]"
     forM_
       [
         ( "--max-cycles"
@@ -327,12 +327,12 @@ spec = do
             dataize expr emptyState ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
-      expr <- parseExpressionThrows boxed
+      expr <- parseExpressionThrows wrapped
       minted <- newIORef 0
       (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 1 25 Nothing Nothing (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
       value `shouldBe` Dataized (BtOne "00")
     it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
-      expr <- parseExpressionThrows boxed
+      expr <- parseExpressionThrows wrapped
       minted <- newIORef 0
       dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
         `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))

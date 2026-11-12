@@ -25,6 +25,8 @@ module AST
   , repeated
   , attributeFromBinding
   , alike
+  , akin
+  , boxed
   , within
   , symbols
   , lifted
@@ -309,9 +311,34 @@ layer symbol child = goExpr fnvOffset
       FnFresh slot -> goSlot (step h 39) slot
 
 alike :: Expression -> Expression -> Bool
-alike one two = isJust (goExpr (Map.empty, Map.empty) one two)
+alike = likened (\_ _ -> False)
+
+akin :: Expression -> Expression -> Bool
+akin = likened grown
+  where
+    grown :: Expression -> Expression -> Bool
+    grown before@(ExFormation left) after@(ExFormation right) = boxed left && boxed right && within before after
+    grown _ _ = False
+
+boxed :: [Binding] -> Bool
+boxed bds = any phi bds && not (any lambda bds) && not (any delta bds)
+  where
+    phi :: Binding -> Bool
+    phi (BiTau AtPhi _) = True
+    phi _ = False
+    lambda :: Binding -> Bool
+    lambda (BiLambda _) = True
+    lambda _ = False
+    delta :: Binding -> Bool
+    delta (BiDelta _) = True
+    delta _ = False
+
+likened :: (Expression -> Expression -> Bool) -> Expression -> Expression -> Bool
+likened loose one two = isJust (goExpr (Map.empty, Map.empty) one two)
   where
     goExpr :: (Map.Map Int Int, Map.Map Int Int) -> Expression -> Expression -> Maybe (Map.Map Int Int, Map.Map Int Int)
+    goExpr pairing left right
+      | loose left right = Just pairing
     goExpr pairing (ExFormation left) (ExFormation right) = goList goBinding pairing left right
     goExpr pairing (ExApplication left arg) (ExApplication right arg') = goExpr pairing left right >>= \next -> goArgument next arg arg'
     goExpr pairing (ExDispatch left attr) (ExDispatch right attr')
