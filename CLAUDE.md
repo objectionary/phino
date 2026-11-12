@@ -550,7 +550,11 @@ formation holding a λ, is the exception: under `plausible` too it repeats
 only a formation `alike` it, since copies of one atom called from different
 places resemble each other once a symbol stands in one of them, and a loop
 through copies of atoms alone repeats them exactly (`repeats` of `Morph.hs`,
-issue #2347). `--max-loops=<n>`
+issue #2347). Only a boxed formation the copy holds, one binding φ and no λ
+or Δ, may grow inside it as `within` lets it (`akin` in `AST.hs`), so a
+recursion through a side of a fork, whose fabricated copies hold a copy of
+the recursive object with a bigger argument every round, is cut too (#2372).
+`--max-loops=<n>`
 (`_maxLoops` of `ReduceContext`) softens either mode: `enter` cuts a frame only
 once more than `n` of the formations above it are the same as its own, so a
 recursion stopping within `n` rounds, such as the `or` inside `abs` of EO

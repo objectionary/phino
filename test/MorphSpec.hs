@@ -339,6 +339,12 @@ spec = do
       base <- defaultReduceContext ExRoot
       ctx <- enter (ExFormation [BiTau (AtLabel "t") (ExFormation [BiLambda (FnSymbol 4)]), BiLambda (Function "L_vo")]) =<< enter (ExFormation [BiTau (AtLabel "t") (ExDispatch ExRoot (AtLabel "pu")), BiLambda (Function "L_vo")]) base{_acyclic = Just Plausible, _maxLoops = 0}
       length (concat ctx._entered) `shouldBe` 2
+    it "cuts a copy of an atom whose boxed formation grows on every round" $ do
+      let formation :: Int -> Expression
+          formation depth = ExFormation [BiTau (AtLabel "sa") (ExFormation [BiTau (AtLabel "i") (iterate (`ExDispatch` AtLabel "nu") ExRoot !! depth), BiTau AtPhi ExXi]), BiLambda (Function "L_te")]
+      base <- defaultReduceContext ExRoot
+      (enter (formation 3) =<< enter (formation 2) base{_acyclic = Just Plausible, _maxLoops = 0})
+        `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
     it "cuts a copy of an atom that repeats the copy entered above it exactly" $ do
       let formation :: Expression
           formation = ExFormation [BiTau (AtLabel "ka") (ExDispatch ExRoot (AtLabel "mi")), BiLambda (Function "L_ru")]

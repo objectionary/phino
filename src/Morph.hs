@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Budget (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, boxed, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, repeats, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
+module Morph (Answer (..), Budget (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, repeats, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -543,7 +543,7 @@ repeats mode form ctx = awaited ctx (evaluate (length hits `seq` hits))
     repeated :: Acyclic -> Expression -> Bool
     repeated Proven before = alike form before
     repeated Plausible before
-      | atomic form = alike form before
+      | atomic form = akin before form
       | otherwise = within before form
     atomic :: Expression -> Bool
     atomic (ExFormation bds) = any isLambda bds
@@ -561,16 +561,6 @@ entrance Morphing (ExDispatch form@(ExFormation bds) _)
 entrance Evaluation term@(ExFormation bds)
   | isJust (lambda bds) = Just term
 entrance _ _ = Nothing
-
-boxed :: [Binding] -> Bool
-boxed bds = any phi bds && not (any isLambda bds) && not (any delta bds)
-  where
-    phi :: Binding -> Bool
-    phi (BiTau AtPhi _) = True
-    phi _ = False
-    delta :: Binding -> Bool
-    delta (BiDelta _) = True
-    delta _ = False
 
 lambda :: [Binding] -> Maybe (T.Text, Expression)
 lambda bds = case partition isLambda bds of
