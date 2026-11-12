@@ -84,7 +84,7 @@ protocol: |
       𝑛2·1 := 𝑛·1·10  # 𝕄(ξ.right🌵)
       symbolized 𝜎4 := 00-
       𝑛4·1 := ⟦ φ ↦ 𝜎4:λ, not ↦ FF-:Δ ⟧  # symbolize(𝑛2)
-      fabricated 𝑛·1·11 := 𝑛·1·6 and 𝑛4·1  # ⟦ left🌵 ↦ 𝑛·1·6, right🌵 ↦ ⟦ φ ↦ 𝜎4:λ, not ↦ FF-:Δ ⟧, i ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.i, right🌵 ↦ ρ.right🌵.i ⟧, φ ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, not ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.not, right🌵 ↦ ρ.right🌵.not ⟧ ⟧
+      fabricated 𝑛·1·11 := 𝑛·1·6 and 𝑛4·1  # ⟦ left🌵 ↦ 𝑛·1·6, right🌵 ↦ 𝑛4·1, i ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.i, right🌵 ↦ ρ.right🌵.i ⟧, φ ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, not ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.not, right🌵 ↦ ρ.right🌵.not ⟧ ⟧
       remembered 𝑛·1·11 ≡ 𝑛·0·16
       memoized 𝑛·0·16 ⇛ 𝑛·1·11
     remembered 𝑛·0·19 ≡ 𝑛·1·11.not  # ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.not, right🌵 ↦ ρ.right🌵.not ⟧

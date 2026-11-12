@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The left side of the join is 'ξ.a' with its datum turned into a symbol, a
+# term the line '𝑛3·1' writes, and the 'stay' line after it leaves that term
+# as it is, so the join reads '𝑛4', which no line writes. The 'fabricated'
+# line spelled that side in full, at its head and in its comment, though the
+# line of '𝑛3·1' named it right above (#2364). It names the side '𝑛3·1' now,
+# as it names the right side by the line of '𝑛2'.
+symbolic: |
+  - λ: L_join
+    𝑛: $.on🌵
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+    symbolize:
+      𝑛3: 𝑛1
+    stay:
+      𝑛4: 𝑛3
+    join:
+      on: 𝛿1
+      left: 𝑛4
+      right: 𝑛2
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ξ.f( x ↦ ⟦ Δ ⤍ 01- ⟧ ), f ↦ ⟦ x ↦ ∅ ⟧ ⟧, b ↦ ⟦ φ ↦ Φ.zu ⟧, λ ⤍ L_fork ⟧.f ⟧'
+result: '⟦ λ ⤍ L_join, x ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.f( x ↦ x ), right🌵 ↦ ρ.right🌵.f( x ↦ x ) ⟧'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
+      𝕄(ξ.a):
+        morphed 𝑛·1·1 := ⟦ φ ↦ f( x ↦ 01-:Δ ), f(x) ↦ ⟦⟧ ⟧
+      𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.a)
+      𝕄(ξ.b):
+        morphed 𝑛·1·2 := Φ.zu:φ
+      𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
+      symbolized 𝜎2 := 01-
+      𝑛3·1 := ⟦ φ ↦ f( x ↦ 𝜎2:λ ), f(x) ↦ ⟦⟧ ⟧  # symbolize(𝑛1)
+      fabricated 𝑛·1·3 := 𝑛3·1 and 𝑛2·1  # ⟦ left🌵 ↦ 𝑛3·1, right🌵 ↦ 𝑛·1·2, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, f(x) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.f( x ↦ x ), right🌵 ↦ ρ.right🌵.f( x ↦ x ) ⟧ ⟧
+    normalized 𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.f( x ↦ x ), right🌵 ↦ ρ.right🌵.f( x ↦ x ) ⟧
+    morphed 𝑛·0·2 := ⟦ λ ⤍ L_join, x ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.f( x ↦ x ), right🌵 ↦ ρ.right🌵.f( x ↦ x ) ⟧
