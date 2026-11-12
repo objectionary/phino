@@ -157,6 +157,7 @@ data Evaluation
   | EvMorphed Int Expression
   | EvNormalized Int Expression Expression
   | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int) (Maybe Expression)
+  | EvGuarded Int (Either T.Text Expression) (Expression, Expression) (Expression, Expression) Side (Maybe Expression)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvUnripe Int (Expression, Expression) (Expression, Expression) Side Attribute
   | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
@@ -231,6 +232,7 @@ tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
 tier (EvNormalized depth _ _) = depth
 tier (EvJoined depth _ _ _ _ _) = depth
+tier (EvGuarded depth _ _ _ _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
 tier (EvUnripe depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _) = depth
@@ -531,6 +533,13 @@ saveEval handle cursor printed printed' report = do
       termination <- render ExTermination
       raiser <- traverse salted raised
       pure (protocol, Just (indented at (remarked (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right))) [printf "where %s is %s%s" (printFunction (FnSymbol idx)) termination (maybe "" (printf " raised by %s") raiser :: String) | Just idx <- [bottom], idx `elem` [left, right]])))
+    written at (EvGuarded _ condition left right side raised) protocol = do
+      on <- either (pure . labelled protocol) salted condition
+      one <- sided protocol left
+      two <- sided protocol right
+      termination <- render ExTermination
+      raiser <- traverse salted raised
+      pure (protocol, Just (indented at (remarked (printf "guarded %s ? %s : %s" on one two) [printf "where %s is %s%s" (if side == Lefthand then one else two) termination (maybe "" (printf " raised by %s") raiser :: String)])))
     written at (EvDiverged _ left right path refusal) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -848,6 +857,13 @@ saveEvalXml handle cursor printed report = do
         on <- either (pure . labelled nesting) (lift . traced) condition
         raiser <- traverse (leaf depth) [term | Just idx <- [bottom], idx `elem` [left, right], Just term <- [raised]]
         pure (printf "<joined symbol=\"%s\" on=\"%s\" left=\"%s\" right=\"%s\"%s%s/>" (sigma symbol) (escapeXML on) (sigma left) (sigma right) (concat [printf " terminator=\"%s\"" (sigma idx) :: String | Just idx <- [bottom], idx `elem` [left, right]]) (concat [printf " raised=\"%s\"" (escapeXML name) :: String | name <- raiser]))
+    elements at (EvGuarded depth condition left right side raised) nesting =
+      placed at nesting $ do
+        on <- either (pure . labelled nesting) (lift . traced) condition
+        one <- sided depth nesting left
+        two <- sided depth nesting right
+        raiser <- traverse (leaf depth) (maybeToList raised)
+        pure (printf "<guarded on=\"%s\" left=\"%s\" right=\"%s\" terminator=\"%s\"%s/>" (escapeXML on) (escapeXML one) (escapeXML two) (if side == Lefthand then "left" else "right" :: String) (concat [printf " raised=\"%s\"" (escapeXML name) :: String | name <- raiser]))
     elements at (EvDiverged depth left right path refusal) nesting =
       placed at nesting $ do
         one <- sided depth nesting left
