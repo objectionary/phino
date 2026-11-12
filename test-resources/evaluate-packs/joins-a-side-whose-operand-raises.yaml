@@ -34,7 +34,7 @@ protocol: |
         𝛿·1·1 := 𝔻(𝜎1:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       𝕄(ξ.l):
-        morphed 𝑛·1·1 := 𝜎2:λ:φ
+        morphed 𝑛·1·1 := 𝜎2:λ:φ  # 𝕄(ξ.l)
       𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.l)
       𝕄(ξ.r):
         remembered 𝑛·1·2 ≡ Φ.wrap  # ⟦ x ↦ ∅, λ ⤍ L_wrap ⟧
@@ -43,8 +43,8 @@ protocol: |
         remembered 𝑛·1·4 ≡ 𝑛·1·2( x ↦ L_throw:λ )
         𝔼(L_wrap):
           𝑛·2·1 := ⊥
-        morphed 𝑛·1·5 := ⊥
+        morphed 𝑛·1·5 := ⊥  # 𝕄(ξ.r)
       𝑛2·1 := ⊥  # 𝕄(ξ.r)
       joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥
       𝑛·1·6 := 𝜎4:λ:φ
-    morphed 𝑛·0·1 := 𝜎4:λ
+    morphed 𝑛·0·1 := 𝜎4:λ  # 𝕄(Φ.y)

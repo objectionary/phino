@@ -25,7 +25,7 @@ protocol: |
     remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ L_throw:λ )
     𝔼(L_wrap):
       𝕄(ξ.x):
-        morphed 𝑛·1·1 := L_throw:λ
+        morphed 𝑛·1·1 := L_throw:λ  # 𝕄(ξ.x)
       𝑛1·1 := L_throw:λ  # 𝕄(ξ.x)
       𝑛·1·2 := ⊥
-    morphed 𝑛·0·4 := ⊥
+    morphed 𝑛·0·4 := ⊥  # 𝕄(Φ.y)

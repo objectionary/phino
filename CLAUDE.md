@@ -563,8 +563,10 @@ eight bytes hold (`ieee`, the `number` of `<dataized>` in the markup), and the
 operand line right after names it. The symbol a `𝔻` comes down to closes the
 block the same way, as `𝛿·1·2 := 𝔻(𝜎1:λ)` (`EvManufactured`, #2150), and as
 `<manufactured>` in the markup (#1962), counted with the data. The term a `𝕄`
-came to closes its block too, as `morphed 𝑛·1·2 := 𝑛·1·1`
-(`EvMorphed`, #2153), and as `<morphed>` in the markup (#1984), counted with
+came to closes its block too, as `morphed 𝑛·1·2 := 𝑛·1·1  # 𝕄(ξ.x)`
+(`EvMorphed`, #2153), commented with the heading of the block though it
+repeats it, since that heading may stand far above (#2358), and as
+`<morphed>` in the markup (#1984), counted with
 the metas of the firing, and both writers name that term by the meta from then
 on (`namedFormation`), even when a line named it before, unless it holds λ or
 Δ, so the box step after it writes `boxed 𝑛·1·3 := 𝑛·1·2.φ` (#2158). Only the

@@ -27,7 +27,7 @@ protocol: |
         𝛿·1·1 := 𝔻(𝜎1:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       𝕄(ξ.a):
-        morphed 𝑛·1·1 := 𝜎2:λ
+        morphed 𝑛·1·1 := 𝜎2:λ  # 𝕄(ξ.a)
       𝕄(ξ.b):
-        morphed 𝑛·1·2 := ⟦ φ ↦ Φ.zu, ke ↦ Φ.ty ⟧
+        morphed 𝑛·1·2 := ⟦ φ ↦ Φ.zu, ke ↦ Φ.ty ⟧  # 𝕄(ξ.b)
       diverged 𝜎2:λ vs 𝑛·1·2  # cannot join: at .λ the left side has λ ⤍ 𝜎2 and the right side has no λ; cannot fabricate: the left side is an atom

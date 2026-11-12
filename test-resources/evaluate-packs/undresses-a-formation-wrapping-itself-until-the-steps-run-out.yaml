@@ -23,11 +23,11 @@ protocol: |
     𝔼(L_peel):
       𝕄(ξ.x):
         remembered 𝑛·1·1 ≡ Φ.w  # Φ.w:φ
-        morphed 𝑛·1·2 := 𝑛·1·1
+        morphed 𝑛·1·2 := 𝑛·1·1  # 𝕄(ξ.x)
       𝑛1·1 := 𝑛·1·2  # 𝕄(ξ.x)
       undressed 𝑛·1·3 := 𝑛·1·2.φ
       𝕄(𝑛·1·3):
-        morphed 𝑛·1·4 := 𝑛·1·2
+        morphed 𝑛·1·4 := 𝑛·1·2  # 𝕄(𝑛·1·3)
       undressed 𝑛·1·5 := 𝑛·1·4.φ
       𝕄(𝑛·1·5):
         starved 6

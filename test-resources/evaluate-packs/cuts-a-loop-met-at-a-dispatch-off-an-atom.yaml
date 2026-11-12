@@ -39,7 +39,7 @@ protocol: |
           𝑛·1·2 := Φ.dataized( target ↦ Φ.x.q )
           𝑛·1·3 := ⟦ target ↦ Φ.x.q, λ ⤍ L_dataized ⟧
           remembered 𝑛·1·3 ≡ 𝑛·1·1( target ↦ Φ.x.q )
-          morphed 𝑛·1·4 := 𝑛·1·3
+          morphed 𝑛·1·4 := 𝑛·1·3  # 𝕄(ξ.b)
         𝔼(L_dataized):
           𝔻(ξ.target):
             𝕄(ξ.target):
@@ -48,19 +48,19 @@ protocol: |
               recalled 𝑛·0·3 ⇒ 𝑛·0·1( b ↦ Φ.dataized( Φ.x.q ) )
               recalled 𝑛·0·1 ⇒ Φ.times
               looped 𝜎1 := 𝑛·2·1.q  # plausible, repeats 𝑛·2·2
-              morphed 𝑛·2·3 := 𝜎1:λ
+              morphed 𝑛·2·3 := 𝜎1:λ  # 𝕄(ξ.target)
             𝛿·2·1 := 𝔻(𝜎1:λ)
           𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.target)
           𝑛·2·4 := 𝜎2:λ  # 𝑛
           𝕄(𝑛·2·4):
-            morphed 𝑛·2·5 := 𝜎2:λ
+            morphed 𝑛·2·5 := 𝜎2:λ  # 𝕄(𝑛·2·4)
           𝑛·2·6 := 𝑛·2·5  # 𝕄(𝑛·2·4)
           memoized 𝑛·1·3 ⇛ 𝜎2:λ
         𝛿·1·1 := 𝔻(𝜎2:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.b)
       𝑛·1·5 := 𝜎3:λ  # 𝑛
       𝕄(𝑛·1·5):
-        morphed 𝑛·1·6 := 𝜎3:λ
+        morphed 𝑛·1·6 := 𝜎3:λ  # 𝕄(𝑛·1·5)
       𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
       memoized 𝑛·2·2 ⇛ 𝜎3:λ
     unanswered 𝜎3  # 𝕄(𝜎3:λ)

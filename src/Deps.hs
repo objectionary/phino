@@ -524,7 +524,7 @@ saveEval handle cursor printed printed' report = do
       (protocol', value) <- case (namedLookup term protocol._made, namedLookup term protocol._named) of
         (Nothing, Nothing) -> valued counted naming term
         _ -> (,) counted <$> borrowed protocol term
-      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "morphed %s := %s" naming value)))
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (remarked (printf "morphed %s := %s" naming value) (maybe [] pure (innermost protocol)))))
     written at (EvJoined _ condition symbol (left, right) bottom raised) protocol = do
       on <- either (pure . labelled protocol) salted condition
       termination <- render ExTermination

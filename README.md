@@ -327,7 +327,7 @@ $ cat down.txt
       𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
       𝑛·1·3 := ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
       remembered 𝑛·1·3 ≡ 𝑛·0·1( x ↦ 𝜎2:λ )
-      morphed 𝑛·1·4 := 𝑛·1·3
+      morphed 𝑛·1·4 := 𝑛·1·3  # 𝕄(𝑛·1·1)
     𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
     remembered 𝑛·1·3 ≡ 𝑛·0·3
   looped 𝑛·0·3  # proven

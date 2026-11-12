@@ -35,10 +35,10 @@ protocol: |
         𝛿·1·1 := 𝔻(𝜎1:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       𝕄(ξ.a):
-        morphed 𝑛·1·1 := Φ.bool( if ↦ FF-:Δ:φ ):φ
+        morphed 𝑛·1·1 := Φ.bool( if ↦ FF-:Δ:φ ):φ  # 𝕄(ξ.a)
       𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.a)
       𝕄(ξ.b):
-        morphed 𝑛·1·2 := Φ.bool( if ↦ 𝜎2:λ:φ ):φ
+        morphed 𝑛·1·2 := Φ.bool( if ↦ 𝜎2:λ:φ ):φ  # 𝕄(ξ.b)
       𝑛2·1 := 𝑛·1·2  # 𝕄(ξ.b)
       symbolized 𝜎3 := FF-
       𝑛3·1 := Φ.bool( if ↦ 𝜎3:λ:φ ):φ  # symbolize(𝑛1)
@@ -48,4 +48,4 @@ protocol: |
     𝑛·0·2 := Φ.bool( if ↦ 𝜎4:λ:φ )
     𝑛·0·3 := ⟦ if ↦ 𝜎4:λ:φ, φ ↦ if ⟧
     remembered 𝑛·0·3 ≡ 𝑛·0·1( if ↦ 𝜎4:λ:φ )
-    morphed 𝑛·0·4 := 𝑛·0·3
+    morphed 𝑛·0·4 := 𝑛·0·3  # 𝕄(Φ.y)

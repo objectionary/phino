@@ -26,7 +26,7 @@ protocol: |
         𝛿·1·1 := 𝔻(𝜎1:λ)
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       𝕄(ξ.a):
-        morphed 𝑛·1·1 := 01-:Δ:φ
+        morphed 𝑛·1·1 := 01-:Δ:φ  # 𝕄(ξ.a)
       𝕄(ξ.b):
-        morphed 𝑛·1·2 := 02-:Δ:φ
+        morphed 𝑛·1·2 := 02-:Δ:φ  # 𝕄(ξ.b)
       diverged 𝑛·1·1 vs 𝑛·1·2  # cannot join: at .φ.Δ the left side has Δ ⤍ 01- and the right side has Δ ⤍ 02-; cannot fabricate: the join names no otherwise

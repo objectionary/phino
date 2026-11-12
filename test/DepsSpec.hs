@@ -180,12 +180,12 @@ spec = do
     it "spells the symbol of an operand in full when the line before it named another symbol" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ж" Dataization ExRoot, EvManufactured 3 31, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Left 32)])
       last (lines written) `shouldBe` "    𝛿1·1 := 𝔻(𝜎32:λ)  # 𝔻(ξ.щ)"
-    it "writes the term a morphing came to as a line binding it to a fresh 𝑛 under the heading of the morphing" $ do
+    it "writes the term a morphing came to as a line binding it to a fresh 𝑛 commented with the heading of the morphing" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук")), EvMorphed 2 (ExDispatch ExRoot (AtLabel "щука"))])
-      lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.жук):", "    morphed 𝑛·0·1 := Φ.щука"]
+      lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.жук):", "    morphed 𝑛·0·1 := Φ.щука  # 𝕄(Φ.жук)"]
     it "spells the term a morphing came to by the name of the formation an application made" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "w")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w")), EvMorphed 2 (ExFormation [BiTau (AtLabel "q") (ExFormation [])])])
-      last (lines written) `shouldBe` "    morphed 𝑛·0·3 := 𝑛·0·2"
+      last (lines written) `shouldBe` "    morphed 𝑛·0·3 := 𝑛·0·2  # 𝕄(Φ.w)"
     it "numbers a box step past the term the morphing before it came to, as the markup does" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ.e", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "e")), EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "байт")) (ArTau AtPhi (ExFormation [BiLambda (FnSymbol 1)]))) (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 1)])]) (ExDispatch ExRoot (AtLabel "e")), EvMorphed 2 (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 1)])]), EvBoxed 1 (ExDispatch (ExFormation [BiTau AtPhi (ExFormation [BiLambda (FnSymbol 1)])]) AtPhi)])
       last (lines written) `shouldBe` "  boxed 𝑛·0·4 := 𝑛·0·3.φ"
@@ -200,7 +200,7 @@ spec = do
       last (lines written) `shouldBe` "    undressed 𝑛·1·2 := 𝑛·1·1.φ"
     it "names the morphing after a pass of an undress line by the meta of that pass" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvMorphed 2 (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "сокол"))]), EvUndressed 2 (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "сокол"))]) AtPhi), EvStarted 2 Morphing (ExDispatch (ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "сокол"))]) AtPhi), EvMorphed 3 (ExDispatch ExRoot (AtLabel "сокол"))])
-      lines written `shouldContain` ["    𝕄(𝑛·1·2):", "      morphed 𝑛·1·3 := Φ.сокол"]
+      lines written `shouldContain` ["    𝕄(𝑛·1·2):", "      morphed 𝑛·1·3 := Φ.сокол  # 𝕄(𝑛·1·2)"]
     it "spells the datum of an operand in full when the line before it found no datum" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvFiring 1 "L_ж" Dataization ExRoot, EvDelta 3 (BtOne "7F"), EvFiring 2 "L_з" Dataization ExRoot, EvData 2 "𝛿1" (ExDispatch ExXi (AtLabel "щ")) (Right (BtOne "7F"))])
       last (lines written) `shouldBe` "    𝛿1·1 := 7F-  # 𝔻(ξ.щ)"

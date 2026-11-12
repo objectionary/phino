@@ -63,11 +63,11 @@ protocol: |
         𝑛·1·1 := Φ.down( i ↦ 𝜎2:λ )
         𝑛·1·2 := ⟦ i ↦ 𝜎2:λ, φ ↦ Φ.fork( 𝜎1:λ, Φ.down( i ↦ 𝜎2:λ ), Φ.no ) ⟧
         remembered 𝑛·1·2 ≡ 𝑛·0·1( i ↦ 𝜎2:λ )
-        morphed 𝑛·1·3 := 𝑛·1·2
+        morphed 𝑛·1·3 := 𝑛·1·2  # 𝕄(ξ.left🌵)
       𝑛1·1 := 𝑛·1·3  # 𝕄(ξ.left🌵)
       𝕄(ξ.right🌵):
         remembered 𝑛·1·4 ≡ Φ.no  # ⟦ φ ↦ 00-:Δ, not ↦ FF-:Δ ⟧
-        morphed 𝑛·1·5 := 𝑛·1·4
+        morphed 𝑛·1·5 := 𝑛·1·4  # 𝕄(ξ.right🌵)
       𝑛2·1 := 𝑛·1·5  # 𝕄(ξ.right🌵)
       symbolized 𝜎4 := 00-
       𝑛4·1 := ⟦ φ ↦ 𝜎4:λ, not ↦ FF-:Δ ⟧  # symbolize(𝑛2)
@@ -75,4 +75,4 @@ protocol: |
       remembered 𝑛·1·6 ≡ 𝑛·0·10
       memoized 𝑛·0·10 ⇛ 𝑛·1·6
     remembered 𝑛·0·11 ≡ 𝑛·1·6.not  # ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.not, right🌵 ↦ ρ.right🌵.not ⟧
-    morphed 𝑛·0·12 := 𝑛·0·11
+    morphed 𝑛·0·12 := 𝑛·0·11  # 𝕄(Φ.y)
