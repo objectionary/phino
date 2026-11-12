@@ -158,6 +158,18 @@ spec = describe "Functions" $ do
         , \term -> expectExpression term (DataString (strToBts "\\1"))
         )
       ,
+        ( "sed puts the whole match where the replacement holds an ampersand"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "order 42")), ArgExpression (DataString (strToBts "s/([0-9]+)/<&>/g"))]
+        , \term -> expectExpression term (DataString (strToBts "order <42>"))
+        )
+      ,
+        ( "sed keeps an escaped ampersand in the replacement literal"
+        , "sed"
+        , [ArgExpression (DataString (strToBts "order 42")), ArgExpression (DataString (strToBts "s/([0-9]+)/<\\&>/g"))]
+        , \term -> expectExpression term (DataString (strToBts "order <&>"))
+        )
+      ,
         ( "random-string returns a literal pattern with no specials unchanged"
         , "random-string"
         , [ArgExpression (DataString (strToBts "static-name"))]

@@ -631,7 +631,9 @@ Here's list of functions that are supported for extensions:
   replaces all the spaces with empty string. To escape braces and slashes
   in pattern and replacement parts - use them with `\\`,
   e.g. `s/\\(.+\\)//g`. In the replacement, `\\1` to `\\9`, as well as
-  `$1`, put what a group of the pattern matched, e.g. `s/([0-9]+)/\\1!/g`.
+  `$1`, put what a group of the pattern matched, e.g. `s/([0-9]+)/\\1!/g`,
+  and `&` puts the whole match, e.g. `s/[0-9]+/<&>/g`, while `\\&` puts a
+  literal `&`.
 * `random-string` - accepts dataizable expression or bytes as pattern.
   Replaces `%x` and `%d` formatters with random hex numbers and
   decimals accordingly. Uniqueness is guaranteed during one

@@ -175,7 +175,7 @@ _sed args subst = do
         | h == '/' -> (acc, rest, True)
         | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
     referring :: Char -> Bool
-    referring char = isDigit char || char == '\\'
+    referring char = isDigit char || char == '\\' || char == '&'
 
 _randomString :: BuildTermMethod
 _randomString [arg] subst = do
