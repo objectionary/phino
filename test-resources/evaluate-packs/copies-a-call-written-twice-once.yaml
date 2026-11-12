@@ -14,4 +14,6 @@ protocol: |
     𝑛·0·1 := ⟦ x ↦ ∅, φ ↦ x ⟧( x ↦ 𝜎1:λ )
     𝑛·0·2 := ⟦ x ↦ 𝜎1:λ, φ ↦ x ⟧
     recalled 𝑛·0·1 ⇒ 𝑛·0·2
-    morphed 𝑛·0·3 := 𝑛·0·2
+    normalized 𝑛·0·3 := ⟦ a ↦ 𝑛·0·2, b ↦ 𝑛·0·2 ⟧
+    normalized 𝑛·0·4 := 𝑛·0·2
+    morphed 𝑛·0·5 := 𝑛·0·4

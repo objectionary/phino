@@ -35,6 +35,7 @@ protocol: |
     𝑛·0·1 := ⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ 𝜎2:λ )
     𝑛·0·2 := ⟦ v ↦ 𝜎2:λ, λ ⤍ L_box ⟧
     remembered 𝑛·0·3 ≡ Φ.x  # ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ 𝑛·0·2, right🌵 ↦ 𝜎3:λ ⟧
+    normalized 𝑛·0·4 := 𝑛·0·3
     𝔼(L_fork):
       𝔻(ξ.on🌵):
         𝛿·1·1 := 𝔻(𝜎1:λ)
