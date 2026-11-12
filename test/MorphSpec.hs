@@ -21,7 +21,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (Acyclic (..), Evaluation (EvLooped, EvMorphed, EvRecalled, EvWorld), Judgment (..), State, Term (TeExpression))
+import Deps (Acyclic (..), Evaluation (EvLooped, EvMorphed, EvNormalized, EvRecalled, EvWorld), Judgment (..), State, Term (TeExpression))
 import Engine (Engine (_normal))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives)
@@ -129,6 +129,25 @@ spec = do
       _ <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
       records <- readIORef told
       length [term | EvMorphed _ term <- records] `shouldBe` 1
+
+    it "tells the protocol the term a normalize premise came from beside the term it came to" $ do
+      expr <- parseExpressionThrows "⟦ wy ↦ ⟦ kx ↦ ∅ ⟧, y ↦ Φ.wy( kx ↦ Φ.vu ) ⟧"
+      loc <- parseExpressionThrows "Q.y"
+      told <- newIORef []
+      ctx <- defaultReduceContext loc
+      _ <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
+      records <- readIORef told
+      head' <- parseExpressionThrows "⟦ kx ↦ ∅ ⟧( kx ↦ Φ.vu )"
+      [source | EvNormalized _ source _ <- records] `shouldContain` [head']
+
+    it "tells the protocol nothing of a normalize premise that only dropped the arguments of the term it came to" $ do
+      expr <- parseExpressionThrows "⟦ zq ↦ ⊥, y ↦ Φ.zq( ab ↦ Φ.zq ) ⟧"
+      loc <- parseExpressionThrows "Q.y"
+      told <- newIORef []
+      ctx <- defaultReduceContext loc
+      _ <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
+      records <- readIORef told
+      [source | EvNormalized _ source@(ExApplication _ _) _ <- records] `shouldBe` []
 
   describe "morph'" $
     test'

@@ -48,15 +48,12 @@ protocol: |
       𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.left🌵)
       𝕄(ξ.right🌵):
         remembered 𝑛·1·2 ≡ Φ.throw  # ⟦ message ↦ ∅, λ ⤍ L_throw ⟧
-        normalized 𝑛·1·3 := 𝑛·1·2
-        𝑛·1·4 := Φ.throw( message ↦ "bad" )
-        𝑛·1·5 := ⟦ message ↦ "bad", λ ⤍ L_throw ⟧
-        remembered 𝑛·1·5 ≡ 𝑛·1·2( message ↦ "bad" )
-        normalized 𝑛·1·6 := 𝑛·1·5
-        normalized 𝑛·1·7 := 𝑛·1·5
-        morphed 𝑛·1·8 := 𝑛·1·5
-      𝑛2·1 := 𝑛·1·5  # 𝕄(ξ.right🌵)
-      joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥ raised by 𝑛·1·5
-      𝑛·1·9 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎4:λ ⟧
-    normalized 𝑛·0·1 := 𝜎4:λ
+        𝑛·1·3 := Φ.throw( message ↦ "bad" )
+        𝑛·1·4 := ⟦ message ↦ "bad", λ ⤍ L_throw ⟧
+        remembered 𝑛·1·4 ≡ 𝑛·1·2( message ↦ "bad" )
+        morphed 𝑛·1·5 := 𝑛·1·4
+      𝑛2·1 := 𝑛·1·4  # 𝕄(ξ.right🌵)
+      joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥ raised by 𝑛·1·4
+      𝑛·1·6 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎4:λ ⟧
+    normalized 𝑛·0·1 := 𝜎4:λ  # 𝑛·1·6.φ
     morphed 𝑛·0·2 := 𝑛·0·1

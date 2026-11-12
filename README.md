@@ -315,30 +315,26 @@ $ phino morph --symbolic=down.yaml --locator=Q.y --acyclic=proven \
 $ cat down.txt
 𝕄(Φ.y):
   remembered 𝑛·0·1 ≡ Φ.down  # ⟦ x ↦ ∅, λ ⤍ L_down ⟧
-  normalized 𝑛·0·2 := 𝑛·0·1
-  𝑛·0·3 := Φ.down( x ↦ 𝜎1:λ )
-  𝑛·0·4 := ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
-  remembered 𝑛·0·4 ≡ 𝑛·0·1( x ↦ 𝜎1:λ )
-  normalized 𝑛·0·5 := 𝑛·0·4
+  𝑛·0·2 := Φ.down( x ↦ 𝜎1:λ )
+  𝑛·0·3 := ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
+  remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ 𝜎1:λ )
   𝔼(L_down):
     𝔻(ξ.x):
       𝛿·1·1 := 𝔻(𝜎1:λ)
     𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
     𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛
     𝕄(𝑛·1·1):
-      normalized 𝑛·1·2 := 𝑛·0·1
-      𝑛·1·3 := Φ.down( x ↦ 𝜎2:λ )
-      𝑛·1·4 := ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
-      remembered 𝑛·1·4 ≡ 𝑛·0·1( x ↦ 𝜎2:λ )
-      normalized 𝑛·1·5 := 𝑛·1·4
-      morphed 𝑛·1·6 := 𝑛·1·4
-    𝑛·1·7 := 𝑛·1·4  # 𝕄(𝑛·1·1)
-    remembered 𝑛·1·4 ≡ 𝑛·0·4
-  recalled 𝑛·1·4 ⇒ 𝑛·0·4
-  recalled 𝑛·0·4 ⇒ 𝑛·0·1( x ↦ 𝜎1:λ )
+      𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
+      𝑛·1·3 := ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
+      remembered 𝑛·1·3 ≡ 𝑛·0·1( x ↦ 𝜎2:λ )
+      morphed 𝑛·1·4 := 𝑛·1·3
+    𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
+    remembered 𝑛·1·3 ≡ 𝑛·0·3
+  recalled 𝑛·1·3 ⇒ 𝑛·0·3
+  recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ 𝜎1:λ )
   recalled 𝑛·0·1 ⇒ Φ.down
-  looped 𝜎3 := 𝑛·0·3.φ  # proven, repeats 𝑛·0·4
-  morphed 𝑛·0·6 := 𝜎3:λ
+  looped 𝜎3 := 𝑛·0·2.φ  # proven, repeats 𝑛·0·3
+  morphed 𝑛·0·4 := 𝜎3:λ
 ```
 
 In a name such as `𝑛·1·2`, the first number counts the firings, `0` outside
@@ -362,8 +358,8 @@ A protocol may hold these lines:
 * `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.
-* `normalized …` is the term a normalization came to, where it changed the
-  term.
+* `normalized …` is the term a normalization came to, where no line named it
+  before, and the comment names the term it came from.
 * `joined …`, `fabricated …`, `diverged …` and `unripe …` are what a `join`
   made of its two sides, or why it could not join them.
 * `deferred …` and `symbolized …` are the symbols a `defer` or a `symbolize`

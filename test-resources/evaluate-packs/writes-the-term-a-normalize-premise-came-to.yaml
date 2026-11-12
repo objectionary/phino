@@ -5,7 +5,10 @@
 # The rule 'md' of 𝕄 normalizes 'Φ.x' and then '𝑛·0·1.a' before it morphs
 # what they came to. Each normalization that changed its term writes a line
 # binding the term it came to to a fresh 𝑛, so the reader sees every term
-# the chain passed through, not only the one 𝕄 came to (#2362).
+# the chain passed through, not only the one 𝕄 came to (#2362). The line
+# names in its comment the term the normalization came from, and a
+# normalization that came to a term an earlier line named, as 'Φ.x' came to
+# '𝑛·0·1', writes nothing, since that line would only repeat the name (#2366).
 symbolic: '[]'
 location: 'Q.@'
 input: >
@@ -14,6 +17,5 @@ result: ⟦⟧
 protocol: |
   𝕄(Φ.φ):
     remembered 𝑛·0·1 ≡ Φ.x  # ⟦⟧:a:φ
-    normalized 𝑛·0·2 := 𝑛·0·1
-    normalized 𝑛·0·3 := ⟦⟧
-    morphed 𝑛·0·4 := 𝑛·0·3
+    normalized 𝑛·0·2 := ⟦⟧  # 𝑛·0·1.φ.a
+    morphed 𝑛·0·3 := 𝑛·0·2

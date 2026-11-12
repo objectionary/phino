@@ -35,26 +35,21 @@ protocol: |
       𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
       𝕄(ξ.a):
         remembered 𝑛·1·1 ≡ Φ.t  # ⟦ tu ↦ ∅, φ ↦ ρ.s ⟧
-        normalized 𝑛·1·2 := 𝑛·1·1
-        normalized 𝑛·1·3 := 𝑛·1·2
-        morphed 𝑛·1·4 := 𝑛·1·3
+        morphed 𝑛·1·2 := 𝑛·1·1
       𝕄(ξ.b):
-        morphed 𝑛·1·5 := 𝜎3:λ:k:φ
-      fabricated 𝑛·1·6 := 𝑛·1·4 and 𝑛·1·5  # ⟦ tu ↦ ∅, left🌵 ↦ 𝑛·1·4( tu ↦ tu ), right🌵 ↦ 𝑛·1·5, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧ ⟧
-    normalized 𝑛·0·1 := ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧
+        morphed 𝑛·1·3 := 𝜎3:λ:k:φ
+      fabricated 𝑛·1·4 := 𝑛·1·2 and 𝑛·1·3  # ⟦ tu ↦ ∅, left🌵 ↦ 𝑛·1·2( tu ↦ tu ), right🌵 ↦ 𝑛·1·3, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧ ⟧
+    normalized 𝑛·0·1 := ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧  # 𝑛·1·4.φ
     𝔼(L_join):
       𝑛·2·1 := Φ.t( tu ↦ ⊥ )  # 𝕄(ξ.left🌵)
       𝑛·2·2 := ⟦ tu ↦ ⊥, φ ↦ ρ.s ⟧
-      remembered 𝑛·2·2 ≡ 𝑛·1·4( tu ↦ ⊥ )
+      remembered 𝑛·2·2 ≡ 𝑛·1·2( tu ↦ ⊥ )
       𝕄(ξ.left🌵):
-        normalized 𝑛·2·3 := ⟦ a🌵3 ↦ Φ.s, s ↦ 𝜎2:λ:k, t(tu) ↦ ρ.s:φ, y ↦ ⟦ c ↦ 𝜎1:λ, a ↦ Φ.t, b ↦ 𝑛·1·5, λ ⤍ L_fork ⟧.φ.k ⟧
-        normalized 𝑛·2·4 := 𝜎2:λ:k
-        normalized 𝑛·2·5 := 𝑛·2·4
-        normalized 𝑛·2·6 := 𝑛·2·5
-        morphed 𝑛·2·7 := 𝑛·2·6
+        normalized 𝑛·2·3 := 𝜎2:λ:k  # Φ.s
+        morphed 𝑛·2·4 := 𝑛·2·3
       𝕄(ξ.right🌵):
-        morphed 𝑛·2·8 := 𝜎3:λ:k
+        morphed 𝑛·2·5 := 𝜎3:λ:k
       joined 𝜎4 := ξ.on🌵 ? 𝜎2 : 𝜎3
-      𝑛·2·9 := 𝜎4:λ:k
-    normalized 𝑛·0·2 := 𝜎4:λ
+      𝑛·2·6 := 𝜎4:λ:k
+    normalized 𝑛·0·2 := 𝜎4:λ  # 𝑛·2·6.k
     morphed 𝑛·0·3 := 𝑛·0·2
