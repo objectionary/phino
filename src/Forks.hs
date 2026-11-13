@@ -102,8 +102,11 @@ joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse 
       Just name -> (name, joining)
       Nothing -> (succ spent', (succ spent', bottom, Map.insert pair (succ spent') names, (succ spent', pair) : made))
 
-forked :: Function -> Either Int Bytes -> Expression -> Expression -> Either Refusal Expression
-forked func condition left right = do
+-- The fabricated formation holds each side by the term the caller names it
+-- with, such as the name of the side the run keeps (#2377), so a walk over
+-- the formation never copies a side out again.
+forked :: Function -> Either Int Bytes -> (Expression, Expression) -> (Expression, Expression) -> Either Refusal Expression
+forked func condition (leftName, left) (rightName, right) = do
   one <- inlined <$> formed Lefthand left
   two <- inlined <$> formed Righthand right
   maybe (Right (fabricated one two)) Left (listToMaybe (unripe Lefthand one two ++ unripe Righthand two one))
@@ -112,7 +115,7 @@ forked func condition left right = do
     formed side (ExFormation bds) = maybe (Right bds) (Left . Holding side) (listToMaybe [attr | Just attr <- map attributeFromBinding bds, attr == AtDelta || attr == AtLambda])
     formed side _ = Left (Unformed side)
     fabricated :: [Binding] -> [Binding] -> Expression
-    fabricated one two = ExFormation (map BiVoid voids ++ [copy "left🌵" left one, copy "right🌵" right two] ++ map branch (filter (`notElem` voids) (nub (attributes one ++ attributes two))))
+    fabricated one two = ExFormation (map BiVoid voids ++ [copy "left🌵" leftName one, copy "right🌵" rightName two] ++ map branch (filter (`notElem` voids) (nub (attributes one ++ attributes two))))
       where
         voids :: [Attribute]
         voids = nub (vacant one ++ vacant two)

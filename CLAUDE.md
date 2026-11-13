@@ -710,6 +710,18 @@ mutual recursion whose rounds differ only in the symbols of their positions
 costs firings linear in its depth, not exponential, while the cut still
 counts every round that is running (#2374).
 
+A formation a join fabricates binds `left🌵` and `right🌵` to names of its
+sides, `𝑛·1` and `𝑛·2`, not to the sides themselves (`Sides.hs`, `_sides` of
+`ReduceContext`, #2377). The store keeps what every name stands for for the
+whole run and gives an equal term the name it already has, so a repeat stays
+visible. A name counts as a normal form, 𝕄 opens it only where something is
+dispatched off it or applied to it, and the comparisons of the cut and of the
+memo (`alike'`, `akin'`, `within'`, `bijection'` of `AST.hs`) look through it,
+as `abstracted` and `renamedTerm` of `Morph.hs` do. A walk stops at a name, so
+no walk copies a side out again and terms stay as small as the graph they
+are. The `fabricated` record spells the sides back (`unnamed` of `Deps.hs`);
+any other record and the result print the names.
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at

@@ -29,6 +29,7 @@ import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSl
 import Morph (Answer (..), Budget (..), Firing (..), Kept (..), Kindred, ReduceContext (..), ReduceException (..), Steps (..), adopted, argued, awaited, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, kindle, kindred, lambda, minting, morphing, normalized, noted, opening, placed, recalled, remember, remembered, remembering, repeats, retained, settled, starved, unparked, voided)
 import Printer (printExpression, printFunction)
 import Rule (RuleContext (RuleContext))
+import qualified Sides
 import Text.Printf (printf)
 
 evaluation :: ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
@@ -90,7 +91,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         firing <- Firing func (reverse conditions) . (reverse normals' ++) <$> sides entry._ending
         known <- remembered caller._memo firing
         (answer, state') <- maybe (worked ctx entry firing bound'' undressed) (\(first, answer) -> (answer, undressed) <$ recited ctx._nesting first answer) known
-        (answer, state') <$ kindle caller._memo form firing answer
+        (answer, state') <$ kindle caller._sides caller._memo form firing answer
       case outcome of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
@@ -411,16 +412,19 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           mapM_ (\side -> ctx._saveEval (EvGuarded ctx._nesting (either (Left . _spelling) Right on) (left, one) (right, two) side raised)) [side | null made, term /= ExTermination, (side, ExTermination) <- [(Lefthand, stopped one), (Righthand, stopped two)]]
           ctx._saveEval (EvTaken ctx._nesting term)
           pure (Joined term, state''')
-        Left path -> case maybe (Left Unnamed) (\name -> forked name condition one two) fallback of
-          Right term -> do
-            ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) term)
-            pure (Joined term, state''')
-          Left (Unripe side attr) -> do
-            ctx._saveEval (EvUnripe ctx._nesting (left, one) (right, two) side attr)
-            throwIO (Diverged func)
-          Left refusal -> do
-            ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two) path refusal)
-            throwIO (Diverged func)
+        Left path -> do
+          leftName <- Sides.named ctx._sides one
+          rightName <- Sides.named ctx._sides two
+          case maybe (Left Unnamed) (\name -> forked name condition (leftName, one) (rightName, two)) fallback of
+            Right term -> do
+              ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) [(leftName, one), (rightName, two)] term)
+              pure (Joined term, state''')
+            Left (Unripe side attr) -> do
+              ctx._saveEval (EvUnripe ctx._nesting (left, one) (right, two) side attr)
+              throwIO (Diverged func)
+            Left refusal -> do
+              ctx._saveEval (EvDiverged ctx._nesting (left, one) (right, two) path refusal)
+              throwIO (Diverged func)
     weighed :: [(T.Text, Either Int Bytes)] -> Either Meta Expression -> IO (Either Int Bytes)
     weighed operands (Left meta) =
       maybe

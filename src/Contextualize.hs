@@ -26,6 +26,8 @@ instance Show ContextualizeException where
 
 concluded :: Expression -> [(String, Either ContextualizeException Expression)] -> Either ContextualizeException Expression
 concluded _ [(_, answer)] = answer
+concluded term@(ExMeta meta) []
+  | isName meta = Right term
 concluded term [] = Left (Uncontextualizable term "no contextualization rule matches the term")
 concluded term several = Left (Uncontextualizable term (printf "the contextualization rules %s all match the term" (intercalate ", " (map fst several))))
 

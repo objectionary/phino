@@ -81,7 +81,9 @@ spec = do
 
   describe "forked" $ do
     let fork :: Text -> Either Int Bytes -> String -> String -> IO (Either Refusal Expression)
-        fork func condition left right = forked (Function func) condition <$> parseExpressionThrows left <*> parseExpressionThrows right
+        fork func condition left right = forked (Function func) condition <$> fmap twice (parseExpressionThrows left) <*> fmap twice (parseExpressionThrows right)
+        twice :: Expression -> (Expression, Expression)
+        twice side = (side, side)
     it "asks the copies of both sides for an attribute the λ it is given picks between" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx ⟧, right🌵 ↦ ⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_qw, on🌵 ↦ ⟦ Δ ⤍ 1C- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_qw" (Right (BtOne "1C")) "⟦ φ ↦ Φ.hx ⟧" "⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧" >>= (`shouldBe` Right expected)
