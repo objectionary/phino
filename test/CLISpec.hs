@@ -4409,6 +4409,19 @@ spec = do
         ["merge", resource "foo.phi", resource "desugar.phi"]
         ["Can't merge two bindings, conflict found"]
 
+    it "names the locator and the files of clashing bindings" $
+      withTempDirectory "phino-merge-clash" $ \dir -> do
+        createDirectoryIfMissing True dir
+        let one = dir </> "one.phi"
+            two = dir </> "two.phi"
+            three = dir </> "three.phi"
+        writeFile one "⟦ org ↦ ⟦ eolang ↦ ⟦ number ↦ ⟦ plus ↦ ⟦ λ ⤍ L_plus ⟧ ⟧ ⟧ ⟧ ⟧"
+        writeFile two "⟦ org ↦ ⟦ eolang ↦ ⟦ bytes ↦ ⟦⟧ ⟧ ⟧ ⟧"
+        writeFile three "⟦ org ↦ ⟦ eolang ↦ ⟦ number ↦ ⟦ plus ↦ ⟦ λ ⤍ L_add ⟧ ⟧ ⟧ ⟧ ⟧"
+        testCLIFailed
+          ["merge", one, two, three]
+          ["at Φ.org.eolang.number.plus", one, three]
+
     it "fails on merging empty list of expressions" $
       testCLIFailed
         ["merge"]

@@ -150,7 +150,7 @@ main = do
   dsrc <- readFile "benchmark/demo.phi"
   expr <- parseExpressionThrows src
   demo <- parseExpressionThrows dsrc
-  merged <- merge [demo, expr]
+  merged <- merge [("benchmark/demo.phi", demo), ("benchmark/tmp/native.phi", expr)]
   lambdas <- readLambdas "benchmark/atoms.yaml"
   asrc <- readFile "benchmark/accum.phi"
   accum <- parseExpressionThrows asrc
