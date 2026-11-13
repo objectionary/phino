@@ -28,6 +28,7 @@ import Must (Must (MtDisabled))
 import Parser (parseExpressionThrows)
 import Printer (printExpression')
 import Rewriter (RewriteContext (RewriteContext), rewrite)
+import Sides (Sides, sides)
 import Sugar (SugarType (SALTY, SWEET))
 import Tau (seedTaus)
 import Text.Printf (printf)
@@ -62,8 +63,8 @@ rewriteCtx =
     dontSaveStep
     dontSaveMade
 
-symbolicCtx :: Acyclic -> Maybe Memo -> Maybe Facts -> IORef Int -> Lambdas -> Expression -> ReduceContext
-symbolicCtx acyclic memo facts minted lambdas locator =
+symbolicCtx :: Acyclic -> Maybe Memo -> Maybe Facts -> IORef Int -> Sides -> Lambdas -> Expression -> ReduceContext
+symbolicCtx acyclic memo facts minted named lambdas locator =
   ReduceContext
     locator
     locator
@@ -75,6 +76,7 @@ symbolicCtx acyclic memo facts minted lambdas locator =
     (Steps 1000 0)
     Nothing
     minted
+    named
     Nothing
     memo
     1
@@ -201,7 +203,8 @@ main = do
       memo <- memoized (Just acyclic)
       facts <- Just <$> factual
       minted <- newIORef 0
-      let ctx = symbolicCtx acyclic memo facts minted lambdas locator
+      named <- sides
+      let ctx = symbolicCtx acyclic memo facts minted named lambdas locator
       started universe ctx
       (answer, _, _) <- morph universe emptyState ctx
       pure (hashExpression answer)
