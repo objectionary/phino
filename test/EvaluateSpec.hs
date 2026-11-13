@@ -108,7 +108,7 @@ testRecalls pth = do
   where
     orphans :: [String] -> [(String, String)] -> [String]
     orphans [] _ = []
-    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line) <|> T.stripPrefix "memoized " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
+    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line) <|> T.stripPrefix "memoized " (T.pack line) <|> T.stripPrefix "renamed " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
       (Just fact, _) -> orphans rest ([paired arrow (fst (T.breakOn "  # " fact)) | arrow <- [" ≡ ", " ⇛ "], arrow `T.isInfixOf` fact] ++ facts)
       (_, Just recall)
         | paired " ⇒ " recall `elem` facts -> orphans rest facts

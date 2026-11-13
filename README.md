@@ -374,6 +374,8 @@ A protocol may hold these lines:
   a formation it was the answer of.
 * `memoized 𝑛·0·5 ⇛ 𝑛·1·9` is what `--acyclic=plausible` keeps: the
   formation on the left fired to the term on the right.
+* `renamed 𝑛·1·10 ⇛ 𝜎5:λ` is a memo entry used for a formation alike it up
+  to symbols, with the symbols the comment lists renamed.
 * `recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )` is a fact or a memo entry used again,
   spelled as its `remembered` or `memoized` line spelled it.
 * `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names

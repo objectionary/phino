@@ -694,6 +694,22 @@ which the step budget ran out keeps its stall beside the steps it had spent
 spent at least as many, since the same formation fired at a shallower site may
 bring the operand down (#1514, #1521).
 
+The memo also names a position by the symbol 𝔻 brought it down to (`placed`
+of `Morph.hs`), as the term and as its `stayed` spelling, since one value
+reached through two histories is one input to an entry. Each firing that
+answers is kept beside its formation with every known position replaced by
+its symbol (`kindle`), and a later firing the memo of formations misses is
+looked up the same way and matched up to a renaming of symbols (`kindred`,
+`bijection` of `AST.hs`). A match fires nothing: `adopted` takes the kept
+answer with every symbol renamed, a paired symbol to its partner and a
+symbol the kept firing minted (`minting`) to a fresh one, renaming in turn
+the firing that minted a symbol the answer holds, and writes `renamed
+𝑛·1·10 ⇛ 𝜎5:λ  # from 𝑛·1·3, 𝜎1 as 𝜎2, 𝜎3 as 𝜎5` (`EvRenamed`), and the
+markup `<renamed … from="…">` holding an `<as symbol by/>` per symbol. So a
+mutual recursion whose rounds differ only in the symbols of their positions
+costs firings linear in its depth, not exponential, while the cut still
+counts every round that is running (#2374).
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at
