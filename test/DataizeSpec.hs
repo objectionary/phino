@@ -32,6 +32,7 @@ import Morph (ReduceContext (..), Steps (..), emptyState, execBuildTerm)
 import Parser (Form (MONOFORM), parseBytes, parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
+import Sides (sides)
 import System.FilePath (makeRelative)
 import Tau (seedTaus)
 import Test.Hspec
@@ -87,10 +88,10 @@ spec :: Spec
 spec = do
   known <- runIO fixtureLambdas
 
-  describe "dataize' fails when no dataization rule matches the term" $
-    it "throws instead of treating the unmatched meta as ⊥" $
-      (dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
-        `shouldThrow` (\e -> "no dataization rule matched" `isInfixOf` show (e :: SomeException))
+  describe "dataize' fails when no dataization rule matches the term"
+    $ it "throws instead of treating the unmatched meta as ⊥"
+    $ (dataize' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
+      `shouldThrow` (\e -> "no dataization rule matched" `isInfixOf` show (e :: SomeException))
 
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
     ctx <- runIO (defaultReduceContext ExRoot)
@@ -175,25 +176,27 @@ spec = do
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
         minted <- newIORef 0
-        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 Nothing Nothing (Steps 40 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing endless [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+        named <- sides
+        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 Nothing Nothing (Steps 40 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing endless [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
     it "parks the step limit as a residual with --partial" $
       looping $ \endless -> do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
         minted <- newIORef 0
-        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 Nothing Nothing (Steps 40 0) Nothing minted Nothing Nothing 1 Nothing False True True Nothing 0 Dataization [] Map.empty Nothing endless [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+        named <- sides
+        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 Nothing Nothing (Steps 40 0) Nothing minted named Nothing Nothing 1 Nothing False True True Nothing 0 Dataization [] Map.empty Nothing endless [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
 
   describe "stops a dataization by the clock of --max-seconds" $
-    it "fails a partial dataization once the deadline has passed" $ do
+    it "leaves a partial dataization as a residual once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ @ -> [[ D> 7E- ]] ]]"
       deadline <- overdue 29
       ctx <- defaultReduceContext ExRoot
-      dataize expr emptyState ctx{_deadline = Just deadline, _partial = True}
-        `shouldThrow` (\e -> "--max-seconds=29" `isInfixOf` show (e :: SomeException))
+      (outcome, _, _) <- dataize expr emptyState ctx{_deadline = Just deadline, _partial = True}
+      outcome `shouldBe` Residual expr
 
   describe "partially evaluates around a λ function that cannot fire (--partial)" $ do
     let placeholder = ExFormation [BiLambda (Function "Sym_arg_0")]
@@ -220,11 +223,14 @@ spec = do
         `shouldBe` unlines
           [ "  𝔻(Φ):"
           , "    boxed 𝑛·0·1 := Φ.φ"
+          , "    normalized 𝑛·0·2 := 2.0.times( 3.0 ).nope( ρ ↦ Φ )  # Φ.φ"
           , "    𝕄(𝑛·0·1):"
-          , "      𝑛·0·2 := 2.0"
-          , "      𝑛·0·3 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
-          , "      𝑛·0·4 := 𝑛·0·2.times( x ↦ 3.0 )"
-          , "      𝑛·0·5 := ⟦ ρ ↦ 𝑛·0·2, x ↦ 3.0, λ ⤍ L_number_times ⟧"
+          , "      normalized 𝑛·0·3 := ⟦ φ ↦ ∅, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧  # Φ.number"
+          , "      𝑛·0·4 := 2.0"
+          , "      𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
+          , "      normalized 𝑛·0·6 := ⟦ ρ ↦ 𝑛·0·4, x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·0·5.times"
+          , "      𝑛·0·7 := 𝑛·0·4.times( x ↦ 3.0 )"
+          , "      𝑛·0·8 := ⟦ ρ ↦ 𝑛·0·4, x ↦ 3.0, λ ⤍ L_number_times ⟧"
           , "      𝔼(L_number_times):"
           , "        𝔻(ξ.ρ):"
           , "          𝕄(ξ.ρ):"
@@ -232,55 +238,61 @@ spec = do
           , "            𝑛·1·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
           , "            morphed 𝑛·1·3 := 𝑛·1·2"
           , "          boxed 𝑛·1·4 := 𝑛·1·3.φ"
+          , "          normalized 𝑛·1·5 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ, ρ ↦ 𝑛·1·1 )  # 𝑛·1·4"
           , "          𝕄(𝑛·1·4):"
-          , "            𝑛·1·5 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
-          , "            𝑛·1·6 := ⟦ φ ↦ 40-00-00-00-00-00-00-00:Δ, not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧"
-          , "            morphed 𝑛·1·7 := 𝑛·1·6"
-          , "          boxed 𝑛·1·8 := 𝑛·1·7.φ"
+          , "            normalized 𝑛·1·6 := ⟦ φ ↦ ∅, not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧  # Φ.bytes"
+          , "            𝑛·1·7 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
+          , "            𝑛·1·8 := ⟦ φ ↦ 40-00-00-00-00-00-00-00:Δ, not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧"
+          , "            morphed 𝑛·1·9 := 𝑛·1·8"
+          , "          boxed 𝑛·1·10 := 𝑛·1·9.φ"
+          , "          normalized 𝑛·1·11 := 40-00-00-00-00-00-00-00:Δ  # 𝑛·1·10"
           , "          𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0"
           , "        𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
           , "        𝔻(ξ.x):"
           , "          𝕄(ξ.x):"
-          , "            𝑛·1·9 := 3.0"
-          , "            𝑛·1·10 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
-          , "            morphed 𝑛·1·11 := 𝑛·1·10"
-          , "          boxed 𝑛·1·12 := 𝑛·1·11.φ"
-          , "          𝕄(𝑛·1·12):"
-          , "            𝑛·1·13 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
-          , "            𝑛·1·14 := ⟦ φ ↦ 40-08-00-00-00-00-00-00:Δ, not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧"
-          , "            morphed 𝑛·1·15 := 𝑛·1·14"
-          , "          boxed 𝑛·1·16 := 𝑛·1·15.φ"
+          , "            𝑛·1·12 := 3.0"
+          , "            𝑛·1·13 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
+          , "            morphed 𝑛·1·14 := 𝑛·1·13"
+          , "          boxed 𝑛·1·15 := 𝑛·1·14.φ"
+          , "          normalized 𝑛·1·16 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ, ρ ↦ 𝑛·1·12 )  # 𝑛·1·15"
+          , "          𝕄(𝑛·1·15):"
+          , "            𝑛·1·17 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
+          , "            𝑛·1·18 := ⟦ φ ↦ 40-08-00-00-00-00-00-00:Δ, not(ρ) ↦ L_bytes_not:λ, eq(ρ, b) ↦ L_bytes_eq:λ ⟧"
+          , "            morphed 𝑛·1·19 := 𝑛·1·18"
+          , "          boxed 𝑛·1·20 := 𝑛·1·19.φ"
+          , "          normalized 𝑛·1·21 := 40-08-00-00-00-00-00-00:Δ  # 𝑛·1·20"
           , "          𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
           , "        𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-          , "        𝑛·1·17 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
-          , "        𝕄(𝑛·1·17):"
-          , "          𝑛·1·18 := Φ.number( φ ↦ 𝜎1:λ )"
-          , "          𝑛·1·19 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
-          , "          morphed 𝑛·1·20 := 𝑛·1·19"
-          , "        𝑛·1·21 := 𝑛·1·20  # 𝕄(𝑛·1·17)"
-          , "      morphed 𝑛·0·6 := ⟦ ρ ↦ 𝑛·1·18, λ ⤍ L_number_nope ⟧"
-          , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·18, λ ⤍ L_number_nope ⟧)"
+          , "        𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+          , "        𝕄(𝑛·1·22):"
+          , "          𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
+          , "          𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
+          , "          morphed 𝑛·1·25 := 𝑛·1·24"
+          , "        𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
+          , "      normalized 𝑛·0·9 := ⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧  # 𝑛·1·26.nope"
+          , "      morphed 𝑛·0·10 := ⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧"
+          , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧)"
           ]
     it "leaves an unanswered λ function dataized directly as the whole residue" $ do
       ((outcome, chain), protocol) <- partially known "[[ L> Sym_arg_0 ]]"
       outcome `shouldBe` Residual placeholder
-      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    unanswered Sym_arg_0  # 𝔻(Sym_arg_0:λ)\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    normalized 𝑛·0·2 := Sym_arg_0:λ  # Φ.φ\n    unanswered Sym_arg_0  # 𝔻(Sym_arg_0:λ)\n"
       map fst chain `shouldEndWith` [placeholder]
     it "closes a dataization with the datum the delta rule found" $ do
       (_, protocol) <- partially known "[[ @ -> [[ D> 01-02 ]] ]]"
-      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    boxed 𝑛·0·2 := 01-02:Δ:φ.φ\n    𝛿·0·1 := 01-02\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    normalized 𝑛·0·2 := 01-02:Δ:φ  # Φ.φ\n    boxed 𝑛·0·3 := 𝑛·0·2.φ\n    normalized 𝑛·0·4 := 01-02:Δ  # 𝑛·0·3\n    𝛿·0·1 := 01-02\n"
     it "continues the block of a dataization the box rule enters again at the same site" $ do
       (_, protocol) <- partially known "[[ @ -> [[ @ -> [[ D> 0A- ]] ]] ]]"
-      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    boxed 𝑛·0·2 := 0A-:Δ:φ:φ.φ\n    boxed 𝑛·0·3 := 0A-:Δ:φ.φ\n    𝛿·0·1 := 0A-\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    normalized 𝑛·0·2 := 0A-:Δ:φ:φ  # Φ.φ\n    boxed 𝑛·0·3 := 𝑛·0·2.φ\n    normalized 𝑛·0·4 := 0A-:Δ:φ  # 𝑛·0·3\n    boxed 𝑛·0·5 := 𝑛·0·4.φ\n    normalized 𝑛·0·6 := 0A-:Δ  # 𝑛·0·5\n    𝛿·0·1 := 0A-\n"
     it "writes the two morphings of one dataization as two blocks" $ do
       (_, protocol) <- partially known "73.25"
       length (filter (isPrefixOf "    𝕄(") (lines protocol)) `shouldBe` 2
     it "writes every box step of a dataization into the protocol" $ do
       (_, protocol) <- partially known "73.25"
-      filter (isInfixOf "boxed") (lines protocol) `shouldBe` ["    boxed 𝑛·0·1 := Φ.φ", "    boxed 𝑛·0·5 := 𝑛·0·4.φ", "    boxed 𝑛·0·9 := 𝑛·0·8.φ"]
+      filter (isInfixOf "boxed") (lines protocol) `shouldBe` ["    boxed 𝑛·0·1 := Φ.φ", "    boxed 𝑛·0·7 := 𝑛·0·6.φ", "    boxed 𝑛·0·13 := 𝑛·0·12.φ"]
     it "names the morphing that follows a box step by the meta the box step bound" $ do
       (_, protocol) <- partially known "73.25"
-      lines protocol `shouldContain` ["    boxed 𝑛·0·1 := Φ.φ", "    𝕄(𝑛·0·1):"]
+      lines protocol `shouldContain` ["    boxed 𝑛·0·1 := Φ.φ", "    normalized 𝑛·0·2 := 73.25  # Φ.φ", "    𝕄(𝑛·0·1):"]
     it "still reaches the manufactured datum when nothing is stuck" $ do
       ((outcome, _), _) <- partially known "2.times(3)"
       outcome `shouldBe` Dataized (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
@@ -295,37 +307,39 @@ spec = do
       outcome `shouldBe` Residual ExTermination
     it "writes the terminator ⊥ the object reduces to into the protocol" $ do
       (_, protocol) <- partially known "⊥"
-      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n  unanswered ⊥  # 𝔻(⊥)\n"
+      protocol `shouldBe` "  𝔻(Φ):\n    boxed 𝑛·0·1 := Φ.φ\n    normalized 𝑛·0·2 := ⊥  # Φ.φ\n  unanswered ⊥  # 𝔻(⊥)\n"
 
   describe "ReduceContext's --max-depth/--max-cycles reach into the normalization it splices in" $ do
-    let boxed = "[[ @ -> [[ D> 00- ]] ]]"
+    let wrapped = "[[ @ -> [[ D> 00- ]] ]]"
     forM_
       [
         ( "--max-cycles"
-        , \minted -> ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked
+        , \minted named -> ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , \minted -> ReduceContext ExRoot ExRoot Nothing 0 25 Nothing Nothing (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked
+        , \minted named -> ReduceContext ExRoot ExRoot Nothing 0 25 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked
         , "--max-depth=0"
         )
       ]
       ( \(flag, reducing, message) ->
           it ("throws once " ++ flag ++ " is exhausted with --depth-sensitive") $ do
-            expr <- parseExpressionThrows "[[ @ -> [[ x -> [[ D> 00- ]] ]].x ]]"
-            ctx <- reducing <$> newIORef 0
+            expr <- parseExpressionThrows "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]"
+            ctx <- reducing <$> newIORef 0 <*> sides
             dataize expr emptyState ctx `shouldThrow` (\e -> message `isInfixOf` show (e :: SomeException))
       )
     it "does not throw without --depth-sensitive even once --max-depth is exhausted" $ do
-      expr <- parseExpressionThrows boxed
+      expr <- parseExpressionThrows wrapped
       minted <- newIORef 0
-      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 1 25 Nothing Nothing (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+      named <- sides
+      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 1 25 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
       value `shouldBe` Dataized (BtOne "00")
     it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
-      expr <- parseExpressionThrows boxed
+      expr <- parseExpressionThrows wrapped
       minted <- newIORef 0
-      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+      named <- sides
+      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
         `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
 
   describe "labels every step with a defined rule or operation" $ do

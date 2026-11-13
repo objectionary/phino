@@ -113,6 +113,9 @@ spec = do
       , ("reads a back reference as a single digit", "\\10", ["full", "a"], "a0")
       , ("keeps an out of bounds back reference literal", "\\9", ["only"], "\\9")
       , ("keeps a digit after an escaped backslash literal", "\\\\1", ["full", "a"], "\\1")
+      , ("substitutes the whole match for an ampersand", "<&>", ["full", "a"], "<full>")
+      , ("keeps an escaped ampersand literal", "\\&", ["full"], "&")
+      , ("substitutes the whole match after an escaped backslash", "\\\\&", ["full"], "\\full")
       ]
       ( \(desc, template, groups, expected) ->
           it desc $ R.substituteGroups (utf8 template) (map utf8 groups) `shouldBe` utf8 expected

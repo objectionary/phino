@@ -19,5 +19,6 @@ protocol: |
     𝔼(L_pair):
       𝔻(ξ.x):
         boxed 𝑛·1·1 := ∅:φ.φ
+        normalized 𝑛·1·2 := ⊥  # 𝑛·1·1
       unanswered ⊥  # 𝔻(⊥)
       stuck ⊥

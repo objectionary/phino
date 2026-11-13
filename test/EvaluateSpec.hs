@@ -108,12 +108,18 @@ testRecalls pth = do
   where
     orphans :: [String] -> [(String, String)] -> [String]
     orphans [] _ = []
-    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line) <|> T.stripPrefix "memoized " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
+    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line) <|> T.stripPrefix "memoized " (T.pack line) <|> T.stripPrefix "renamed " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
       (Just fact, _) -> orphans rest ([paired arrow (fst (T.breakOn "  # " fact)) | arrow <- [" ≡ ", " ⇛ "], arrow `T.isInfixOf` fact] ++ facts)
       (_, Just recall)
         | paired " ⇒ " recall `elem` facts -> orphans rest facts
         | otherwise -> line : orphans rest facts
-      _ -> orphans rest facts
+      _ -> orphans rest (applied line rest ++ facts)
+    applied :: String -> [String] -> [(String, String)]
+    applied line (next : _)
+      | " := " `T.isInfixOf` T.pack line && " := " `T.isInfixOf` T.pack next = [(named line, named next)]
+    applied _ _ = []
+    named :: String -> String
+    named = T.unpack . fst . T.breakOn " := " . T.pack
     paired :: T.Text -> T.Text -> (String, String)
     paired arrow text = let (left, right) = T.breakOn arrow text in (T.unpack left, T.unpack (T.drop (T.length arrow) right))
 
@@ -195,3 +201,19 @@ spec = do
       ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
       timeout 10000000 (morph program emptyState ctx{_deadline = Just (Deadline 37 due)})
         `shouldThrow` (\e -> "--max-seconds=37" `isInfixOf` show (e :: SomeException))
+
+  describe "fabricates a formation of two sides of different shapes" $
+    it "binds the sides by the names the run gave them, not by the sides themselves" $ do
+      let program = "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧, b ↦ ⟦ φ ↦ Φ.zu ⟧, λ ⤍ L_fork ⟧.ke ⟧"
+      expr <- parseExpressionThrows' MONOFORM program
+      table <- withLambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n    otherwise: L_join\n" readLambdas
+      ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
+      (morphed, _, _) <- morph expr emptyState ctx
+      sides morphed `shouldSatisfy` (\found -> length found == 2 && all named' found)
+  where
+    sides :: Expression -> [Expression]
+    sides (ExFormation bds) = [side | BiTau AtRho (ExFormation fabricated) <- bds, BiTau (AtLabel label) side <- fabricated, label `elem` ["left🌵", "right🌵"]]
+    sides _ = []
+    named' :: Expression -> Bool
+    named' (ExMeta meta) = isName meta
+    named' _ = False

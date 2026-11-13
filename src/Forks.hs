@@ -13,6 +13,8 @@ import Data.List (nub)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Text (Text)
 import qualified Data.Text as T
 
@@ -29,6 +31,10 @@ data Refusal
   deriving (Eq, Show)
 
 joined :: Expression -> Expression -> Int -> Either [Attribute] (Expression, [(Int, (Int, Int))], Maybe Int, Int)
+joined ExTermination right spent
+  | null (symbols right) = Right (right, [], Nothing, spent)
+joined left ExTermination spent
+  | null (symbols left) = Right (left, [], Nothing, spent)
 joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse made, bottom, spent')) <$> goExpr left right (spent, Nothing, Map.empty, [])
   where
     goExpr :: Expression -> Expression -> Joining -> Either [Attribute] (Expression, Joining)
@@ -98,36 +104,50 @@ joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse 
       Just name -> (name, joining)
       Nothing -> (succ spent', (succ spent', bottom, Map.insert pair (succ spent') names, (succ spent', pair) : made))
 
-forked :: Function -> Either Int Bytes -> Expression -> Expression -> Either Refusal Expression
-forked func condition left right = do
-  one <- formed Lefthand left
-  two <- formed Righthand right
+forked :: Function -> Either Int Bytes -> (Expression, Expression) -> (Expression, Expression) -> Either Refusal Expression
+forked func condition (leftName, left) (rightName, right) = do
+  one <- inlined <$> formed Lefthand left
+  two <- inlined <$> formed Righthand right
   maybe (Right (fabricated one two)) Left (listToMaybe (unripe Lefthand one two ++ unripe Righthand two one))
   where
     formed :: Side -> Expression -> Either Refusal [Binding]
     formed side (ExFormation bds) = maybe (Right bds) (Left . Holding side) (listToMaybe [attr | Just attr <- map attributeFromBinding bds, attr == AtDelta || attr == AtLambda])
     formed side _ = Left (Unformed side)
     fabricated :: [Binding] -> [Binding] -> Expression
-    fabricated one two = ExFormation (map BiVoid voids ++ [copy "left🌵" left one, copy "right🌵" right two] ++ map branch (filter (`notElem` voids) (nub (attributes one ++ attributes two))))
+    fabricated one two = ExFormation (map BiVoid voids ++ [copy "left🌵" leftName one, copy "right🌵" rightName two] ++ map branch (filter (`Set.notMember` vacated) (distinct (attributes one ++ attributes two))))
       where
         voids :: [Attribute]
-        voids = nub (vacant one ++ vacant two)
+        voids = distinct (vacant one ++ vacant two)
+        vacated :: Set Attribute
+        vacated = Set.fromList voids
+        heldOne :: Map Attribute [Attribute]
+        heldOne = held one
+        heldTwo :: Map Attribute [Attribute]
+        heldTwo = held two
         branch :: Attribute -> Binding
-        branch attr = maybe (forking attr) (BiTau attr) (aliased attr)
-        aliased :: Attribute -> Maybe Expression
-        aliased attr = case (bound one attr, bound two attr) of
-          (Just term@(ExDispatch ExXi name), Just other) | term == other && name `elem` attributes one ++ attributes two -> Just term
-          _ -> Nothing
-        bound :: [Binding] -> Attribute -> Maybe Expression
-        bound bds attr = listToMaybe [term | BiTau label term <- bds, label == attr]
-        forking :: Attribute -> Binding
-        forking attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" one attr, ask "right🌵" two attr]))
+        branch attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" heldOne attr, ask "right🌵" heldTwo attr]))
         inner :: Attribute -> [Attribute]
-        inner attr = nub (concat (mapMaybe (`held` attr) [one, two]))
-        ask :: Text -> [Binding] -> Attribute -> Binding
-        ask name bds attr = BiTau (AtLabel name) (applied (ExDispatch (ExDispatch (ExDispatch ExXi AtRho) (AtLabel name)) attr) (fromMaybe (inner attr) (held bds attr)))
+        inner attr = nub (concat (mapMaybe (Map.lookup attr) [heldOne, heldTwo]))
+        ask :: Text -> Map Attribute [Attribute] -> Attribute -> Binding
+        ask name holding attr = BiTau (AtLabel name) (applied (ExDispatch (ExDispatch (ExDispatch ExXi AtRho) (AtLabel name)) attr) (fromMaybe (inner attr) (Map.lookup attr holding)))
+    inlined :: [Binding] -> [Binding]
+    inlined bds = map goBinding bds
+      where
+        bodies :: Map Attribute Expression
+        bodies = firsts [(label, bound) | BiTau label bound <- bds]
+        goBinding :: Binding -> Binding
+        goBinding (BiTau attr term) = BiTau attr (fromMaybe term (goTerm [attr] term))
+        goBinding bd = bd
+        goTerm :: [Attribute] -> Expression -> Maybe Expression
+        goTerm seen term@(ExDispatch ExXi name)
+          | name `elem` seen = Nothing
+          | otherwise = maybe (Just term) (goTerm (name : seen)) (Map.lookup name bodies)
+        goTerm _ term = Just term
     unripe :: Side -> [Binding] -> [Binding] -> [Refusal]
-    unripe side bds others = [Unripe side attr | attr <- vacant bds, attr `elem` [label | BiTau label _ <- others]]
+    unripe side bds others = [Unripe side attr | attr <- vacant bds, attr `Set.member` bound]
+      where
+        bound :: Set Attribute
+        bound = Set.fromList [label | BiTau label _ <- others]
     vacant :: [Binding] -> [Attribute]
     vacant bds = [attr | BiVoid attr <- bds, own attr]
     attributes :: [Binding] -> [Attribute]
@@ -139,5 +159,15 @@ forked func condition left right = do
     copy name side bds = BiTau (AtLabel name) (applied side (vacant bds))
     applied :: Expression -> [Attribute] -> Expression
     applied = foldl (\term attr -> ExApplication term (ArTau attr (ExDispatch ExXi attr)))
-    held :: [Binding] -> Attribute -> Maybe [Attribute]
-    held bds attr = listToMaybe [vacant inside | BiTau label (ExFormation inside) <- bds, label == attr]
+    held :: [Binding] -> Map Attribute [Attribute]
+    held bds = firsts [(label, vacant inside) | BiTau label (ExFormation inside) <- bds]
+    firsts :: [(Attribute, value)] -> Map Attribute value
+    firsts = Map.fromListWith (\_ earlier -> earlier)
+    distinct :: [Attribute] -> [Attribute]
+    distinct = go Set.empty
+      where
+        go :: Set Attribute -> [Attribute] -> [Attribute]
+        go _ [] = []
+        go seen (attr : rest)
+          | attr `Set.member` seen = go seen rest
+          | otherwise = attr : go (Set.insert attr seen) rest

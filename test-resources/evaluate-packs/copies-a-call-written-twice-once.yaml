@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The call '⟦ x ↦ ∅, φ ↦ x ⟧( x ↦ 𝜎1:λ )' stands twice in 'c', once in 'a'
+# and once in 'b'. Normalization of the world copies it once and recalls that
+# copy for the second place, instead of copying the same call again (#2343).
+symbolic: '[]'
+location: 'Q.y'
+input: '⟦ c ↦ ⟦ a ↦ ⟦ x ↦ ∅, φ ↦ x ⟧( x ↦ 𝜎1:λ ), b ↦ ⟦ x ↦ ∅, φ ↦ x ⟧( x ↦ 𝜎1:λ ) ⟧, y ↦ Φ.c.b ⟧'
+result: '⟦ x ↦ 𝜎1:λ, φ ↦ x ⟧'
+protocol: |
+  𝕄(Φ.y):
+    𝑛·0·1 := ⟦ x ↦ ∅, φ ↦ x ⟧( x ↦ 𝜎1:λ )
+    𝑛·0·2 := ⟦ x ↦ 𝜎1:λ, φ ↦ x ⟧
+    recalled 𝑛·0·1 ⇒ 𝑛·0·2
+    normalized 𝑛·0·3 := ⟦ a ↦ 𝑛·0·2, b ↦ 𝑛·0·2 ⟧  # Φ.c
+    morphed 𝑛·0·4 := 𝑛·0·2

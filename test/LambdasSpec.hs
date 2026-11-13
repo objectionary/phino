@@ -753,9 +753,9 @@ spec = do
       term <- parseExpressionThrows "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )"
       (\(_, _, spent) -> spent) (symbolized term 6) `shouldBe` 6
 
-  describe "emptyLambdas" $
-    it "cannot read a λ function without the file naming one" $
-      answering emptyLambdas "L_number_plus" `shouldBe` Nothing
+  describe "emptyLambdas"
+    $ it "cannot read a λ function without the file naming one"
+    $ answering emptyLambdas "L_number_plus" `shouldBe` Nothing
 
   describe "minted" $ do
     it "mints one fresh symbol per bare 𝜎 the answer carries" $ do

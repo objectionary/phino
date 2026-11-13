@@ -43,8 +43,10 @@ protocol: |
         remembered 𝑛·1·4 ≡ 𝑛·1·2( x ↦ L_throw:λ )
         𝔼(L_wrap):
           𝑛·2·1 := ⊥
-        morphed 𝑛·1·5 := ⊥
+        normalized 𝑛·1·5 := ⊥  # ⊥.φ
+        morphed 𝑛·1·6 := ⊥
       𝑛2·1 := ⊥  # 𝕄(ξ.r)
       joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥
-      𝑛·1·6 := 𝜎4:λ:φ
-    morphed 𝑛·0·1 := 𝜎4:λ
+      𝑛·1·7 := 𝜎4:λ:φ
+    normalized 𝑛·0·1 := 𝜎4:λ  # 𝑛·1·7.φ
+    morphed 𝑛·0·2 := 𝑛·0·1

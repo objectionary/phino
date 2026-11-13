@@ -17,11 +17,11 @@ import Data.Aeson (FromJSON)
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (find, isInfixOf, nub)
 import Data.List.NonEmpty (NonEmpty (..))
-import Data.Map.Strict qualified as Map
 import Data.Maybe (fromMaybe)
+import Data.Text qualified as T
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (Acyclic (..), Evaluation (EvMorphed, EvRecalled, EvWorld), Judgment (..), State, Term (TeExpression))
+import Deps (Acyclic (..), Evaluation (EvLooped, EvMorphed, EvNormalized, EvRecalled, EvWorld), Judgment (..), State, Term (TeExpression))
 import Engine (Engine (_normal))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives)
@@ -30,7 +30,7 @@ import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
 import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
-import Morph (Deadline (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, inferred, insideUniverse, morph, morph', voided)
+import Morph (Deadline (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, factual, fired, inferred, insideUniverse, morph, morph', noted, voided)
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -130,6 +130,25 @@ spec = do
       records <- readIORef told
       length [term | EvMorphed _ term <- records] `shouldBe` 1
 
+    it "tells the protocol the term a normalize premise came from beside the term it came to" $ do
+      expr <- parseExpressionThrows "⟦ wy ↦ ⟦ kx ↦ ∅ ⟧, y ↦ Φ.wy( kx ↦ Φ.vu ) ⟧"
+      loc <- parseExpressionThrows "Q.y"
+      told <- newIORef []
+      ctx <- defaultReduceContext loc
+      _ <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
+      records <- readIORef told
+      head' <- parseExpressionThrows "⟦ kx ↦ ∅ ⟧( kx ↦ Φ.vu )"
+      [source | EvNormalized _ source _ <- records] `shouldContain` [head']
+
+    it "tells the protocol nothing of a normalize premise that only dropped the arguments of the term it came to" $ do
+      expr <- parseExpressionThrows "⟦ zq ↦ ⊥, y ↦ Φ.zq( ab ↦ Φ.zq ) ⟧"
+      loc <- parseExpressionThrows "Q.y"
+      told <- newIORef []
+      ctx <- defaultReduceContext loc
+      _ <- morph expr emptyState ctx{_saveEval = \record -> modifyIORef' told (record :)}
+      records <- readIORef told
+      [source | EvNormalized _ source@(ExApplication _ _) _ <- records] `shouldBe` []
+
   describe "morph'" $
     test'
       morph'
@@ -182,10 +201,10 @@ spec = do
           [direct (\_ _ -> [Morphs ExRoot world (pure . Concludes . Answered (Morphing, "premise"))])]
       answer `shouldBe` world
 
-  describe "morph' fails when no morphing rule matches the term" $
-    it "throws instead of looping when handed a bare, unmatched meta" $
-      (morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
-        `shouldThrow` (\e -> "Morphing expects a normal form" `isInfixOf` show (e :: SomeException))
+  describe "morph' fails when no morphing rule matches the term"
+    $ it "throws instead of looping when handed a bare, unmatched meta"
+    $ (morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
+      `shouldThrow` (\e -> "Morphing expects a normal form" `isInfixOf` show (e :: SomeException))
 
   describe "execBuildTerm 'morph'" $ do
     let univ = ExFormation []
@@ -270,68 +289,118 @@ spec = do
       ctx <- defaultReduceContext ExRoot
       morph expr emptyState ctx{_deadline = Just deadline}
         `shouldThrow` (\e -> "--max-seconds=17" `isInfixOf` show (e :: SomeException))
-    it "fails a partial morphing once the deadline has passed" $ do
+    it "leaves a partial morphing in place once the deadline has passed" $ do
       expr <- parseExpressionThrows "[[ q -> [[ D> 5A- ]] ]]"
       deadline <- overdue 23
       ctx <- defaultReduceContext ExRoot
-      morph expr emptyState ctx{_deadline = Just deadline, _partial = True}
-        `shouldThrow` (\e -> "--max-seconds=23" `isInfixOf` show (e :: SomeException))
+      (residue, _, _) <- morph expr emptyState ctx{_deadline = Just deadline, _partial = True}
+      residue `shouldBe` expr
 
   describe "stops an entrance by the clock of --max-seconds" $
     it "fails a comparison that outlasts the deadline" $ do
       due <- (+ 0.2) <$> getMonotonicTime
       let formation :: Expression -> Int -> Expression
-          formation base depth = ExFormation [BiTau (AtLabel "x") (iterate (`ExDispatch` AtLabel "w") base !! depth), BiLambda (Function "L_q")]
+          formation base depth = ExFormation [BiTau (AtLabel "x") (iterate (`ExDispatch` AtLabel "w") base !! depth), BiTau AtPhi ExRoot]
       base <- defaultReduceContext ExRoot
       ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
       timeout 10000000 (enter (formation ExXi 1700) ctx)
         `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))
 
+  describe "names a cut by the facts however wide they are" $
+    it "names a cut held at the end of a wide fact long before the deadline" $ do
+      let looping :: Expression
+          looping = ExFormation [BiTau AtPhi (ExDispatch ExRoot (AtLabel "pz"))]
+          wide :: Expression
+          wide = ExFormation ([BiTau (AtLabel (T.pack ("w" ++ show index))) (ExFormation [BiTau (AtLabel (T.pack ("v" ++ show index))) (ExFormation [BiDelta (BtOne "5C")])]) | index <- [1 :: Int .. 30000]] ++ [BiTau (AtLabel "kq") looping])
+      facts <- factual
+      told <- newIORef []
+      base <- defaultReduceContext ExRoot
+      noted base{_facts = Just facts} wide (ExDispatch ExRoot (AtLabel "cq"))
+      due <- (+ 2) <$> getMonotonicTime
+      ctx <- enter looping base{_acyclic = Just Plausible, _maxLoops = 0, _facts = Just facts, _reckoning = True, _deadline = Just (Deadline 43 due), _saveEval = \record -> modifyIORef' told (record :)}
+      _ <- timeout 10000000 (fired ExRoot ctx ExRoot emptyState looping)
+      records <- readIORef told
+      [answered | EvLooped _ _ _ _ _ (Just (_, answered)) <- records] `shouldBe` [Just (ExDispatch (ExDispatch ExRoot (AtLabel "cq")) (AtLabel "kq"))]
+
   describe "enters a formation again as many times as --max-loops allows" $ do
     it "enters a formation holding the one entered above it under --max-loops=1" $ do
       let formation :: Int -> Expression
-          formation depth = ExFormation [BiTau (AtLabel "kv") (iterate (`ExDispatch` AtLabel "zu") ExRoot !! depth), BiLambda (Function "L_hop")]
+          formation depth = ExFormation [BiTau (AtLabel "kv") (iterate (`ExDispatch` AtLabel "zu") ExRoot !! depth), BiTau AtPhi ExRoot]
       base <- defaultReduceContext ExRoot
       ctx <- enter (formation 4) =<< enter (formation 3) base{_acyclic = Just Plausible, _maxLoops = 1}
       length (concat ctx._entered) `shouldBe` 2
     it "cuts a formation holding the two entered above it under --max-loops=1" $ do
       let formation :: Int -> Expression
-          formation depth = ExFormation [BiTau (AtLabel "qe") (iterate (`ExDispatch` AtLabel "yo") ExRoot !! depth), BiLambda (Function "L_kit")]
+          formation depth = ExFormation [BiTau (AtLabel "qe") (iterate (`ExDispatch` AtLabel "yo") ExRoot !! depth), BiTau AtPhi ExRoot]
       base <- defaultReduceContext ExRoot
       (enter (formation 7) =<< enter (formation 6) =<< enter (formation 5) base{_acyclic = Just Plausible, _maxLoops = 1})
+        `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
+    it "enters a copy of an atom that only resembles the copy entered above it" $ do
+      base <- defaultReduceContext ExRoot
+      ctx <- enter (ExFormation [BiTau (AtLabel "t") (ExFormation [BiLambda (FnSymbol 4)]), BiLambda (Function "L_vo")]) =<< enter (ExFormation [BiTau (AtLabel "t") (ExDispatch ExRoot (AtLabel "pu")), BiLambda (Function "L_vo")]) base{_acyclic = Just Plausible, _maxLoops = 0}
+      length (concat ctx._entered) `shouldBe` 2
+    it "cuts a copy of an atom whose boxed formation grows on every round" $ do
+      let formation :: Int -> Expression
+          formation depth = ExFormation [BiTau (AtLabel "sa") (ExFormation [BiTau (AtLabel "i") (iterate (`ExDispatch` AtLabel "nu") ExRoot !! depth), BiTau AtPhi ExXi]), BiLambda (Function "L_te")]
+      base <- defaultReduceContext ExRoot
+      (enter (formation 3) =<< enter (formation 2) base{_acyclic = Just Plausible, _maxLoops = 0})
+        `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
+    it "cuts a copy of an atom that repeats the copy entered above it exactly" $ do
+      let formation :: Expression
+          formation = ExFormation [BiTau (AtLabel "ka") (ExDispatch ExRoot (AtLabel "mi")), BiLambda (Function "L_ru")]
+      base <- defaultReduceContext ExRoot
+      (enter formation =<< enter formation base{_acyclic = Just Plausible, _maxLoops = 0})
         `shouldThrow` (\e -> "already inside" `isInfixOf` show (e :: SomeException))
 
   describe "places a formation among the objects of the world" $ do
     it "places a formation by the object the fact table maps it to" $ do
       let body = ExApplication (ExDispatch ExRoot (AtLabel "zuq")) (ArTau (AtLabel "wo") (ExFormation [BiLambda (FnSymbol 7)]))
-      facts <- newIORef (Map.fromList [(hashExpression (ExFormation [BiTau AtPhi body]), [(ExFormation [BiTau AtPhi body], ExDispatch ExRoot (AtLabel "nq"))])])
+      facts <- factual
       base <- defaultReduceContext ExRoot
+      noted base{_facts = Just facts} (ExFormation [BiTau AtPhi body]) (ExDispatch ExRoot (AtLabel "nq"))
       fmap fst <$> declared (ExFormation [BiTau (AtLabel "nq") (ExFormation [BiVoid AtPhi]), BiTau (AtLabel "kel") (ExFormation [BiTau AtPhi body])]) base{_facts = Just facts} (ExFormation [BiTau AtPhi body])
         `shouldReturn` Just (ExDispatch ExRoot (AtLabel "nq"))
     it "recalls every fact it follows on its way to the world, one by one" $ do
       let head' = ExFormation [BiVoid (AtLabel "ru"), BiTau AtPhi (ExDispatch ExXi (AtLabel "ru"))]
           copy = ExFormation [BiTau (AtLabel "ru") (ExFormation [BiLambda (FnSymbol 6)]), BiTau AtPhi (ExDispatch ExXi (AtLabel "ru"))]
           applied = ExApplication head' (ArTau (AtLabel "ru") (ExFormation [BiLambda (FnSymbol 6)]))
-      facts <- newIORef (Map.fromListWith (++) [(hashExpression term, [(term, source)]) | (term, source) <- [(head', ExDispatch ExRoot (AtLabel "vex")), (copy, applied)]])
+      facts <- factual
       told <- newIORef []
       base <- defaultReduceContext ExRoot
+      mapM_ (uncurry (noted base{_facts = Just facts})) [(head', ExDispatch ExRoot (AtLabel "vex")), (copy, applied)]
       _ <- declared (ExFormation [BiTau (AtLabel "vex") head']) base{_facts = Just facts, _saveEval = \record -> modifyIORef' told (record :)} copy
       records <- readIORef told
       reverse [(term, reply) | EvRecalled _ term reply <- records] `shouldBe` [(copy, applied), (head', ExDispatch ExRoot (AtLabel "vex"))]
+    it "recalls every fact of a circle of facts once, whatever symbol the copy holds" $ do
+      let recalls :: Int -> IO Int
+          recalls symbol = do
+            let head' = ExFormation [BiVoid (AtLabel "ko"), BiLambda (Function "L_jew")]
+                copy = ExFormation [BiTau (AtLabel "ko") (ExFormation [BiLambda (FnSymbol symbol)]), BiLambda (Function "L_jew")]
+                twin = ExFormation [BiTau (AtLabel "ko") (ExFormation [BiLambda (FnSymbol symbol)]), BiLambda (Function "L_jew"), BiTau AtRho (ExDispatch ExRoot (AtLabel "jew"))]
+                answer = ExFormation [BiTau AtPhi twin]
+            facts <- factual
+            told <- newIORef []
+            base <- defaultReduceContext ExRoot
+            mapM_ (uncurry (noted base{_facts = Just facts})) [(head', ExDispatch ExRoot (AtLabel "jew")), (copy, ExApplication head' (ArTau (AtLabel "ko") (ExFormation [BiLambda (FnSymbol symbol)]))), (answer, copy), (twin, ExDispatch answer AtPhi)]
+            mapM_ (\index -> noted base{_facts = Just facts} (ExFormation [BiLambda (FnSymbol (symbol + index))]) (ExDispatch ExRoot (AtLabel "pad"))) [1 .. 12]
+            _ <- declared (ExFormation [BiTau (AtLabel "jew") head']) base{_facts = Just facts, _saveEval = \record -> modifyIORef' told (record :)} answer
+            (\records -> length [term | EvRecalled _ term _ <- records]) <$> readIORef told
+      mapM recalls [3, 17 .. 700] `shouldReturn` replicate 50 3
     it "answers the voids of the first head a chain of remembered copies was applied to" $ do
       let head' = ExFormation [BiVoid (AtLabel "ka"), BiVoid (AtLabel "mu"), BiLambda (Function "L_ozu")]
           half = ExFormation [BiTau (AtLabel "ka") (ExFormation [BiLambda (FnSymbol 4)]), BiVoid (AtLabel "mu"), BiLambda (Function "L_ozu")]
           full = ExFormation [BiTau (AtLabel "ka") (ExFormation [BiLambda (FnSymbol 4)]), BiTau (AtLabel "mu") (ExFormation [BiLambda (FnSymbol 9)]), BiLambda (Function "L_ozu")]
-      facts <- newIORef (Map.fromListWith (++) [(hashExpression term, [(term, source)]) | (term, source) <- [(head', ExDispatch ExRoot (AtLabel "ozu")), (half, ExApplication head' (ArTau (AtLabel "ka") (ExFormation [BiLambda (FnSymbol 4)]))), (full, ExApplication half (ArTau (AtLabel "mu") (ExFormation [BiLambda (FnSymbol 9)])))]])
+      facts <- factual
       base <- defaultReduceContext ExRoot
+      mapM_ (uncurry (noted base{_facts = Just facts})) [(head', ExDispatch ExRoot (AtLabel "ozu")), (half, ExApplication head' (ArTau (AtLabel "ka") (ExFormation [BiLambda (FnSymbol 4)]))), (full, ExApplication half (ArTau (AtLabel "mu") (ExFormation [BiLambda (FnSymbol 9)])))]
       voided base{_facts = Just facts} full `shouldReturn` Just [AtLabel "ka", AtLabel "mu"]
     it "answers no voids for a formation the fact table does not hold" $ do
-      facts <- newIORef Map.empty
+      facts <- factual
       base <- defaultReduceContext ExRoot
       voided base{_facts = Just facts} (ExFormation [BiTau (AtLabel "pe") (ExFormation []), BiLambda (Function "L_uv")]) `shouldReturn` Nothing
     it "places nothing the fact table does not map" $ do
       let body = ExApplication (ExDispatch ExRoot (AtLabel "zuq")) (ArTau (AtLabel "wo") (ExFormation [BiLambda (FnSymbol 7)]))
-      facts <- newIORef Map.empty
+      facts <- factual
       base <- defaultReduceContext ExRoot
       fmap fst <$> declared (ExFormation [BiTau (AtLabel "kel") (ExFormation [BiTau AtPhi body])]) base{_facts = Just facts} (ExFormation [BiTau AtPhi body])
         `shouldReturn` Nothing

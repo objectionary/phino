@@ -52,7 +52,11 @@ jobs:
         run: |
           set -e
           git checkout ${{ github.event.pull_request.base.sha }}
-          cabal build all --enable-benchmarks
+          if ! cabal build all --enable-benchmarks; then
+            echo "::warning::bench does not build at the merge-base, so it is built there with benchmark/Main.hs of the PR head"
+            git checkout ${{ github.event.pull_request.head.sha }} -- benchmark/Main.hs
+            cabal build all --enable-benchmarks
+          fi
           phino_dir=$(dirname "$(cabal list-bin phino)")
           PATH="$phino_dir:$PATH" make benchmark/tmp/native.phi
           cp benchmark/tmp/native.phi /tmp/native.phi

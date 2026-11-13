@@ -59,4 +59,5 @@ protocol: |
       joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
       𝑛·1·8 := ⟦ v ↦ 𝜎4:λ, tag ↦ v, λ ⤍ L_box ⟧
       remembered 𝑛·1·9 ≡ 𝑛·0·1  # ⟦ v ↦ 𝜎4:λ, tag ↦ v, λ ⤍ L_box ⟧
-    morphed 𝑛·0·2 := 𝜎4:λ
+    normalized 𝑛·0·2 := 𝜎4:λ  # 𝑛·1·9.tag
+    morphed 𝑛·0·3 := 𝑛·0·2

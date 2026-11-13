@@ -68,8 +68,10 @@ substituteGroups rep groups = B.concat (go (B.unpack rep))
                     Just idx -> fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
                in val : go afterDigits
     go ('\\' : '\\' : rest) = B.singleton '\\' : go rest
+    go ('\\' : '&' : rest) = B.singleton '&' : go rest
     go ('\\' : digit : rest)
       | isDigit digit = fromMaybe (B.pack ['\\', digit]) (safeIndex (toInteger (digitToInt digit)) groups) : go rest
+    go ('&' : rest) = fromMaybe (B.singleton '&') (safeIndex 0 groups) : go rest
     go (c : rest) = B.singleton c : go rest
     safeIndex :: Integer -> [B.ByteString] -> Maybe B.ByteString
     safeIndex i xs

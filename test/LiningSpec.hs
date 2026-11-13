@@ -116,10 +116,10 @@ spec = do
       ]
       (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
-  describe "toSingleLine on APP_BINDING" $
-    it "recurses into the pair" $
-      toSingleLine (APP_BINDING (PA_TAU (AT_LABEL "x") ARROW multilineFormation))
-        `shouldBe` APP_BINDING (PA_TAU (AT_LABEL "x") ARROW singlelineFormation)
+  describe "toSingleLine on APP_BINDING"
+    $ it "recurses into the pair"
+    $ toSingleLine (APP_BINDING (PA_TAU (AT_LABEL "x") ARROW multilineFormation))
+      `shouldBe` APP_BINDING (PA_TAU (AT_LABEL "x") ARROW singlelineFormation)
 
   describe "toSingleLine on APP_ARGUMENT" $
     forM_

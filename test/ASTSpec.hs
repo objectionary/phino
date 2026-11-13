@@ -91,9 +91,9 @@ spec = do
           it desc $ (lhs == rhs) `shouldBe` expected
       )
 
-  describe "Attribute Ord instance orders correctly" $
-    it "sorts attributes by constructor order" $
-      let attrs = [AtMeta "z", AtDelta, AtLambda, AtRho, AtPhi, AtLabel "a"]
+  describe "Attribute Ord instance orders correctly"
+    $ it "sorts attributes by constructor order"
+    $ let attrs = [AtMeta "z", AtDelta, AtLambda, AtRho, AtPhi, AtLabel "a"]
           first : _ = sort attrs
           isLabel (AtLabel _) = True
           isLabel _ = False
@@ -123,9 +123,9 @@ spec = do
           it desc $ (lhs == rhs) `shouldBe` expected
       )
 
-  describe "Bytes Ord instance orders correctly" $
-    it "sorts bytes by constructor order" $
-      let bytes = [BtMeta "z", BtMany ["00"], BtOne "FF", BtEmpty]
+  describe "Bytes Ord instance orders correctly"
+    $ it "sorts bytes by constructor order"
+    $ let bytes = [BtMeta "z", BtMany ["00"], BtOne "FF", BtEmpty]
           first : _ = sort bytes
        in first `shouldBe` BtEmpty
 
@@ -159,9 +159,9 @@ spec = do
           it desc $ (lhs == rhs) `shouldBe` expected
       )
 
-  describe "Binding Ord instance orders correctly" $
-    it "sorts bindings by constructor order" $
-      let bindings = [BiLambda (FnMeta "Z"), BiLambda (Function "A"), BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExRoot]
+  describe "Binding Ord instance orders correctly"
+    $ it "sorts bindings by constructor order"
+    $ let bindings = [BiLambda (FnMeta "Z"), BiLambda (Function "A"), BiVoid AtRho, BiDelta BtEmpty, BiMeta "B", BiTau AtRho ExRoot]
           first : _ = sort bindings
           isTau (BiTau _ _) = True
           isTau _ = False
@@ -194,9 +194,9 @@ spec = do
           it desc $ (lhs == rhs) `shouldBe` expected
       )
 
-  describe "Expression Ord instance orders correctly" $
-    it "sorts expressions by constructor order" $
-      let exprs = [ExDispatch ExRoot AtRho, ExApplication ExRoot (ArTau AtRho ExRoot), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
+  describe "Expression Ord instance orders correctly"
+    $ it "sorts expressions by constructor order"
+    $ let exprs = [ExDispatch ExRoot AtRho, ExApplication ExRoot (ArTau AtRho ExRoot), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
           first : _ = sort exprs
        in first `shouldBe` ExFormation []
 
@@ -325,6 +325,24 @@ spec = do
     it "does not find a term inside a bare symbol at the top" $
       within (ExFormation [BiDelta (BtOne "3E")]) (ExFormation [BiLambda (FnSymbol 5)]) `shouldBe` False
 
+  describe "akin" $ do
+    let down :: Expression -> Expression
+        down idx = ExFormation [BiTau (AtLabel "i") idx, BiTau AtPhi (ExDispatch ExRoot (AtLabel "qo"))]
+        next :: Expression -> Expression
+        next arg = ExApplication (ExDispatch ExRoot (AtLabel "next")) (ArTau (AtLabel "x") arg)
+        atom :: Expression -> Int -> Expression
+        atom side idx = ExFormation [BiTau (AtLabel "on") (ExFormation [BiLambda (FnSymbol idx)]), BiTau AtRho (ExFormation [BiTau (AtLabel "rt") side]), BiLambda (Function "L_vex")]
+    it "finds an atom inside the next one whose boxed formation wraps its argument once more" $
+      akin (atom (down (next (ExFormation [BiLambda (FnSymbol 3)]))) 5) (atom (down (next (next (ExFormation [BiLambda (FnSymbol 3)])))) 8) `shouldBe` True
+    it "does not find an atom inside one whose boxed formation lost a wrapper" $
+      akin (atom (down (next (next ExRoot))) 2) (atom (down (next ExRoot)) 2) `shouldBe` False
+    it "does not find an atom inside one that differs outside its boxed formations" $
+      akin (ExFormation [BiTau (AtLabel "t") (ExDispatch ExRoot (AtLabel "pu")), BiLambda (Function "L_yo")]) (ExFormation [BiTau (AtLabel "t") (next (ExDispatch ExRoot (AtLabel "pu"))), BiLambda (Function "L_yo")]) `shouldBe` False
+    it "does not find an atom inside one naming another λ function" $
+      akin (ExFormation [BiTau (AtLabel "w") (down ExXi), BiLambda (Function "L_ab")]) (ExFormation [BiTau (AtLabel "w") (down (next ExXi)), BiLambda (Function "L_cd")]) `shouldBe` False
+    it "does not map one symbol outside a boxed formation to two others" $
+      akin (atom (down ExRoot) 4) (ExFormation [BiTau (AtLabel "on") (ExFormation [BiLambda (FnSymbol 6)]), BiTau AtRho (ExFormation [BiTau (AtLabel "rt") (down ExRoot), BiTau (AtLabel "of") (ExFormation [BiLambda (FnSymbol 6)])]), BiLambda (Function "L_vex")]) `shouldBe` False
+
   describe "hashSkeleton" $ do
     it "does not tell apart two formations that bind other terms to the same attributes" $
       hashSkeleton (ExFormation [BiTau (AtLabel "acc") ExRoot, BiLambda (Function "L_f")])
@@ -355,12 +373,12 @@ spec = do
              in matched `shouldBe` expected
       )
 
-  describe "dataBytes" $
-    it "builds the bytes-object formation carrying the given bytes" $
-      dataBytes (BtOne "48")
-        `shouldBe` ExApplication
-          (ExDispatch ExRoot (AtLabel "bytes"))
-          (ArTau AtPhi (ExFormation [BiDelta (BtOne "48")]))
+  describe "dataBytes"
+    $ it "builds the bytes-object formation carrying the given bytes"
+    $ dataBytes (BtOne "48")
+      `shouldBe` ExApplication
+        (ExDispatch ExRoot (AtLabel "bytes"))
+        (ArTau AtPhi (ExFormation [BiDelta (BtOne "48")]))
 
   describe "DataObject/DataString/DataNumber pattern" $ do
     it "constructs the phi-named, unwrapped form" $
@@ -510,10 +528,10 @@ spec = do
       ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "op"))]
         `shouldNotBe` ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "po"))]
 
-  describe "Expression Show instance" $
-    it "does not show what a node carries besides its parts" $
-      show (ExApplication (ExDispatch ExXi (AtLabel "yb")) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho])))
-        `shouldBe` "ExApplication (ExDispatch ExXi yb) (ArAlpha α0 (ExFormation [BiVoid ρ]))"
+  describe "Expression Show instance"
+    $ it "does not show what a node carries besides its parts"
+    $ show (ExApplication (ExDispatch ExXi (AtLabel "yb")) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho])))
+      `shouldBe` "ExApplication (ExDispatch ExXi yb) (ArAlpha α0 (ExFormation [BiVoid ρ]))"
 
   describe "lifted" $ do
     it "raises every symbol above the floor by the offset" $

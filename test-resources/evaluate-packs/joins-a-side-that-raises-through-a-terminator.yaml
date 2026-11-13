@@ -55,4 +55,5 @@ protocol: |
       𝑛2·1 := 𝑛·1·4  # 𝕄(ξ.right🌵)
       joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥ raised by 𝑛·1·4
       𝑛·1·6 := ⟦ k ↦ ⟦⟧, φ ↦ 𝜎4:λ ⟧
-    morphed 𝑛·0·1 := 𝜎4:λ
+    normalized 𝑛·0·1 := 𝜎4:λ  # 𝑛·1·6.φ
+    morphed 𝑛·0·2 := 𝑛·0·1

@@ -28,4 +28,5 @@ protocol: |
         morphed 𝑛·1·1 := L_throw:λ
       𝑛1·1 := L_throw:λ  # 𝕄(ξ.x)
       𝑛·1·2 := ⊥
-    morphed 𝑛·0·4 := ⊥
+    normalized 𝑛·0·4 := ⊥  # ⊥.φ
+    morphed 𝑛·0·5 := ⊥

@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A 'defer' line reduces only the arguments of a copy, never its methods
+# (#2379). Here the method 'm' of 'step' reads to the bare symbol '𝜎1', but
+# the argument 'tup' reads to an empty object, so the line binds the copy as
+# it is, writes no 'deferred' line and mints no symbol.
+symbolic: |
+  - λ: L_hold
+    morph:
+      𝑛1: $.b
+    defer:
+      𝑛2: 𝑛1
+    𝑛: ⟦ φ ↦ 𝑛2 ⟧
+location: 'Q.y'
+input: '⟦ done ↦ ⟦⟧, step(tup) ↦ ⟦ φ ↦ Φ.done, m ↦ Φ.items.tail ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧, head ↦ ⟦⟧ ⟧, y ↦ ⟦ b ↦ Φ.step( tup ↦ Φ.items.head ), λ ⤍ L_hold ⟧.φ ⟧'
+result: '⟦ tup ↦ Φ.items.head, φ ↦ Φ.done, m ↦ Φ.items.tail ⟧'
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_hold):
+      𝕄(ξ.b):
+        remembered 𝑛·1·1 ≡ Φ.step  # ⟦ tup ↦ ∅, φ ↦ Φ.done, m ↦ Φ.items.tail ⟧
+        𝑛·1·2 := Φ.step( tup ↦ Φ.items.head )
+        𝑛·1·3 := ⟦ tup ↦ Φ.items.head, φ ↦ Φ.done, m ↦ Φ.items.tail ⟧
+        remembered 𝑛·1·3 ≡ 𝑛·1·1( tup ↦ Φ.items.head )
+        morphed 𝑛·1·4 := 𝑛·1·3
+      𝑛1·1 := 𝑛·1·4  # 𝕄(ξ.b)
+      𝑛·1·5 := 𝑛·1·4:φ  # 𝑛
+      𝕄(𝑛·1·5):
+        morphed 𝑛·1·6 := 𝑛·1·4:φ
+      𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
+    morphed 𝑛·0·1 := 𝑛·1·4

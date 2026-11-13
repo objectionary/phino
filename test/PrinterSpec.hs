@@ -82,9 +82,9 @@ spec = do
           it desc (printExpression' expr (sugar, UNICODE, SINGLELINE, defaultMargin) `shouldContain` "𝛿1")
       )
 
-  describe "printExpression with SWEET UNICODE renders the pretty function meta" $
-    it "meta lambda becomes 𝑓" $
-      printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "𝑓:λ"
+  describe "printExpression with SWEET UNICODE renders the pretty function meta"
+    $ it "meta lambda becomes 𝑓"
+    $ printExpression' (ExFormation [BiLambda (FnMeta "F")]) (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "𝑓:λ"
 
   describe "printExpression names the non-finite doubles instead of spelling their bytes" $
     forM_
@@ -185,6 +185,20 @@ spec = do
     case parseExpression "⟦ a ↦ ⟦ b ↦ ⟦ c ↦ ⟦ d ↦ ⟦ e ↦ ⟦ x ↦ ξ.yyyyyyyy, z ↦ ξ.w ⟧ ⟧ ⟧ ⟧ ⟧ ⟧" of
       Right deep -> maximum (map length (lines (printExpression' deep (SALTY, UNICODE, MULTILINE, 36)))) `shouldSatisfy` (<= 36)
       Left err -> expectationFailure err
+
+  describe "printExpression counts the width of :attr only on the last line of the asset" $ do
+    let program name = either error id (parseExpression ("⟦ " ++ name ++ " ↦ Φ.f(a ↦ Φ.g(b ↦ Φ.cccccccc, d ↦ Φ.eeeeeeee)) ⟧"))
+        long = replicate 30 'k'
+        printed name = printExpression' (program name) (SWEET, UNICODE, MULTILINE, 48)
+    it "splits the asset of a long name the same way as of a short one" $
+      printed long `shouldBe` "Φ.f(\n  a ↦ Φ.g( b ↦ Φ.cccccccc, d ↦ Φ.eeeeeeee )\n):" ++ long
+    it "keeps the layout of a short name" $
+      printed "k" `shouldBe` "Φ.f(\n  a ↦ Φ.g( b ↦ Φ.cccccccc, d ↦ Φ.eeeeeeee )\n):k"
+    it "keeps every line of a long name within the margin" $
+      maximum (map length (lines (printed long))) `shouldSatisfy` (<= 48)
+    it "still splits an asset that fits alone but not with its name" $
+      printExpression' (either error id (parseExpression "⟦ kkkkkkkkkkkkkkkkkkkk ↦ Φ.f(a ↦ Φ.ggggggg) ⟧")) (SWEET, UNICODE, MULTILINE, 30)
+        `shouldBe` "Φ.f(\n  a ↦ Φ.ggggggg\n):kkkkkkkkkkkkkkkkkkkk"
 
   describe "printExpression keeps a compressed meet atomic under a narrow margin" $
     it "renders the meet body on a single line even when the margin wraps its parent" $ do
@@ -383,9 +397,9 @@ spec = do
               ]
       printExpressionHidingRho' deep (SWEET, UNICODE, SINGLELINE, defaultMargin) `shouldBe` "⟦⟧:b:a"
 
-  describe "logPrintConfig" $
-    it "is a fixed SWEET/UNICODE/SINGLELINE config at the default margin" $
-      logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE, defaultMargin)
+  describe "logPrintConfig"
+    $ it "is a fixed SWEET/UNICODE/SINGLELINE config at the default margin"
+    $ logPrintConfig `shouldBe` (SWEET, UNICODE, SINGLELINE, defaultMargin)
 
   describe "printExpression' spells one-binding formations the way the parser reads them back" $
     forM_
