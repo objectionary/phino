@@ -17,7 +17,7 @@ import Logger (logDebug)
 import Matcher (Meta (Named), MetaValue (MvBindings), Subst (Subst), substEmpty)
 import Misc (uniqueBindings')
 import Printer (printExpression)
-import Test.Hspec (Expectation, Spec, describe, it, shouldBe, shouldThrow)
+import Test.Hspec (Expectation, Spec, describe, it, shouldBe, shouldNotBe, shouldThrow)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (ArgAttribute, ArgBinding, ArgBytes, ArgExpression))
 
@@ -56,6 +56,30 @@ spec = describe "Functions" $ do
           subst = Subst (Map.fromList [first, second])
       TeBindings bds <- buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2")] subst
       length bds `shouldBe` 2
+
+    it "renames a reference through rho from a nested formation" $ do
+      let first = (Named "B1", MvBindings [BiTau (AtLabel "a") ExRoot])
+          second =
+            ( Named "B2"
+            , MvBindings
+                [ BiTau (AtLabel "a") ExXi
+                , BiTau (AtLabel "c") (ExFormation [BiTau (AtLabel "d") (ExDispatch (ExDispatch ExXi AtRho) (AtLabel "a"))])
+                ]
+            )
+          subst = Subst (Map.fromList [first, second])
+      TeBindings [_, BiTau renamed _, BiTau _ (ExFormation [BiTau _ (ExDispatch _ ref)])] <-
+        buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2")] subst
+      renamed `shouldNotBe` AtLabel "a"
+      ref `shouldBe` renamed
+
+    it "keeps a reference to an attribute of the nested formation itself" $ do
+      let first = (Named "B1", MvBindings [BiTau (AtLabel "a") ExRoot])
+          inner = ExFormation [BiVoid (AtLabel "a"), BiTau (AtLabel "d") (ExDispatch ExXi (AtLabel "a"))]
+          second = (Named "B2", MvBindings [BiTau (AtLabel "a") ExXi, BiTau (AtLabel "c") inner])
+          subst = Subst (Map.fromList [first, second])
+      TeBindings [_, _, BiTau _ result] <-
+        buildTerm "join" [ArgBinding (BiMeta "B1"), ArgBinding (BiMeta "B2")] subst
+      result `shouldBe` inner
 
     it "joins no bindings when given no arguments" $ do
       TeBindings bds <- buildTerm "join" [] substEmpty
