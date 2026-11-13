@@ -106,7 +106,7 @@ established :: Expression -> Facts
 established term = Facts (layer id hashExpression term) (tally term) (calm term) (unrepeated term)
 
 instance Eq Expression where
-  left == right = isTrue# (reallyUnsafePtrEquality# left right) || congruent left right
+  left == right = left `seq` right `seq` (isTrue# (reallyUnsafePtrEquality# left right) || congruent left right)
     where
       congruent :: Expression -> Expression -> Bool
       congruent (Formed facts bds) (Formed facts' bds') = alongside facts facts' && bds == bds'
