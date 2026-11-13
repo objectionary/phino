@@ -11,7 +11,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Morph (Answer (..), Budget (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), ReductionFunc, Morphed, Steps (..), Tally (..), admitting, argued, awaited, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, repeats, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
+module Morph (Answer (..), Budget (..), Deadline (..), Firing (..), Facts, Kept (..), ReduceContext (..), ReduceException (..), EvaluationFunc, Memo (..), Kindred, ReductionFunc, adopted, kindle, kindred, minting, placed, Morphed, Steps (..), Tally (..), admitting, argued, awaited, called, carried, charged, coined, counted, declared, deeper, emptyState, ended, enter, execBuildTerm, expired, fired, inferred, insideUniverse, isLambda, lambda, leadsTo, factual, memoized, morph, noted, remembering, morph', morphing, normalized, onward, opening, parking, recalled, refused, remember, remembered, repeats, retained, settled, severing, starved, tallied, timed, universed, unparked, vetted, voided) where
 
 import AST
 import Builder (buildExpressionThrows, nameIn)
@@ -19,6 +19,7 @@ import Control.Applicative ((<|>))
 import Control.Exception (Exception, catch, evaluate, throwIO, try)
 import Control.Monad (forM_, guard, unless, when)
 import Data.Bifunctor (first, second)
+import Data.Either (lefts)
 import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (find, partition, sortOn)
 import qualified Data.List as List
@@ -33,7 +34,7 @@ import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import GHC.Stats (GCDetails (..), RTSStats (..), getRTSStats, getRTSStatsEnabled)
 import qualified Inference as In
-import Lambdas (Lambdas, thrown)
+import Lambdas (Lambdas, stayed, thrown)
 import Locator (locatedExpression, withLocatedExpression)
 import Matcher (substEmpty)
 import Must (Must (..))
@@ -69,7 +70,15 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression, Answer))) (IORef Int) (IORef Int)
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression, Answer))) (IORef Int) (IORef Int) Kin
+
+data Kin = Kin (IORef Spots) (IORef (Map.Map Int [Kindred])) (IORef (Map.Map Int Firing))
+
+data Spots = Spots (Store Int) (Map.Map Int Expression)
+
+data Kindred = Kindred Expression Expression Firing Answer
+
+data Renaming = Renaming (IORef (Map.Map Int Int)) Spots (IORef (Set.Set Firing))
 
 data Answer
   = Answer Expression Expression
@@ -189,7 +198,7 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   where
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
-    starve (Just (Memo _ _ _ exhausted)) = modifyIORef' exhausted (+ 1)
+    starve (Just (Memo _ _ _ exhausted _)) = modifyIORef' exhausted (+ 1)
 
 measured :: ReduceContext -> Expression -> IO ()
 measured ctx term = do
@@ -246,12 +255,12 @@ awaited ctx action = case ctx._deadline of
     maybe (expired ctx cap) pure =<< timeout (ceiling (max 0 (due - now) * 1000000)) action
 
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0)
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> (Kin <$> newIORef (Spots Map.empty Map.empty) <*> newIORef Map.empty <*> newIORef Map.empty))
 memoized _ = pure Nothing
 
 recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
 recalled Nothing _ _ = pure Nothing
-recalled (Just (Memo store _ answers _)) form spent = do
+recalled (Just (Memo store _ answers _ _)) form spent = do
   kept <- readIORef store
   count <- readIORef answers
   let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
@@ -266,26 +275,186 @@ recalled (Just (Memo store _ answers _)) form spent = do
 
 counted :: Maybe Memo -> IO Int
 counted Nothing = pure 0
-counted (Just (Memo _ _ answers _)) = readIORef answers
+counted (Just (Memo _ _ answers _ _)) = readIORef answers
 
 starved :: Maybe Memo -> IO Int
 starved Nothing = pure 0
-starved (Just (Memo _ _ _ exhausted)) = readIORef exhausted
+starved (Just (Memo _ _ _ exhausted _)) = readIORef exhausted
 
 retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
 retained Nothing _ _ _ = pure ()
-retained (Just (Memo store _ _ _)) form stamp kept =
+retained (Just (Memo store _ _ _ _)) form stamp kept =
   modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
 
 remembered :: Maybe Memo -> Firing -> IO (Maybe (Expression, Answer))
 remembered Nothing _ = pure Nothing
-remembered (Just (Memo _ firings _ _)) firing = Map.lookup firing <$> readIORef firings
+remembered (Just (Memo _ firings _ _ _)) firing = Map.lookup firing <$> readIORef firings
 
 remember :: Maybe Memo -> Firing -> Expression -> Answer -> IO ()
 remember Nothing _ _ _ = pure ()
-remember (Just (Memo _ firings answers _)) firing form answer = do
+remember (Just (Memo _ firings answers _ _)) firing form answer = do
   modifyIORef' firings (Map.insert firing (form, answer))
   modifyIORef' answers (+ 1)
+
+placed :: Maybe Memo -> Expression -> Int -> IO ()
+placed (Just (Memo _ _ _ _ (Kin places _ _))) term idx
+  | not (bare term) = modifyIORef' places (\spots -> List.foldl' spot spots (List.nub [term, stayed term]))
+  where
+    spot :: Spots -> Expression -> Spots
+    spot spots@(Spots known spelt) spelling = maybe (Spots (Map.insertWith (++) (hashExpression spelling) [(spelling, idx)] known) (Map.insertWith (\_ old -> old) idx spelling spelt)) (const spots) (spotted spots spelling)
+    bare :: Expression -> Bool
+    bare (ExFormation [BiLambda (FnSymbol _)]) = True
+    bare _ = False
+placed _ _ _ = pure ()
+
+spotted :: Spots -> Expression -> Maybe Int
+spotted (Spots known _) term = lookup term (Map.findWithDefault [] (hashExpression term) known)
+
+abstracted :: Spots -> Expression -> (Expression, [(Int, Expression)])
+abstracted spots = goExpr
+  where
+    goExpr :: Expression -> (Expression, [(Int, Expression)])
+    goExpr term = maybe (nested term) (\idx -> (ExFormation [BiLambda (FnSymbol idx)], [(idx, term)])) (spotted spots term)
+    nested :: Expression -> (Expression, [(Int, Expression)])
+    nested (ExFormation bds) = let parts = map goBinding bds in (ExFormation (map fst parts), concatMap snd parts)
+    nested (ExApplication expr arg) = let (expr', one) = goExpr expr; (arg', two) = goArgument arg in (ExApplication expr' arg', one ++ two)
+    nested (ExDispatch expr attr) = first (`ExDispatch` attr) (goExpr expr)
+    nested term = (term, [])
+    goBinding :: Binding -> (Binding, [(Int, Expression)])
+    goBinding (BiTau attr expr) = first (BiTau attr) (goExpr expr)
+    goBinding bd = (bd, [])
+    goArgument :: Argument -> (Argument, [(Int, Expression)])
+    goArgument (ArTau attr expr) = first (ArTau attr) (goExpr expr)
+    goArgument (ArAlpha alpha expr) = first (ArAlpha alpha) (goExpr expr)
+
+kindle :: Maybe Memo -> Expression -> Firing -> Answer -> IO ()
+kindle (Just (Memo _ _ _ _ (Kin places likes _))) form firing answer = do
+  spots <- readIORef places
+  let key = fst (abstracted spots form)
+  modifyIORef' likes (Map.insertWith (++) (hashShape key) [Kindred key form firing answer])
+kindle _ _ _ _ = pure ()
+
+minting :: Maybe Memo -> Firing -> Answer -> IO ()
+minting (Just (Memo _ _ _ _ (Kin _ _ minters))) firing@(Firing _ operands normals) answer =
+  modifyIORef' minters (\known -> List.foldl' (\held idx -> Map.insertWith (\_ old -> old) idx firing held) known [idx | idx <- answered answer, idx `notElem` inputs])
+  where
+    inputs :: [Int]
+    inputs = lefts operands ++ concatMap symbols normals
+minting _ _ _ = pure ()
+
+answered :: Answer -> [Int]
+answered (Answer built normal) = List.nub (symbols built ++ symbols normal)
+answered (Joined normal) = List.nub (symbols normal)
+answered Raised = []
+
+kindred :: ReduceContext -> Expression -> IO (Maybe (Kindred, Map.Map Int Int, [(Int, Expression)]))
+kindred ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places likes _))} form = do
+  spots <- readIORef places
+  known <- readIORef likes
+  let (key, posed) = abstracted spots form
+      found = listToMaybe [(kin, pairing, posed) | kin@(Kindred before _ _ _) <- Map.findWithDefault [] (hashShape key) known, Just pairing <- [bijection before key]]
+  awaited ctx (evaluate (isJust found `seq` found))
+kindred _ _ = pure Nothing
+
+adopted :: ReduceContext -> (Kindred, Map.Map Int Int, [(Int, Expression)]) -> Expression -> IO Answer
+adopted ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places _ _))} (Kindred key form firing answer, pairing, posed) target = do
+  table <- newIORef pairing
+  visiting <- newIORef Set.empty
+  Spots known _ <- readIORef places
+  adopt ctx (Renaming table (Spots known (Map.fromList [(idx, fromMaybe (ExFormation [BiLambda (FnSymbol idx')]) (lookup idx' posed)) | idx <- symbols key, Just idx' <- [Map.lookup idx pairing]])) visiting) firing key form answer (Just target)
+adopted _ _ _ = throwIO (userError "A renamed answer needs the memo of --acyclic=plausible")
+
+adopt :: ReduceContext -> Renaming -> Firing -> Expression -> Expression -> Answer -> Maybe Expression -> IO Answer
+adopt ctx renaming@(Renaming table _ visiting) firing key form answer target = do
+  modifyIORef' visiting (Set.insert firing)
+  firing' <- refired ctx renaming firing
+  existing <- remembered ctx._memo firing'
+  case existing >>= \(first', answer') -> (first',answer',) <$> bijection (ended answer) (ended answer') of
+    Just (first', answer', pairing) -> do
+      modifyIORef' table (`Map.union` pairing)
+      forM_ target $ \form' -> do
+        ctx._saveEval (EvRecalled (ctx._nesting + 1) first' (ended answer'))
+        stamp <- counted ctx._memo
+        retained ctx._memo form' stamp (Answered answer')
+        ctx._saveEval (EvMemoized (ctx._nesting + 1) form' (ended answer'))
+      pure answer'
+    Nothing -> do
+      minters <- held ctx._memo
+      let own = [idx | idx <- answered answer, Map.lookup idx minters == Just firing]
+      known <- readIORef table
+      forM_ [idx | idx <- own, Map.notMember idx known] $ \idx -> do
+        fresh <- coined ctx
+        modifyIORef' table (Map.insert idx fresh)
+      answer' <- reanswered answer
+      form' <- maybe (renamedTerm ctx renaming form) pure target
+      remember ctx._memo firing' form' answer'
+      table' <- readIORef table
+      minted' ctx._memo firing' [fresh | idx <- own, Just fresh <- [Map.lookup idx table']]
+      stamp <- counted ctx._memo
+      retained ctx._memo form' stamp (Answered answer')
+      ctx._saveEval (EvRenamed (ctx._nesting + 1) form' (ended answer') form [(idx, idx') | idx <- List.nub (symbols key ++ answered answer), Just idx' <- [Map.lookup idx table'], idx' /= idx])
+      pure answer'
+  where
+    reanswered :: Answer -> IO Answer
+    reanswered (Answer built normal) = Answer <$> renamedTerm ctx renaming built <*> renamedTerm ctx renaming normal
+    reanswered (Joined normal) = Joined <$> renamedTerm ctx renaming normal
+    reanswered Raised = pure Raised
+    held :: Maybe Memo -> IO (Map.Map Int Firing)
+    held (Just (Memo _ _ _ _ (Kin _ _ minters))) = readIORef minters
+    held Nothing = pure Map.empty
+    minted' :: Maybe Memo -> Firing -> [Int] -> IO ()
+    minted' (Just (Memo _ _ _ _ (Kin _ _ minters))) firing' fresh = modifyIORef' minters (\known -> List.foldl' (\kept idx -> Map.insert idx firing' kept) known fresh)
+    minted' Nothing _ _ = pure ()
+
+refired :: ReduceContext -> Renaming -> Firing -> IO Firing
+refired ctx renaming (Firing func operands normals) = Firing func <$> mapM operand operands <*> mapM (renamedTerm ctx renaming) normals
+  where
+    operand :: Either Int Bytes -> IO (Either Int Bytes)
+    operand (Left idx) = Left <$> renamedSymbol ctx renaming idx
+    operand bytes = pure bytes
+
+renamedTerm :: ReduceContext -> Renaming -> Expression -> IO Expression
+renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _) = goExpr
+  where
+    goExpr :: Expression -> IO Expression
+    goExpr term = maybe (nested term) (spot term) (spotted spots term)
+    spot :: Expression -> Int -> IO Expression
+    spot term idx = maybe (nested term) pure (Map.lookup idx spelt)
+    nested :: Expression -> IO Expression
+    nested (ExFormation bds) = ExFormation <$> mapM goBinding bds
+    nested (ExApplication expr arg) = ExApplication <$> goExpr expr <*> goArgument arg
+    nested (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr expr
+    nested term = pure term
+    goBinding :: Binding -> IO Binding
+    goBinding (BiTau attr expr) = BiTau attr <$> goExpr expr
+    goBinding (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> renamedSymbol ctx renaming idx
+    goBinding bd = pure bd
+    goArgument :: Argument -> IO Argument
+    goArgument (ArTau attr expr) = ArTau attr <$> goExpr expr
+    goArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr expr
+
+renamedSymbol :: ReduceContext -> Renaming -> Int -> IO Int
+renamedSymbol ctx renaming@(Renaming table _ visiting) idx = do
+  known <- readIORef table
+  maybe unknown pure (Map.lookup idx known)
+  where
+    unknown :: IO Int
+    unknown = do
+      minter <- case ctx._memo of
+        Just (Memo _ _ _ _ (Kin _ _ minters)) -> Map.lookup idx <$> readIORef minters
+        Nothing -> pure Nothing
+      seen <- readIORef visiting
+      case minter of
+        Just firing | Set.notMember firing seen -> do
+          kept <- remembered ctx._memo firing
+          forM_ kept (\(form, answer) -> adopt ctx renaming firing form form answer Nothing)
+          maybe fresh pure . Map.lookup idx =<< readIORef table
+        Just _ -> fresh
+        Nothing -> idx <$ modifyIORef' table (Map.insert idx idx)
+    fresh :: IO Int
+    fresh = do
+      made <- coined ctx
+      made <$ modifyIORef' table (Map.insert idx made)
 
 parking :: NonEmpty Rewritten -> State -> IO a -> IO a
 parking seq state action = action `catch` rethrow

@@ -18,6 +18,7 @@ import Data.Bool (bool)
 import Data.IORef (readIORef, writeIORef)
 import Data.List (partition)
 import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
@@ -25,7 +26,7 @@ import Engine (Engine (..))
 import Forks (Refusal (Unnamed, Unripe), Side (Lefthand, Righthand), forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
-import Morph (Answer (..), Budget (..), Firing (..), Kept (..), ReduceContext (..), ReduceException (..), Steps (..), argued, awaited, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, lambda, morphing, normalized, noted, opening, recalled, remember, remembered, remembering, repeats, retained, settled, starved, unparked, voided)
+import Morph (Answer (..), Budget (..), Firing (..), Kept (..), Kindred, ReduceContext (..), ReduceException (..), Steps (..), adopted, argued, awaited, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, kindle, kindred, lambda, minting, morphing, normalized, noted, opening, placed, recalled, remember, remembered, remembering, repeats, retained, settled, starved, unparked, voided)
 import Printer (printExpression, printFunction)
 import Rule (RuleContext (RuleContext))
 import Text.Printf (printf)
@@ -68,8 +69,14 @@ symbol func form self univ state caller = case matched caller._symbolic func of
   Just entry -> do
     charged caller
     known <- recalled caller._memo form caller._steps._spent
-    maybe (made entry) told known
+    maybe (kindred caller form >>= maybe (made entry) adopting) told known
   where
+    adopting :: (Kindred, Map.Map Int Int, [(Int, Expression)]) -> IO (Expression, State)
+    adopting kin = do
+      caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
+      answer <- adopted caller kin form
+      shown (caller._nesting + 1) answer
+      pure (ended answer, state)
     made :: Lambda -> IO (Expression, State)
     made entry = do
       stamp <- counted caller._memo
@@ -82,7 +89,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         (bound'', undressed, normals') <- foldM (through ctx "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
         firing <- Firing func (reverse conditions) . (reverse normals' ++) <$> sides entry._ending
         known <- remembered caller._memo firing
-        maybe (worked ctx entry firing bound'' undressed) (\(first, answer) -> (answer, undressed) <$ recited ctx._nesting first answer) known
+        (answer, state') <- maybe (worked ctx entry firing bound'' undressed) (\(first, answer) -> (answer, undressed) <$ recited ctx._nesting first answer) known
+        (answer, state') <$ kindle caller._memo form firing answer
       case outcome of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
@@ -98,6 +106,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       (lined, state'') <- foldM (passing ctx entry) (bound, state') entry._lines
       (answer, state''') <- concluded ctx entry operands lined state''
       remember caller._memo firing form answer
+      minting caller._memo firing answer
       known <- remembering caller._facts form
       when (known && spoken (ended answer)) (noted ctx (ended answer) form)
       pure (answer, state''')
@@ -203,6 +212,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         Nothing -> throwIO (Stuck (fromMaybe func state''._stuck))
         Just bytes -> do
           let datum = maybe (Right bytes) Left state''._manufactured
+          mapM_ (placed caller._memo (fromMaybe term (walked term))) state''._manufactured
           ctx._saveEval (EvData ctx._nesting meta._spelling origin datum)
           bound' <- bind meta (MvBytes bytes) bound
           pure (datum, bound', state'')

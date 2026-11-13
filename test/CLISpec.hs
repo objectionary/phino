@@ -1624,6 +1624,14 @@ spec = do
         withStdin once $
           testCLIFailed ["dataize", "--locator=Q.t", "--max-loops=1"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
 
+    describe "--acyclic=plausible over a mutual recursion of four objects" $ do
+      let world = "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, plus(i) ↦ ⟦ λ ⤍ L_plus ⟧, read(p) ↦ ⟦ at ↦ ξ.p ⟧, f1(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 28-:Δ ).if( Φ.read( Φ.f4( Φ.plus( ξ.i ) ).at ), Φ.read( Φ.plus( ξ.i ) ) ) ⟧, " ++ intercalate ", " [printf "f%d(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), %02X-:Δ ).if( Φ.read( ξ.i ), Φ.f%d( Φ.f%d( ξ.i ).at ) ) ⟧" level (0x28 + level :: Int) level (level - 1) | level <- [2 .. 4 :: Int]] ++ ", t ↦ Φ.f4( 00-:Δ ).at ⟧"
+          atoms = T.pack "- λ: L_fork\n  dataize: {𝛿1: $.on🌵}\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  stay: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  evaluate: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  undress: {𝑛15: 𝑛5, 𝑛16: 𝑛6}\n  symbolize: {𝑛11: 𝑛15, 𝑛12: 𝑛16}\n  defer: {𝑛13: 𝑛11, 𝑛14: 𝑛12}\n  cast: {𝑛19: 𝑛13, 𝑛20: 𝑛14}\n  join: {'on': 𝛿1, left: 𝑛19, right: 𝑛20, otherwise: L_fork}\n- λ: L_eq\n  dataize: {𝛿1: $.a, 𝛿2: $.b}\n  𝑛: Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ )\n- λ: L_byte\n  dataize: {𝛿1: $.data, 𝛿2: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_plus\n  dataize: {𝛿1: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+      it "answers the rounds alike an earlier one from memory, within a cap of firings the work of every round runs over" $
+        withLambdasOf atoms $ \file ->
+          withStdin world $
+            testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=1", "--max-firings=400"] ["40-45-00-00-00-00-00-00"]
+
     describe "--acyclic at a recursive call" $ do
       let recursive = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.call( a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ) ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
           calling = T.pack "- λ: L_call\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n"

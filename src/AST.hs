@@ -25,6 +25,7 @@ module AST
   , repeated
   , attributeFromBinding
   , alike
+  , bijection
   , akin
   , boxed
   , within
@@ -333,8 +334,14 @@ boxed bds = any phi bds && not (any lambda bds) && not (any delta bds)
     delta (BiDelta _) = True
     delta _ = False
 
+bijection :: Expression -> Expression -> Maybe (Map.Map Int Int)
+bijection one two = fst <$> matching (\_ _ -> False) one two
+
 likened :: (Expression -> Expression -> Bool) -> Expression -> Expression -> Bool
-likened loose one two = isJust (goExpr (Map.empty, Map.empty) one two)
+likened loose one two = isJust (matching loose one two)
+
+matching :: (Expression -> Expression -> Bool) -> Expression -> Expression -> Maybe (Map.Map Int Int, Map.Map Int Int)
+matching loose = goExpr (Map.empty, Map.empty)
   where
     goExpr :: (Map.Map Int Int, Map.Map Int Int) -> Expression -> Expression -> Maybe (Map.Map Int Int, Map.Map Int Int)
     goExpr pairing left right
@@ -351,7 +358,7 @@ likened loose one two = isJust (goExpr (Map.empty, Map.empty) one two)
     goBinding :: (Map.Map Int Int, Map.Map Int Int) -> Binding -> Binding -> Maybe (Map.Map Int Int, Map.Map Int Int)
     goBinding pairing (BiTau attr left) (BiTau attr' right)
       | attr == attr' = goExpr pairing left right
-    goBinding pairing (BiLambda (FnSymbol left)) (BiLambda (FnSymbol right)) = paired pairing left right
+    goBinding pairing (BiLambda (FnSymbol left)) (BiLambda (FnSymbol right)) = twinned pairing left right
     goBinding pairing left right = same pairing left right
     goArgument :: (Map.Map Int Int, Map.Map Int Int) -> Argument -> Argument -> Maybe (Map.Map Int Int, Map.Map Int Int)
     goArgument pairing (ArTau attr left) (ArTau attr' right)
@@ -367,8 +374,8 @@ likened loose one two = isJust (goExpr (Map.empty, Map.empty) one two)
     same pairing left right
       | left == right = Just pairing
       | otherwise = Nothing
-    paired :: (Map.Map Int Int, Map.Map Int Int) -> Int -> Int -> Maybe (Map.Map Int Int, Map.Map Int Int)
-    paired (forward, backward) left right = case (Map.lookup left forward, Map.lookup right backward) of
+    twinned :: (Map.Map Int Int, Map.Map Int Int) -> Int -> Int -> Maybe (Map.Map Int Int, Map.Map Int Int)
+    twinned (forward, backward) left right = case (Map.lookup left forward, Map.lookup right backward) of
       (Nothing, Nothing) -> Just (Map.insert left right forward, Map.insert right left backward)
       (Just right', Just _) | right' == right -> Just (forward, backward)
       _ -> Nothing

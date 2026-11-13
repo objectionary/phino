@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvRecalled, EvRemembered, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -279,6 +279,9 @@ spec = do
     it "writes the answer the memo keeps for a formation as a memoized line" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvMemoized 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 8)])])
       last (lines written) `shouldBe` "    memoized 𝑛·1·1 ⇛ 𝜎8:λ  # Φ.налим"
+    it "writes an answer the memo renamed as a renamed line naming the formation it came from and every symbol it renamed" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvRenamed 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 9)]) (ExDispatch ExRoot (AtLabel "карп")) [(3, 7), (4, 9)]])
+      last (lines written) `shouldBe` "    renamed 𝑛·1·1 ⇛ 𝜎9:λ  # Φ.налим, from Φ.карп, 𝜎3 as 𝜎7, 𝜎4 as 𝜎9"
     it "recalls an answer the memo kept as its remembered line spelled it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvMemoized 2 (ExFormation [BiTau (AtLabel "лещ") (ExFormation [])]) (ExFormation [BiLambda (FnSymbol 8)]), EvMorphed 2 (ExFormation [BiTau (AtLabel "лещ") (ExFormation [])]), EvRecalled 2 (ExFormation [BiTau (AtLabel "лещ") (ExFormation [])]) (ExFormation [BiLambda (FnSymbol 8)])])
       last (lines written) `shouldBe` "    recalled 𝑛·1·1 ⇒ 𝜎8:λ"
@@ -676,6 +679,9 @@ spec = do
     it "writes the answer the memo keeps for a formation as a memoized element" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvMemoized 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 8)])])
       lines written `shouldContain` ["    <memoized meta=\"𝑛·1·1\" as=\"𝜎8\"/>"]
+    it "writes an answer the memo renamed as a renamed element naming the formation it came from and every symbol it renamed" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvRenamed 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 9)]) (ExDispatch ExRoot (AtLabel "карп")) [(3, 7), (4, 9)]])
+      lines written `shouldContain` ["    <renamed meta=\"𝑛·1·1\" as=\"𝜎9\" from=\"Φ.карп\"><as symbol=\"𝜎3\" by=\"𝜎7\"/><as symbol=\"𝜎4\" by=\"𝜎9\"/></renamed>"]
     it "writes what the memo mapped a term to as an element naming both" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_сом" Dataization ExRoot, EvRecalled 2 (ExDispatch ExRoot (AtLabel "окунь")) (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldContain` ["    <recalled of=\"Φ.окунь\" as=\"Φ.щука\"/>"]
