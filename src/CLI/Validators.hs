@@ -70,9 +70,9 @@ validateLatexOptions LATEX _ strings _ = forM_ strings validateLatexString
     validateLatexString (Just label, "label") =
       unless (all safeLabelCharacter label) $
         invalidCLIArguments
-          "The --label option must contain only letters, numbers, colons, periods, underscores, and hyphens"
+          "The --label option must contain only letters, numbers, colons, underscores, and hyphens"
     validateLatexString _ = pure ()
-    safeLabelCharacter character = isAlphaNum character || character `elem` ":._-"
+    safeLabelCharacter character = isAlphaNum character || character `elem` ":_-"
 validateLatexOptions _ bools strings ints = do
   let (bools', opts) = unzip bools
       msg = "The --%s option can stay together with --output=latex only"
