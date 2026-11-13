@@ -160,7 +160,7 @@ data Evaluation
   | EvGuarded Int (Either T.Text Expression) (Expression, Expression) (Expression, Expression) Side (Maybe Expression)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvUnripe Int (Expression, Expression) (Expression, Expression) Side Attribute
-  | EvFabricated Int (Expression, Expression) (Expression, Expression) Expression
+  | EvFabricated Int (Expression, Expression) (Expression, Expression) [(Expression, Expression)] Expression
   | EvTaken Int Expression
   | EvRemembered Int Expression Expression
   | EvMemoized Int Expression Expression
@@ -236,7 +236,7 @@ tier (EvJoined depth _ _ _ _ _) = depth
 tier (EvGuarded depth _ _ _ _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
 tier (EvUnripe depth _ _ _ _) = depth
-tier (EvFabricated depth _ _ _) = depth
+tier (EvFabricated depth _ _ _ _) = depth
 tier (EvTaken depth _) = depth
 tier (EvRemembered depth _ _) = depth
 tier (EvMemoized depth _ _) = depth
@@ -553,10 +553,10 @@ saveEval handle cursor printed printed' report = do
       one <- sided protocol left
       two <- sided protocol right
       pure (protocol, Just (indented at (printf "unripe %s vs %s  # %s" one two (refused (Unripe side attr)))))
-    written at (EvFabricated _ left right term) protocol = do
+    written at (EvFabricated _ left right names term) protocol = do
       one <- sided protocol left
       two <- sided protocol right
-      body <- printed (abbreviatedInside protocol._made term)
+      body <- printed (abbreviatedInside protocol._made (unnamed names term))
       let (index, counted) = numbered protocol
       pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "fabricated %s·%d := %s and %s  # %s" (labelled protocol answer) index one two body)))
     written at (EvTaken _ term) protocol = do
@@ -882,11 +882,11 @@ saveEvalXml handle cursor printed report = do
         one <- sided depth nesting left
         two <- sided depth nesting right
         pure (printf "<unripe left=\"%s\" right=\"%s\" at=\"%s\"/>" (escapeXML one) (escapeXML two) (escapeXML (printAttribute attr)))
-    elements at (EvFabricated depth left right term) nesting =
+    elements at (EvFabricated depth left right names term) nesting =
       placed at nesting $ do
         one <- sided depth nesting left
         two <- sided depth nesting right
-        body <- leaf depth term
+        body <- leaf depth (unnamed names term)
         (naming, _) <- counted
         pure (printf "<fabricated meta=\"%s\" left=\"%s\" right=\"%s\">%s</fabricated>" (escapeXML naming) (escapeXML one) (escapeXML two) (escapeXMLText body))
     elements at (EvTaken depth term) nesting = placed at nesting (concluded "answered" "" depth term)
@@ -1291,3 +1291,19 @@ progressed cursor interval render record evaluation = do
           logInfo (printf "Started %d dataizations and fired %d λ functions in %.0fs, now at %s" progress._formations progress._firings (now - progress._began) locator)
           writeIORef cursor progress{_told = Just now}
         else writeIORef cursor progress
+
+unnamed :: [(Expression, Expression)] -> Expression -> Expression
+unnamed names = goExpr
+  where
+    goExpr :: Expression -> Expression
+    goExpr term@(ExMeta _) = fromMaybe term (lookup term names)
+    goExpr (ExFormation bds) = ExFormation (map goBinding bds)
+    goExpr (ExApplication term arg) = ExApplication (goExpr term) (goArgument arg)
+    goExpr (ExDispatch term attr) = ExDispatch (goExpr term) attr
+    goExpr term = term
+    goBinding :: Binding -> Binding
+    goBinding (BiTau attr term) = BiTau attr (goExpr term)
+    goBinding bd = bd
+    goArgument :: Argument -> Argument
+    goArgument (ArTau attr term) = ArTau attr (goExpr term)
+    goArgument (ArAlpha alpha term) = ArAlpha alpha (goExpr term)

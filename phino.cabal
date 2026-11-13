@@ -89,6 +89,7 @@ library
     Replacer
     Rewriter
     Rule
+    Sides
     Slots
     Sugar
     Tau

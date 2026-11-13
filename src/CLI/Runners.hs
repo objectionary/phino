@@ -41,6 +41,7 @@ import qualified Printer as P
 import qualified Random as R
 import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
+import Sides (sides)
 import Slots (anonymous)
 import System.Directory (canonicalizePath, doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
@@ -182,6 +183,7 @@ runDataize args OptsDataize{..} = do
   save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
   minted <- newIORef 0
+  named <- sides
   memo <- memoized _acyclic
   facts <- factual
   linked <- engine
@@ -192,7 +194,7 @@ runDataize args OptsDataize{..} = do
       _minutes
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty (Just facts) lambdas [] False (building linked) reduction evaluation save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted named deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty (Just facts) lambdas [] False (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Dataization header _inside expr ctx
           started universe aiming
           (,universe,aiming._locator) <$> dataize universe emptyState aiming
@@ -269,6 +271,7 @@ runMorph args OptsMorph{..} = do
   save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
   minted <- newIORef 0
+  named <- sides
   memo <- memoized _acyclic
   facts <- factual
   linked <- engine
@@ -279,7 +282,7 @@ runMorph args OptsMorph{..} = do
       _minutes
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty (Just facts) lambdas [] False (building linked) reduction evaluation save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted named deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty (Just facts) lambdas [] False (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Morphing header _inside expr ctx
           started universe aiming
           (,universe,aiming._locator) <$> morph universe emptyState aiming

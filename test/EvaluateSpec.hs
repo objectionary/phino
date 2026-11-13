@@ -201,3 +201,19 @@ spec = do
       ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
       timeout 10000000 (morph program emptyState ctx{_deadline = Just (Deadline 37 due)})
         `shouldThrow` (\e -> "--max-seconds=37" `isInfixOf` show (e :: SomeException))
+
+  describe "fabricates a formation of two sides of different shapes" $
+    it "binds the sides by the names the run gave them, not by the sides themselves" $ do
+      let program = "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧, b ↦ ⟦ φ ↦ Φ.zu ⟧, λ ⤍ L_fork ⟧.ke ⟧"
+      expr <- parseExpressionThrows' MONOFORM program
+      table <- withLambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n    otherwise: L_join\n" readLambdas
+      ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
+      (morphed, _, _) <- morph expr emptyState ctx
+      sides morphed `shouldSatisfy` (\found -> length found == 2 && all named' found)
+  where
+    sides :: Expression -> [Expression]
+    sides (ExFormation bds) = [side | BiTau AtRho (ExFormation fabricated) <- bds, BiTau (AtLabel label) side <- fabricated, label `elem` ["left🌵", "right🌵"]]
+    sides _ = []
+    named' :: Expression -> Bool
+    named' (ExMeta meta) = isName meta
+    named' _ = False
