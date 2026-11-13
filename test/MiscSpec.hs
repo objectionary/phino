@@ -47,9 +47,9 @@ spec = do
       ]
       (\(desc, bindings, expected) -> it desc (attributesFromBindings bindings `shouldBe` expected))
 
-  describe "attributesFromBindings'" $
-    it "keeps a Nothing placeholder for each BiMeta entry" $
-      attributesFromBindings' [BiVoid AtRho, BiMeta "B"] `shouldBe` [Just AtRho, Nothing]
+  describe "attributesFromBindings'"
+    $ it "keeps a Nothing placeholder for each BiMeta entry"
+    $ attributesFromBindings' [BiVoid AtRho, BiMeta "B"] `shouldBe` [Just AtRho, Nothing]
 
   describe "fqnToAttrs" $
     forM_
@@ -63,6 +63,6 @@ spec = do
       ]
       (\(desc, expr, expected) -> it desc (fqnToAttrs expr `shouldBe` expected))
 
-  describe "toDouble" $
-    it "converts an Int to the equal Double" $
-      toDouble 5 `shouldBe` 5.0
+  describe "toDouble"
+    $ it "converts an Int to the equal Double"
+    $ toDouble 5 `shouldBe` 5.0

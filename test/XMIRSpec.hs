@@ -405,9 +405,9 @@ spec = do
     it "never carries the fraction past nine digits" $
       xmirTime (posixSecondsToUTCTime 1790000000.99999995) `shouldBe` "2026-09-21T14:13:20.999999950Z"
 
-  describe "escapeXML" $
-    it "escapes an apostrophe alongside the other reserved characters" $
-      escapeXML "it's a & <b> \"quote\"" `shouldBe` "it&apos;s a &amp; &lt;b&gt; &quot;quote&quot;"
+  describe "escapeXML"
+    $ it "escapes an apostrophe alongside the other reserved characters"
+    $ escapeXML "it's a & <b> \"quote\"" `shouldBe` "it&apos;s a &amp; &lt;b&gt; &quot;quote&quot;"
 
   describe "XMIR document structure" $ do
     it "produces an empty prologue and epilogue" $ do

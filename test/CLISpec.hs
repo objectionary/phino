@@ -280,25 +280,25 @@ spec = do
       ]
       (\(desc, input, args, expected) -> it desc (withStdin input (testCLISucceeded args expected)))
 
-  it "keeps a data literal sugared when it is applied to more arguments" $
-    withStdin "⟦ i ↦ 42(z ↦ ξ.f), s ↦ \"Hello\"(z ↦ ξ.f) ⟧" $
-      testCLISucceeded ["rewrite", "--sweet", "--flat"] ["⟦ i ↦ 42.0( z ↦ f ), s ↦ \"Hello\"( z ↦ f ) ⟧"]
+  it "keeps a data literal sugared when it is applied to more arguments"
+    $ withStdin "⟦ i ↦ 42(z ↦ ξ.f), s ↦ \"Hello\"(z ↦ ξ.f) ⟧"
+    $ testCLISucceeded ["rewrite", "--sweet", "--flat"] ["⟦ i ↦ 42.0( z ↦ f ), s ↦ \"Hello\"( z ↦ f ) ⟧"]
 
-  it "prints the one-binding sugar after inline voids with --sweet" $
-    withStdin "[[ x(y) -> [[ a -> 42 ]] ]]" $
-      testCLISucceeded ["rewrite", "--sweet"] ["⟦ x(y) ↦ 42.0:a ⟧"]
+  it "prints the one-binding sugar after inline voids with --sweet"
+    $ withStdin "[[ x(y) -> [[ a -> 42 ]] ]]"
+    $ testCLISucceeded ["rewrite", "--sweet"] ["⟦ x(y) ↦ 42.0:a ⟧"]
 
-  it "prints debug info with --log-level=DEBUG" $
-    withStdin "[[]]" $
-      testCLISucceeded ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]
+  it "prints debug info with --log-level=DEBUG"
+    $ withStdin "[[]]"
+    $ testCLISucceeded ["rewrite", "--log-level=DEBUG"] ["[DEBUG]:"]
 
   describe "--log-level accepts every named level" $
     forM_
       ["INFO", "info", "ERROR", "ERR", "error", "NONE", "none"]
       ( \flagValue ->
-          it ("--log-level=" ++ flagValue) $
-            withStdin "[[]]" $
-              testCLISucceeded ["rewrite", "--log-level=" ++ flagValue] ["⟧"]
+          it ("--log-level=" ++ flagValue)
+            $ withStdin "[[]]"
+            $ testCLISucceeded ["rewrite", "--log-level=" ++ flagValue] ["⟧"]
       )
 
   describe "--log-level prints nothing below its level" $
@@ -311,9 +311,9 @@ spec = do
               forM_ hidden (out `shouldNotContain`)
       )
 
-  it "fails on an unrecognized --log-level value" $
-    withStdin "[[]]" $
-      testCLIFailed ["rewrite", "--log-level=verbose"] ["unknown log-level: verbose"]
+  it "fails on an unrecognized --log-level value"
+    $ withStdin "[[]]"
+    $ testCLIFailed ["rewrite", "--log-level=verbose"] ["unknown log-level: verbose"]
 
   describe "rewriting" $ do
     let xmir =
@@ -521,11 +521,11 @@ spec = do
         ["rewrite", "--help"]
         ["Rewrite the 𝜑-expression", "--seed SEED"]
 
-    it "accepts --seed flag" $
-      withStdin "[[ x -> 5 ]]" $
-        testCLISucceeded
-          ["rewrite", "--seed=42", "--sweet"]
-          ["5.0:x"]
+    it "accepts --seed flag"
+      $ withStdin "[[ x -> 5 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--seed=42", "--sweet"]
+        ["5.0:x"]
 
     it "defaults --seed to 0 in help" $
       testCLISucceeded
@@ -566,23 +566,23 @@ spec = do
       (mixed, _) <- withStdin "[[ x -> 5 ]]" $ withStdout (runCLI ("rewrite" : "--shuffle" : "--seed=1" : base))
       mixed `shouldNotBe` plain
 
-    it "fails with a non-integer --seed" $
-      withStdin "[[ ]]" $
-        testCLIFailed
-          ["rewrite", "--seed=abc"]
-          ["[ERROR]"]
+    it "fails with a non-integer --seed"
+      $ withStdin "[[ ]]"
+      $ testCLIFailed
+        ["rewrite", "--seed=abc"]
+        ["[ERROR]"]
 
-    it "refuses a --seed outside the Int range" $
-      withStdin "[[ ]]" $
-        testCLIFailed
-          ["rewrite", "--seed=18446744073709551616"]
-          ["value must be between"]
+    it "refuses a --seed outside the Int range"
+      $ withStdin "[[ ]]"
+      $ testCLIFailed
+        ["rewrite", "--seed=18446744073709551616"]
+        ["value must be between"]
 
-    it "refuses a non-positive --abridged width" $
-      withStdin "[[ t -> 01- ]]" $
-        testCLIFailed
-          ["dataize", "--locator=Q.t", "--protocol=p.txt", "--abridged=0"]
-          ["--abridged must be positive"]
+    it "refuses a non-positive --abridged width"
+      $ withStdin "[[ t -> 01- ]]"
+      $ testCLIFailed
+        ["dataize", "--locator=Q.t", "--protocol=p.txt", "--abridged=0"]
+        ["--abridged must be positive"]
 
     it "saves steps to dir with --steps-dir" $
       withTempDirectory "phino-steps" $ \dir ->
@@ -663,23 +663,23 @@ spec = do
         ["rewrite", resource "desugar.phi"]
         ["⟦ foo ↦ ξ.x ⟧"]
 
-    it "desugares with without any rules flag from stdin" $
-      withStdin "[[foo ↦ x]]" $
-        testCLISucceeded ["rewrite"] ["⟦ foo ↦ ξ.x ⟧"]
+    it "desugares with without any rules flag from stdin"
+      $ withStdin "[[foo ↦ x]]"
+      $ testCLISucceeded ["rewrite"] ["⟦ foo ↦ ξ.x ⟧"]
 
-    it "keeps the bytes of a string intact while desugaring it" $
-      withStdin "⟦ φ ↦ Φ.string(as-bytes ↦ Φ.bytes(data ↦ ⟦ Δ ⤍ 65-0A-65, ρ ↦ ∅ ⟧)), ρ ↦ ∅ ⟧" $
-        testCLISucceeded ["rewrite", "--flat"] ["Δ ⤍ 65-0A-65"]
+    it "keeps the bytes of a string intact while desugaring it"
+      $ withStdin "⟦ φ ↦ Φ.string(as-bytes ↦ Φ.bytes(data ↦ ⟦ Δ ⤍ 65-0A-65, ρ ↦ ∅ ⟧)), ρ ↦ ∅ ⟧"
+      $ testCLISucceeded ["rewrite", "--flat"] ["Δ ⤍ 65-0A-65"]
 
-    it "rewrites with single rule" $
-      withStdin "T(x -> Q.y)" $
-        testCLISucceeded ["rewrite", "--rule=resources/normalize/dc.yaml"] ["⊥"]
+    it "rewrites with single rule"
+      $ withStdin "T(x -> Q.y)"
+      $ testCLISucceeded ["rewrite", "--rule=resources/normalize/dc.yaml"] ["⊥"]
 
-    it "fails when a rewriting rule uses a dataization-only function" $
-      withStdin "⟦⟧" $
-        testCLIFailed
-          ["rewrite", rule "evaluate-in-rewrite.yaml"]
-          ["Function 'evaluate' in rule 'uses-evaluate' is available only for dataization and morphing, not for rewriting"]
+    it "fails when a rewriting rule uses a dataization-only function"
+      $ withStdin "⟦⟧"
+      $ testCLIFailed
+        ["rewrite", rule "evaluate-in-rewrite.yaml"]
+        ["Function 'evaluate' in rule 'uses-evaluate' is available only for dataization and morphing, not for rewriting"]
 
     forM_
       [ ("kind-tau-to-expression.yaml", "Function 'random-tau' in rule 'tau-to-expression' returns an attribute, but its meta '𝑒2' is an expression")
@@ -694,19 +694,19 @@ spec = do
     it "accepts a where step whose function returns the kind of its meta" $
       withStdin "⟦ bar ↦ ⟦⟧ ⟧" (testCLISucceeded ["rewrite", rule "kind-tau-to-attribute.yaml"] ["bar ↦ ⟦⟧"])
 
-    it "names the join function in the error message" $
-      withStdin "⟦⟧" $
-        testCLIFailed
-          ["rewrite", rule "join-broken.yaml"]
-          ["Function join() can work with bindings only"]
+    it "names the join function in the error message"
+      $ withStdin "⟦⟧"
+      $ testCLIFailed
+        ["rewrite", rule "join-broken.yaml"]
+        ["Function join() can work with bindings only"]
 
-    it "reports a broken rule file in plain text with its path" $
-      withStdin "⟦⟧" $
-        testCLIFailed
-          ["rewrite", rule "malformed-pattern.yaml"]
-          [ "Could not load rule from 'test-resources/cli/rules/malformed-pattern.yaml'"
-          , "unexpected '⟧'"
-          ]
+    it "reports a broken rule file in plain text with its path"
+      $ withStdin "⟦⟧"
+      $ testCLIFailed
+        ["rewrite", rule "malformed-pattern.yaml"]
+        [ "Could not load rule from 'test-resources/cli/rules/malformed-pattern.yaml'"
+        , "unexpected '⟧'"
+        ]
 
     it "counts the position of a YAML error from one" $
       withTempFileContent "badruleXXXXXX.yaml" "name: a\npattern: x: y\n" $ \path ->
@@ -727,41 +727,41 @@ spec = do
             ]
         ]
 
-    it "normalizes and applies --rule at the same time" $
-      withStdin "⟦ k ↦ ⟦ m ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.m, j ↦ ⟦ λ ⤍ Marker ⟧ ⟧" $
-        testCLISucceeded
-          ["rewrite", "--normalize", rule "marker.yaml", "--sweet"]
-          ["⟦ k ↦ 01-:Δ, j ↦ FF-:Δ ⟧"]
+    it "normalizes and applies --rule at the same time"
+      $ withStdin "⟦ k ↦ ⟦ m ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.m, j ↦ ⟦ λ ⤍ Marker ⟧ ⟧"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", rule "marker.yaml", "--sweet"]
+        ["⟦ k ↦ 01-:Δ, j ↦ FF-:Δ ⟧"]
 
-    it "normalizes from stdin" $
-      withStdin "⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--margin=20"]
-          ["⟦ a ↦ ⟦ b ↦ ⟦⟧ ⟧ ⟧"]
+    it "normalizes from stdin"
+      $ withStdin "⟦ a ↦ ⟦ b ↦ ∅ ⟧ (b ↦ [[ ]]) ⟧"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--margin=20"]
+        ["⟦ a ↦ ⟦ b ↦ ⟦⟧ ⟧ ⟧"]
 
-    it "rewrites with --sweet flag" $
-      withStdin "[[ x -> 5]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet"]
-          ["5.0:x"]
+    it "rewrites with --sweet flag"
+      $ withStdin "[[ x -> 5]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet"]
+        ["5.0:x"]
 
-    it "rewrites as XMIR" $
-      withStdin "[[ x -> Q.y ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=xmir"]
-          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
+    it "rewrites as XMIR"
+      $ withStdin "[[ x -> Q.y ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=xmir"]
+        ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
-    it "accepts --focus=Φ together with --output=xmir, since Φ and Q are the same locator" $
-      withStdin "[[ x -> Q.y ]]" $
-        testCLISucceeded
-          ["rewrite", "--focus=Φ", "--output=xmir"]
-          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
+    it "accepts --focus=Φ together with --output=xmir, since Φ and Q are the same locator"
+      $ withStdin "[[ x -> Q.y ]]"
+      $ testCLISucceeded
+        ["rewrite", "--focus=Φ", "--output=xmir"]
+        ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
-    it "rewrites a formation of several bindings at the root as XMIR" $
-      withStdin "⟦ x ↦ 1, ρ ↦ 2 ⟧" $
-        testCLISucceeded
-          ["rewrite", "--output=xmir"]
-          ["<o base=\"Φ.number\" name=\"x\">", "<o base=\"Φ.number\" name=\"ρ\">"]
+    it "rewrites a formation of several bindings at the root as XMIR"
+      $ withStdin "⟦ x ↦ 1, ρ ↦ 2 ⟧"
+      $ testCLISucceeded
+        ["rewrite", "--output=xmir"]
+        ["<o base=\"Φ.number\" name=\"x\">", "<o base=\"Φ.number\" name=\"ρ\">"]
 
     it "emits a real revision and ms in XMIR" $ do
       (output, _) <- withStdin "[[ x -> Q.y ]]" $ withStdout (runCLI ["rewrite", "--output=xmir"])
@@ -782,85 +782,85 @@ spec = do
       revision `shouldNotBe` "1234567"
       ms `shouldSatisfy` (all isDigit)
 
-    it "rewrites as LaTeX" $
-      withStdin "[[ x_o -> Q.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=latex", "--sweet"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "[["
-              , "  |x\\char95{}o| -> Q . |z| ( |y| -> |5.0| ),"
-              , "  |q\\char36{}| -> T,"
-              , "  |w| -> \\phiTerminal{\\xi},"
-              , "  \\phiTerminal{\\rho} -> Q,"
-              , "  @ -> |1.0|,"
-              , "  |y| -> \"H\\char36{}\\char64{}\\char94{}M\","
-              , "  L> |Fu\\char95{}nc|"
-              , "]]{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "rewrites as LaTeX"
+      $ withStdin "[[ x_o -> Q.z(y -> 5), q$ -> T, w -> $, ^ -> Q, @ -> 1, y -> \"H$@^M\", L> Fu_nc ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=latex", "--sweet"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "[["
+            , "  |x\\char95{}o| -> Q . |z| ( |y| -> |5.0| ),"
+            , "  |q\\char36{}| -> T,"
+            , "  |w| -> \\phiTerminal{\\xi},"
+            , "  \\phiTerminal{\\rho} -> Q,"
+            , "  @ -> |1.0|,"
+            , "  |y| -> \"H\\char36{}\\char64{}\\char94{}M\","
+            , "  L> |Fu\\char95{}nc|"
+            , "]]{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "rewrites as LaTeX without numeration" $
-      withStdin "[[ x -> 5 ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
-          [ unlines
-              [ "\\begin{phiquation*}"
-              , "|5.0| : |x|{.}"
-              , "\\end{phiquation*}"
-              ]
-          ]
+    it "rewrites as LaTeX without numeration"
+      $ withStdin "[[ x -> 5 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=latex", "--sweet", "--nonumber", "--flat"]
+        [ unlines
+            [ "\\begin{phiquation*}"
+            , "|5.0| : |x|{.}"
+            , "\\end{phiquation*}"
+            ]
+        ]
 
-    it "rewrites an alpha-index argument as \\alpha subscript in LaTeX" $
-      withStdin "Q.foo(~1 -> Q.y)" $
-        testCLISucceeded
-          ["rewrite", "--output=latex", "--flat", "--nonumber"]
-          [ unlines
-              [ "\\begin{phiquation*}"
-              , "Q . |foo| ( \\phiTerminal{\\alpha_{1}} -> Q . |y| ){.}"
-              , "\\end{phiquation*}"
-              ]
-          ]
+    it "rewrites an alpha-index argument as \\alpha subscript in LaTeX"
+      $ withStdin "Q.foo(~1 -> Q.y)"
+      $ testCLISucceeded
+        ["rewrite", "--output=latex", "--flat", "--nonumber"]
+        [ unlines
+            [ "\\begin{phiquation*}"
+            , "Q . |foo| ( \\phiTerminal{\\alpha_{1}} -> Q . |y| ){.}"
+            , "\\end{phiquation*}"
+            ]
+        ]
 
-    it "rewrite as LaTeX with expression name" $
-      withStdin "[[ x -> 5 ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "\\phiExpression{foo} |5.0| : |x|{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "rewrite as LaTeX with expression name"
+      $ withStdin "[[ x -> 5 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=foo"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "\\phiExpression{foo} |5.0| : |x|{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "escapes special characters in the LaTeX expression name" $
-      withStdin "[[ x -> 5 ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=bad%tag"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "\\phiExpression{bad\\char37{}tag} |5.0| : |x|{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "escapes special characters in the LaTeX expression name"
+      $ withStdin "[[ x -> 5 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=latex", "--sweet", "--flat", "--expression=bad%tag"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "\\phiExpression{bad\\char37{}tag} |5.0| : |x|{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "rewrite as LaTeX with label name" $
-      withStdin "[[ x -> 5 ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
-          [ unlines
-              [ "\\begin{phiquation}\n\\label{foo}"
-              , "|5.0| : |x|{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "rewrite as LaTeX with label name"
+      $ withStdin "[[ x -> 5 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=latex", "--sweet", "--flat", "--label=foo"]
+        [ unlines
+            [ "\\begin{phiquation}\n\\label{foo}"
+            , "|5.0| : |x|{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "rewrites with XMIR as input" $
-      withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
-        testCLISucceeded
-          ["rewrite", "--input=xmir", "--sweet"]
-          ["Φ.number:x:app"]
+    it "rewrites with XMIR as input"
+      $ withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>"
+      $ testCLISucceeded
+        ["rewrite", "--input=xmir", "--sweet"]
+        ["Φ.number:x:app"]
 
     it "rewrites and prints with XMIR as input and output" $
       withStdin
@@ -877,318 +877,318 @@ spec = do
             ]
         )
 
-    it "rewrites as XMIR with omit-listing flag" $
-      withStdin "[[ x -> Q.y ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=xmir", "--omit-listing"]
-          ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>1 line(s)</listing>", "  <o base=\"Φ.y\" name=\"x\"/>"]
+    it "rewrites as XMIR with omit-listing flag"
+      $ withStdin "[[ x -> Q.y ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=xmir", "--omit-listing"]
+        ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", "<object", "<listing>1 line(s)</listing>", "  <o base=\"Φ.y\" name=\"x\"/>"]
 
-    it "does not fail on exactly 1 rewriting" $
-      withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
-        testCLISucceeded
-          ["rewrite", rule "simple.yaml", "--must=1", "--sweet"]
-          ["\"bar\":x"]
+    it "does not fail on exactly 1 rewriting"
+      $ withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧"
+      $ testCLISucceeded
+        ["rewrite", rule "simple.yaml", "--must=1", "--sweet"]
+        ["\"bar\":x"]
 
-    it "prints many expressions with --sequence" $
-      withStdin "[[ x -> \"0\" ]]" $
-        testCLISucceeded
-          [ "rewrite"
-          , rule "first.yaml"
-          , rule "second.yaml"
-          , "--max-depth=1"
-          , "--max-cycles=1"
-          , "--sequence"
-          , "--sweet"
-          , "--flat"
-          ]
-          [ unlines
-              [ "\"0\":x"
-              , "Φ.x( y ↦ \"1\" )"
-              , "\"1\":x"
-              ]
-          ]
+    it "prints many expressions with --sequence"
+      $ withStdin "[[ x -> \"0\" ]]"
+      $ testCLISucceeded
+        [ "rewrite"
+        , rule "first.yaml"
+        , rule "second.yaml"
+        , "--max-depth=1"
+        , "--max-cycles=1"
+        , "--sequence"
+        , "--sweet"
+        , "--flat"
+        ]
+        [ unlines
+            [ "\"0\":x"
+            , "Φ.x( y ↦ \"1\" )"
+            , "\"1\":x"
+            ]
+        ]
 
-    it "prefixes every step with a header when --headers is on" $
-      withStdin "[[ x -> \"0\" ]]" $
-        testCLISucceeded
-          [ "rewrite"
-          , rule "first.yaml"
-          , rule "second.yaml"
-          , "--max-depth=1"
-          , "--max-cycles=1"
-          , "--sequence"
-          , "--headers"
-          , "--sweet"
-          , "--flat"
-          ]
-          [ intercalate
-              "\n"
-              [ ""
-              , "=== Step #1"
-              , "\"0\":x"
-              , ""
-              , "=== Step #2, Rule 'first', 23t -> 26t"
-              , "Φ.x( y ↦ \"1\" )"
-              , ""
-              , "=== Step #3, Rule 'second', 26t -> 23t"
-              , "\"1\":x"
-              ]
-          ]
+    it "prefixes every step with a header when --headers is on"
+      $ withStdin "[[ x -> \"0\" ]]"
+      $ testCLISucceeded
+        [ "rewrite"
+        , rule "first.yaml"
+        , rule "second.yaml"
+        , "--max-depth=1"
+        , "--max-cycles=1"
+        , "--sequence"
+        , "--headers"
+        , "--sweet"
+        , "--flat"
+        ]
+        [ intercalate
+            "\n"
+            [ ""
+            , "=== Step #1"
+            , "\"0\":x"
+            , ""
+            , "=== Step #2, Rule 'first', 23t -> 26t"
+            , "Φ.x( y ↦ \"1\" )"
+            , ""
+            , "=== Step #3, Rule 'second', 26t -> 23t"
+            , "\"1\":x"
+            ]
+        ]
 
-    it "ignores --headers without --sequence" $
-      withStdin "[[ x -> \"foo\" ]]" $
-        testCLISucceeded
-          ["rewrite", rule "simple.yaml", "--headers", "--sweet", "--flat"]
-          ["\"bar\":x"]
+    it "ignores --headers without --sequence"
+      $ withStdin "[[ x -> \"foo\" ]]"
+      $ testCLISucceeded
+        ["rewrite", rule "simple.yaml", "--headers", "--sweet", "--flat"]
+        ["\"bar\":x"]
 
-    it "emits step headers as LaTeX comments with --headers" $
-      withStdin "[[ x -> \"0\" ]]" $
-        testCLISucceeded
-          [ "rewrite"
-          , rule "first.yaml"
-          , rule "second.yaml"
-          , "--max-depth=1"
-          , "--max-cycles=1"
-          , "--sequence"
-          , "--headers"
-          , "--sweet"
-          , "--flat"
-          , "--output=latex"
-          ]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "% === Step #1"
-              , "\"0\" : |x| \\phiNormalize[\\nameref{r:first}]"
-              , "% === Step #2, Rule 'first', 23t -> 26t"
-              , "  \\phiNormalize Q . |x| ( |y| -> \"1\" ) \\phiNormalize[\\nameref{r:second}]"
-              , "% === Step #3, Rule 'second', 26t -> 23t"
-              , "  \\phiNormalize \"1\" : |x| \\phiNormalize"
-              , "  \\phiNormalize \\dots"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "emits step headers as LaTeX comments with --headers"
+      $ withStdin "[[ x -> \"0\" ]]"
+      $ testCLISucceeded
+        [ "rewrite"
+        , rule "first.yaml"
+        , rule "second.yaml"
+        , "--max-depth=1"
+        , "--max-cycles=1"
+        , "--sequence"
+        , "--headers"
+        , "--sweet"
+        , "--flat"
+        , "--output=latex"
+        ]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "% === Step #1"
+            , "\"0\" : |x| \\phiNormalize[\\nameref{r:first}]"
+            , "% === Step #2, Rule 'first', 23t -> 26t"
+            , "  \\phiNormalize Q . |x| ( |y| -> \"1\" ) \\phiNormalize[\\nameref{r:second}]"
+            , "% === Step #3, Rule 'second', 26t -> 23t"
+            , "  \\phiNormalize \"1\" : |x| \\phiNormalize"
+            , "  \\phiNormalize \\dots"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "prints only one latex preamble with --sequence" $
-      withStdin "[[ x -> \"0\" ]]" $
-        testCLISucceeded
-          [ "rewrite"
-          , rule "first.yaml"
-          , rule "second.yaml"
-          , "--max-depth=1"
-          , "--max-cycles=1"
-          , "--sequence"
-          , "--sweet"
-          , "--flat"
-          , "--output=latex"
-          ]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "\"0\" : |x| \\phiNormalize[\\nameref{r:first}]"
-              , "  \\phiNormalize Q . |x| ( |y| -> \"1\" ) \\phiNormalize[\\nameref{r:second}]"
-              , "  \\phiNormalize \"1\" : |x| \\phiNormalize"
-              , "  \\phiNormalize \\dots"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "prints only one latex preamble with --sequence"
+      $ withStdin "[[ x -> \"0\" ]]"
+      $ testCLISucceeded
+        [ "rewrite"
+        , rule "first.yaml"
+        , rule "second.yaml"
+        , "--max-depth=1"
+        , "--max-cycles=1"
+        , "--sequence"
+        , "--sweet"
+        , "--flat"
+        , "--output=latex"
+        ]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "\"0\" : |x| \\phiNormalize[\\nameref{r:first}]"
+            , "  \\phiNormalize Q . |x| ( |y| -> \"1\" ) \\phiNormalize[\\nameref{r:second}]"
+            , "  \\phiNormalize \"1\" : |x| \\phiNormalize"
+            , "  \\phiNormalize \\dots"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "prints meet prefix with --meet-prefix=foo in LaTeX" $
-      withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize \\phinoMeet{foo:1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize |42-| : D{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "prints meet prefix with --meet-prefix=foo in LaTeX"
+      $ withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress", "--meet-prefix=foo"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\phiNormalize[\\nameref{r:copy}]"
+            , "  \\phiNormalize \\phinoMeet{foo:1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\phiNormalize[\\nameref{r:dot}]"
+            , "  \\phiNormalize |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:dot}]"
+            , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:skip}]"
+            , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{foo:1} ) \\phiNormalize[\\nameref{r:skip}]"
+            , "  \\phiNormalize |42-| : D{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "prints with compressed expressions in LaTeX" $
-      withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize \\phinoMeet{1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize |42-| : D{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "prints with compressed expressions in LaTeX"
+      $ withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--sweet", "--sequence", "--output=latex", "--flat", "--compress"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "[[ |x| -> ?, |y| -> |x| ]] ( |x| -> |42-| : D ) . |y| \\phiNormalize[\\nameref{r:copy}]"
+            , "  \\phiNormalize \\phinoMeet{1}{ [[ |x| -> |42-| : D, |y| -> |x| ]] } . |y| \\phiNormalize[\\nameref{r:dot}]"
+            , "  \\phiNormalize |42-| : D : |x| . |x| ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:dot}]"
+            , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> |42-| : D : |x|, \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:skip}]"
+            , "  \\phiNormalize |42-| : D ( \\phiTerminal{\\rho} -> \\phinoAgain{1} ) \\phiNormalize[\\nameref{r:skip}]"
+            , "  \\phiNormalize |42-| : D{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "should not print \\phinoMeet{} twice" $
-      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> \\phinoMeet{1}{ |42.0| : |t| } ]] ( |y| -> \\phinoAgain{1} ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
-              , "  \\phiNormalize T : |ex|{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "should not print \\phinoMeet{} twice"
+      $ withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "[[ |y| -> ?, |k| -> \\phinoMeet{1}{ |42.0| : |t| } ]] ( |y| -> \\phinoAgain{1} ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+            , "  \\phiNormalize [[ |y| -> \\phinoAgain{1}, |k| -> \\phinoAgain{1} ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+            , "  \\phiNormalize T : |ex|{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "should not meet expression with high --meet-popularity" $
-      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-popularity=70"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
-              , "  \\phiNormalize T : |ex|{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "should not meet expression with high --meet-popularity"
+      $ withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-popularity=70"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+            , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+            , "  \\phiNormalize T : |ex|{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "meets with --meet-length=32" $
-      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
-              , "  \\phiNormalize T : |ex|{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "meets with --meet-length=32"
+      $ withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--sequence", "--flat", "--compress", "--output=latex", "--sweet", "--meet-length=32"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:copy}]"
+            , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| : |ex| \\phiNormalize[\\nameref{r:stop}]"
+            , "  \\phiNormalize T : |ex|{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "focuses expression in latex with sequence" $
-      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--sequence", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| \\phiNormalize[\\nameref{r:stop}]"
-              , "  \\phiNormalize T{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "focuses expression in latex with sequence"
+      $ withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--sequence", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "[[ |y| -> ?, |k| -> |42.0| : |t| ]] ( |y| -> |42.0| : |t| ) : |x| . |i| \\phiNormalize[\\nameref{r:copy}]"
+            , "  \\phiNormalize [[ |y| -> |42.0| : |t|, |k| -> |42.0| : |t| ]] : |x| . |i| \\phiNormalize[\\nameref{r:stop}]"
+            , "  \\phiNormalize T{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "focuses expression in latex without sequence" $
-      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "T{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "focuses expression in latex without sequence"
+      $ withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--flat", "--output=latex", "--sweet", "--focus=Q.ex"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "T{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "shows exceeding of limits in latex" $
-      withStdin "[[ x -> $.y, y -> $.x ]].x" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--flat", "--sequence", "--output=latex", "--sweet", "--max-depth=1", "--max-cycles=1"]
-          [ unlines
-              [ "\\begin{phiquation}"
-              , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize |x| : |y| . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\phiNormalize"
-              , "  \\phiNormalize \\dots"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "shows exceeding of limits in latex"
+      $ withStdin "[[ x -> $.y, y -> $.x ]].x"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--flat", "--sequence", "--output=latex", "--sweet", "--max-depth=1", "--max-cycles=1"]
+        [ unlines
+            [ "\\begin{phiquation}"
+            , "[[ |x| -> |y|, |y| -> |x| ]] . |x| \\phiNormalize[\\nameref{r:dot}]"
+            , "  \\phiNormalize |x| : |y| . |y| ( \\phiTerminal{\\rho} -> [[ |x| -> |y|, |y| -> |x| ]] ) \\phiNormalize"
+            , "  \\phiNormalize \\dots"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "ends the last step with a period when --max-cycles lands on the normal form" $
-      withStdin "⟦ a ↦ ⟦ x ↦ ∅ ⟧( x ↦ ⟦⟧ ).x ⟧" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--max-cycles=1", "--sequence", "--output=latex"]
-          ["  \\phiNormalize [[ |a| -> [[]] ]]{.}"]
+    it "ends the last step with a period when --max-cycles lands on the normal form"
+      $ withStdin "⟦ a ↦ ⟦ x ↦ ∅ ⟧( x ↦ ⟦⟧ ).x ⟧"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--max-cycles=1", "--sequence", "--output=latex"]
+        ["  \\phiNormalize [[ |a| -> [[]] ]]{.}"]
 
-    it "focuses expression in phi without sequence" $
-      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
-          ["⊥"]
+    it "focuses expression in phi without sequence"
+      $ withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
+        ["⊥"]
 
-    it "focuses expression in phi with sequence" $
-      withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]" $
-        testCLISucceeded
-          ["rewrite", "--normalize", "--sequence", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
-          [ unlines
-              [ "⟦ y ↦ ∅, k ↦ 42.0:t ⟧( y ↦ 42.0:t ):x.i"
-              , "⟦ y ↦ 42.0:t, k ↦ 42.0:t ⟧:x.i"
-              , "⊥"
-              ]
-          ]
+    it "focuses expression in phi with sequence"
+      $ withStdin "[[ ex -> [[ x -> [[ y -> ?, k -> [[ t -> 42]]  ]]( y -> [[ t -> 42 ]]) ]].i ]]"
+      $ testCLISucceeded
+        ["rewrite", "--normalize", "--sequence", "--flat", "--output=phi", "--sweet", "--focus=Q.ex"]
+        [ unlines
+            [ "⟦ y ↦ ∅, k ↦ 42.0:t ⟧( y ↦ 42.0:t ):x.i"
+            , "⟦ y ↦ 42.0:t, k ↦ 42.0:t ⟧:x.i"
+            , "⊥"
+            ]
+        ]
 
-    it "prints input as listing in XMIR" $
-      withStdin "[[ app -> [[]] ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat"]
-          ["  <listing>[[ app -&gt; [[]] ]]</listing>"]
+    it "prints input as listing in XMIR"
+      $ withStdin "[[ app -> [[]] ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat"]
+        ["  <listing>[[ app -&gt; [[]] ]]</listing>"]
 
-    it "print expression in listing in XMIRs with --sequence" $
-      withStdin "[[ x -> \"foo\" ]]" $
-        testCLISucceeded
-          ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat", "--sequence", rule "simple.yaml"]
-          ["  <listing>\"foo\":x</listing>", "  <listing>\"bar\":x</listing>"]
+    it "print expression in listing in XMIRs with --sequence"
+      $ withStdin "[[ x -> \"foo\" ]]"
+      $ testCLISucceeded
+        ["rewrite", "--output=xmir", "--omit-comments", "--sweet", "--flat", "--sequence", rule "simple.yaml"]
+        ["  <listing>\"foo\":x</listing>", "  <listing>\"bar\":x</listing>"]
 
     describe "must range tests" $ do
       describe "fails" $ do
-        it "when cycles exceed range ..1" $
-          withStdin "[[ x -> [[ y -> 5 ]].y ]].x" $
-            testCLIFailed
-              ["rewrite", "--max-depth=1", "--max-cycles=2", "--normalize", "--must=..1"]
-              ["it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"]
+        it "when cycles exceed range ..1"
+          $ withStdin "[[ x -> [[ y -> 5 ]].y ]].x"
+          $ testCLIFailed
+            ["rewrite", "--max-depth=1", "--max-cycles=2", "--normalize", "--must=..1"]
+            ["it's expected rewriting cycles to be in range [..1], but rewriting has already reached 2"]
 
-        it "when cycles below range 2.." $
-          withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
-            testCLIFailed
-              ["rewrite", rule "simple.yaml", "--must=2.."]
-              ["it's expected rewriting cycles to be in range [2..], but rewriting stopped after 1"]
+        it "when cycles below range 2.."
+          $ withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧"
+          $ testCLIFailed
+            ["rewrite", rule "simple.yaml", "--must=2.."]
+            ["it's expected rewriting cycles to be in range [2..], but rewriting stopped after 1"]
 
-        it "with invalid range 5..3" $
-          withStdin "[[ ]]" $
-            testCLIFailed
-              ["rewrite", "--must=5..3"]
-              ["cannot parse value `5..3'"]
+        it "with invalid range 5..3"
+          $ withStdin "[[ ]]"
+          $ testCLIFailed
+            ["rewrite", "--must=5..3"]
+            ["cannot parse value `5..3'"]
 
-        it "with negative in range -1..5" $
-          withStdin "[[ ]]" $
-            testCLIFailed
-              ["rewrite", "--must=-1..5"]
-              ["cannot parse value `-1..5'"]
+        it "with negative in range -1..5"
+          $ withStdin "[[ ]]"
+          $ testCLIFailed
+            ["rewrite", "--must=-1..5"]
+            ["cannot parse value `-1..5'"]
 
-        it "with malformed range syntax" $
-          withStdin "[[ ]]" $
-            testCLIFailed
-              ["rewrite", "--must=3...5"]
-              ["cannot parse value `3...5'"]
+        it "with malformed range syntax"
+          $ withStdin "[[ ]]"
+          $ testCLIFailed
+            ["rewrite", "--must=3...5"]
+            ["cannot parse value `3...5'"]
 
-      it "accepts range ..5 (0 to 5 cycles)" $
-        withStdin "[[ ]]" $
-          testCLISucceeded ["rewrite", "--must=..5", "--sweet"] ["⟦⟧"]
+      it "accepts range ..5 (0 to 5 cycles)"
+        $ withStdin "[[ ]]"
+        $ testCLISucceeded ["rewrite", "--must=..5", "--sweet"] ["⟦⟧"]
 
-      it "accepts range 0..0 (exactly 0 cycles)" $
-        withStdin "[[ ]]" $
-          testCLISucceeded ["rewrite", "--must=0..0", "--sweet"] ["⟦⟧"]
+      it "accepts range 0..0 (exactly 0 cycles)"
+        $ withStdin "[[ ]]"
+        $ testCLISucceeded ["rewrite", "--must=0..0", "--sweet"] ["⟦⟧"]
 
-      it "accepts range 1..1 (exactly 1 cycle)" $
-        withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
-          testCLISucceeded
-            ["rewrite", rule "simple.yaml", "--must=1..1", "--sweet"]
-            ["\"bar\":x"]
+      it "accepts range 1..1 (exactly 1 cycle)"
+        $ withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧"
+        $ testCLISucceeded
+          ["rewrite", rule "simple.yaml", "--must=1..1", "--sweet"]
+          ["\"bar\":x"]
 
-      it "accepts range 1..3 when 1 cycle happens" $
-        withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧" $
-          testCLISucceeded
-            ["rewrite", rule "simple.yaml", "--must=1..3", "--sweet"]
-            ["\"bar\":x"]
+      it "accepts range 1..3 when 1 cycle happens"
+        $ withStdin "⟦ t ↦ ⟦ x ↦ \"foo\" ⟧ ⟧"
+        $ testCLISucceeded
+          ["rewrite", rule "simple.yaml", "--must=1..3", "--sweet"]
+          ["\"bar\":x"]
 
-      it "accepts range 0.. (0 or more)" $
-        withStdin "[[ ]]" $
-          testCLISucceeded ["rewrite", "--must=0..", "--sweet"] ["⟦⟧"]
+      it "accepts range 0.. (0 or more)"
+        $ withStdin "[[ ]]"
+        $ testCLISucceeded ["rewrite", "--must=0..", "--sweet"] ["⟦⟧"]
 
     it "prints to target file" $
       withStdin "[[ ]]" $
@@ -1287,59 +1287,59 @@ spec = do
           content <- readFile tgt
           content `shouldBe` "\"bar\":x\n"
 
-    it "rewrites with cycles" $
-      withStdin "[[ x -> \"x\" ]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet", rule "infinite.yaml", "--max-depth=1", "--max-cycles=2"]
-          ["\"x_hi_hi\":x"]
+    it "rewrites with cycles"
+      $ withStdin "[[ x -> \"x\" ]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", rule "infinite.yaml", "--max-depth=1", "--max-cycles=2"]
+        ["\"x_hi_hi\":x"]
 
-    it "hides default package" $
-      withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet", "--flat", "--hide=Q.org"]
-          ["42.0:x"]
+    it "hides default package"
+      $ withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]]]], x -> 42 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", "--flat", "--hide=Q.org"]
+        ["42.0:x"]
 
-    it "hides several FQNs" $
-      withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.yegor256"]
-          ["⟦ org ↦ ⟦⟧, x ↦ 42.0 ⟧"]
+    it "hides several FQNs"
+      $ withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.yegor256"]
+        ["⟦ org ↦ ⟦⟧, x ↦ 42.0 ⟧"]
 
-    it "shows and hides" $
-      withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet", "--flat", "--show=Q.org", "--hide=Q.org.eolang"]
-          ["Φ.y:yegor256:org"]
+    it "shows and hides"
+      $ withStdin "[[ org -> [[ eolang -> Q.x, yegor256 -> Q.y ]], x -> 42 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", "--flat", "--show=Q.org", "--hide=Q.org.eolang"]
+        ["Φ.y:yegor256:org"]
 
-    it "hides an object outside the --show locator" $
-      withStdin "[[ org -> [[ eolang -> Q.x ]], x -> 42 ]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet", "--flat", "--show=Q.x", "--hide=Q.org.eolang"]
-          ["42.0:x"]
+    it "hides an object outside the --show locator"
+      $ withStdin "[[ org -> [[ eolang -> Q.x ]], x -> 42 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", "--flat", "--show=Q.x", "--hide=Q.org.eolang"]
+        ["42.0:x"]
 
-    it "hides an object inside an earlier --hide locator" $
-      withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]] ]], x -> 42 ]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.eolang.number"]
-          ["⟦ org ↦ ⟦⟧, x ↦ 42.0 ⟧"]
+    it "hides an object inside an earlier --hide locator"
+      $ withStdin "[[ org -> [[ eolang -> [[ number -> [[]] ]] ]], x -> 42 ]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", "--flat", "--hide=Q.org.eolang", "--hide=Q.org.eolang.number"]
+        ["⟦ org ↦ ⟦⟧, x ↦ 42.0 ⟧"]
 
-    it "fails on a --show locator that matches nothing" $
-      withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]" $
-        testCLIFailed
-          ["rewrite", "--flat", "--show=Q.zzz"]
-          ["[ERROR]:", "Can't find object by locator: 'Φ.zzz'"]
+    it "fails on a --show locator that matches nothing"
+      $ withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]"
+      $ testCLIFailed
+        ["rewrite", "--flat", "--show=Q.zzz"]
+        ["[ERROR]:", "Can't find object by locator: 'Φ.zzz'"]
 
-    it "shows the whole program with --show=Q" $
-      withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]" $
-        testCLISucceeded
-          ["rewrite", "--flat", "--show=Q"]
-          ["⟦ a ↦ ⟦ b ↦ Φ, c ↦ Φ ⟧, d ↦ Φ ⟧"]
+    it "shows the whole program with --show=Q"
+      $ withStdin "[[ a -> [[ b -> Q, c -> Q ]], d -> Q ]]"
+      $ testCLISucceeded
+        ["rewrite", "--flat", "--show=Q"]
+        ["⟦ a ↦ ⟦ b ↦ Φ, c ↦ Φ ⟧, d ↦ Φ ⟧"]
 
-    it "prints in line with --flat" $
-      withStdin "[[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet", "--flat"]
-          ["⟦ x ↦ 5.0, y ↦ \"hey\", z ↦ ⟦⟧:w ⟧"]
+    it "prints in line with --flat"
+      $ withStdin "[[ x -> 5, y -> \"hey\", z -> [[ w -> [[ ]] ]] ]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", "--flat"]
+        ["⟦ x ↦ 5.0, y ↦ \"hey\", z ↦ ⟦⟧:w ⟧"]
 
     it "removes unnecessary rho bindings in primitive applications" $
       withStdin
@@ -1355,45 +1355,45 @@ spec = do
             ["⟦ z ↦ 42.0, org ↦ ⟦ bytes(data) ↦ ⟦⟧, number(as-bytes) ↦ ⟦⟧ ⟧:eolang ⟧"]
         )
 
-    it "reduces log message" $
-      withStdin "[[ x -> [[ y -> ? ]](y -> 5) ]]" $
-        testCLISucceeded
-          ["rewrite", "--log-level=debug", "--log-lines=1", "--normalize"]
-          [ intercalate
-              "\n"
-              [ "[DEBUG]: Applied 'copy' (32 nodes -> 27 nodes)"
-              , "---| log is limited by --log-lines=1 option |---"
-              ]
-          ]
+    it "reduces log message"
+      $ withStdin "[[ x -> [[ y -> ? ]](y -> 5) ]]"
+      $ testCLISucceeded
+        ["rewrite", "--log-level=debug", "--log-lines=1", "--normalize"]
+        [ intercalate
+            "\n"
+            [ "[DEBUG]: Applied 'copy' (32 nodes -> 27 nodes)"
+            , "---| log is limited by --log-lines=1 option |---"
+            ]
+        ]
 
-    it "reports a condition that raised while being evaluated" $
-      withStdin "[[ x -> [[ y -> ∅ ]] ]]" $
-        testCLISucceeded
-          ["rewrite", rule "raising-condition.yaml", "--log-level=debug", "--flat"]
-          [ "raised and was treated as not met: user error (Only data objects and bytes are supported"
-          , "⟦ x ↦ ⟦ y ↦ ∅ ⟧ ⟧"
-          ]
+    it "reports a condition that raised while being evaluated"
+      $ withStdin "[[ x -> [[ y -> ∅ ]] ]]"
+      $ testCLISucceeded
+        ["rewrite", rule "raising-condition.yaml", "--log-level=debug", "--flat"]
+        [ "raised and was treated as not met: user error (Only data objects and bytes are supported"
+        , "⟦ x ↦ ⟦ y ↦ ∅ ⟧ ⟧"
+        ]
 
-    it "canonizes expression" $
-      withStdin "[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]" $
-        testCLISucceeded
-          ["rewrite", "--canonize", "--sweet", "--flat"]
-          ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Package ⟧"]
+    it "canonizes expression"
+      $ withStdin "[[ x -> [[ y -> [[ L> Func ]].q, z -> Q.x(a -> [[ w -> [[ L> Atom ]], L> Hello ]]) ]], L> Package ]]"
+      $ testCLISucceeded
+        ["rewrite", "--canonize", "--sweet", "--flat"]
+        ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Package ⟧"]
 
-    it "rewrites by locator" $
-      withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]" $
-        testCLISucceeded
-          ["rewrite", "--sweet", "--flat", "--locator=Q.ex", "--normalize"]
-          ["⟦ ex ↦ 5.0:x, abc ↦ ∅:x( x ↦ 5.0 ) ⟧"]
+    it "rewrites by locator"
+      $ withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", "--flat", "--locator=Q.ex", "--normalize"]
+        ["⟦ ex ↦ 5.0:x, abc ↦ ∅:x( x ↦ 5.0 ) ⟧"]
 
-    it "returns original expression on --breakpoint" $
-      withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y" $
-        testCLISucceeded
-          ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--log-level=debug"]
-          [ "Applied 'copy' (22 nodes -> 17 nodes)"
-          , "Rule 'stop' is a breakpoint, dropping down all the previous rewritings..."
-          , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"
-          ]
+    it "returns original expression on --breakpoint"
+      $ withStdin "[[ x -> ?, y -> $.x ]](x -> [[ D> 42- ]]).y"
+      $ testCLISucceeded
+        ["rewrite", "--sweet", "--flat", "--normalize", "--breakpoint=stop", "--log-level=debug"]
+        [ "Applied 'copy' (22 nodes -> 17 nodes)"
+        , "Rule 'stop' is a breakpoint, dropping down all the previous rewritings..."
+        , "⟦ x ↦ ∅, y ↦ x ⟧( x ↦ 42-:Δ ).y"
+        ]
 
     it "leaves no step files of the rewritings --breakpoint dropped" $
       withTempDirectory "phino-steps-breakpoint" $ \dir ->
@@ -1408,41 +1408,41 @@ spec = do
         withStdin "[[ x -> $ ]]" $
           testCLISucceeded ["rewrite", "--rule=" ++ fix, "--max-depth=1", "--depth-sensitive", "--flat"] ["⟦ x ↦ Φ ⟧"]
 
-    it "keeps the rewritten expression when the --breakpoint rule fired" $
-      withStdin "⟦ a ↦ ⟦ b ↦ Φ ⟧.b ⟧" $
-        testCLISucceeded
-          ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
-          ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
+    it "keeps the rewritten expression when the --breakpoint rule fired"
+      $ withStdin "⟦ a ↦ ⟦ b ↦ Φ ⟧.b ⟧"
+      $ testCLISucceeded
+        ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
+        ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
 
   describe "morph --focus under --locator" $ do
     it "finds the same object for the steps and for the answer" $
       withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $ do
         (out, _) <- withStdout (runCLI ["morph", "--locator=Q.t", "--focus=Q.a", "--flat", "--sequence"])
         filter (not . null) (lines out) `shouldSatisfy` all (== "⟦ Δ ⤍ 02- ⟧")
-    it "prints the answer when --focus names the object at --locator" $
-      withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" $
-        testCLISucceeded ["morph", "--locator=Q.t", "--focus=Q.t", "--flat", "--sequence"] ["⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"]
+    it "prints the answer when --focus names the object at --locator"
+      $ withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧"
+      $ testCLISucceeded ["morph", "--locator=Q.t", "--focus=Q.t", "--flat", "--sequence"] ["⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"]
     it "fails on a --focus it cannot find before it prints any step" $
       withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" $ do
         (out, _) <- withStdout (try (runCLI ["morph", "--locator=Q.t", "--focus=Q.nope", "--flat", "--sequence"]) :: IO (Either ExitCode ()))
         out `shouldNotContain` "⟦ t ↦"
 
-  it "fails on a --hide locator that matches nothing, as --show does" $
-    withStdin "[[ x -> Q.y ]]" $
-      testCLIFailed ["rewrite", "--hide=Q.nope"] ["Can't find object by locator: 'Φ.nope'"]
+  it "fails on a --hide locator that matches nothing, as --show does"
+    $ withStdin "[[ x -> Q.y ]]"
+    $ testCLIFailed ["rewrite", "--hide=Q.nope"] ["Can't find object by locator: 'Φ.nope'"]
 
-  it "names the term dataization cannot take, and says a normal form is expected" $
-    withStdin "⟦ x ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.b ⟧" $
-      testCLIFailed ["dataize", "--locator=Q.x"] ["Dataization expects a normal form, but the term at the locator is not one: 01-:Δ:b.b"]
+  it "names the term dataization cannot take, and says a normal form is expected"
+    $ withStdin "⟦ x ↦ ⟦ b ↦ ⟦ Δ ⤍ 01- ⟧ ⟧.b ⟧"
+    $ testCLIFailed ["dataize", "--locator=Q.x"] ["Dataization expects a normal form, but the term at the locator is not one: 01-:Δ:b.b"]
 
   describe "--partial parks a universe that --max-cycles stops" $ do
     let heavy = "⟦ simple ↦ ⟦ Δ ⤍ 01- ⟧, heavy ↦ ⟦ a ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧ ⟧.a.b.c ⟧"
-    it "in dataize" $
-      withStdin heavy $
-        testCLISucceeded ["dataize", "--locator=Q.simple", "--max-cycles=1", "--partial", "--flat"] ["⟦ Δ ⤍ 01- ⟧"]
-    it "in morph" $
-      withStdin heavy $
-        testCLISucceeded ["morph", "--locator=Q.simple", "--max-cycles=1", "--partial", "--flat"] ["⟦ Δ ⤍ 01- ⟧"]
+    it "in dataize"
+      $ withStdin heavy
+      $ testCLISucceeded ["dataize", "--locator=Q.simple", "--max-cycles=1", "--partial", "--flat"] ["⟦ Δ ⤍ 01- ⟧"]
+    it "in morph"
+      $ withStdin heavy
+      $ testCLISucceeded ["morph", "--locator=Q.simple", "--max-cycles=1", "--partial", "--flat"] ["⟦ Δ ⤍ 01- ⟧"]
 
   describe "dataize" $ do
     it "prints help" $
@@ -1451,21 +1451,21 @@ spec = do
     it "names every block of a --symbolic entry in its help" $
       testCLISucceeded ["dataize", "--help"] ["\"dataize\"", "\"morph\"", "\"evaluate\"", "\"defer\"", "\"stay\"", "\"rewrite\"", "\"symbolize\"", "\"cast\"", "\"join\""]
 
-    it "dataizes simple expression" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["dataize"] ["01-"]
+    it "dataizes simple expression"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded ["dataize"] ["01-"]
 
-    it "accepts --seed flag" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["dataize", "--seed=7"] ["01-"]
+    it "accepts --seed flag"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded ["dataize", "--seed=7"] ["01-"]
 
-    it "fails to dataize an empty object, which dataizes the terminator ⊥" $
-      withStdin "[[ ]]" $
-        testCLIFailed ["dataize"] ["terminator ⊥"]
+    it "fails to dataize an empty object, which dataizes the terminator ⊥"
+      $ withStdin "[[ ]]"
+      $ testCLIFailed ["dataize"] ["terminator ⊥"]
 
-    it "fails with negative --max-steps" $
-      withStdin "[[ D> 01- ]]" $
-        testCLIFailed ["dataize", "--max-steps=-1"] ["--max-steps must be positive"]
+    it "fails with negative --max-steps"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLIFailed ["dataize", "--max-steps=-1"] ["--max-steps must be positive"]
 
     it "fails on --max-steps instead of dataizing forever" $
       loopingLambdas $ \endless ->
@@ -1490,23 +1490,23 @@ spec = do
 
     describe "--acyclic=proven" $ do
       let circling = "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧"
-      it "spends the whole budget and fails on the limit without the flag" $
-        withStdin circling $
-          testCLIFailed
-            ["dataize", "--locator=Q.t", "--max-steps=40"]
-            ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
+      it "spends the whole budget and fails on the limit without the flag"
+        $ withStdin circling
+        $ testCLIFailed
+          ["dataize", "--locator=Q.t", "--max-steps=40"]
+          ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=40"]
 
-      it "answers the copy it came back to with a symbol with the flag" $
-        withStdin circling $
-          testCLISucceeded
-            ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-steps=4000"]
-            ["40-45-00-00-00-00-00-00"]
+      it "answers the copy it came back to with a symbol with the flag"
+        $ withStdin circling
+        $ testCLISucceeded
+          ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-steps=4000"]
+          ["40-45-00-00-00-00-00-00"]
 
-      it "answers the same with --partial" $
-        withStdin circling $
-          testCLISucceeded
-            ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
-            ["40-45-00-00-00-00-00-00"]
+      it "answers the same with --partial"
+        $ withStdin circling
+        $ testCLISucceeded
+          ["dataize", "--locator=Q.t", "--acyclic=proven", "--partial", "--max-steps=4000", "--flat", "--hide-rho"]
+          ["40-45-00-00-00-00-00-00"]
 
       it "writes the cut to the protocol where the formation would have opened" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -1586,43 +1586,43 @@ spec = do
           records <- readProtocol path
           lines records `shouldContain` ["  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·10 )  # 𝔻(𝑛·0·5), plausible, repeats 𝑛·0·9"]
 
-      it "refuses the flag without a mode" $
-        withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
-          testCLIFailed ["dataize", "--locator=Q.t", "--acyclic"] ["The option `--acyclic` expects an argument"]
+      it "refuses the flag without a mode"
+        $ withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧"
+        $ testCLIFailed ["dataize", "--locator=Q.t", "--acyclic"] ["The option `--acyclic` expects an argument"]
 
-      it "refuses a mode it does not know" $
-        withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
-          testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=sure"] ["The value 'sure' can't be used for '--acyclic' option"]
+      it "refuses a mode it does not know"
+        $ withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧"
+        $ testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=sure"] ["The value 'sure' can't be used for '--acyclic' option"]
 
-      it "answers a terminating program the same way with the flag" $
-        withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
-          testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=proven"] ["01-02"]
+      it "answers a terminating program the same way with the flag"
+        $ withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧"
+        $ testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=proven"] ["01-02"]
 
     describe "--max-loops" $ do
       let once = "⟦ f ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.again ⟧, start ↦ ⟦ again ↦ Φ.f( x ↦ Φ.stop( v ↦ Φ.start ) ) ⟧, stop ↦ ⟦ v ↦ ∅, again ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, t ↦ Φ.f( x ↦ Φ.start ) ⟧"
-      it "cuts a recursion that stops after one round without the flag" $
-        withStdin once $
-          testCLISucceeded
-            ["dataize", "--locator=Q.t", "--acyclic=plausible"]
-            ["40-45-00-00-00-00-00-00"]
+      it "cuts a recursion that stops after one round without the flag"
+        $ withStdin once
+        $ testCLISucceeded
+          ["dataize", "--locator=Q.t", "--acyclic=plausible"]
+          ["40-45-00-00-00-00-00-00"]
 
-      it "dataizes a recursion that stops after one round with --max-loops=1" $
-        withStdin once $
-          testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=1"] ["01-"]
+      it "dataizes a recursion that stops after one round with --max-loops=1"
+        $ withStdin once
+        $ testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=1"] ["01-"]
 
-      it "cuts a recursion that never stops with --max-loops=1" $
-        withStdin "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧" $
-          testCLISucceeded
-            ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-loops=1", "--max-steps=4000"]
-            ["40-45-00-00-00-00-00-00"]
+      it "cuts a recursion that never stops with --max-loops=1"
+        $ withStdin "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧"
+        $ testCLISucceeded
+          ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-loops=1", "--max-steps=4000"]
+          ["40-45-00-00-00-00-00-00"]
 
-      it "refuses a negative count" $
-        withStdin once $
-          testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=-1"] ["--max-loops must be >= 0"]
+      it "refuses a negative count"
+        $ withStdin once
+        $ testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=-1"] ["--max-loops must be >= 0"]
 
-      it "refuses the flag without --acyclic" $
-        withStdin once $
-          testCLIFailed ["dataize", "--locator=Q.t", "--max-loops=1"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
+      it "refuses the flag without --acyclic"
+        $ withStdin once
+        $ testCLIFailed ["dataize", "--locator=Q.t", "--max-loops=1"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
 
     describe "--acyclic=plausible over a mutual recursion of four objects" $ do
       let world = "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, plus(i) ↦ ⟦ λ ⤍ L_plus ⟧, read(p) ↦ ⟦ at ↦ ξ.p ⟧, f1(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 28-:Δ ).if( Φ.read( Φ.f4( Φ.plus( ξ.i ) ).at ), Φ.read( Φ.plus( ξ.i ) ) ) ⟧, " ++ intercalate ", " [printf "f%d(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), %02X-:Δ ).if( Φ.read( ξ.i ), Φ.f%d( Φ.f%d( ξ.i ).at ) ) ⟧" level (0x28 + level :: Int) level (level - 1) | level <- [2 .. 4 :: Int]] ++ ", t ↦ Φ.f4( 00-:Δ ).at ⟧"
@@ -1855,71 +1855,71 @@ spec = do
           records <- readProtocol path
           lines records `shouldSatisfy` any (isInfixOf "looped")
 
-    it "dataizes with --sequence" $
-      withStdin "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]" $
-        testCLISucceeded
-          ["dataize", "--sequence", "--output=latex", "--flat", "--sweet"]
-          [ intercalate
-              "\n"
-              [ "\\begin{phiquation}"
-              , "[[ @ -> |f| ( |y| -> [[]] ), |f|(|y|) -> |00-| : D ]] \\phiDataize[\\nameref{r:box}]"
-              , "  \\phiDataize [[ @ -> |f| ( |y| -> [[]] ), |f|(|y|) -> |00-| : D ]] . @ \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize [[ |f|(|y|) -> |00-| : D ]] . |f| ( |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize [[ D> |00-|, |y| -> ? ]] ( \\phiTerminal{\\rho} -> [[ |f|(|y|) -> |00-| : D ]], |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize [[ D> |00-|, |y| -> ? ]] ( |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:copy}]"
-              , "  \\phiNormalize [[ D> |00-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize [[ D> |00-|, |y| -> [[]] ]] \\phiDataize[\\nameref{r:delta}]"
-              , "  \\phiDataize |00-|{.}"
-              , "\\end{phiquation}"
-              , "00-"
-              ]
-          ]
+    it "dataizes with --sequence"
+      $ withStdin "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]"
+      $ testCLISucceeded
+        ["dataize", "--sequence", "--output=latex", "--flat", "--sweet"]
+        [ intercalate
+            "\n"
+            [ "\\begin{phiquation}"
+            , "[[ @ -> |f| ( |y| -> [[]] ), |f|(|y|) -> |00-| : D ]] \\phiDataize[\\nameref{r:box}]"
+            , "  \\phiDataize [[ @ -> |f| ( |y| -> [[]] ), |f|(|y|) -> |00-| : D ]] . @ \\phiNormalize[\\nameref{r:dot}]"
+            , "  \\phiNormalize [[ |f|(|y|) -> |00-| : D ]] . |f| ( |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:dot}]"
+            , "  \\phiNormalize [[ D> |00-|, |y| -> ? ]] ( \\phiTerminal{\\rho} -> [[ |f|(|y|) -> |00-| : D ]], |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:skip}]"
+            , "  \\phiNormalize [[ D> |00-|, |y| -> ? ]] ( |y| -> [[]], \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:copy}]"
+            , "  \\phiNormalize [[ D> |00-|, |y| -> [[]] ]] ( \\phiTerminal{\\rho} -> Q ) \\phiNormalize[\\nameref{r:skip}]"
+            , "  \\phiNormalize [[ D> |00-|, |y| -> [[]] ]] \\phiDataize[\\nameref{r:delta}]"
+            , "  \\phiDataize |00-|{.}"
+            , "\\end{phiquation}"
+            , "00-"
+            ]
+        ]
 
-    it "keeps the delta step in --sequence under --quiet" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded
-          ["dataize", "--sequence", "--quiet", "--output=latex", "--flat", "--sweet"]
-          [ intercalate
-              "\n"
-              [ "|01-| : D \\phiDataize[\\nameref{r:delta}]"
-              , "  \\phiDataize |01-|{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "keeps the delta step in --sequence under --quiet"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded
+        ["dataize", "--sequence", "--quiet", "--output=latex", "--flat", "--sweet"]
+        [ intercalate
+            "\n"
+            [ "|01-| : D \\phiDataize[\\nameref{r:delta}]"
+            , "  \\phiDataize |01-|{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "ends the phi --sequence at the bare data" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded
-          ["dataize", "--sequence", "--quiet", "--flat", "--sweet"]
-          ["01-:Δ\n01-"]
+    it "ends the phi --sequence at the bare data"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded
+        ["dataize", "--sequence", "--quiet", "--flat", "--sweet"]
+        ["01-:Δ\n01-"]
 
-    it "focuses a compressed sequence whose meet replaces a step root" $
-      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
-        testCLISucceeded
-          ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( |32.0| ), |c| -> |25.0| ]] } \\phiDataize[\\nameref{r:box}]"]
+    it "focuses a compressed sequence whose meet replaces a step root"
+      $ withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]"
+      $ testCLISucceeded
+        ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
+        ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( |32.0| ), |c| -> |25.0| ]] } \\phiDataize[\\nameref{r:box}]"]
 
-    it "compresses a canonized whole-expression sequence into a meet" $
-      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
-        testCLISucceeded
-          ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}"]
+    it "compresses a canonized whole-expression sequence into a meet"
+      $ withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]"
+      $ testCLISucceeded
+        ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
+        ["\\phinoMeet{dataization:1}"]
 
-    it "canonizes the residue it prints with --partial" $
-      withStdin "[[ @ -> [[ L> Foo ]] ]]" $
-        testCLISucceeded ["dataize", "--partial", "--canonize", "--flat", "--sweet"] ["Fn1:λ"]
+    it "canonizes the residue it prints with --partial"
+      $ withStdin "[[ @ -> [[ L> Foo ]] ]]"
+      $ testCLISucceeded ["dataize", "--partial", "--canonize", "--flat", "--sweet"] ["Fn1:λ"]
 
-    it "hides an object outside the residue --locator aims at with --partial" $
-      withStdin "[[ t -> [[ @ -> [[ L> Foo ]] ]], o -> [[ D> 03- ]] ]]" $
-        testCLISucceeded ["dataize", "--partial", "--locator=Q.t", "--hide=Q.o", "--flat", "--sweet"] ["Foo:λ"]
+    it "hides an object outside the residue --locator aims at with --partial"
+      $ withStdin "[[ t -> [[ @ -> [[ L> Foo ]] ]], o -> [[ D> 03- ]] ]]"
+      $ testCLISucceeded ["dataize", "--partial", "--locator=Q.t", "--hide=Q.o", "--flat", "--sweet"] ["Foo:λ"]
 
-    it "dataizes with --locator" $
-      withStdin "[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]" $
-        testCLISucceeded ["dataize", "--locator=Q.ex"] ["42-"]
+    it "dataizes with --locator"
+      $ withStdin "[[ ex -> [[ @ -> Q.x ]], x -> [[ D> 42- ]] ]]"
+      $ testCLISucceeded ["dataize", "--locator=Q.ex"] ["42-"]
 
-    it "does not print bytes with --quiet" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["dataize", "--quiet"] []
+    it "does not print bytes with --quiet"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded ["dataize", "--quiet"] []
 
     describe "--abridged" $ do
       let wide = "⟦ t ↦ ⟦ φ ↦ ⟦ Δ ⤍ 01-02 ⟧, anfang ↦ ξ.schluss, mitte ↦ ξ.anfang, schluss ↦ ξ.mitte, rand ↦ ξ.schluss ⟧ ⟧"
@@ -1980,23 +1980,23 @@ spec = do
             testCLISucceeded ["dataize", "--locator=Q.t", "--partial", "--minutes=" ++ path, "--abridged=200", "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           lines records `shouldContain` ["  unanswered L_weit  # 𝔻(⟦ λ ⤍ L_weit, anfang ↦ schluss, mitte ↦ anfang, schluss ↦ mitte, rand ↦ schluss ⟧)"]
-      it "refuses a width that is not a number" $
-        withStdin wide $
-          testCLIFailed ["dataize", "--locator=Q.t", "--protocol=breit.txt", "--abridged=breit"] ["cannot parse value `breit'"]
+      it "refuses a width that is not a number"
+        $ withStdin wide
+        $ testCLIFailed ["dataize", "--locator=Q.t", "--protocol=breit.txt", "--abridged=breit"] ["cannot parse value `breit'"]
       it "leaves the printed result whole" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin wide $
             testCLISucceeded ["morph", "--locator=Q.t", "--minutes=" ++ path, "--abridged", "--sweet", "--hide-rho", "--flat"] ["anfang ↦ schluss, mitte ↦ anfang"]
-      it "refuses the flag without a protocol" $
-        withStdin wide $
-          testCLIFailed ["dataize", "--locator=Q.t", "--abridged"] ["The option --abridged requires --protocol"]
-      it "refuses to cut the data in dataize without --abridged" $
-        withStdin wide $
-          testCLIFailed ["dataize", "--locator=Q.t", "--protocol=daten.txt", "--abridged-data"] ["The option --abridged-data requires --abridged"]
-      it "refuses to cut the data in morph without --abridged" $
-        withStdin wide $
-          testCLIFailed ["morph", "--locator=Q.t", "--protocol=daten.xml", "--abridged-data"] ["The option --abridged-data requires --abridged"]
+      it "refuses the flag without a protocol"
+        $ withStdin wide
+        $ testCLIFailed ["dataize", "--locator=Q.t", "--abridged"] ["The option --abridged requires --protocol"]
+      it "refuses to cut the data in dataize without --abridged"
+        $ withStdin wide
+        $ testCLIFailed ["dataize", "--locator=Q.t", "--protocol=daten.txt", "--abridged-data"] ["The option --abridged-data requires --abridged"]
+      it "refuses to cut the data in morph without --abridged"
+        $ withStdin wide
+        $ testCLIFailed ["morph", "--locator=Q.t", "--protocol=daten.xml", "--abridged-data"] ["The option --abridged-data requires --abridged"]
 
     describe "--protocol" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
@@ -3433,23 +3433,23 @@ spec = do
       let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
           dispatched = "[[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.foo.bar ]]"
           wrapped = "[[ app -> [[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.app.foo.bar ]] ]]"
-      it "fails on a λ function that cannot fire without the flag" $
-        withStdin stuck $
-          testCLIFailed
-            ["dataize", symbolic, "--sweet", "--hide-rho"]
-            ["No entry of --symbolic answers the λ function 'L_number_nope'"]
+      it "fails on a λ function that cannot fire without the flag"
+        $ withStdin stuck
+        $ testCLIFailed
+          ["dataize", symbolic, "--sweet", "--hide-rho"]
+          ["No entry of --symbolic answers the λ function 'L_number_nope'"]
 
-      it "prints the residue with the stuck application intact and exits successfully" $
-        withStdin stuck $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--sweet", "--hide-rho"]
-            ["L_number_nope:λ"]
+      it "prints the residue with the stuck application intact and exits successfully"
+        $ withStdin stuck
+        $ testCLISucceeded
+          ["dataize", symbolic, "--partial", "--sweet", "--hide-rho"]
+          ["L_number_nope:λ"]
 
-      it "keeps what was evaluated before the stuck site in the residue" $
-        withStdin stuck $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--sweet"]
-            ["φ ↦ 𝜎1:λ"]
+      it "keeps what was evaluated before the stuck site in the residue"
+        $ withStdin stuck
+        $ testCLISucceeded
+          ["dataize", symbolic, "--partial", "--sweet"]
+          ["φ ↦ 𝜎1:λ"]
 
       it "records every firing before the stuck site in --protocol" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -3511,54 +3511,54 @@ spec = do
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
 
-      it "still prints bytes when nothing gets stuck" $
-        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
-          testCLISucceeded ["dataize", symbolic, "--partial"] ["40-45-00-00-00-00-00-00"]
+      it "still prints bytes when nothing gets stuck"
+        $ withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+        $ testCLISucceeded ["dataize", symbolic, "--partial"] ["40-45-00-00-00-00-00-00"]
 
-      it "prints the residual at --locator as XMIR, with ρ hidden" $
-        withStdin wrapped $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir", "--hide-rho"]
-            ["<o name=\"λ\">L_number_nope</o>"]
+      it "prints the residual at --locator as XMIR, with ρ hidden"
+        $ withStdin wrapped
+        $ testCLISucceeded
+          ["dataize", symbolic, "--partial", "--locator=Q.app", "--output=xmir", "--hide-rho"]
+          ["<o name=\"λ\">L_number_nope</o>"]
 
       it "prints the residual at --locator, not the whole program" $
         withStdin wrapped $ do
           (out, _) <- withStdout (runCLI ["dataize", symbolic, "--partial", "--locator=Q.app", "--hide-rho", "--flat"])
           lines out `shouldBe` ["⟦ λ ⤍ L_number_nope ⟧"]
 
-      it "prints a residual of several top bindings as XMIR" $
-        withStdin dispatched $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--output=xmir"]
-            ["<o base=\"Φ.foo\" name=\"ρ\"/>", "<o name=\"λ\">L_number_nope</o>"]
+      it "prints a residual of several top bindings as XMIR"
+        $ withStdin dispatched
+        $ testCLISucceeded
+          ["dataize", symbolic, "--partial", "--output=xmir"]
+          ["<o base=\"Φ.foo\" name=\"ρ\"/>", "<o name=\"λ\">L_number_nope</o>"]
 
-      it "prints the chain of steps ending in the residue with --sequence" $
-        withStdin stuck $
-          testCLISucceeded
-            ["dataize", symbolic, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
-            ["2.0.times( 3.0 ).nope", "L_number_nope:λ"]
+      it "prints the chain of steps ending in the residue with --sequence"
+        $ withStdin stuck
+        $ testCLISucceeded
+          ["dataize", symbolic, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
+          ["2.0.times( 3.0 ).nope", "L_number_nope:λ"]
 
-      it "prints the terminator ⊥ the object reduces to as the residue" $
-        withStdin "[[ ]]" $
-          testCLISucceeded ["dataize", "--partial"] ["⊥"]
+      it "prints the terminator ⊥ the object reduces to as the residue"
+        $ withStdin "[[ ]]"
+        $ testCLISucceeded ["dataize", "--partial"] ["⊥"]
 
     describe "--symbolic" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
-      it "fires the λ function an entry of the file answers" $
-        withStdin sum' $
-          testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
+      it "fires the λ function an entry of the file answers"
+        $ withStdin sum'
+        $ testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
 
-      it "reports the progress of the run with --log-level=INFO" $
-        withStdin sum' $
-          testCLISucceeded ["dataize", symbolic, "--log-level=INFO", "--quiet"] ["[INFO]: Started "]
+      it "reports the progress of the run with --log-level=INFO"
+        $ withStdin sum'
+        $ testCLISucceeded ["dataize", symbolic, "--log-level=INFO", "--quiet"] ["[INFO]: Started "]
 
-      it "gets stuck on every λ function when it is not given" $
-        withStdin sum' $
-          testCLIFailed ["dataize"] ["No entry of --symbolic answers the λ function 'L_number_plus'"]
+      it "gets stuck on every λ function when it is not given"
+        $ withStdin sum'
+        $ testCLIFailed ["dataize"] ["No entry of --symbolic answers the λ function 'L_number_plus'"]
 
-      it "fails when the file is not there" $
-        withStdin sum' $
-          testCLIFailed ["dataize", "--symbolic=no-such-file.yaml"] ["no-such-file.yaml"]
+      it "fails when the file is not there"
+        $ withStdin sum'
+        $ testCLIFailed ["dataize", "--symbolic=no-such-file.yaml"] ["no-such-file.yaml"]
 
       it "fails on a file that carries no entries at all, before dataizing anything" $
         withTempFileContent "symbolicXXXXXX.yaml" "nope: true\n" $ \path ->
@@ -3605,21 +3605,21 @@ spec = do
 
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
-      it "dataizes an expression the input does not contain" $
-        withStdin universe $
-          testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )"] ["40-45-00-00-00-00-00-00"]
+      it "dataizes an expression the input does not contain"
+        $ withStdin universe
+        $ testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )"] ["40-45-00-00-00-00-00-00"]
 
-      it "normalizes what it is handed before dataizing it" $
-        withStdin universe $
-          testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x"] ["2A-"]
+      it "normalizes what it is handed before dataizing it"
+        $ withStdin universe
+        $ testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x"] ["2A-"]
 
-      it "hides an object of the universe from the answer it morphs inside it" $
-        withStdin universe $
-          testCLISucceeded ["morph", "--inside=[[ x -> [[ D> 2A- ]] ]].x", "--hide=Q.bytes", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 2A- ⟧"]
+      it "hides an object of the universe from the answer it morphs inside it"
+        $ withStdin universe
+        $ testCLISucceeded ["morph", "--inside=[[ x -> [[ D> 2A- ]] ]].x", "--hide=Q.bytes", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 2A- ⟧"]
 
-      it "morphs inside the universe just as it dataizes inside it" $
-        withStdin universe $
-          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
+      it "morphs inside the universe just as it dataizes inside it"
+        $ withStdin universe
+        $ testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
 
       it "opens the text protocol before the objects it made while aiming" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -3645,182 +3645,182 @@ spec = do
           records <- readProtocol path
           take 2 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝑛·0·1 := ∅:x( x ↦ 2A-:Δ )"]
 
-      it "cannot be used together with --locator" $
-        withStdin universe $
-          testCLIFailed ["dataize", "--inside=Q.@", "--locator=Q.@"] ["--inside and --locator cannot be used together"]
+      it "cannot be used together with --locator"
+        $ withStdin universe
+        $ testCLIFailed ["dataize", "--inside=Q.@", "--locator=Q.@"] ["--inside and --locator cannot be used together"]
 
-      it "accepts --locator=Φ with --inside, since Φ and Q both name the root" $
-        withStdin universe $
-          testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x", "--locator=Φ"] ["2A-"]
+      it "accepts --locator=Φ with --inside, since Φ and Q both name the root"
+        $ withStdin universe
+        $ testCLISucceeded ["dataize", "--inside=[[ x -> [[ D> 2A- ]] ]].x", "--locator=Φ"] ["2A-"]
 
-      it "accepts --locator=Φ with morph --inside, since Φ and Q both name the root" $
-        withStdin universe $
-          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--locator=Φ", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
+      it "accepts --locator=Φ with morph --inside, since Φ and Q both name the root"
+        $ withStdin universe
+        $ testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--locator=Φ", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
 
-      it "fails when the input expression is not a formation" $
-        withStdin "Q.x" $
-          testCLIFailed ["dataize", "--inside=Q.x"] ["--inside requires the input expression to be a formation"]
+      it "fails when the input expression is not a formation"
+        $ withStdin "Q.x"
+        $ testCLIFailed ["dataize", "--inside=Q.x"] ["--inside requires the input expression to be a formation"]
 
     describe "fails" $ do
-      it "with --output != latex and --nonumber" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--nonumber", "--output=xmir"]
-            ["The --nonumber option can stay together with --output=latex only"]
+      it "with --output != latex and --nonumber"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--nonumber", "--output=xmir"]
+          ["The --nonumber option can stay together with --output=latex only"]
 
-      it "with --omit-listing and --output != xmir" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--omit-listing", "--output=phi"]
-            ["--omit-listing"]
+      it "with --omit-listing and --output != xmir"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--omit-listing", "--output=phi"]
+          ["--omit-listing"]
 
-      it "with --omit-comments and --output != xmir" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--omit-comments", "--output=phi"]
-            ["--omit-comments"]
+      it "with --omit-comments and --output != xmir"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--omit-comments", "--output=phi"]
+          ["--omit-comments"]
 
-      it "with --expression and --output != latex" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--expression=foo", "--output=phi"]
-            ["--expression option can stay together with --output=latex only"]
+      it "with --expression and --output != latex"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--expression=foo", "--output=phi"]
+          ["--expression option can stay together with --output=latex only"]
 
-      it "with --label and --output != latex" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--label=foo", "--output=phi"]
-            ["--label option can stay together with --output=latex only"]
+      it "with --label and --output != latex"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--label=foo", "--output=phi"]
+          ["--label option can stay together with --output=latex only"]
 
-      it "with wrong --hide option" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--hide=Q.x(Q.y)"]
-            ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
+      it "with wrong --hide option"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--hide=Q.x(Q.y)"]
+          ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
 
-      it "with wrong --show option" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--show=Q.x(Q.y)"]
-            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
+      it "with wrong --show option"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--show=Q.x(Q.y)"]
+          ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
 
-      it "with wrong --locator option" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--locator=Q.x(Q.y)"]
-            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
+      it "with wrong --locator option"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--locator=Q.x(Q.y)"]
+          ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
 
-      it "with wrong --focus option" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--focus=Q.x(Q.y)"]
-            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --focus"]
+      it "with wrong --focus option"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--focus=Q.x(Q.y)"]
+          ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --focus"]
 
-      it "with wrong --locator option written through ξ, keeping ξ in the error" $
-        withStdin "" $
-          testCLIFailed
-            ["dataize", "--locator=ξ.x"]
-            ["[ERROR]:", "but given: ξ.x"]
+      it "with wrong --locator option written through ξ, keeping ξ in the error"
+        $ withStdin ""
+        $ testCLIFailed
+          ["dataize", "--locator=ξ.x"]
+          ["[ERROR]:", "but given: ξ.x"]
 
-    it "accepts --depth-sensitive" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
+    it "accepts --depth-sensitive"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded ["dataize", "--depth-sensitive"] ["01-"]
 
-    it "finishes exactly on --max-cycles without reporting the limit" $
-      withStdin "⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
-        testCLISucceeded ["dataize", "--max-cycles=1"] ["01-"]
+    it "finishes exactly on --max-cycles without reporting the limit"
+      $ withStdin "⟦ φ ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
+      $ testCLISucceeded ["dataize", "--max-cycles=1"] ["01-"]
 
-    it "reports --max-cycles exceeded when a rule still applies at the limit" $
-      withStdin "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]" $
-        testCLIFailed
-          ["dataize", "--max-cycles=1"]
-          ["[ERROR]: Normalization did not finish before reaching the limit of cycles: --max-cycles=1"]
+    it "reports --max-cycles exceeded when a rule still applies at the limit"
+      $ withStdin "[[ @ -> $.f(y -> [[ ]]), f -> [[ D> 00-, y -> ? ]] ]]"
+      $ testCLIFailed
+        ["dataize", "--max-cycles=1"]
+        ["[ERROR]: Normalization did not finish before reaching the limit of cycles: --max-cycles=1"]
 
   describe "morph" $ do
     let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
     it "prints help" $
       testCLISucceeded ["morph", "--help"] ["Morph the 𝜑-expression"]
 
-    it "hands the top formation back untouched under the default locator" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["morph", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
+    it "hands the top formation back untouched under the default locator"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded ["morph", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
 
-    it "stops at the bare saturated λ-formation" $
-      withStdin chained $
-        testCLISucceeded
-          ["morph", symbolic, "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
-          ["⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"]
+    it "stops at the bare saturated λ-formation"
+      $ withStdin chained
+      $ testCLISucceeded
+        ["morph", symbolic, "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+        ["⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"]
 
-    it "leaves to dataize the firing that takes the same term to bytes" $
-      withStdin chained $
-        testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
+    it "leaves to dataize the firing that takes the same term to bytes"
+      $ withStdin chained
+      $ testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
 
-    it "morphs the subterm --locator aims at" $
-      withStdin "[[ ex -> Q.x, x -> [[ D> 42- ]] ]]" $
-        testCLISucceeded ["morph", "--locator=Q.ex", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 42- ⟧"]
+    it "morphs the subterm --locator aims at"
+      $ withStdin "[[ ex -> Q.x, x -> [[ D> 42- ]] ]]"
+      $ testCLISucceeded ["morph", "--locator=Q.ex", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 42- ⟧"]
 
-    it "canonizes the answer it prints" $
-      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
-        testCLISucceeded ["morph", "--canonize", "--flat", "--sweet"] ["⟦ x ↦ Fn1:λ, y ↦ Fn2:λ ⟧"]
+    it "canonizes the answer it prints"
+      $ withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]"
+      $ testCLISucceeded ["morph", "--canonize", "--flat", "--sweet"] ["⟦ x ↦ Fn1:λ, y ↦ Fn2:λ ⟧"]
 
-    it "hides a binding of the answer it prints" $
-      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
-        testCLISucceeded ["morph", "--hide=Q.x", "--flat", "--sweet"] ["Bar:λ:y"]
+    it "hides a binding of the answer it prints"
+      $ withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]"
+      $ testCLISucceeded ["morph", "--hide=Q.x", "--flat", "--sweet"] ["Bar:λ:y"]
 
-    it "shows only one binding of the answer it prints" $
-      withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]" $
-        testCLISucceeded ["morph", "--show=Q.x", "--flat", "--sweet"] ["Foo:λ:x"]
+    it "shows only one binding of the answer it prints"
+      $ withStdin "[[ x -> [[ L> Foo ]], y -> [[ L> Bar ]] ]]"
+      $ testCLISucceeded ["morph", "--show=Q.x", "--flat", "--sweet"] ["Foo:λ:x"]
 
-    it "hides an object outside the answer --locator aims at" $
-      withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]" $
-        testCLISucceeded ["morph", "--locator=Q.t", "--hide=Q.o", "--flat", "--hide-rho"] ["⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
+    it "hides an object outside the answer --locator aims at"
+      $ withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]"
+      $ testCLISucceeded ["morph", "--locator=Q.t", "--hide=Q.o", "--flat", "--hide-rho"] ["⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
 
-    it "hides a binding of the answer --locator aims at" $
-      withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]" $
-        testCLISucceeded ["morph", "--locator=Q.t", "--hide=Q.t.a", "--flat", "--hide-rho"] ["⟦ b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
+    it "hides a binding of the answer --locator aims at"
+      $ withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]"
+      $ testCLISucceeded ["morph", "--locator=Q.t", "--hide=Q.t.a", "--flat", "--hide-rho"] ["⟦ b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
 
-    it "shows only one binding of the answer --locator aims at" $
-      withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]" $
-        testCLISucceeded ["morph", "--locator=Q.t", "--show=Q.t.b", "--flat", "--hide-rho"] ["⟦ b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
+    it "shows only one binding of the answer --locator aims at"
+      $ withStdin "[[ t -> [[ a -> [[ D> 01- ]], b -> [[ D> 02- ]] ]], o -> [[ D> 03- ]] ]]"
+      $ testCLISucceeded ["morph", "--locator=Q.t", "--show=Q.t.b", "--flat", "--hide-rho"] ["⟦ b ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
 
-    it "prints ⊥ instead of failing the run" $
-      withStdin "[[ x -> $ ]]" $
-        testCLISucceeded ["morph", "--locator=Q.x"] ["⊥"]
+    it "prints ⊥ instead of failing the run"
+      $ withStdin "[[ x -> $ ]]"
+      $ testCLISucceeded ["morph", "--locator=Q.x"] ["⊥"]
 
-    it "fails to dataize what it morphs to ⊥" $
-      withStdin "[[ x -> $ ]]" $
-        testCLIFailed ["dataize", "--locator=Q.x"] ["terminator ⊥"]
+    it "fails to dataize what it morphs to ⊥"
+      $ withStdin "[[ x -> $ ]]"
+      $ testCLIFailed ["dataize", "--locator=Q.x"] ["terminator ⊥"]
 
-    it "prints the chain of morphing steps with --sequence" $
-      withStdin chained $
-        testCLISucceeded
-          ["morph", symbolic, "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
-          [ "Rule 'maa'"
-          , "Rule 'alpha'"
-          , "Rule 'copy'"
-          , "Rule 'mf'"
-          , "⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
-          ]
+    it "prints the chain of morphing steps with --sequence"
+      $ withStdin chained
+      $ testCLISucceeded
+        ["morph", symbolic, "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
+        [ "Rule 'maa'"
+        , "Rule 'alpha'"
+        , "Rule 'copy'"
+        , "Rule 'mf'"
+        , "⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
+        ]
 
-    it "writes every step of a LaTeX --sequence with the arrow of its judgment" $
-      withStdin "[[ q -> [[ ]], k -> Q.q ]]" $
-        testCLISucceeded
-          ["morph", "--locator=Q.k", "--sequence", "--output=latex", "--flat", "--sweet", "--quiet"]
-          [ intercalate
-              "\n"
-              [ "\\begin{phiquation}"
-              , "[[ |q| -> [[]], |k| -> Q . |q| ]] \\phiMorph[\\nameref{r:md}]"
-              , "  \\phiMorph [[ |q| -> [[]], |k| -> [[ |q| -> [[]], |k| -> Q . |q| ]] . |q| ]] \\phiNormalize[\\nameref{r:dot}]"
-              , "  \\phiNormalize [[ |q| -> [[]], |k| -> [[]] ( \\phiTerminal{\\rho} -> Q ) ]] \\phiNormalize[\\nameref{r:skip}]"
-              , "  \\phiNormalize [[ |q| -> [[]], |k| -> [[]] ]] \\phiMorph[\\nameref{r:mf}]"
-              , "  \\phiMorph [[ |q| -> [[]], |k| -> [[]] ]]{.}"
-              , "\\end{phiquation}"
-              ]
-          ]
+    it "writes every step of a LaTeX --sequence with the arrow of its judgment"
+      $ withStdin "[[ q -> [[ ]], k -> Q.q ]]"
+      $ testCLISucceeded
+        ["morph", "--locator=Q.k", "--sequence", "--output=latex", "--flat", "--sweet", "--quiet"]
+        [ intercalate
+            "\n"
+            [ "\\begin{phiquation}"
+            , "[[ |q| -> [[]], |k| -> Q . |q| ]] \\phiMorph[\\nameref{r:md}]"
+            , "  \\phiMorph [[ |q| -> [[]], |k| -> [[ |q| -> [[]], |k| -> Q . |q| ]] . |q| ]] \\phiNormalize[\\nameref{r:dot}]"
+            , "  \\phiNormalize [[ |q| -> [[]], |k| -> [[]] ( \\phiTerminal{\\rho} -> Q ) ]] \\phiNormalize[\\nameref{r:skip}]"
+            , "  \\phiNormalize [[ |q| -> [[]], |k| -> [[]] ]] \\phiMorph[\\nameref{r:mf}]"
+            , "  \\phiMorph [[ |q| -> [[]], |k| -> [[]] ]]{.}"
+            , "\\end{phiquation}"
+            ]
+        ]
 
-    it "does not print the result with --quiet" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["morph", "--quiet"] []
+    it "does not print the result with --quiet"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded ["morph", "--quiet"] []
 
     it "records the λ functions it fires with --protocol" $
       withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -3890,34 +3890,34 @@ spec = do
           steps `shouldBe` map (\n -> printf "%05d.phi" (n :: Int)) [1 .. length steps]
           length steps `shouldSatisfy` (> 0)
 
-    it "accepts --seed, --shuffle and --depth-sensitive" $
-      withStdin "[[ D> 01- ]]" $
-        testCLISucceeded ["morph", "--seed=7", "--shuffle", "--depth-sensitive", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
+    it "accepts --seed, --shuffle and --depth-sensitive"
+      $ withStdin "[[ D> 01- ]]"
+      $ testCLISucceeded ["morph", "--seed=7", "--shuffle", "--depth-sensitive", "--flat", "--hide-rho"] ["⟦ Δ ⤍ 01- ⟧"]
 
-    it "returns the λ-formation dataize cannot finish on" $
-      withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧" $
-        testCLISucceeded
-          ["morph", "--locator=Q.@", "--max-steps=40", "--flat", "--hide-rho"]
-          ["⟦ λ ⤍ L_number_div"]
+    it "returns the λ-formation dataize cannot finish on"
+      $ withStdin "⟦ @ ↦ ⟦ λ ⤍ L_number_div, ρ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧, x ↦ ⟦ Δ ⤍ 40-00-00-00-00-00-00-00 ⟧ ⟧ ⟧"
+      $ testCLISucceeded
+        ["morph", "--locator=Q.@", "--max-steps=40", "--flat", "--hide-rho"]
+        ["⟦ λ ⤍ L_number_div"]
 
-    it "fails once the --max-steps budget is spent" $
-      withStdin chained $
-        testCLIFailed
-          ["morph", "--locator=Q.@", "--max-steps=3"]
-          ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=3"]
+    it "fails once the --max-steps budget is spent"
+      $ withStdin chained
+      $ testCLIFailed
+        ["morph", "--locator=Q.@", "--max-steps=3"]
+        ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=3"]
 
-    it "names morphing, not dataization, when the budget is spent before dataization starts" $
-      withStdin "⟦ x ↦ Φ.x.y ⟧" $
-        testCLIFailed
-          ["morph", "--locator=Q.x", "--max-steps=5"]
-          ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=5"]
+    it "names morphing, not dataization, when the budget is spent before dataization starts"
+      $ withStdin "⟦ x ↦ Φ.x.y ⟧"
+      $ testCLIFailed
+        ["morph", "--locator=Q.x", "--max-steps=5"]
+        ["[ERROR]: Morphing did not finish before reaching the limit of steps: --max-steps=5"]
 
     describe "--max-firings" $ do
       let splitting = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: Φ.s.foo\n    𝑛2: Φ.s.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
           split = "⟦ s ↦ ⟦ λ ⤍ L_split ⟧, x ↦ Φ.s.foo ⟧"
-      it "fails with non-positive --max-firings" $
-        withStdin split $
-          testCLIFailed ["morph", "--max-firings=0"] ["--max-firings must be positive"]
+      it "fails with non-positive --max-firings"
+        $ withStdin split
+        $ testCLIFailed ["morph", "--max-firings=0"] ["--max-firings must be positive"]
 
       it "fails once the --max-firings budget is spent on a widening recursion" $
         splitting $ \table ->
@@ -3946,109 +3946,109 @@ spec = do
 
     describe "--max-nodes" $ do
       let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
-      it "fails with non-positive --max-nodes" $
-        withStdin growing $
-          testCLIFailed ["dataize", "--max-nodes=0"] ["--max-nodes must be positive"]
+      it "fails with non-positive --max-nodes"
+        $ withStdin growing
+        $ testCLIFailed ["dataize", "--max-nodes=0"] ["--max-nodes must be positive"]
 
-      it "fails once the term grows over --max-nodes" $
-        withStdin growing $
-          testCLIFailed
-            ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--locator=Q.x"]
-            ["[ERROR]: Evaluation did not finish before reaching the limit of nodes: --max-nodes=60"]
+      it "fails once the term grows over --max-nodes"
+        $ withStdin growing
+        $ testCLIFailed
+          ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--locator=Q.x"]
+          ["[ERROR]: Evaluation did not finish before reaching the limit of nodes: --max-nodes=60"]
 
-      it "ends the growing term with --partial" $
-        withStdin growing $
-          testCLISucceeded
-            ["morph", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
-            ["Φ.m( 𝜎1:λ )"]
+      it "ends the growing term with --partial"
+        $ withStdin growing
+        $ testCLISucceeded
+          ["morph", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
+          ["Φ.m( 𝜎1:λ )"]
 
-      it "passes a small run in a large program under --max-nodes" $
-        withStdin ("⟦ x ↦ ⟦ φ ↦ ξ.y, y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
-          testCLISucceeded ["dataize", "--max-nodes=50", "--locator=Q.x"] ["05-"]
+      it "passes a small run in a large program under --max-nodes"
+        $ withStdin ("⟦ x ↦ ⟦ φ ↦ ξ.y, y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧")
+        $ testCLISucceeded ["dataize", "--max-nodes=50", "--locator=Q.x"] ["05-"]
 
     describe "--max-memory" $ do
       let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
-      it "fails with non-positive --max-memory" $
-        withStdin growing $
-          testCLIFailed ["dataize", "--max-memory=0G"] ["--max-memory must be positive"]
+      it "fails with non-positive --max-memory"
+        $ withStdin growing
+        $ testCLIFailed ["dataize", "--max-memory=0G"] ["--max-memory must be positive"]
 
-      it "fails with --max-memory of an unknown unit" $
-        withStdin growing $
-          testCLIFailed ["dataize", "--max-memory=8Q"] ["--max-memory must be a number of bytes, optionally ending with K, M, G or T"]
+      it "fails with --max-memory of an unknown unit"
+        $ withStdin growing
+        $ testCLIFailed ["dataize", "--max-memory=8Q"] ["--max-memory must be a number of bytes, optionally ending with K, M, G or T"]
 
-      it "fails once the heap grows over --max-memory" $
-        withStdin growing $
-          testCLIFailed
-            ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--locator=Q.x"]
-            ["[ERROR]: Evaluation did not finish before reaching the limit of memory: --max-memory=1K"]
+      it "fails once the heap grows over --max-memory"
+        $ withStdin growing
+        $ testCLIFailed
+          ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--locator=Q.x"]
+          ["[ERROR]: Evaluation did not finish before reaching the limit of memory: --max-memory=1K"]
 
-      it "ends the growing term with --partial under --max-memory" $
-        withStdin growing $
-          testCLISucceeded
-            ["morph", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
-            ["Φ.m( 𝜎1:λ )"]
+      it "ends the growing term with --partial under --max-memory"
+        $ withStdin growing
+        $ testCLISucceeded
+          ["morph", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
+          ["Φ.m( 𝜎1:λ )"]
 
-      it "passes a small run in a large program under --max-memory" $
-        withStdin ("⟦ x ↦ ⟦ φ ↦ ξ.y, y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
-          testCLISucceeded ["dataize", "--max-memory=1G", "--locator=Q.x"] ["05-"]
+      it "passes a small run in a large program under --max-memory"
+        $ withStdin ("⟦ x ↦ ⟦ φ ↦ ξ.y, y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧")
+        $ testCLISucceeded ["dataize", "--max-memory=1G", "--locator=Q.x"] ["05-"]
 
     describe "--max-seconds" $ do
       let ladder = withLambdasOf (T.pack "- λ: L_split\n  morph:\n    𝑛1: ξ.n.foo\n    𝑛2: ξ.n.foo\n  𝑛: ⟦ l ↦ 𝑛1, r ↦ 𝑛2 ⟧\n")
           rungs = "⟦ " ++ intercalate ", " [printf "l%d ↦ ⟦ λ ⤍ L_split, n ↦ Φ.l%d ⟧" rung (rung + 1) | rung <- [0 .. 23 :: Int]] ++ ", l24 ↦ ⟦⟧, x ↦ Φ.l0.foo ⟧"
           bounded :: Expectation -> Expectation
           bounded check = timeout 60000000 check >>= (`shouldBe` Just ())
-      it "fails with non-positive --max-seconds" $
-        withStdin rungs $
-          testCLIFailed ["morph", "--max-seconds=0"] ["--max-seconds must be positive"]
+      it "fails with non-positive --max-seconds"
+        $ withStdin rungs
+        $ testCLIFailed ["morph", "--max-seconds=0"] ["--max-seconds must be positive"]
 
-      it "fails with a --max-seconds value above maxBound Int, naming the limit" $
-        withStdin rungs $
-          testCLIFailed
-            ["morph", "--max-seconds=9223372036854775808"]
-            ["value must be between", "9223372036854775807"]
+      it "fails with a --max-seconds value above maxBound Int, naming the limit"
+        $ withStdin rungs
+        $ testCLIFailed
+          ["morph", "--max-seconds=9223372036854775808"]
+          ["value must be between", "9223372036854775807"]
 
       it "fails once the --max-seconds budget is spent" $
         ladder $ \table ->
-          bounded $
-            withStdin rungs $
-              testCLIFailed
-                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
-                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+          bounded
+            $ withStdin rungs
+            $ testCLIFailed
+              ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
+              ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
 
       it "fails dataize once the --max-seconds budget is spent" $
         ladder $ \table ->
-          bounded $
-            withStdin rungs $
-              testCLIFailed
-                ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
-                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+          bounded
+            $ withStdin rungs
+            $ testCLIFailed
+              ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
+              ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
 
       it "prints the residue once the --max-seconds budget is spent with --partial" $
         ladder $ \table ->
-          bounded $
-            withStdin rungs $
-              testCLISucceeded
-                ["morph", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
-                ["⟦ λ ⤍ L_split, n ↦ Φ.l1 ⟧.foo"]
+          bounded
+            $ withStdin rungs
+            $ testCLISucceeded
+              ["morph", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
+              ["⟦ λ ⤍ L_split, n ↦ Φ.l1 ⟧.foo"]
 
       it "prints the residue of a dataization once the --max-seconds budget is spent with --partial" $
         ladder $ \table ->
-          bounded $
-            withStdin rungs $
-              testCLISucceeded
-                ["dataize", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
-                ["⟦ λ ⤍ L_split, n ↦ Φ.l1 ⟧.foo"]
+          bounded
+            $ withStdin rungs
+            $ testCLISucceeded
+              ["dataize", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
+              ["⟦ λ ⤍ L_split, n ↦ Φ.l1 ⟧.foo"]
 
       forM_ [(testCLIFailed, ["--max-seconds=1"], ["--locator=Q.x"]), (testCLISucceeded, [], ["--locator=Q.x", "--partial"])] $ \(run, outputs, opts) ->
         it ("writes the timeout as the last line of the protocol with " ++ unwords opts) $
           ladder $ \table ->
             withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
               hClose stream
-              bounded $
-                withStdin rungs $
-                  run
-                    (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--minutes=" ++ path, "--quiet"] ++ opts)
-                    outputs
+              bounded
+                $ withStdin rungs
+                $ run
+                  (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--minutes=" ++ path, "--quiet"] ++ opts)
+                  outputs
               records <- readProtocol path
               dropWhile (== ' ') (last (lines records)) `shouldBe` "timeout 1"
 
@@ -4056,11 +4056,11 @@ spec = do
         ladder $ \table ->
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            bounded $
-              withStdin rungs $
-                testCLISucceeded
-                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--partial", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
-                  []
+            bounded
+              $ withStdin rungs
+              $ testCLISucceeded
+                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--partial", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
+                []
             records <- readProtocol path
             length (filter (isInfixOf "<timeout limit=\"1\" by=\"morph\" at=\"") (lines records)) `shouldBe` 1
 
@@ -4068,31 +4068,31 @@ spec = do
         ladder $ \table ->
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            bounded $
-              withStdin rungs $
-                testCLIFailed
-                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
-                  ["--max-seconds=1"]
+            bounded
+              $ withStdin rungs
+              $ testCLIFailed
+                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
+                ["--max-seconds=1"]
             document <- X.readFile X.def path
             X.nameLocalName (X.elementName (X.documentRoot document)) `shouldBe` T.pack "protocol"
 
-    it "parks the spent budget as a residual with --partial" $
-      withStdin "⟦ φ ↦ 5.gt(Φ.nan) ⟧" $
-        testCLISucceeded
-          ["morph", "--locator=Q.@", "--max-steps=10", "--partial", "--flat", "--hide-rho", "--sweet"]
-          ["5.0.gt( Φ.nan )"]
+    it "parks the spent budget as a residual with --partial"
+      $ withStdin "⟦ φ ↦ 5.gt(Φ.nan) ⟧"
+      $ testCLISucceeded
+        ["morph", "--locator=Q.@", "--max-steps=10", "--partial", "--flat", "--hide-rho", "--sweet"]
+        ["5.0.gt( Φ.nan )"]
 
     describe "--partial" $ do
       let stuck = "[[ @ -> [[ L> Sym_arg_0 ]].foo ]]"
-      it "fails on a λ function that cannot fire without the flag" $
-        withStdin stuck $
-          testCLIFailed ["morph", "--locator=Q.@"] ["No entry of --symbolic answers the λ function 'Sym_arg_0'"]
+      it "fails on a λ function that cannot fire without the flag"
+        $ withStdin stuck
+        $ testCLIFailed ["morph", "--locator=Q.@"] ["No entry of --symbolic answers the λ function 'Sym_arg_0'"]
 
-      it "prints the residue with the stuck application intact and exits successfully" $
-        withStdin stuck $
-          testCLISucceeded
-            ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
-            ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
+      it "prints the residue with the stuck application intact and exits successfully"
+        $ withStdin stuck
+        $ testCLISucceeded
+          ["morph", "--locator=Q.@", "--partial", "--flat", "--hide-rho"]
+          ["⟦ λ ⤍ Sym_arg_0 ⟧.foo"]
 
     describe "a copy a 'defer' line of a join defers" $ do
       let joining = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  defer:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n"
@@ -4200,11 +4200,11 @@ spec = do
       it "answers a recalled firing with the line of the first under plausible" $
         recorded "plausible" >>= (`shouldContain` ["      𝑛·4·1 := 𝑛·2·21  # 𝑛"])
 
-      it "dataizes to the same datum under plausible" $
-        withStdin chained $
-          testCLISucceeded
-            ["dataize", symbolic, "--acyclic=plausible", "--locator=Q.@"]
-            ["40-45-00-00-00-00-00-00"]
+      it "dataizes to the same datum under plausible"
+        $ withStdin chained
+        $ testCLISucceeded
+          ["dataize", symbolic, "--acyclic=plausible", "--locator=Q.@"]
+          ["40-45-00-00-00-00-00-00"]
 
     describe "--acyclic=proven" $ do
       let looping = "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧"
@@ -4222,11 +4222,11 @@ spec = do
               ["morph", "--symbolic=" ++ endless, "--locator=Q.x", "--acyclic=proven", "--max-steps=4000", "--flat", "--hide-rho"]
               ["⟦ λ ⤍ 𝜎1 ⟧"]
 
-      it "answers a terminating program the same way with the flag" $
-        withStdin chained $
-          testCLISucceeded
-            ["morph", symbolic, "--acyclic=proven", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
-            ["⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"]
+      it "answers a terminating program the same way with the flag"
+        $ withStdin chained
+        $ testCLISucceeded
+          ["morph", symbolic, "--acyclic=proven", "--locator=Q.@", "--sweet", "--hide-rho", "--flat"]
+          ["⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"]
 
     describe "--max-loops" $ do
       it "fires a looping λ function once more with --max-loops=1" $
@@ -4240,34 +4240,34 @@ spec = do
             records <- readProtocol path
             length (filter (isInfixOf "𝔼(L_loop)") (lines records)) `shouldBe` 2
 
-      it "refuses the flag without --acyclic" $
-        withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧" $
-          testCLIFailed ["morph", "--locator=Q.x", "--max-loops=3"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
+      it "refuses the flag without --acyclic"
+        $ withStdin "⟦ x ↦ ⟦ λ ⤍ L_loop ⟧.foo ⟧"
+        $ testCLIFailed ["morph", "--locator=Q.x", "--max-loops=3"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
 
-    it "prints a top formation of several bindings as XMIR" $
-      withStdin "[[ x -> [[ D> 01- ]], y -> [[ D> 02- ]] ]]" $
-        testCLISucceeded
-          ["morph", "--output=xmir"]
-          ["<o name=\"x\">01-</o>", "<o name=\"y\">02-</o>"]
+    it "prints a top formation of several bindings as XMIR"
+      $ withStdin "[[ x -> [[ D> 01- ]], y -> [[ D> 02- ]] ]]"
+      $ testCLISucceeded
+        ["morph", "--output=xmir"]
+        ["<o name=\"x\">01-</o>", "<o name=\"y\">02-</o>"]
 
     describe "fails" $ do
-      it "with --output != latex and --nonumber" $
-        withStdin "" $
-          testCLIFailed
-            ["morph", "--nonumber", "--output=xmir"]
-            ["The --nonumber option can stay together with --output=latex only"]
+      it "with --output != latex and --nonumber"
+        $ withStdin ""
+        $ testCLIFailed
+          ["morph", "--nonumber", "--output=xmir"]
+          ["The --nonumber option can stay together with --output=latex only"]
 
-      it "with --show used more than once" $
-        withStdin "" $
-          testCLIFailed
-            ["morph", "--show=Q.a", "--show=Q.b"]
-            ["The option --show can be used only once"]
+      it "with --show used more than once"
+        $ withStdin ""
+        $ testCLIFailed
+          ["morph", "--show=Q.a", "--show=Q.b"]
+          ["The option --show can be used only once"]
 
-      it "with wrong --locator option" $
-        withStdin "" $
-          testCLIFailed
-            ["morph", "--locator=Q.x(Q.y)"]
-            ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
+      it "with wrong --locator option"
+        $ withStdin ""
+        $ testCLIFailed
+          ["morph", "--locator=Q.x(Q.y)"]
+          ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
 
   describe "explain" $ do
     forM_
@@ -4511,24 +4511,24 @@ spec = do
         ["match", "--help"]
         ["Print result 𝜑-expression using syntax sugar", "Print result 𝜑-expression in one line"]
 
-    it "rejects --sequence, which --help must not mention" $
-      withStdin "[[ ]]" $
-        testCLIFailed ["match", "--sequence", "--pattern=[[ !B ]]"] ["Invalid option"]
+    it "rejects --sequence, which --help must not mention"
+      $ withStdin "[[ ]]"
+      $ testCLIFailed ["match", "--sequence", "--pattern=[[ !B ]]"] ["Invalid option"]
 
-    it "takes from stdin" $
-      withStdin "[[]]" $
-        testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]"]
+    it "takes from stdin"
+      $ withStdin "[[]]"
+      $ testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]"]
 
     it "takes from file" $
       testCLISucceeded ["match", resource "foo.phi", "--log-level=debug"] ["[DEBUG]"]
 
-    it "does not print substitutions without pattern" $
-      withStdin "[[]]" $
-        testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]: The --pattern is not provided, no substitutions are built"]
+    it "does not print substitutions without pattern"
+      $ withStdin "[[]]"
+      $ testCLISucceeded ["match", "--log-level=debug"] ["[DEBUG]: The --pattern is not provided, no substitutions are built"]
 
-    it "refuses --when without --pattern" $
-      withStdin "[[]]" $
-        testCLIFailed ["match", "--when=bogus"] ["The option --when requires --pattern"]
+    it "refuses --when without --pattern"
+      $ withStdin "[[]]"
+      $ testCLIFailed ["match", "--when=bogus"] ["The option --when requires --pattern"]
 
     it "reproduces the same output for the same --seed" $ do
       dir <- getTemporaryDirectory
@@ -4547,70 +4547,70 @@ spec = do
       firstRun `shouldBe` secondRun
       removeFile file
 
-    it "numbers two anonymous captures of one kind, so they stay apart" $
-      withStdin "[[ a -> [[ ]], b -> Q ]]" $
-        testCLISucceeded ["match", "--pattern=[[ !t -> !e, !t -> !e ]]"] ["e#1 >> ⟦⟧\ne#2 >> Φ\nt#1 >> a\nt#2 >> b"]
+    it "numbers two anonymous captures of one kind, so they stay apart"
+      $ withStdin "[[ a -> [[ ]], b -> Q ]]"
+      $ testCLISucceeded ["match", "--pattern=[[ !t -> !e, !t -> !e ]]"] ["e#1 >> ⟦⟧\ne#2 >> Φ\nt#1 >> a\nt#2 >> b"]
 
-    it "prints many substitutions" $
-      withStdin "[[ x -> Q.x, y -> Q.y ]]" $
-        testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
+    it "prints many substitutions"
+      $ withStdin "[[ x -> Q.x, y -> Q.y ]]"
+      $ testCLISucceeded ["match", "--pattern=Q.!t"] ["t >> x\n------\nt >> y"]
 
-    it "refuses a length compared with a literal that does not fit into Int" $
-      withStdin "[[ a -> $, b -> Q ]]" $
-        testCLIFailed ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),18446744073709551618)"] ["compares a number with an expression"]
+    it "refuses a length compared with a literal that does not fit into Int"
+      $ withStdin "[[ a -> $, b -> Q ]]"
+      $ testCLIFailed ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),18446744073709551618)"] ["compares a number with an expression"]
 
-    it "builds substitutions with conditions" $
-      withStdin "[[ x -> Q.y ]].x" $
-        testCLISucceeded
-          ["match", "--pattern=[[ !t1 -> Q.y, !B1 ]].!t1", "--when=eq(length(!B1),0)"]
-          ["B1 >> ⟦⟧\nt1 >> x"]
+    it "builds substitutions with conditions"
+      $ withStdin "[[ x -> Q.y ]].x"
+      $ testCLISucceeded
+        ["match", "--pattern=[[ !t1 -> Q.y, !B1 ]].!t1", "--when=eq(length(!B1),0)"]
+        ["B1 >> ⟦⟧\nt1 >> x"]
 
     it "builds with condition from file" $
       testCLISucceeded
         ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B1),1)", resource "foo.phi"]
         ["B1 >> ⟦ foo ↦ Φ.org.eolang.x ⟧"]
 
-    it "keeps an 'or' met when a raising item comes first" $
-      withStdin "[[ s -> [[ q -> ? ]] ]]" $
-        testCLISucceeded
-          ["match", "--flat", "--pattern=[[ s -> !e1 ]]", "--when=or(matches(\"x\", !e1), eq(1,1))"]
-          ["e1 >> ⟦ q ↦ ∅ ⟧"]
+    it "keeps an 'or' met when a raising item comes first"
+      $ withStdin "[[ s -> [[ q -> ? ]] ]]"
+      $ testCLISucceeded
+        ["match", "--flat", "--pattern=[[ s -> !e1 ]]", "--when=or(matches(\"x\", !e1), eq(1,1))"]
+        ["e1 >> ⟦ q ↦ ∅ ⟧"]
 
-    it "keeps an 'or' met when a raising item comes last" $
-      withStdin "[[ s -> [[ q -> ? ]] ]]" $
-        testCLISucceeded
-          ["match", "--flat", "--pattern=[[ s -> !e1 ]]", "--when=or(eq(1,1), matches(\"x\", !e1))"]
-          ["e1 >> ⟦ q ↦ ∅ ⟧"]
+    it "keeps an 'or' met when a raising item comes last"
+      $ withStdin "[[ s -> [[ q -> ? ]] ]]"
+      $ testCLISucceeded
+        ["match", "--flat", "--pattern=[[ s -> !e1 ]]", "--when=or(eq(1,1), matches(\"x\", !e1))"]
+        ["e1 >> ⟦ q ↦ ∅ ⟧"]
 
-    it "logs a raising 'or' item as not met" $
-      withStdin "[[ s -> [[ q -> ? ]] ]]" $
-        testCLISucceeded
-          ["match", "--log-level=debug", "--pattern=[[ s -> !e1 ]]", "--when=or(matches(\"x\", !e1), eq(1,1))"]
-          ["raised and was treated as not met"]
+    it "logs a raising 'or' item as not met"
+      $ withStdin "[[ s -> [[ q -> ? ]] ]]"
+      $ testCLISucceeded
+        ["match", "--log-level=debug", "--pattern=[[ s -> !e1 ]]", "--when=or(matches(\"x\", !e1), eq(1,1))"]
+        ["raised and was treated as not met"]
 
-    it "rejects an anonymous meta in --when" $
-      withStdin "[[ x -> Q.y ]]" $
-        testCLIFailed
-          ["match", "--pattern=[[ !B ]]", "--when=eq(length(!B),1)"]
-          ["[ERROR]: Anonymous meta '!B' cannot be referenced in --when"]
+    it "rejects an anonymous meta in --when"
+      $ withStdin "[[ x -> Q.y ]]"
+      $ testCLIFailed
+        ["match", "--pattern=[[ !B ]]", "--when=eq(length(!B),1)"]
+        ["[ERROR]: Anonymous meta '!B' cannot be referenced in --when"]
 
-    it "rejects a named meta in --when the pattern does not bind" $
-      withStdin "[[ x -> Q.y ]]" $
-        testCLIFailed
-          ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B2),1)"]
-          ["[ERROR]: The --when condition reads the meta '!B2' it never binds, since neither --pattern binds it"]
+    it "rejects a named meta in --when the pattern does not bind"
+      $ withStdin "[[ x -> Q.y ]]"
+      $ testCLIFailed
+        ["match", "--pattern=[[ !B1 ]]", "--when=eq(length(!B2),1)"]
+        ["[ERROR]: The --when condition reads the meta '!B2' it never binds, since neither --pattern binds it"]
 
-    it "fails on parsing --when condition" $
-      withStdin "[[]]" $
-        testCLIFailed
-          ["match", "--pattern=[[!B]]", "--when=hello"]
-          ["[ERROR]: Couldn't parse given condition"]
+    it "fails on parsing --when condition"
+      $ withStdin "[[]]"
+      $ testCLIFailed
+        ["match", "--pattern=[[!B]]", "--when=hello"]
+        ["[ERROR]: Couldn't parse given condition"]
 
-    it "fails on empty substitutions" $
-      withStdin "Q.x.y" $
-        testCLIFailed
-          ["match", "--pattern=$.!t"]
-          ["[ERROR]"]
+    it "fails on empty substitutions"
+      $ withStdin "Q.x.y"
+      $ testCLIFailed
+        ["match", "--pattern=$.!t"]
+        ["[ERROR]"]
 
   describe "CmdException Show instance" $
     forM_
@@ -4660,9 +4660,9 @@ spec = do
       , ("match", ["match", "--monoform", "--pattern=[[ !B ]]"])
       ]
       ( \(command, args) ->
-          it (command ++ " rejects a program mixing ASCII and Unicode symbols") $
-            withStdin "⟦ x -> ? ]]" $
-              testCLIFailed args ["The ASCII symbol \"->\" at 1:5 mixes with the Unicode \"⟦\" at 1:1, while --monoform is set"]
+          it (command ++ " rejects a program mixing ASCII and Unicode symbols")
+            $ withStdin "⟦ x -> ? ]]"
+            $ testCLIFailed args ["The ASCII symbol \"->\" at 1:5 mixes with the Unicode \"⟦\" at 1:1, while --monoform is set"]
       )
     it "merge rejects a program mixing ASCII and Unicode symbols" $
       withTempFileContent "monoformXXXXXX.phi" "⟦ x -> ? ]]" $ \path ->

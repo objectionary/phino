@@ -98,9 +98,9 @@ spec = do
       ]
       (\(desc, value, predicate) -> it desc (btsToNum (nonFiniteBts value) `shouldSatisfy` predicate))
 
-  describe "btsToNum with a byte array that is not 8 bytes long" $
-    it "errors out" $
-      evaluate (btsToNum (BtMany ["40", "45"])) `shouldThrow` (== InvalidNumberLength 2)
+  describe "btsToNum with a byte array that is not 8 bytes long"
+    $ it "errors out"
+    $ evaluate (btsToNum (BtMany ["40", "45"])) `shouldThrow` (== InvalidNumberLength 2)
 
   describe "strToBts" $
     forM_
@@ -213,9 +213,9 @@ spec = do
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-  describe "btsNot" $
-    it "negates every byte" $
-      btsNot (BtMany ["CA", "FE", "BE", "BE"]) `shouldBe` BtMany ["35", "01", "41", "41"]
+  describe "btsNot"
+    $ it "negates every byte"
+    $ btsNot (BtMany ["CA", "FE", "BE", "BE"]) `shouldBe` BtMany ["35", "01", "41", "41"]
 
   describe "btsConcat" $
     forM_
@@ -242,9 +242,9 @@ spec = do
           it desc $ btsSize bts `shouldBe` size
       )
 
-  describe "btsSize on meta bytes" $
-    it "errors out since meta bytes cannot be converted to actual bytes" $
-      evaluate (btsSize (BtMeta "alpha")) `shouldThrow` anyErrorCall
+  describe "btsSize on meta bytes"
+    $ it "errors out since meta bytes cannot be converted to actual bytes"
+    $ evaluate (btsSize (BtMeta "alpha")) `shouldThrow` anyErrorCall
 
   describe "hex byte decoding" $
     forM_
