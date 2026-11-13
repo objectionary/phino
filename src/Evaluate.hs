@@ -325,7 +325,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     postponing :: ReduceContext -> State -> Expression -> Expression -> IO (Maybe Expression)
     postponing ctx state' site (ExFormation bds)
       | copied bds = do
-          known <- mapM resolved bds
+          voids <- voided ctx{_saveEval = dontSaveEval} (ExFormation bds)
+          known <- mapM (\bd -> if argument voids bd then resolved bd else pure bd) bds
           if any bare known then bool (Just <$> postponed known) (pure Nothing) =<< recursive else pure Nothing
       where
         recursive :: IO Bool
@@ -350,6 +351,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
             formed :: Expression -> Bool
             formed (ExFormation _) = True
             formed _ = False
+        argument :: Maybe [Attribute] -> Binding -> Bool
+        argument Nothing _ = True
+        argument (Just voids) (BiTau attr _) = attr `elem` voids
+        argument _ _ = False
         bare :: Binding -> Bool
         bare (BiTau attr (ExFormation [BiLambda (FnSymbol _)])) = attr /= AtPhi && attr /= AtRho
         bare _ = False

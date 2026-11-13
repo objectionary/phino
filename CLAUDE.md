@@ -354,7 +354,10 @@ parks the firing as a whole (#2014).
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
 code in φ, whatever its φ reads: it reduces every argument other than φ and ρ
-with no entry of the file, and once one comes to `⟦ λ ⤍ 𝜎k ⟧` it binds a
+with no entry of the file, an attribute void in the object the facts lead the
+copy back to (`voided` of `Morph.hs`), never a method, so a copy costs its
+arguments and not its size; a copy no fact leads anywhere gets every binding
+reduced (#2379). Once one comes to `⟦ λ ⤍ 𝜎k ⟧` it binds a
 fresh symbol and writes `deferred …` (`EvDeferred`), naming the call the copy
 stands for by the path of the world the facts lead it back to (`declared` and
 `called` of `Morph.hs`), the way the record of 0.0.153 did (#1892); any other
