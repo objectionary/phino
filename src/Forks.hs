@@ -102,9 +102,6 @@ joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse 
       Just name -> (name, joining)
       Nothing -> (succ spent', (succ spent', bottom, Map.insert pair (succ spent') names, (succ spent', pair) : made))
 
--- The fabricated formation holds each side by the term the caller names it
--- with, such as the name of the side the run keeps (#2377), so a walk over
--- the formation never copies a side out again.
 forked :: Function -> Either Int Bytes -> (Expression, Expression) -> (Expression, Expression) -> Either Refusal Expression
 forked func condition (leftName, left) (rightName, right) = do
   one <- inlined <$> formed Lefthand left

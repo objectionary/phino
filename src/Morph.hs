@@ -312,9 +312,6 @@ placed _ _ _ = pure ()
 spotted :: Spots -> Expression -> Maybe Int
 spotted (Spots known _) term = lookup term (Map.findWithDefault [] (hashExpression term) known)
 
--- The firing with every known position replaced by its symbol, looking
--- through the name of a side of a fabricated formation and naming what the
--- side comes to, so the key stays as small as the formation (#2377).
 abstracted :: Sides -> Spots -> Expression -> IO (Expression, [(Int, Expression)])
 abstracted store spots form = do
   cache <- newIORef Map.empty
@@ -910,10 +907,6 @@ normalized expr seq ctx@ReduceContext{..} = do
       look <- resolver _sides
       let unfolded = spined look False term'
       if unfolded == term' then pure (term', chain') else go taken peeled copies unfolded chain'
-    -- A name of a side a fabricated formation holds is opened where something
-    -- is applied to it or dispatched off it, along the spine of the term
-    -- alone, so the side is copied and remembered as it was before the
-    -- formation held names, while the formation itself keeps the name (#2377).
     spined :: (T.Text -> Maybe Expression) -> Bool -> Expression -> Expression
     spined look _ (ExDispatch term attr) = ExDispatch (spined look True term) attr
     spined look _ (ExApplication term arg) = ExApplication (spined look True term) arg

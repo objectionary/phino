@@ -1292,10 +1292,6 @@ progressed cursor interval render record evaluation = do
           writeIORef cursor progress{_told = Just now}
         else writeIORef cursor progress
 
--- The fabricated formation with the names of its sides put back as the
--- sides they stand for (#2377), so a writer spells each side by the line that
--- bound it, as it did before the formation held names; the sides themselves
--- are not walked.
 unnamed :: [(Expression, Expression)] -> Expression -> Expression
 unnamed names = goExpr
   where

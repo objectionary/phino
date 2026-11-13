@@ -230,8 +230,6 @@ hashExpression term = case known term of
 hashShape :: Expression -> Int
 hashShape = layer (const 0) hashShape
 
--- A name the run gave a side of a fabricated formation, spelled '𝑛·k' (#2377),
--- unlike a meta of a rule, which never holds a dot.
 isName :: Text -> Bool
 isName = T.isPrefixOf "n·"
 
@@ -326,8 +324,6 @@ layer symbol child = goExpr fnvOffset
 alike :: Expression -> Expression -> Bool
 alike = alike' (const Nothing)
 
--- Two terms alike, looking through the names of the sides of fabricated
--- formations with the given resolver (#2377).
 alike' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
 alike' look = likened look (\_ _ -> False)
 
@@ -421,8 +417,6 @@ type Search = Searched -> (Bool, Searched)
 within :: Expression -> Expression -> Bool
 within = within' (const Nothing)
 
--- The earlier term embedded in the later one, looking through the names of
--- the sides of fabricated formations with the given resolver (#2377).
 within' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
 within' look before after = fst (coupled (opened before) (opened after) Map.empty)
   where
