@@ -10,7 +10,7 @@
 
 module AST
   ( Slot (..)
-  , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes)
+  , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes, BaseObject, DataString, DataNumber, DataObject)
   , Argument (..)
   , Alpha (..)
   , Binding (..)
@@ -39,11 +39,7 @@ module AST
   , denoted
   , countNodes
   , matchBaseObject
-  , pattern BaseObject
   , matchDataObject
-  , pattern DataString
-  , pattern DataNumber
-  , pattern DataObject
   , dataBytes
   )
 where

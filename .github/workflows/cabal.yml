@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-15, ubuntu-24.04, windows-2022]
-        ghc: ['9.6.7', '9.8.4', '9.10.3']
+        ghc: ['9.6.7', '9.8.4', '9.10.3', '9.14.1']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -39,6 +39,8 @@ jobs:
             ${{ runner.os }}-ghc${{ matrix.ghc }}-cabal-
       - run: cabal update
       - run: make clean test
+      - if: ${{ matrix.ghc == '9.14.1' }}
+        run: cabal build all --enable-tests --enable-benchmarks --ghc-options=-Werror
   telegram:
     needs: cabal
     runs-on: ubuntu-26.04

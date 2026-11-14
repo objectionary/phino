@@ -16,13 +16,16 @@ concurrency:
   cancel-in-progress: true
 jobs:
   compiled:
+    strategy:
+      matrix:
+        ghc: ['9.6.7', '9.14.1']
     runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - id: setup
         uses: ./.github/actions/ghc
         with:
-          ghc-version: '9.6.7'
+          ghc-version: ${{ matrix.ghc }}
           cabal-version: '3.18.2.0'
       - uses: actions/cache@v6
         with:
@@ -30,8 +33,8 @@ jobs:
             ${{ steps.setup.outputs.cabal-store }}
             dist-newstyle
             dist-compiled
-          key: ${{ runner.os }}-compiled-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
+          key: ${{ runner.os }}-ghc${{ matrix.ghc }}-compiled-cabal-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('cabal.project', 'cabal.project.freeze') }}
           restore-keys: |
-            ${{ runner.os }}-compiled-cabal-
+            ${{ runner.os }}-ghc${{ matrix.ghc }}-compiled-cabal-
       - run: cabal update
       - run: make compiled
