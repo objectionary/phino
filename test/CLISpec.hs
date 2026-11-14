@@ -3542,6 +3542,37 @@ spec = do
         withStdin "[[ ]]" $
           testCLISucceeded ["dataize", "--partial"] ["⊥"]
 
+      describe "--focus under --locator" $ do
+        it "finds the same object for the steps and for the answer when --locator has no matching child" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $
+            testCLISucceeded
+              ["dataize", "--partial", "--locator=Q.t", "--focus=Q.a", "--flat"]
+              ["⟦ Δ ⤍ 02- ⟧"]
+        it "finds the same object for the steps and for the answer even when --locator also binds that attribute" $
+          withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_nope ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $ do
+            (out, _) <- withStdout (runCLI ["dataize", "--partial", "--locator=Q.t", "--focus=Q.a", "--flat", "--sequence"])
+            filter (not . null) (lines out) `shouldSatisfy` (not . null)
+            filter (not . null) (lines out) `shouldSatisfy` all (== "⟦ Δ ⤍ 02- ⟧")
+        it "prints the residual when --focus names the object at --locator" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $
+            testCLISucceeded
+              ["dataize", "--partial", "--locator=Q.t", "--focus=Q.t", "--flat"]
+              ["⟦ λ ⤍ L_nope ⟧"]
+        it "respects --hide together with --focus and --locator" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧, a ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧" $
+            testCLISucceeded
+              ["dataize", "--partial", "--locator=Q.t", "--focus=Q.a", "--hide=Q.a.x", "--flat"]
+              ["⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
+        it "fails on a --focus it cannot find before it prints any step" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧ ⟧" $ do
+            (out, _) <- withStdout (try (runCLI ["dataize", "--partial", "--locator=Q.t", "--focus=Q.nope", "--flat", "--sequence"]) :: IO (Either ExitCode ()))
+            out `shouldNotContain` "⟦ λ ⤍"
+        it "prints the answer at --focus in LaTeX format under --locator" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $
+            testCLISucceeded
+              ["dataize", "--partial", "--locator=Q.t", "--focus=Q.a", "--flat", "--output=latex"]
+              ["\\begin{phiquation}", "[[ D> |02-| ]]{.}", "\\end{phiquation}"]
+
     describe "--symbolic" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
       it "fires the λ function an entry of the file answers" $
