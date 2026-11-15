@@ -620,6 +620,13 @@ ExtArgument
   | Attribute'           # !t
 ```
 
+Regular expressions in `matches` and `sed` are limited to 1,000,000 match
+calls and 256 levels of recursion per execution. Exceeding either limit
+stops the command with `Regex execution failed` and exit code 1. The recursion
+limit protects small native thread stacks; a repeated capturing group such as
+`(a|b)*` can reach it even on a string of a few hundred characters. Long strings
+can still be matched with patterns that need little recursion, such as `[ab]*`.
+
 Here's list of functions that are supported for extensions:
 
 * `contextualize` - function of two arguments, that rewrites given expression
