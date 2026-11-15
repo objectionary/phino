@@ -16,7 +16,7 @@ env:
   CABAL_VERSION: '3.18.2.0'
   HOME_REV: 'a4ccaa932aa2049b509a96f3589f7f28ec4e4469'
   EOLANG_VERSION: '0.37.1'
-  EO_PARSER: '0.62.1'
+  EO_PARSER: '0.63.2'
 permissions: read-all
 jobs:
   objectionary:
@@ -71,18 +71,18 @@ jobs:
           cd home
           count=0
           while IFS= read -r file; do
-            rel="${file#.eoc/1-parse/}"
+            rel="${file#.eoc/01-parse/}"
             dir=".eoc/2-rewritten/$(dirname "$rel")"
             mkdir -p "$dir"
             phino rewrite --input=xmir --output=xmir "$file" > "$dir/$(basename "$rel")"
             count=$((count + 1))
-          done < <(find .eoc/1-parse -type f -name '*.xmir')
+          done < <(find .eoc/01-parse -type f -name '*.xmir')
           echo "Rewritten $count XMIR document(s)"
           test "$count" -gt 0
       - name: Regenerate EO sources from rewritten XMIR
         run: |
           cd home
-          eoc -s objects print --print-input=2-rewritten --print-output=../objects
+          eoc -s objects print --parser="$EO_PARSER" --print-input=2-rewritten --print-output=../objects
       - name: Validate a dataization residual against the XMIR schema
         run: |
           set -e
