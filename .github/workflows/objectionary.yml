@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 env:
   GHC_VERSION: '9.8.4'
-  CABAL_VERSION: '3.12.1.0'
+  CABAL_VERSION: '3.18.2.0'
   HOME_REV: 'a4ccaa932aa2049b509a96f3589f7f28ec4e4469'
   EOLANG_VERSION: '0.37.1'
   EO_PARSER: '0.62.1'

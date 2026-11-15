@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The memo of '--acyclic=plausible' names a position by the symbol 𝔻 brought
+# it down to. The firing of 'b' brings 'Φ.v' down to '𝜎2', so the formation
+# of 'c', '⟦ target ↦ Φ.v, λ ⤍ L_dataized ⟧', is the formation of 'a' with
+# '𝜎2' in place of '𝜎1'. The memo of formations misses it, yet the firing of
+# 'c' fires nothing: it takes the answer of 'a' with every symbol renamed,
+# '𝜎1' as '𝜎2', and with a fresh '𝜎5' for the '𝜎3' the firing of 'a' minted,
+# and writes it as 'renamed' (#2374).
+symbolic: |
+  - λ: L_dataized
+    dataize:
+      𝛿1: $.target
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_peek
+    dataize:
+      𝛿1: $.target
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+  - λ: L_triple
+    morph:
+      𝑛1: $.a
+      𝑛2: $.b
+      𝑛3: $.c
+    evaluate:
+      𝑛4: 𝑛1
+      𝑛5: 𝑛2
+      𝑛6: 𝑛3
+    𝑛: ⟦ φ ↦ ⟦ a ↦ 𝑛4, b ↦ 𝑛5, c ↦ 𝑛6 ⟧ ⟧
+location: 'Q.p'
+acyclic: plausible
+input: >
+  ⟦ dataized(target) ↦ L_dataized:λ,
+    peek(target) ↦ L_peek:λ,
+    p ↦ ⟦
+      a ↦ Φ.dataized( target ↦ Φ.u ),
+      b ↦ Φ.peek( target ↦ Φ.v ),
+      c ↦ Φ.dataized( target ↦ Φ.v ),
+      λ ⤍ L_triple ⟧.φ,
+    u ↦ ⟦ λ ⤍ 𝜎1 ⟧,
+    v ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧
+result: '⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧'
+protocol: |
+  𝕄(Φ.p):
+    𝔼(L_triple):
+      𝕄(ξ.a):
+        remembered 𝑛·1·1 ≡ Φ.dataized  # ⟦ target ↦ ∅, λ ⤍ L_dataized ⟧
+        𝑛·1·2 := Φ.dataized( target ↦ Φ.u )
+        𝑛·1·3 := ⟦ target ↦ Φ.u, λ ⤍ L_dataized ⟧
+        remembered 𝑛·1·3 ≡ 𝑛·1·1( target ↦ Φ.u )
+        morphed 𝑛·1·4 := 𝑛·1·3
+      𝑛1·1 := 𝑛·1·3  # 𝕄(ξ.a)
+      𝕄(ξ.b):
+        remembered 𝑛·1·5 ≡ Φ.peek  # ⟦ target ↦ ∅, λ ⤍ L_peek ⟧
+        𝑛·1·6 := Φ.peek( target ↦ Φ.v )
+        𝑛·1·7 := ⟦ target ↦ Φ.v, λ ⤍ L_peek ⟧
+        remembered 𝑛·1·7 ≡ 𝑛·1·5( target ↦ Φ.v )
+        morphed 𝑛·1·8 := 𝑛·1·7
+      𝑛2·1 := 𝑛·1·7  # 𝕄(ξ.b)
+      𝕄(ξ.c):
+        𝑛·1·9 := Φ.dataized( target ↦ Φ.v )
+        𝑛·1·10 := ⟦ target ↦ Φ.v, λ ⤍ L_dataized ⟧
+        remembered 𝑛·1·10 ≡ 𝑛·1·1( target ↦ Φ.v )
+        morphed 𝑛·1·11 := 𝑛·1·10
+      𝑛3·1 := 𝑛·1·10  # 𝕄(ξ.c)
+      recalled 𝑛·1·3 ⇒ 𝑛·1·1( target ↦ Φ.u )
+      recalled 𝑛·1·1 ⇒ Φ.dataized
+      𝔼(L_dataized):  # 𝔼(𝑛1)
+        𝔻(ξ.target):
+          𝕄(ξ.target):
+            normalized 𝑛·2·1 := 𝜎1:λ  # Φ.u
+            morphed 𝑛·2·2 := 𝑛·2·1
+          𝛿·2·1 := 𝔻(𝜎1:λ)
+        𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.target)
+        𝑛·2·3 := 𝜎3:λ  # 𝑛
+        𝕄(𝑛·2·3):
+          morphed 𝑛·2·4 := 𝜎3:λ
+        𝑛·2·5 := 𝑛·2·4  # 𝕄(𝑛·2·3)
+        memoized 𝑛·1·3 ⇛ 𝜎3:λ
+      𝑛4·1 := 𝑛·2·5  # 𝔼(𝑛1)
+      recalled 𝑛·1·7 ⇒ 𝑛·1·5( target ↦ Φ.v )
+      recalled 𝑛·1·5 ⇒ Φ.peek
+      𝔼(L_peek):  # 𝔼(𝑛2)
+        𝔻(ξ.target):
+          𝕄(ξ.target):
+            normalized 𝑛·3·1 := 𝜎2:λ  # Φ.v
+            morphed 𝑛·3·2 := 𝑛·3·1
+          𝛿·3·1 := 𝔻(𝜎2:λ)
+        𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.target)
+        𝑛·3·3 := 𝜎4:λ  # 𝑛
+        𝕄(𝑛·3·3):
+          morphed 𝑛·3·4 := 𝜎4:λ
+        𝑛·3·5 := 𝑛·3·4  # 𝕄(𝑛·3·3)
+        memoized 𝑛·1·7 ⇛ 𝜎4:λ
+      𝑛5·1 := 𝑛·3·5  # 𝔼(𝑛2)
+      recalled 𝑛·1·10 ⇒ 𝑛·1·1( target ↦ Φ.v )
+      recalled 𝑛·1·1 ⇒ Φ.dataized
+      𝔼(L_dataized):  # 𝔼(𝑛3)
+        renamed 𝑛·1·10 ⇛ 𝜎5:λ  # from 𝑛·1·3, 𝜎1 as 𝜎2, 𝜎3 as 𝜎5
+        𝑛·4·1 := 𝜎5:λ  # 𝑛
+        𝑛·4·2 := 𝜎5:λ  # 𝕄(𝑛·4·1)
+      𝑛6·1 := 𝑛·4·2  # 𝔼(𝑛3)
+      𝑛·1·12 := ⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧:φ  # 𝑛
+      𝕄(𝑛·1·12):
+        morphed 𝑛·1·13 := ⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧:φ
+      𝑛·1·14 := 𝑛·1·13  # 𝕄(𝑛·1·12)
+      memoized 𝑛·1·15 ⇛ 𝑛·1·14  # ⟦ a ↦ 𝑛·1·2, b ↦ 𝑛·1·6, c ↦ 𝑛·1·9, λ ⤍ L_triple ⟧
+    normalized 𝑛·0·1 := ⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧  # 𝑛·1·14.φ
+    morphed 𝑛·0·2 := 𝑛·0·1

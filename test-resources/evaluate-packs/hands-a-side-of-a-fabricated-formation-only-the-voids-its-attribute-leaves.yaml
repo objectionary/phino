@@ -9,8 +9,8 @@
 # leaves alone (#2031), since 'miss' turns an application to an attribute a
 # formation lacks into ⊥. The program hands 'x' over, so the right side gets
 # 'w' bound to ⊥, the two sides differ in shape and are fabricated again, and
-# 'k' stays the alias of 'x' both sides bind it to (#2260), so the copy under
-# 'x' finds it on both of them.
+# 'k', an alias of 'x' on both sides, gets a copy of 'L_join' of its own
+# (#2368), which asks both sides for 'k' and finds 'x' on both of them.
 symbolic: |
   - λ: L_fork
     dataize:
@@ -40,8 +40,9 @@ protocol: |
       𝕄(ξ.b):
         morphed 𝑛·1·2 := ⟦ ke(x, w) ↦ x:k ⟧
       fabricated 𝑛·1·3 := 𝑛·1·1 and 𝑛·1·2  # ⟦ left🌵 ↦ 𝑛·1·1, right🌵 ↦ 𝑛·1·2, φ ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, ke(x, w) ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧ ⟧
-    𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧( x ↦ 𝜎2:λ:φ )
-    𝑛·0·2 := ⟦ λ ⤍ L_join, x ↦ 𝜎2:λ:φ, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧
+    normalized 𝑛·0·1 := ⟦ λ ⤍ L_join, x ↦ ∅, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧  # 𝑛·1·3.ke
+    𝑛·0·2 := ⟦ λ ⤍ L_join, x ↦ ∅, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧( x ↦ 𝜎2:λ:φ )
+    𝑛·0·3 := ⟦ λ ⤍ L_join, x ↦ 𝜎2:λ:φ, w ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.ke( x ↦ x ), right🌵 ↦ ρ.right🌵.ke( x ↦ x, w ↦ w ) ⟧
     𝔼(L_join):
       𝑛·2·1 := ⟦ x ↦ ∅, k ↦ x ⟧( x ↦ 𝜎2:λ:φ )  # 𝕄(ξ.left🌵)
       𝑛·2·2 := ⟦ x ↦ 𝜎2:λ:φ, k ↦ x ⟧
@@ -53,11 +54,13 @@ protocol: |
       𝑛·2·7 := ⟦ x ↦ 𝜎2:λ:φ, w ↦ ⊥, k ↦ x ⟧
       𝕄(ξ.right🌵):
         morphed 𝑛·2·8 := 𝑛·2·7
-      fabricated 𝑛·2·9 := 𝑛·2·3 and 𝑛·2·8  # ⟦ left🌵 ↦ 𝑛·2·3, right🌵 ↦ 𝑛·2·8, x ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.x, right🌵 ↦ ρ.right🌵.x ⟧, k ↦ x, w ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.w, right🌵 ↦ ρ.right🌵.w ⟧ ⟧
+      fabricated 𝑛·2·9 := 𝑛·2·3 and 𝑛·2·8  # ⟦ left🌵 ↦ 𝑛·2·3, right🌵 ↦ 𝑛·2·8, x ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.x, right🌵 ↦ ρ.right🌵.x ⟧, k ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.k, right🌵 ↦ ρ.right🌵.k ⟧, w ↦ ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.w, right🌵 ↦ ρ.right🌵.w ⟧ ⟧
+    normalized 𝑛·0·4 := ⟦ λ ⤍ L_join, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.k, right🌵 ↦ ρ.right🌵.k ⟧  # 𝑛·2·9.k
     𝔼(L_join):
       𝕄(ξ.left🌵):
         morphed 𝑛·3·1 := 𝜎2:λ:φ
       𝕄(ξ.right🌵):
         morphed 𝑛·3·2 := 𝑛·3·1
       𝑛·3·3 := 𝑛·3·1
-    morphed 𝑛·0·3 := 𝜎2:λ
+    normalized 𝑛·0·5 := 𝜎2:λ  # 𝑛·3·3.φ
+    morphed 𝑛·0·6 := 𝑛·0·5

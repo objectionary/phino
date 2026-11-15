@@ -55,4 +55,5 @@ protocol: |
       𝑛3·1 := ⟦ φ ↦ 𝜎2:λ, kq ↦ Φ.bool( if ↦ 01-:Δ ) ⟧  # rewrite(𝑛1)
       joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
       𝑛·1·3 := ⟦ φ ↦ 𝜎4:λ, kq ↦ Φ.bool( if ↦ 01-:Δ ) ⟧
-    morphed 𝑛·0·1 := 𝜎4:λ
+    normalized 𝑛·0·1 := 𝜎4:λ  # 𝑛·1·3.φ
+    morphed 𝑛·0·2 := 𝑛·0·1

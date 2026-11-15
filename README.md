@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.161
+cabal install --overwrite-policy=always phino-0.0.165
 phino --version
 ```
 
@@ -59,7 +59,7 @@ In a [GitHub Actions][gha] workflow, one step downloads the binary
 for the runner and puts it on the `PATH`:
 
 ```yaml
-- uses: objectionary/phino@0.0.161
+- uses: objectionary/phino@0.0.165
   with:
     version-file: phino-version.txt
 - run: phino --version
@@ -126,10 +126,12 @@ $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho sum.phi
 ```
 
 Dataizing a symbol always gives the same bytes, the number 42, as above.
+Like `morph`, `dataize` fails on a term that is not a normal form.
 
 Inside an entry, `$` is the formation being fired and `Φ` is the universe.
 A meta is a named placeholder: `𝛿1`, `𝛿2` and so on hold bytes, while `𝑛1`,
-`𝑛2` and so on hold terms.
+`𝑛2` and so on hold normal forms, and a line that would bind one to any other
+term fails the run.
 An entry may hold only the keys below, and any other key refuses the whole
 file:
 
@@ -149,7 +151,8 @@ file:
   meta holds, through evaluation, 𝔼, as in `𝑛2: 𝑛1`.
 * `defer` binds a term meta to a fresh symbol when another meta holds a copy
   of an object whose argument is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and to that
-  term as it is otherwise.
+  term as it is otherwise, or when under `--acyclic` the φ of the copy
+  repeats a formation the run is inside.
 * `stay` binds a term meta to the term another meta holds, with every
   `( ρ ↦ … )` applied to a dispatch dropped.
 * `symbolize` binds a term meta to the term another meta holds, with every
@@ -226,15 +229,17 @@ $ phino dataize --symbolic=atoms.yaml --inside='5.plus( 6 )' universe.phi
 
 ### Limits
 
-Three options stop a run that goes on for too long:
+Five options stop a run that goes on for too long:
 
 * `--max-steps` bounds how deep morphing and dataization may nest,
   `1000` by default;
 * `--max-firings` bounds how many λ functions the whole run may fire;
-* `--max-seconds` bounds how many seconds the whole run may take.
+* `--max-seconds` bounds how many seconds the whole run may take;
+* `--max-nodes` bounds how many nodes the term of the run may grow to;
+* `--max-memory` bounds the live heap of the run, such as `8G`.
 
-`--partial` leaves a site in place when it runs out of steps or firings, but
-a run out of time always fails.
+`--partial` leaves a site in place when it runs out of steps, firings,
+seconds, nodes or memory.
 
 ## Morph
 
@@ -263,7 +268,8 @@ It takes every option of `dataize`.
 ### Acyclic morphing
 
 `phino` stops no recursion by itself, so a run that never ends fails once
-`--max-steps` runs out.
+`--max-steps` runs out, with `Morphing did not finish before reaching the
+limit of steps: --max-steps=<n>`.
 The `--acyclic=<mode>` option makes the run notice a loop instead.
 When a reduction is about to enter a formation it is already inside, the run
 answers a copy of an object binding φ with a fresh symbol and goes on, and
@@ -286,9 +292,9 @@ times before it is cut.
 ## Protocol
 
 The `--protocol` option writes every λ function the run fired into a file,
-as a tree.
-A file whose name ends in `.xml` gets the tree as XML, for a program to read,
-and any other name gets indented text.
+as a tree in XML, for a program to read.
+The `--minutes` option writes the same tree as indented text, and one run
+may take both.
 Here, `L_down` answers with a call of its own object over a fresh symbol, so
 without `--acyclic` the run would go on until `--max-steps` runs out:
 
@@ -304,8 +310,8 @@ $ cat down.phi
   y ↦ Φ.down( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ
 ⟧
 $ phino morph --symbolic=down.yaml --locator=Q.y --acyclic=proven \
-    --protocol=down.txt --sweet --hide-rho down.phi
-⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧.φ
+    --minutes=down.txt --sweet --hide-rho down.phi
+𝜎3:λ
 $ cat down.txt
 𝕄(Φ.y):
   remembered 𝑛·0·1 ≡ Φ.down  # ⟦ x ↦ ∅, λ ⤍ L_down ⟧
@@ -324,7 +330,11 @@ $ cat down.txt
       morphed 𝑛·1·4 := 𝑛·1·3
     𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
     remembered 𝑛·1·3 ≡ 𝑛·0·3
-  looped 𝑛·0·3  # proven
+  recalled 𝑛·1·3 ⇒ 𝑛·0·3
+  recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ 𝜎1:λ )
+  recalled 𝑛·0·1 ⇒ Φ.down
+  looped 𝜎3 := 𝑛·0·2.φ  # proven, repeats 𝑛·0·3
+  morphed 𝑛·0·4 := 𝜎3:λ
 ```
 
 In a name such as `𝑛·1·2`, the first number counts the firings, `0` outside
@@ -348,6 +358,8 @@ A protocol may hold these lines:
 * `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.
+* `normalized …` is the term a normalization came to, where no line named it
+  before, and the comment names the term it came from.
 * `joined …`, `fabricated …`, `diverged …` and `unripe …` are what a `join`
   made of its two sides, or why it could not join them.
 * `deferred …` and `symbolized …` are the symbols a `defer` or a `symbolize`
@@ -362,18 +374,22 @@ A protocol may hold these lines:
   a formation it was the answer of.
 * `memoized 𝑛·0·5 ⇛ 𝑛·1·9` is what `--acyclic=plausible` keeps: the
   formation on the left fired to the term on the right.
+* `renamed 𝑛·1·10 ⇛ 𝜎5:λ` is a memo entry used for a formation alike it up
+  to symbols, with the symbols the comment lists renamed.
 * `recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )` is a fact or a memo entry used again,
   spelled as its `remembered` or `memoized` line spelled it.
 * `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
   the call of the object it answered with that symbol, when a fact names it.
-* `starved …`, `spent …` and `timeout …` are where `--max-steps`,
-  `--max-firings` and `--max-seconds` ran out.
+* `starved …`, `spent …`, `timeout …`, `oversized …` and `blown …` are
+  where `--max-steps`, `--max-firings`, `--max-seconds`, `--max-nodes` and
+  `--max-memory` ran out.
 * `msec …`, `firings …` and `fps …` close the file, and the listing above
   leaves them and the `# …` lines out, since they differ from run to run.
 
 The `--abridged` option folds every formation longer than sixty-four
 characters, or than `--abridged=WIDTH`, into its `φ`, `Δ` and `λ` and a count
-of the rest.
+of the rest, and every application that long into its head and a count of its
+arguments.
 The `--abridged-data` option also cuts every byte string longer than eight
 bytes down to its first two bytes and its last two.
 
@@ -623,7 +639,10 @@ Here's list of functions that are supported for extensions:
   separated by `/`, for example, this pattern `s/\\s+//g`
   replaces all the spaces with empty string. To escape braces and slashes
   in pattern and replacement parts - use them with `\\`,
-  e.g. `s/\\(.+\\)//g`.
+  e.g. `s/\\(.+\\)//g`. In the replacement, `\\1` to `\\9`, as well as
+  `$1`, put what a group of the pattern matched, e.g. `s/([0-9]+)/\\1!/g`,
+  and `&` puts the whole match, e.g. `s/[0-9]+/<&>/g`, while `\\&` puts a
+  literal `&`.
 * `random-string` - accepts dataizable expression or bytes as pattern.
   Replaces `%x` and `%d` formatters with random hex numbers and
   decimals accordingly. Uniqueness is guaranteed during one
@@ -700,119 +719,119 @@ entries of `benchmark/demo.phi` symbolically, one case per entry.
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      1654259.743 μs
-  avg:        165425.974 μs
-  min:        145644.045 μs
-  max:        199744.046 μs
-  std dev:    21841.101 μs
+  total:      2066554.596 μs
+  avg:        206655.460 μs
+  min:        185040.330 μs
+  max:        240448.721 μs
+  std dev:    25205.367 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      7532890.217 μs
-  avg:        753289.022 μs
-  min:        697330.791 μs
-  max:        828942.148 μs
-  std dev:    48864.855 μs
+  total:      8379123.666 μs
+  avg:        837912.367 μs
+  min:        789526.681 μs
+  max:        896836.784 μs
+  std dev:    41239.371 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      27.452 μs
-  avg:        2.745 μs
-  min:        1.362 μs
-  max:        12.369 μs
-  std dev:    3.217 μs
+  total:      15.728 μs
+  avg:        1.573 μs
+  min:        1.396 μs
+  max:        1.809 μs
+  std dev:    0.148 μs
 === print/sweet/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      4716656.706 μs
-  avg:        471665.671 μs
-  min:        429856.404 μs
-  max:        506384.818 μs
-  std dev:    26407.702 μs
+  total:      5290672.593 μs
+  avg:        529067.259 μs
+  min:        490103.770 μs
+  max:        570559.154 μs
+  std dev:    29509.749 μs
 === print/sweet/flat ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      632043.782 μs
-  avg:        63204.378 μs
-  min:        55929.134 μs
-  max:        73390.539 μs
-  std dev:    7940.675 μs
+  total:      660420.084 μs
+  avg:        66042.008 μs
+  min:        56619.561 μs
+  max:        77989.203 μs
+  std dev:    9209.215 μs
 === print/salty/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      15143233.760 μs
-  avg:        1514323.376 μs
-  min:        1440993.541 μs
-  max:        1553100.546 μs
-  std dev:    34720.849 μs
+  total:      16195964.493 μs
+  avg:        1619596.449 μs
+  min:        1603119.283 μs
+  max:        1640364.088 μs
+  std dev:    11249.344 μs
 === morph/symbolic/demo/e1 ===
   warmup:     3 iterations
-  batches:    10 x 12
-  total:      9157.418 μs
-  avg:        76.312 μs
-  min:        74.647 μs
-  max:        84.939 μs
-  std dev:    2.921 μs
+  batches:    10 x 9
+  total:      9958.392 μs
+  avg:        110.649 μs
+  min:        105.527 μs
+  max:        118.163 μs
+  std dev:    3.123 μs
 === morph/symbolic/demo/e2 ===
   warmup:     3 iterations
-  batches:    10 x 203
-  total:      152158.633 μs
-  avg:        74.955 μs
-  min:        74.005 μs
-  max:        76.320 μs
-  std dev:    0.622 μs
+  batches:    10 x 165
+  total:      182361.874 μs
+  avg:        110.522 μs
+  min:        108.306 μs
+  max:        112.929 μs
+  std dev:    1.482 μs
 === morph/symbolic/demo/e3 ===
   warmup:     3 iterations
-  batches:    10 x 195
-  total:      146936.196 μs
-  avg:        75.352 μs
-  min:        74.971 μs
-  max:        75.875 μs
-  std dev:    0.269 μs
+  batches:    10 x 156
+  total:      171525.942 μs
+  avg:        109.953 μs
+  min:        108.482 μs
+  max:        112.194 μs
+  std dev:    1.069 μs
 === morph/symbolic/demo/e4 ===
   warmup:     3 iterations
-  batches:    10 x 199
-  total:      147976.285 μs
-  avg:        74.360 μs
-  min:        73.897 μs
-  max:        74.797 μs
-  std dev:    0.308 μs
+  batches:    10 x 150
+  total:      165133.575 μs
+  avg:        110.089 μs
+  min:        108.778 μs
+  max:        111.813 μs
+  std dev:    1.096 μs
 === morph/symbolic/demo/e5 ===
   warmup:     3 iterations
-  batches:    10 x 193
-  total:      145661.822 μs
-  avg:        75.472 μs
-  min:        74.477 μs
-  max:        76.355 μs
-  std dev:    0.556 μs
+  batches:    10 x 152
+  total:      171745.199 μs
+  avg:        112.990 μs
+  min:        111.030 μs
+  max:        114.832 μs
+  std dev:    1.047 μs
 === morph/symbolic/native/e5 ===
   warmup:     3 iterations
   batches:    10 x 4
-  total:      40998.154 μs
-  avg:        1024.954 μs
-  min:        908.056 μs
-  max:        1312.004 μs
-  std dev:    109.742 μs
+  total:      66231.880 μs
+  avg:        1655.797 μs
+  min:        1610.435 μs
+  max:        1802.427 μs
+  std dev:    59.996 μs
 === morph/symbolic/accum/0 ===
   warmup:     3 iterations
-  batches:    10 x 110
-  total:      67418.542 μs
-  avg:        61.290 μs
-  min:        60.356 μs
-  max:        63.552 μs
-  std dev:    0.815 μs
+  batches:    10 x 98
+  total:      93066.937 μs
+  avg:        94.966 μs
+  min:        93.247 μs
+  max:        97.688 μs
+  std dev:    1.266 μs
 === morph/symbolic/accum/400 ===
   warmup:     3 iterations
-  batches:    10 x 95
-  total:      73122.056 μs
-  avg:        76.971 μs
-  min:        76.276 μs
-  max:        79.419 μs
-  std dev:    0.863 μs
+  batches:    10 x 76
+  total:      86811.834 μs
+  avg:        114.226 μs
+  min:        112.182 μs
+  max:        117.413 μs
+  std dev:    1.690 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-11-06 at 20:44,
+on 2026-11-13 at 14:11,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -855,4 +874,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/42290262794
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/43439923868
