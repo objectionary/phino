@@ -194,14 +194,18 @@ spec = do
       made <- newIORef []
       _ <- rewrite (ExApplication (ExFormation [BiVoid (AtLabel "ж")]) (ArTau (AtLabel "ж") (ExFormation []))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
       readIORef made `shouldReturn` [(ExApplication (ExFormation [BiVoid (AtLabel "ж")]) (ArTau (AtLabel "ж") (ExFormation [])), ExFormation [BiTau (AtLabel "ж") (ExFormation [])])]
-    it "tells nothing of an application a step left the object it was" $ do
+    it "tells an application a step left the object it was" $ do
       made <- newIORef []
-      _ <- rewrite (ExApplication (ExFormation [BiTau (AtLabel "ъ") (ExFormation [])]) (ArTau AtRho (ExFormation []))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
-      readIORef made `shouldReturn` []
-    it "tells nothing of the ρ a dispatch fills" $ do
+      _ <- rewrite (ExApplication (ExFormation [BiTau AtRho (ExFormation []), BiTau (AtLabel "ъ") (ExFormation [])]) (ArTau AtRho (ExFormation [BiVoid (AtLabel "ц")]))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
+      readIORef made `shouldReturn` [(ExApplication (ExFormation [BiTau AtRho (ExFormation []), BiTau (AtLabel "ъ") (ExFormation [])]) (ArTau AtRho (ExFormation [BiVoid (AtLabel "ц")])), ExFormation [BiTau AtRho (ExFormation []), BiTau (AtLabel "ъ") (ExFormation [])])]
+    it "tells the ρ a dispatch fills, beside the object it made" $ do
       made <- newIORef []
       _ <- rewrite (ExApplication (ExFormation [BiVoid AtRho, BiVoid (AtLabel "щ")]) (ArTau AtRho (ExFormation [BiTau (AtLabel "ё") (ExFormation [])]))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
-      readIORef made `shouldReturn` []
+      readIORef made `shouldReturn` [(ExApplication (ExFormation [BiVoid AtRho, BiVoid (AtLabel "щ")]) (ArTau AtRho (ExFormation [BiTau (AtLabel "ё") (ExFormation [])])), ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "ё") (ExFormation [])]), BiVoid (AtLabel "щ")])]
+    it "tells the dispatch a step took into an object" $ do
+      made <- newIORef []
+      _ <- rewrite (ExDispatch (ExFormation [BiTau (AtLabel "ыж") (ExFormation [BiVoid (AtLabel "ю")])]) (AtLabel "ыж")) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
+      readIORef made >>= (`shouldSatisfy` elem (ExDispatch (ExFormation [BiTau (AtLabel "ыж") (ExFormation [BiVoid (AtLabel "ю")])]) (AtLabel "ыж")) . map fst)
 
   describe "rewrites by a locator" $ do
     it "rewrites the located part step after step" $ do
@@ -212,6 +216,28 @@ spec = do
       expr <- parseExpressionThrows "⟦ t ↦ ⊥.a ⟧"
       rewrite expr [] (RewriteContext (ExDispatch ExRoot (AtLabel "w")) 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep dontSaveMade)
         `shouldThrow` (\exc -> "Can't find object by locator" `isInfixOf` show (exc :: SomeException))
+
+  describe "catches a loop that comes back to the term the run started from" $ do
+    let steps =
+          [ direct "a-to-b" False (\_ expr -> [ExFormation [BiTau (AtLabel "b") ExXi] | ExFormation [BiTau (AtLabel "a") ExXi] <- [expr]])
+          , direct "b-to-a" False (\_ expr -> [ExFormation [BiTau (AtLabel "a") ExXi] | ExFormation [BiTau (AtLabel "b") ExXi] <- [expr]])
+          ]
+        context cycles locator some =
+          RewriteContext locator 25 cycles False Nothing (building linked) (_normal linked) (every some) MtDisabled Nothing dontSaveStep dontSaveMade
+        looping exc = "looping" `isInfixOf` show (exc :: SomeException)
+    it "catches a loop that comes back to the term the run started from" $ do
+      forM_
+        [ (ExFormation [BiTau (AtLabel "a") ExXi], steps)
+        , (ExFormation [BiTau (AtLabel "b") ExXi], steps)
+        , (ExFormation [BiTau (AtLabel "a") ExXi], reverse steps)
+        , (ExFormation [BiTau (AtLabel "b") ExXi], reverse steps)
+        ]
+        (\(start, some) -> rewrite start some (context 25 ExRoot some) `shouldThrow` looping)
+      rewrite
+        (ExFormation [BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "a") ExXi])])
+        steps
+        (context 1 (ExDispatch ExRoot (AtLabel "x")) steps)
+        `shouldThrow` looping
 
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"

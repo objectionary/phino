@@ -11,7 +11,7 @@ module Rule (RuleContext (..), Step (..), domainOf, isFormation, isNF, matchExpr
 import AST
 import Builder
   ( buildAttribute
-  , buildBindingThrows
+  , buildBinding
   , buildBindingUnchecked
   , buildExpression
   , buildExpressionThrows
@@ -21,7 +21,8 @@ import Control.Exception (Exception (displayException), throwIO)
 import Control.Exception.Base (SomeException, try)
 import Control.Monad (when)
 import Data.Foldable (foldlM)
-import Data.List (foldl', intersect, nub)
+import Data.List (intersect, nub)
+import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
@@ -90,7 +91,7 @@ normalWith matching (ExFormation bds) = normalBindings bds || not (matching (ExF
 normalWith matching expr = not (matching expr)
 
 normalHeld :: (Expression -> Bool) -> Expression -> Bool
-normalHeld _ (ExMeta _) = False
+normalHeld _ (ExMeta meta) = isName meta
 normalHeld _ (ExAny _) = False
 normalHeld test expr = test expr
 
@@ -206,7 +207,7 @@ _absolute expr subst _ = do
   pure [subst | xiFree built]
 
 bound :: Expression -> Bool
-bound (ExMeta _) = False
+bound (ExMeta meta) = isName meta
 bound (ExAny _) = False
 bound _ = True
 
@@ -214,6 +215,7 @@ xiFree :: Expression -> Bool
 xiFree (ExFormation _) = True
 xiFree ExRoot = True
 xiFree ExTermination = True
+xiFree (ExMeta meta) = isName meta
 xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
 xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
 xiFree (ExDispatch e _) = xiFree e
@@ -233,17 +235,24 @@ _matches :: String -> Expression -> Subst -> RuleContext -> IO [Subst]
 _matches pat (ExMeta meta) (Subst mp) ctx = case M.lookup (Named meta) mp of
   Just (MvExpression expr) -> _matches pat expr (Subst mp) ctx
   _ -> pure []
-_matches pat expr subst ctx = do
-  (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression expr] subst
-  matched <- match (T.encodeUtf8 (T.pack pat)) (T.encodeUtf8 (T.pack (btsToUnescapedStr tgt)))
-  pure [subst | matched]
+_matches pat expr subst ctx = case buildExpression expr subst of
+  Right built -> do
+    (TeBytes tgt) <- _buildTerm ctx "dataize" [Y.ArgExpression built] subst
+    matched <- match (T.encodeUtf8 (T.pack pat)) (T.encodeUtf8 (T.pack (btsToUnescapedStr tgt)))
+    pure [subst | matched]
+  Left err -> do
+    logDebug (printf "Condition matches(%s, %s) can't be built and was treated as not met: %s" (printExpression expr) pat err)
+    pure []
 
 _partOf :: Expression -> Binding -> Subst -> RuleContext -> IO [Subst]
-_partOf exp bd subst _ = do
-  exp' <- buildExpressionThrows exp subst
-  bds <- buildBindingThrows bd subst
-  pure [subst | partOf exp' bds]
+_partOf exp bd subst _ = case (buildExpression exp subst, buildBinding bd subst) of
+  (Right exp', Right bds) -> pure [subst | partOf exp' bds]
+  (_, Left err) -> unbuilt err
+  (Left err, _) -> unbuilt err
   where
+    unbuilt err = do
+      logDebug (printf "Condition part-of(%s, %s) can't be built and was treated as not met: %s" (printExpression exp) (printBinding bd) err)
+      pure []
     partOf :: Expression -> [Binding] -> Bool
     partOf _ [] = False
     partOf expr (BiTau _ (ExFormation bds) : rest) = expr == ExFormation bds || partOf expr bds || partOf expr rest
@@ -396,7 +405,7 @@ redex rule = case rule.pattern of
     demanded bds (Y.In attrs metas)
       | all (\meta -> isMeta meta && meta `elem` bds) metas = attrs
     demanded bds (Y.And conds) = concatMap (demanded bds) conds
-    demanded bds (Y.Or (cond : conds)) = foldl' (\attrs cond' -> attrs `intersect` demanded bds cond') (demanded bds cond) conds
+    demanded bds (Y.Or (cond : conds)) = List.foldl' (\attrs cond' -> attrs `intersect` demanded bds cond') (demanded bds cond) conds
     demanded _ _ = []
     isMeta :: Binding -> Bool
     isMeta (BiMeta _) = True

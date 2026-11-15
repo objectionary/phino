@@ -1,10 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: '[[ x -> "Hello" ]]'
+failure: true
+expression: '[[ x -> Q.z ]]'
 pattern: '[[ x -> !e1 ]]'
 condition:
-  not:
-    eq:
-      - foo
-      - '"Hello"'
+  matches: ['Q', '!e1']

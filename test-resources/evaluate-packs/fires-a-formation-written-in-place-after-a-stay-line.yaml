@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The side is a formation written in place, not an object of the world, with
+# its void 'v' filled by an argument. The 'stay' line drops the '( ρ ↦ Φ )'
+# of that argument, and the 'evaluate' line still fires the formation, since
+# what it does depends on the term it gets and the world alone, and not on
+# what happened to the term before (#2269, #2270).
+symbolic: |
+  - λ: L_probe
+    morph:
+      𝑛1: $.side🌵
+    stay:
+      𝑛2: 𝑛1
+    evaluate:
+      𝑛3: 𝑛2
+    𝑛: 𝑛3
+  - λ: L_box
+    𝑛: ⟦ λ ⤍ 𝜎 ⟧
+location: 'Q.y'
+partial: true
+input: >
+  ⟦ k ↦ 𝜎1:λ,
+    x ↦ ⟦ λ ⤍ L_probe, side🌵 ↦ ⟦ f ↦ ⟦ v ↦ ∅, λ ⤍ L_box ⟧ ⟧.f( v ↦ Φ.k( ρ ↦ Φ ) ) ⟧,
+    y ↦ Φ.x.φ ⟧
+result: '𝜎2:λ.φ'
+protocol: |
+  𝕄(Φ.y):
+    𝑛·0·1 := ⟦ v ↦ ∅, λ ⤍ L_box ⟧( v ↦ Φ.k )
+    𝑛·0·2 := ⟦ v ↦ Φ.k, λ ⤍ L_box ⟧
+    remembered 𝑛·0·3 ≡ Φ.x  # ⟦ λ ⤍ L_probe, side🌵 ↦ 𝑛·0·2 ⟧
+    𝔼(L_probe):
+      𝕄(ξ.side🌵):
+        morphed 𝑛·1·1 := 𝑛·0·2
+      𝑛1·1 := 𝑛·0·2  # 𝕄(ξ.side🌵)
+      𝑛2·1 := ⟦ v ↦ Φ.k, λ ⤍ L_box ⟧  # stay(𝑛1)
+      𝔼(L_box):  # 𝔼(𝑛2)
+        𝑛·2·1 := 𝜎2:λ  # 𝑛
+        𝕄(𝑛·2·1):
+          morphed 𝑛·2·2 := 𝜎2:λ
+        𝑛·2·3 := 𝑛·2·2  # 𝕄(𝑛·2·1)
+      𝑛3·1 := 𝑛·2·3  # 𝔼(𝑛2)
+      𝑛·1·2 := 𝑛3·1  # 𝑛
+      𝕄(𝑛·1·2):
+        morphed 𝑛·1·3 := 𝑛3·1
+      𝑛·1·4 := 𝑛3·1  # 𝕄(𝑛·1·2)
+    unanswered 𝜎2  # 𝕄(𝜎2:λ)

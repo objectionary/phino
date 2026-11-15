@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The block names 'L_join' under 'otherwise', but the left side leaves 'k'
+# void and the right side binds it, so the right side is applied further than
+# the left one. A formation leaving 'k' void would hand a void to whoever takes
+# 'k' of the right side, so nothing is fabricated: the firing writes 'unripe',
+# naming the attribute and the side leaving it void, and gets stuck (#2202).
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.c
+    join:
+      on: 𝛿1
+      left: $.a
+      right: $.b
+      otherwise: L_join
+location: 'Q.y'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧, k ↦ ∅ ⟧, b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎3 ⟧, k ↦ ⟦ ⟧ ⟧, λ ⤍ L_fork ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function 'L_fork'"
+protocol: |
+  𝕄(Φ.y):
+    𝔼(L_fork):
+      𝔻(ξ.c):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
+      𝕄(ξ.a):
+        morphed 𝑛·1·1 := ⟦ φ ↦ 𝜎2:λ, k ↦ ∅ ⟧
+      𝕄(ξ.b):
+        morphed 𝑛·1·2 := ⟦ φ ↦ 𝜎3:λ, k ↦ ⟦⟧ ⟧
+      unripe 𝑛·1·1 vs 𝑛·1·2  # k is void on the left and attached on the right

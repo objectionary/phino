@@ -7,16 +7,19 @@
 module YamlSpec where
 
 import AST (Alpha, Attribute, Binding, Bytes, Expression (ExMeta, ExRoot))
-import Control.Exception (Exception (displayException), SomeException)
+import Control.Exception (Exception (displayException), SomeException, bracket)
 import Control.Monad
+import Data.ByteString qualified as BS
 import Data.Either (isLeft, isRight)
-import Data.List (isInfixOf, nub, sort, (\\))
+import Data.List (intercalate, isInfixOf, nub, sort, (\\))
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Files (allPathsIn)
+import System.Directory (getTemporaryDirectory, removeFile)
 import System.FilePath
+import System.IO (hClose, openTempFile)
 import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldSatisfy, shouldThrow)
 import Yaml (Condition (..), ContextualizeRule (..), DataizeRule (..), MorphRule (..), Number, Operation (..), Premise (..), Rule, contextualizationRules, dataizationRules, morphingRules, yamlRule)
 
@@ -30,6 +33,21 @@ failsWith fragment decoded = case decoded of
 
 failsAsRedundant :: Either Yaml.ParseException a -> Bool
 failsAsRedundant = failsWith "redundant"
+
+loadedFrom :: String -> String -> IO Rule
+loadedFrom file content = do
+  tmp <- getTemporaryDirectory
+  bracket
+    (openTempFile tmp file)
+    (\(path, handle) -> hClose handle >> removeFile path)
+    ( \(path, handle) -> do
+        BS.hPut handle (encodeUtf8 (T.pack content))
+        hClose handle
+        yamlRule path
+    )
+
+quoted :: String -> String
+quoted word = "'" ++ word ++ "'"
 
 spec :: Spec
 spec = do
@@ -55,6 +73,26 @@ spec = do
     forM_
       packs
       (\pth -> it (makeRelative resources pth) (void (yamlRule pth)))
+
+  it "reads a bare y, n, yes, no, on and off in a rule file as the attributes they spell" $ do
+    let written :: (String -> String) -> String
+        written spelled = "name: bare-words\npattern: ⟦ 𝜏1 ↦ 𝑒1, 𝐵1 ⟧\nresult: ⟦ 𝐵1 ⟧\nwhen:\n  and:\n    - eq: [𝜏1, " ++ spelled "n" ++ "]\n    - in: [" ++ spelled "y" ++ ", 𝐵1]\n    - disjoint: [[" ++ intercalate ", " (map spelled ["yes", "no", "on", "off"]) ++ "], [𝐵1]]"
+    bare <- loadedFrom "bare-words.yaml" (written id)
+    show bare
+      `shouldBe` either
+        Yaml.prettyPrintParseException
+        (show :: Rule -> String)
+        (decodeYaml' (written quoted))
+
+  it "reads a bare ASCII meta in a rule file as the meta it spells" $ do
+    let written :: (String -> String) -> String
+        written spelled = "name: bare-metas\npattern: ⟦ φ ↦ !e1, !t1 ↦ !e2, !B1 ⟧.!t2\nresult: " ++ spelled "!e1" ++ "\nwhen:\n  and:\n    - nf: " ++ spelled "!e2" ++ "\n    - not:\n        eq:\n          - " ++ spelled "!t1" ++ "\n          - " ++ spelled "!t2" ++ "\n    - not:\n        in:\n          - " ++ spelled "!t2" ++ "\n          - " ++ spelled "!B1"
+    bare <- loadedFrom "bare-metas.yaml" (written id)
+    show bare
+      `shouldBe` either
+        Yaml.prettyPrintParseException
+        (show :: Rule -> String)
+        (decodeYaml' (written quoted))
 
   describe "fails on yaml typos" $ do
     let resources = "test-resources/yaml-typos"
@@ -330,6 +368,49 @@ spec = do
   describe "rejects a fractional literal number" $
     it "fails on a fraction instead of silently rounding it" $
       (decodeYaml' "2.5" :: Either Yaml.ParseException Number) `shouldSatisfy` isLeft
+
+  describe "refuses a condition that compares different kinds" $ do
+    forM_
+      [
+        ( "an expression with a number in 'eq'"
+        , "eq: [𝑒1, 5]"
+        , "The 'eq' condition compares an expression with a number, while it can compare only two numbers, two attributes or two expressions"
+        )
+      ,
+        ( "an expression with an integral number in 'eq'"
+        , "eq: [𝑒1, 5.0]"
+        , "The 'eq' condition compares an expression with a number"
+        )
+      ,
+        ( "an expression with a number in 'gt'"
+        , "gt: [𝑒1, 3]"
+        , "The 'gt' condition compares an expression with a number, while it can compare only two numbers"
+        )
+      ,
+        ( "an expression with an attribute in 'eq'"
+        , "eq: [𝑒1, 𝜏1]"
+        , "The 'eq' condition compares an expression with an attribute"
+        )
+      ,
+        ( "an attribute with an attribute in 'gt'"
+        , "gt: ['!t1', '!t2']"
+        , "The 'gt' condition compares an attribute with an attribute, while it can compare only two numbers"
+        )
+      ,
+        ( "a nested 'not' that compares an expression with a number"
+        , "not: {eq: ['!e1', 5]}"
+        , "compares an expression with a number"
+        )
+      ]
+      (\(desc, yaml, message) -> it ("rejects " ++ desc) ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` failsWith message))
+    it "rejects a rule whose 'having' compares an expression with a number" $
+      (decodeYaml' "name: hv\npattern: '⟦ x ↦ 𝑒1 ⟧'\nresult: '⟦ ⟧'\nhaving:\n  eq: ['!e1', 5]" :: Either Yaml.ParseException Rule)
+        `shouldSatisfy` failsWith "compares an expression with a number"
+    it "rejects a morphing rule whose 'when' compares an expression with a number" $
+      (decodeYaml' "name: mv\nmatch: '⟦ 𝜏1 ↦ 𝑒1 ⟧'\nuniverse: '⟦ ⟧'\nconclusion: '⟦ ⟧'\nwhen:\n  eq: ['𝑒1', 5]" :: Either Yaml.ParseException MorphRule)
+        `shouldSatisfy` failsWith "compares an expression with a number"
+    it "accepts a quoted number as an expression" $
+      (decodeYaml' "eq: ['𝑒1', '5']" :: Either Yaml.ParseException Condition) `shouldSatisfy` isRight
 
   describe "rejects an empty 'and' condition" $
     it "fails on 'and: []'" $

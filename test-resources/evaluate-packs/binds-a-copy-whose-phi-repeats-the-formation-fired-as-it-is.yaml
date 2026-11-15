@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The copy 'down( i ↦ 𝜎2 )' is the left side of the fork the φ of 'down' calls,
+# so its own φ comes to the very formation that is being fired. Its argument is
+# a bare symbol, but a 'defer' line binds such a copy as it is under
+# '--acyclic' (#2206): a symbol standing for the call would hide the recursion
+# from the cut, and the 'cast' line would then give that symbol the 'not' of
+# 'Φ.no', which nobody checked. The fork fabricates a formation of both sides,
+# and the fork under its 'not' is the one that goes on into the copy.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.on🌵
+    morph:
+      𝑛1: $.left🌵
+      𝑛2: $.right🌵
+    symbolize:
+      𝑛3: 𝑛1
+      𝑛4: 𝑛2
+    defer:
+      𝑛5: 𝑛3
+      𝑛6: 𝑛4
+    cast:
+      𝑛7: 𝑛5
+      𝑛8: 𝑛6
+    join:
+      'on': 𝛿1
+      left: 𝑛7
+      right: 𝑛8
+      otherwise: L_fork
+location: 'Q.y'
+acyclic: plausible
+partial: true
+input: >
+  ⟦ no ↦ ⟦ φ ↦ 00-:Δ, not ↦ FF-:Δ ⟧,
+    fork(on🌵, left🌵, right🌵) ↦ ⟦ λ ⤍ L_fork ⟧,
+    down(i) ↦ ⟦ φ ↦ Φ.fork( 𝜎1:λ, Φ.down( i ↦ 𝜎2:λ ), Φ.no ) ⟧,
+    y ↦ Φ.down( i ↦ 𝜎3:λ ).not ⟧
+result: '⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.not, right🌵 ↦ ρ.right🌵.not ⟧'
+protocol: |
+  𝕄(Φ.y):
+    remembered 𝑛·0·1 ≡ Φ.down  # ⟦ i ↦ ∅, φ ↦ Φ.fork( 𝜎1:λ, Φ.down( i ↦ 𝜎2:λ ), Φ.no ) ⟧
+    𝑛·0·2 := Φ.down( i ↦ 𝜎3:λ )
+    𝑛·0·3 := ⟦ i ↦ 𝜎3:λ, φ ↦ Φ.fork( 𝜎1:λ, Φ.down( i ↦ 𝜎2:λ ), Φ.no ) ⟧
+    remembered 𝑛·0·3 ≡ 𝑛·0·1( i ↦ 𝜎3:λ )
+    normalized 𝑛·0·4 := Φ.fork( 𝜎1:λ, Φ.down( i ↦ 𝜎2:λ ), Φ.no ).not  # 𝑛·0·3.φ.not
+    remembered 𝑛·0·5 ≡ Φ.fork  # ⟦ on🌵 ↦ ∅, left🌵 ↦ ∅, right🌵 ↦ ∅, λ ⤍ L_fork ⟧
+    𝑛·0·6 := Φ.fork( on🌵 ↦ 𝜎1:λ )
+    𝑛·0·7 := ⟦ on🌵 ↦ 𝜎1:λ, left🌵 ↦ ∅, right🌵 ↦ ∅, λ ⤍ L_fork ⟧
+    remembered 𝑛·0·7 ≡ 𝑛·0·5( on🌵 ↦ 𝜎1:λ )
+    𝑛·0·8 := 𝑛·0·6( left🌵 ↦ Φ.down( i ↦ 𝜎2:λ ) )
+    𝑛·0·9 := ⟦ on🌵 ↦ 𝜎1:λ, left🌵 ↦ Φ.down( i ↦ 𝜎2:λ ), right🌵 ↦ ∅, λ ⤍ L_fork ⟧
+    remembered 𝑛·0·9 ≡ 𝑛·0·7( left🌵 ↦ Φ.down( i ↦ 𝜎2:λ ) )
+    𝑛·0·10 := 𝑛·0·8( right🌵 ↦ Φ.no )
+    𝑛·0·11 := ⟦ on🌵 ↦ 𝜎1:λ, left🌵 ↦ Φ.down( i ↦ 𝜎2:λ ), right🌵 ↦ Φ.no, λ ⤍ L_fork ⟧
+    remembered 𝑛·0·11 ≡ 𝑛·0·9( right🌵 ↦ Φ.no )
+    𝔼(L_fork):
+      𝔻(ξ.on🌵):
+        𝛿·1·1 := 𝔻(𝜎1:λ)
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.on🌵)
+      𝕄(ξ.left🌵):
+        𝑛·1·1 := Φ.down( i ↦ 𝜎2:λ )
+        𝑛·1·2 := ⟦ i ↦ 𝜎2:λ, φ ↦ Φ.fork( 𝜎1:λ, Φ.down( i ↦ 𝜎2:λ ), Φ.no ) ⟧
+        remembered 𝑛·1·2 ≡ 𝑛·0·1( i ↦ 𝜎2:λ )
+        morphed 𝑛·1·3 := 𝑛·1·2
+      𝑛1·1 := 𝑛·1·3  # 𝕄(ξ.left🌵)
+      𝕄(ξ.right🌵):
+        remembered 𝑛·1·4 ≡ Φ.no  # ⟦ φ ↦ 00-:Δ, not ↦ FF-:Δ ⟧
+        morphed 𝑛·1·5 := 𝑛·1·4
+      𝑛2·1 := 𝑛·1·5  # 𝕄(ξ.right🌵)
+      symbolized 𝜎4 := 00-
+      𝑛4·1 := ⟦ φ ↦ 𝜎4:λ, not ↦ FF-:Δ ⟧  # symbolize(𝑛2)
+      fabricated 𝑛·1·6 := 𝑛·1·3 and 𝑛4·1  # ⟦ left🌵 ↦ 𝑛·1·3, right🌵 ↦ 𝑛4·1, i ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.i, right🌵 ↦ ρ.right🌵.i ⟧, φ ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.φ, right🌵 ↦ ρ.right🌵.φ ⟧, not ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.not, right🌵 ↦ ρ.right🌵.not ⟧ ⟧
+      remembered 𝑛·1·6 ≡ 𝑛·0·11
+      memoized 𝑛·0·11 ⇛ 𝑛·1·6
+    remembered 𝑛·0·12 ≡ 𝑛·1·6.not  # ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ρ.left🌵.not, right🌵 ↦ ρ.right🌵.not ⟧
+    morphed 𝑛·0·13 := 𝑛·0·12
