@@ -109,6 +109,8 @@ expression ExTermination _ = pure ("⊥", [])
 expression (ExFormation bds) ctx = do
   nested <- nestedBindings bds ctx
   pure ("", nested)
+expression dispatch@(ExDispatch _ attr) _
+  | metaAttribute attr = throwIO (UnsupportedExpression dispatch)
 expression (ExDispatch expr attr) ctx = do
   (base, children) <- expression expr ctx
   let attr' = printAttribute attr
@@ -149,6 +151,8 @@ expression (DataString bytes) XmirContext{..} =
 expression app@(ExApplication expr (ArTau AtRho _)) ctx@XmirContext{..}
   | _hideRho = expression expr ctx
   | otherwise = throwIO (UnsupportedExpression app)
+expression app@(ExApplication _ (ArTau attr _)) _
+  | metaAttribute attr = throwIO (UnsupportedExpression app)
 expression app@(ExApplication expr arg) ctx = do
   (base, children) <- expression expr ctx
   when (null base) (throwIO (UnsupportedExpression app))
@@ -163,6 +167,11 @@ expression app@(ExApplication expr arg) ctx = do
       ArTau attr value -> (printAttribute attr, value)
       ArAlpha alpha value -> (printAlpha alpha, value)
 expression expr _ = throwIO (UnsupportedExpression expr)
+
+metaAttribute :: Attribute -> Bool
+metaAttribute (AtMeta _) = True
+metaAttribute (AtAny _) = True
+metaAttribute _ = False
 
 formationBinding :: Binding -> XmirContext -> IO (Maybe Node)
 formationBinding (BiTau (AtLabel label) expr) ctx = Just <$> namedBinding (T.unpack label) expr ctx
