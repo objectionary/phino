@@ -9,7 +9,7 @@
 
 module LaTeXSpec where
 
-import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot), Function (FnMeta, FnSymbol))
+import AST (Attribute (AtLabel, AtMeta, AtPhi, AtRho), Binding (BiDelta, BiLambda, BiMeta, BiTau, BiVoid), Bytes (BtMeta, BtOne), Expression (ExDispatch, ExFormation, ExMeta, ExPhiAgain, ExPhiMeet, ExRoot), Function (FnMeta, FnSymbol, Function))
 import Control.Monad (forM_)
 import Data.Aeson (FromJSON)
 import Data.List (intercalate)
@@ -173,6 +173,16 @@ spec = do
       let weird = ExFormation [BiTau (AtLabel "a@b^c") ExRoot]
       expressionToLaTeX weird defaultLatexContext
         `shouldBe` "\\begin{phiquation}\nQ : |a\\char64{}b\\char94{}c|{.}\n\\end{phiquation}"
+
+    it "escapes a lone 'D' or 'L' after '_' or '-' in an attribute label" $ do
+      let labels = ExFormation [BiVoid (AtLabel "a_D"), BiVoid (AtLabel "x1-L"), BiVoid (AtLabel "aD")]
+      expressionToLaTeX labels defaultLatexContext
+        `shouldBe` "\\begin{phiquation}\n[[ |a\\char95{}\\char68{}| -> ?, |x1-\\char76{}| -> ?, |aD| -> ? ]]{.}\n\\end{phiquation}"
+
+    it "escapes a lambda function named by a lone 'Q'" $ do
+      let lambdas = ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (Function "Q")]), BiTau (AtLabel "y") (ExFormation [BiLambda (Function "Qa")])]
+      expressionToLaTeX lambdas defaultLatexContext
+        `shouldBe` "\\begin{phiquation}\n[[ |x| -> |\\char81{}| : L, |y| -> |Qa| : L ]]{.}\n\\end{phiquation}"
 
     forM_
       [
