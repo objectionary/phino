@@ -551,3 +551,14 @@ spec = do
     it "makes the whole anew where the part differs" $
       intact [BiVoid (AtLabel "zu")] (ExDispatch ExXi (AtLabel "old")) ExFormation [BiVoid (AtLabel "ri")]
         `shouldBe` ExFormation [BiVoid (AtLabel "ri")]
+
+  describe "suffixed" $ do
+    it "changes the items the walk changes and keeps the others" $
+      suffixed (\item -> Just (if item == BiVoid (AtLabel "ko") then BiVoid (AtLabel "mu") else item)) [BiVoid (AtLabel "ax"), BiVoid (AtLabel "ko"), BiVoid (AtLabel "ep")]
+        `shouldBe` Just [BiVoid (AtLabel "ax"), BiVoid (AtLabel "mu"), BiVoid (AtLabel "ep")]
+    it "answers the list it was given where the walk changes nothing" $
+      suffixed Just [BiVoid (AtLabel "yi"), BiDelta (BtOne "2D")]
+        `shouldBe` Just [BiVoid (AtLabel "yi"), BiDelta (BtOne "2D")]
+    it "fails where the walk fails" $
+      suffixed (\item -> if item == BiVoid (AtLabel "os") then Nothing else Just item) [BiVoid (AtLabel "ig"), BiVoid (AtLabel "os")]
+        `shouldBe` Nothing

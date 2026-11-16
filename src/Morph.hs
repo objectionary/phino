@@ -459,7 +459,7 @@ renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _) term = do
               made <$ modifyIORef' renamed (Map.insert name made)
     nested renamed expr = walked renamed expr
     walked :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    walked renamed whole@(ExFormation bds) = intact bds whole ExFormation <$> mapM (goBinding renamed) bds
+    walked renamed whole@(ExFormation bds) = intact bds whole ExFormation <$> suffixed (goBinding renamed) bds
     walked renamed whole@(ExApplication expr arg) = intact (expr, arg) whole (uncurry ExApplication) <$> ((,) <$> goExpr renamed expr <*> goArgument renamed arg)
     walked renamed whole@(ExDispatch expr attr) = intact expr whole (`ExDispatch` attr) <$> goExpr renamed expr
     walked _ expr = pure expr
