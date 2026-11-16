@@ -31,6 +31,7 @@ module AST
   , akin
   , akin'
   , boxed
+  , intact
   , within
   , within'
   , isName
@@ -92,6 +93,11 @@ pattern ExDispatch :: Expression -> Attribute -> Expression
 pattern ExDispatch expr attr <- Dispatched _ expr attr
   where
     ExDispatch expr attr = cached (\facts -> Dispatched facts expr attr)
+
+intact :: (Eq part) => part -> whole -> (part -> whole) -> part -> whole
+intact old whole make new
+  | new == old = whole
+  | otherwise = make new
 
 cached :: (Facts -> Expression) -> Expression
 cached node = let term = node (established term) in term
