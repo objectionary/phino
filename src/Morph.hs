@@ -334,21 +334,21 @@ abstracted store spots form = do
                     (side', posed) <- goExpr cache side
                     if side' == side then pure (term, posed) else (,posed) <$> named store side'
               made <$ modifyIORef' cache (Map.insert name made)
-    nested cache (ExFormation bds) = do
+    nested cache term@(ExFormation bds) = do
       parts <- mapM (goBinding cache) bds
-      pure (ExFormation (map fst parts), concatMap snd parts)
-    nested cache (ExApplication expr arg) = do
+      pure (intact bds term ExFormation (map fst parts), concatMap snd parts)
+    nested cache term@(ExApplication expr arg) = do
       (expr', one) <- goExpr cache expr
       (arg', two) <- goArgument cache arg
-      pure (ExApplication expr' arg', one ++ two)
-    nested cache (ExDispatch expr attr) = first (`ExDispatch` attr) <$> goExpr cache expr
+      pure (intact (expr, arg) term (uncurry ExApplication) (expr', arg'), one ++ two)
+    nested cache term@(ExDispatch expr attr) = first (intact expr term (`ExDispatch` attr)) <$> goExpr cache expr
     nested _ term = pure (term, [])
     goBinding :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Binding -> IO (Binding, [(Int, Expression)])
-    goBinding cache (BiTau attr expr) = first (BiTau attr) <$> goExpr cache expr
+    goBinding cache bd@(BiTau attr expr) = first (intact expr bd (BiTau attr)) <$> goExpr cache expr
     goBinding _ bd = pure (bd, [])
     goArgument :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Argument -> IO (Argument, [(Int, Expression)])
-    goArgument cache (ArTau attr expr) = first (ArTau attr) <$> goExpr cache expr
-    goArgument cache (ArAlpha alpha expr) = first (ArAlpha alpha) <$> goExpr cache expr
+    goArgument cache arg@(ArTau attr expr) = first (intact expr arg (ArTau attr)) <$> goExpr cache expr
+    goArgument cache arg@(ArAlpha alpha expr) = first (intact expr arg (ArAlpha alpha)) <$> goExpr cache expr
 
 kindle :: Sides -> Maybe Memo -> Expression -> Firing -> Answer -> IO ()
 kindle store (Just (Memo _ _ _ _ (Kin places likes _))) form firing answer = do
@@ -459,17 +459,17 @@ renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _) term = do
               made <$ modifyIORef' renamed (Map.insert name made)
     nested renamed expr = walked renamed expr
     walked :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    walked renamed (ExFormation bds) = ExFormation <$> mapM (goBinding renamed) bds
-    walked renamed (ExApplication expr arg) = ExApplication <$> goExpr renamed expr <*> goArgument renamed arg
-    walked renamed (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr renamed expr
+    walked renamed whole@(ExFormation bds) = intact bds whole ExFormation <$> suffixed (goBinding renamed) bds
+    walked renamed whole@(ExApplication expr arg) = intact (expr, arg) whole (uncurry ExApplication) <$> ((,) <$> goExpr renamed expr <*> goArgument renamed arg)
+    walked renamed whole@(ExDispatch expr attr) = intact expr whole (`ExDispatch` attr) <$> goExpr renamed expr
     walked _ expr = pure expr
     goBinding :: IORef (Map.Map T.Text Expression) -> Binding -> IO Binding
-    goBinding renamed (BiTau attr expr) = BiTau attr <$> goExpr renamed expr
+    goBinding renamed bd@(BiTau attr expr) = intact expr bd (BiTau attr) <$> goExpr renamed expr
     goBinding _ (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> renamedSymbol ctx renaming idx
     goBinding _ bd = pure bd
     goArgument :: IORef (Map.Map T.Text Expression) -> Argument -> IO Argument
-    goArgument renamed (ArTau attr expr) = ArTau attr <$> goExpr renamed expr
-    goArgument renamed (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr renamed expr
+    goArgument renamed arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> goExpr renamed expr
+    goArgument renamed arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> goExpr renamed expr
 
 renamedSymbol :: ReduceContext -> Renaming -> Int -> IO Int
 renamedSymbol ctx renaming@(Renaming table _ visiting) idx = do
