@@ -31,6 +31,7 @@ module AST
   , akin
   , akin'
   , boxed
+  , intact
   , within
   , within'
   , isName
@@ -92,6 +93,15 @@ pattern ExDispatch :: Expression -> Attribute -> Expression
 pattern ExDispatch expr attr <- Dispatched _ expr attr
   where
     ExDispatch expr attr = cached (\facts -> Dispatched facts expr attr)
+
+-- The whole a walk was given, where the part the walk made of it is the
+-- part it had, and the whole made of the new part otherwise. A walk that
+-- rebuilds every node it passes hands back a private copy of a term nothing
+-- changed in, which costs the memory of the term again (#2392).
+intact :: (Eq part) => part -> whole -> (part -> whole) -> part -> whole
+intact old whole make new
+  | new == old = whole
+  | otherwise = make new
 
 cached :: (Facts -> Expression) -> Expression
 cached node = let term = node (established term) in term

@@ -543,3 +543,11 @@ spec = do
     it "does not touch a term carrying no symbol" $
       lifted 0 3 (ExFormation [BiTau (AtLabel "ul") (ExDispatch ExXi (AtLabel "ha")), BiLambda (Function "L_up"), BiDelta (BtOne "1F")])
         `shouldBe` ExFormation [BiTau (AtLabel "ul") (ExDispatch ExXi (AtLabel "ha")), BiLambda (Function "L_up"), BiDelta (BtOne "1F")]
+
+  describe "intact" $ do
+    it "hands back the whole where the part is the one it had" $
+      intact [BiVoid (AtLabel "zu")] (ExDispatch ExXi (AtLabel "old")) ExFormation [BiVoid (AtLabel "zu")]
+        `shouldBe` ExDispatch ExXi (AtLabel "old")
+    it "makes the whole anew where the part differs" $
+      intact [BiVoid (AtLabel "zu")] (ExDispatch ExXi (AtLabel "old")) ExFormation [BiVoid (AtLabel "ri")]
+        `shouldBe` ExFormation [BiVoid (AtLabel "ri")]
