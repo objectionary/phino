@@ -725,6 +725,16 @@ no walk copies a side out again and terms stay as small as the graph they
 are. The `fabricated` record spells the sides back (`unnamed` of `Deps.hs`);
 any other record and the result print the names.
 
+The walks that copy a term to change it, `renamedTerm` and `abstracted` of
+`Morph.hs` and `stayed` and `symbolized` of `Lambdas.hs`, hand back every
+node, binding and argument nothing changed under (`intact` of `AST.hs`), so a
+copy of a wide object stays shared with the world and the memo keeps no
+private copy of it (#2392). For the same reason every field of `Facts` of
+`AST.hs` is strict, so a node carries no thunk, the writers keep the texts
+of `_stated` and `_attested` packed, since a `String` costs some forty
+bytes a character, and `forked` builds the `on🌵` binding and the paths
+`ρ.left🌵` and `ρ.right🌵` once for all the branches of a formation.
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at

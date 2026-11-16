@@ -298,7 +298,7 @@ data Protocol = Protocol
   , _blocks :: [(Int, Maybe (Judgment, String), String, Bool)]
   , _answered :: [(Int, Expression, String)]
   , _unwritten :: Map.Map Int (Named Expression)
-  , _stated :: Named [(Expression, (String, String))]
+  , _stated :: Named [(Expression, (T.Text, T.Text))]
   , _spelt :: Map.Map Int (Map.Map Bytes String)
   }
 
@@ -321,7 +321,7 @@ data Nesting = Nesting
   , _shapes :: Map.Map [Maybe Attribute] [(Expression, [Binding])]
   , _opaque :: Int
   , _unmarked :: Map.Map Int (Named Expression)
-  , _attested :: Named [(Expression, (String, String))]
+  , _attested :: Named [(Expression, (T.Text, T.Text))]
   }
 
 type Naming = StateT (Nesting, [String]) IO
@@ -329,11 +329,14 @@ type Naming = StateT (Nesting, [String]) IO
 emptyNesting :: Nesting
 emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Map.empty Nothing [] [] [] Map.empty Map.empty 0 Map.empty Map.empty
 
-stated :: Expression -> Expression -> String -> String -> Named [(Expression, (String, String))] -> Named [(Expression, (String, String))]
-stated object source left right facts = namedInsert object ((source, (left, right)) : fromMaybe [] (namedLookup object facts)) facts
+stated :: Expression -> Expression -> String -> String -> Named [(Expression, (T.Text, T.Text))] -> Named [(Expression, (T.Text, T.Text))]
+stated object source left right facts = packed `seq` namedInsert object ((source, packed) : fromMaybe [] (namedLookup object facts)) facts
+  where
+    packed :: (T.Text, T.Text)
+    packed = ((,) $! T.pack left) $! T.pack right
 
-statement :: Expression -> Expression -> Named [(Expression, (String, String))] -> Maybe (String, String)
-statement object source facts = namedLookup object facts >>= lookup source
+statement :: Expression -> Expression -> Named [(Expression, (T.Text, T.Text))] -> Maybe (String, String)
+statement object source facts = bimap T.unpack T.unpack <$> (namedLookup object facts >>= lookup source)
 
 saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
 saveEval handle cursor printed printed' report = do

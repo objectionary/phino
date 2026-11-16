@@ -31,6 +31,7 @@ module AST
   , akin
   , akin'
   , boxed
+  , intact
   , within
   , within'
   , isName
@@ -74,7 +75,7 @@ data Expression
   | ExPhiAgain (Maybe String) Int Expression
   | ExBytes Bytes
 
-data Facts = Facts !Int Int !Bool Bool
+data Facts = Facts !Int !Int !Bool !Bool
 
 {-# COMPLETE ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes #-}
 
@@ -92,6 +93,11 @@ pattern ExDispatch :: Expression -> Attribute -> Expression
 pattern ExDispatch expr attr <- Dispatched _ expr attr
   where
     ExDispatch expr attr = cached (\facts -> Dispatched facts expr attr)
+
+intact :: (Eq part) => part -> whole -> (part -> whole) -> part -> whole
+intact old whole make new
+  | new == old = whole
+  | otherwise = make new
 
 cached :: (Facts -> Expression) -> Expression
 cached node = let term = node (established term) in term
