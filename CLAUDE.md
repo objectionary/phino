@@ -734,6 +734,9 @@ private copy of it (#2392). For the same reason every field of `Facts` of
 of `_stated` and `_attested` packed, since a `String` costs some forty
 bytes a character, and `forked` builds the `on🌵` binding and the paths
 `ρ.left🌵` and `ρ.right🌵` once for all the branches of a formation.
+`renamedTerm` walks the bindings of a formation with `suffixed` of `AST.hs`,
+which hands back the tail of the list no binding changed in, so a copy
+renamed in its first binding keeps the cells of all the others.
 
 ### Test pattern: YAML packs
 

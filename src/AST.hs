@@ -32,6 +32,7 @@ module AST
   , akin'
   , boxed
   , intact
+  , suffixed
   , within
   , within'
   , isName
@@ -98,6 +99,16 @@ intact :: (Eq part) => part -> whole -> (part -> whole) -> part -> whole
 intact old whole make new
   | new == old = whole
   | otherwise = make new
+
+suffixed :: (Monad walk, Eq item) => (item -> walk item) -> [item] -> walk [item]
+suffixed change items = snd <$> go change items
+  where
+    go :: (Monad walk, Eq item) => (item -> walk item) -> [item] -> walk (Bool, [item])
+    go _ [] = pure (True, [])
+    go turn whole@(item : rest) = do
+      item' <- turn item
+      (same, rest') <- go turn rest
+      pure (if same && item' == item then (True, whole) else (False, item' : rest'))
 
 cached :: (Facts -> Expression) -> Expression
 cached node = let term = node (established term) in term
