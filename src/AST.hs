@@ -75,7 +75,7 @@ data Expression
   | ExPhiAgain (Maybe String) Int Expression
   | ExBytes Bytes
 
-data Facts = Facts !Int Int !Bool Bool
+data Facts = Facts !Int !Int !Bool !Bool
 
 {-# COMPLETE ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes #-}
 
