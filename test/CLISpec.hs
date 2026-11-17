@@ -135,6 +135,50 @@ rule file = "--rule=test-resources/cli/rules/" <> file
 
 spec :: Spec
 spec = do
+  describe "regex execution limits" $ do
+    forM_
+      [ ("matches", ["  matches: ['^(a|b)*$', '!e1']"])
+      , ("or", ["  or:", "    - matches: ['^(a|b)*$', '!e1']", "    - eq: [1, 1]"])
+      ]
+      ( \(desc, condition) ->
+          it ("fails normally when a " ++ desc ++ " condition exceeds the recursion limit") $
+            withTempFileContent
+              "regex-limit.yaml"
+              ( unlines
+                  ( [ "name: mt"
+                    , "pattern: '[[ x -> !e1 ]]'"
+                    , "result: '[[ y -> !e1 ]]'"
+                    , "when:"
+                    ]
+                      ++ condition
+                  )
+              )
+              ( \path ->
+                  withStdin ("[[ x -> \"" ++ replicate 9000 'a' ++ "\" ]]") $
+                    testCLIFailed ["rewrite", "--sweet", "--rule=" ++ path] ["Regex execution failed:"]
+              )
+      )
+
+    forM_ ["(a|b)*", "(ab)+"] $ \pattern ->
+      forM_ ["", "g"] $ \flag ->
+        it ("fails normally when sed exceeds the recursion limit with " ++ pattern ++ " and flag '" ++ flag ++ "'") $
+          withTempFileContent
+            "regex-limit.yaml"
+            ( unlines
+                [ "name: sed-limit"
+                , "pattern: '[[ x -> !e1 ]]'"
+                , "result: '[[ y -> !e2 ]]'"
+                , "where:"
+                , "  - meta: '!e2'"
+                , "    function: sed"
+                , "    args: ['!e1', '\"s/" ++ pattern ++ "/X/" ++ flag ++ "\"']"
+                ]
+            )
+            ( \path ->
+                withStdin ("[[ x -> \"" ++ concat (replicate 10000 "ab") ++ "\" ]]") $
+                  testCLIFailed ["rewrite", "--sweet", "--rule=" ++ path] ["Regex execution failed:"]
+            )
+
   it "prints version" $
     testCLISucceeded ["--version"] [showVersion version]
 
