@@ -1694,11 +1694,14 @@ spec = do
           withStdin recursive $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible"] ["40-45-00-00-00-00-00-00"]
 
-      it "writes the recursive call it cuts to the protocol as a call of the object" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["      looped 𝜎1 := Φ.down( i ↦ 𝑛·1·7 )  # plausible, repeats 𝑛·0·4"])
+      it "writes the recursive call an operand comes to to the protocol as passed, as a call of the object" $
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["      passed 𝑛·1·4 := Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # plausible, repeats 𝑛·0·4"])
 
-      it "writes the recursive call it cuts to the XML protocol with the object and the metas of its arguments" $
-        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["      <looped symbol=\"𝜎1\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·1·7</meta></with></looped>"])
+      it "writes the recursive call an operand comes to to the XML protocol as passed, with the object and the metas of its arguments" $
+        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["      <passed meta=\"𝑛·1·4\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑒·0·2</meta></with></passed>"])
+
+      it "cuts the recursive call where a line of the entry enters it" $
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["  looped 𝜎1 := Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # 𝔼(𝑛·0·13.a), plausible, repeats 𝑛·0·13"])
 
     describe "--acyclic at a recursive call through a fork" $ do
       let recursive = "⟦ if(c, a, b) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ξ.c, left🌵 ↦ ξ.a, right🌵 ↦ ξ.b ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.if( c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ), b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
@@ -1718,14 +1721,39 @@ spec = do
           withStdin recursive $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=1"] ["40-45-00-00-00-00-00-00"]
 
-      it "writes the copy it cuts in a side of a fork to the protocol as a call of the object" $
-        recorded "1" "protocolXXXXXX.txt" >>= (`shouldContain` ["        looped 𝜎3 := Φ.down( i ↦ 𝑛·3·7 )  # plausible, repeats 𝑛·0·4"])
+      it "writes the copy a side of a fork comes to again to the protocol as passed, as a call of the object" $
+        recorded "1" "protocolXXXXXX.txt" >>= (`shouldContain` ["        passed 𝑛·3·4 := Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) )  # plausible, repeats 𝑛·0·4"])
 
-      it "writes the copy it cuts in a side of a fork to the XML protocol with the object and the metas of its arguments" $
-        recorded "1" "protocolXXXXXX.xml" >>= (`shouldContain` ["        <looped symbol=\"𝜎3\" by=\"morph\" match=\"plausible\" at=\"ξ.left🌵\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·3·7</meta></with></looped>"])
+      it "writes the copy a side of a fork comes to again to the XML protocol as passed, with the object and the metas of its arguments" $
+        recorded "1" "protocolXXXXXX.xml" >>= (`shouldContain` ["        <passed meta=\"𝑛·3·4\" by=\"morph\" match=\"plausible\" at=\"ξ.left🌵\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑒·2·3</meta></with></passed>"])
 
       it "counts the copies the sides of earlier rounds of a fork made under --max-loops=2" $
-        recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          looped 𝜎3 := Φ.down( i ↦ 𝑛·6·7 )  # plausible, repeats 𝑛·0·4"])
+        recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          passed 𝑛·6·4 := Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) ) )  # plausible, repeats 𝑛·0·4"])
+
+    describe "--acyclic at an object an atom only hands back" $ do
+      let world = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, down ↦ ⟦ φ ↦ Φ.call( Φ.down ).at, at ↦ 2A-:Δ ⟧, t ↦ Φ.down ⟧"
+          calling = T.pack "- λ: L_call\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
+          recorded :: String -> IO [String]
+          recorded name =
+            withTempFile name $ \(path, stream) -> do
+              hClose stream
+              withLambdasOf calling $ \file ->
+                withStdin world $
+                  testCLISucceeded
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", recording path, "--quiet", "--sweet", "--hide-rho"]
+                    []
+              lines <$> readProtocol path
+      forM_ ["plausible", "proven"] $ \mode ->
+        it ("hands the object back as it is and takes the attribute off it under --acyclic=" ++ mode) $
+          withLambdasOf calling $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=" ++ mode] ["2A-"]
+
+      it "writes the object it hands back to the protocol as passed" $
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["        passed 𝑛·1·2 := Φ.down  # plausible, repeats 𝑛·1·1"])
+
+      it "writes the object it hands back to the XML protocol as passed" $
+        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["        <passed meta=\"𝑛·1·2\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·1·1\" object=\"Φ.down\"/>"])
 
     describe "--acyclic at a copy holding a λ" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, x ↦ Φ.dataized( Φ.fork( Φ.dataized( Φ.x ), ⟦ λ ⤍ 𝜎3 ⟧ ) ) ⟧"

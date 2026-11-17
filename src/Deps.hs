@@ -134,6 +134,7 @@ data Evaluation
   | EvBoxed Int Expression
   | EvUndressed Int Expression
   | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Maybe Expression))
+  | EvPassed Int Judgment Acyclic Expression Expression Expression (Maybe Expression)
   | EvStuck Int T.Text Judgment Expression
   | EvOpaque Int Int Judgment Expression
   | EvStall Int T.Text
@@ -184,6 +185,7 @@ resited from to = record
     record (EvFiring depth key judgment site) = EvFiring depth key judgment (moved site)
     record (EvStarted depth judgment site) = EvStarted depth judgment (moved site)
     record (EvLooped depth judgment mode self site answered) = EvLooped depth judgment mode self (moved site) answered
+    record (EvPassed depth judgment mode self site term call) = EvPassed depth judgment mode self (moved site) term call
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (moved site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (moved site)
     record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (moved site)
@@ -212,6 +214,7 @@ tier (EvManufactured depth _) = depth
 tier (EvBoxed depth _) = depth
 tier (EvUndressed depth _) = depth
 tier (EvLooped depth _ _ _ _ _) = depth
+tier (EvPassed depth _ _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
 tier (EvOpaque depth _ _ _) = depth
 tier (EvStall depth _) = depth
@@ -455,6 +458,14 @@ saveEval handle cursor printed printed' report = do
         severed form (symbol, call) = do
           made <- traverse (printed . abbreviatedInside protocol._made) call
           pure (printf "looped %s%s" (printFunction (FnSymbol symbol)) (maybe "" (" := " ++) made), [printf "repeats %s" form])
+    written at (EvPassed _ judgment mode self site term call) protocol = do
+      form <- render self
+      remarks <- context protocol judgment site
+      let (index, counted) = numbered protocol
+          naming :: String
+          naming = printf "%s·%d" (labelled protocol answer) index
+      value <- maybe (borrowed protocol term) (printed . abbreviatedInside protocol._made) call
+      pure (counted{_made = namedFormation term (alias (opener protocol) index) counted._made}, Just (indented at (remarked (printf "passed %s := %s" naming value) (remarks ++ [certainty mode, printf "repeats %s" form]))))
     written at (EvStuck _ key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented at (printf "unanswered %s  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -798,6 +809,19 @@ saveEvalXml handle cursor printed report = do
         origin <- leaf depth self
         (object, given) <- called depth call
         pure (printf "<looped symbol=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\"%s>%s</looped>" (sigma symbol) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) (trailed call) given)
+    elements at (EvPassed depth judgment mode self site term call) nesting =
+      placed at nesting $ do
+        locator <- located depth site
+        origin <- leaf depth self
+        (object, given) <- maybe ((,"") <$> leaf depth term) (called depth) call
+        (naming, aliased) <- counted
+        modify (first (\nesting' -> nesting'{_objects = namedFormation term aliased nesting'._objects}))
+        pure (printf "<passed meta=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\"%s%s" (escapeXML naming) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) (maybe "" trailed call) (closing given))
+      where
+        closing :: String -> String
+        closing "" = "/>"
+        closing "<with></with>" = "/>"
+        closing given = printf ">%s</passed>" given
     elements at (EvStuck depth key judgment self) nesting =
       placed at nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
     elements at (EvOpaque depth symbol judgment self) nesting =

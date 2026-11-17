@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvPassed, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -300,6 +300,15 @@ spec = do
     it "writes a cut that answered a copy as the call of the object it repeats" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvLooped 1 Dataization Proven (ExFormation []) ExRoot (Just (14, Just (ExApplication (ExDispatch ExRoot (AtLabel "клён")) (ArTau (AtLabel "ось") (ExFormation [BiLambda (FnSymbol 3)])))))])
       last (lines written) `shouldBe` "  looped 𝜎14 := Φ.клён( ось ↦ 𝜎3:λ )  # proven, repeats ⟦⟧"
+    it "writes a copy handed back as it is under a name of its own and the call of the object it repeats" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation []) ExRoot (ExFormation [BiTau (AtLabel "ъ") ExRoot]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "клён")) (ArTau (AtLabel "ось") (ExFormation [BiLambda (FnSymbol 3)]))))])
+      last (lines written) `shouldBe` "  passed 𝑛·0·1 := Φ.клён( ось ↦ 𝜎3:λ )  # proven, repeats ⟦⟧"
+    it "writes a copy handed back as it is that no fact names by the copy itself" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation []) ExRoot (ExFormation [BiTau (AtLabel "ъ") ExRoot]) Nothing])
+      last (lines written) `shouldBe` "  passed 𝑛·0·1 := Φ:ъ  # proven, repeats ⟦⟧"
+    it "names a copy handed back as it is by its name from then on" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation []) ExRoot (ExFormation [BiTau (AtLabel "ъ") ExRoot]) Nothing, EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "ъ") ExRoot]) AtPhi)])
+      last (lines written) `shouldBe` "  boxed 𝑛·0·2 := 𝑛·0·1.φ"
     it "names the block over an answer by the line that built it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
       lines written `shouldContain` ["    𝕄(𝑛·1·1):"]
@@ -709,6 +718,12 @@ spec = do
     it "writes a cut that answered a copy as an element naming the formation it repeats, the object and its arguments" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvLooped 1 Dataization Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (Just (14, Just (ExApplication (ExDispatch ExRoot (AtLabel "клён")) (ArTau (AtLabel "ось") (ExFormation [BiLambda (FnSymbol 3)])))))])
       lines written `shouldContain` ["  <looped symbol=\"𝜎14\" by=\"dataize\" match=\"proven\" at=\"Φ\" of=\"𝑒·0·1\" object=\"Φ.клён\"><with><symbol attr=\"ось\">𝜎3</symbol></with></looped>"]
+    it "writes a copy handed back as it is as an element naming the formation it repeats, the object and its arguments" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (ExFormation [BiTau (AtLabel "ь") ExRoot]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "клён")) (ArTau (AtLabel "ось") (ExFormation [BiLambda (FnSymbol 3)]))))])
+      lines written `shouldContain` ["  <passed meta=\"𝑛·0·1\" by=\"dataize\" match=\"proven\" at=\"Φ\" of=\"𝑒·0·1\" object=\"Φ.клён\"><with><symbol attr=\"ось\">𝜎3</symbol></with></passed>"]
+    it "writes a copy handed back as it is that no fact names as an empty element naming the copy" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (ExFormation [BiTau (AtLabel "ь") ExRoot]) Nothing])
+      lines written `shouldContain` ["  <passed meta=\"𝑛·0·1\" by=\"dataize\" match=\"proven\" at=\"Φ\" of=\"𝑒·0·1\" object=\"𝑒·0·2\"/>"]
     it "writes a cut whose call ends with attributes as an element naming the object, its arguments and those attributes" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvLooped 1 Dataization Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (Just (19, Just (ExDispatch (ExDispatch (ExApplication (ExDispatch ExRoot (AtLabel "вяз")) (ArTau (AtLabel "корень") (ExFormation [BiLambda (FnSymbol 5)]))) AtPhi) (AtLabel "ветка"))))])
       lines written `shouldContain` ["  <looped symbol=\"𝜎19\" by=\"dataize\" match=\"proven\" at=\"Φ\" of=\"𝑒·0·1\" object=\"Φ.вяз\" dispatch=\"φ.ветка\"><with><symbol attr=\"корень\">𝜎5</symbol></with></looped>"]
