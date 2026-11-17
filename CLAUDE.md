@@ -140,12 +140,12 @@ and the chains 𝕄 and 𝔻 make of an object of random programs; it also check
 that the compiled test of which rules match never misses one.
 
 The normal-form test of either engine (`normal` of `Rule.hs`, `nf` of the
-generated module) takes for a normal form every meta a rule asks about: the
-meta holds a part of the term, and a part that is no normal form holds a match the walk
-meets anyway. Asking it again ran the whole test on every part, which doubled
-the work per level of a chain of nested copies (#2409). So a generated rule
-takes the test as an argument, the steps and `matching` hand it `nf`, and `nf`
-hands it `const True` (`matchingBy`).
+generated module) takes for a normal form every meta a rule asks about: the meta
+holds a part of the term, and a part that is no normal form holds a match the
+walk meets anyway. Asking it again ran the whole test on every part, which
+doubled the work per level of a chain of nested copies (#2409). So a generated
+rule takes the test as an argument, the steps and `matching` hand it `nf`, and
+`nf` hands it `const True` (`matchingBy`).
 
 A rule of 𝕄 or 𝔻 is an `Inference` of `Inference.hs`: matched against a term
 and a universe it answers the `Premises` it runs beside its spine, in order —
