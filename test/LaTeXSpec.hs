@@ -311,6 +311,23 @@ spec = do
           , "\\end{phiquation}"
           ]
 
+    it "keeps the name of a function across the focused steps of a --sequence under --canonize" $ do
+      focus <- parseExpressionThrows "Q.a"
+      step1 <- parseExpressionThrows "[[ a -> [[ x -> [[ L> Fa ]], y -> [[ L> Fb ]] ]] ]]"
+      step2 <- parseExpressionThrows "[[ a -> [[ y -> [[ L> Fb ]] ]] ]]"
+      latex <-
+        rewrittensToLatex
+          ([(step1, Nothing), (step2, Just (Normalization, "drop"))], False)
+          defaultLatexContext{_focus = focus, _canonize = True}
+      latex
+        `shouldBe` intercalate
+          "\n"
+          [ "\\begin{phiquation}"
+          , "[[ |x| -> |Fn1| : L, |y| -> |Fn2| : L ]]"
+          , "  \\phiNormalize |Fn2| : L : |y| \\phiNormalize[\\nameref{r:drop}]{.}"
+          , "\\end{phiquation}"
+          ]
+
     it "compresses and canonizes a --sequence of focused sub-expressions above the default meet threshold" $ do
       focus <- parseExpressionThrows "Q.x"
       step1 <- parseExpressionThrows "[[ x -> [[ w -> Q.a.b.c.d ]] ]]"
