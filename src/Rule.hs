@@ -61,8 +61,13 @@ matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normali
 isNF :: Expression -> RuleContext -> Bool
 isNF expr ctx = normalWith (`matchesAnyNormalizationRule` ctx) expr
 
+-- A term is a normal form when no rule of normalization matches anywhere
+-- inside it. A rule asking a meta for a normal form asks it of a part of the
+-- term, and a part that is no normal form holds a match the walk meets anyway,
+-- so the walk takes every such part for a normal form and never runs itself
+-- again on it, which on a chain of copies doubled the work per level (#2409).
 normal :: Expression -> Bool
-normal expr = isNF expr (RuleContext buildTerm Nothing normal)
+normal expr = isNF expr (RuleContext buildTerm Nothing (const True))
 
 normalWith :: (Expression -> Bool) -> Expression -> Bool
 normalWith _ ExXi = True
