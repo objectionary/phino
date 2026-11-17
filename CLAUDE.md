@@ -145,7 +145,10 @@ holds a part of the term, and a part that is no normal form holds a match the
 walk meets anyway. Asking it again ran the whole test on every part, which
 doubled the work per level of a chain of nested copies (#2409). So a generated
 rule takes the test as an argument, the steps and `matching` hand it `nf`, and
-`nf` hands it `const True` (`matchingBy`).
+`nf` hands it `const True` (`matchingBy`). This holds while no rule of
+normalization asks for a normal form under `not` and every 𝑛 or 𝑘 meta binds a
+proper part of the term the rule matches; `nested` of `CompiledSpec.hs` compares
+the test with the one asking every meta the whole test again.
 
 A rule of 𝕄 or 𝔻 is an `Inference` of `Inference.hs`: matched against a term
 and a universe it answers the `Premises` it runs beside its spine, in order —
