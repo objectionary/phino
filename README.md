@@ -620,6 +620,13 @@ ExtArgument
   | Attribute'           # !t
 ```
 
+Regular expressions in `matches` and `sed` are limited to 1,000,000 match
+calls and 256 levels of recursion per execution. Exceeding either limit
+stops the command with `Regex execution failed` and exit code 1. The recursion
+limit protects small native thread stacks; a repeated capturing group such as
+`(a|b)*` can reach it even on a string of a few hundred characters. Long strings
+can still be matched with patterns that need little recursion, such as `[ab]*`.
+
 Here's list of functions that are supported for extensions:
 
 * `contextualize` - function of two arguments, that rewrites given expression
@@ -719,119 +726,119 @@ entries of `benchmark/demo.phi` symbolically, one case per entry.
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      2453719.508 μs
-  avg:        245371.951 μs
-  min:        220752.442 μs
-  max:        296909.647 μs
-  std dev:    27003.300 μs
+  total:      1624060.124 μs
+  avg:        162406.012 μs
+  min:        144277.371 μs
+  max:        194535.221 μs
+  std dev:    21570.423 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      9866591.315 μs
-  avg:        986659.131 μs
-  min:        921418.100 μs
-  max:        1102113.710 μs
-  std dev:    56998.675 μs
+  total:      7009151.691 μs
+  avg:        700915.169 μs
+  min:        651934.228 μs
+  max:        762411.055 μs
+  std dev:    44745.118 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      20.982 μs
-  avg:        2.098 μs
-  min:        1.834 μs
-  max:        2.515 μs
-  std dev:    0.184 μs
+  total:      12.959 μs
+  avg:        1.296 μs
+  min:        1.166 μs
+  max:        1.418 μs
+  std dev:    0.091 μs
 === print/sweet/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      6234263.292 μs
-  avg:        623426.329 μs
-  min:        589221.718 μs
-  max:        673546.203 μs
-  std dev:    27064.446 μs
+  total:      4217518.009 μs
+  avg:        421751.801 μs
+  min:        403493.618 μs
+  max:        457424.859 μs
+  std dev:    16536.568 μs
 === print/sweet/flat ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      724804.323 μs
-  avg:        72480.432 μs
-  min:        65259.429 μs
-  max:        87334.477 μs
-  std dev:    8984.513 μs
+  total:      545770.341 μs
+  avg:        54577.034 μs
+  min:        49166.277 μs
+  max:        63498.089 μs
+  std dev:    5148.406 μs
 === print/salty/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      19126480.390 μs
-  avg:        1912648.039 μs
-  min:        1875502.155 μs
-  max:        1956570.553 μs
-  std dev:    20844.896 μs
+  total:      13219408.124 μs
+  avg:        1321940.812 μs
+  min:        1272904.132 μs
+  max:        1364186.958 μs
+  std dev:    31154.946 μs
 === morph/symbolic/demo/e1 ===
   warmup:     3 iterations
-  batches:    10 x 9
-  total:      12704.169 μs
-  avg:        141.157 μs
-  min:        134.343 μs
-  max:        151.899 μs
-  std dev:    4.891 μs
+  batches:    10 x 12
+  total:      11083.017 μs
+  avg:        92.358 μs
+  min:        90.596 μs
+  max:        97.264 μs
+  std dev:    1.942 μs
 === morph/symbolic/demo/e2 ===
   warmup:     3 iterations
-  batches:    10 x 127
-  total:      176678.561 μs
-  avg:        139.117 μs
-  min:        137.214 μs
-  max:        143.183 μs
-  std dev:    1.776 μs
+  batches:    10 x 183
+  total:      169227.669 μs
+  avg:        92.474 μs
+  min:        92.145 μs
+  max:        93.183 μs
+  std dev:    0.311 μs
 === morph/symbolic/demo/e3 ===
   warmup:     3 iterations
-  batches:    10 x 127
-  total:      175688.735 μs
-  avg:        138.338 μs
-  min:        136.833 μs
-  max:        140.267 μs
-  std dev:    1.075 μs
+  batches:    10 x 185
+  total:      173845.799 μs
+  avg:        93.971 μs
+  min:        93.445 μs
+  max:        94.542 μs
+  std dev:    0.317 μs
 === morph/symbolic/demo/e4 ===
   warmup:     3 iterations
-  batches:    10 x 126
-  total:      173384.341 μs
-  avg:        137.607 μs
-  min:        135.730 μs
-  max:        138.598 μs
-  std dev:    0.771 μs
+  batches:    10 x 189
+  total:      176636.558 μs
+  avg:        93.458 μs
+  min:        92.301 μs
+  max:        97.186 μs
+  std dev:    1.478 μs
 === morph/symbolic/demo/e5 ===
   warmup:     3 iterations
-  batches:    10 x 128
-  total:      179484.059 μs
-  avg:        140.222 μs
-  min:        139.549 μs
-  max:        143.084 μs
-  std dev:    0.994 μs
+  batches:    10 x 186
+  total:      176437.359 μs
+  avg:        94.859 μs
+  min:        94.521 μs
+  max:        95.173 μs
+  std dev:    0.205 μs
 === morph/symbolic/native/e5 ===
   warmup:     3 iterations
-  batches:    10 x 5
-  total:      61516.790 μs
-  avg:        1230.336 μs
-  min:        1101.850 μs
-  max:        1321.369 μs
-  std dev:    69.828 μs
+  batches:    10 x 6
+  total:      80211.099 μs
+  avg:        1336.852 μs
+  min:        1211.536 μs
+  max:        1384.878 μs
+  std dev:    55.380 μs
 === morph/symbolic/accum/0 ===
   warmup:     3 iterations
-  batches:    10 x 84
-  total:      99685.372 μs
-  avg:        118.673 μs
-  min:        116.748 μs
-  max:        121.306 μs
-  std dev:    1.277 μs
+  batches:    10 x 107
+  total:      83668.975 μs
+  avg:        78.195 μs
+  min:        77.496 μs
+  max:        78.759 μs
+  std dev:    0.356 μs
 === morph/symbolic/accum/400 ===
   warmup:     3 iterations
-  batches:    10 x 65
-  total:      88840.145 μs
-  avg:        136.677 μs
-  min:        134.036 μs
-  max:        139.531 μs
-  std dev:    1.259 μs
+  batches:    10 x 77
+  total:      70478.596 μs
+  avg:        91.531 μs
+  min:        90.598 μs
+  max:        92.469 μs
+  std dev:    0.645 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-11-15 at 16:40,
+on 2026-11-16 at 09:21,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -874,4 +881,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/43735583799
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/43835713699
