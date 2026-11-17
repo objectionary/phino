@@ -1700,7 +1700,7 @@ spec = do
       it "writes the recursive call an operand comes to to the XML protocol as passed, with the object and the metas of its arguments" $
         recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["      <passed meta=\"𝑛·1·4\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑒·0·2</meta></with></passed>"])
 
-      it "cuts the recursive call where a line of the entry enters it" $
+      it "cuts the recursive call after the firing that handed it back" $
         recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["  looped 𝜎1 := Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # 𝔼(𝑛·0·13.a), plausible, repeats 𝑛·0·13"])
 
     describe "--acyclic at a recursive call through a fork" $ do

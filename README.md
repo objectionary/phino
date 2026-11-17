@@ -384,6 +384,8 @@ A protocol may hold these lines:
   spelled as its `remembered` or `memoized` line spelled it.
 * `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
   the call of the object it answered with that symbol, when a fact names it.
+* `passed 𝑛·1·2 := …` is where an operand came to an object `--acyclic`
+  takes for a loop, handed on as it is.
 * `starved …`, `spent …`, `timeout …`, `oversized …` and `blown …` are
   where `--max-steps`, `--max-firings`, `--max-seconds`, `--max-nodes` and
   `--max-memory` ran out.
