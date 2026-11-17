@@ -263,7 +263,7 @@ spec = do
           , "          normalized 𝑛·1·21 := 40-08-00-00-00-00-00-00:Δ  # 𝑛·1·20"
           , "          𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
           , "        𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-          , "        𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+          , "        𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_times"
           , "        𝕄(𝑛·1·22):"
           , "          𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
           , "          𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"

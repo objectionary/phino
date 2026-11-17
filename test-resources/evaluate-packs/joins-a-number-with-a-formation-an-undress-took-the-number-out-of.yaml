@@ -49,9 +49,9 @@ protocol: |
         morphed 𝑛·1·9 := 𝑛·1·8
       𝑛2·1 := 𝑛·1·9  # undress(ξ.right🌵)
       symbolized 𝜎2 := 40-45-00-00-00-00-00-00  # 42.0
-      𝑛3·1 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎2:λ ), neg ↦ ρ:φ ⟧  # symbolize(𝑛1)
+      𝑛3·1 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎2:λ ), neg ↦ ρ:φ ⟧  # symbolize(𝑛1 of L_fork)
       symbolized 𝜎3 := 40-1C-00-00-00-00-00-00  # 7.0
-      𝑛4·1 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ), neg ↦ ρ:φ ⟧  # symbolize(𝑛2)
+      𝑛4·1 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ), neg ↦ ρ:φ ⟧  # symbolize(𝑛2 of L_fork)
       joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
       𝑛·1·10 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ), neg ↦ ρ:φ ⟧
     normalized 𝑛·0·1 := Φ.bytes( φ ↦ 𝜎4:λ )  # 𝑛·1·10.φ

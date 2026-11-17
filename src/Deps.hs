@@ -300,10 +300,11 @@ data Protocol = Protocol
   , _unwritten :: Map.Map Int (Named Expression)
   , _stated :: Named [(Expression, (T.Text, T.Text))]
   , _spelt :: Map.Map Int (Map.Map Bytes String)
+  , _lambdas :: Map.Map Int T.Text
   }
 
 emptyProtocol :: Protocol
-emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty Map.empty Nothing [] [] Map.empty Map.empty Map.empty
+emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty Map.empty Nothing [] [] Map.empty Map.empty Map.empty Map.empty
 
 data Nesting = Nesting
   { _fires :: Int
@@ -372,7 +373,7 @@ saveEval handle cursor printed printed' report = do
     context protocol judgment site = do
       locator <- located protocol site
       let said = printf "%s(%s)" (letter judgment) locator
-      pure [said | innermost protocol /= Just said]
+      pure [printf "%s(%s)" (letter judgment) (owned protocol site locator) | innermost protocol /= Just said]
     innermost :: Protocol -> Maybe String
     innermost protocol = case protocol._blocks of
       (_, heading, _, _) : _ -> snd <$> heading
@@ -415,6 +416,7 @@ saveEval handle cursor printed printed' report = do
         ( protocol
             { _fired = firings
             , _open = (depth, firings) : protocol._open
+            , _lambdas = Map.insert firings key protocol._lambdas
             , _blocks = (at, Nothing, opening, True) : protocol._blocks
             }
         , Just opening
@@ -488,7 +490,7 @@ saveEval handle cursor printed printed' report = do
     written at (EvReshaped _ spelling block source term) protocol = do
       let naming = labelled protocol spelling
       (protocol', value) <- inscribed protocol naming term
-      line <- printf "%s := %s  # %s(%s)" naming value (T.unpack block) <$> salted (unwritten protocol source)
+      line <- printf "%s := %s  # %s(%s)" naming value (T.unpack block) . owned protocol source <$> salted (unwritten protocol source)
       pure (protocol', Just (indented at line))
     written at (EvSymbolized _ symbol bytes) protocol = do
       datum <- render (ExBytes bytes)
@@ -520,7 +522,7 @@ saveEval handle cursor printed printed' report = do
       let (index, counted) = numbered protocol
       value <- borrowed protocol term
       let naming = printf "%s·%d" (labelled protocol answer) index
-      pure (counted{_built = Map.insert (opener protocol) index counted._built, _answered = (depth, term, naming) : counted._answered}, Just (indented at (printf "%s := %s  # %s" naming value (T.unpack answer))))
+      pure (counted{_built = Map.insert (opener protocol) index counted._built, _answered = (depth, term, naming) : counted._answered}, Just (indented at (printf "%s := %s  # %s" naming value (entered protocol (T.unpack answer)))))
     written at (EvAnswer _ term) protocol = do
       let (index, counted) = numbered protocol
           stem :: String
@@ -630,13 +632,19 @@ saveEval handle cursor printed printed' report = do
     spoken :: Protocol -> Expression -> IO String
     spoken protocol meta = maybe (labelled protocol . T.pack <$> salted meta) (borrowed protocol) (namedLookup meta (held protocol))
     commented :: Protocol -> String -> Judgment -> Expression -> IO String
-    commented protocol line judgment operand = printf "%s  # %s(%s)" line (letter judgment) <$> salted (unwritten protocol operand)
+    commented protocol line judgment operand = printf "%s  # %s(%s)" line (letter judgment) . owned protocol operand <$> salted (unwritten protocol operand)
+    owned :: Protocol -> Expression -> String -> String
+    owned protocol term spelling = case unwritten protocol term of
+      ExMeta meta | not (T.any (== '·') meta) -> entered protocol spelling
+      _ -> spelling
+    entered :: Protocol -> String -> String
+    entered protocol spelling = maybe spelling (printf "%s of %s" spelling . T.unpack) (Map.lookup (opener protocol) protocol._lambdas)
     unwritten :: Protocol -> Expression -> Expression
     unwritten protocol = abbreviated (held protocol)
     held :: Protocol -> Named Expression
     held protocol = Map.findWithDefault Map.empty (opener protocol) protocol._unwritten
     outer :: Int -> Protocol -> Protocol
-    outer depth protocol = protocol{_open = dropWhile ((>= depth) . fst) protocol._open, _answered = dropWhile (\(level, _, _) -> level > depth) protocol._answered, _unwritten = foldr (Map.delete . snd) protocol._unwritten (takeWhile ((>= depth) . fst) protocol._open), _spelt = foldr (Map.delete . snd) protocol._spelt (takeWhile ((>= depth) . fst) protocol._open)}
+    outer depth protocol = protocol{_open = dropWhile ((>= depth) . fst) protocol._open, _answered = dropWhile (\(level, _, _) -> level > depth) protocol._answered, _unwritten = foldr (Map.delete . snd) protocol._unwritten (takeWhile ((>= depth) . fst) protocol._open), _spelt = foldr (Map.delete . snd) protocol._spelt (takeWhile ((>= depth) . fst) protocol._open), _lambdas = foldr (Map.delete . snd) protocol._lambdas (takeWhile ((>= depth) . fst) protocol._open)}
     labelled :: Protocol -> T.Text -> String
     labelled protocol spelling = printf "%s·%d" (T.unpack spelling) (opener protocol)
     opener :: Protocol -> Int
