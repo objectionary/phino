@@ -384,7 +384,11 @@ there would hand out again the symbols its protocol records already spell
 carries. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
-parks on, and the protocol records it as `unanswered name` either way. What
+parks on. The protocol records the first as `unanswered L_none` (`EvStuck`)
+and the second as `opaque 𝜎1` (`EvOpaque`, `<opaque symbol="𝜎1">` in the
+markup), since no entry of the file may answer a symbol, and both comment
+with the whole term the judgment worked on, as `𝕄(𝜎1:λ.at)`: `premised` of
+`Morph.hs` hands it to the firing in `_working` of `ReduceContext` (#2404). What
 fired is written as a tree by `--protocol` and `--minutes`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
 the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a

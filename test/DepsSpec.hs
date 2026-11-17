@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -138,6 +138,12 @@ spec = do
     it "writes an application as a line binding its call to a fresh 𝑛" $ do
       (_, written) <- recorded (\record -> record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))))
       take 1 (lines written) `shouldBe` ["  𝑛·0·1 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ.w)"]
+    it "writes a symbol nothing can fire as opaque, with the attribute taken off it" $ do
+      (_, written) <- recorded (\record -> record (EvOpaque 1 7 Morphing (ExDispatch (ExFormation [BiLambda (FnSymbol 7)]) (AtLabel "ёж"))))
+      lines written `shouldBe` ["  opaque 𝜎7  # 𝕄(𝜎7:λ.ёж)"]
+    it "writes a λ function no entry answers as unanswered, with the attribute taken off it" $ do
+      (_, written) <- recorded (\record -> record (EvStuck 1 "L_ёж" Morphing (ExDispatch (ExFormation [BiLambda (Function "L_ёж")]) (AtLabel "уж"))))
+      lines written `shouldBe` ["  unanswered L_ёж  # 𝕄(L_ёж:λ.уж)"]
     it "writes the formation an application made on a line of its own after the line of the application" $ do
       (_, written) <- recorded (\record -> record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "сом")) (ArTau (AtLabel "ус") (ExFormation []))) (ExFormation [BiTau (AtLabel "ус") (ExFormation []), BiTau (AtLabel "хвост") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "пруд"))))
       last (lines written) `shouldBe` "  𝑛·0·2 := ⟦ ус ↦ ⟦⟧, хвост ↦ ⟦⟧ ⟧"
@@ -766,6 +772,9 @@ spec = do
     it "writes a firing no entry answered as an element naming the term it got stuck on" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvStuck 2 "L_щ" Morphing (ExFormation [BiLambda (FnSymbol 120)])])
       lines written `shouldContain` ["    <unanswered λ=\"L_щ\" by=\"morph\">𝜎120</unanswered>"]
+    it "writes a symbol nothing can fire as an element of its own, naming the term 𝕄 worked on" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvOpaque 1 120 Morphing (ExDispatch (ExFormation [BiLambda (FnSymbol 120)]) (AtLabel "щ"))])
+      lines written `shouldContain` ["  <opaque symbol=\"𝜎120\" by=\"morph\">𝜎120.щ</opaque>"]
     it "writes a stuck firing as an element of the word the text uses" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvStuckOn 2 "L_жук"])
       lines written `shouldContain` ["    <stuck λ=\"L_жук\"/>"]

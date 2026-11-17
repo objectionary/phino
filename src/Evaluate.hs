@@ -33,26 +33,30 @@ import qualified Sides
 import Text.Printf (printf)
 
 evaluation :: ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
-evaluation ctx state form univ = case form of
+evaluation asked state form univ = case form of
   ExFormation bds
     | not (any isLambda bds) -> pure (form, state)
     | otherwise -> case lambda bds of
         Just (func, args) -> do
-          (raw, state') <- symbol func form args univ state ctx
+          (raw, state') <- symbol func form worked args univ state ctx
           (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
           pure (normal, state')
         Nothing -> case unknown bds of
-          Just idx -> stuck idx form
+          Just idx -> opaque idx
           Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
   _ -> throwIO (userError "Function evaluate() expects a formation")
   where
+    ctx :: ReduceContext
+    ctx = asked{_working = Nothing}
+    worked :: Expression
+    worked = fromMaybe form asked._working
     unknown :: [Binding] -> Maybe Int
     unknown bindings = case partition isLambda bindings of
       ([BiLambda (FnSymbol idx)], _) -> Just idx
       _ -> Nothing
-    stuck :: Int -> Expression -> IO (Expression, State)
-    stuck idx form = do
-      unless (name `elem` ctx._parked) (ctx._saveEval (EvStuck ctx._nesting name ctx._judgment form))
+    opaque :: Int -> IO (Expression, State)
+    opaque idx = do
+      unless (name `elem` ctx._parked) (ctx._saveEval (EvOpaque ctx._nesting idx ctx._judgment worked))
       throwIO (Stuck name)
       where
         name :: T.Text
@@ -62,10 +66,10 @@ data Raise = Raise
   deriving stock (Show)
   deriving anyclass (Exception)
 
-symbol :: T.Text -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-symbol func form self univ state caller = case matched caller._symbolic func of
+symbol :: T.Text -> Expression -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+symbol func form whole self univ state caller = case matched caller._symbolic func of
   Nothing -> do
-    unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
+    unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment whole))
     throwIO (Stuck func)
   Just entry -> do
     charged caller

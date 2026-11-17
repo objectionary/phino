@@ -135,6 +135,7 @@ data Evaluation
   | EvUndressed Int Expression
   | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Maybe Expression))
   | EvStuck Int T.Text Judgment Expression
+  | EvOpaque Int Int Judgment Expression
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
   | EvStarved Int Int Judgment Expression
@@ -211,6 +212,7 @@ tier (EvBoxed depth _) = depth
 tier (EvUndressed depth _) = depth
 tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
+tier (EvOpaque depth _ _ _) = depth
 tier (EvStall depth _) = depth
 tier (EvStuckOn depth _) = depth
 tier (EvStarved depth _ _ _) = depth
@@ -454,6 +456,9 @@ saveEval handle cursor printed printed' report = do
     written at (EvStuck _ key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented at (printf "unanswered %s  # %s(%s)" (T.unpack key) (letter judgment) form)))
+    written at (EvOpaque _ symbol judgment self) protocol = do
+      form <- render self
+      pure (protocol, Just (indented at (printf "opaque %s  # %s(%s)" (printFunction (FnSymbol symbol)) (letter judgment) form)))
     written at (EvStall _ key) protocol =
       pure (protocol, Just (indented at (printf "stall %s" (T.unpack key))))
     written at (EvStuckOn _ key) protocol =
@@ -790,6 +795,8 @@ saveEvalXml handle cursor printed report = do
         pure (printf "<looped symbol=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\"%s>%s</looped>" (sigma symbol) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) (trailed call) given)
     elements at (EvStuck depth key judgment self) nesting =
       placed at nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
+    elements at (EvOpaque depth symbol judgment self) nesting =
+      placed at nesting (printf "<opaque symbol=\"%s\" by=\"%s\">%s</opaque>" (sigma symbol) (opened judgment) . escapeXMLText <$> leaf depth self)
     elements at (EvStall _ key) nesting =
       placed at nesting (pure (printf "<stalled λ=\"%s\"/>" (quoted key)))
     elements at (EvStuckOn _ key) nesting =

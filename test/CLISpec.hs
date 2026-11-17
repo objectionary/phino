@@ -3310,7 +3310,7 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.x\">"
                          , "  <formed meta=\"𝑒·0·1\" λ=\"L_number_nope\"/>"
-                         , "  <unanswered λ=\"L_number_nope\" by=\"morph\">𝑒·0·1</unanswered>"
+                         , "  <unanswered λ=\"L_number_nope\" by=\"morph\">𝑒·0·1.foo</unanswered>"
                          , "</morph>"
                          ]
 
@@ -3417,7 +3417,7 @@ spec = do
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·4\">𝜎1</answered>"
                          , "  </evaluate>"
-                         , "  <unanswered λ=\"𝜎1\" by=\"morph\">𝜎1</unanswered>"
+                         , "  <opaque symbol=\"𝜎1\" by=\"morph\">𝜎1.foo</opaque>"
                          , "</morph>"
                          ]
 
