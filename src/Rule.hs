@@ -61,6 +61,26 @@ matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normali
 isNF :: Expression -> RuleContext -> Bool
 isNF expr ctx = normalWith (`matchesAnyNormalizationRule` ctx) expr
 
+normal :: Expression -> Bool
+  }
+
+data Step = Step
+  { _name :: String
+  , _applied :: RuleContext -> Expression -> IO (Maybe (Expression, [(Expression, Expression)]))
+  }
+
+matchesAnyNormalizationRule :: Expression -> RuleContext -> Bool
+matchesAnyNormalizationRule expr ctx = matchesAnyNormalizationRule' expr normalizationRules ctx
+  where
+    matchesAnyNormalizationRule' :: Expression -> [Y.Rule] -> RuleContext -> Bool
+    matchesAnyNormalizationRule' _ [] _ = False
+    matchesAnyNormalizationRule' expr (rule : rules) ctx =
+      let matched = unsafePerformIO (admitted (deep rule) [substEmpty] expr rule ctx)
+       in not (null matched) || matchesAnyNormalizationRule' expr rules ctx
+
+isNF :: Expression -> RuleContext -> Bool
+isNF expr ctx = normalWith (`matchesAnyNormalizationRule` ctx) expr
+
 -- A term is a normal form when no rule of normalization matches anywhere
 -- inside it. A rule asking a meta for a normal form asks it of a part of the
 -- term, and a part that is no normal form holds a match the walk meets anyway,
