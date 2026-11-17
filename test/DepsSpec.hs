@@ -305,10 +305,19 @@ spec = do
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ"
     it "writes the term a stay line dropped a ρ from beside the stay of the meta it read" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvReshaped 2 "𝑛3" "stay" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
-      last (lines written) `shouldBe` "    𝑛3·1 := 𝜎3:λ  # stay(𝑛1)"
+      last (lines written) `shouldBe` "    𝑛3·1 := 𝜎3:λ  # stay(𝑛1 of L_ф)"
     it "writes the term a symbolize line turned a datum of into a symbol beside the symbolize of the meta it read" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvReshaped 2 "𝑛4" "symbolize" (ExMeta "n2") (ExFormation [BiLambda (FnSymbol 6)])])
-      last (lines written) `shouldBe` "    𝑛4·1 := 𝜎6:λ  # symbolize(𝑛2)"
+      last (lines written) `shouldBe` "    𝑛4·1 := 𝜎6:λ  # symbolize(𝑛2 of L_ф)"
+    it "names the entry a meta belongs to beside the firing an evaluate line made of it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_вилка" Morphing ExRoot, EvFiring 2 "L_плюс" Evaluation (ExMeta "n3")])
+      last (lines written) `shouldBe` "    𝔼(L_плюс):  # 𝔼(𝑛3 of L_вилка)"
+    it "names the entry beside the answer it built" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_зов" Morphing ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю"))])
+      last (lines written) `shouldBe` "    𝑛·1·1 := Φ.ю  # 𝑛 of L_зов"
+    it "leaves a meta numbered by its firing as it is" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvReshaped 2 "𝑛3" "stay" (ExMeta "n1·1") (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "    𝑛3·1 := 𝜎3:λ  # stay(𝑛1·1)"
     it "writes the symbol a symbolize line minted beside the datum it stands for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtOne "4A")])
       last (lines written) `shouldBe` "    symbolized 𝜎6 := 4A-"

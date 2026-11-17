@@ -392,8 +392,11 @@ firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment o
 line is a judgment applied to a term — the intent the value beside it came
 from: the judgment that asked for a firing and the site it was fired at
 (`_site` of `ReduceContext`), and the one that reduced an operand and the term
-it was reduced from. The option picks the format, whatever the file is
-named: `--protocol` gets markup (`Nesting` and `saveEvalXml`) and `--minutes`
+it was reduced from. A comment naming a meta of an entry alone, such as `𝑛`,
+`stay(𝑛1)` or `𝔼(𝑛3)`, writes after it the λ name of the firing it belongs to,
+as `𝔼(𝑛3 of L_fork)` (`_lambdas` of `Protocol`, #2402), since the heading of
+that firing may stand far above. The option picks the format, whatever the
+file is named: `--protocol` gets markup (`Nesting` and `saveEvalXml`) and `--minutes`
 the indented text, and one run given both writes both files (`withEvalFunc'`
 of `CLI/Helpers.hs`, #2335). Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
