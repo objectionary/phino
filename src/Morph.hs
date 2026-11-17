@@ -135,6 +135,7 @@ data ReduceContext = ReduceContext
   , _symbolic :: Lambdas
   , _raising :: [T.Text]
   , _reckoning :: Bool
+  , _working :: Maybe Expression
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
@@ -853,7 +854,7 @@ inferred expr univ state ctx rules = do
       (morphed, state'') <- detached term world state' ctx
       next morphed >>= premised state''
     premised state' (In.Evaluates form world next) = do
-      (answer, state'') <- ctx._evaluate ctx state' form world
+      (answer, state'') <- ctx._evaluate ctx{_working = Just expr} state' form world
       next answer >>= premised state''
     premised state' (In.Contextualizes term context next) = ctx._engine._contextualize term context >>= next >>= premised state'
 

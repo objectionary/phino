@@ -366,7 +366,8 @@ A protocol may hold these lines:
   line minted.
 * `cast …` binds a meta to the copy a `cast` block made of a bare symbol, and
   the comment names the meta it read and the meta whose shape it took.
-* `unanswered …` is a λ name no entry answers.
+* `unanswered …` is a λ name no entry answers, and `opaque …` a symbol
+  nothing can fire; the comment names the term 𝕄 or 𝔻 worked on.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
 * `remembered 𝑛·0·1 ≡ Φ.down` is a fact the run keeps: the term on the

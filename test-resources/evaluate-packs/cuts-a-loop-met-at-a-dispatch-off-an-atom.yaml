@@ -65,4 +65,4 @@ protocol: |
         morphed 𝑛·1·6 := 𝜎3:λ
       𝑛·1·7 := 𝑛·1·6  # 𝕄(𝑛·1·5)
       memoized 𝑛·2·3 ⇛ 𝜎3:λ
-    unanswered 𝜎3  # 𝕄(𝜎3:λ)
+    opaque 𝜎3  # 𝕄(𝜎3:λ.q)

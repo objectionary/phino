@@ -93,6 +93,7 @@ symbolicCtx acyclic memo facts minted named lambdas locator =
     lambdas
     []
     False
+    Nothing
     (building linked)
     reduction
     evaluation
