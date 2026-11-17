@@ -330,6 +330,7 @@ $ cat down.txt
       morphed 𝑛·1·4 := 𝑛·1·3
     𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
     remembered 𝑛·1·3 ≡ 𝑛·0·3
+    evaluated 𝑛·1·6 := 𝑛·1·3  # 𝑛·0·3
   recalled 𝑛·1·3 ⇒ 𝑛·0·3
   recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ 𝜎1:λ )
   recalled 𝑛·0·1 ⇒ Φ.down
@@ -358,6 +359,8 @@ A protocol may hold these lines:
 * `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.
+* `evaluated …` closes an `𝔼` block with what the firing answered, and the
+  comment names the formation fired.
 * `normalized …` is the term a normalization came to, where no line named it
   before, and the comment names the term it came from.
 * `joined …`, `fabricated …`, `diverged …` and `unripe …` are what a `join`
@@ -381,6 +384,8 @@ A protocol may hold these lines:
   spelled as its `remembered` or `memoized` line spelled it.
 * `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
   the call of the object it answered with that symbol, when a fact names it.
+* `passed 𝑛·1·2 := …` is where an operand came to an object `--acyclic`
+  takes for a loop, handed on as it is.
 * `starved …`, `spent …`, `timeout …`, `oversized …` and `blown …` are
   where `--max-steps`, `--max-firings`, `--max-seconds`, `--max-nodes` and
   `--max-memory` ran out.
