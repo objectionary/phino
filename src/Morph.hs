@@ -543,9 +543,8 @@ sever taken form univ state ctx = admitted form ctx >>= either cut (pure . Right
 
 severed :: Maybe Attribute -> Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
 severed taken univ ctx state form bds (mode, before) = do
-  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
-  forM_ call (recited ctx . snd)
-  reckoned <- traverse (spelled taken . fst) call
+  call <- tracing ctx form before
+  reckoned <- traverse (spelled taken) call
   fresh <- coined ctx
   ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
   pure (ExFormation [BiLambda (FnSymbol fresh)])
@@ -555,6 +554,17 @@ severed taken univ ctx state form bds (mode, before) = do
     spelled Nothing found
       | ctx._reckoning = pure found
       | otherwise = argued univ ctx{_reckoning = True} state form bds found
+
+passing :: ReduceContext -> Expression -> (Acyclic, Expression) -> IO ()
+passing ctx form (mode, before) = do
+  call <- tracing ctx form before
+  ctx._saveEval (EvPassed ctx._nesting ctx._judgment mode before ctx._site form call)
+
+tracing :: ReduceContext -> Expression -> Expression -> IO (Maybe Expression)
+tracing ctx form before = do
+  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
+  forM_ call (recited ctx . snd)
+  pure (fst <$> call)
 
 recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
@@ -1018,19 +1028,16 @@ morphing univ ctx expr state = do
   unparked $ do
     opened <- opening Morphing =<< universed universe aiming
     ((morphed, _), state') <- morph' (normal, (universe, Nothing) :| []) universe state{_copies = []} opened
-    recurring morphed universe state'{_copies = state._copies ++ state'._copies} opened
+    recurring morphed state'{_copies = state._copies ++ state'._copies} opened
   where
-    recurring :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    recurring term@(ExFormation bds) world state' opened
+    recurring :: Expression -> State -> ReduceContext -> IO (Expression, State)
+    recurring term@(ExFormation bds) state' opened
       | Just mode <- opened._acyclic
       , boxed bds = do
           hits <- repeats mode term opened
-          case drop opened._maxLoops hits of
-            before : _ -> (,state') <$> severed Nothing world opened state' term bds (mode, before)
-            []
-              | null hits -> pure (term, state')
-              | otherwise -> pure (term, state'{_copies = state'._copies ++ [term]})
-    recurring term _ state' _ = pure (term, state')
+          forM_ (listToMaybe (drop opened._maxLoops hits)) (passing opened term . (mode,))
+          pure (term, if null hits then state' else state'{_copies = state'._copies ++ [term]})
+    recurring term state' _ = pure (term, state')
 
 carried :: State -> ReduceContext -> (State, ReduceContext)
 carried state ctx = (state{_copies = []}, maybe ctx (\mode -> ctx{_entered = foldr (\form -> seenInsert (digest mode form) form) ctx._entered state._copies}) ctx._acyclic)

@@ -540,13 +540,18 @@ both writers keep the text they wrote for every fact (`_stated` of
 `Protocol`, `_attested` of `Nesting`) and recall a fact by that text, though
 a later line names the term anew, and `EvaluateSpec.hs` checks it on every
 pack.
-The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
-such a copy the same way where the operand comes to one that repeats the
-formations above it more often than `--max-loops` lets through, since a
-recursion through a fork reaches the copy of every round only as a side of
-the fork and never boxes it (#2228). That side is morphed in a
-context of its own, gone once the firing answers, so `morphing` hands a copy
-it lets through while it repeats one above back in `_copies` of `State`, and
+The morphing of an operand of an entry (`morphing` of `Morph.hs`) never cuts
+a copy the operand comes to, even one that repeats the formations above it
+more often than `--max-loops` lets through, since an entry may only hand it
+back and the program take a plain attribute off it, and a symbol in its place
+has no attribute to take (#2401). It hands the copy back as it is and writes
+`passed 𝑛·1·2 := Φ.down  # plausible, repeats 𝑛·1·1` (`EvPassed`, `passing`
+of `Morph.hs`), naming the copy anew and after the call the facts trace, as
+`looped` does but working out no argument, and the markup as `<passed>`; the
+frame that enters the copy cuts it, if anything does. A recursion through a
+fork reaches the copy of every round only as a side of the fork, morphed in
+a context of its own and gone once the firing answers (#2228), so `morphing`
+hands every copy that repeats one above back in `_copies` of `State`, and
 the next frame of the 𝔻 chain that fired the entry adds it to the formations
 it remembers (`carried` of `Morph.hs`), which `--max-loops` counts.
 The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
