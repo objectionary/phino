@@ -64,5 +64,6 @@ protocol: |
         𝑛·1·24 := ⟦ φ ↦ 𝜎4:λ, plus(x) ↦ L_number_plus:λ ⟧
         morphed 𝑛·1·25 := 𝑛·1·24
       𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)
-    normalized 𝑛·0·7 := 𝜎4:λ  # 𝑛·1·26.φ
+      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·6
+    normalized 𝑛·0·7 := 𝜎4:λ  # 𝑛·1·27.φ
     morphed 𝑛·0·8 := 𝑛·0·7

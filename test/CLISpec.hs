@@ -1770,10 +1770,10 @@ spec = do
                     []
               lines <$> readProtocol path
       it "writes the copy it cuts to the protocol as a call of the object with the attribute it ends with" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·9·9, right ↦ 𝑛·11·1 ).right🌵.φ  # plausible"))
+        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·9·9, right ↦ 𝑛·11·2 ).right🌵.φ  # plausible"))
 
       it "writes the copy it cuts to the XML protocol with the object, the metas of its arguments and the attribute it ends with" $
-        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·1</meta></with></looped>"))
+        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·2</meta></with></looped>"))
 
     describe "--acyclic at a copy whose argument repeats the same loop" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, times(b) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ) ) ⟧"
@@ -2215,7 +2215,8 @@ spec = do
                        , "      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "      morphed 𝑛·1·25 := 𝑛·1·24"
                        , "    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "  boxed 𝑛·0·10 := 𝑛·1·26.φ"
+                       , "    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "  boxed 𝑛·0·10 := 𝑛·1·27.φ"
                        , "  normalized 𝑛·0·11 := 𝜎1:λ  # 𝑛·0·10"
                        , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
                        ]
@@ -2243,7 +2244,8 @@ spec = do
                        , "      morphed 𝑛·1·2 := Φ.bytes( φ ↦ 𝜎1:λ ):φ"
                        , "    𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)"
                        , "    remembered 𝑛·1·3 ≡ 𝑛·0·5"
-                       , "  boxed 𝑛·0·7 := 𝑛·1·3.φ"
+                       , "    evaluated 𝑛·1·4 := 𝑛·1·3  # 𝑛·0·5"
+                       , "  boxed 𝑛·0·7 := 𝑛·1·4.φ"
                        , "  normalized 𝑛·0·8 := Φ.bytes( φ ↦ 𝜎1:λ )  # 𝑛·0·7"
                        , "  𝕄(𝑛·0·7):"
                        , "    normalized 𝑛·0·9 := ∅:φ  # Φ.bytes"
@@ -2310,7 +2312,8 @@ spec = do
                        , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "        morphed 𝑛·1·25 := 𝑛·1·24"
                        , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·26.plus"
+                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·27.plus"
                        , "    𝑛·0·10 := 𝑛·1·23.plus( x ↦ 7.0 )"
                        , "    𝑛·0·11 := ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
                        , "    morphed 𝑛·0·12 := 𝑛·0·11"
@@ -2345,7 +2348,8 @@ spec = do
                        , "      𝑛·2·18 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "      morphed 𝑛·2·19 := 𝑛·2·18"
                        , "    𝑛·2·20 := 𝑛·2·19  # 𝕄(𝑛·2·16)"
-                       , "  boxed 𝑛·0·13 := 𝑛·2·20.φ"
+                       , "    evaluated 𝑛·2·21 := 𝑛·2·20  # 𝑛·0·11"
+                       , "  boxed 𝑛·0·13 := 𝑛·2·21.φ"
                        , "  normalized 𝑛·0·14 := 𝜎2:λ  # 𝑛·0·13"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
@@ -2405,7 +2409,8 @@ spec = do
                        , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
                        , "        morphed 𝑛·1·25 := 𝑛·1·24"
                        , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·1·26.times"
+                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·1·27.times"
                        , "    𝑛·0·10 := 𝑛·1·23.times( x ↦ 7.0 )"
                        , "    𝑛·0·11 := ⟦ x ↦ 7.0, λ ⤍ L_number_times ⟧"
                        , "    morphed 𝑛·0·12 := 𝑛·0·11"
@@ -2440,7 +2445,8 @@ spec = do
                        , "      𝑛·2·18 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
                        , "      morphed 𝑛·2·19 := 𝑛·2·18"
                        , "    𝑛·2·20 := 𝑛·2·19  # 𝕄(𝑛·2·16)"
-                       , "  boxed 𝑛·0·13 := 𝑛·2·20.φ"
+                       , "    evaluated 𝑛·2·21 := 𝑛·2·20  # 𝑛·0·11"
+                       , "  boxed 𝑛·0·13 := 𝑛·2·21.φ"
                        , "  normalized 𝑛·0·14 := 𝜎2:λ  # 𝑛·0·13"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
@@ -2525,7 +2531,8 @@ spec = do
                        , "          𝑛·2·23 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "          morphed 𝑛·2·24 := 𝑛·2·23"
                        , "        𝑛·2·25 := 𝑛·2·24  # 𝕄(𝑛·2·21)"
-                       , "      boxed 𝑛·1·18 := 𝑛·2·25.φ"
+                       , "        evaluated 𝑛·2·26 := 𝑛·2·25  # 𝑛·1·16"
+                       , "      boxed 𝑛·1·18 := 𝑛·2·26.φ"
                        , "      normalized 𝑛·1·19 := 𝜎1:λ  # 𝑛·1·18"
                        , "      𝛿·1·2 := 𝔻(𝜎1:λ)"
                        , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
@@ -2535,7 +2542,8 @@ spec = do
                        , "      𝑛·1·22 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "      morphed 𝑛·1·23 := 𝑛·1·22"
                        , "    𝑛·1·24 := 𝑛·1·23  # 𝕄(𝑛·1·20)"
-                       , "  boxed 𝑛·0·10 := 𝑛·1·24.φ"
+                       , "    evaluated 𝑛·1·25 := 𝑛·1·24  # 𝑛·0·8"
+                       , "  boxed 𝑛·0·10 := 𝑛·1·25.φ"
                        , "  normalized 𝑛·0·11 := 𝜎2:λ  # 𝑛·0·10"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
@@ -2661,7 +2669,8 @@ spec = do
                        , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
                        , "        morphed 𝑛·1·25 := 𝑛·1·24"
                        , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·26.nope"
+                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·27.nope"
                        , "    morphed 𝑛·0·10 := L_number_nope:λ"
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
@@ -2679,7 +2688,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          records `shouldEndWith` "    𝕄(𝑛·1·22):\n      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )\n      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧\n      morphed 𝑛·1·25 := 𝑛·1·24\n    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)\n  boxed 𝑛·0·10 := 𝑛·1·26.φ\n  normalized 𝑛·0·11 := 𝜎1:λ  # 𝑛·0·10\n  𝛿·0·1 := 𝔻(𝜎1:λ)\n"
+          records `shouldEndWith` "    𝕄(𝑛·1·22):\n      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )\n      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧\n      morphed 𝑛·1·25 := 𝑛·1·24\n    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)\n    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8\n  boxed 𝑛·0·10 := 𝑛·1·27.φ\n  normalized 𝑛·0·11 := 𝜎1:λ  # 𝑛·0·10\n  𝛿·0·1 := 𝔻(𝜎1:λ)\n"
 
       it "numbers every step in the text as the XML of the same run numbers it" $
         withTempFile "protocolXXXXXX.txt" $ \(text, one) ->
@@ -2692,7 +2701,7 @@ spec = do
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ xml, "--quiet", "--sweet", "--hide-rho"] []
             lined <- readProtocol text
             marked <- readProtocol xml
-            [meta | meta : ":=" : _ <- map (dropWhile (`elem` ["boxed", "morphed", "normalized", "fabricated"]) . words) (lines lined), "𝑛·" `isPrefixOf` meta]
+            [meta | meta : ":=" : _ <- map (dropWhile (`elem` ["boxed", "morphed", "normalized", "fabricated", "evaluated"]) . words) (lines lined), "𝑛·" `isPrefixOf` meta]
               `shouldBe` [takeWhile (/= '"') (drop 6 token) | token <- words marked, "meta=\"𝑛·" `isPrefixOf` token]
 
       describe "as XML" $ do
@@ -2770,8 +2779,9 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·25\">𝑛·1·24</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·26\">𝑛·1·25</answered>"
+                         , "    <evaluated meta=\"𝑛·1·27\" of=\"𝑛·0·8\">𝑛·1·26</evaluated>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·10\">𝑛·1·26.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·10\">𝑛·1·27.φ</boxed>"
                          , "  <normalized meta=\"𝑛·0·11\" of=\"𝑛·0·10\">𝜎1</normalized>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎1</manufactured>"
                          , "</dataize>"
@@ -2922,8 +2932,9 @@ spec = do
                          , "        <morphed meta=\"𝑛·1·25\">𝑛·1·24</morphed>"
                          , "      </morph>"
                          , "      <answered meta=\"𝑛·1·26\">𝑛·1·25</answered>"
+                         , "      <evaluated meta=\"𝑛·1·27\" of=\"𝑛·0·8\">𝑛·1·26</evaluated>"
                          , "    </evaluate>"
-                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·26.plus\">𝑛·1·23.plus</normalized>"
+                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·27.plus\">𝑛·1·23.plus</normalized>"
                          , "    <applied meta=\"𝑛·0·10\" by=\"morph\" at=\"𝑛·0·1\" of=\"𝑛·1·23.plus\"><meta attr=\"x\">𝑒·0·7</meta></applied>"
                          , "    <formed meta=\"𝑛·0·11\" of=\"𝑛·1·23.plus\"><meta attr=\"x\">𝑒·0·7</meta></formed>"
                          , "    <morphed meta=\"𝑛·0·12\">𝑛·0·11</morphed>"
@@ -2968,8 +2979,9 @@ spec = do
                          , "      <morphed meta=\"𝑛·2·19\">𝑛·2·18</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·2·20\">𝑛·2·19</answered>"
+                         , "    <evaluated meta=\"𝑛·2·21\" of=\"𝑛·0·11\">𝑛·2·20</evaluated>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·13\">𝑛·2·20.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·13\">𝑛·2·21.φ</boxed>"
                          , "  <normalized meta=\"𝑛·0·14\" of=\"𝑛·0·13\">𝜎2</normalized>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎2</manufactured>"
                          , "</dataize>"
@@ -3029,8 +3041,10 @@ spec = do
                          , "    <joined symbol=\"𝜎4\" on=\"𝛿1·1\" left=\"𝜎2\" right=\"𝜎3\"/>"
                          , "    <formed meta=\"𝑒·1·3\"><symbol attr=\"φ\">𝜎4</symbol></formed>"
                          , "    <answered meta=\"𝑛·1·3\">𝑒·1·3</answered>"
+                         , "    <formed meta=\"𝑒·1·4\" λ=\"L_fork\"><symbol attr=\"c\">𝜎1</symbol><meta attr=\"a\">𝑛·1·1</meta><meta attr=\"b\">𝑛·1·2</meta></formed>"
+                         , "    <evaluated meta=\"𝑛·1·4\" of=\"𝑒·1·4\">𝑛·1·3</evaluated>"
                          , "  </evaluate>"
-                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·3.φ\">𝜎4</normalized>"
+                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·4.φ\">𝜎4</normalized>"
                          , "  <morphed meta=\"𝑛·0·2\">𝜎4</morphed>"
                          , "</morph>"
                          ]
@@ -3058,8 +3072,10 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·3\">𝑒·1·1</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·4\">𝑛·1·3</answered>"
+                         , "    <formed meta=\"𝑒·1·2\" λ=\"L_pair\"><datum attr=\"x\">01-</datum></formed>"
+                         , "    <evaluated meta=\"𝑛·1·5\" of=\"𝑒·1·2\">𝑛·1·4</evaluated>"
                          , "  </evaluate>"
-                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·4.left\">𝜎1</normalized>"
+                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·5.left\">𝜎1</normalized>"
                          , "  <morphed meta=\"𝑛·0·2\">𝜎1</morphed>"
                          , "</morph>"
                          ]
@@ -3085,8 +3101,10 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·3\">𝑒·1·1</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·4\">𝑛·1·3</answered>"
+                         , "    <formed meta=\"𝑒·1·2\" λ=\"L_keep\"><datum attr=\"x\">01-</datum></formed>"
+                         , "    <evaluated meta=\"𝑛·1·5\" of=\"𝑒·1·2\">𝑛·1·4</evaluated>"
                          , "  </evaluate>"
-                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·4.z\">01-</normalized>"
+                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·5.z\">01-</normalized>"
                          , "  <morphed meta=\"𝑛·0·2\">01-</morphed>"
                          , "</morph>"
                          ]
@@ -3197,8 +3215,9 @@ spec = do
                          , "          <morphed meta=\"𝑛·2·24\">𝑛·2·23</morphed>"
                          , "        </morph>"
                          , "        <answered meta=\"𝑛·2·25\">𝑛·2·24</answered>"
+                         , "        <evaluated meta=\"𝑛·2·26\" of=\"𝑛·1·16\">𝑛·2·25</evaluated>"
                          , "      </evaluate>"
-                         , "      <boxed meta=\"𝑛·1·18\">𝑛·2·25.φ</boxed>"
+                         , "      <boxed meta=\"𝑛·1·18\">𝑛·2·26.φ</boxed>"
                          , "      <normalized meta=\"𝑛·1·19\" of=\"𝑛·1·18\">𝜎1</normalized>"
                          , "      <manufactured meta=\"𝛿·1·2\">𝜎1</manufactured>"
                          , "    </dataize>"
@@ -3212,8 +3231,9 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·23\">𝑛·1·22</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·24\">𝑛·1·23</answered>"
+                         , "    <evaluated meta=\"𝑛·1·25\" of=\"𝑛·0·8\">𝑛·1·24</evaluated>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·10\">𝑛·1·24.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·10\">𝑛·1·25.φ</boxed>"
                          , "  <normalized meta=\"𝑛·0·11\" of=\"𝑛·0·10\">𝜎2</normalized>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎2</manufactured>"
                          , "</dataize>"
@@ -3292,8 +3312,9 @@ spec = do
                          , "        <morphed meta=\"𝑛·1·25\">𝑛·1·24</morphed>"
                          , "      </morph>"
                          , "      <answered meta=\"𝑛·1·26\">𝑛·1·25</answered>"
+                         , "      <evaluated meta=\"𝑛·1·27\" of=\"𝑛·0·8\">𝑛·1·26</evaluated>"
                          , "    </evaluate>"
-                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·26.nope\">𝑛·1·23.nope</normalized>"
+                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·27.nope\">𝑛·1·23.nope</normalized>"
                          , "    <morphed meta=\"𝑛·0·10\">𝑛·1·23.nope</morphed>"
                          , "  </morph>"
                          , "  <unanswered λ=\"L_number_nope\" by=\"dataize\">𝑛·1·23.nope</unanswered>"
@@ -3387,8 +3408,9 @@ spec = do
                          , "        <morphed meta=\"𝑛·1·25\">𝑛·1·24</morphed>"
                          , "      </morph>"
                          , "      <answered meta=\"𝑛·1·26\">𝑛·1·25</answered>"
+                         , "      <evaluated meta=\"𝑛·1·27\" of=\"𝑛·0·8\">𝑛·1·26</evaluated>"
                          , "    </evaluate>"
-                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·26.nope\">𝑛·1·23.nope</normalized>"
+                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·27.nope\">𝑛·1·23.nope</normalized>"
                          , "    <morphed meta=\"𝑛·0·10\">𝑛·1·23.nope</morphed>"
                          , "  </morph>"
                          , "  <unanswered λ=\"L_number_nope\" by=\"dataize\">𝑛·1·23.nope</unanswered>"
@@ -3416,6 +3438,9 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·3\">𝜎1</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·4\">𝜎1</answered>"
+                         , "    <formed meta=\"𝑒·1·1\"/>"
+                         , "    <formed meta=\"𝑒·1·2\" λ=\"L_pick\"><meta attr=\"here\">𝑒·1·1</meta></formed>"
+                         , "    <evaluated meta=\"𝑛·1·5\" of=\"𝑒·1·2\">𝜎1</evaluated>"
                          , "  </evaluate>"
                          , "  <opaque symbol=\"𝜎1\" by=\"morph\">𝜎1.foo</opaque>"
                          , "</morph>"
@@ -3550,7 +3575,8 @@ spec = do
                        , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
                        , "        morphed 𝑛·1·25 := 𝑛·1·24"
                        , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·26.nope"
+                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·27.nope"
                        , "    morphed 𝑛·0·10 := L_number_nope:λ"
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
@@ -3949,7 +3975,8 @@ spec = do
                      , "      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
                      , "      morphed 𝑛·1·25 := 𝑛·1·24"
                      , "    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                     , "  normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·26.plus"
+                     , "    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·6"
+                     , "  normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·27.plus"
                      , "  𝑛·0·8 := 𝑛·1·23.plus( x ↦ 7.0 )"
                      , "  𝑛·0·9 := ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
                      , "  morphed 𝑛·0·10 := 𝑛·0·9"
@@ -4227,7 +4254,7 @@ spec = do
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
         records <- recordedWith (joining <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
-        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·2·6</meta></with></deferred>"]
+        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·2·7</meta></with></deferred>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"

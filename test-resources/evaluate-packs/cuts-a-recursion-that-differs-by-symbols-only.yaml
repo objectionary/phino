@@ -41,6 +41,7 @@ protocol: |
         morphed 𝑛·1·4 := 𝑛·1·3
       𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
       remembered 𝑛·1·3 ≡ 𝑛·0·3
+      evaluated 𝑛·1·6 := 𝑛·1·3  # 𝑛·0·3
     recalled 𝑛·1·3 ⇒ 𝑛·0·3
     recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ 𝜎1:λ )
     recalled 𝑛·0·1 ⇒ Φ.down

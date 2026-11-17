@@ -58,5 +58,6 @@ protocol: |
         𝑛·1·19 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧
         morphed 𝑛·1·20 := 𝑛·1·19
       𝑛·1·21 := 𝑛·1·20  # 𝕄(𝑛·1·17)
-    normalized 𝑛·0·7 := 𝜎2:λ  # 𝑛·1·21.φ
+      evaluated 𝑛·1·22 := 𝑛·1·21  # 𝑛·0·6
+    normalized 𝑛·0·7 := 𝜎2:λ  # 𝑛·1·22.φ
     morphed 𝑛·0·8 := 𝑛·0·7

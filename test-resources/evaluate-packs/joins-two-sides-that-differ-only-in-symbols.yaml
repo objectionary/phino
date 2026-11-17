@@ -82,7 +82,8 @@ protocol: |
         𝑛·1·25 := ⟦ φ ↦ 𝜎1:λ, if(then, else) ↦ L_fork:λ ⟧
         morphed 𝑛·1·26 := 𝑛·1·25
       𝑛·1·27 := 𝑛·1·26  # 𝕄(𝑛·1·22)
-    normalized 𝑛·0·7 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·27.if
+      evaluated 𝑛·1·28 := 𝑛·1·27  # 𝑛·0·6
+    normalized 𝑛·0·7 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·28.if
     𝑛·0·8 := 𝑛·1·24.if( then ↦ 1.0.plus( 2.0 ).plus( 𝑛·1·12 ) )
     𝑛·0·9 := ⟦ then ↦ 1.0.plus( 2.0 ).plus( 𝑛·1·12 ), else ↦ ∅, λ ⤍ L_fork ⟧
     𝑛·0·10 := 𝑛·0·8( else ↦ 3.0.plus( 4.0 ).plus( 𝑛·1·12 ) )
@@ -140,7 +141,8 @@ protocol: |
             𝑛·3·23 := ⟦ φ ↦ 𝜎2:λ, gt(x) ↦ L_number_gt:λ, plus(x) ↦ L_number_plus:λ ⟧
             morphed 𝑛·3·24 := 𝑛·3·23
           𝑛·3·25 := 𝑛·3·24  # 𝕄(𝑛·3·21)
-        normalized 𝑛·2·11 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·3·25.plus
+          evaluated 𝑛·3·26 := 𝑛·3·25  # 𝑛·2·10
+        normalized 𝑛·2·11 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·3·26.plus
         𝑛·2·12 := 𝑛·3·22.plus( x ↦ 𝑛·1·12 )
         𝑛·2·13 := ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·14 := 𝑛·2·13
@@ -187,12 +189,14 @@ protocol: |
             𝑛·4·23 := ⟦ φ ↦ 𝜎3:λ, gt(x) ↦ L_number_gt:λ, plus(x) ↦ L_number_plus:λ ⟧
             morphed 𝑛·4·24 := 𝑛·4·23
           𝑛·4·25 := 𝑛·4·24  # 𝕄(𝑛·4·21)
-        normalized 𝑛·2·20 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·4·25.plus
+          evaluated 𝑛·4·26 := 𝑛·4·25  # 𝑛·2·19
+        normalized 𝑛·2·20 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·4·26.plus
         𝑛·2·21 := 𝑛·4·22.plus( x ↦ 𝑛·1·12 )
         𝑛·2·22 := ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·23 := 𝑛·2·22
       joined 𝜎4 := 𝛿1·2 ? 𝜎2 : 𝜎3
       𝑛·2·24 := ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧
+      evaluated 𝑛·2·25 := ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧  # 𝑛·0·11
     𝔼(L_number_plus):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
@@ -224,5 +228,6 @@ protocol: |
         𝑛·5·18 := ⟦ φ ↦ 𝜎5:λ, gt(x) ↦ L_number_gt:λ, plus(x) ↦ L_number_plus:λ ⟧
         morphed 𝑛·5·19 := 𝑛·5·18
       𝑛·5·20 := 𝑛·5·19  # 𝕄(𝑛·5·16)
-    normalized 𝑛·0·12 := 𝜎5:λ  # 𝑛·5·20.φ
+      evaluated 𝑛·5·21 := 𝑛·5·20  # ⟦ x ↦ 𝑛·5·6, λ ⤍ L_number_plus ⟧
+    normalized 𝑛·0·12 := 𝜎5:λ  # 𝑛·5·21.φ
     morphed 𝑛·0·13 := 𝑛·0·12

@@ -51,5 +51,6 @@ protocol: |
         𝑛·1·13 := ⟦ φ ↦ 𝜎6:λ, plus(x) ↦ L_number_plus:λ ⟧
         morphed 𝑛·1·14 := 𝑛·1·13
       𝑛·1·15 := 𝑛·1·14  # 𝕄(𝑛·1·11)
-    normalized 𝑛·0·7 := 𝜎6:λ  # 𝑛·1·15.φ
+      evaluated 𝑛·1·16 := 𝑛·1·15  # 𝑛·0·6
+    normalized 𝑛·0·7 := 𝜎6:λ  # 𝑛·1·16.φ
     morphed 𝑛·0·8 := 𝑛·0·7

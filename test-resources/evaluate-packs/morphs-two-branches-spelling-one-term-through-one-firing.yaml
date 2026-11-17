@@ -86,7 +86,8 @@ protocol: |
         morphed 𝑛·1·26 := 𝑛·1·25
       𝑛·1·27 := 𝑛·1·26  # 𝕄(𝑛·1·22)
       memoized 𝑛·0·6 ⇛ 𝑛·1·27
-    normalized 𝑛·0·7 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·27.if
+      evaluated 𝑛·1·28 := 𝑛·1·27  # 𝑛·0·6
+    normalized 𝑛·0·7 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·28.if
     𝑛·0·8 := 𝑛·1·24.if( then ↦ 1.0.plus( 2.0 ).plus( 3.0 ) )
     𝑛·0·9 := ⟦ then ↦ 1.0.plus( 2.0 ).plus( 3.0 ), else ↦ ∅, λ ⤍ L_fork ⟧
     𝑛·0·10 := 𝑛·0·8( else ↦ 1.0.plus( 2.0 ).plus( 3.0 ) )
@@ -145,7 +146,8 @@ protocol: |
             morphed 𝑛·3·24 := 𝑛·3·23
           𝑛·3·25 := 𝑛·3·24  # 𝕄(𝑛·3·21)
           memoized 𝑛·2·10 ⇛ 𝑛·3·25
-        normalized 𝑛·2·11 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·3·25.plus
+          evaluated 𝑛·3·26 := 𝑛·3·25  # 𝑛·2·10
+        normalized 𝑛·2·11 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·3·26.plus
         𝑛·2·12 := 𝑛·3·22.plus( x ↦ 3.0 )
         𝑛·2·13 := ⟦ x ↦ 3.0, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·14 := 𝑛·2·13
@@ -160,7 +162,8 @@ protocol: |
           recalled 𝑛·2·10 ⇒ 𝑛·3·25
           𝑛·4·1 := 𝑛·3·22  # 𝑛 of L_number_plus
           𝑛·4·2 := 𝑛·3·25  # 𝕄(𝑛·4·1)
-        normalized 𝑛·2·20 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·4·2.plus
+          evaluated 𝑛·4·3 := 𝑛·4·2  # 𝑛·2·19
+        normalized 𝑛·2·20 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·4·3.plus
         𝑛·2·21 := 𝑛·3·22.plus( x ↦ 3.0 )
         𝑛·2·22 := ⟦ x ↦ 3.0, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·23 := 𝑛·2·22
@@ -170,6 +173,7 @@ protocol: |
         morphed 𝑛·2·25 := 𝑛·2·22
       𝑛·2·26 := 𝑛·2·22  # 𝕄(𝑛·2·24)
       memoized 𝑛·0·11 ⇛ 𝑛·2·22
+      evaluated 𝑛·2·27 := 𝑛·2·22  # 𝑛·0·11
     𝔼(L_number_plus):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
@@ -202,7 +206,8 @@ protocol: |
         morphed 𝑛·5·19 := 𝑛·5·18
       𝑛·5·20 := 𝑛·5·19  # 𝕄(𝑛·5·16)
       memoized 𝑛·2·22 ⇛ 𝑛·5·20
-    normalized 𝑛·0·12 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·5·20.plus
+      evaluated 𝑛·5·21 := 𝑛·5·20  # 𝑛·2·22
+    normalized 𝑛·0·12 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·5·21.plus
     𝑛·0·13 := 𝑛·5·17.plus( x ↦ 9.0 )
     𝑛·0·14 := ⟦ x ↦ 9.0, λ ⤍ L_number_plus ⟧
     morphed 𝑛·0·15 := 𝑛·0·14
