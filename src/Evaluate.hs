@@ -81,6 +81,7 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       answer <- adopted caller kin form
       shown (caller._nesting + 1) answer
+      closed answer
       pure (ended answer, state)
     made :: Lambda -> IO (Expression, State)
     made entry = do
@@ -100,6 +101,7 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
           when (isJust caller._memo) (caller._saveEval (EvMemoized (caller._nesting + 1) form (ended answer)))
+          closed answer
           pure (ended answer, state')
         Left failure -> do
           exhausted' <- starved caller._memo
@@ -184,6 +186,7 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
     told (Answered answer) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       recited (caller._nesting + 1) form answer
+      closed answer
       pure (ended answer, state)
     told (Looped term) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -193,6 +196,8 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       caller._saveEval (EvStall (caller._nesting + 1) name)
       throwIO (Stuck name)
+    closed :: Answer -> IO ()
+    closed answer = caller._saveEval (EvEvaluated (caller._nesting + 1) form (ended answer))
     recited :: Int -> Expression -> Answer -> IO ()
     recited depth term answer = do
       caller._saveEval (EvRecalled depth term (ended answer))

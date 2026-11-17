@@ -87,7 +87,8 @@ protocol: |
         morphed 𝑛·1·26 := 𝑛·1·25
       𝑛·1·27 := 𝑛·1·26  # 𝕄(𝑛·1·22)
       memoized 𝑛·0·7 ⇛ 𝑛·1·27
-    normalized 𝑛·0·8 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·27.if
+      evaluated 𝑛·1·28 := 𝑛·1·27  # 𝑛·0·7
+    normalized 𝑛·0·8 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·28.if
     𝑛·0·9 := 𝑛·1·24.if( then ↦ 1.0.plus( 2.0 ).plus( 𝑛·1·12 ) )
     𝑛·0·10 := ⟦ then ↦ 1.0.plus( 2.0 ).plus( 𝑛·1·12 ), else ↦ ∅, λ ⤍ L_fork ⟧
     𝑛·0·11 := 𝑛·0·9( else ↦ 3.0.plus( 4.0 ).plus( 𝑛·1·12 ) )
@@ -146,7 +147,8 @@ protocol: |
             morphed 𝑛·3·24 := 𝑛·3·23
           𝑛·3·25 := 𝑛·3·24  # 𝕄(𝑛·3·21)
           memoized 𝑛·2·10 ⇛ 𝑛·3·25
-        normalized 𝑛·2·11 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·3·25.plus
+          evaluated 𝑛·3·26 := 𝑛·3·25  # 𝑛·2·10
+        normalized 𝑛·2·11 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·3·26.plus
         𝑛·2·12 := 𝑛·3·22.plus( x ↦ 𝑛·1·12 )
         𝑛·2·13 := ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·14 := 𝑛·2·13
@@ -194,13 +196,15 @@ protocol: |
             morphed 𝑛·4·24 := 𝑛·4·23
           𝑛·4·25 := 𝑛·4·24  # 𝕄(𝑛·4·21)
           memoized 𝑛·2·19 ⇛ 𝑛·4·25
-        normalized 𝑛·2·20 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·4·25.plus
+          evaluated 𝑛·4·26 := 𝑛·4·25  # 𝑛·2·19
+        normalized 𝑛·2·20 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·4·26.plus
         𝑛·2·21 := 𝑛·4·22.plus( x ↦ 𝑛·1·12 )
         𝑛·2·22 := ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧
         morphed 𝑛·2·23 := 𝑛·2·22
       joined 𝜎4 := 𝛿1·2 ? 𝜎2 : 𝜎3
       𝑛·2·24 := ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧
       memoized 𝑛·0·12 ⇛ ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧
+      evaluated 𝑛·2·25 := ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧  # 𝑛·0·12
     𝔼(L_number_plus):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
@@ -233,7 +237,8 @@ protocol: |
         morphed 𝑛·5·19 := 𝑛·5·18
       𝑛·5·20 := 𝑛·5·19  # 𝕄(𝑛·5·16)
       memoized 𝑛·5·21 ⇛ 𝑛·5·20  # ⟦ x ↦ 𝑛·5·6, λ ⤍ L_number_plus ⟧
-    normalized 𝑛·0·13 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·5·20.plus
+      evaluated 𝑛·5·22 := 𝑛·5·20  # 𝑛·5·21
+    normalized 𝑛·0·13 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·5·22.plus
     𝑛·0·14 := 𝑛·5·17.plus( x ↦ Φ.f )
     𝑛·0·15 := ⟦ x ↦ Φ.f, λ ⤍ L_number_plus ⟧
     𝔼(L_number_plus):
@@ -258,7 +263,8 @@ protocol: |
             recalled 𝑛·0·7 ⇒ 𝑛·1·27
             𝑛·7·1 := 𝑛·2·1  # 𝑛 of L_number_gt
             𝑛·7·2 := 𝑛·1·27  # 𝕄(𝑛·7·1)
-          normalized 𝑛·6·12 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·7·2.if
+            evaluated 𝑛·7·3 := 𝑛·7·2  # 𝑛·6·11
+          normalized 𝑛·6·12 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·7·3.if
           𝑛·6·13 := 𝑛·2·1.if( then ↦ 𝑛·3·1.plus( 𝑛·3·11 ).plus( 𝑛·5·6 ) )
           𝑛·6·14 := ⟦ then ↦ 𝑛·3·1.plus( 𝑛·3·11 ).plus( 𝑛·5·6 ), else ↦ ∅, λ ⤍ L_fork ⟧
           𝑛·6·15 := 𝑛·6·13( else ↦ 𝑛·4·1.plus( 𝑛·4·11 ).plus( 𝑛·5·6 ) )
@@ -267,11 +273,13 @@ protocol: |
         𝔼(L_fork):
           recalled 𝑛·0·12 ⇒ ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧
           𝑛·8·1 := 𝑛·5·21
+          evaluated 𝑛·8·2 := 𝑛·5·21  # 𝑛·6·16
         𝔼(L_number_plus):
           recalled 𝑛·5·21 ⇒ 𝑛·5·20
           𝑛·9·1 := 𝑛·6·1  # 𝑛 of L_number_plus
           𝑛·9·2 := 𝑛·5·20  # 𝕄(𝑛·9·1)
-        boxed 𝑛·6·18 := 𝑛·9·2.φ
+          evaluated 𝑛·9·3 := 𝑛·9·2  # 𝑛·5·21
+        boxed 𝑛·6·18 := 𝑛·9·3.φ
         𝛿·6·2 := 𝔻(𝜎5:λ)
       𝛿2·6 := 𝛿·6·2  # 𝔻(ξ.x)
       𝑛·6·19 := Φ.number( φ ↦ 𝜎6:λ )  # 𝑛 of L_number_plus
@@ -281,5 +289,6 @@ protocol: |
         morphed 𝑛·6·22 := 𝑛·6·21
       𝑛·6·23 := 𝑛·6·22  # 𝕄(𝑛·6·19)
       memoized 𝑛·0·15 ⇛ 𝑛·6·23
-    normalized 𝑛·0·16 := 𝜎6:λ  # 𝑛·6·23.φ
+      evaluated 𝑛·6·24 := 𝑛·6·23  # 𝑛·0·15
+    normalized 𝑛·0·16 := 𝜎6:λ  # 𝑛·6·24.φ
     morphed 𝑛·0·17 := 𝑛·0·16

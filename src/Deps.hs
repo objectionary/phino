@@ -165,6 +165,7 @@ data Evaluation
   | EvTaken Int Expression
   | EvRemembered Int Expression Expression
   | EvMemoized Int Expression Expression
+  | EvEvaluated Int Expression Expression
   | EvRecalled Int Expression Expression
   | EvRenamed Int Expression Expression Expression [(Int, Int)]
   | EvWorld Expression
@@ -242,6 +243,7 @@ tier (EvFabricated depth _ _ _ _) = depth
 tier (EvTaken depth _) = depth
 tier (EvRemembered depth _ _) = depth
 tier (EvMemoized depth _ _) = depth
+tier (EvEvaluated depth _ _) = depth
 tier (EvRecalled depth _ _) = depth
 tier (EvRenamed depth _ _ _ _) = depth
 tier EvWorld{} = maxBound
@@ -577,6 +579,9 @@ saveEval handle cursor printed printed' report = do
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s" naming value)))
     written at (EvRemembered _ object source) protocol = stating at "remembered" "≡" object source protocol
     written at (EvMemoized _ form reply) protocol = stating at "memoized" "⇛" form reply protocol
+    written at (EvEvaluated _ form reply) protocol = do
+      origin <- render form
+      second (fmap (`remarked` [origin])) <$> concluding at "evaluated" reply protocol
     written at (EvRecalled _ term reply) protocol = do
       (known, given) <- maybe ((,) <$> render term <*> render reply) pure (statement term reply protocol._stated)
       pure (protocol, Just (indented at (printf "recalled %s ⇒ %s" known given)))
@@ -910,6 +915,7 @@ saveEvalXml handle cursor printed report = do
     elements at (EvTaken depth term) nesting = placed at nesting (concluded "answered" "" depth term)
     elements at (EvRemembered depth object source) nesting = placed at nesting (attesting "remembered" depth nesting object source)
     elements at (EvMemoized depth form reply) nesting = placed at nesting (attesting "memoized" depth nesting form reply)
+    elements at (EvEvaluated depth form reply) nesting = placed at nesting (leaf depth form >>= \origin -> concluded "evaluated" (printf " of=\"%s\"" (escapeXML origin)) depth reply)
     elements at (EvRecalled depth term reply) nesting =
       placed at nesting $ do
         (asked, given) <- maybe ((,) <$> leaf depth term <*> leaf depth reply) pure (statement term reply nesting._attested)

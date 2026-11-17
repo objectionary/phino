@@ -269,7 +269,8 @@ spec = do
           , "          𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
           , "          morphed 𝑛·1·25 := 𝑛·1·24"
           , "        𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-          , "      normalized 𝑛·0·9 := ⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧  # 𝑛·1·26.nope"
+          , "        evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+          , "      normalized 𝑛·0·9 := ⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧  # 𝑛·1·27.nope"
           , "      morphed 𝑛·0·10 := ⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧"
           , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧)"
           ]

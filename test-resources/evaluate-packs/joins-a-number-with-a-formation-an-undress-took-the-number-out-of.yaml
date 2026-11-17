@@ -54,7 +54,8 @@ protocol: |
       𝑛4·1 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎3:λ ), neg ↦ ρ:φ ⟧  # symbolize(𝑛2 of L_fork)
       joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3
       𝑛·1·10 := ⟦ φ ↦ Φ.bytes( φ ↦ 𝜎4:λ ), neg ↦ ρ:φ ⟧
-    normalized 𝑛·0·1 := Φ.bytes( φ ↦ 𝜎4:λ )  # 𝑛·1·10.φ
+      evaluated 𝑛·1·11 := 𝑛·1·10  # ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ 𝑛·1·2, right🌵 ↦ 𝑛·1·5 ⟧
+    normalized 𝑛·0·1 := Φ.bytes( φ ↦ 𝜎4:λ )  # 𝑛·1·11.φ
     normalized 𝑛·0·2 := ∅:φ  # Φ.bytes
     𝑛·0·3 := Φ.bytes( φ ↦ 𝜎4:λ )
     𝑛·0·4 := 𝜎4:λ:φ

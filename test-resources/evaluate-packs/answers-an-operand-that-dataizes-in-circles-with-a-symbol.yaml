@@ -49,5 +49,6 @@ protocol: |
       𝕄(𝑛·1·11):
         morphed 𝑛·1·12 := 𝜎2:λ:bar
       𝑛·1·13 := 𝑛·1·12  # 𝕄(𝑛·1·11)
-    normalized 𝑛·0·1 := 𝜎2:λ  # 𝑛·1·13.bar
+      evaluated 𝑛·1·14 := 𝑛·1·13  # ⟦ arg ↦ Φ.cyc( 𝑛·1·10 ), λ ⤍ L_outer ⟧
+    normalized 𝑛·0·1 := 𝜎2:λ  # 𝑛·1·14.bar
     morphed 𝑛·0·2 := 𝑛·0·1

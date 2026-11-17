@@ -602,6 +602,11 @@ in `of` of `<normalized>` in the markup, the universe spelled `Φ` (#2366). It
 writes nothing where the term is the one it came from, with or without the
 arguments the normalization dropped, and nothing where the term is one an
 earlier line named, since the line would only repeat that name.
+A firing that answered, made, recalled from the memo or renamed, closes its
+block the same way, as `evaluated 𝑛·1·5 := 𝜎1:λ  # 𝑛·0·7` (`EvEvaluated`,
+`closed` of `symbol` in `Evaluate.hs`, issue #2406), with the formation fired
+in the comment and in `of` of `<evaluated>` in the markup, so a line after the
+block is plainly not part of the firing; a firing with no answer writes none.
 A cut is a line too,
 `looped …` (`EvLooped`), written by `enter` where the refused frame would have
 opened, carrying the formation its ancestor entered (#1434) and naming the mode

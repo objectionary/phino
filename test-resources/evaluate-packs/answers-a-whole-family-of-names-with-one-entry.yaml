@@ -64,7 +64,8 @@ protocol: |
         𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧
         morphed 𝑛·1·25 := 𝑛·1·24
       𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)
-    normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·1·26.times
+      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·6
+    normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·1·27.times
     𝑛·0·8 := 𝑛·1·23.times( x ↦ 7.0 )
     𝑛·0·9 := ⟦ x ↦ 7.0, λ ⤍ L_number_times ⟧
     𝔼(L_number_times):
@@ -98,5 +99,6 @@ protocol: |
         𝑛·2·18 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧
         morphed 𝑛·2·19 := 𝑛·2·18
       𝑛·2·20 := 𝑛·2·19  # 𝕄(𝑛·2·16)
-    normalized 𝑛·0·10 := 𝜎2:λ  # 𝑛·2·20.φ
+      evaluated 𝑛·2·21 := 𝑛·2·20  # 𝑛·0·9
+    normalized 𝑛·0·10 := 𝜎2:λ  # 𝑛·2·21.φ
     morphed 𝑛·0·11 := 𝑛·0·10

@@ -89,7 +89,8 @@ protocol: |
             𝑛·2·23 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧
             morphed 𝑛·2·24 := 𝑛·2·23
           𝑛·2·25 := 𝑛·2·24  # 𝕄(𝑛·2·21)
-        boxed 𝑛·1·18 := 𝑛·2·25.φ
+          evaluated 𝑛·2·26 := 𝑛·2·25  # 𝑛·1·16
+        boxed 𝑛·1·18 := 𝑛·2·26.φ
         normalized 𝑛·1·19 := 𝜎1:λ  # 𝑛·1·18
         𝛿·1·2 := 𝔻(𝜎1:λ)
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
@@ -99,7 +100,8 @@ protocol: |
         𝑛·1·22 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧
         morphed 𝑛·1·23 := 𝑛·1·22
       𝑛·1·24 := 𝑛·1·23  # 𝕄(𝑛·1·20)
-    normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·24.plus
+      evaluated 𝑛·1·25 := 𝑛·1·24  # 𝑛·0·6
+    normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·25.plus
     𝑛·0·8 := 𝑛·1·21.plus( x ↦ 8.0 )
     𝑛·0·9 := ⟦ x ↦ 8.0, λ ⤍ L_number_plus ⟧
     morphed 𝑛·0·10 := 𝑛·0·9

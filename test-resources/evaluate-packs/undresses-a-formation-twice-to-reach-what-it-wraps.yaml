@@ -36,5 +36,6 @@ protocol: |
       𝕄(𝑛·1·7):
         morphed 𝑛·1·8 := 𝑛·1·6
       𝑛·1·9 := 𝑛·1·8  # 𝕄(𝑛·1·7)
-    normalized 𝑛·0·1 := ∅:k  # 𝑛·1·9.t
+      evaluated 𝑛·1·10 := 𝑛·1·9  # ⟦ λ ⤍ L_peel, x ↦ 𝑛·1·1 ⟧
+    normalized 𝑛·0·1 := ∅:k  # 𝑛·1·10.t
     morphed 𝑛·0·2 := 𝑛·0·1
