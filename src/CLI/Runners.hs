@@ -31,6 +31,7 @@ import Evaluate (evaluation)
 import Files (overwrite)
 import qualified Filter as F
 import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules, explainRules)
+import Locator (withLocatedExpression)
 import Logger
 import Margin (defaultMargin)
 import Merge (merge)
@@ -199,14 +200,18 @@ runDataize args OptsDataize{..} = do
           started universe aiming
           (,universe,aiming._locator) <$> dataize universe emptyState aiming
       )
+  printed <-
+    if _quiet
+      then pure Nothing
+      else Just <$> printOutcome printCtx (resolvedAnswer foc aim universe chain excluded included) outcome
   when _sequence (exclude chain >>= include >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (filteredAt aim universe excluded included) outcome >>= putStrLn)
+  mapM_ putStrLn printed
   where
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
-    printOutcome ctx narrowed (Residual residue) = do
+    printOutcome ctx resolve (Residual residue) = do
       logDebug "Dataization got stuck on a λ function that cannot fire, printing the residual program (--partial)"
-      answer <- narrowed residue
+      answer <- resolve residue
       validateXmirTopLevel _outputFormat answer
       printAnswer ctx answer
     validateOpts :: IO ()
@@ -291,18 +296,12 @@ runMorph args OptsMorph{..} = do
     if _quiet
       then pure Nothing
       else do
-        answer <-
-          if foc == ExRoot
-            then filteredAt aim universe excluded included morphed
-            else F.exclude' (maybe morphed fst (lastMaybe chain)) excluded >>= (`F.include'` included)
+        answer <- resolvedAnswer foc aim universe chain excluded included morphed
         validateXmirTopLevel _outputFormat answer
         Just <$> printAnswer printCtx answer
   when _sequence (exclude chain >>= include >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
   mapM_ putStrLn printed
   where
-    lastMaybe :: [a] -> Maybe a
-    lastMaybe [] = Nothing
-    lastMaybe items = Just (last items)
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions
@@ -462,3 +461,15 @@ runCompile OptsCompile{..} = do
       if found
         then pure (Just full)
         else if parent == full then pure Nothing else projectRootOf parent
+
+resolvedAnswer :: Expression -> Expression -> Expression -> [(Expression, b)] -> [Expression] -> [Expression] -> Expression -> IO Expression
+resolvedAnswer foc aim universe chain excluded included expr =
+  if foc == ExRoot
+    then filteredAt aim universe excluded included expr
+    else do
+      located <- withLocatedExpression aim expr (maybe universe fst (lastMaybe chain))
+      F.exclude' located excluded >>= (`F.include'` included)
+
+lastMaybe :: [a] -> Maybe a
+lastMaybe [] = Nothing
+lastMaybe items = Just (last items)
