@@ -379,6 +379,9 @@ optSeed =
 optSugar :: Parser SugarType
 optSugar = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-expressions using syntax sugar" _intermediateOptions))
 
+optCheat :: Parser Bool
+optCheat = switch (long "cheat" <> help "Let normalization take shortcuts its rules do not spell, such as dropping a ρ applied to a term that already ends with one; the steps then differ from what the rules prescribe")
+
 optHideRho :: Parser Bool
 optHideRho = switch (long "hide-rho" <> help "Remove every ρ binding from result and intermediate 𝜑-expressions for cleaner output")
 
@@ -449,6 +452,7 @@ dataizeParser =
             <*> optHeaders
             <*> optCanonize
             <*> optDepthSensitive
+            <*> optCheat
             <*> optShuffle
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
@@ -502,6 +506,7 @@ morphParser =
             <*> optHeaders
             <*> optCanonize
             <*> optDepthSensitive
+            <*> optCheat
             <*> optShuffle
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
@@ -555,6 +560,7 @@ rewriteParser =
             <*> optOmitListing
             <*> optOmitComments
             <*> optDepthSensitive
+            <*> optCheat
             <*> optNonumber
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> switch (long "update" <> help "Skip rewriting if --target file is newer than the input file")

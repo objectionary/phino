@@ -264,7 +264,7 @@ spec = do
 
   describe "morphing 'md' is disjoint from 'ml'" $ do
     ctx <- runIO (defaultReduceContext ExRoot)
-    let rctx = RuleContext (execBuildTerm ExRoot ctx) Nothing (_normal linked)
+    let rctx = RuleContext (execBuildTerm ExRoot ctx) Nothing (_normal linked) False
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule

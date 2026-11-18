@@ -857,7 +857,7 @@ inferred expr univ state ctx rules = do
   where
     go :: [In.Inference value] -> IO (Maybe (In.Premises value))
     go [] = pure Nothing
-    go (rule : rest) = rule (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal) expr univ >>= maybe (go rest) (pure . Just)
+    go (rule : rest) = rule (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal False) expr univ >>= maybe (go rest) (pure . Just)
     premised :: State -> In.Premises value -> IO (In.Conclusion value, State)
     premised state' (In.Concludes conclusion) = pure (conclusion, state')
     premised state' (In.Morphs term world next) = do

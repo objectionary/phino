@@ -467,6 +467,22 @@ and holds only the attributes it binds anew (`copied`); the world is the
 normalized universe, which `universed` of `Morph.hs` hands to the writers as
 `EvWorld` and the text writer ignores.
 
+### Cheating
+
+By default normalization does what the rules say, step by step, so a run
+printed with `--sequence` or as LaTeX shows every step the rules prescribe.
+Given `--cheat`, the `rewrite`, `morph` and `dataize` commands let it take
+shortcuts no rule spells (`cheat` of `Engine.hs`, `cheating` and `cheated` of
+`Rewriter.hs`, `_cheat` of `RuleContext`). The only one so far drops a ρ a
+step applies to a term already ending with one, so `dot` makes
+`𝑒1(ρ ↦ 𝑒2)` and not `𝑒1(ρ ↦ 𝑒2)(ρ ↦ 𝑒3)`, since the inner ρ always wins
+through `copy`, `stay` or `skip`. Without it a body such as `Φ.outer(ρ ↦ X)`
+taken out of a fabricated formation gains a ρ holding that formation every
+time, and the tree doubles per `dot` (#2415). It works on what a step built,
+in `interpreted` and `direct` alike, so both engines cheat the same. The
+builder turning `Φ(ρ ↦ 𝑒)` into `Φ` is no cheat and stays on: neither the
+parser nor the XMIR reader accepts `Φ(ρ ↦ 𝑒)` (#1378).
+
 ### Dependency inversion for circular imports
 
 `Deps.hs` exists solely to break the cycle

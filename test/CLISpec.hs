@@ -253,6 +253,22 @@ spec = do
           ["--pin=" ++ showVersion version, "--pin-file=" ++ file, "rewrite"]
           ["[ERROR]: Invalid option `--pin-file=" ++ file ++ "'"]
 
+  describe "--cheat" $ do
+    it "drops a ρ applied to a term that already ends with one" $
+      withStdin "[[ a -> Q.x(^ -> [[ ]]), b -> [[ ]] ]].a" $
+        testCLISucceeded ["rewrite", "--normalize", "--flat", "--sweet", "--cheat"] ["Φ.x( ρ ↦ ⟦⟧ )"]
+    it "keeps every ρ the rules prescribe without it" $
+      withStdin "[[ a -> Q.x(^ -> [[ ]]), b -> [[ ]] ]].a" $
+        testCLISucceeded ["rewrite", "--normalize", "--flat", "--sweet"] ["Φ.x( ρ ↦ ⟦⟧, ρ ↦ ⟦ a ↦ Φ.x( ρ ↦ ⟦⟧ ), b ↦ ⟦⟧ ⟧ )"]
+    it "keeps the terms of nested forks small while dataizing" $
+      withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
+        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
+          testCLISucceeded ["dataize", "--cheat", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["00-"]
+    it "lets the terms of nested forks grow while dataizing without it" $
+      withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
+        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
+          testCLIFailed ["dataize", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["--max-nodes=5000"]
+
   describe "--hide-rho" $
     forM_
       [

@@ -107,6 +107,7 @@ data OptsDataize = OptsDataize
   , _headers :: Bool
   , _canonize :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _shuffle :: Bool
   , _seed :: Int
   , _quiet :: Bool
@@ -157,6 +158,7 @@ data OptsMorph = OptsMorph
   , _headers :: Bool
   , _canonize :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _shuffle :: Bool
   , _seed :: Int
   , _quiet :: Bool
@@ -220,6 +222,7 @@ data OptsRewrite = OptsRewrite
   , _omitListing :: Bool
   , _omitComments :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _nonumber :: Bool
   , _inPlace :: Bool
   , _update :: Bool
