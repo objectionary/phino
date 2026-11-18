@@ -356,6 +356,8 @@ A protocol may hold these lines:
   commented with `𝕄(𝑛·1·1)` is its normal form.
 * `boxed …` is dataization stepping into the `φ` of a formation.
 * `undressed …` is an `undress` line taking the `φ` of a formation.
+* `shared 𝑛·1 := …` names an argument a recursion keeps wrapping, so later
+  lines spell it by that name.
 * `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.
