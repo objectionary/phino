@@ -543,33 +543,33 @@ spec = do
           actual.func `shouldBe` "fn"
         _ -> expectationFailure "Expected PA_LAMBDA"
       case pairLambda' of
-        actual@PA_LAMBDA{} ->
+        actual@PA_LAMBDA'{} ->
           actual.func `shouldBe` "fn"
-        _ -> expectationFailure "Expected PA_LAMBDA"
+        _ -> expectationFailure "Expected PA_LAMBDA'"
       case pairMetaLambda of
         actual@PA_META_LAMBDA{} ->
           actual.meta `shouldBe` metaVal
         _ -> expectationFailure "Expected PA_META_LAMBDA"
       case pairMetaLambda' of
-        actual@PA_META_LAMBDA{} ->
+        actual@PA_META_LAMBDA'{} ->
           actual.meta `shouldBe` metaVal
-        _ -> expectationFailure "Expected PA_META_LAMBDA"
+        _ -> expectationFailure "Expected PA_META_LAMBDA'"
       case pairDelta of
         actual@PA_DELTA{} ->
           actual.bytes `shouldBe` BT_ONE "40"
         _ -> expectationFailure "Expected PA_DELTA"
       case pairDelta' of
-        actual@PA_DELTA{} ->
+        actual@PA_DELTA'{} ->
           actual.bytes `shouldBe` BT_ONE "40"
-        _ -> expectationFailure "Expected PA_DELTA"
+        _ -> expectationFailure "Expected PA_DELTA'"
       case pairMetaDelta of
         actual@PA_META_DELTA{} ->
           actual.meta `shouldBe` metaVal
         _ -> expectationFailure "Expected PA_META_DELTA"
       case pairMetaDelta' of
-        actual@PA_META_DELTA{} ->
+        actual@PA_META_DELTA'{} ->
           actual.meta `shouldBe` metaVal
-        _ -> expectationFailure "Expected PA_META_DELTA"
+        _ -> expectationFailure "Expected PA_META_DELTA'"
       shouldShowAndEqSelf "PA_TAU" pairTau
       shouldShowAndEqSelf "PA_ALPHA" pairAlpha
       shouldShowAndEqSelf "PA_FORMATION" pairFormation
