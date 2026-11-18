@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Binds the attribute that random-tau returns to an expression meta.
+name: tau-to-expression
+pattern: "⟦ foo ↦ 𝑒1 ⟧"
+result: "⟦ foo ↦ 𝑒2 ⟧"
+where:
+  - meta: "𝑒2"
+    function: random-tau

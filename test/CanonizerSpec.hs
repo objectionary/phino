@@ -100,12 +100,21 @@ spec = do
     it "returns an empty list for an empty input" $
       canonize [] `shouldBe` []
 
-    it "restarts the counter independently for each Rewritten in the chain" $ do
+    it "gives a new function of a later step the next number" $ do
       let first = ExFormation [BiLambda (Function "X")]
           second = ExFormation [BiLambda (Function "Y")]
-          expected = ExFormation [BiLambda (Function "Fn1")]
       canonize [(first, Just (Morphing, "rule-1")), (second, Just (Dataization, "rule-2"))]
-        `shouldBe` [(expected, Just (Morphing, "rule-1")), (expected, Just (Dataization, "rule-2"))]
+        `shouldBe` [ (ExFormation [BiLambda (Function "Fn1")], Just (Morphing, "rule-1"))
+                   , (ExFormation [BiLambda (Function "Fn2")], Just (Dataization, "rule-2"))
+                   ]
+
+    it "keeps the name of a function across the steps of a sequence" $ do
+      let first = ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (Function "Fa")]), BiTau (AtLabel "y") (ExFormation [BiLambda (Function "Fb")])]
+          second = ExFormation [BiTau (AtLabel "y") (ExFormation [BiLambda (Function "Fb")])]
+      map fst (canonize [(first, Nothing), (second, Nothing)])
+        `shouldBe` [ ExFormation [BiTau (AtLabel "x") (ExFormation [BiLambda (Function "Fn1")]), BiTau (AtLabel "y") (ExFormation [BiLambda (Function "Fn2")])]
+                   , ExFormation [BiTau (AtLabel "y") (ExFormation [BiLambda (Function "Fn2")])]
+                   ]
 
     it "preserves the rule tag alongside the canonized expression" $
       canonize [(ExFormation [BiLambda (Function "Foo")], Nothing)]

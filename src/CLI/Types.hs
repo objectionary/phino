@@ -119,6 +119,8 @@ data OptsDataize = OptsDataize
   , _maxSteps :: Int
   , _maxFirings :: Maybe Int
   , _maxSeconds :: Maybe Int
+  , _maxNodes :: Maybe Int
+  , _maxMemory :: Maybe Int
   , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int
@@ -132,6 +134,7 @@ data OptsDataize = OptsDataize
   , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
+  , _minutes :: Maybe FilePath
   , _abridged :: Maybe Int
   , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath
@@ -166,6 +169,8 @@ data OptsMorph = OptsMorph
   , _maxSteps :: Int
   , _maxFirings :: Maybe Int
   , _maxSeconds :: Maybe Int
+  , _maxNodes :: Maybe Int
+  , _maxMemory :: Maybe Int
   , _margin :: Int
   , _meetPopularity :: Maybe Int
   , _meetLength :: Maybe Int
@@ -179,6 +184,7 @@ data OptsMorph = OptsMorph
   , _inside :: Maybe String
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
+  , _minutes :: Maybe FilePath
   , _abridged :: Maybe Int
   , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath

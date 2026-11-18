@@ -6,13 +6,20 @@ module Regexp where
 import Control.Exception
 import Data.Array (bounds, (!))
 import qualified Data.ByteString.Char8 as B
-import Data.Char (isDigit, ord)
+import Data.Char (digitToInt, isDigit, ord)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 import qualified Text.Regex.PCRE.ByteString as R
 import qualified Text.Regex.PCRE.Wrap as W
 
 data Regex = Regex R.Regex R.Regex
+
+newtype RegexExecutionException = RegexExecutionException String
+
+instance Show RegexExecutionException where
+  show (RegexExecutionException err) = "Regex execution failed: " ++ err
+
+instance Exception RegexExecutionException
 
 compile :: B.ByteString -> IO Regex
 compile pat = do
@@ -21,7 +28,7 @@ compile pat = do
   pure (Regex first continuation)
   where
     compileWith option = do
-      compiled <- R.compile R.compUTF8 option (B.pack "(*UCP)" `B.append` pat)
+      compiled <- R.compile R.compUTF8 option (B.pack "(*UCP)(*LIMIT_MATCH=1000000)(*LIMIT_RECURSION=256)" `B.append` pat)
       case compiled of
         Left (_, err) -> throwIO (userError ("Regex compilation failed: " ++ err))
         Right regex -> pure regex
@@ -67,6 +74,11 @@ substituteGroups rep groups = B.concat (go (B.unpack rep))
                     Nothing -> B.pack ('$' : digits)
                     Just idx -> fromMaybe (B.pack ('$' : digits)) (safeIndex idx groups)
                in val : go afterDigits
+    go ('\\' : '\\' : rest) = B.singleton '\\' : go rest
+    go ('\\' : '&' : rest) = B.singleton '&' : go rest
+    go ('\\' : digit : rest)
+      | isDigit digit = fromMaybe (B.pack ['\\', digit]) (safeIndex (toInteger (digitToInt digit)) groups) : go rest
+    go ('&' : rest) = fromMaybe (B.singleton '&') (safeIndex 0 groups) : go rest
     go (c : rest) = B.singleton c : go rest
     safeIndex :: Integer -> [B.ByteString] -> Maybe B.ByteString
     safeIndex i xs
@@ -128,4 +140,4 @@ replaceAll (Regex first _) rep input = go 0 B.empty
     isContinuation byte = ord byte >= 0x80 && ord byte < 0xC0
 
 regexExecutionFailed :: Show err => err -> IO value
-regexExecutionFailed err = throwIO (userError ("Regex execution failed: " ++ show err))
+regexExecutionFailed err = throwIO (RegexExecutionException (show err))
