@@ -31,6 +31,8 @@ module AST
   , akin
   , akin'
   , boxed
+  , intact
+  , suffixed
   , within
   , within'
   , isName
@@ -74,7 +76,7 @@ data Expression
   | ExPhiAgain (Maybe String) Int Expression
   | ExBytes Bytes
 
-data Facts = Facts !Int Int !Bool Bool
+data Facts = Facts !Int !Int !Bool !Bool
 
 {-# COMPLETE ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes #-}
 
@@ -92,6 +94,21 @@ pattern ExDispatch :: Expression -> Attribute -> Expression
 pattern ExDispatch expr attr <- Dispatched _ expr attr
   where
     ExDispatch expr attr = cached (\facts -> Dispatched facts expr attr)
+
+intact :: (Eq part) => part -> whole -> (part -> whole) -> part -> whole
+intact old whole make new
+  | new == old = whole
+  | otherwise = make new
+
+suffixed :: (Monad walk, Eq item) => (item -> walk item) -> [item] -> walk [item]
+suffixed change items = snd <$> go change items
+  where
+    go :: (Monad walk, Eq item) => (item -> walk item) -> [item] -> walk (Bool, [item])
+    go _ [] = pure (True, [])
+    go turn whole@(item : rest) = do
+      item' <- turn item
+      (same, rest') <- go turn rest
+      pure (if same && item' == item then (True, whole) else (False, item' : rest'))
 
 cached :: (Facts -> Expression) -> Expression
 cached node = let term = node (established term) in term

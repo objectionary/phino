@@ -18,7 +18,7 @@ import Builder
   )
 import Bytes (btsToUnescapedStr)
 import Control.Exception (Exception (displayException), throwIO)
-import Control.Exception.Base (SomeException, try)
+import Control.Exception.Base (SomeException, fromException, tryJust)
 import Control.Monad (when)
 import Data.Foldable (foldlM)
 import Data.List (intersect, nub)
@@ -33,7 +33,7 @@ import GHC.IO (unsafePerformIO)
 import Logger (logDebug)
 import Matcher
 import Printer
-import Regexp (match)
+import Regexp (RegexExecutionException, match)
 import Text.Printf (printf)
 import Yaml (normalizationRules)
 import qualified Yaml as Y
@@ -62,7 +62,7 @@ isNF :: Expression -> RuleContext -> Bool
 isNF expr ctx = normalWith (`matchesAnyNormalizationRule` ctx) expr
 
 normal :: Expression -> Bool
-normal expr = isNF expr (RuleContext buildTerm Nothing normal)
+normal expr = isNF expr (RuleContext buildTerm Nothing (const True))
 
 normalWith :: (Expression -> Bool) -> Expression -> Bool
 normalWith _ ExXi = True
@@ -101,7 +101,7 @@ _or conds subst ctx = loop Nothing conds
     loop :: Maybe SomeException -> [Y.Condition] -> IO [Subst]
     loop raised [] = maybe (pure []) throwIO raised
     loop raised (cond : rest) = do
-      met <- try (meetCondition' cond subst ctx) :: IO (Either SomeException [Subst])
+      met <- tryJust recoverableConditionException (meetCondition' cond subst ctx) :: IO (Either SomeException [Subst])
       case met of
         Right [] -> loop raised rest
         Right mets -> pure mets
@@ -289,10 +289,15 @@ meetCondition' (Y.PartOf expr bd) = _partOf expr bd
 meetCondition' (Y.Disjoint attrs bds) = _disjoint attrs bds
 meetCondition' (Y.IsFormation expr) = _isFormation expr
 
+recoverableConditionException :: SomeException -> Maybe SomeException
+recoverableConditionException err = case fromException err :: Maybe RegexExecutionException of
+  Just _ -> Nothing
+  Nothing -> Just err
+
 meetCondition :: Y.Condition -> [Subst] -> RuleContext -> IO [Subst]
 meetCondition _ [] _ = pure []
 meetCondition cond (subst : rest) ctx = do
-  met <- try (meetCondition' cond subst ctx) :: IO (Either SomeException [Subst])
+  met <- tryJust recoverableConditionException (meetCondition' cond subst ctx) :: IO (Either SomeException [Subst])
   case met of
     Right first -> do
       next <- meetCondition cond rest ctx

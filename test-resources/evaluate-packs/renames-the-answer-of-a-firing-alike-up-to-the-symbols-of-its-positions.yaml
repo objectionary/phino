@@ -66,45 +66,49 @@ protocol: |
       𝑛3·1 := 𝑛·1·10  # 𝕄(ξ.c)
       recalled 𝑛·1·3 ⇒ 𝑛·1·1( target ↦ Φ.u )
       recalled 𝑛·1·1 ⇒ Φ.dataized
-      𝔼(L_dataized):  # 𝔼(𝑛1)
+      𝔼(L_dataized):  # 𝔼(𝑛1 of L_triple)
         𝔻(ξ.target):
           𝕄(ξ.target):
             normalized 𝑛·2·1 := 𝜎1:λ  # Φ.u
             morphed 𝑛·2·2 := 𝑛·2·1
           𝛿·2·1 := 𝔻(𝜎1:λ)
         𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.target)
-        𝑛·2·3 := 𝜎3:λ  # 𝑛
+        𝑛·2·3 := 𝜎3:λ  # 𝑛 of L_dataized
         𝕄(𝑛·2·3):
           morphed 𝑛·2·4 := 𝜎3:λ
         𝑛·2·5 := 𝑛·2·4  # 𝕄(𝑛·2·3)
         memoized 𝑛·1·3 ⇛ 𝜎3:λ
-      𝑛4·1 := 𝑛·2·5  # 𝔼(𝑛1)
+        evaluated 𝑛·2·6 := 𝑛·2·5  # 𝑛·1·3
+      𝑛4·1 := 𝑛·2·5  # 𝔼(𝑛1 of L_triple)
       recalled 𝑛·1·7 ⇒ 𝑛·1·5( target ↦ Φ.v )
       recalled 𝑛·1·5 ⇒ Φ.peek
-      𝔼(L_peek):  # 𝔼(𝑛2)
+      𝔼(L_peek):  # 𝔼(𝑛2 of L_triple)
         𝔻(ξ.target):
           𝕄(ξ.target):
             normalized 𝑛·3·1 := 𝜎2:λ  # Φ.v
             morphed 𝑛·3·2 := 𝑛·3·1
           𝛿·3·1 := 𝔻(𝜎2:λ)
         𝛿1·3 := 𝛿·3·1  # 𝔻(ξ.target)
-        𝑛·3·3 := 𝜎4:λ  # 𝑛
+        𝑛·3·3 := 𝜎4:λ  # 𝑛 of L_peek
         𝕄(𝑛·3·3):
           morphed 𝑛·3·4 := 𝜎4:λ
         𝑛·3·5 := 𝑛·3·4  # 𝕄(𝑛·3·3)
         memoized 𝑛·1·7 ⇛ 𝜎4:λ
-      𝑛5·1 := 𝑛·3·5  # 𝔼(𝑛2)
+        evaluated 𝑛·3·6 := 𝑛·3·5  # 𝑛·1·7
+      𝑛5·1 := 𝑛·3·5  # 𝔼(𝑛2 of L_triple)
       recalled 𝑛·1·10 ⇒ 𝑛·1·1( target ↦ Φ.v )
       recalled 𝑛·1·1 ⇒ Φ.dataized
-      𝔼(L_dataized):  # 𝔼(𝑛3)
+      𝔼(L_dataized):  # 𝔼(𝑛3 of L_triple)
         renamed 𝑛·1·10 ⇛ 𝜎5:λ  # from 𝑛·1·3, 𝜎1 as 𝜎2, 𝜎3 as 𝜎5
-        𝑛·4·1 := 𝜎5:λ  # 𝑛
+        𝑛·4·1 := 𝜎5:λ  # 𝑛 of L_dataized
         𝑛·4·2 := 𝜎5:λ  # 𝕄(𝑛·4·1)
-      𝑛6·1 := 𝑛·4·2  # 𝔼(𝑛3)
-      𝑛·1·12 := ⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧:φ  # 𝑛
+        evaluated 𝑛·4·3 := 𝑛·4·2  # 𝑛·1·10
+      𝑛6·1 := 𝑛·4·2  # 𝔼(𝑛3 of L_triple)
+      𝑛·1·12 := ⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧:φ  # 𝑛 of L_triple
       𝕄(𝑛·1·12):
         morphed 𝑛·1·13 := ⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧:φ
       𝑛·1·14 := 𝑛·1·13  # 𝕄(𝑛·1·12)
       memoized 𝑛·1·15 ⇛ 𝑛·1·14  # ⟦ a ↦ 𝑛·1·2, b ↦ 𝑛·1·6, c ↦ 𝑛·1·9, λ ⤍ L_triple ⟧
-    normalized 𝑛·0·1 := ⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧  # 𝑛·1·14.φ
+      evaluated 𝑛·1·16 := 𝑛·1·14  # 𝑛·1·15
+    normalized 𝑛·0·1 := ⟦ a ↦ 𝜎3:λ, b ↦ 𝜎4:λ, c ↦ 𝜎5:λ ⟧  # 𝑛·1·16.φ
     morphed 𝑛·0·2 := 𝑛·0·1

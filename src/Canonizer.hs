@@ -78,5 +78,10 @@ canonizeExpr :: Expression -> Expression
 canonizeExpr expr = fst (canonizeExpression expr (Map.empty, 1))
 
 canonize :: [Rewritten] -> [Rewritten]
-canonize [] = []
-canonize ((expr, maybeRule) : rest) = (canonizeExpr expr, maybeRule) : canonize rest
+canonize rewrittens = go rewrittens (Map.empty, 1)
+  where
+    go :: [Rewritten] -> CanonState -> [Rewritten]
+    go [] _ = []
+    go ((expr, maybeRule) : rest) st =
+      let (expr', st') = canonizeExpression expr st
+       in (expr', maybeRule) : go rest st'

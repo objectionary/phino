@@ -177,7 +177,7 @@ spec = do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
         minted <- newIORef 0
         named <- sides
-        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 Nothing Nothing (Steps 40 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing endless [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+        dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 Nothing Nothing (Steps 40 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing endless [] False Nothing (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
           `shouldThrow` (\e -> "--max-steps=40" `isInfixOf` show (e :: SomeException))
 
     it "parks the step limit as a residual with --partial" $
@@ -185,7 +185,7 @@ spec = do
         expr <- parseExpressionThrows "⟦ @ ↦ ⟦ λ ⤍ L_loop ⟧ ⟧"
         minted <- newIORef 0
         named <- sides
-        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 Nothing Nothing (Steps 40 0) Nothing minted named Nothing Nothing 1 Nothing False True True Nothing 0 Dataization [] Map.empty Nothing endless [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+        (outcome, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 25 Nothing Nothing (Steps 40 0) Nothing minted named Nothing Nothing 1 Nothing False True True Nothing 0 Dataization [] Map.empty Nothing endless [] False Nothing (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
         case outcome of
           Residual _ -> pure ()
           Dataized bts -> expectationFailure ("expected a residual, dataized to " ++ show bts)
@@ -263,13 +263,14 @@ spec = do
           , "          normalized 𝑛·1·21 := 40-08-00-00-00-00-00-00:Δ  # 𝑛·1·20"
           , "          𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
           , "        𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-          , "        𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+          , "        𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_times"
           , "        𝕄(𝑛·1·22):"
           , "          𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
           , "          𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
           , "          morphed 𝑛·1·25 := 𝑛·1·24"
           , "        𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-          , "      normalized 𝑛·0·9 := ⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧  # 𝑛·1·26.nope"
+          , "        evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+          , "      normalized 𝑛·0·9 := ⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧  # 𝑛·1·27.nope"
           , "      morphed 𝑛·0·10 := ⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧"
           , "    unanswered L_number_nope  # 𝔻(⟦ ρ ↦ 𝑛·1·23, λ ⤍ L_number_nope ⟧)"
           ]
@@ -314,12 +315,12 @@ spec = do
     forM_
       [
         ( "--max-cycles"
-        , \minted named -> ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked
+        , \minted named -> ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False Nothing (building linked) reduction evaluation dontSaveStep dontSaveEval linked
         , "--max-cycles=0"
         )
       ,
         ( "--max-depth"
-        , \minted named -> ReduceContext ExRoot ExRoot Nothing 0 25 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked
+        , \minted named -> ReduceContext ExRoot ExRoot Nothing 0 25 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing True True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False Nothing (building linked) reduction evaluation dontSaveStep dontSaveEval linked
         , "--max-depth=0"
         )
       ]
@@ -333,13 +334,13 @@ spec = do
       expr <- parseExpressionThrows wrapped
       minted <- newIORef 0
       named <- sides
-      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 1 25 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+      (value, _, _) <- dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 1 25 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False Nothing (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
       value `shouldBe` Dataized (BtOne "00")
     it "throws once --max-cycles is exhausted even without --depth-sensitive" $ do
       expr <- parseExpressionThrows wrapped
       minted <- newIORef 0
       named <- sides
-      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+      dataize expr emptyState (ReduceContext ExRoot ExRoot Nothing 25 0 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Dataization [] Map.empty Nothing emptyLambdas [] False Nothing (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
         `shouldThrow` (\e -> "--max-cycles=0" `isInfixOf` show (e :: SomeException))
 
   describe "labels every step with a defined rule or operation" $ do

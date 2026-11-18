@@ -10,6 +10,7 @@ module RuleSpec where
 
 import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Slot (..), inert)
 import Builder (buildExpressionThrows)
+import Control.Exception (evaluate)
 import Control.Monad
 import Data.Aeson
 import Data.List (isInfixOf)
@@ -23,10 +24,11 @@ import Logger (LogLevel (DEBUG, ERROR), setLogConfig)
 import Matcher
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printSubsts)
-import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normalHeld, redex)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normal, normalHeld, redex)
 import System.FilePath
 import System.IO (stderr)
 import System.IO.Silently (hCapture)
+import System.Timeout (timeout)
 import Test.Hspec (Spec, after_, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy)
 import Yaml qualified
 
@@ -118,6 +120,13 @@ spec = do
       , ("returns false for a dispatch whose body no rule of contextualization takes", ExDispatch (ExFormation [BiTau (AtLabel "kq") (ExDispatch (ExMeta "e5") (AtLabel "wb"))]) (AtLabel "kq"), False)
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)
+
+  describe "tells a normal form of a chain of nested copies in time" $ do
+    let chain :: Int -> Expression
+        chain depth = iterate (ExApplication (ExFormation [BiVoid (AtLabel "x"), BiTau (AtLabel "y") (ExDispatch ExXi (AtLabel "x"))]) . ArTau (AtLabel "x")) (ExFormation [BiDelta (BtOne "00")]) !! depth
+    forM_ [("the rules of YAML", normal), ("the engine linked", _normal linked)] $ \(name, test) ->
+      it ("by " ++ name) $
+        timeout 10000000 (evaluate (test (chain 40))) `shouldReturn` Just False
 
   describe "matchExpressionWithRule via a 'where' extension or a φ-marker meta" $ do
     let ctx :: RuleContext
