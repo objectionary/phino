@@ -42,7 +42,7 @@ import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
 import Rule (RuleContext (RuleContext), xiFree)
-import Sides (Sides, named, opened, resolver)
+import Sides (Sides, minted, named, opened, resolver, spelled)
 import System.Timeout (timeout)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
@@ -835,7 +835,7 @@ morph universe state caller@ReduceContext{..} = do
     reduced expr ctx = do
       result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
       case result of
-        Right ((morphed, seq), state') -> pure (morphed, reverse (NE.toList seq), state')
+        Right ((morphed, seq), state') -> (,reverse (NE.toList seq),state') <$> spelled _sides morphed
         Left (StuckAt func seq parked) | _partial -> residue seq parked{_stuck = Just func}
         Left (OutOfStepsAt _ seq parked) | _partial -> residue seq parked
         Left (OutOfSteps _) | _partial -> pure (expr, [(universe, Nothing)], state)
@@ -843,7 +843,7 @@ morph universe state caller@ReduceContext{..} = do
         Left failure -> throwIO (failure :: ReduceException)
     residue :: NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
     residue seq parked = do
-      expr <- locatedExpression _locator (fst (NE.head seq))
+      expr <- spelled _sides =<< locatedExpression _locator (fst (NE.head seq))
       pure (expr, reverse (NE.toList seq), parked)
 
 vetted :: Judgment -> Expression -> ReduceContext -> IO ()
@@ -857,7 +857,7 @@ inferred expr univ state ctx rules = do
   where
     go :: [In.Inference value] -> IO (Maybe (In.Premises value))
     go [] = pure Nothing
-    go (rule : rest) = rule (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal) expr univ >>= maybe (go rest) (pure . Just)
+    go (rule : rest) = rule (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal False) expr univ >>= maybe (go rest) (pure . Just)
     premised :: State -> In.Premises value -> IO (In.Conclusion value, State)
     premised state' (In.Concludes conclusion) = pure (conclusion, state')
     premised state' (In.Morphs term world next) = do
@@ -872,7 +872,8 @@ onward :: NonEmpty Rewritten -> State -> In.Way -> Expression -> Expression -> R
 onward seq state (In.Taken step) _ expr ctx = do
   seq' <- leadsTo seq step expr ctx
   pure ((expr, seq'), state)
-onward seq state (In.Normalized step) univ expr ctx = do
+onward seq state (In.Normalized step) univ expr' ctx = do
+  expr <- shared ctx expr'
   labelled <- leadsTo seq step expr ctx
   normal@(term, _) <- normalized expr labelled ctx
   unless (term `elem` [expr, bare expr]) (ctx._saveEval (EvNormalized ctx._nesting (rooted expr) term))
@@ -891,6 +892,62 @@ onward seq state (In.Named step) univ expr ctx = case ctx._universe of
   Just world -> onward seq state (In.Taken step) univ world ctx
   Nothing -> onward seq state (In.Normalized step) univ expr ctx
 onward seq state (In.Staged stage) _ expr ctx = morph' (expr, seq) stage state ctx
+
+shared :: ReduceContext -> Expression -> IO Expression
+shared ctx = go
+  where
+    go :: Expression -> IO Expression
+    go term@(ExApplication head' arg) = do
+      head'' <- go head'
+      arg' <- goArgument arg
+      pure (if head'' == head' && arg' == arg then term else ExApplication head'' arg')
+    go term@(ExDispatch inner attr) = do
+      inner' <- go inner
+      pure (if inner' == inner then term else ExDispatch inner' attr)
+    go term = pure term
+    goArgument :: Argument -> IO Argument
+    goArgument arg@(ArTau AtRho _) = pure arg
+    goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> (goValue =<< go expr)
+    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> (goValue =<< go expr)
+    goValue :: Expression -> IO Expression
+    goValue value@(ExMeta _) = pure value
+    goValue value@(ExApplication inner (ArTau AtRho _))
+      | closed value && growing value = do
+          look <- resolver ctx._sides
+          if dispatching look inner then goValue inner else kept value
+    goValue value = kept value
+    dispatching :: (T.Text -> Maybe Expression) -> Expression -> Bool
+    dispatching _ (ExDispatch _ _) = True
+    dispatching look (ExApplication inner _) = dispatching look inner
+    dispatching look (ExMeta name) = maybe False (dispatching look) (look name)
+    dispatching _ _ = False
+    kept :: Expression -> IO Expression
+    kept value
+      | closed value && growing value = do
+          (name, fresh) <- minted ctx._sides value
+          when fresh (ctx._saveEval (EvShared ctx._nesting name value))
+          pure name
+      | otherwise = pure value
+    growing :: Expression -> Bool
+    growing (ExMeta _) = True
+    growing (ExDispatch inner _) = not (path inner) || growing inner
+    growing (ExApplication inner (ArTau _ arg)) = growing inner || growing arg
+    growing (ExApplication inner (ArAlpha _ arg)) = growing inner || growing arg
+    growing _ = False
+    path :: Expression -> Bool
+    path (ExDispatch inner _) = path inner
+    path ExRoot = True
+    path _ = False
+    closed :: Expression -> Bool
+    closed (ExApplication inner (ArTau _ arg)) = closed inner && closed arg
+    closed (ExApplication inner (ArAlpha _ arg)) = closed inner && closed arg
+    closed (ExDispatch inner _) = closed inner
+    closed (ExFormation _) = True
+    closed ExRoot = True
+    closed (ExBytes _) = True
+    closed ExTermination = True
+    closed (ExMeta name) = isName name
+    closed _ = False
 
 leadsTo :: NonEmpty Rewritten -> (Judgment, String) -> Expression -> ReduceContext -> IO (NonEmpty Rewritten)
 leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do

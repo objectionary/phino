@@ -40,7 +40,6 @@ instance Arbitrary Grown where
           )
       spelled :: Expression -> Bool
       spelled (ExApplication ExXi _) = False
-      spelled (ExApplication ExRoot _) = False
       spelled (ExApplication (DataNumber _) (ArTau AtRho _)) = False
       spelled (ExApplication (DataString _) (ArTau AtRho _)) = False
       spelled _ = True
@@ -76,7 +75,7 @@ instance Arbitrary Grown where
       smaller = \case
         ExFormation bds -> [inner | BiTau _ inner <- bds] ++ (ExFormation <$> shrinkList binding bds)
         ExDispatch inner attr -> inner : (ExDispatch <$> smaller inner <*> pure attr)
-        ExApplication inner arg -> inner : held arg : [ExApplication less arg | less <- smaller inner, less `notElem` [ExXi, ExRoot]] ++ (ExApplication inner <$> argued arg)
+        ExApplication inner arg -> inner : held arg : [ExApplication less arg | less <- smaller inner, less /= ExXi] ++ (ExApplication inner <$> argued arg)
         _ -> []
       binding :: Binding -> [Binding]
       binding (BiTau attr inner) = BiTau attr <$> smaller inner

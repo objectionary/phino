@@ -618,10 +618,7 @@ xmirToExpression derived cur fqn
           if null (cur C.$/ C.element (toName "o"))
             then pure ExXi
             else throwIO (InvalidXMIRFormat "Application of 'ξ' is illegal in XMIR" cur)
-        "Φ" ->
-          if null (cur C.$/ C.element (toName "o"))
-            then pure ExRoot
-            else throwIO (InvalidXMIRFormat "Application of 'Φ' is illegal in XMIR" cur)
+        "Φ" -> xmirToApplication derived ExRoot (cur C.$/ C.element (toName "o")) fqn
         "⊥" -> xmirToApplication derived ExTermination (cur C.$/ C.element (toName "o")) fqn
         '⊥' : '.' : rest -> xmirToExpression' ExTermination "⊥" rest cur fqn
         'Φ' : '.' : rest -> xmirToExpression' ExRoot "Φ" rest cur fqn

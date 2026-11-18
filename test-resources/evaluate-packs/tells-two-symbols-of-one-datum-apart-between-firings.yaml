@@ -33,12 +33,14 @@ result: '⟦ x ↦ 𝜎3:λ, y ↦ 𝜎4:λ ⟧'
 protocol: |
   𝕄(Φ.φ):
     remembered 𝑛·0·1 ≡ Φ.pair  # ⟦ x ↦ ∅, y ↦ ∅, λ ⤍ L_pair ⟧
-    𝑛·0·2 := Φ.pair( x ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ )
-    𝑛·0·3 := ⟦ x ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ, y ↦ ∅, λ ⤍ L_pair ⟧
-    remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ )
-    𝑛·0·4 := 𝑛·0·2( y ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ )
-    𝑛·0·5 := ⟦ x ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ, y ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ, λ ⤍ L_pair ⟧
-    remembered 𝑛·0·5 ≡ 𝑛·0·3( y ↦ Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ )
+    shared 𝑛·1 := Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ
+    𝑛·0·2 := Φ.pair( x ↦ 𝑛·1 )
+    𝑛·0·3 := ⟦ x ↦ 𝑛·1, y ↦ ∅, λ ⤍ L_pair ⟧
+    remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ 𝑛·1 )
+    shared 𝑛·2 := Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ
+    𝑛·0·4 := 𝑛·0·3( y ↦ 𝑛·2 )
+    𝑛·0·5 := ⟦ x ↦ 𝑛·1, y ↦ 𝑛·2, λ ⤍ L_pair ⟧
+    remembered 𝑛·0·5 ≡ 𝑛·0·4
     𝔼(L_pair):
       𝕄(ξ.x):
         remembered 𝑛·1·1 ≡ Φ.dataized  # ⟦ target ↦ ∅, λ ⤍ L_dataized ⟧

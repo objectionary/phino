@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+name: drop-x
+pattern: ⟦ 𝐵1, x ↦ 𝑒1, 𝐵2 ⟧
+result: ⟦ 𝐵1, 𝐵2 ⟧
