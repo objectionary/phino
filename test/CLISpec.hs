@@ -1434,6 +1434,14 @@ spec = do
           ["rewrite", "--canonize", "--sweet", "--flat"]
           ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Package ⟧"]
 
+    it "keeps the name of a function across the steps of --sequence under --canonize" $
+      withStdin "[[ a -> [[ x -> [[ L> Fa ]], y -> [[ L> Fb ]] ]] ]]" $
+        testCLISucceeded
+          ["rewrite", rule "drop-x.yaml", "--sequence", "--canonize", "--flat"]
+          [ "⟦ a ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧, y ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧ ⟧"
+          , "⟦ a ↦ ⟦ y ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧ ⟧"
+          ]
+
     it "rewrites by locator" $
       withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]" $
         testCLISucceeded
