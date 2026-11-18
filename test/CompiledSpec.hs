@@ -88,9 +88,9 @@ spec =
               (RewriteContext ExRoot 25 25 False universe (building engine) (_normal engine) (_matching engine) MtDisabled Nothing dontSaveStep dontSaveMade)
         )
     nested :: Expression -> Bool
-    nested expr = isNF expr (RuleContext (building yaml) Nothing nested)
+    nested expr = isNF expr (RuleContext (building yaml) Nothing nested False)
     matched :: Expression -> IO (Set.Set Int)
-    matched expr = Set.fromList . map fst <$> filterM (\(_, rule) -> not . null <$> matchExpressionWithRule expr rule (RuleContext (building yaml) Nothing (_normal yaml))) (zip [0 ..] Y.normalizationRules)
+    matched expr = Set.fromList . map fst <$> filterM (\(_, rule) -> not . null <$> matchExpressionWithRule expr rule (RuleContext (building yaml) Nothing (_normal yaml) False)) (zip [0 ..] Y.normalizationRules)
     morphed :: Lambdas -> Engine -> Expression -> IO (Either String String)
     morphed lambdas engine world = settled (show . fst <$> (morph' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState =<< reducing lambdas engine))
     dataized :: Lambdas -> Engine -> Expression -> IO (Either String String)

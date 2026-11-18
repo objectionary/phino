@@ -26,7 +26,7 @@ import Dataize
 import Deps (Judgment (..), dontSaveMade)
 import Emit (emitted)
 import Encoding
-import Engine (Engine (..), building, current, stepOf)
+import Engine (Engine (..), building, cheat, current, stepOf)
 import Evaluate (evaluation)
 import Files (overwrite)
 import qualified Filter as F
@@ -64,7 +64,7 @@ runRewrite OptsRewrite{..} = do
   validateNoOverlap "show" included "hide" excluded
   setStdGen (mkStdGen _seed)
   rules <- getRules _normalize _shuffle _rules
-  linked <- engine
+  linked <- (if _cheat then cheat else id) <$> engine
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   (expr, atoms) <- parseInputWithAtoms input _inputFormat _monoform
@@ -79,7 +79,7 @@ runRewrite OptsRewrite{..} = do
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
   save <- saveStepFunc _stepsDir printCtx included excluded
-  let steps = map (stepOf linked) rules
+  let steps = map ((if _cheat then cheating else id) . stepOf linked) rules
   (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save dontSaveMade)
   when (isJust _breakpoint && NE.length rewrittens == 1) (clearedStepsDir _stepsDir)
   rewrittens' <- exclude (if _sequence then NE.toList rewrittens else [NE.last rewrittens]) >>= include
@@ -187,7 +187,7 @@ runDataize args OptsDataize{..} = do
   named <- sides
   memo <- memoized _acyclic
   facts <- factual
-  linked <- engine
+  linked <- (if _cheat then cheat else id) <$> engine
   header <- headerOf args _inputFile input expr _symbolic lambdas
   ((outcome, chain, _), universe, aim) <-
     withEvalFunc
@@ -279,7 +279,7 @@ runMorph args OptsMorph{..} = do
   named <- sides
   memo <- memoized _acyclic
   facts <- factual
-  linked <- engine
+  linked <- (if _cheat then cheat else id) <$> engine
   header <- headerOf args _inputFile input expr _symbolic lambdas
   ((morphed, chain, _), universe, aim) <-
     withEvalFunc
@@ -423,7 +423,7 @@ runMatch OptsMatch{..} = do
       traverse_ (throwIO . AnonymousMetaInCondition . T.unpack) (anonymous condition)
       traverse_ (throwIO . UnboundMetaInCondition . T.unpack) (listToMaybe (unboundMetas ptn condition))
       linked <- engine
-      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext (building linked) Nothing linked._normal)
+      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext (building linked) Nothing linked._normal False)
       if null substs
         then throwIO EmptySubstsOnMatch
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))

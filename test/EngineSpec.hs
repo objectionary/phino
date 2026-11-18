@@ -9,10 +9,11 @@ import AST
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Deps (Term (TeExpression))
-import Engine (Engine (..), building, fresh, stepOf, yaml)
+import Engine (Engine (..), building, cheat, fresh, stepOf, yaml)
+import Functions (buildTerm)
 import Matcher (substEmpty)
-import Rule (Step (..))
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Rule (RuleContext (..), Step (..))
+import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 import Yaml qualified as Y
 
 spec :: Spec
@@ -27,6 +28,16 @@ spec = do
     it "names every rule of normalization as one matching a term" $
       _matching yaml (Just (ExFormation [BiVoid (AtLabel "ug")])) (ExDispatch ExRoot (AtLabel "yb"))
         `shouldBe` Set.fromList [0 .. length Y.normalizationRules - 1]
+  describe "cheat" $ do
+    it "lets every step of normalization cheat" $
+      mapM (\step -> fmap fst <$> _applied step (RuleContext buildTerm Nothing (const True) False) ExXi) (_normalization (cheat yaml{_normalization = [told]}))
+        `shouldReturn` [Just ExRoot]
+    it "lets every compiled step cheat" $
+      mapM (\step -> fmap fst <$> _applied step (RuleContext buildTerm Nothing (const True) False) ExXi) (Map.elems (_rules (cheat yaml{_rules = Map.fromList [("rule", told)]})))
+        `shouldReturn` [Just ExRoot]
+    it "leaves the engine honest without it" $
+      mapM (\step -> fmap fst <$> _applied step (RuleContext buildTerm Nothing (const True) False) ExXi) [told]
+        `shouldReturn` [Just ExXi]
   describe "fresh" $ do
     it "accepts the engine interpreting the rules phino carries" $
       fresh yaml `shouldBe` True
@@ -36,3 +47,6 @@ spec = do
     it "hands contextualization to the engine" $ do
       TeExpression term <- building yaml{_contextualize = \_ _ -> pure (ExDispatch ExRoot (AtLabel "qo"))} "contextualize" [Y.ArgExpression ExXi, Y.ArgExpression (ExFormation [])] substEmpty
       term `shouldBe` ExDispatch ExRoot (AtLabel "qo")
+  where
+    told :: Step
+    told = Step "told" (\ctx _ -> pure (Just (if _cheat ctx then ExRoot else ExXi, [])))
