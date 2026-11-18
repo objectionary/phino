@@ -6,9 +6,9 @@
 # correctly (it used to say "'go" instead of "join()").
 name: uses-join-on-non-binding
 pattern: '!e2'
-result: '!e1'
+result: '[[ !B1 ]]'
 where:
-  - meta: '!e1'
+  - meta: '!B1'
     function: join
     args:
       - 'some-text'

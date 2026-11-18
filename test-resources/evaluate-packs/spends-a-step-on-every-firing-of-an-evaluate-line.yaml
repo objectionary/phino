@@ -28,6 +28,6 @@ protocol: |
         morphed 𝑛·1·1 := 𝑛·0·1
       𝑛1·1 := 𝑛·0·1  # 𝕄(ξ.next🌵)
       recalled 𝑛·0·1 ⇒ Φ.loop
-      𝔼(L_loop):  # 𝔼(𝑛1)
+      𝔼(L_loop):  # 𝔼(𝑛1 of L_loop)
         𝕄(ξ.next🌵):
           starved 6

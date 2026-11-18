@@ -26,7 +26,7 @@ spec = do
         `shouldSatisfy` (\source -> all (\rule -> ("R.direct " ++ show rule.name) `isInfixOf` source) Y.normalizationRules)
     it "asks a built-in rule of normalization in the one walk, told it is a redex" $
       fromRight "" (emitted [Y.Rule "kq" Nothing Nothing (ExDispatch ExTermination (AtLabel "wv")) ExTermination Nothing Nothing Nothing] [] [] [] [] [])
-        `shouldSatisfy` ("(0, True, rewriteKq)" `isInfixOf`)
+        `shouldSatisfy` ("(0, True, rewriteKq normal)" `isInfixOf`)
     it "leaves a rule of '--rule' out of the one walk" $
       fromRight "" (emitted [] [Y.Rule "jd" Nothing Nothing (ExDispatch ExXi (AtLabel "pe")) ExRoot Nothing Nothing Nothing] [] [] [] [])
         `shouldNotSatisfy` ("rewriteJd)" `isInfixOf`)
@@ -38,7 +38,7 @@ spec = do
         `shouldSatisfy` (\source -> all (\rule -> ("(" ++ show rule.name ++ ", ") `isInfixOf` source) Y.contextualizationRules)
     it "writes a rule of '--rule' beside the built-in ones" $
       fromRight "" (emitted [] [Y.Rule "kwpr" Nothing Nothing (ExDispatch ExXi (AtLabel "hq")) ExRoot Nothing Nothing Nothing] [] [] [] [])
-        `shouldSatisfy` ("R.direct \"kwpr\" False rewriteKwpr" `isInfixOf`)
+        `shouldSatisfy` ("R.direct \"kwpr\" False (rewriteKwpr nf)" `isInfixOf`)
     it "imports the texts a label of a rule is spelled with" $
       fromRight "" (emitted [] [Y.Rule "lb" Nothing Nothing (ExDispatch ExXi (AtLabel "hq")) ExRoot Nothing Nothing Nothing] [] [] [] [])
         `shouldSatisfy` ("import qualified Data.Text as T" `isInfixOf`)
@@ -83,10 +83,13 @@ spec = do
         `shouldSatisfy` ("x1 == x3" `isInfixOf`)
     it "asks a normal form of a '𝑛' meta the way the matcher does" $
       fromRight "" (emitted [] [Y.Rule "nh" Nothing Nothing (ExDispatch (ExMeta "n4") (AtLabel "wq")) ExRoot Nothing Nothing Nothing] [] [] [] [])
-        `shouldSatisfy` ("Ru.normalHeld nf x1" `isInfixOf`)
+        `shouldSatisfy` ("Ru.normalHeld normal x1" `isInfixOf`)
     it "asks the condition 'nf' the way the matcher does" $
       fromRight "" (emitted [] [Y.Rule "nc" Nothing Nothing (ExDispatch (ExMeta "e3") (AtLabel "jb")) ExRoot (Just (Y.NF (ExMeta "e3"))) Nothing Nothing] [] [] [] [])
-        `shouldSatisfy` ("Ru.normalHeld nf x1" `isInfixOf`)
+        `shouldSatisfy` ("Ru.normalHeld normal x1" `isInfixOf`)
+    it "tells a normal form with no test of a normal form inside it" $
+      fromRight "" (emitted Y.normalizationRules [] Y.contextualizationRules Y.morphingRules Y.dataizationRules current)
+        `shouldSatisfy` ("nf = Ru.normalWith (not . null . matchingBy (const True) Nothing)" `isInfixOf`)
     it "compiles a rule rewriting a formation into a formation the fast way, when it has a 'when' condition" $
       fromRight "" (emitted [] [Y.Rule "fw" Nothing Nothing (ExFormation [BiMeta "B1", BiVoid (AtLabel "x"), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "y"), BiMeta "B2"]) (Just (Y.In [AtLabel "z"] [BiMeta "B1"])) Nothing Nothing] [] [] [] [])
         `shouldSatisfy` ("stepFw ::" `isInfixOf`)
@@ -119,11 +122,6 @@ spec = do
         ( "a rule rewriting a formation into a formation the fast way"
         , Y.Rule "fs" Nothing Nothing (ExFormation [BiMeta "B1", BiVoid (AtLabel "x"), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "y"), BiMeta "B2"]) Nothing Nothing Nothing
         , "The rule 'fs' cannot be compiled, since it rewrites a formation into a formation the fast way"
-        )
-      ,
-        ( "a pattern applying Φ to a ρ"
-        , Y.Rule "rt" Nothing Nothing (ExDispatch (ExApplication ExRoot (ArTau AtRho ExXi)) (AtLabel "k")) ExXi Nothing Nothing Nothing
-        , "The rule 'rt' cannot be compiled, since its pattern applies Φ to a ρ"
         )
       ,
         ( "a function of 'where' other than 'contextualize' and 'named'"
