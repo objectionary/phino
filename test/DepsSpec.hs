@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvPassed, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvPassed, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvShared, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -189,6 +189,9 @@ spec = do
     it "writes the term a morphing came to as a line binding it to a fresh 𝑛 under the heading of the morphing" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук")), EvMorphed 2 (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.жук):", "    morphed 𝑛·0·1 := Φ.щука"]
+    it "writes the term a meta was shared for as a line binding that meta" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "сом")), EvShared 2 (ExMeta "n·1") (ExApplication (ExDispatch ExRoot (AtLabel "карп")) (ArTau (AtLabel "икра") (ExDispatch ExRoot (AtLabel "линь"))))])
+      lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.сом):", "    shared 𝑛·1 := Φ.карп( икра ↦ Φ.линь )"]
     it "writes the term a normalization came to as a line binding it to a fresh 𝑛 and naming what it came from" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "лось")), EvNormalized 2 (ExDispatch (ExDispatch ExRoot (AtLabel "кедр")) (AtLabel "шишка")) (ExDispatch ExRoot (AtLabel "выпь"))])
       lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.лось):", "    normalized 𝑛·0·1 := Φ.выпь  # Φ.кедр.шишка"]
@@ -601,6 +604,9 @@ spec = do
     it "writes the term a morphing came to as an element with its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvMorphed 1 (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldContain` ["  <morphed meta=\"𝑛·0·1\">Φ.щука</morphed>"]
+    it "writes the term a meta was shared for as an element naming that meta" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvShared 1 (ExMeta "n·1") (ExDispatch ExRoot (AtLabel "налим"))])
+      lines written `shouldContain` ["  <shared meta=\"𝑛·1\">Φ.налим</shared>"]
     it "writes the term a normalization came to as an element with its name and what it came from" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvNormalized 1 (ExDispatch (ExDispatch ExRoot (AtLabel "бор")) (AtLabel "пень")) (ExDispatch ExRoot (AtLabel "сыч"))])
       lines written `shouldContain` ["  <normalized meta=\"𝑛·0·1\" of=\"Φ.бор.пень\">Φ.сыч</normalized>"]

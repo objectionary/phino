@@ -89,10 +89,12 @@ protocol: |
       memoized 𝑛·0·7 ⇛ 𝑛·1·27
       evaluated 𝑛·1·28 := 𝑛·1·27  # 𝑛·0·7
     normalized 𝑛·0·8 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·28.if
-    𝑛·0·9 := 𝑛·1·24.if( then ↦ 1.0.plus( 2.0 ).plus( 𝑛·1·12 ) )
-    𝑛·0·10 := ⟦ then ↦ 1.0.plus( 2.0 ).plus( 𝑛·1·12 ), else ↦ ∅, λ ⤍ L_fork ⟧
-    𝑛·0·11 := 𝑛·0·9( else ↦ 3.0.plus( 4.0 ).plus( 𝑛·1·12 ) )
-    𝑛·0·12 := ⟦ then ↦ 1.0.plus( 2.0 ).plus( 𝑛·1·12 ), else ↦ 3.0.plus( 4.0 ).plus( 𝑛·1·12 ), λ ⤍ L_fork ⟧
+    shared 𝑛·1 := 1.0.plus( 2.0 ).plus( 𝑛·1·12 )
+    𝑛·0·9 := 𝑛·1·24.if( then ↦ 𝑛·1 )
+    𝑛·0·10 := ⟦ then ↦ 𝑛·1, else ↦ ∅, λ ⤍ L_fork ⟧
+    shared 𝑛·2 := 3.0.plus( 4.0 ).plus( 𝑛·1·12 )
+    𝑛·0·11 := 𝑛·0·10( else ↦ 𝑛·2 )
+    𝑛·0·12 := ⟦ then ↦ 𝑛·1, else ↦ 𝑛·2, λ ⤍ L_fork ⟧
     𝔼(L_fork):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
@@ -265,10 +267,10 @@ protocol: |
             𝑛·7·2 := 𝑛·1·27  # 𝕄(𝑛·7·1)
             evaluated 𝑛·7·3 := 𝑛·7·2  # 𝑛·6·11
           normalized 𝑛·6·12 := ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·7·3.if
-          𝑛·6·13 := 𝑛·2·1.if( then ↦ 𝑛·3·1.plus( 𝑛·3·11 ).plus( 𝑛·5·6 ) )
-          𝑛·6·14 := ⟦ then ↦ 𝑛·3·1.plus( 𝑛·3·11 ).plus( 𝑛·5·6 ), else ↦ ∅, λ ⤍ L_fork ⟧
-          𝑛·6·15 := 𝑛·6·13( else ↦ 𝑛·4·1.plus( 𝑛·4·11 ).plus( 𝑛·5·6 ) )
-          𝑛·6·16 := ⟦ then ↦ 𝑛·3·1.plus( 𝑛·3·11 ).plus( 𝑛·5·6 ), else ↦ 𝑛·4·1.plus( 𝑛·4·11 ).plus( 𝑛·5·6 ), λ ⤍ L_fork ⟧
+          𝑛·6·13 := 𝑛·2·1.if( then ↦ 𝑛·1 )
+          𝑛·6·14 := ⟦ then ↦ 𝑛·1, else ↦ ∅, λ ⤍ L_fork ⟧
+          𝑛·6·15 := 𝑛·6·14( else ↦ 𝑛·2 )
+          𝑛·6·16 := ⟦ then ↦ 𝑛·1, else ↦ 𝑛·2, λ ⤍ L_fork ⟧
           morphed 𝑛·6·17 := 𝑛·6·16
         𝔼(L_fork):
           recalled 𝑛·0·12 ⇒ ⟦ x ↦ 𝑛·1·12, λ ⤍ L_number_plus ⟧

@@ -754,6 +754,20 @@ no walk copies a side out again and terms stay as small as the graph they
 are. The `fabricated` record spells the sides back (`unnamed` of `Deps.hs`);
 any other record and the result print the names.
 
+The same store names the arguments of a call a rule normalizes (`shared` of
+`Morph.hs`, #2397): before a `normalize` premise of a rule of 𝕄, every argument
+of an application along the spine of the term, other than a name alone, that
+holds no ξ, ρ or other meta, and holds a name or a dispatch off something other
+than a path of `Φ`, gets a name (`minted` of `Sides.hs`), so an accumulator a
+recursion wraps every round, as `Φ.more( Φ.state( Φ.plus( ξ.acc.at ),
+ξ.acc.groups ) )`, is spelled once and not again in every round that copies it.
+A number, a path or a formation stays as it is. The first time a term gets its
+name the run writes `shared 𝑛·1 := …` (`EvShared`), and the markup `<shared
+meta="𝑛·1">`. Unlike the name of a side, the name of an argument is spelled back
+in what `morph` and `dataize` print, the result and the residue of `--partial`
+alike (`spelled` of `Sides.hs`), so the output parses again. The firings stay as
+many as before: the memo still sees the same terms.
+
 The walks that copy a term to change it, `renamedTerm` and `abstracted` of
 `Morph.hs` and `stayed` and `symbolized` of `Lambdas.hs`, hand back every
 node, binding and argument nothing changed under (`intact` of `AST.hs`), so a

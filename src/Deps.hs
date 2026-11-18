@@ -132,6 +132,7 @@ data Evaluation
   | EvDelta Int Bytes
   | EvManufactured Int Int
   | EvBoxed Int Expression
+  | EvShared Int Expression Expression
   | EvUndressed Int Expression
   | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Maybe Expression))
   | EvPassed Int Judgment Acyclic Expression Expression Expression (Maybe Expression)
@@ -212,6 +213,7 @@ tier (EvStarted depth _ _) = depth
 tier (EvDelta depth _) = depth
 tier (EvManufactured depth _) = depth
 tier (EvBoxed depth _) = depth
+tier (EvShared depth _ _) = depth
 tier (EvUndressed depth _) = depth
 tier (EvLooped depth _ _ _ _ _) = depth
 tier (EvPassed depth _ _ _ _ _ _) = depth
@@ -447,6 +449,10 @@ saveEval handle cursor printed printed' report = do
       let (naming, protocol') = stored (Left symbol) protocol
       pure (protocol', Just (indented at (printf "%s := %s" naming datum)))
     written at (EvBoxed _ term) protocol = taking at "boxed" term protocol
+    written at (EvShared _ name term) protocol = do
+      label <- render name
+      value <- printed (abbreviatedInside protocol._made term)
+      pure (protocol, Just (indented at (printf "shared %s := %s" label value)))
     written at (EvUndressed _ term) protocol = taking at "undressed" term protocol
     written at (EvLooped _ judgment mode self site answered) protocol = do
       form <- render self
@@ -850,6 +856,11 @@ saveEvalXml handle cursor printed report = do
       where
         (naming, nesting') = stored (Left symbol) nesting
     elements at (EvBoxed depth term) nesting = taken at "boxed" depth term nesting
+    elements at (EvShared depth name term) nesting =
+      placed at nesting $ do
+        label <- leaf depth name
+        body <- coined depth term >>= lift . spelled
+        pure (printf "<shared meta=\"%s\">%s</shared>" (escapeXML label) (escapeXMLText body))
     elements at (EvUndressed depth term) nesting = taken at "undressed" depth term nesting
     elements at (EvData _ spelling _ value) nesting =
       placed at nesting $ case (found value nesting._held, value) of

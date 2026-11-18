@@ -1686,6 +1686,18 @@ spec = do
           withStdin world $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=1", "--max-firings=400"] ["40-45-00-00-00-00-00-00"]
 
+    describe "--acyclic=plausible over an accumulator that grows every round" $ do
+      let world = "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, state(at, groups) ↦ ⟦ φ ↦ ξ.at ⟧, more(acc) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.acc.at ), 29-:Δ ).if( ξ.acc, Φ.more( Φ.more( Φ.state( Φ.plus( ξ.acc.at ), ξ.acc.groups ) ) ) ) ⟧, e1 ↦ Φ.byte( 𝜎1:λ, Φ.more( Φ.state( 00-:Δ, 00-:Δ ) ).at ) ⟧"
+          atoms = T.pack "- λ: L_fork\n  dataize: {𝛿1: $.on🌵}\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  stay: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  evaluate: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  undress: {𝑛15: 𝑛5, 𝑛16: 𝑛6}\n  symbolize: {𝑛11: 𝑛15, 𝑛12: 𝑛16}\n  defer: {𝑛13: 𝑛11, 𝑛14: 𝑛12}\n  cast: {𝑛19: 𝑛13, 𝑛20: 𝑛14}\n  join: {'on': 𝛿1, left: 𝑛19, right: 𝑛20, otherwise: L_fork}\n- λ: L_eq\n  dataize: {𝛿1: $.a, 𝛿2: $.b}\n  𝑛: Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ )\n- λ: L_byte\n  dataize: {𝛿1: $.data, 𝛿2: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_plus\n  dataize: {𝛿1: $.x}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+      it "shares the accumulator by a name, so no line of the minutes grows with the rounds" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf atoms $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.e1", "--acyclic=plausible", "--max-loops=2", "--max-seconds=60", "--minutes=" ++ path, "--sweet", "--hide-rho"] ["40-45-00-00-00-00-00-00"]
+          records <- lines <$> readProtocol path
+          (any (isPrefixOf "shared " . dropWhile (== ' ')) records, maximum (map length records) < 1000) `shouldBe` (True, True)
+
     describe "--acyclic at a recursive call" $ do
       let recursive = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.call( a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ) ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
           calling = T.pack "- λ: L_call\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n"
@@ -2504,8 +2516,9 @@ spec = do
                        , "    𝑛·0·4 := 5.0"
                        , "    𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
                        , "    normalized 𝑛·0·6 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
-                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 6.0.plus( 7.0 ) )"
-                       , "    𝑛·0·8 := ⟦ x ↦ 6.0.plus( 7.0 ), λ ⤍ L_number_plus ⟧"
+                       , "    shared 𝑛·1 := 6.0.plus( 7.0 )"
+                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 𝑛·1 )"
+                       , "    𝑛·0·8 := ⟦ x ↦ 𝑛·1, λ ⤍ L_number_plus ⟧"
                        , "    morphed 𝑛·0·9 := 𝑛·0·8"
                        , "  𝔼(L_number_plus):  # 𝔻(𝑛·0·1)"
                        , "    𝔻(ξ.ρ):"
@@ -2739,7 +2752,7 @@ spec = do
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ xml, "--quiet", "--sweet", "--hide-rho"] []
             lined <- readProtocol text
             marked <- readProtocol xml
-            [meta | meta : ":=" : _ <- map (dropWhile (`elem` ["boxed", "morphed", "normalized", "fabricated", "evaluated"]) . words) (lines lined), "𝑛·" `isPrefixOf` meta]
+            [meta | meta : ":=" : _ <- map (dropWhile (`elem` ["boxed", "morphed", "normalized", "fabricated", "evaluated", "shared"]) . words) (lines lined), "𝑛·" `isPrefixOf` meta]
               `shouldBe` [takeWhile (/= '"') (drop 6 token) | token <- words marked, "meta=\"𝑛·" `isPrefixOf` token]
 
       describe "as XML" $ do
@@ -3171,8 +3184,10 @@ spec = do
                          , "    <applied meta=\"𝑛·0·4\" by=\"morph\" at=\"𝑛·0·1\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></applied>"
                          , "    <formed meta=\"𝑛·0·5\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></formed>"
                          , "    <normalized meta=\"𝑛·0·6\" of=\"𝑛·0·5.plus\">𝑛·0·4.plus</normalized>"
-                         , "    <applied meta=\"𝑛·0·7\" by=\"morph\" at=\"𝑛·0·1\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑒·0·7</meta></applied>"
-                         , "    <formed meta=\"𝑛·0·8\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑒·0·7</meta></formed>"
+                         , "    <applied meta=\"𝑒·0·9\" of=\"𝑒·0·4.plus\"><meta attr=\"α0\">𝑒·0·6</meta></applied>"
+                         , "    <shared meta=\"𝑛·1\">𝑒·0·9</shared>"
+                         , "    <applied meta=\"𝑛·0·7\" by=\"morph\" at=\"𝑛·0·1\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑛·1</meta></applied>"
+                         , "    <formed meta=\"𝑛·0·8\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑛·1</meta></formed>"
                          , "    <morphed meta=\"𝑛·0·9\">𝑛·0·8</morphed>"
                          , "  </morph>"
                          , "  <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"𝑛·0·1\">"
