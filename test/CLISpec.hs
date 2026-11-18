@@ -1492,6 +1492,12 @@ spec = do
           ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
           ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
 
+    it "keeps the ρ that dot applies to Φ, and reads it back" $ do
+      withStdin "[[ x -> [[ y -> Q ]].y ]]" $
+        testCLISucceeded ["rewrite", "--normalize", "--flat"] ["⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧"]
+      withStdin "⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧" $
+        testCLISucceeded ["rewrite", "--flat"] ["⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧"]
+
   describe "morph --focus under --locator" $ do
     it "finds the same object for the steps and for the answer" $
       withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $ do

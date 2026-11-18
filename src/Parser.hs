@@ -500,12 +500,7 @@ exTail expr =
                 _ <- symbol "."
                 ExDispatch expr <$> attribute
             , do
-                guard
-                  ( case expr of
-                      ExXi -> False
-                      ExRoot -> False
-                      _ -> True
-                  )
+                guard (expr /= ExXi)
                 _ <- symbol "("
                 bds <-
                   choice
