@@ -12,10 +12,10 @@ import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
-import Canonizer (canonizeExpr, lambdaNames)
+import Canonizer (canonize, canonizeExpr, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
-import Control.Monad (mfilter, when, (>=>))
+import Control.Monad (mfilter, when, zipWithM, (>=>))
 import qualified Data.ByteString as BS
 import Data.Char (isDigit)
 import Data.Functor ((<&>))
@@ -231,6 +231,7 @@ parseInputWithAtoms input format form = (,M.empty) <$> parseInput input format f
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
+  | _canonize = withHeaders <$> zipWithM (printCanonized ctx) (map fst chain) (map fst (canonize chain))
   | otherwise = withHeaders <$> mapM (printAnswer ctx . fst) chain
   where
     withHeaders :: [String] -> String
@@ -243,11 +244,12 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
 
 printAnswer :: PrintContext -> Expression -> IO String
 printAnswer ctx@PrintCtx{..} expr
-  | _canonize = printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
+  | _canonize = printCanonized ctx expr (canonizeExpr expr)
   | otherwise = printFocused ctx expr
-  where
-    canonized :: Expression
-    canonized = canonizeExpr expr
+
+printCanonized :: PrintContext -> Expression -> Expression -> IO String
+printCanonized ctx@PrintCtx{..} expr canonized =
+  printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
 
 printFocused :: PrintContext -> Expression -> IO String
 printFocused ctx@PrintCtx{..} expr

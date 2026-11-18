@@ -235,7 +235,6 @@ rewriting (name, rule) = do
     refused
       | isJust rule.having = Left (printf "The rule '%s' cannot be compiled, since it has a 'having' condition" rule.name)
       | isNothing rule.when && fast rule.pattern rule.result = Left (printf "The rule '%s' cannot be compiled, since it rewrites a formation into a formation the fast way" rule.name)
-      | rooted rule.pattern = Left (printf "The rule '%s' cannot be compiled, since its pattern applies Φ to a ρ" rule.name)
       | otherwise = Right ()
     walked :: Emitting a -> Either String a
     walked (Emitting walk) = either (Left . printf "The rule '%s' cannot be compiled, since %s" rule.name) (Right . fst) (walk (Scope Map.empty 1))
@@ -567,7 +566,6 @@ built _ (ExMeta meta) = known (Named meta)
 built _ ExXi = pure (Just "ExXi")
 built _ ExRoot = pure (Just "ExRoot")
 built _ ExTermination = pure (Just "ExTermination")
-built checked (ExApplication ExRoot (ArTau AtRho expr)) = fmap (const "ExRoot") <$> built checked expr
 built checked (ExFormation bds) = do
   parts <- mapM part bds
   pure (formation <$> sequence parts)
@@ -648,14 +646,6 @@ function func = refuse (printf "it holds the λ function '%s' where a literal on
 
 texted :: T.Text -> String
 texted text = "T.pack " ++ show (T.unpack text)
-
-rooted :: Expression -> Bool
-rooted (ExApplication ExRoot (ArTau AtRho _)) = True
-rooted (ExApplication expr (ArTau _ arg)) = rooted expr || rooted arg
-rooted (ExApplication expr (ArAlpha _ arg)) = rooted expr || rooted arg
-rooted (ExDispatch expr _) = rooted expr
-rooted (ExFormation bds) = or [rooted expr | BiTau _ expr <- bds]
-rooted _ = False
 
 known :: Meta -> Emitting (Maybe String)
 known key = Emitting (\scope@(Scope bound _) -> Right (Map.lookup key bound, scope))

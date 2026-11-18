@@ -42,6 +42,7 @@ data RuleContext = RuleContext
   { _buildTerm :: BuildTermFunc
   , _universe :: Maybe Expression
   , _normal :: Expression -> Bool
+  , _cheat :: Bool
   }
 
 data Step = Step
@@ -62,7 +63,7 @@ isNF :: Expression -> RuleContext -> Bool
 isNF expr ctx = normalWith (`matchesAnyNormalizationRule` ctx) expr
 
 normal :: Expression -> Bool
-normal expr = isNF expr (RuleContext buildTerm Nothing (const True))
+normal expr = isNF expr (RuleContext buildTerm Nothing (const True) False)
 
 normalWith :: (Expression -> Bool) -> Expression -> Bool
 normalWith _ ExXi = True

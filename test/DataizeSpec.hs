@@ -95,7 +95,7 @@ spec = do
 
   describe "dataization 'norm' is disjoint from the specific clauses" $ do
     ctx <- runIO (defaultReduceContext ExRoot)
-    let rctx = RuleContext (execBuildTerm ExRoot ctx) Nothing (_normal linked)
+    let rctx = RuleContext (execBuildTerm ExRoot ctx) Nothing (_normal linked) False
         dataizeRule :: String -> Yaml.DataizeRule
         dataizeRule nm = fromMaybe (error ("no dataization rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.dataizationRules)
         asRule :: Yaml.DataizeRule -> Yaml.Rule

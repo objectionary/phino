@@ -27,7 +27,7 @@ module LaTeX
 import AST
 import Bytes (nonFiniteName)
 import CST
-import Canonizer (canonize, canonizeExpr)
+import Canonizer (canonize)
 import Data.Char (isAscii, isAsciiLower, isAsciiUpper, isDigit, ord)
 import Data.List (intercalate, isInfixOf, nub, zipWith4)
 import Data.Maybe (isJust)
@@ -209,10 +209,6 @@ canonizedRewrittens :: [Rewritten] -> LatexContext -> [Rewritten]
 canonizedRewrittens rewrittens LatexContext{_canonize = shouldCanonize} =
   if shouldCanonize then canonize rewrittens else rewrittens
 
-canonizedExpressions :: [Expression] -> LatexContext -> [Expression]
-canonizedExpressions exprs LatexContext{_canonize = shouldCanonize} =
-  if shouldCanonize then map canonizeExpr exprs else exprs
-
 compressedExpressions :: [Expression] -> LatexContext -> [Expression]
 compressedExpressions exprs ctx@LatexContext{..} =
   if _compress then meetInExpressions exprs ctx else exprs
@@ -232,7 +228,7 @@ rewrittensToLatex (rewrittens, exceeded) ctx@LatexContext{..} = do
   pure
     ( concat
         [ preamble ctx
-        , body (stepComments rewrittens ctx) (zip (canonizedExpressions (compressedExpressions focused ctx) ctx) rules) (\tabs expr -> renderToLatex (shown ctx (expressionToCSTFrom tabs expr)) ctx)
+        , body (stepComments rewrittens ctx) (canonizedRewrittens (zip (compressedExpressions focused ctx) rules) ctx) (\tabs expr -> renderToLatex (shown ctx (expressionToCSTFrom tabs expr)) ctx)
         , ending exceeded (last (arrows (map snd rewrittens))) ctx
         ]
     )
