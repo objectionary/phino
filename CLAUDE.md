@@ -139,6 +139,17 @@ engines over random terms and compares the chains, the normal-form test and 𝒞
 and the chains 𝕄 and 𝔻 make of an object of random programs; it also checks
 that the compiled test of which rules match never misses one.
 
+The normal-form test of either engine (`normal` of `Rule.hs`, `nf` of the
+generated module) takes for a normal form every meta a rule asks about: the meta
+holds a part of the term, and a part that is no normal form holds a match the
+walk meets anyway. Asking it again ran the whole test on every part, which
+doubled the work per level of a chain of nested copies (#2409). So a generated
+rule takes the test as an argument, the steps and `matching` hand it `nf`, and
+`nf` hands it `const True` (`matchingBy`). This holds while no rule of
+normalization asks for a normal form under `not` and every 𝑛 or 𝑘 meta binds a
+proper part of the term the rule matches; `nested` of `CompiledSpec.hs` compares
+the test with the one asking every meta the whole test again.
+
 A rule of 𝕄 or 𝔻 is an `Inference` of `Inference.hs`: matched against a term
 and a universe it answers the `Premises` it runs beside its spine, in order —
 `Morphs`, `Evaluates` or `Contextualizes`, each a function of the answer it is
@@ -658,7 +669,8 @@ state it started from and would refund the firings made inside it (#1472).
 `--max-seconds` bounds the time of the whole run the same way (`Deadline` and
 `clocked` in `Morph.hs`, off unless given), read by `deeper` at every step and
 by `charged` at every firing, since a run may spend its time rewriting terms
-that fire nothing (#1619), and by `enter` while it compares formations, since
+that fire nothing (#1619), by `normalized` at every step of normalization
+(#2409), and by `enter` while it compares formations, since
 under `plausible` one comparison by `within` may outlast the whole run, so a
 timer cuts that comparison where it stands (#1622). The same timer
 (`awaited` of `Morph.hs`) cuts the walk of a `rewrite` line, which takes no

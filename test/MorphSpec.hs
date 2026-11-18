@@ -30,7 +30,7 @@ import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
 import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
-import Morph (Deadline (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, factual, fired, inferred, insideUniverse, morph, morph', noted, voided)
+import Morph (Deadline (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, factual, fired, inferred, insideUniverse, morph, morph', normalized, noted, voided)
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -295,6 +295,12 @@ spec = do
       ctx <- defaultReduceContext ExRoot
       (residue, _, _) <- morph expr emptyState ctx{_deadline = Just deadline, _partial = True}
       residue `shouldBe` expr
+    it "fails a normalization once the deadline has passed" $ do
+      expr <- parseExpressionThrows "[[ w -> [[ y -> ? ]]( y -> [[ ]] ) ]]"
+      deadline <- overdue 19
+      ctx <- defaultReduceContext ExRoot
+      normalized expr ((expr, Nothing) :| []) ctx{_deadline = Just deadline}
+        `shouldThrow` (\e -> "--max-seconds=19" `isInfixOf` show (e :: SomeException))
 
   describe "stops an entrance by the clock of --max-seconds" $
     it "fails a comparison that outlasts the deadline" $ do

@@ -62,7 +62,7 @@ isNF :: Expression -> RuleContext -> Bool
 isNF expr ctx = normalWith (`matchesAnyNormalizationRule` ctx) expr
 
 normal :: Expression -> Bool
-normal expr = isNF expr (RuleContext buildTerm Nothing normal)
+normal expr = isNF expr (RuleContext buildTerm Nothing (const True))
 
 normalWith :: (Expression -> Bool) -> Expression -> Bool
 normalWith _ ExXi = True
