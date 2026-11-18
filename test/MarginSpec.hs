@@ -8,11 +8,13 @@ module MarginSpec where
 import AST
 import Bytes (numToBts, strToBts)
 import CST
+import Control.Exception (evaluate)
 import Control.Monad (forM_)
 import Data.Text qualified as T
 import Lining (LineFormat (..), toSingleLine)
 import Margin (withLines, withMargin)
 import Render (render)
+import System.Timeout (timeout)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe)
 import Text.Printf (printf)
 
@@ -95,6 +97,22 @@ precomposed =
 
 spec :: Spec
 spec = do
+  describe "withMargin on deep overflowing subtrees" $ do
+    it "lays out nested formations without rendering every overflowing ancestor" $ do
+      let leaf = EX_GLOBAL Φ
+          nested = iterate nest leaf !! 10000
+          nest :: EXPRESSION -> EXPRESSION
+          nest inner = EX_FORMATION LSB EOL (TAB 1) (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW inner) (BDS_EMPTY NO_TAB) NO_TAB) EOL (TAB 0) RSB
+      result <- timeout 5000000 (evaluate (T.count "⟦" (render (withMargin 80 nested))))
+      result `shouldBe` Just 10000
+    it "lays out nested callees without rendering their preceding lines again" $ do
+      let leaf = EX_GLOBAL Φ
+          nested = iterate call leaf !! 10000
+          call :: EXPRESSION -> EXPRESSION
+          call inner = EX_APPLICATION inner NO_SPACE EOL (TAB 1) (AA_EXPRS (APP_ARG leaf AAS_EMPTY)) EOL (TAB 0) 1
+      result <- timeout 5000000 (evaluate (T.count "(" (render (withMargin 80 nested))))
+      result `shouldBe` Just 10000
+
   describe "withMargin on EX_FORMATION" $ do
     it "leaves an empty formation untouched at any margin" $
       withMargin 0 (expressionToCST (ExFormation [])) `shouldBe` expressionToCST (ExFormation [])
@@ -302,7 +320,7 @@ spec = do
       , ("a string literal", DataString (strToBts "hello"))
       ]
     margins :: [Int]
-    margins = [0, 1, 40, 80, 1000]
+    margins = [-1, 0, 1, 40, 80, 1000, maxBound]
 
     commaFormation :: Expression
     commaFormation =

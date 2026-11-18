@@ -42,7 +42,7 @@ import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
 import Rule (RuleContext (RuleContext), xiFree)
-import Sides (Sides, named, opened, resolver)
+import Sides (Sides, minted, named, opened, resolver, spelled)
 import System.Timeout (timeout)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
@@ -135,6 +135,7 @@ data ReduceContext = ReduceContext
   , _symbolic :: Lambdas
   , _raising :: [T.Text]
   , _reckoning :: Bool
+  , _working :: Maybe Expression
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
@@ -542,9 +543,8 @@ sever taken form univ state ctx = admitted form ctx >>= either cut (pure . Right
 
 severed :: Maybe Attribute -> Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
 severed taken univ ctx state form bds (mode, before) = do
-  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
-  forM_ call (recited ctx . snd)
-  reckoned <- traverse (spelled taken . fst) call
+  call <- tracing ctx form before
+  reckoned <- traverse (spelled taken) call
   fresh <- coined ctx
   ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
   pure (ExFormation [BiLambda (FnSymbol fresh)])
@@ -554,6 +554,17 @@ severed taken univ ctx state form bds (mode, before) = do
     spelled Nothing found
       | ctx._reckoning = pure found
       | otherwise = argued univ ctx{_reckoning = True} state form bds found
+
+passing :: ReduceContext -> Expression -> (Acyclic, Expression) -> IO ()
+passing ctx form (mode, before) = do
+  call <- tracing ctx form before
+  ctx._saveEval (EvPassed ctx._nesting ctx._judgment mode before ctx._site form call)
+
+tracing :: ReduceContext -> Expression -> Expression -> IO (Maybe Expression)
+tracing ctx form before = do
+  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
+  forM_ call (recited ctx . snd)
+  pure (fst <$> call)
 
 recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
@@ -824,7 +835,7 @@ morph universe state caller@ReduceContext{..} = do
     reduced expr ctx = do
       result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
       case result of
-        Right ((morphed, seq), state') -> pure (morphed, reverse (NE.toList seq), state')
+        Right ((morphed, seq), state') -> (,reverse (NE.toList seq),state') <$> spelled _sides morphed
         Left (StuckAt func seq parked) | _partial -> residue seq parked{_stuck = Just func}
         Left (OutOfStepsAt _ seq parked) | _partial -> residue seq parked
         Left (OutOfSteps _) | _partial -> pure (expr, [(universe, Nothing)], state)
@@ -832,7 +843,7 @@ morph universe state caller@ReduceContext{..} = do
         Left failure -> throwIO (failure :: ReduceException)
     residue :: NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
     residue seq parked = do
-      expr <- locatedExpression _locator (fst (NE.head seq))
+      expr <- spelled _sides =<< locatedExpression _locator (fst (NE.head seq))
       pure (expr, reverse (NE.toList seq), parked)
 
 vetted :: Judgment -> Expression -> ReduceContext -> IO ()
@@ -853,7 +864,7 @@ inferred expr univ state ctx rules = do
       (morphed, state'') <- detached term world state' ctx
       next morphed >>= premised state''
     premised state' (In.Evaluates form world next) = do
-      (answer, state'') <- ctx._evaluate ctx state' form world
+      (answer, state'') <- ctx._evaluate ctx{_working = Just expr} state' form world
       next answer >>= premised state''
     premised state' (In.Contextualizes term context next) = ctx._engine._contextualize term context >>= next >>= premised state'
 
@@ -861,7 +872,8 @@ onward :: NonEmpty Rewritten -> State -> In.Way -> Expression -> Expression -> R
 onward seq state (In.Taken step) _ expr ctx = do
   seq' <- leadsTo seq step expr ctx
   pure ((expr, seq'), state)
-onward seq state (In.Normalized step) univ expr ctx = do
+onward seq state (In.Normalized step) univ expr' ctx = do
+  expr <- shared ctx expr'
   labelled <- leadsTo seq step expr ctx
   normal@(term, _) <- normalized expr labelled ctx
   unless (term `elem` [expr, bare expr]) (ctx._saveEval (EvNormalized ctx._nesting (rooted expr) term))
@@ -880,6 +892,62 @@ onward seq state (In.Named step) univ expr ctx = case ctx._universe of
   Just world -> onward seq state (In.Taken step) univ world ctx
   Nothing -> onward seq state (In.Normalized step) univ expr ctx
 onward seq state (In.Staged stage) _ expr ctx = morph' (expr, seq) stage state ctx
+
+shared :: ReduceContext -> Expression -> IO Expression
+shared ctx = go
+  where
+    go :: Expression -> IO Expression
+    go term@(ExApplication head' arg) = do
+      head'' <- go head'
+      arg' <- goArgument arg
+      pure (if head'' == head' && arg' == arg then term else ExApplication head'' arg')
+    go term@(ExDispatch inner attr) = do
+      inner' <- go inner
+      pure (if inner' == inner then term else ExDispatch inner' attr)
+    go term = pure term
+    goArgument :: Argument -> IO Argument
+    goArgument arg@(ArTau AtRho _) = pure arg
+    goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> (goValue =<< go expr)
+    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> (goValue =<< go expr)
+    goValue :: Expression -> IO Expression
+    goValue value@(ExMeta _) = pure value
+    goValue value@(ExApplication inner (ArTau AtRho _))
+      | closed value && growing value = do
+          look <- resolver ctx._sides
+          if dispatching look inner then goValue inner else kept value
+    goValue value = kept value
+    dispatching :: (T.Text -> Maybe Expression) -> Expression -> Bool
+    dispatching _ (ExDispatch _ _) = True
+    dispatching look (ExApplication inner _) = dispatching look inner
+    dispatching look (ExMeta name) = maybe False (dispatching look) (look name)
+    dispatching _ _ = False
+    kept :: Expression -> IO Expression
+    kept value
+      | closed value && growing value = do
+          (name, fresh) <- minted ctx._sides value
+          when fresh (ctx._saveEval (EvShared ctx._nesting name value))
+          pure name
+      | otherwise = pure value
+    growing :: Expression -> Bool
+    growing (ExMeta _) = True
+    growing (ExDispatch inner _) = not (path inner) || growing inner
+    growing (ExApplication inner (ArTau _ arg)) = growing inner || growing arg
+    growing (ExApplication inner (ArAlpha _ arg)) = growing inner || growing arg
+    growing _ = False
+    path :: Expression -> Bool
+    path (ExDispatch inner _) = path inner
+    path ExRoot = True
+    path _ = False
+    closed :: Expression -> Bool
+    closed (ExApplication inner (ArTau _ arg)) = closed inner && closed arg
+    closed (ExApplication inner (ArAlpha _ arg)) = closed inner && closed arg
+    closed (ExDispatch inner _) = closed inner
+    closed (ExFormation _) = True
+    closed ExRoot = True
+    closed (ExBytes _) = True
+    closed ExTermination = True
+    closed (ExMeta name) = isName name
+    closed _ = False
 
 leadsTo :: NonEmpty Rewritten -> (Judgment, String) -> Expression -> ReduceContext -> IO (NonEmpty Rewritten)
 leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
@@ -914,7 +982,7 @@ normalized expr seq ctx@ReduceContext{..} = do
     spined _ _ term = term
     rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
     rewriteContext taken peeled copies whole@ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled copies whole)
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> clocked whole >> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled copies whole)
     made :: IORef (Store Expression) -> IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
     made _ _ copies whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
       | attr /= AtRho && object /= head' = do
@@ -1017,19 +1085,16 @@ morphing univ ctx expr state = do
   unparked $ do
     opened <- opening Morphing =<< universed universe aiming
     ((morphed, _), state') <- morph' (normal, (universe, Nothing) :| []) universe state{_copies = []} opened
-    recurring morphed universe state'{_copies = state._copies ++ state'._copies} opened
+    recurring morphed state'{_copies = state._copies ++ state'._copies} opened
   where
-    recurring :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    recurring term@(ExFormation bds) world state' opened
+    recurring :: Expression -> State -> ReduceContext -> IO (Expression, State)
+    recurring term@(ExFormation bds) state' opened
       | Just mode <- opened._acyclic
       , boxed bds = do
           hits <- repeats mode term opened
-          case drop opened._maxLoops hits of
-            before : _ -> (,state') <$> severed Nothing world opened state' term bds (mode, before)
-            []
-              | null hits -> pure (term, state')
-              | otherwise -> pure (term, state'{_copies = state'._copies ++ [term]})
-    recurring term _ state' _ = pure (term, state')
+          forM_ (listToMaybe (drop opened._maxLoops hits)) (passing opened term . (mode,))
+          pure (term, if null hits then state' else state'{_copies = state'._copies ++ [term]})
+    recurring term state' _ = pure (term, state')
 
 carried :: State -> ReduceContext -> (State, ReduceContext)
 carried state ctx = (state{_copies = []}, maybe ctx (\mode -> ctx{_entered = foldr (\form -> seenInsert (digest mode form) form) ctx._entered state._copies}) ctx._acyclic)

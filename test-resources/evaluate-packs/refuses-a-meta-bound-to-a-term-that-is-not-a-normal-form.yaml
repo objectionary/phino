@@ -27,4 +27,4 @@ protocol: |
       𝕄(ξ.x):
         morphed 𝑛·1·1 := 01-:Δ
       𝑛1·1 := 01-:Δ  # 𝕄(ξ.x)
-      𝑛2·1 := 01-:Δ:k.k  # rewrite(𝑛1)
+      𝑛2·1 := 01-:Δ:k.k  # rewrite(𝑛1 of L_wrap)

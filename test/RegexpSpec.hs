@@ -17,6 +17,35 @@ utf8 = TE.encodeUtf8 . T.pack
 
 spec :: Spec
 spec = do
+  describe "execution limits" $ do
+    it "rejects a deeply recursive match with a normal error" $
+      R.match (utf8 "^(a|b)*$") (utf8 (replicate 9000 'a'))
+        `shouldThrow` (isInfixOf "Regex execution failed:" . displayException :: SomeException -> Bool)
+
+    forM_
+      [ ("extractGroups", \regex input -> void (R.extractGroups regex input))
+      , ("replaceFirst", \regex input -> void (R.replaceFirst regex (utf8 "X") input))
+      , ("replaceAll", \regex input -> void (R.replaceAll regex (utf8 "X") input))
+      ]
+      ( \(desc, execute) ->
+          forM_ ["(a|b)*", "(ab)+"] $ \pattern ->
+            it ("rejects deep recursion in " ++ desc ++ " with " ++ pattern) $ do
+              regex <- R.compile (utf8 pattern)
+              execute regex (utf8 (concat (replicate 10000 "ab")))
+                `shouldThrow` (isInfixOf "Regex execution failed:" . displayException :: SomeException -> Bool)
+      )
+
+    it "does not let a pattern raise the recursion ceiling" $
+      R.match (utf8 "(*LIMIT_RECURSION=10000000)^(a|b)*$") (utf8 (replicate 9000 'a'))
+        `shouldThrow` (isInfixOf "Regex execution failed:" . displayException :: SomeException -> Bool)
+
+    it "rejects excessive backtracking with a normal error" $
+      R.match (utf8 "^(a+)+$") (utf8 (replicate 30 'a' ++ "b"))
+        `shouldThrow` (isInfixOf "Regex execution failed:" . displayException :: SomeException -> Bool)
+
+    it "still matches a long string without deep recursion" $
+      R.match (utf8 "^a+$") (utf8 (replicate 20000 'a')) `shouldReturn` True
+
   describe "compile" $ do
     forM_
       [ ("compiles a valid pattern", "foo", "foobar")
