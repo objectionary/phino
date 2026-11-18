@@ -31,6 +31,7 @@ import Evaluate (evaluation)
 import Files (overwrite)
 import qualified Filter as F
 import LaTeX (explainContextualizeRules, explainDataizeRules, explainMorphRules, explainRules)
+import Locator (withLocatedExpression)
 import Logger
 import Margin (defaultMargin)
 import Merge (merge)
@@ -41,6 +42,7 @@ import qualified Printer as P
 import qualified Random as R
 import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
+import Sides (sides)
 import Slots (anonymous)
 import System.Directory (canonicalizePath, doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
@@ -182,6 +184,7 @@ runDataize args OptsDataize{..} = do
   save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
   minted <- newIORef 0
+  named <- sides
   memo <- memoized _acyclic
   facts <- factual
   linked <- engine
@@ -189,21 +192,26 @@ runDataize args OptsDataize{..} = do
   ((outcome, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
+      _minutes
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty (Just facts) lambdas (building linked) reduction evaluation save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted named deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty (Just facts) lambdas [] False Nothing (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Dataization header _inside expr ctx
           started universe aiming
           (,universe,aiming._locator) <$> dataize universe emptyState aiming
       )
+  printed <-
+    if _quiet
+      then pure Nothing
+      else Just <$> printOutcome printCtx (resolvedAnswer foc aim universe chain excluded included) outcome
   when _sequence (exclude chain >>= include >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
-  unless _quiet (printOutcome printCtx (filteredAt aim universe excluded included) outcome >>= putStrLn)
+  mapM_ putStrLn printed
   where
     printOutcome :: PrintContext -> (Expression -> IO Expression) -> Outcome -> IO String
     printOutcome _ _ (Dataized bytes) = pure (P.printBytes bytes)
-    printOutcome ctx narrowed (Residual residue) = do
+    printOutcome ctx resolve (Residual residue) = do
       logDebug "Dataization got stuck on a λ function that cannot fire, printing the residual program (--partial)"
-      answer <- narrowed residue
+      answer <- resolve residue
       validateXmirTopLevel _outputFormat answer
       printAnswer ctx answer
     validateOpts :: IO ()
@@ -215,7 +223,7 @@ runDataize args OptsDataize{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-      when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (isJust _abridged && isNothing _protocol && isNothing _minutes) (invalidCLIArguments "The option --abridged requires --protocol or --minutes, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when (isJust _inside) $ do
@@ -268,6 +276,7 @@ runMorph args OptsMorph{..} = do
   save <- saveStepFunc _stepsDir printCtx included excluded
   tally <- tallied _maxFirings
   minted <- newIORef 0
+  named <- sides
   memo <- memoized _acyclic
   facts <- factual
   linked <- engine
@@ -275,9 +284,10 @@ runMorph args OptsMorph{..} = do
   ((morphed, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
+      _minutes
       printCtx
       ( \record -> do
-          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles (Steps _maxSteps 0) tally minted deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty (Just facts) lambdas (building linked) reduction evaluation save record linked
+          let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted named deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty (Just facts) lambdas [] False Nothing (building linked) reduction evaluation save record linked
           (universe, aiming) <- aimed printCtx Morphing header _inside expr ctx
           started universe aiming
           (,universe,aiming._locator) <$> morph universe emptyState aiming
@@ -286,18 +296,12 @@ runMorph args OptsMorph{..} = do
     if _quiet
       then pure Nothing
       else do
-        answer <-
-          if foc == ExRoot
-            then filteredAt aim universe excluded included morphed
-            else F.exclude' (maybe morphed fst (lastMaybe chain)) excluded >>= (`F.include'` included)
+        answer <- resolvedAnswer foc aim universe chain excluded included morphed
         validateXmirTopLevel _outputFormat answer
         Just <$> printAnswer printCtx answer
   when _sequence (exclude chain >>= include >>= \shown -> printRewrittens printCtx (shown, False) >>= putStrLn)
   mapM_ putStrLn printed
   where
-    lastMaybe :: [a] -> Maybe a
-    lastMaybe [] = Nothing
-    lastMaybe items = Just (last items)
     validateOpts :: IO ()
     validateOpts = do
       validateLatexOptions
@@ -307,7 +311,7 @@ runMorph args OptsMorph{..} = do
         [(_meetPopularity, "meet-popularity"), (_meetLength, "meet-length")]
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
-      when (isJust _abridged && isNothing _protocol) (invalidCLIArguments "The option --abridged requires --protocol, since only the protocol is abridged")
+      when (isJust _abridged && isNothing _protocol && isNothing _minutes) (invalidCLIArguments "The option --abridged requires --protocol or --minutes, since only the protocol is abridged")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when (isJust _inside) $ do
@@ -457,3 +461,15 @@ runCompile OptsCompile{..} = do
       if found
         then pure (Just full)
         else if parent == full then pure Nothing else projectRootOf parent
+
+resolvedAnswer :: Expression -> Expression -> Expression -> [(Expression, b)] -> [Expression] -> [Expression] -> Expression -> IO Expression
+resolvedAnswer foc aim universe chain excluded included expr =
+  if foc == ExRoot
+    then filteredAt aim universe excluded included expr
+    else do
+      located <- withLocatedExpression aim expr (maybe universe fst (lastMaybe chain))
+      F.exclude' located excluded >>= (`F.include'` included)
+
+lastMaybe :: [a] -> Maybe a
+lastMaybe [] = Nothing
+lastMaybe items = Just (last items)
