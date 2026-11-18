@@ -20,7 +20,7 @@ import Deps (Evaluation (..), Judgment (..), State (..), resited)
 import Engine (Engine (..))
 import qualified Inference as In
 import Locator (locatedExpression)
-import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, carried, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed)
+import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, carried, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed, vetted)
 import Rewriter (Rewritten)
 
 type Dataized = (Bytes, [Rewritten])
@@ -35,11 +35,13 @@ data Outcome
 dataize :: Expression -> State -> ReduceContext -> IO (Outcome, [Rewritten], State)
 dataize universe state ctx@ReduceContext{..} = do
   expr <- locatedExpression _locator universe
+  vetted Dataization expr ctx
   result <- try (dataize' (expr, (universe, Nothing) :| []) universe state ctx)
   case result of
     Right ((bytes, seq), state') -> pure (Dataized bytes, reverse seq, state')
     Left (StuckAt func seq parked) | _partial -> residual seq parked{_stuck = Just func}
     Left (OutOfStepsAt _ seq parked) | _partial -> residual seq parked
+    Left (OutOfSteps _) | _partial -> pure (Residual expr, [(universe, Nothing)], state)
     Left (LoopingAt _ seq parked) | _partial -> residual seq parked
     Left (Undataizable term seq parked) | _partial -> do
       unless (dead `elem` _parked) (_saveEval (EvStuck _nesting dead Dataization term))
@@ -69,7 +71,7 @@ dataize' (start, seq) univ held caller = do
           pure ((bts, NE.toList seq'), state'{_manufactured = Nothing})
         Just (In.Onward way built world, state') -> do
           ctx' <- boxing way built ctx
-          (dataizable, state'') <- onward seq state' way built ctx'
+          (dataizable, state'') <- onward seq state' way univ built ctx'
           dataize' dataizable world state'' ctx'
         Nothing -> throwIO (Undataizable expr seq state)
   where

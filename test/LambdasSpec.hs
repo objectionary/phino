@@ -571,6 +571,11 @@ spec = do
       kept <- parseExpressionThrows "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) )"
       stayed term `shouldBe` kept
 
+    it "keeps the bindings beside the one it changed" $ do
+      term <- parseExpressionThrows "⟦ ja ↦ ξ.w, ne ↦ Φ.bytes( ρ ↦ ⟦ x ↦ ∅ ⟧ ), ob ↦ Φ.k( z ↦ ξ.w ) ⟧.ne"
+      kept <- parseExpressionThrows "⟦ ja ↦ ξ.w, ne ↦ Φ.bytes, ob ↦ Φ.k( z ↦ ξ.w ) ⟧.ne"
+      stayed term `shouldBe` kept
+
   describe "cast" $ do
     it "casts a bare symbol into a copy of a decorator whose φ is a bare symbol" $ do
       bare <- parseExpressionThrows "⟦ λ ⤍ 𝜎5 ⟧"
@@ -687,6 +692,15 @@ spec = do
     it "counts every symbol it minted" $ do
       term <- parseExpressionThrows "Φ.number( φ ↦ ⟦ Δ ⤍ 0E- ⟧ )"
       (\(_, _, spent) -> spent) (symbolized term 11) `shouldBe` 12
+
+    it "leaves a term holding no datum as it is" $ do
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.wert( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ).zahl, λ ⤍ L_kern, tief ↦ ξ.ρ.q( α0 ↦ ξ.w ) ⟧"
+      symbolized term 5 `shouldBe` (term, [], 5)
+
+    it "keeps the bindings beside the datum it turned into a symbol" $ do
+      term <- parseExpressionThrows "Φ.paar( φ ↦ ⟦ λ ⤍ L_kern, eins ↦ ξ.w.r, zwei ↦ ⟦ Δ ⤍ 7B- ⟧, drei ↦ Φ.k( z ↦ ξ.w ) ⟧ )"
+      masked <- parseExpressionThrows "Φ.paar( φ ↦ ⟦ λ ⤍ L_kern, eins ↦ ξ.w.r, zwei ↦ ⟦ λ ⤍ 𝜎4 ⟧, drei ↦ Φ.k( z ↦ ξ.w ) ⟧ )"
+      (\(made, _, _) -> made) (symbolized term 3) `shouldBe` masked
 
     it "walks the φ an application binds down to the datum" $ do
       term <- parseExpressionThrows "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 3F-F0-00-00-00-00-00-00 ⟧ ) )"
