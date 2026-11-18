@@ -14,6 +14,13 @@ import qualified Text.Regex.PCRE.Wrap as W
 
 data Regex = Regex R.Regex R.Regex
 
+newtype RegexExecutionException = RegexExecutionException String
+
+instance Show RegexExecutionException where
+  show (RegexExecutionException err) = "Regex execution failed: " ++ err
+
+instance Exception RegexExecutionException
+
 compile :: B.ByteString -> IO Regex
 compile pat = do
   first <- compileWith R.execBlank
@@ -21,7 +28,7 @@ compile pat = do
   pure (Regex first continuation)
   where
     compileWith option = do
-      compiled <- R.compile R.compUTF8 option (B.pack "(*UCP)" `B.append` pat)
+      compiled <- R.compile R.compUTF8 option (B.pack "(*UCP)(*LIMIT_MATCH=1000000)(*LIMIT_RECURSION=256)" `B.append` pat)
       case compiled of
         Left (_, err) -> throwIO (userError ("Regex compilation failed: " ++ err))
         Right regex -> pure regex
@@ -133,4 +140,4 @@ replaceAll (Regex first _) rep input = go 0 B.empty
     isContinuation byte = ord byte >= 0x80 && ord byte < 0xC0
 
 regexExecutionFailed :: Show err => err -> IO value
-regexExecutionFailed err = throwIO (userError ("Regex execution failed: " ++ show err))
+regexExecutionFailed err = throwIO (RegexExecutionException (show err))

@@ -135,6 +135,7 @@ data ReduceContext = ReduceContext
   , _symbolic :: Lambdas
   , _raising :: [T.Text]
   , _reckoning :: Bool
+  , _working :: Maybe Expression
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
@@ -334,21 +335,21 @@ abstracted store spots form = do
                     (side', posed) <- goExpr cache side
                     if side' == side then pure (term, posed) else (,posed) <$> named store side'
               made <$ modifyIORef' cache (Map.insert name made)
-    nested cache (ExFormation bds) = do
+    nested cache term@(ExFormation bds) = do
       parts <- mapM (goBinding cache) bds
-      pure (ExFormation (map fst parts), concatMap snd parts)
-    nested cache (ExApplication expr arg) = do
+      pure (intact bds term ExFormation (map fst parts), concatMap snd parts)
+    nested cache term@(ExApplication expr arg) = do
       (expr', one) <- goExpr cache expr
       (arg', two) <- goArgument cache arg
-      pure (ExApplication expr' arg', one ++ two)
-    nested cache (ExDispatch expr attr) = first (`ExDispatch` attr) <$> goExpr cache expr
+      pure (intact (expr, arg) term (uncurry ExApplication) (expr', arg'), one ++ two)
+    nested cache term@(ExDispatch expr attr) = first (intact expr term (`ExDispatch` attr)) <$> goExpr cache expr
     nested _ term = pure (term, [])
     goBinding :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Binding -> IO (Binding, [(Int, Expression)])
-    goBinding cache (BiTau attr expr) = first (BiTau attr) <$> goExpr cache expr
+    goBinding cache bd@(BiTau attr expr) = first (intact expr bd (BiTau attr)) <$> goExpr cache expr
     goBinding _ bd = pure (bd, [])
     goArgument :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Argument -> IO (Argument, [(Int, Expression)])
-    goArgument cache (ArTau attr expr) = first (ArTau attr) <$> goExpr cache expr
-    goArgument cache (ArAlpha alpha expr) = first (ArAlpha alpha) <$> goExpr cache expr
+    goArgument cache arg@(ArTau attr expr) = first (intact expr arg (ArTau attr)) <$> goExpr cache expr
+    goArgument cache arg@(ArAlpha alpha expr) = first (intact expr arg (ArAlpha alpha)) <$> goExpr cache expr
 
 kindle :: Sides -> Maybe Memo -> Expression -> Firing -> Answer -> IO ()
 kindle store (Just (Memo _ _ _ _ (Kin places likes _))) form firing answer = do
@@ -459,17 +460,17 @@ renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _) term = do
               made <$ modifyIORef' renamed (Map.insert name made)
     nested renamed expr = walked renamed expr
     walked :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    walked renamed (ExFormation bds) = ExFormation <$> mapM (goBinding renamed) bds
-    walked renamed (ExApplication expr arg) = ExApplication <$> goExpr renamed expr <*> goArgument renamed arg
-    walked renamed (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr renamed expr
+    walked renamed whole@(ExFormation bds) = intact bds whole ExFormation <$> suffixed (goBinding renamed) bds
+    walked renamed whole@(ExApplication expr arg) = intact (expr, arg) whole (uncurry ExApplication) <$> ((,) <$> goExpr renamed expr <*> goArgument renamed arg)
+    walked renamed whole@(ExDispatch expr attr) = intact expr whole (`ExDispatch` attr) <$> goExpr renamed expr
     walked _ expr = pure expr
     goBinding :: IORef (Map.Map T.Text Expression) -> Binding -> IO Binding
-    goBinding renamed (BiTau attr expr) = BiTau attr <$> goExpr renamed expr
+    goBinding renamed bd@(BiTau attr expr) = intact expr bd (BiTau attr) <$> goExpr renamed expr
     goBinding _ (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> renamedSymbol ctx renaming idx
     goBinding _ bd = pure bd
     goArgument :: IORef (Map.Map T.Text Expression) -> Argument -> IO Argument
-    goArgument renamed (ArTau attr expr) = ArTau attr <$> goExpr renamed expr
-    goArgument renamed (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr renamed expr
+    goArgument renamed arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> goExpr renamed expr
+    goArgument renamed arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> goExpr renamed expr
 
 renamedSymbol :: ReduceContext -> Renaming -> Int -> IO Int
 renamedSymbol ctx renaming@(Renaming table _ visiting) idx = do
@@ -542,9 +543,8 @@ sever taken form univ state ctx = admitted form ctx >>= either cut (pure . Right
 
 severed :: Maybe Attribute -> Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
 severed taken univ ctx state form bds (mode, before) = do
-  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
-  forM_ call (recited ctx . snd)
-  reckoned <- traverse (spelled taken . fst) call
+  call <- tracing ctx form before
+  reckoned <- traverse (spelled taken) call
   fresh <- coined ctx
   ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
   pure (ExFormation [BiLambda (FnSymbol fresh)])
@@ -554,6 +554,17 @@ severed taken univ ctx state form bds (mode, before) = do
     spelled Nothing found
       | ctx._reckoning = pure found
       | otherwise = argued univ ctx{_reckoning = True} state form bds found
+
+passing :: ReduceContext -> Expression -> (Acyclic, Expression) -> IO ()
+passing ctx form (mode, before) = do
+  call <- tracing ctx form before
+  ctx._saveEval (EvPassed ctx._nesting ctx._judgment mode before ctx._site form call)
+
+tracing :: ReduceContext -> Expression -> Expression -> IO (Maybe Expression)
+tracing ctx form before = do
+  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
+  forM_ call (recited ctx . snd)
+  pure (fst <$> call)
 
 recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
@@ -853,7 +864,7 @@ inferred expr univ state ctx rules = do
       (morphed, state'') <- detached term world state' ctx
       next morphed >>= premised state''
     premised state' (In.Evaluates form world next) = do
-      (answer, state'') <- ctx._evaluate ctx state' form world
+      (answer, state'') <- ctx._evaluate ctx{_working = Just expr} state' form world
       next answer >>= premised state''
     premised state' (In.Contextualizes term context next) = ctx._engine._contextualize term context >>= next >>= premised state'
 
@@ -914,7 +925,7 @@ normalized expr seq ctx@ReduceContext{..} = do
     spined _ _ term = term
     rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
     rewriteContext taken peeled copies whole@ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled copies whole)
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> clocked whole >> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled copies whole)
     made :: IORef (Store Expression) -> IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
     made _ _ copies whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
       | attr /= AtRho && object /= head' = do
@@ -1017,19 +1028,16 @@ morphing univ ctx expr state = do
   unparked $ do
     opened <- opening Morphing =<< universed universe aiming
     ((morphed, _), state') <- morph' (normal, (universe, Nothing) :| []) universe state{_copies = []} opened
-    recurring morphed universe state'{_copies = state._copies ++ state'._copies} opened
+    recurring morphed state'{_copies = state._copies ++ state'._copies} opened
   where
-    recurring :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    recurring term@(ExFormation bds) world state' opened
+    recurring :: Expression -> State -> ReduceContext -> IO (Expression, State)
+    recurring term@(ExFormation bds) state' opened
       | Just mode <- opened._acyclic
       , boxed bds = do
           hits <- repeats mode term opened
-          case drop opened._maxLoops hits of
-            before : _ -> (,state') <$> severed Nothing world opened state' term bds (mode, before)
-            []
-              | null hits -> pure (term, state')
-              | otherwise -> pure (term, state'{_copies = state'._copies ++ [term]})
-    recurring term _ state' _ = pure (term, state')
+          forM_ (listToMaybe (drop opened._maxLoops hits)) (passing opened term . (mode,))
+          pure (term, if null hits then state' else state'{_copies = state'._copies ++ [term]})
+    recurring term state' _ = pure (term, state')
 
 carried :: State -> ReduceContext -> (State, ReduceContext)
 carried state ctx = (state{_copies = []}, maybe ctx (\mode -> ctx{_entered = foldr (\form -> seenInsert (digest mode form) form) ctx._entered state._copies}) ctx._acyclic)

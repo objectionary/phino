@@ -20,5 +20,5 @@ protocol: |
     𝔼(L_pair):
       𝔻(ξ.x):
         𝕄(ξ.x):
-          unanswered L_none  # 𝕄(L_none:λ)
+          unanswered L_none  # 𝕄(L_none:λ.foo)
       stuck L_none

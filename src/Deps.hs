@@ -134,7 +134,9 @@ data Evaluation
   | EvBoxed Int Expression
   | EvUndressed Int Expression
   | EvLooped Int Judgment Acyclic Expression Expression (Maybe (Int, Maybe Expression))
+  | EvPassed Int Judgment Acyclic Expression Expression Expression (Maybe Expression)
   | EvStuck Int T.Text Judgment Expression
+  | EvOpaque Int Int Judgment Expression
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
   | EvStarved Int Int Judgment Expression
@@ -164,6 +166,7 @@ data Evaluation
   | EvTaken Int Expression
   | EvRemembered Int Expression Expression
   | EvMemoized Int Expression Expression
+  | EvEvaluated Int Expression Expression
   | EvRecalled Int Expression Expression
   | EvRenamed Int Expression Expression Expression [(Int, Int)]
   | EvWorld Expression
@@ -182,6 +185,7 @@ resited from to = record
     record (EvFiring depth key judgment site) = EvFiring depth key judgment (moved site)
     record (EvStarted depth judgment site) = EvStarted depth judgment (moved site)
     record (EvLooped depth judgment mode self site answered) = EvLooped depth judgment mode self (moved site) answered
+    record (EvPassed depth judgment mode self site term call) = EvPassed depth judgment mode self (moved site) term call
     record (EvStarved depth limit judgment site) = EvStarved depth limit judgment (moved site)
     record (EvTimeout depth limit judgment site) = EvTimeout depth limit judgment (moved site)
     record (EvSpent depth limit judgment site) = EvSpent depth limit judgment (moved site)
@@ -210,7 +214,9 @@ tier (EvManufactured depth _) = depth
 tier (EvBoxed depth _) = depth
 tier (EvUndressed depth _) = depth
 tier (EvLooped depth _ _ _ _ _) = depth
+tier (EvPassed depth _ _ _ _ _ _) = depth
 tier (EvStuck depth _ _ _) = depth
+tier (EvOpaque depth _ _ _) = depth
 tier (EvStall depth _) = depth
 tier (EvStuckOn depth _) = depth
 tier (EvStarved depth _ _ _) = depth
@@ -240,6 +246,7 @@ tier (EvFabricated depth _ _ _ _) = depth
 tier (EvTaken depth _) = depth
 tier (EvRemembered depth _ _) = depth
 tier (EvMemoized depth _ _) = depth
+tier (EvEvaluated depth _ _) = depth
 tier (EvRecalled depth _ _) = depth
 tier (EvRenamed depth _ _ _ _) = depth
 tier EvWorld{} = maxBound
@@ -298,12 +305,13 @@ data Protocol = Protocol
   , _blocks :: [(Int, Maybe (Judgment, String), String, Bool)]
   , _answered :: [(Int, Expression, String)]
   , _unwritten :: Map.Map Int (Named Expression)
-  , _stated :: Named [(Expression, (String, String))]
+  , _stated :: Named [(Expression, (T.Text, T.Text))]
   , _spelt :: Map.Map Int (Map.Map Bytes String)
+  , _lambdas :: Map.Map Int T.Text
   }
 
 emptyProtocol :: Protocol
-emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty Map.empty Nothing [] [] Map.empty Map.empty Map.empty
+emptyProtocol = Protocol 0 Map.empty [] False Map.empty Map.empty Map.empty Map.empty Nothing [] [] Map.empty Map.empty Map.empty Map.empty
 
 data Nesting = Nesting
   { _fires :: Int
@@ -321,7 +329,7 @@ data Nesting = Nesting
   , _shapes :: Map.Map [Maybe Attribute] [(Expression, [Binding])]
   , _opaque :: Int
   , _unmarked :: Map.Map Int (Named Expression)
-  , _attested :: Named [(Expression, (String, String))]
+  , _attested :: Named [(Expression, (T.Text, T.Text))]
   }
 
 type Naming = StateT (Nesting, [String]) IO
@@ -329,11 +337,14 @@ type Naming = StateT (Nesting, [String]) IO
 emptyNesting :: Nesting
 emptyNesting = Nesting 0 [] [] Map.empty Map.empty Map.empty Map.empty Nothing [] [] [] Map.empty Map.empty 0 Map.empty Map.empty
 
-stated :: Expression -> Expression -> String -> String -> Named [(Expression, (String, String))] -> Named [(Expression, (String, String))]
-stated object source left right facts = namedInsert object ((source, (left, right)) : fromMaybe [] (namedLookup object facts)) facts
+stated :: Expression -> Expression -> String -> String -> Named [(Expression, (T.Text, T.Text))] -> Named [(Expression, (T.Text, T.Text))]
+stated object source left right facts = packed `seq` namedInsert object ((source, packed) : fromMaybe [] (namedLookup object facts)) facts
+  where
+    packed :: (T.Text, T.Text)
+    packed = ((,) $! T.pack left) $! T.pack right
 
-statement :: Expression -> Expression -> Named [(Expression, (String, String))] -> Maybe (String, String)
-statement object source facts = namedLookup object facts >>= lookup source
+statement :: Expression -> Expression -> Named [(Expression, (T.Text, T.Text))] -> Maybe (String, String)
+statement object source facts = bimap T.unpack T.unpack <$> (namedLookup object facts >>= lookup source)
 
 saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
 saveEval handle cursor printed printed' report = do
@@ -369,7 +380,7 @@ saveEval handle cursor printed printed' report = do
     context protocol judgment site = do
       locator <- located protocol site
       let said = printf "%s(%s)" (letter judgment) locator
-      pure [said | innermost protocol /= Just said]
+      pure [printf "%s(%s)" (letter judgment) (owned protocol site locator) | innermost protocol /= Just said]
     innermost :: Protocol -> Maybe String
     innermost protocol = case protocol._blocks of
       (_, heading, _, _) : _ -> snd <$> heading
@@ -412,6 +423,7 @@ saveEval handle cursor printed printed' report = do
         ( protocol
             { _fired = firings
             , _open = (depth, firings) : protocol._open
+            , _lambdas = Map.insert firings key protocol._lambdas
             , _blocks = (at, Nothing, opening, True) : protocol._blocks
             }
         , Just opening
@@ -446,9 +458,20 @@ saveEval handle cursor printed printed' report = do
         severed form (symbol, call) = do
           made <- traverse (printed . abbreviatedInside protocol._made) call
           pure (printf "looped %s%s" (printFunction (FnSymbol symbol)) (maybe "" (" := " ++) made), [printf "repeats %s" form])
+    written at (EvPassed _ judgment mode self site term call) protocol = do
+      form <- render self
+      remarks <- context protocol judgment site
+      let (index, counted) = numbered protocol
+          naming :: String
+          naming = printf "%s·%d" (labelled protocol answer) index
+      value <- maybe (borrowed protocol term) (printed . abbreviatedInside protocol._made) call
+      pure (counted{_made = namedFormation term (alias (opener protocol) index) counted._made}, Just (indented at (remarked (printf "passed %s := %s" naming value) (remarks ++ [certainty mode, printf "repeats %s" form]))))
     written at (EvStuck _ key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented at (printf "unanswered %s  # %s(%s)" (T.unpack key) (letter judgment) form)))
+    written at (EvOpaque _ symbol judgment self) protocol = do
+      form <- render self
+      pure (protocol, Just (indented at (printf "opaque %s  # %s(%s)" (printFunction (FnSymbol symbol)) (letter judgment) form)))
     written at (EvStall _ key) protocol =
       pure (protocol, Just (indented at (printf "stall %s" (T.unpack key))))
     written at (EvStuckOn _ key) protocol =
@@ -485,7 +508,7 @@ saveEval handle cursor printed printed' report = do
     written at (EvReshaped _ spelling block source term) protocol = do
       let naming = labelled protocol spelling
       (protocol', value) <- inscribed protocol naming term
-      line <- printf "%s := %s  # %s(%s)" naming value (T.unpack block) <$> salted (unwritten protocol source)
+      line <- printf "%s := %s  # %s(%s)" naming value (T.unpack block) . owned protocol source <$> salted (unwritten protocol source)
       pure (protocol', Just (indented at line))
     written at (EvSymbolized _ symbol bytes) protocol = do
       datum <- render (ExBytes bytes)
@@ -517,7 +540,7 @@ saveEval handle cursor printed printed' report = do
       let (index, counted) = numbered protocol
       value <- borrowed protocol term
       let naming = printf "%s·%d" (labelled protocol answer) index
-      pure (counted{_built = Map.insert (opener protocol) index counted._built, _answered = (depth, term, naming) : counted._answered}, Just (indented at (printf "%s := %s  # %s" naming value (T.unpack answer))))
+      pure (counted{_built = Map.insert (opener protocol) index counted._built, _answered = (depth, term, naming) : counted._answered}, Just (indented at (printf "%s := %s  # %s" naming value (entered protocol (T.unpack answer)))))
     written at (EvAnswer _ term) protocol = do
       let (index, counted) = numbered protocol
           stem :: String
@@ -567,6 +590,9 @@ saveEval handle cursor printed printed' report = do
       pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s" naming value)))
     written at (EvRemembered _ object source) protocol = stating at "remembered" "≡" object source protocol
     written at (EvMemoized _ form reply) protocol = stating at "memoized" "⇛" form reply protocol
+    written at (EvEvaluated _ form reply) protocol = do
+      origin <- render form
+      second (fmap (`remarked` [origin])) <$> concluding at "evaluated" reply protocol
     written at (EvRecalled _ term reply) protocol = do
       (known, given) <- maybe ((,) <$> render term <*> render reply) pure (statement term reply protocol._stated)
       pure (protocol, Just (indented at (printf "recalled %s ⇒ %s" known given)))
@@ -627,13 +653,19 @@ saveEval handle cursor printed printed' report = do
     spoken :: Protocol -> Expression -> IO String
     spoken protocol meta = maybe (labelled protocol . T.pack <$> salted meta) (borrowed protocol) (namedLookup meta (held protocol))
     commented :: Protocol -> String -> Judgment -> Expression -> IO String
-    commented protocol line judgment operand = printf "%s  # %s(%s)" line (letter judgment) <$> salted (unwritten protocol operand)
+    commented protocol line judgment operand = printf "%s  # %s(%s)" line (letter judgment) . owned protocol operand <$> salted (unwritten protocol operand)
+    owned :: Protocol -> Expression -> String -> String
+    owned protocol term spelling = case unwritten protocol term of
+      ExMeta meta | not (T.any (== '·') meta) -> entered protocol spelling
+      _ -> spelling
+    entered :: Protocol -> String -> String
+    entered protocol spelling = maybe spelling (printf "%s of %s" spelling . T.unpack) (Map.lookup (opener protocol) protocol._lambdas)
     unwritten :: Protocol -> Expression -> Expression
     unwritten protocol = abbreviated (held protocol)
     held :: Protocol -> Named Expression
     held protocol = Map.findWithDefault Map.empty (opener protocol) protocol._unwritten
     outer :: Int -> Protocol -> Protocol
-    outer depth protocol = protocol{_open = dropWhile ((>= depth) . fst) protocol._open, _answered = dropWhile (\(level, _, _) -> level > depth) protocol._answered, _unwritten = foldr (Map.delete . snd) protocol._unwritten (takeWhile ((>= depth) . fst) protocol._open), _spelt = foldr (Map.delete . snd) protocol._spelt (takeWhile ((>= depth) . fst) protocol._open)}
+    outer depth protocol = protocol{_open = dropWhile ((>= depth) . fst) protocol._open, _answered = dropWhile (\(level, _, _) -> level > depth) protocol._answered, _unwritten = foldr (Map.delete . snd) protocol._unwritten (takeWhile ((>= depth) . fst) protocol._open), _spelt = foldr (Map.delete . snd) protocol._spelt (takeWhile ((>= depth) . fst) protocol._open), _lambdas = foldr (Map.delete . snd) protocol._lambdas (takeWhile ((>= depth) . fst) protocol._open)}
     labelled :: Protocol -> T.Text -> String
     labelled protocol spelling = printf "%s·%d" (T.unpack spelling) (opener protocol)
     opener :: Protocol -> Int
@@ -777,8 +809,23 @@ saveEvalXml handle cursor printed report = do
         origin <- leaf depth self
         (object, given) <- called depth call
         pure (printf "<looped symbol=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\"%s>%s</looped>" (sigma symbol) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) (trailed call) given)
+    elements at (EvPassed depth judgment mode self site term call) nesting =
+      placed at nesting $ do
+        locator <- located depth site
+        origin <- leaf depth self
+        (object, given) <- maybe ((,"") <$> leaf depth term) (called depth) call
+        (naming, aliased) <- counted
+        modify (first (\nesting' -> nesting'{_objects = namedFormation term aliased nesting'._objects}))
+        pure (printf "<passed meta=\"%s\" by=\"%s\" match=\"%s\" at=\"%s\" of=\"%s\" object=\"%s\"%s%s" (escapeXML naming) (opened judgment) (certainty mode) (escapeXML locator) (escapeXML origin) (escapeXML object) (maybe "" trailed call) (closing given))
+      where
+        closing :: String -> String
+        closing "" = "/>"
+        closing "<with></with>" = "/>"
+        closing given = printf ">%s</passed>" given
     elements at (EvStuck depth key judgment self) nesting =
       placed at nesting (printf "<unanswered λ=\"%s\" by=\"%s\">%s</unanswered>" (quoted key) (opened judgment) . escapeXMLText <$> leaf depth self)
+    elements at (EvOpaque depth symbol judgment self) nesting =
+      placed at nesting (printf "<opaque symbol=\"%s\" by=\"%s\">%s</opaque>" (sigma symbol) (opened judgment) . escapeXMLText <$> leaf depth self)
     elements at (EvStall _ key) nesting =
       placed at nesting (pure (printf "<stalled λ=\"%s\"/>" (quoted key)))
     elements at (EvStuckOn _ key) nesting =
@@ -892,6 +939,7 @@ saveEvalXml handle cursor printed report = do
     elements at (EvTaken depth term) nesting = placed at nesting (concluded "answered" "" depth term)
     elements at (EvRemembered depth object source) nesting = placed at nesting (attesting "remembered" depth nesting object source)
     elements at (EvMemoized depth form reply) nesting = placed at nesting (attesting "memoized" depth nesting form reply)
+    elements at (EvEvaluated depth form reply) nesting = placed at nesting (leaf depth form >>= \origin -> concluded "evaluated" (printf " of=\"%s\"" (escapeXML origin)) depth reply)
     elements at (EvRecalled depth term reply) nesting =
       placed at nesting $ do
         (asked, given) <- maybe ((,) <$> leaf depth term <*> leaf depth reply) pure (statement term reply nesting._attested)
