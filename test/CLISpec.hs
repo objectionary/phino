@@ -1704,6 +1704,22 @@ spec = do
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-loops=1", "--max-steps=4000"]
             ["40-45-00-00-00-00-00-00"]
 
+      describe "over a recursion that takes an attribute off its own call" $ do
+        let world = "⟦ num(φ) ↦ ⟦ gt(ρ, b) ↦ L_gt:λ, plus(ρ, b) ↦ L_plus:λ ⟧, seq(i) ↦ ⟦ φ ↦ Φ.num( φ ↦ 𝜎1:λ ).gt( i ).if( Φ.seq( i.plus( Φ.num( φ ↦ 01-:Δ ) ) ).plus( Φ.num( φ ↦ 01-:Δ ) ), i ) ⟧, app ↦ Φ.seq( Φ.num( φ ↦ 00-:Δ ) ) ⟧"
+            atoms = T.pack "- λ: L_gt\n  dataize: {𝛿1: $.b}\n  𝑛: ⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧\n- λ: L_fork\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  evaluate: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  symbolize: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  cast: {𝑛7: 𝑛5, 𝑛8: 𝑛6}\n  join: {'on': $.on🌵, left: 𝑛7, right: 𝑛8, otherwise: L_fork}\n- λ: L_plus\n  dataize: {𝛿1: $.ρ}\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
+        it "cuts the recursion by --max-loops, not by --max-steps" $
+          withLambdasOf atoms $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--max-steps=1000", "--max-firings=50"] ["40-45-00-00-00-00-00-00"]
+        it "writes the cut of the dispatch off the copy that repeats one above" $
+          withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf atoms $ \file ->
+              withStdin world $
+                testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+            records <- map (dropWhile (== ' ')) . lines <$> readProtocol path
+            records `shouldContain` ["looped 𝜎5 := 𝑛·5·1.plus  # plausible, repeats 𝑛·0·4"]
+
       it "refuses a negative count" $
         withStdin once $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=-1"] ["--max-loops must be >= 0"]

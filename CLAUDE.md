@@ -522,16 +522,19 @@ The step budget `--max-steps` is what ends that recursion, and the only thing
 that does unless `morph` or `dataize` is given `--acyclic=<mode>`: the option
 has every 𝕄 and every 𝔻 frame remember the formations its ancestors have
 entered (`severing` and `enter` in `Morph.hs`, one store for both judgments,
-since only `box` and `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line, `fired`
-of `Morph.hs`, enter one, and the line spends a step of `deeper` as a frame
-does, #1882) and park the site the moment a frame is about to enter one of
-them again, the way `--partial` parks a λ that cannot fire. Where `box` of 𝔻
+since only `box` and `fire` of 𝔻, `ml` and `mphi` of 𝕄 and an `evaluate`
+line, `fired` of `Morph.hs`, enter one, and the line spends a step of
+`deeper` as a frame does, #1882) and park the site the moment a frame is
+about to enter one of them again, the way `--partial` parks a λ that cannot
+fire. Where `box` of 𝔻
 or an `evaluate` line is about to enter a formation binding φ and holding no λ,
 `sever` answers it with a fresh symbol, and the run goes on (#2226). Where 𝔻 or
 an `evaluate` line is about to enter a formation holding a λ, such as a copy of
 an atom whose operand dataizes the call again, or the φ of a formation a join
 fabricated, `sever` answers it the same way (#2272, #2275, #2278). Where 𝕄 is
-about to dispatch off a formation holding a λ that repeats one above, `sever`
+about to dispatch off a formation holding a λ, or off one binding φ and
+holding no λ, which `mphi` takes the attribute off through its φ the way
+`box` of 𝔻 goes into it (#2422), and the formation repeats one above, `sever`
 answers the whole dispatch with a fresh symbol and names it after the call the
 facts trace with the attribute on top, as `looped 𝜎1 := 𝑛·2·1.q`, leaving the
 arguments as they are, since working them out runs into the same loop again
