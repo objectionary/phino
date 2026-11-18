@@ -614,10 +614,7 @@ xmirToExpression derived cur fqn
                       attr <- toAttr rest cur
                       let disp = ExDispatch expr attr
                       xmirToApplication derived disp args' fqn
-        "ξ" ->
-          if null (cur C.$/ C.element (toName "o"))
-            then pure ExXi
-            else throwIO (InvalidXMIRFormat "Application of 'ξ' is illegal in XMIR" cur)
+        "ξ" -> xmirToApplication derived ExXi (cur C.$/ C.element (toName "o")) fqn
         "Φ" -> xmirToApplication derived ExRoot (cur C.$/ C.element (toName "o")) fqn
         "⊥" -> xmirToApplication derived ExTermination (cur C.$/ C.element (toName "o")) fqn
         '⊥' : '.' : rest -> xmirToExpression' ExTermination "⊥" rest cur fqn

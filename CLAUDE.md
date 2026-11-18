@@ -480,8 +480,8 @@ through `copy`, `stay` or `skip`. Without it a body such as `Φ.outer(ρ ↦ X)`
 taken out of a fabricated formation gains a ρ holding that formation every
 time, and the tree doubles per `dot` (#2415). It works on what a step built,
 in `interpreted` and `direct` alike, so both engines cheat the same. An
-application of `Φ`, such as `Φ(ρ ↦ 𝑒)`, is a term like any other: the parser
-and the XMIR reader accept it and the builder keeps it (#2417).
+application of `Φ` or `ξ`, such as `Φ(ρ ↦ 𝑒)`, is a term like any other: the
+parser and the XMIR reader accept it and the builder keeps it (#2417, #2418).
 
 ### Dependency inversion for circular imports
 
@@ -809,10 +809,9 @@ Test files map 1:1 with source modules (`RewriterSpec.hs` ↔ `Rewriter.hs`).
 `PrinterSpec.hs` also states the round trip of the printer and the parser as
 a QuickCheck property over `Grown` of `test/Grown.hs`, a term grown at random
 and shrunk to the smallest one still failing (#2002). The generator grows only
-what the sweet syntax spells back: it applies nothing to ξ or Φ, closes a
-formation with its λ and Δ, since neither takes a position (#1411), and
-applies no ρ straight to a number or string literal, since the sweet syntax
-drops such a ρ (#451).
+what the sweet syntax spells back: it closes a formation with its λ and Δ,
+since neither takes a position (#1411), and applies no ρ straight to a number
+or string literal, since the sweet syntax drops such a ρ (#451).
 
 ### Style
 
