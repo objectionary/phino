@@ -479,9 +479,9 @@ step applies to a term already ending with one, so `dot` makes
 through `copy`, `stay` or `skip`. Without it a body such as `Φ.outer(ρ ↦ X)`
 taken out of a fabricated formation gains a ρ holding that formation every
 time, and the tree doubles per `dot` (#2415). It works on what a step built,
-in `interpreted` and `direct` alike, so both engines cheat the same. The
-builder turning `Φ(ρ ↦ 𝑒)` into `Φ` is no cheat and stays on: neither the
-parser nor the XMIR reader accepts `Φ(ρ ↦ 𝑒)` (#1378).
+in `interpreted` and `direct` alike, so both engines cheat the same. An
+application of `Φ`, such as `Φ(ρ ↦ 𝑒)`, is a term like any other: the parser
+and the XMIR reader accept it and the builder keeps it (#2417).
 
 ### Dependency inversion for circular imports
 
