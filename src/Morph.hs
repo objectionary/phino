@@ -911,7 +911,18 @@ shared ctx = go
     goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> (goValue =<< go expr)
     goValue :: Expression -> IO Expression
     goValue value@(ExMeta _) = pure value
-    goValue value
+    goValue value@(ExApplication inner (ArTau AtRho _))
+      | closed value && growing value = do
+          look <- resolver ctx._sides
+          if dispatching look inner then goValue inner else kept value
+    goValue value = kept value
+    dispatching :: (T.Text -> Maybe Expression) -> Expression -> Bool
+    dispatching _ (ExDispatch _ _) = True
+    dispatching look (ExApplication inner _) = dispatching look inner
+    dispatching look (ExMeta name) = maybe False (dispatching look) (look name)
+    dispatching _ _ = False
+    kept :: Expression -> IO Expression
+    kept value
       | closed value && growing value = do
           (name, fresh) <- minted ctx._sides value
           when fresh (ctx._saveEval (EvShared ctx._nesting name value))

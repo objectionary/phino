@@ -761,7 +761,10 @@ holds no ξ, ρ or other meta, and holds a name or a dispatch off something othe
 than a path of `Φ`, gets a name (`minted` of `Sides.hs`), so an accumulator a
 recursion wraps every round, as `Φ.more( Φ.state( Φ.plus( ξ.acc.at ),
 ξ.acc.groups ) )`, is spelled once and not again in every round that copies it.
-A number, a path or a formation stays as it is. The first time a term gets its
+A number, a path or a formation stays as it is. An argument applying ρ to a
+dispatch, or to a name standing for one, as `𝑛·2( ρ ↦ … )` that `dot` makes of
+`ξ.i`, is named without that ρ, which `stayed` drops too, so one value never
+gets a second name every round (#2413). The first time a term gets its
 name the run writes `shared 𝑛·1 := …` (`EvShared`), and the markup `<shared
 meta="𝑛·1">`. Unlike the name of a side, the name of an argument is spelled back
 in what `morph` and `dataize` print, the result and the residue of `--partial`
