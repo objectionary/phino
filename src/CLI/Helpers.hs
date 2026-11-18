@@ -12,12 +12,12 @@ import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
-import Canonizer (canonizeExpr, lambdaNames)
+import Canonizer (canonize, canonizeExpr, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
-import Control.Monad (mfilter, when, (>=>))
+import Control.Monad (mfilter, when, zipWithM, (>=>))
 import qualified Data.ByteString as BS
-import Data.Char (isDigit, toLower)
+import Data.Char (isDigit)
 import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
@@ -48,7 +48,7 @@ import qualified Random as R
 import Rewriter (Rewrittens', stepHeaders)
 import Sugar (SugarType (SALTY), withoutRho)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, listDirectory, removeFile)
-import System.FilePath (splitExtension, takeDirectory, takeExtension, (</>))
+import System.FilePath (splitExtension, takeDirectory, (</>))
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
 import XMIR (Atoms, expressionToXMIR, gitRevision, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
@@ -96,8 +96,8 @@ saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
         saveStep stepsDir ioToExt render step expr
   pure save
 
-withEvalFunc :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc target ctx action = withEvalFunc' target ctx (tracked >=> action)
+withEvalFunc :: forall a. Maybe FilePath -> Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc xml text ctx action = withEvalFunc' xml text ctx (tracked >=> action)
   where
     tracked :: SaveEvalFunc -> IO SaveEvalFunc
     tracked record = do
@@ -108,29 +108,29 @@ withEvalFunc target ctx action = withEvalFunc' target ctx (tracked >=> action)
           pure (progressed cursor 5 (flattened ctx) record)
         else pure record
 
-withEvalFunc' :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc' Nothing _ action = action dontSaveEval
-withEvalFunc' (Just file) ctx action = do
-  createDirectoryIfMissing True (takeDirectory file)
-  logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as %s" file (if markup then "XML" else "text"))
-  if markup then markedUp else plain
+withEvalFunc' :: forall a. Maybe FilePath -> Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc' xml text ctx action =
+  markedUp xml (\marked -> plain text (\lined -> action (\record -> marked record >> lined record)))
   where
-    markup :: Bool
-    markup = map toLower (takeExtension file) == ".xml"
-    markedUp :: IO a
-    markedUp = do
+    markedUp :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
+    markedUp Nothing go = go dontSaveEval
+    markedUp (Just file) go = do
+      logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as XML" file)
       cursor <- newIORef emptyNesting
       began <- getMonotonicTime
-      bracket opened (\protocol -> endEvalXml protocol cursor began `finally` hClose protocol) $ \protocol ->
-        action (saveEvalXml protocol cursor (flattened ctx))
-    plain :: IO a
-    plain = do
+      bracket (opened file) (\protocol -> endEvalXml protocol cursor began `finally` hClose protocol) $ \protocol ->
+        go (saveEvalXml protocol cursor (flattened ctx))
+    plain :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
+    plain Nothing go = go dontSaveEval
+    plain (Just file) go = do
+      logDebug (printf "The option '--minutes' is specified, every firing will be recorded in '%s' as text" file)
       cursor <- newIORef emptyProtocol
       began <- getMonotonicTime
-      bracket opened (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
-        action (saveEval protocol cursor (flattened ctx) (salted ctx))
-    opened :: IO Handle
-    opened = do
+      bracket (opened file) (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
+        go (saveEval protocol cursor (flattened ctx) (salted ctx))
+    opened :: FilePath -> IO Handle
+    opened file = do
+      createDirectoryIfMissing True (takeDirectory file)
       protocol <- openFile file WriteMode
       hSetEncoding protocol utf8
       pure protocol
@@ -231,6 +231,7 @@ parseInputWithAtoms input format form = (,M.empty) <$> parseInput input format f
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
+  | _canonize = withHeaders <$> zipWithM (printCanonized ctx) (map fst chain) (map fst (canonize chain))
   | otherwise = withHeaders <$> mapM (printAnswer ctx . fst) chain
   where
     withHeaders :: [String] -> String
@@ -243,11 +244,12 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
 
 printAnswer :: PrintContext -> Expression -> IO String
 printAnswer ctx@PrintCtx{..} expr
-  | _canonize = printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
+  | _canonize = printCanonized ctx expr (canonizeExpr expr)
   | otherwise = printFocused ctx expr
-  where
-    canonized :: Expression
-    canonized = canonizeExpr expr
+
+printCanonized :: PrintContext -> Expression -> Expression -> IO String
+printCanonized ctx@PrintCtx{..} expr canonized =
+  printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
 
 printFocused :: PrintContext -> Expression -> IO String
 printFocused ctx@PrintCtx{..} expr
@@ -340,10 +342,33 @@ validateRewriteRule rule =
    in case filter (\fn -> fn `notElem` (buildFunctions ++ execFunctions)) used of
         (fn : _) -> invalidCLIArguments (printf "Function '%s' in rule '%s' is not supported" fn rule.name)
         [] -> case filter (`elem` execFunctions) used of
-          [] -> pure rule
+          [] -> case filter (\extra -> returned (Y.function extra) /= kind (Y.meta extra)) (fromMaybe [] rule.where_) of
+            [] -> pure rule
+            (extra : _) ->
+              invalidCLIArguments
+                ( printf
+                    "Function '%s' in rule '%s' returns %s, but its meta '%s' is %s"
+                    (Y.function extra)
+                    rule.name
+                    (returned (Y.function extra))
+                    (P.printExtraArg (Y.meta extra))
+                    (kind (Y.meta extra))
+                )
           (fn : _) ->
             invalidCLIArguments
               (printf "Function '%s' in rule '%s' is available only for dataization and morphing, not for rewriting" fn rule.name)
+  where
+    returned :: String -> String
+    returned "random-tau" = "an attribute"
+    returned "tau" = "an attribute"
+    returned "join" = "bindings"
+    returned "dataize" = "bytes"
+    returned _ = "an expression"
+    kind :: Y.ExtraArgument -> String
+    kind (Y.ArgAttribute _) = "an attribute"
+    kind (Y.ArgBinding _) = "bindings"
+    kind (Y.ArgBytes _) = "bytes"
+    kind (Y.ArgExpression _) = "an expression"
 
 printOut :: Maybe FilePath -> String -> IO ()
 printOut target content = case target of

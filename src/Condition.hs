@@ -160,7 +160,7 @@ parseCondition input = do
           "condition"
           input
   case parsed of
-    Right parsed' -> Right parsed'
+    Right parsed' -> parsed' <$ Y.wellCompared parsed'
     Left err -> Left (errorBundlePretty err)
 
 parseConditionThrows :: String -> IO Y.Condition

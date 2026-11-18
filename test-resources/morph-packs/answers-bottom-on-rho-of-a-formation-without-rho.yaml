@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 # A formation that declares no ρ has no receiver, so asking it for one is
-# dead and does not go through its φ (#1859).
+# dead and does not go through its φ (#1859). The dispatch stands in the
+# world, since 'morph' refuses a term at the locator that is not a normal
+# form (#2343).
 location: 'Q.x'
-input: '[[ x -> [[ @ -> $.y, y -> [[ ]] ]].^ ]]'
+input: '[[ k -> [[ @ -> $.y, y -> [[ ]] ]].^, x -> Q.k ]]'
 result: '⊥'

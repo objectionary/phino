@@ -89,7 +89,7 @@ spec = do
       isNothing found `shouldBe` True
 
 context :: RuleContext
-context = RuleContext (building yaml) Nothing yaml._normal
+context = RuleContext (building yaml) Nothing yaml._normal False
 
 morphingRule :: String -> Y.MorphRule
 morphingRule name = fromMaybe (error (printf "no morphing rule is named '%s'" name)) (find (\rule -> rule.name == name) Y.morphingRules)

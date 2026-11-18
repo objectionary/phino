@@ -12,6 +12,7 @@ import Contextualize (contextualize)
 import Control.Exception (throwIO)
 import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
+import Data.Char (isDigit)
 import Data.Functor
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -169,10 +170,12 @@ _sed args subst = do
       Nothing -> (acc, B.empty, False)
       Just (h, rest)
         | h == '\\' -> case B.uncons rest of
-            Just (h', rest') -> nextUntilSlash rest' ((if escape then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
+            Just (h', rest') -> nextUntilSlash rest' ((if escape && not (referring h') then acc else B.snoc acc '\\') `B.append` B.singleton h') escape
             Nothing -> (if escape then acc else B.snoc acc '\\', B.empty, False)
         | h == '/' -> (acc, rest, True)
         | otherwise -> nextUntilSlash rest (B.snoc acc h) escape
+    referring :: Char -> Bool
+    referring char = isDigit char || char == '\\' || char == '&'
 
 _randomString :: BuildTermMethod
 _randomString [arg] subst = do
@@ -306,20 +309,27 @@ _join args subst = do
           (rest, used, next) <- renameBindings bds attrs unavailable changes
           pure (bd : rest, used, next)
     renameValue :: Map.Map Attribute Attribute -> Binding -> Binding
-    renameValue changes (BiTau attr expr) = BiTau attr (renameExpression changes expr)
-    renameValue _ binding = binding
-    renameExpression :: Map.Map Attribute Attribute -> Expression -> Expression
-    renameExpression changes expression = case expression of
-      ExFormation _ -> expression
-      ExApplication expr arg -> ExApplication (renameExpression changes expr) (renameArgument changes arg)
-      ExDispatch ExXi attr -> ExDispatch ExXi (Map.findWithDefault attr attr changes)
-      ExDispatch expr attr -> ExDispatch (renameExpression changes expr) attr
-      ExPhiMeet prefix idx expr -> ExPhiMeet prefix idx (renameExpression changes expr)
-      ExPhiAgain prefix idx expr -> ExPhiAgain prefix idx (renameExpression changes expr)
+    renameValue changes = renameBinding changes 0
+    renameBinding :: Map.Map Attribute Attribute -> Int -> Binding -> Binding
+    renameBinding changes depth (BiTau attr expr) = BiTau attr (renameExpression changes depth expr)
+    renameBinding _ _ binding = binding
+    renameExpression :: Map.Map Attribute Attribute -> Int -> Expression -> Expression
+    renameExpression changes depth expression = case expression of
+      ExFormation bds -> ExFormation (map (renameBinding changes (depth + 1)) bds)
+      ExApplication expr arg -> ExApplication (renameExpression changes depth expr) (renameArgument changes depth arg)
+      ExDispatch expr attr
+        | rhos depth expr -> ExDispatch expr (Map.findWithDefault attr attr changes)
+        | otherwise -> ExDispatch (renameExpression changes depth expr) attr
+      ExPhiMeet prefix idx expr -> ExPhiMeet prefix idx (renameExpression changes depth expr)
+      ExPhiAgain prefix idx expr -> ExPhiAgain prefix idx (renameExpression changes depth expr)
       other -> other
-    renameArgument :: Map.Map Attribute Attribute -> Argument -> Argument
-    renameArgument changes (ArTau attr expr) = ArTau attr (renameExpression changes expr)
-    renameArgument changes (ArAlpha alpha expr) = ArAlpha alpha (renameExpression changes expr)
+    rhos :: Int -> Expression -> Bool
+    rhos 0 ExXi = True
+    rhos depth (ExDispatch expr AtRho) | depth > 0 = rhos (depth - 1) expr
+    rhos _ _ = False
+    renameArgument :: Map.Map Attribute Attribute -> Int -> Argument -> Argument
+    renameArgument changes depth (ArTau attr expr) = ArTau attr (renameExpression changes depth expr)
+    renameArgument changes depth (ArAlpha alpha expr) = ArAlpha alpha (renameExpression changes depth expr)
     freshAttr :: Set.Set Attribute -> IO Attribute
     freshAttr unavailable = do
       term <- _randomTau [] subst

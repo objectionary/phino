@@ -19,6 +19,9 @@ import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Aeson.Types (formatRelativePath)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as BC
+import Data.Conduit ((.|))
+import qualified Data.Conduit.List as CL
 import Data.FileEmbed (embedDir)
 import Data.Maybe (fromMaybe)
 import Data.Scientific (isInteger)
@@ -26,11 +29,12 @@ import Data.Text (Text, unpack)
 import qualified Data.Text as T
 import Data.Yaml (Parser)
 import qualified Data.Yaml as Yaml
-import Data.Yaml.Internal (Warning (DuplicateKey))
+import Data.Yaml.Internal (Warning (DuplicateKey), decodeHelper_)
 import GHC.Generics (Generic)
 import Metas
 import Parser
 import Slots
+import qualified Text.Libyaml as Libyaml
 import Text.Printf (printf)
 import Text.Regex.PCRE ((=~))
 
@@ -127,7 +131,9 @@ instance FromJSON Comparable where
   parseJSON _ = fail "An argument of 'eq' or 'gt' is a number, an attribute, an expression, or an object of 'length' or 'domain'"
 
 instance FromJSON Condition where
-  parseJSON = withObject "Condition" parseCondition
+  parseJSON = withObject "Condition" $ \v -> do
+    cond <- parseCondition v
+    cond <$ either fail pure (wellCompared cond)
 
 parseCondition :: Object -> Parser Condition
 parseCondition v = do
@@ -183,6 +189,28 @@ parseCondition v = do
   where
     several :: FromJSON a => Value -> Parser [a]
     several val = parseJSON val <|> (pure <$> parseJSON val)
+
+kindOf :: Comparable -> String
+kindOf (CmpNum _) = "a number"
+kindOf (CmpAttr _) = "an attribute"
+kindOf (CmpExpr _) = "an expression"
+
+wellCompared :: Condition -> Either String ()
+wellCompared = \case
+  And conds -> mapM_ wellCompared conds
+  Or conds -> mapM_ wellCompared conds
+  Not cond -> wellCompared cond
+  Eq left right
+    | kindOf left == kindOf right -> Right ()
+    | otherwise -> mismatch "eq" "two numbers, two attributes or two expressions" left right
+  Gt left right
+    | kindOf left == "a number" && kindOf right == "a number" -> Right ()
+    | otherwise -> mismatch "gt" "two numbers" left right
+  _ -> Right ()
+  where
+    mismatch :: String -> String -> Comparable -> Comparable -> Either String ()
+    mismatch verb allowed left right =
+      Left (printf "The '%s' condition compares %s with %s, while it can compare only %s" verb (kindOf left) (kindOf right) allowed)
 
 instance FromJSON ExtraArgument where
   parseJSON v@(String _) =
@@ -508,11 +536,19 @@ normalizationRules = map decodeRule $(embedDir "resources/normalize")
 
 yamlRule :: FilePath -> IO Rule
 yamlRule path = do
-  decoded <- Yaml.decodeFileWithWarnings path
+  decoded <- decodeHelper_ (Libyaml.decodeFile path .| CL.map worded)
   case decoded of
     Left err -> throwIO err
     Right (warnings, rule) -> rule <$ mapM_ reportDuplicateKey warnings
   where
+    worded :: Libyaml.Event -> Libyaml.Event
+    worded (Libyaml.EventScalar value Libyaml.NoTag style anchor)
+      | value `elem` spelled = Libyaml.EventScalar value Libyaml.StrTag style anchor
+    worded (Libyaml.EventScalar value (Libyaml.UriTag tag@('!' : _)) style anchor)
+      | BS.null value = Libyaml.EventScalar (BC.pack tag) Libyaml.StrTag style anchor
+    worded event = event
+    spelled :: [BS.ByteString]
+    spelled = ["y", "Y", "yes", "Yes", "YES", "n", "N", "no", "No", "NO", "on", "On", "ON", "off", "Off", "OFF"]
     reportDuplicateKey :: Warning -> IO ()
     reportDuplicateKey (DuplicateKey jsonPath) =
       fail (printf "The key '%s' is repeated in the rule file '%s', only the last value is kept" (formatRelativePath jsonPath) path)
