@@ -4180,7 +4180,7 @@ spec = do
                     (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--minutes=" ++ path, "--quiet"] ++ opts)
                     outputs
               records <- readProtocol path
-              dropWhile (== ' ') (last (lines records)) `shouldBe` "timeout 1"
+              take 2 (words (last (lines records))) `shouldBe` ["timeout", "1"]
 
       it "writes the timeout once to the XML protocol" $
         ladder $ \table ->
