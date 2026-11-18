@@ -101,16 +101,24 @@ emitted builtin custom contextual morphs dataizes sources = do
             , ""
             , "-- Whether the term is a normal form: no built-in rule of normalization"
             , "-- matches anywhere inside it."
+            , "-- A rule asking a meta for a normal form asks it of a part of the term,"
+            , "-- and a part that is no normal form holds a match the walk meets anyway,"
+            , "-- so the walk takes every such part for a normal form (#2409)."
             , "nf :: Expression -> Bool"
-            , "nf = Ru.normalWith (not . null . matching Nothing)"
+            , "nf = Ru.normalWith (not . null . matchingBy (const True) Nothing)"
             , ""
             , "-- The numbers of the built-in rules of normalization matching somewhere in"
             , "-- the term, in the order one walk over it meets them, told the world the"
             , "-- term stands in."
             , "matching :: Maybe Expression -> Expression -> [Int]"
-            , "matching ="
+            , "matching = matchingBy nf"
+            , ""
+            , "-- The numbers of the built-in rules of normalization matching somewhere in"
+            , "-- the term, a rule asking a meta for a normal form told it by the test."
+            , "matchingBy :: (Expression -> Bool) -> Maybe Expression -> Expression -> [Int]"
+            , "matchingBy normal ="
             , "  M.hits"
-            , "    " ++ listed' 4 [printf "(%d, %s, rewrite%s)" idx (show (redex rule)) name | (idx, (name, rule)) <- zip [0 :: Int ..] (take (length builtin) rules)]
+            , "    " ++ listed' 4 [printf "(%d, %s, rewrite%s normal)" idx (show (redex rule)) name | (idx, (name, rule)) <- zip [0 :: Int ..] (take (length builtin) rules)]
             , ""
             , "-- The Contextualization function 𝒞, the conclusion of the one rule matching"
             , "-- the term and the context."
@@ -203,9 +211,9 @@ rewriting (name, rule) = do
   refused
   (quals, result) <- walked $ do
     pattern' <- matching rule.pattern "term"
-    when' <- maybe (pure []) (fmap (pure . Guard) . condition) rule.when
+    when' <- maybe (pure []) (fmap (pure . Guard) . condition "normal") rule.when
     absolute <- mapM (fmap (\var -> Guard ("Ru.xiFree " ++ var)) . held) (prefixed "k" rule.pattern)
-    normal <- mapM (fmap (\var -> Guard ("Ru.normalHeld nf " ++ var)) . held) (prefixed "n" rule.pattern ++ prefixed "k" rule.pattern)
+    normal <- mapM (fmap (\var -> Guard ("Ru.normalHeld normal " ++ var)) . held) (prefixed "n" rule.pattern ++ prefixed "k" rule.pattern)
     extras <- concat <$> mapM extended (fromMaybe [] rule.where_)
     result <- built True rule.result >>= maybe (refuse "its result names a meta its pattern does not bind") pure
     pure (pattern' ++ when' ++ absolute ++ normal ++ extras, result)
@@ -215,10 +223,10 @@ rewriting (name, rule) = do
     ( unlines
         [ printf "-- The rule '%s'." (unwords (lines rule.name))
         , printf "step%s :: Ru.Step" name
-        , printf "step%s = R.direct %s %s rewrite%s" name (show rule.name) (show (redex rule)) name
+        , printf "step%s = R.direct %s %s (rewrite%s nf)" name (show rule.name) (show (redex rule)) name
         , ""
-        , printf "rewrite%s :: Maybe Expression -> Expression -> [Expression]" name
-        , printf "rewrite%s %s %s =" name universe (if "term" `elem` tokens body then "term" else "_")
+        , printf "rewrite%s :: (Expression -> Bool) -> Maybe Expression -> Expression -> [Expression]" name
+        , printf "rewrite%s %s %s %s =" name (if "normal" `elem` tokens body then "normal" else "_") universe (if "term" `elem` tokens body then "term" else "_")
         , body
         ]
     )
@@ -301,7 +309,7 @@ inferring kind (name, answer) rule ematch builder spine = do
   (quals, result) <- walked $ do
     universe <- matching ematch "universe"
     term <- matching rule.pattern "term"
-    when' <- maybe (pure []) (fmap (pure . Guard) . condition) rule.when
+    when' <- maybe (pure []) (fmap (pure . Guard) . condition "nf") rule.when
     absolute <- mapM (fmap (\var -> Guard ("Ru.xiFree " ++ var)) . held) (prefixed "k" rule.pattern)
     normal <- mapM (fmap (\var -> Guard ("Ru.normalHeld nf " ++ var)) . held) (prefixed "n" rule.pattern ++ prefixed "k" rule.pattern)
     result <- premised sides conclusion
@@ -495,30 +503,30 @@ prefixed prefix = nub . go
     go (ExDispatch expr _) = go expr
     go _ = []
 
-condition :: Y.Condition -> Emitting String
-condition (Y.And conds) = parens . intercalate " && " <$> mapM condition conds
-condition (Y.Or conds) = parens . intercalate " || " <$> mapM condition conds
-condition (Y.Not cond) = ("not " ++) . parens <$> condition cond
-condition (Y.In attrs bds) = present True attrs bds
-condition (Y.Disjoint attrs bds) = present False attrs bds
-condition (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) = compared "==" <$> number left <*> number right
-condition (Y.Gt (Y.CmpNum left) (Y.CmpNum right)) = compared ">" <$> number left <*> number right
-condition (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) = compared "==" <$> attr' left <*> attr' right
+condition :: String -> Y.Condition -> Emitting String
+condition test (Y.And conds) = parens . intercalate " && " <$> mapM (condition test) conds
+condition test (Y.Or conds) = parens . intercalate " || " <$> mapM (condition test) conds
+condition test (Y.Not cond) = ("not " ++) . parens <$> condition test cond
+condition _ (Y.In attrs bds) = present True attrs bds
+condition _ (Y.Disjoint attrs bds) = present False attrs bds
+condition _ (Y.Eq (Y.CmpNum left) (Y.CmpNum right)) = compared "==" <$> number left <*> number right
+condition _ (Y.Gt (Y.CmpNum left) (Y.CmpNum right)) = compared ">" <$> number left <*> number right
+condition _ (Y.Eq (Y.CmpAttr left) (Y.CmpAttr right)) = compared "==" <$> attr' left <*> attr' right
   where
     attr' :: Attribute -> Emitting (Maybe String)
     attr' (AtMeta meta) = known (Named meta)
     attr' (AtAny _) = pure Nothing
     attr' attr = Just <$> attributed attr
-condition (Y.Eq (Y.CmpExpr left) (Y.CmpExpr right)) = compared "==" <$> built False left <*> built False right
-condition (Y.Eq _ _) = pure "False"
-condition (Y.Gt _ _) = pure "False"
-condition (Y.NF expr) = asked "Ru.normalHeld nf" expr
-condition (Y.Absolute expr) = asked "Ru.xiFree" expr
-condition (Y.IsFormation (ExMeta meta)) = maybe "False" ("Ru.isFormation " ++) <$> known (Named meta)
-condition (Y.IsFormation (ExFormation _)) = pure "True"
-condition (Y.IsFormation _) = pure "False"
-condition (Y.Matches _ _) = refuse "its condition 'matches' needs a run of dataization"
-condition (Y.PartOf _ _) = refuse "its condition 'part-of' is not compiled yet"
+condition _ (Y.Eq (Y.CmpExpr left) (Y.CmpExpr right)) = compared "==" <$> built False left <*> built False right
+condition _ (Y.Eq _ _) = pure "False"
+condition _ (Y.Gt _ _) = pure "False"
+condition test (Y.NF expr) = asked ("Ru.normalHeld " ++ test) expr
+condition _ (Y.Absolute expr) = asked "Ru.xiFree" expr
+condition _ (Y.IsFormation (ExMeta meta)) = maybe "False" ("Ru.isFormation " ++) <$> known (Named meta)
+condition _ (Y.IsFormation (ExFormation _)) = pure "True"
+condition _ (Y.IsFormation _) = pure "False"
+condition _ (Y.Matches _ _) = refuse "its condition 'matches' needs a run of dataization"
+condition _ (Y.PartOf _ _) = refuse "its condition 'part-of' is not compiled yet"
 
 present :: Bool -> [Attribute] -> [Binding] -> Emitting String
 present every attrs bds = do

@@ -10,20 +10,26 @@ module RuleSpec where
 
 import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Slot (..), inert)
 import Builder (buildExpressionThrows)
+import Control.Exception (evaluate)
 import Control.Monad
 import Data.Aeson
+import Data.List (isInfixOf)
 import Data.Yaml qualified as Y
 import Engine (Engine (_normal))
 import Files (allPathsIn)
 import Fixtures (linked)
 import Functions (buildTerm)
 import GHC.Generics
+import Logger (LogLevel (DEBUG, ERROR), setLogConfig)
 import Matcher
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printSubsts)
-import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normalHeld, redex)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normal, normalHeld, redex)
 import System.FilePath
-import Test.Hspec (Spec, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy)
+import System.IO (stderr)
+import System.IO.Silently (hCapture)
+import System.Timeout (timeout)
+import Test.Hspec (Spec, after_, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy)
 import Yaml qualified
 
 data ConditionPack = ConditionPack
@@ -114,6 +120,13 @@ spec = do
       , ("returns false for a dispatch whose body no rule of contextualization takes", ExDispatch (ExFormation [BiTau (AtLabel "kq") (ExDispatch (ExMeta "e5") (AtLabel "wb"))]) (AtLabel "kq"), False)
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)
+
+  describe "tells a normal form of a chain of nested copies in time" $ do
+    let chain :: Int -> Expression
+        chain depth = iterate (ExApplication (ExFormation [BiVoid (AtLabel "x"), BiTau (AtLabel "y") (ExDispatch ExXi (AtLabel "x"))]) . ArTau (AtLabel "x")) (ExFormation [BiDelta (BtOne "00")]) !! depth
+    forM_ [("the rules of YAML", normal), ("the engine linked", _normal linked)] $ \(name, test) ->
+      it ("by " ++ name) $
+        timeout 10000000 (evaluate (test (chain 40))) `shouldReturn` Just False
 
   describe "matchExpressionWithRule via a 'where' extension or a φ-marker meta" $ do
     let ctx :: RuleContext
@@ -256,3 +269,27 @@ spec = do
       terms <- mapM parseExpressionThrows samples
       found <- concat <$> sequence [matches term rule | term <- terms, rule <- Yaml.normalizationRules]
       found `shouldBe` []
+
+  describe "a condition that cannot be built" $ do
+    after_ (setLogConfig ERROR 25) $ do
+      let context :: RuleContext
+          context = RuleContext buildTerm Nothing (_normal linked)
+      it "logs an unbound meta in 'part-of' and treats the condition as not met" $ do
+        expr <- parseExpressionThrows "[[ x -> Q.y ]]"
+        let substs = matchExpressionDeep (ExFormation [BiTau (AtLabel "x") (ExMeta "e1")]) expr
+            cond = Yaml.PartOf (ExMeta "e1") (BiMeta "B1")
+        length substs `shouldBe` 1
+        setLogConfig DEBUG 25
+        (captured, met) <- hCapture [stderr] (meetCondition cond substs context)
+        met `shouldBe` []
+        "Condition part-of(" `isInfixOf` captured `shouldBe` True
+      it "logs an unbound meta in 'matches' and treats the condition as not met" $ do
+        expr <- parseExpressionThrows "[[ x -> Q.y ]]"
+        nested <- parseExpressionThrows "Q.x.!t9"
+        let substs = matchExpressionDeep (ExFormation [BiTau (AtLabel "x") (ExMeta "e1")]) expr
+            cond = Yaml.Matches "Q" nested
+        length substs `shouldBe` 1
+        setLogConfig DEBUG 25
+        (captured, met) <- hCapture [stderr] (meetCondition cond substs context)
+        met `shouldBe` []
+        "Condition matches(" `isInfixOf` captured `shouldBe` True
