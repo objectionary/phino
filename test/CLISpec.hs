@@ -1492,6 +1492,10 @@ spec = do
           ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
           ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
 
+    it "reads back an application of ξ as it is" $
+      withStdin "[[ a -> [[ x -> ∅ ]], b -> $(x -> [[ ]]) ]]" $
+        testCLISucceeded ["rewrite", "--flat"] ["⟦ a ↦ ⟦ x ↦ ∅ ⟧, b ↦ ξ( x ↦ ⟦⟧ ) ⟧"]
+
     it "keeps the ρ that dot applies to Φ, and reads it back" $ do
       withStdin "[[ x -> [[ y -> Q ]].y ]]" $
         testCLISucceeded ["rewrite", "--normalize", "--flat"] ["⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧"]
