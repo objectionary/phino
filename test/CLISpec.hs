@@ -1706,6 +1706,11 @@ spec = do
           records <- lines <$> readProtocol path
           (any (isPrefixOf "shared " . dropWhile (== ' ')) records, maximum (map length records) < 1000) `shouldBe` (True, True)
 
+      it "gives an argument read off a copy one name, so a chain of recursions stays within a cap of firings" $
+        withLambdasOf atoms $ \file ->
+          withStdin "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, num(v) ↦ ⟦ φ ↦ ξ.v, next ↦ Φ.num( ξ.v ) ⟧, r1(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 0A-:Δ ).if( ξ.i, Φ.r1( ξ.i.next ) ) ⟧, r2(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 22-:Δ ).if( Φ.r2( Φ.r1( ξ.i.next ) ), ξ.i ) ⟧, r3(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 23-:Δ ).if( Φ.r3( Φ.r2( ξ.i.next ) ), ξ.i ) ⟧, r4(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 24-:Δ ).if( Φ.r4( Φ.r3( ξ.i.next ) ), ξ.i ) ⟧, e1 ↦ Φ.byte( 𝜎1:λ, Φ.r4( Φ.num( 00-:Δ ) ) ) ⟧" $
+            testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.e1", "--acyclic=plausible", "--max-loops=1", "--max-firings=600"] ["40-45-00-00-00-00-00-00"]
+
     describe "--acyclic at a recursive call" $ do
       let recursive = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.call( a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ) ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
           calling = T.pack "- λ: L_call\n  morph:\n    𝑛1: $.a\n  evaluate:\n    𝑛2: 𝑛1\n  𝑛: 𝑛2\n"
