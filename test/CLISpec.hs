@@ -2168,6 +2168,18 @@ spec = do
           records <- readProtocol path
           records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
 
+      it "adds the time, the depth, the firings and the memory to every line under --profile" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--profile", "--quiet"] []
+          records <- readProtocol path
+          lines records `shouldSatisfy` all (\line -> all (`isInfixOf` line) [" ms, at ", ", depth ", ", firings ", ", heap ", ", peak "])
+
+      it "refuses --profile without --minutes" $
+        withStdin "[[ D> 01- ]]" $
+          testCLIFailed ["dataize", "--profile", "--quiet"] ["The option --profile requires --minutes"]
+
       it "opens the protocol with a header naming the phino that wrote it" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream

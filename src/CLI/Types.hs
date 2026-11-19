@@ -136,6 +136,7 @@ data OptsDataize = OptsDataize
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
   , _minutes :: Maybe FilePath
+  , _profile :: Bool
   , _abridged :: Maybe Int
   , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath
@@ -187,6 +188,7 @@ data OptsMorph = OptsMorph
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
   , _minutes :: Maybe FilePath
+  , _profile :: Bool
   , _abridged :: Maybe Int
   , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath

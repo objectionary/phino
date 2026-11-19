@@ -193,6 +193,7 @@ runDataize args OptsDataize{..} = do
     withEvalFunc
       _protocol
       _minutes
+      _profile
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted named deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty (Just facts) lambdas [] False Nothing (building linked) reduction evaluation save record linked
@@ -224,6 +225,7 @@ runDataize args OptsDataize{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol && isNothing _minutes) (invalidCLIArguments "The option --abridged requires --protocol or --minutes, since only the protocol is abridged")
+      when (_profile && isNothing _minutes) (invalidCLIArguments "The option --profile requires --minutes, since only the minutes are profiled")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when (isJust _inside) $ do
@@ -285,6 +287,7 @@ runMorph args OptsMorph{..} = do
     withEvalFunc
       _protocol
       _minutes
+      _profile
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted named deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty (Just facts) lambdas [] False Nothing (building linked) reduction evaluation save record linked
@@ -312,6 +315,7 @@ runMorph args OptsMorph{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol && isNothing _minutes) (invalidCLIArguments "The option --abridged requires --protocol or --minutes, since only the protocol is abridged")
+      when (_profile && isNothing _minutes) (invalidCLIArguments "The option --profile requires --minutes, since only the minutes are profiled")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when (isJust _inside) $ do

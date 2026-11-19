@@ -16,15 +16,17 @@ import Control.Monad.Trans.State.Strict (StateT, get, modify, put, runStateT)
 import Data.Bifunctor (bimap, first, second)
 import Data.Char (isAlphaNum)
 import Data.Either (lefts, rights)
-import Data.IORef (IORef, readIORef, writeIORef)
+import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
 import Data.List (intercalate, sortOn)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (catMaybes, fromMaybe, isJust, listToMaybe, mapMaybe, maybeToList)
 import qualified Data.Text as T
 import Data.Time (ZonedTime, defaultTimeLocale, formatTime)
+import Data.Word (Word64)
 import Files (overwrite)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
+import GHC.Stats (GCDetails (gcdetails_live_bytes), RTSStats (gc, max_mem_in_use_bytes), getRTSStats, getRTSStatsEnabled)
 import Logger (logDebug, logInfo)
 import Matcher
 import Printer (printAlpha, printAttribute, printBinding, printFunction)
@@ -348,11 +350,18 @@ stated object source left right facts = packed `seq` namedInsert object ((source
 statement :: Expression -> Expression -> Named [(Expression, (T.Text, T.Text))] -> Maybe (String, String)
 statement object source facts = bimap T.unpack T.unpack <$> (namedLookup object facts >>= lookup source)
 
-saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> SaveEvalFunc
-saveEval handle cursor printed printed' report = do
+saveEval :: Handle -> IORef Protocol -> (Expression -> IO String) -> (Expression -> IO String) -> Maybe Profile -> SaveEvalFunc
+saveEval handle cursor printed printed' profile report = do
   made <- atomicModify cursor (fmap (first (forgotten report) . headed) . written (tier report) report . beside (tier report) report . outer (tier report))
-  mapM_ saved made
+  mapM_ saved =<< maybe pure timed profile made
   where
+    timed :: Profile -> [String] -> IO [String]
+    timed _ [] = pure []
+    timed _ made | EvHeader{} <- report = pure made
+    timed watch made = do
+      protocol <- readIORef cursor
+      stamp <- stamped watch (tier report) protocol._fired
+      pure (init made ++ [printf "%s  # %s" (last made) stamp])
     forgotten :: Evaluation -> Protocol -> Protocol
     forgotten EvBound{} protocol = protocol
     forgotten EvDelta{} protocol = protocol
@@ -702,6 +711,33 @@ saveEval handle cursor printed printed' report = do
       let (index, counted) = numbered protocol
       taken <- printed (abbreviatedInside protocol._made term)
       pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "%s %s·%d := %s" word (labelled protocol answer) index taken)))
+
+data Profile = Profile
+  { _start :: Double
+  , _previous :: IORef Double
+  }
+
+profiling :: IO Profile
+profiling = do
+  now <- getMonotonicTime
+  Profile now <$> newIORef now
+
+stamped :: Profile -> Int -> Int -> IO String
+stamped watch depth firings = do
+  now <- getMonotonicTime
+  before <- atomicModifyIORef' watch._previous (now,)
+  printf "+%d ms, at %d ms, depth %d, firings %d%s" (milliseconds before now) (milliseconds watch._start now) depth firings <$> memory
+  where
+    memory :: IO String
+    memory = do
+      enabled <- getRTSStatsEnabled
+      if enabled
+        then do
+          stats <- getRTSStats
+          pure (printf ", heap %s, peak %s" (megabytes (gcdetails_live_bytes (gc stats))) (megabytes (max_mem_in_use_bytes stats)))
+        else pure (mempty :: String)
+    megabytes :: Word64 -> String
+    megabytes bytes = printf "%.1f MB" (fromIntegral bytes / 1048576 :: Double)
 
 endEval :: Handle -> IORef Protocol -> Double -> IO ()
 endEval handle cursor began = do
