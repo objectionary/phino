@@ -620,6 +620,13 @@ earlier one and holds it as `within` lets it, so a recursion handing its
 own growing call to an atom, as `Φ.go( Φ.seq( i.next ).ok )`, is cut too,
 while nested calls whose arguments shrink, such as five `or` in each other,
 are not (#2428).
+Where `within'` says no at such a pair, `matching` stops there, since nothing
+below can match where the looser search found nothing (#2438). The depth of a
+call is measured once per name, since the sides of nested forks share their
+names and walking them again doubles the work per fork. Every pair `within'`
+has answered stays in the `Memo` for the whole run, until it holds a million
+of them (`akin''` and `within''` of `AST.hs`), since the ancestors on the
+stack are the same formations from one firing to the next.
 `--max-loops=<n>`
 (`_maxLoops` of `ReduceContext`) softens either mode: `enter` cuts a frame only
 once more than `n` of the formations above it are the same as its own, so a
