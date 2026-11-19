@@ -91,8 +91,8 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
       let ctx = caller{_nesting = caller._nesting + 1, _raising = entry._terminators}
       outcome <- try $ raised ctx $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-        (bound', morphed, normals) <- foldM (through ctx "morph" (still pure)) (bound, dataized, []) entry._morphed
-        (bound'', undressed, normals') <- foldM (through ctx "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
+        (bound', morphed, normals) <- foldM (through ctx (joining entry._ending) "morph" (still pure)) (bound, dataized, []) entry._morphed
+        (bound'', undressed, normals') <- foldM (through ctx (joining entry._ending) "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
         firing <- Firing func (reverse conditions) . (reverse normals' ++) <$> sides entry._ending
         known <- remembered caller._memo firing
         (answer, state') <- maybe (worked ctx entry firing bound'' undressed) (\(first, answer) -> (answer, undressed) <$ recited ctx._nesting first answer) known
@@ -148,13 +148,13 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
     sourced _ = Nothing
     line :: ReduceContext -> Ending -> (Subst, State) -> Line -> IO (Subst, State)
     line ctx _ held (Dataized meta source) = lowered ctx held meta source
-    line ctx _ held (Morphed meta source) = reduced ctx held meta source
+    line ctx ending held (Morphed meta source) = reduced ctx (joining ending) held meta source
     line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
-    line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
-    line ctx _ held (Stayed meta source) = reshaped ctx "stay" (still (pure . stayed)) meta source held
-    line ctx _ held (Rewritten meta source rules) = reshaped ctx "rewrite" (still (awaited ctx . rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal False) rules)) meta source held
-    line ctx _ held (Symbolized meta source) = reshaped ctx "symbolize" (still (masked ctx)) meta source held
-    line ctx _ held (Undressed meta source) = reshaped ctx "undress" (peeled ctx) meta source held
+    line ctx ending (bound, state') (Deferred meta source) = (,state') <$> deferred ctx (joining ending) state' meta source bound
+    line ctx ending held (Stayed meta source) = reshaped ctx (joining ending) "stay" (still (pure . stayed)) meta source held
+    line ctx ending held (Rewritten meta source rules) = reshaped ctx (joining ending) "rewrite" (still (awaited ctx . rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal False) rules)) meta source held
+    line ctx ending held (Symbolized meta source) = reshaped ctx (joining ending) "symbolize" (still (masked ctx)) meta source held
+    line ctx ending held (Undressed meta source) = reshaped ctx (joining ending) "undress" (peeled ctx) meta source held
     line ctx _ held (Cast one first two second) = casting ctx held (one, first) (two, second)
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
@@ -226,11 +226,13 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
           ctx._saveEval (EvData ctx._nesting meta._spelling origin datum)
           bound' <- bind meta (MvBytes bytes) bound
           pure (datum, bound', state'')
-    through :: ReduceContext -> T.Text -> (State -> Expression -> IO (Expression, State)) -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
-    through ctx block change (bound, state', normals) (meta, term) = do
+    through :: ReduceContext -> Bool -> T.Text -> (State -> Expression -> IO (Expression, State)) -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
+    through ctx side block change (bound, state', normals) (meta, term) = do
       placed <- operand term
-      (normal, state'') <- morphing univ ctx{_site = term} placed state'
-      (shaped, state''') <- change state'' normal
+      ((normal, shaped), state''') <- blanked side ((ExTermination, ExTermination), state') $ do
+        (normal, state'') <- morphing univ ctx{_site = term} placed state'
+        (shaped, state''') <- change state'' normal
+        pure ((normal, shaped), state''')
       ctx._saveEval
         ( if shaped == normal
             then EvTerm ctx._nesting meta._spelling Morphing term normal
@@ -238,17 +240,17 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
         )
       bound' <- bind meta (MvExpression shaped) bound
       pure (bound', state''', shaped : normals)
-    reduced :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
-    reduced ctx (bound, state') meta source = do
+    reduced :: ReduceContext -> Bool -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
+    reduced ctx side (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      (normal, state'') <- morphing univ ctx{_site = ExMeta source._name} term state'
+      (normal, state'') <- blanked side (ExTermination, state') (morphing univ ctx{_site = ExMeta source._name} term state')
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing (ExMeta source._name) normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
-    reshaped :: ReduceContext -> T.Text -> (State -> Expression -> IO (Expression, State)) -> Meta -> Meta -> (Subst, State) -> IO (Subst, State)
-    reshaped ctx block change meta source (bound, state') = do
+    reshaped :: ReduceContext -> Bool -> T.Text -> (State -> Expression -> IO (Expression, State)) -> Meta -> Meta -> (Subst, State) -> IO (Subst, State)
+    reshaped ctx side block change meta source (bound, state') = do
       kept <- buildExpressionThrows (ExMeta source._name) bound
-      (term, state'') <- change state' kept
+      (term, state'') <- blanked side (ExTermination, state') (change state' kept)
       ctx._saveEval
         ( if term == kept
             then EvBound ctx._nesting (ExMeta meta._name) term
@@ -296,7 +298,7 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
     evaluated :: ReduceContext -> Ending -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     evaluated ctx ending (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      (answer, state'') <- kindled ctx ending (ExMeta source._name) state' term
+      (answer, state'') <- blanked (joining ending) (ExTermination, state') (kindled ctx ending (ExMeta source._name) state' term)
       ctx._saveEval
         ( if answer == term
             then EvBound ctx._nesting (ExMeta meta._name) term
@@ -323,10 +325,10 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
     named :: Attribute -> Binding -> Bool
     named attr (BiTau attr' _) = attr == attr'
     named _ _ = False
-    deferred :: ReduceContext -> State -> Meta -> Meta -> Subst -> IO Subst
-    deferred ctx state' meta source bound = do
+    deferred :: ReduceContext -> Bool -> State -> Meta -> Meta -> Subst -> IO Subst
+    deferred ctx side state' meta source bound = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      answer <- postponing ctx state' (ExMeta source._name) term >>= maybe (kept term) pure
+      answer <- blanked side ExTermination (postponing ctx state' (ExMeta source._name) term >>= maybe (kept term) pure)
       bind meta (MvExpression answer) bound
       where
         kept :: Expression -> IO Expression
@@ -458,7 +460,17 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
     walked term = Just term
     reached :: ReduceContext -> Subst -> Expression -> State -> IO (Expression, State)
     reached _ bound (ExMeta name) state' = (,state') <$> buildExpressionThrows (ExMeta name) bound
-    reached ctx _ side state' = (\placed -> morphing univ ctx{_site = side} placed state') =<< operand side
+    reached ctx _ side state' = (\placed -> blanked True (ExTermination, state') (morphing univ ctx{_site = side} placed state')) =<< operand side
+    joining :: Ending -> Bool
+    joining Joining{} = True
+    joining _ = False
+    blanked :: Bool -> result -> IO result -> IO result
+    blanked True fallback work = catch work (\failure -> if opaqued failure then pure fallback else throwIO failure)
+    blanked False _ work = work
+    opaqued :: ReduceException -> Bool
+    opaqued (Stuck name) = "𝜎" `T.isPrefixOf` name
+    opaqued (StuckAt name _ _) = "𝜎" `T.isPrefixOf` name
+    opaqued _ = False
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'
