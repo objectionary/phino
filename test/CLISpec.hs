@@ -693,6 +693,28 @@ spec = do
           concat saved `shouldNotContain` "Minus"
           concat saved `shouldNotContain` "Plus"
 
+    it "keeps the name a function has under --sequence in every --steps-dir file under --canonize" $
+      withTempDirectory "phino-steps-canonized" $ \dir ->
+        withStdin "[[ a -> [[ x -> [[ L> Fa ]] ]].q, b -> [[ y -> [[ L> Fb ]] ]].y ]]" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--sequence", "--canonize", "--flat", "--steps-dir=" ++ dir]
+            ["⟦ a ↦ ⊥, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"]
+          saved <- traverse (readUtf8 . (dir </>)) ["00001.phi", "00002.phi", "00003.phi"]
+          map (filter (/= '\n')) saved
+            `shouldBe` [ "⟦ a ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧.q, b ↦ ⟦ λ ⤍ Fn2 ⟧( ρ ↦ ⟦ y ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧ ) ⟧"
+                       , "⟦ a ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧.q, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"
+                       , "⟦ a ↦ ⊥, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"
+                       ]
+
+    it "saves the --canonize steps when --show names an object only the steps hold" $
+      withTempDirectory "phino-steps-shown" $ \dir ->
+        withStdin "[[ app -> [[ x -> [[ L> Fx ]] ]](^ -> [[ ]]) ]]" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--canonize", "--flat", "--show=Q.app.x", "--steps-dir=" ++ dir]
+            ["⟦ app ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧ ⟧"]
+          saved <- readUtf8 (dir </> "00001.phi")
+          filter (/= '\n') saved `shouldBe` "⟦ app ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧ ⟧"
+
     it "gives the saved steps the --focus of the printed ones" $
       withTempDirectory "phino-steps-focused" $ \dir ->
         withStdin "⟦ x ↦ ⟦ k ↦ ⟦ q ↦ ⟦⟧ ⟧ ⟧.k, y ↦ ⟦ z ↦ ⟦⟧ ⟧ ⟧" $ do

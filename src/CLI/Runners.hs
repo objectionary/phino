@@ -78,7 +78,7 @@ runRewrite OptsRewrite{..} = do
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx included excluded
+  save <- saveStepFunc _stepsDir printCtx included excluded expr
   let steps = map ((if _cheat then cheating else id) . stepOf linked) rules
   (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save dontSaveMade)
   when (isJust _breakpoint && NE.length rewrittens == 1) (clearedStepsDir _stepsDir)
@@ -181,7 +181,7 @@ runDataize args OptsDataize{..} = do
   let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx included excluded
+  save <- saveStepFunc _stepsDir printCtx included excluded expr
   tally <- tallied _maxFirings
   minted <- newIORef 0
   named <- sides
@@ -275,7 +275,7 @@ runMorph args OptsMorph{..} = do
   let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx included excluded
+  save <- saveStepFunc _stepsDir printCtx included excluded expr
   tally <- tallied _maxFirings
   minted <- newIORef 0
   named <- sides

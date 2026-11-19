@@ -12,7 +12,7 @@ import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
-import Canonizer (canonize, canonizeExpr, lambdaNames)
+import Canonizer (CanonState, canonize, canonizeExpr, canonizeExpression, emptyCanon, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
 import Control.Monad (mfilter, when, zipWithM, (>=>))
@@ -26,6 +26,7 @@ import Data.Maybe
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Time (getZonedTime)
+import Data.Tuple (swap)
 import Data.Version (showVersion)
 import qualified Data.Yaml as Yaml
 import Deps (Evaluation (EvHeader, EvRun), Header (Header), Judgment, SaveEvalFunc, SaveStepFunc, World (World), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, profiling, progressed, resited, saveEval, saveEvalXml, saveStep)
@@ -38,7 +39,7 @@ import GHC.Clock (getMonotonicTime)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
 import Lambdas (Lambdas, emptyLambdas, readLambdas, sized, taken)
 import Lining (LineFormat (SINGLELINE))
-import Locator (locatedExpression, withLocatedExpression)
+import Locator (LocatorException, locatedExpression, withLocatedExpression)
 import Logger
 import Morph (ReduceContext (..), insideUniverse)
 import Parser (Form, parseExpressionThrows, parseExpressionThrows')
@@ -79,22 +80,33 @@ clearedStepsDir (Just dir) = do
       isFile <- doesFileExist path
       when isFile (removeFile path)
 
-saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> IO SaveStepFunc
-saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
+saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> Expression -> IO SaveStepFunc
+saveStepFunc stepsDir ctx@PrintCtx{..} included excluded start = do
   clearedStepsDir stepsDir
   counter <- newIORef (0 :: Int)
+  names <- newIORef =<< seeded
   let ioToExt :: String
       ioToExt
         | _outputFormat == LATEX = "tex"
         | otherwise = show _outputFormat
+      render :: Expression -> IO String
       render expr = do
-        shown <- F.exclude' expr excluded >>= (`F.include'` included)
-        printAnswer ctx shown
+        visible <- shown expr
+        if _canonize
+          then atomicModifyIORef' names (swap . canonizeExpression visible) >>= printCanonized ctx visible
+          else printAnswer ctx visible
       save :: SaveStepFunc
       save expr = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))
         saveStep stepsDir ioToExt render step expr
   pure save
+  where
+    shown :: Expression -> IO Expression
+    shown expr = F.exclude' expr excluded >>= (`F.include'` included)
+    seeded :: IO CanonState
+    seeded
+      | _canonize && isJust stepsDir = (snd . (`canonizeExpression` emptyCanon) <$> shown start) `catch` (\(_ :: LocatorException) -> pure emptyCanon)
+      | otherwise = pure emptyCanon
 
 withEvalFunc :: forall a. Maybe FilePath -> Maybe FilePath -> Bool -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
 withEvalFunc xml text profile ctx action = withEvalFunc' xml text profile ctx (tracked >=> action)
