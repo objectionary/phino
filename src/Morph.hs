@@ -71,7 +71,7 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression, Answer))) (IORef Int) (IORef Int) Kin
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression, Answer))) (IORef Int) (IORef Int) Kin (IORef Searched)
 
 data Kin = Kin (IORef Spots) (IORef (Map.Map Int [Kindred])) (IORef (Map.Map Int Firing))
 
@@ -201,7 +201,7 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   where
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
-    starve (Just (Memo _ _ _ exhausted _)) = modifyIORef' exhausted (+ 1)
+    starve (Just (Memo _ _ _ exhausted _ _)) = modifyIORef' exhausted (+ 1)
 
 measured :: ReduceContext -> Expression -> IO ()
 measured ctx term = do
@@ -258,12 +258,12 @@ awaited ctx action = case ctx._deadline of
     maybe (expired ctx cap) pure =<< timeout (ceiling (max 0 (due - now) * 1000000)) action
 
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> (Kin <$> newIORef (Spots Map.empty Map.empty) <*> newIORef Map.empty <*> newIORef Map.empty))
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> (Kin <$> newIORef (Spots Map.empty Map.empty) <*> newIORef Map.empty <*> newIORef Map.empty) <*> newIORef Map.empty)
 memoized _ = pure Nothing
 
 recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
 recalled Nothing _ _ = pure Nothing
-recalled (Just (Memo store _ answers _ _)) form spent = do
+recalled (Just (Memo store _ answers _ _ _)) form spent = do
   kept <- readIORef store
   count <- readIORef answers
   let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
@@ -278,29 +278,29 @@ recalled (Just (Memo store _ answers _ _)) form spent = do
 
 counted :: Maybe Memo -> IO Int
 counted Nothing = pure 0
-counted (Just (Memo _ _ answers _ _)) = readIORef answers
+counted (Just (Memo _ _ answers _ _ _)) = readIORef answers
 
 starved :: Maybe Memo -> IO Int
 starved Nothing = pure 0
-starved (Just (Memo _ _ _ exhausted _)) = readIORef exhausted
+starved (Just (Memo _ _ _ exhausted _ _)) = readIORef exhausted
 
 retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
 retained Nothing _ _ _ = pure ()
-retained (Just (Memo store _ _ _ _)) form stamp kept =
+retained (Just (Memo store _ _ _ _ _)) form stamp kept =
   modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
 
 remembered :: Maybe Memo -> Firing -> IO (Maybe (Expression, Answer))
 remembered Nothing _ = pure Nothing
-remembered (Just (Memo _ firings _ _ _)) firing = Map.lookup firing <$> readIORef firings
+remembered (Just (Memo _ firings _ _ _ _)) firing = Map.lookup firing <$> readIORef firings
 
 remember :: Maybe Memo -> Firing -> Expression -> Answer -> IO ()
 remember Nothing _ _ _ = pure ()
-remember (Just (Memo _ firings answers _ _)) firing form answer = do
+remember (Just (Memo _ firings answers _ _ _)) firing form answer = do
   modifyIORef' firings (Map.insert firing (form, answer))
   modifyIORef' answers (+ 1)
 
 placed :: Maybe Memo -> Expression -> Int -> IO ()
-placed (Just (Memo _ _ _ _ (Kin places _ _))) term idx
+placed (Just (Memo _ _ _ _ (Kin places _ _) _)) term idx
   | not (bare term) = modifyIORef' places (\spots -> List.foldl' spot spots (List.nub [term, stayed term]))
   where
     spot :: Spots -> Expression -> Spots
@@ -352,14 +352,14 @@ abstracted store spots form = do
     goArgument cache arg@(ArAlpha alpha expr) = first (intact expr arg (ArAlpha alpha)) <$> goExpr cache expr
 
 kindle :: Sides -> Maybe Memo -> Expression -> Firing -> Answer -> IO ()
-kindle store (Just (Memo _ _ _ _ (Kin places likes _))) form firing answer = do
+kindle store (Just (Memo _ _ _ _ (Kin places likes _) _)) form firing answer = do
   spots <- readIORef places
   key <- fst <$> abstracted store spots form
   modifyIORef' likes (Map.insertWith (++) (hashShape key) [Kindred key form firing answer])
 kindle _ _ _ _ _ = pure ()
 
 minting :: Maybe Memo -> Firing -> Answer -> IO ()
-minting (Just (Memo _ _ _ _ (Kin _ _ minters))) firing@(Firing _ operands normals) answer =
+minting (Just (Memo _ _ _ _ (Kin _ _ minters) _)) firing@(Firing _ operands normals) answer =
   modifyIORef' minters (\known -> List.foldl' (\held idx -> Map.insertWith (\_ old -> old) idx firing held) known [idx | idx <- answered answer, idx `notElem` inputs])
   where
     inputs :: [Int]
@@ -372,7 +372,7 @@ answered (Joined normal) = List.nub (symbols normal)
 answered Raised = []
 
 kindred :: ReduceContext -> Expression -> IO (Maybe (Kindred, Map.Map Int Int, [(Int, Expression)]))
-kindred ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places likes _))} form = do
+kindred ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places likes _) _)} form = do
   spots <- readIORef places
   known <- readIORef likes
   (key, posed) <- abstracted ctx._sides spots form
@@ -382,7 +382,7 @@ kindred ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places likes _))} form
 kindred _ _ = pure Nothing
 
 adopted :: ReduceContext -> (Kindred, Map.Map Int Int, [(Int, Expression)]) -> Expression -> IO Answer
-adopted ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places _ _))} (Kindred key form firing answer, pairing, posed) target = do
+adopted ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places _ _) _)} (Kindred key form firing answer, pairing, posed) target = do
   table <- newIORef pairing
   visiting <- newIORef Set.empty
   Spots known _ <- readIORef places
@@ -426,10 +426,10 @@ adopt ctx renaming@(Renaming table _ visiting) firing key form answer target = d
     reanswered (Joined normal) = Joined <$> renamedTerm ctx renaming normal
     reanswered Raised = pure Raised
     held :: Maybe Memo -> IO (Map.Map Int Firing)
-    held (Just (Memo _ _ _ _ (Kin _ _ minters))) = readIORef minters
+    held (Just (Memo _ _ _ _ (Kin _ _ minters) _)) = readIORef minters
     held Nothing = pure Map.empty
     minted' :: Maybe Memo -> Firing -> [Int] -> IO ()
-    minted' (Just (Memo _ _ _ _ (Kin _ _ minters))) firing' fresh = modifyIORef' minters (\known -> List.foldl' (\kept idx -> Map.insert idx firing' kept) known fresh)
+    minted' (Just (Memo _ _ _ _ (Kin _ _ minters) _)) firing' fresh = modifyIORef' minters (\known -> List.foldl' (\kept idx -> Map.insert idx firing' kept) known fresh)
     minted' Nothing _ _ = pure ()
 
 refired :: ReduceContext -> Renaming -> Firing -> IO Firing
@@ -480,7 +480,7 @@ renamedSymbol ctx renaming@(Renaming table _ visiting) idx = do
     unknown :: IO Int
     unknown = do
       minter <- case ctx._memo of
-        Just (Memo _ _ _ _ (Kin _ _ minters)) -> Map.lookup idx <$> readIORef minters
+        Just (Memo _ _ _ _ (Kin _ _ minters) _) -> Map.lookup idx <$> readIORef minters
         Nothing -> pure Nothing
       seen <- readIORef visiting
       case minter of
@@ -756,14 +756,30 @@ admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
 repeats :: Acyclic -> Expression -> ReduceContext -> IO [Expression]
 repeats mode form ctx = do
   look <- resolver ctx._sides
-  let hits = take (succ ctx._maxLoops) (filter (repeated look mode) (Map.findWithDefault [] (digest mode form) ctx._entered))
-  awaited ctx (evaluate (length hits `seq` hits))
+  start <- maybe (pure Map.empty) readIORef (searching ctx._memo)
+  (hits, kept) <- awaited ctx (evaluate (forced (goHits look start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
+  mapM_ (\ref -> writeIORef ref (bounded kept)) (searching ctx._memo)
+  pure hits
   where
-    repeated :: (T.Text -> Maybe Expression) -> Acyclic -> Expression -> Bool
-    repeated look Proven before = alike' look form before
-    repeated look Plausible before
-      | atomic form = akin' look before form
-      | otherwise = within' look before form
+    goHits :: (T.Text -> Maybe Expression) -> Searched -> Int -> [Expression] -> ([Expression], Searched)
+    goHits _ kept 0 _ = ([], kept)
+    goHits _ kept _ [] = ([], kept)
+    goHits look kept wanted (before : rest) = case repeated look mode before kept of
+      (True, kept') -> first (before :) (goHits look kept' (pred wanted) rest)
+      (False, kept') -> goHits look kept' wanted rest
+    forced :: ([Expression], Searched) -> ([Expression], Searched)
+    forced result@(hits, kept) = length hits `seq` kept `seq` result
+    bounded :: Searched -> Searched
+    bounded kept
+      | Map.size kept > 1000000 = Map.empty
+      | otherwise = kept
+    searching :: Maybe Memo -> Maybe (IORef Searched)
+    searching = fmap (\(Memo _ _ _ _ _ searched) -> searched)
+    repeated :: (T.Text -> Maybe Expression) -> Acyclic -> Expression -> Searched -> (Bool, Searched)
+    repeated look Proven before kept = (alike' look form before, kept)
+    repeated look Plausible before kept
+      | atomic form = akin'' look kept before form
+      | otherwise = within'' look kept before form
     atomic :: Expression -> Bool
     atomic (ExFormation bds) = any isLambda bds
     atomic _ = False
