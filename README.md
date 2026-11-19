@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.165
+cabal install --overwrite-policy=always phino-0.0.166
 phino --version
 ```
 
@@ -59,7 +59,7 @@ In a [GitHub Actions][gha] workflow, one step downloads the binary
 for the runner and puts it on the `PATH`:
 
 ```yaml
-- uses: objectionary/phino@0.0.165
+- uses: objectionary/phino@0.0.166
   with:
     version-file: phino-version.txt
 - run: phino --version
@@ -736,119 +736,119 @@ entries of `benchmark/demo.phi` symbolically, one case per entry.
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      1624060.124 μs
-  avg:        162406.012 μs
-  min:        144277.371 μs
-  max:        194535.221 μs
-  std dev:    21570.423 μs
+  total:      2465622.673 μs
+  avg:        246562.267 μs
+  min:        218941.645 μs
+  max:        290334.729 μs
+  std dev:    28336.570 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      7009151.691 μs
-  avg:        700915.169 μs
-  min:        651934.228 μs
-  max:        762411.055 μs
-  std dev:    44745.118 μs
+  total:      10271875.983 μs
+  avg:        1027187.598 μs
+  min:        952523.149 μs
+  max:        1105602.944 μs
+  std dev:    56046.627 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      12.959 μs
-  avg:        1.296 μs
-  min:        1.166 μs
-  max:        1.418 μs
-  std dev:    0.091 μs
+  total:      19.617 μs
+  avg:        1.962 μs
+  min:        1.743 μs
+  max:        2.565 μs
+  std dev:    0.256 μs
 === print/sweet/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      4217518.009 μs
-  avg:        421751.801 μs
-  min:        403493.618 μs
-  max:        457424.859 μs
-  std dev:    16536.568 μs
+  total:      1938531.305 μs
+  avg:        193853.130 μs
+  min:        183598.609 μs
+  max:        213453.416 μs
+  std dev:    8131.310 μs
 === print/sweet/flat ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      545770.341 μs
-  avg:        54577.034 μs
-  min:        49166.277 μs
-  max:        63498.089 μs
-  std dev:    5148.406 μs
+  total:      1057872.434 μs
+  avg:        105787.243 μs
+  min:        82857.729 μs
+  max:        125178.649 μs
+  std dev:    14251.925 μs
 === print/salty/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      13219408.124 μs
-  avg:        1321940.812 μs
-  min:        1272904.132 μs
-  max:        1364186.958 μs
-  std dev:    31154.946 μs
+  total:      7558977.518 μs
+  avg:        755897.752 μs
+  min:        712322.803 μs
+  max:        796599.717 μs
+  std dev:    34496.886 μs
 === morph/symbolic/demo/e1 ===
   warmup:     3 iterations
-  batches:    10 x 12
-  total:      11083.017 μs
-  avg:        92.358 μs
-  min:        90.596 μs
-  max:        97.264 μs
-  std dev:    1.942 μs
+  batches:    10 x 8
+  total:      12455.075 μs
+  avg:        155.688 μs
+  min:        150.368 μs
+  max:        160.704 μs
+  std dev:    3.488 μs
 === morph/symbolic/demo/e2 ===
   warmup:     3 iterations
-  batches:    10 x 183
-  total:      169227.669 μs
-  avg:        92.474 μs
-  min:        92.145 μs
-  max:        93.183 μs
-  std dev:    0.311 μs
+  batches:    10 x 111
+  total:      171500.448 μs
+  avg:        154.505 μs
+  min:        153.192 μs
+  max:        156.390 μs
+  std dev:    0.882 μs
 === morph/symbolic/demo/e3 ===
   warmup:     3 iterations
-  batches:    10 x 185
-  total:      173845.799 μs
-  avg:        93.971 μs
-  min:        93.445 μs
-  max:        94.542 μs
-  std dev:    0.317 μs
+  batches:    10 x 108
+  total:      171991.630 μs
+  avg:        159.252 μs
+  min:        157.466 μs
+  max:        163.693 μs
+  std dev:    1.851 μs
 === morph/symbolic/demo/e4 ===
   warmup:     3 iterations
-  batches:    10 x 189
-  total:      176636.558 μs
-  avg:        93.458 μs
-  min:        92.301 μs
-  max:        97.186 μs
-  std dev:    1.478 μs
+  batches:    10 x 113
+  total:      178788.974 μs
+  avg:        158.220 μs
+  min:        156.030 μs
+  max:        165.535 μs
+  std dev:    2.578 μs
 === morph/symbolic/demo/e5 ===
   warmup:     3 iterations
-  batches:    10 x 186
-  total:      176437.359 μs
-  avg:        94.859 μs
-  min:        94.521 μs
-  max:        95.173 μs
-  std dev:    0.205 μs
+  batches:    10 x 99
+  total:      178753.236 μs
+  avg:        180.559 μs
+  min:        176.461 μs
+  max:        202.862 μs
+  std dev:    7.494 μs
 === morph/symbolic/native/e5 ===
   warmup:     3 iterations
-  batches:    10 x 6
-  total:      80211.099 μs
-  avg:        1336.852 μs
-  min:        1211.536 μs
-  max:        1384.878 μs
-  std dev:    55.380 μs
+  batches:    10 x 5
+  total:      49540.552 μs
+  avg:        990.811 μs
+  min:        970.614 μs
+  max:        1049.267 μs
+  std dev:    21.179 μs
 === morph/symbolic/accum/0 ===
   warmup:     3 iterations
-  batches:    10 x 107
-  total:      83668.975 μs
-  avg:        78.195 μs
-  min:        77.496 μs
-  max:        78.759 μs
-  std dev:    0.356 μs
+  batches:    10 x 71
+  total:      92231.443 μs
+  avg:        129.903 μs
+  min:        129.040 μs
+  max:        132.475 μs
+  std dev:    0.907 μs
 === morph/symbolic/accum/400 ===
   warmup:     3 iterations
-  batches:    10 x 77
-  total:      70478.596 μs
-  avg:        91.531 μs
-  min:        90.598 μs
-  max:        92.469 μs
-  std dev:    0.645 μs
+  batches:    10 x 49
+  total:      73746.782 μs
+  avg:        150.504 μs
+  min:        147.839 μs
+  max:        153.328 μs
+  std dev:    1.475 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-11-16 at 09:21,
+on 2026-11-19 at 09:38,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -891,4 +891,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/43835713699
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/44497401529
