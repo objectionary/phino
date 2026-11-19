@@ -1720,6 +1720,14 @@ spec = do
             records <- map (dropWhile (== ' ')) . lines <$> readProtocol path
             records `shouldContain` ["looped 𝜎5 := 𝑛·5·1.plus  # plausible, repeats 𝑛·0·4"]
 
+      describe "over a recursion that hands its own growing call to an atom" $ do
+        let world = "⟦ go(x) ↦ ⟦ λ ⤍ L_go ⟧, seq(i) ↦ ⟦ ok ↦ Φ.go( Φ.seq( i.next ).ok ) ⟧, app ↦ Φ.seq( 𝜎1:λ ).ok ⟧"
+            atoms = T.pack "- λ: L_go\n  morph: {𝑛1: $.x}\n  𝑛: 𝑛1\n"
+        it "cuts the recursion by --max-loops, not by --max-steps" $
+          withLambdasOf atoms $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--max-steps=200"] ["40-45-00-00-00-00-00-00"]
+
       it "refuses a negative count" $
         withStdin once $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=-1"] ["--max-loops must be >= 0"]

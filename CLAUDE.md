@@ -599,6 +599,12 @@ issue #2347). Only a boxed formation the copy holds, one binding φ and no λ
 or Δ, may grow inside it as `within` lets it (`akin` in `AST.hs`), so a
 recursion through a side of a fork, whose fabricated copies hold a copy of
 the recursive object with a bigger argument every round, is cut too (#2372).
+So may a call not made yet, an application or a dispatch off one, seen
+through the names of `shared`, where the later one is deeper than the
+earlier one and holds it as `within` lets it, so a recursion handing its
+own growing call to an atom, as `Φ.go( Φ.seq( i.next ).ok )`, is cut too,
+while nested calls whose arguments shrink, such as five `or` in each other,
+are not (#2428).
 `--max-loops=<n>`
 (`_maxLoops` of `ReduceContext`) softens either mode: `enter` cuts a frame only
 once more than `n` of the formations above it are the same as its own, so a
