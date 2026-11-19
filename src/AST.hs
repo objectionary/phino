@@ -352,7 +352,19 @@ akin' look = likened look grown
   where
     grown :: Expression -> Expression -> Bool
     grown before@(ExFormation left) after@(ExFormation right) = boxed left && boxed right && within' look before after
-    grown _ _ = False
+    grown before after = pending before && pending after && deepness before < deepness after && within' look before after
+    deepness :: Expression -> Int
+    deepness (ExMeta name) = maybe 0 deepness (look name)
+    deepness (ExApplication callee (ArTau _ arg)) = 1 + max (deepness callee) (deepness arg)
+    deepness (ExApplication callee (ArAlpha _ arg)) = 1 + max (deepness callee) (deepness arg)
+    deepness (ExDispatch inner _) = 1 + deepness inner
+    deepness (ExFormation bds) = 1 + maximum (0 : [deepness body | BiTau _ body <- bds])
+    deepness _ = 0
+    pending :: Expression -> Bool
+    pending (ExMeta name) = maybe False pending (look name)
+    pending (ExApplication _ _) = True
+    pending (ExDispatch inner _) = pending inner
+    pending _ = False
 
 boxed :: [Binding] -> Bool
 boxed bds = any phi bds && not (any lambda bds) && not (any delta bds)
