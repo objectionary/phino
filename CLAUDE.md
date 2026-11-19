@@ -301,6 +301,14 @@ condition, and the firing writes `guarded 𝛿1·1 ? 𝑛1·1 : 𝑛2·1  # wher
 is ⊥` (`EvGuarded`) and the markup
 `<guarded on="𝛿1·1" left="𝑛1·1" right="𝑛2·1" terminator="right"/>` (#2370).
 A ⊥ deeper inside a side still joins only with a symbol facing it.
+In an entry that joins, an operand of `morph` or `undress` or a line whose
+term gets `opaque`, such as a dispatch off the bare symbol of a cut,
+`⟦ λ ⤍ 𝜎5 ⟧.if`, binds its meta to ⊥ rather than getting the firing stuck,
+so that side ends as a raise does and the join keeps the other one
+(`blanked` of `Evaluate.hs`, #2427). The failure is told by its name, a
+symbol, which no λ name spells, so a stall the memo replays is caught too.
+An operand of `dataize`, the condition among them, and an entry that
+computes still get stuck.
 Two formations of other shapes, neither holding a datum nor a λ (#2041), are
 joined attribute by attribute when the block names a λ function under
 `otherwise` (#2024):

@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# An entry that does not join morphs an operand dispatching off a bare
+# symbol. There is no side to end, so the 'opaque' still gets the firing stuck
+# (#2427).
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.on🌵
+    morph:
+      𝑛1: $.left🌵
+      𝑛2: $.right🌵
+    join:
+      on: 𝛿1
+      left: 𝑛1
+      right: 𝑛2
+      otherwise: L_fork
+  - λ: L_id
+    morph:
+      𝑛1: $.x
+    𝑛: 𝑛1
+location: 'Q.e1'
+input: '⟦ e1 ↦ ⟦ λ ⤍ L_id, x ↦ ⟦ λ ⤍ 𝜎1 ⟧.q ⟧.φ ⟧'
+fails: "No entry of --symbolic answers the λ function '𝜎1'"
+protocol: |
+  𝕄(Φ.e1):
+    𝔼(L_id):
+      𝕄(ξ.x):
+        opaque 𝜎1  # 𝕄(𝜎1:λ.q)
+      stuck 𝜎1
