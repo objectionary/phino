@@ -365,10 +365,11 @@ throws `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around
 it write `stuck` as for a λ function no entry answers. A side or an operand
 whose morph throws fails the firing with what it threw, so a run never
-splits and prints one result (#1996). It does so under `--partial` too:
-`morphing` of `Morph.hs` runs the operand through `morph'` and parks nothing,
-so no later block runs on a term that was never morphed, and `--partial`
-parks the firing as a whole (#2014).
+splits and prints one result (#1996), unless an entry that joins meets an
+`opaque` there, which ends that side alone, as said above. It does so under
+`--partial` too: `morphing` of `Morph.hs` runs the operand through `morph'`
+and parks nothing, so no later block runs on a term that was never morphed,
+and `--partial` parks the firing as a whole (#2014).
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
@@ -392,7 +393,8 @@ is no bare symbol: it morphs the argument in the copy, at a site such as
 does, and writes every step to the protocol, so the markup names the argument
 by the object an application made of it, such as `𝑛·77·3`. An argument whose
 morph or firing gets stuck, is cut or runs out of steps gets the firing stuck
-at once, as an operand does (#2014).
+at once, as an operand does (#2014), but for an `opaque` in an entry that
+joins, which binds the meta of the `defer` line to ⊥.
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
