@@ -338,7 +338,7 @@ alike :: Expression -> Expression -> Bool
 alike = alike' (const Nothing)
 
 alike' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
-alike' look = likened look (\_ _ -> False)
+alike' look = likened look (\_ _ -> Nothing)
 
 akin :: Expression -> Expression -> Bool
 akin = akin' (const Nothing)
@@ -346,9 +346,12 @@ akin = akin' (const Nothing)
 akin' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
 akin' look = likened look grown
   where
-    grown :: Expression -> Expression -> Bool
-    grown before@(ExFormation left) after@(ExFormation right) = boxed left && boxed right && within' look before after
-    grown before after = pending before && pending after && deepness before < deepness after && within' look before after
+    grown :: Expression -> Expression -> Maybe Bool
+    grown before@(ExFormation left) after@(ExFormation right)
+      | boxed left && boxed right = Just (within' look before after)
+    grown before after
+      | pending before && pending after && deepness before < deepness after = Just (within' look before after)
+    grown _ _ = Nothing
     deepness :: Expression -> Int
     deepness (ExMeta name) = maybe 0 deepness (look name)
     deepness (ExApplication callee (ArTau _ arg)) = 1 + max (deepness callee) (deepness arg)
@@ -379,37 +382,40 @@ bijection :: Expression -> Expression -> Maybe (Map.Map Int Int)
 bijection = bijection' (const Nothing)
 
 bijection' :: (Text -> Maybe Expression) -> Expression -> Expression -> Maybe (Map.Map Int Int)
-bijection' look one two = fst <$> matching look (\_ _ -> False) one two
+bijection' look one two = fst <$> matching look (\_ _ -> Nothing) one two
 
-likened :: (Text -> Maybe Expression) -> (Expression -> Expression -> Bool) -> Expression -> Expression -> Bool
+likened :: (Text -> Maybe Expression) -> (Expression -> Expression -> Maybe Bool) -> Expression -> Expression -> Bool
 likened look loose one two = isJust (matching look loose one two)
 
 type Pairing = (Map.Map Int Int, Map.Map Int Int, Map.Map (Text, Text) ())
 
-matching :: (Text -> Maybe Expression) -> (Expression -> Expression -> Bool) -> Expression -> Expression -> Maybe (Map.Map Int Int, Map.Map Int Int)
+matching :: (Text -> Maybe Expression) -> (Expression -> Expression -> Maybe Bool) -> Expression -> Expression -> Maybe (Map.Map Int Int, Map.Map Int Int)
 matching look loose one two = (\(forward, backward, _) -> (forward, backward)) <$> goExpr (Map.empty, Map.empty, Map.empty) one two
   where
     goExpr :: Pairing -> Expression -> Expression -> Maybe Pairing
-    goExpr pairing left right
-      | loose left right = Just pairing
-    goExpr pairing@(forward, backward, met) (ExMeta left) (ExMeta right)
+    goExpr pairing left right = case loose left right of
+      Just True -> Just pairing
+      Just False -> Nothing
+      Nothing -> goStrict pairing left right
+    goStrict :: Pairing -> Expression -> Expression -> Maybe Pairing
+    goStrict pairing@(forward, backward, met) (ExMeta left) (ExMeta right)
       | Map.member (left, right) met = Just pairing
       | Just left' <- look left
       , Just right' <- look right =
           goExpr (forward, backward, Map.insert (left, right) () met) left' right'
-    goExpr pairing (ExMeta left) right
+    goStrict pairing (ExMeta left) right
       | Just left' <- look left = goExpr pairing left' right
-    goExpr pairing left (ExMeta right)
+    goStrict pairing left (ExMeta right)
       | Just right' <- look right = goExpr pairing left right'
-    goExpr pairing (ExFormation left) (ExFormation right) = goList goBinding pairing left right
-    goExpr pairing (ExApplication left arg) (ExApplication right arg') = goExpr pairing left right >>= \next -> goArgument next arg arg'
-    goExpr pairing (ExDispatch left attr) (ExDispatch right attr')
+    goStrict pairing (ExFormation left) (ExFormation right) = goList goBinding pairing left right
+    goStrict pairing (ExApplication left arg) (ExApplication right arg') = goExpr pairing left right >>= \next -> goArgument next arg arg'
+    goStrict pairing (ExDispatch left attr) (ExDispatch right attr')
       | attr == attr' = goExpr pairing left right
-    goExpr pairing (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right)
+    goStrict pairing (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right)
       | prefix == prefix' && idx == idx' = goExpr pairing left right
-    goExpr pairing (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right)
+    goStrict pairing (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right)
       | prefix == prefix' && idx == idx' = goExpr pairing left right
-    goExpr pairing left right = same pairing left right
+    goStrict pairing left right = same pairing left right
     goBinding :: Pairing -> Binding -> Binding -> Maybe Pairing
     goBinding pairing (BiTau attr left) (BiTau attr' right)
       | attr == attr' = goExpr pairing left right

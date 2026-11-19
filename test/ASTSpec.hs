@@ -12,7 +12,9 @@ import Control.Monad (forM_)
 import Data.List (nub, sort)
 import Data.Text qualified as T
 import GHC.Clock (getMonotonicTime)
+import Grown (Grown (..))
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
+import Test.Hspec.QuickCheck (prop)
 
 spec :: Spec
 spec = do
@@ -342,6 +344,10 @@ spec = do
       akin (ExFormation [BiTau (AtLabel "w") (down ExXi), BiLambda (Function "L_ab")]) (ExFormation [BiTau (AtLabel "w") (down (next ExXi)), BiLambda (Function "L_cd")]) `shouldBe` False
     it "does not map one symbol outside a boxed formation to two others" $
       akin (atom (down ExRoot) 4) (ExFormation [BiTau (AtLabel "on") (ExFormation [BiLambda (FnSymbol 6)]), BiTau AtRho (ExFormation [BiTau (AtLabel "rt") (down ExRoot), BiTau (AtLabel "of") (ExFormation [BiLambda (FnSymbol 6)])]), BiLambda (Function "L_vex")]) `shouldBe` False
+    it "does not find an atom inside one whose boxed formation is not within, however alike their parts" $
+      akin (atom (ExFormation [BiTau AtPhi ExRoot, BiTau (AtLabel "z") ExXi]) 1) (atom (ExFormation [BiTau AtPhi ExRoot, BiTau (AtLabel "z") ExRoot]) 1) `shouldBe` False
+    prop "finds every term inside itself, as the looser search does" $ \(Grown one) ->
+      (akin one one, within one one) `shouldBe` (True, True)
 
   describe "hashSkeleton" $ do
     it "does not tell apart two formations that bind other terms to the same attributes" $
