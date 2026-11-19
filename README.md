@@ -295,6 +295,8 @@ The `--protocol` option writes every λ function the run fired into a file,
 as a tree in XML, for a program to read.
 The `--minutes` option writes the same tree as indented text, and one run
 may take both.
+With `--profile`, every record of the minutes ends with the milliseconds
+it took, the time since the start, and the memory in use.
 Here, `L_down` answers with a call of its own object over a fresh symbol, so
 without `--acyclic` the run would go on until `--max-steps` runs out:
 

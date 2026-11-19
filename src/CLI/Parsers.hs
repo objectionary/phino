@@ -336,6 +336,16 @@ optMinutes =
         )
     )
 
+optProfile :: Parser Bool
+optProfile =
+  switch
+    ( long "profile"
+        <> help
+          "Close every record of the --minutes file with a comment holding the milliseconds since the record \
+          \above and since the start, the depth of the record, the firings so far, the live heap and the peak memory, \
+          \so a slow or memory-hungry spot shows next to the lines that caused it"
+    )
+
 optAbridged :: Parser (Maybe Int)
 optAbridged =
   optional
@@ -481,6 +491,7 @@ dataizeParser =
             <*> optStepsDir
             <*> optProtocol
             <*> optMinutes
+            <*> optProfile
             <*> optAbridged
             <*> optAbridgedData
             <*> optSymbolic
@@ -535,6 +546,7 @@ morphParser =
             <*> optStepsDir
             <*> optProtocol
             <*> optMinutes
+            <*> optProfile
             <*> optAbridged
             <*> optAbridgedData
             <*> optSymbolic

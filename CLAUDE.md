@@ -426,7 +426,12 @@ the indented text, and one run given both writes both files (`withEvalFunc'`
 of `CLI/Helpers.hs`, #2335). Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
 the symbol it denotes and spells it `𝜎1` as everywhere else, where the text
-names a line by counting.
+names a line by counting. Given `--profile`, which needs `--minutes`, the
+text closes the last line of every record but the header with a comment, as
+`# +3 ms, at 512 ms, depth 4, firings 80, heap 9.8 MB, peak 14.1 MB`: the
+time since the record above and since the start, the depth of the record,
+the firings so far, and the live heap and peak memory of `getRTSStats`
+(`Profile` and `stamped` of `Deps.hs`, issue #2434).
 
 An application writes a line too, `𝑛·1·1 := …` (`EvApplied`, #1745). A `Step`
 answers the term it made and the pairs of redex and result it replaced, and

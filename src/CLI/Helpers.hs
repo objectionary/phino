@@ -28,7 +28,7 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Time (getZonedTime)
 import Data.Version (showVersion)
 import qualified Data.Yaml as Yaml
-import Deps (Evaluation (EvHeader, EvRun), Header (Header), Judgment, SaveEvalFunc, SaveStepFunc, World (World), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, resited, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvHeader, EvRun), Header (Header), Judgment, SaveEvalFunc, SaveStepFunc, World (World), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, profiling, progressed, resited, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
@@ -96,8 +96,8 @@ saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
         saveStep stepsDir ioToExt render step expr
   pure save
 
-withEvalFunc :: forall a. Maybe FilePath -> Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc xml text ctx action = withEvalFunc' xml text ctx (tracked >=> action)
+withEvalFunc :: forall a. Maybe FilePath -> Maybe FilePath -> Bool -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc xml text profile ctx action = withEvalFunc' xml text profile ctx (tracked >=> action)
   where
     tracked :: SaveEvalFunc -> IO SaveEvalFunc
     tracked record = do
@@ -108,8 +108,8 @@ withEvalFunc xml text ctx action = withEvalFunc' xml text ctx (tracked >=> actio
           pure (progressed cursor 5 (flattened ctx) record)
         else pure record
 
-withEvalFunc' :: forall a. Maybe FilePath -> Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc' xml text ctx action =
+withEvalFunc' :: forall a. Maybe FilePath -> Maybe FilePath -> Bool -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc' xml text profile ctx action =
   markedUp xml (\marked -> plain text (\lined -> action (\record -> marked record >> lined record)))
   where
     markedUp :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
@@ -126,8 +126,9 @@ withEvalFunc' xml text ctx action =
       logDebug (printf "The option '--minutes' is specified, every firing will be recorded in '%s' as text" file)
       cursor <- newIORef emptyProtocol
       began <- getMonotonicTime
+      watch <- if profile then Just <$> profiling else pure Nothing
       bracket (opened file) (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
-        go (saveEval protocol cursor (flattened ctx) (salted ctx))
+        go (saveEval protocol cursor (flattened ctx) (salted ctx) watch)
     opened :: FilePath -> IO Handle
     opened file = do
       createDirectoryIfMissing True (takeDirectory file)
