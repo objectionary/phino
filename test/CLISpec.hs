@@ -269,6 +269,30 @@ spec = do
         withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
           testCLIFailed ["dataize", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["--max-nodes=5000"]
 
+  it "fails when --pin doesn't match even with --version" $
+    testCLIFailed
+      ["--pin=9.9.9.9", "--version"]
+      ["Version mismatch: --pin requires '9.9.9.9', but this is phino " ++ showVersion version]
+
+  it "fails when --pin doesn't match even with --help" $
+    testCLIFailed
+      ["--pin=9.9.9.9", "--help"]
+      ["Version mismatch: --pin requires '9.9.9.9', but this is phino " ++ showVersion version]
+
+  it "fails when --pin-file doesn't match even with --version" $
+    withTempDirectory "phino-pin-version" $ \dir -> do
+      createDirectoryIfMissing True dir
+      let file = dir </> "pinned.txt"
+      writeFile file "7.3.0.41\n"
+      testCLIFailed
+        ["--pin-file=" ++ file, "--version"]
+        ["Version mismatch: --pin requires '7.3.0.41', but this is phino " ++ showVersion version]
+
+  it "prints version when --pin matches" $
+    testCLISucceeded
+      ["--pin=" ++ showVersion version, "--version"]
+      [showVersion version]
+
   describe "--hide-rho" $
     forM_
       [
