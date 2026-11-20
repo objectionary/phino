@@ -29,7 +29,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 import Encoding
 import Lining
-import Margin (defaultMargin, withLines)
+import Margin (WithMargin (..), defaultMargin)
 import Matcher
 import Render
 import Sugar
@@ -51,8 +51,15 @@ printExpressionHidingRho' :: Expression -> PrintConfig -> String
 printExpressionHidingRho' = printExpressionWith withoutRho
 
 printExpressionWith :: (SugarType -> EXPRESSION -> EXPRESSION) -> Expression -> PrintConfig -> String
-printExpressionWith hide ex (sugar, encoding, line, margin) =
-  T.unpack $ render (withLines line margin $ withEncoding encoding $ hide sugar $ withSugarType sugar $ expressionToCST ex)
+printExpressionWith = printExpressionFrom 0
+
+printExpressionFrom :: Int -> (SugarType -> EXPRESSION -> EXPRESSION) -> Expression -> PrintConfig -> String
+printExpressionFrom offset hide ex (sugar, encoding, line, margin) =
+  T.unpack $ render (lined line $ withEncoding encoding $ hide sugar $ withSugarType sugar $ expressionToCST ex)
+  where
+    lined :: LineFormat -> EXPRESSION -> EXPRESSION
+    lined SINGLELINE = toSingleLine
+    lined MULTILINE = withMargin' (offset, margin)
 
 printExpression :: Expression -> String
 printExpression ex = printExpression' ex defaultPrintConfig
@@ -99,13 +106,13 @@ printExtraArg' (ArgBytes bts) _ = printBytes bts
 printExtraArg :: ExtraArgument -> String
 printExtraArg arg = printExtraArg' arg defaultPrintConfig
 
-printMetaValue :: MetaValue -> PrintConfig -> String
-printMetaValue (MvAttribute att) (_, encoding, _, _) = printAttribute' att encoding
-printMetaValue (MvIndex index) _ = show index
-printMetaValue (MvExpression ex) config = printExpression' ex config
-printMetaValue (MvBytes bts) _ = printBytes bts
-printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config
-printMetaValue (MvFunction fun) _ = printFunction fun
+printMetaValue :: Int -> MetaValue -> PrintConfig -> String
+printMetaValue _ (MvAttribute att) (_, encoding, _, _) = printAttribute' att encoding
+printMetaValue _ (MvIndex index) _ = show index
+printMetaValue offset (MvExpression ex) config = printExpressionFrom offset (const id) ex config
+printMetaValue _ (MvBytes bts) _ = printBytes bts
+printMetaValue offset (MvBindings bds) config = printExpressionFrom offset (const id) (ExFormation bds) config
+printMetaValue _ (MvFunction fun) _ = printFunction fun
 
 printMeta :: Meta -> String
 printMeta (Named name) = T.unpack name
@@ -115,7 +122,7 @@ printSubst :: Subst -> PrintConfig -> String
 printSubst (Subst mp) config =
   intercalate
     "\n"
-    (map (\(key, value) -> numbered key <> " >> " <> printMetaValue value config) (Map.toList mp))
+    (map (\(key, value) -> let lead = numbered key <> " >> " in lead <> printMetaValue (length lead) value config) (Map.toList mp))
   where
     numbered :: Meta -> String
     numbered anon@(Anon slot@(Slot kind _))
