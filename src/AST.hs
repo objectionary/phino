@@ -33,6 +33,7 @@ module AST
   , akin'
   , akin''
   , deepness
+  , reaches
   , boxed
   , intact
   , suffixed
@@ -364,7 +365,7 @@ akin'' look depth searched one two = case matching look grown searched one two o
     decided :: (Bool, Searched) -> (Maybe Bool, Searched)
     decided (found, kept) = (Just found, kept)
     deeper :: Expression -> Expression -> Bool
-    deeper before after = deepness look depth before < deepness look depth after
+    deeper before after = not (reaches look depth (deepness look depth after) before)
     pending :: Expression -> Bool
     pending (ExMeta name) = maybe False pending (look name)
     pending (ExApplication _ _) = True
@@ -383,6 +384,18 @@ deepness look depth = go
     go _ = 0
     deepest :: [Expression] -> Int
     deepest = List.foldl' (\most part -> max most (go part + 1)) 1
+
+reaches :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Int -> Expression -> Bool
+reaches look depth = go
+  where
+    go :: Int -> Expression -> Bool
+    go limit _ | limit <= 0 = True
+    go limit (ExMeta name) = maybe (maybe False (go limit) (look name)) (>= limit) (depth name)
+    go limit (ExApplication callee (ArTau _ arg)) = limit <= 1 || go (pred limit) callee || go (pred limit) arg
+    go limit (ExApplication callee (ArAlpha _ arg)) = limit <= 1 || go (pred limit) callee || go (pred limit) arg
+    go limit (ExDispatch inner _) = limit <= 1 || go (pred limit) inner
+    go limit (ExFormation bds) = limit <= 1 || any (go (pred limit)) [body | BiTau _ body <- bds]
+    go _ _ = False
 
 boxed :: [Binding] -> Bool
 boxed bds = any phi bds && not (any lambda bds) && not (any delta bds)
