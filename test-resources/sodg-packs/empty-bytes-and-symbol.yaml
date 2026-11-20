@@ -3,8 +3,8 @@
 ---
 input: '⟦ a ↦ ⟦ Δ ⤍ --, λ ⤍ 𝜎3 ⟧ ⟧'
 output: |
-  F b0 a
-  F b1
-  Δ b1 --
-  λ b1 𝜎3
-  P b0 a b1
+  F c0 a
+  F c1
+  Δ c1 --
+  λ c1 𝜎3
+  P c0 a c1

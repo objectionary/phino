@@ -4758,14 +4758,14 @@ spec = do
 
     it "takes from stdin" $
       withStdin "⟦ x ↦ ξ.y, y ↦ ∅ ⟧" $
-        testCLISucceeded ["sodg"] ["F b0 x y\nD b1 b0 y\nP b0 x b1\n"]
+        testCLISucceeded ["sodg"] ["F c0 x y\nD c1 c0 y\nP c0 x c1\n"]
 
     it "takes from file" $
-      testCLISucceeded ["sodg", resource "foo.phi"] ["F b0 foo\nD b1 b0 org\nD b2 b1 eolang\nD b3 b2 x\nP b0 foo b3\n"]
+      testCLISucceeded ["sodg", resource "foo.phi"] ["F c0 foo\nD c1 c0 org\nD c2 c1 eolang\nD c3 c2 x\nP c0 foo c3\n"]
 
     it "reads XMIR" $
       withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
-        testCLISucceeded ["sodg", "--input=xmir"] ["F b0 app\nF b1 x\nD b2 b0 number\nP b1 x b2\nP b0 app b1\n"]
+        testCLISucceeded ["sodg", "--input=xmir"] ["F c0 app\nF c1 x\nD c2 c0 number\nP c1 x c2\nP c0 app c1\n"]
 
     it "fails on ⊥ and names the attribute" $
       withStdin "⟦ a ↦ ⊥ ⟧" $

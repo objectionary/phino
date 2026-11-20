@@ -3,11 +3,11 @@
 ---
 input: '⟦ a ↦ ⟦ b ↦ ξ.c, c ↦ ξ ⟧, d ↦ ξ.a ⟧'
 output: |
-  F b0 a d
-  F b1 b c
-  D b2 b1 c
-  P b1 b b2
-  P b1 c b1
-  P b0 a b1
-  D b3 b0 a
-  P b0 d b3
+  F c0 a d
+  F c1 b c
+  D c2 c1 c
+  P c1 b c2
+  P c1 c c1
+  P c0 a c1
+  D c3 c0 a
+  P c0 d c3

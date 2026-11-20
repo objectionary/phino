@@ -3,9 +3,9 @@
 ---
 input: '⟦ x ↦ Φ.f( a ↦ ξ.y, b ↦ Φ ), y ↦ ∅ ⟧'
 output: |
-  F b0 x y
-  D b1 b0 f
-  D b2 b0 y
-  A b3 b1 a b2
-  A b4 b3 b b0
-  P b0 x b4
+  F c0 x y
+  D c1 c0 f
+  D c2 c0 y
+  A c3 c1 a c2
+  A c4 c3 b c0
+  P c0 x c4

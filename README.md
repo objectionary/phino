@@ -527,9 +527,9 @@ The `sodg` command prints the commands that build the graph of a
 
 ```bash
 $ echo '⟦ x ↦ ξ.y, y ↦ ∅ ⟧' | phino sodg
-F b0 x y
-D b1 b0 y
-P b0 x b1
+F c0 x y
+D c1 c0 y
+P c0 x c1
 ```
 
 ## Compile

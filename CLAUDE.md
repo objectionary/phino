@@ -77,8 +77,8 @@ components: `library` (`src/`), executable `phino` (`app/`), test suite
 
 `sodg` (`Sodg.hs`, #2447) walks the term as written, normalizing nothing, and
 prints the commands `F`, `D`, `A`, `P`, `Δ` and `λ` that build its graph,
-naming vertices `b0`, `b1` and so on: a formation takes its name before its
-bindings, a dispatch or an application after its operands, `Φ` is `b0` and `ξ`
+naming cells `c0`, `c1` and so on: a formation takes its name before its
+bindings, a dispatch or an application after its operands, `Φ` is `c0` and `ξ`
 the nearest formation around. A term holding ⊥, a meta or a ξ outside every
 formation is refused.
 

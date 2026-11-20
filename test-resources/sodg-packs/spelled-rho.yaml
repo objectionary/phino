@@ -3,6 +3,6 @@
 ---
 input: '⟦ ρ ↦ ∅, φ ↦ ξ.ρ ⟧'
 output: |
-  F b0 ρ φ
-  D b1 b0 ρ
-  P b0 φ b1
+  F c0 ρ φ
+  D c1 c0 ρ
+  P c0 φ c1

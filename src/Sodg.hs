@@ -119,7 +119,7 @@ sodg :: Expression -> IO [Command]
 sodg = either throwIO pure . commands
 
 vertex :: Int -> String
-vertex idx = 'b' : show idx
+vertex idx = 'c' : show idx
 
 printCommands :: [Command] -> String
 printCommands = concatMap ((++ "\n") . unwords . spelled)
