@@ -468,7 +468,11 @@ instance ToCST [Binding] BINDINGS where
 
 instance ToCST Binding PAIR where
   toCST (BiTau attr exp@(ExFormation bds)) ctx =
-    let (head', rest) = span positionless bds
+    let (run, after) = span positionless bds
+        seen = scanl (\acc bd -> acc || named bd) False run
+        left = drop 1 (scanr (\bd acc -> named bd || acc) False run)
+        cut = length (takeWhile not (zipWith3 between run seen left))
+        (head', rest) = (take cut run, drop cut run ++ after)
         voids' = [void | BiVoid void <- head']
         others = filter (not . isVoid) head'
         attr' = toCST attr ctx
@@ -488,6 +492,10 @@ instance ToCST Binding PAIR where
       positionless BiLambda{} = True
       positionless BiDelta{} = True
       positionless _ = False
+      between :: Binding -> Bool -> Bool -> Bool
+      between bd before later = not (isVoid bd) && before && later
+      named :: Binding -> Bool
+      named bd = isVoid bd && bd /= BiVoid AtRho
       isVoid :: Binding -> Bool
       isVoid BiVoid{} = True
       isVoid _ = False
