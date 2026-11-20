@@ -90,6 +90,7 @@ library
     Rewriter
     Rule
     Sides
+    Sodg
     Slots
     Sugar
     Tau
@@ -204,6 +205,7 @@ test-suite spec
     RewriterSpec
     RuleSpec
     SidesSpec
+    SodgSpec
     Spec
     SugarSpec
     TauSpec

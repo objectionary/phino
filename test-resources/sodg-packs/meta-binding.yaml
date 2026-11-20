@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ a ↦ ⟦ 𝐵1 ⟧ ⟧'
+fails: 'holds ⟦ 𝐵1 ⟧'

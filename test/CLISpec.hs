@@ -4752,6 +4752,29 @@ spec = do
         writeFile (dir </> "having.yaml") "name: hv\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ !B1 ]]'\nhaving:\n  eq: ['!e1', '!e1']\n"
         withCurrentDirectory dir (testCLIFailed ["compile", "--rule=having.yaml", "--target=Compiled.hs"] ["The rule 'hv' cannot be compiled, since it has a 'having' condition"])
 
+  describe "sodg" $ do
+    it "prints help" $
+      testCLISucceeded ["sodg", "--help"] ["Print the SODG commands that build the graph of the 𝜑-expression"]
+
+    it "takes from stdin" $
+      withStdin "⟦ x ↦ ξ.y, y ↦ ∅ ⟧" $
+        testCLISucceeded ["sodg"] ["F c0 x y\nD c1 c0 y\nP c0 x c1\n"]
+
+    it "takes from file" $
+      testCLISucceeded ["sodg", resource "foo.phi"] ["F c0 foo\nD c1 c0 org\nD c2 c1 eolang\nD c3 c2 x\nP c0 foo c3\n"]
+
+    it "reads XMIR" $
+      withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
+        testCLISucceeded ["sodg", "--input=xmir"] ["F c0 app\nF c1 x\nD c2 c0 number\nP c1 x c2\nP c0 app c1\n"]
+
+    it "fails on ⊥ and names the attribute" $
+      withStdin "⟦ a ↦ ⊥ ⟧" $
+        testCLIFailed ["sodg"] ["The attribute Φ.a is ⊥"]
+
+    it "rejects an option of other commands" $
+      withStdin "⟦⟧" $
+        testCLIFailed ["sodg", "--sweet"] ["Invalid option"]
+
   describe "match" $ do
     it "prints help" $
       testCLISucceeded

@@ -633,6 +633,16 @@ matchParser =
             <*> optSeed
         )
 
+sodgParser :: Parser Command
+sodgParser =
+  CmdSodg
+    <$> ( OptsSodg
+            <$> optLogLevel
+            <*> optLogLines
+            <*> optInputFormat
+            <*> argInputFile
+        )
+
 compileParser :: Parser Command
 compileParser =
   CmdCompile
@@ -652,6 +662,7 @@ commandParser =
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
         <> command "merge" (info mergeParser (progDesc "Merge 𝜑-expressions into single one by merging their top level formations"))
         <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))
+        <> command "sodg" (info sodgParser (progDesc "Print the SODG commands that build the graph of the 𝜑-expression"))
         <> command "compile" (info compileParser (progDesc "Compile the rules into a Haskell module a build with the flag 'compiled' links in"))
     )
 
