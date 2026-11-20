@@ -9,7 +9,8 @@ module ASTSpec where
 import AST
 import Control.Exception (evaluate)
 import Control.Monad (forM_)
-import Data.List (foldl', nub, sort)
+import Data.List (nub, sort)
+import Data.List qualified as List
 import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import GHC.Clock (getMonotonicTime)
@@ -359,7 +360,7 @@ spec = do
             Just idx | idx /= "0" -> Just (term (read (T.unpack idx)))
             _ -> Nothing
           depths :: Map.Map T.Text Int
-          depths = foldl' (\kept idx -> Map.insert (T.pack ("n·" ++ show idx)) (deepness look (`Map.lookup` kept) (term idx)) kept) Map.empty [1 .. 22 :: Int]
+          depths = List.foldl' (\kept idx -> Map.insert (T.pack ("n·" ++ show idx)) (deepness look (`Map.lookup` kept) (term idx)) kept) Map.empty [1 .. 22 :: Int]
       start <- getMonotonicTime
       found <- evaluate (akin' look (`Map.lookup` depths) (ExDispatch (named 21) (AtLabel "q")) (ExDispatch (named 22) (AtLabel "q")))
       end <- getMonotonicTime
@@ -378,7 +379,7 @@ spec = do
           look :: T.Text -> Maybe Expression
           look = (`Map.lookup` terms)
           depths :: Map.Map T.Text Int
-          depths = foldl' (\kept (name, term) -> Map.insert name (deepness look (`Map.lookup` kept) term) kept) Map.empty (Map.toAscList terms)
+          depths = List.foldl' (\kept (name, term) -> Map.insert name (deepness look (`Map.lookup` kept) term) kept) Map.empty (Map.toAscList terms)
           whole :: Expression
           whole = ExApplication three (ArAlpha (Alpha 0) (ExMeta "n·2"))
        in deepness look (`Map.lookup` depths) whole `shouldBe` deepness look (const Nothing) whole
