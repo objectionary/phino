@@ -15,6 +15,7 @@ import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import GHC.Clock (getMonotonicTime)
 import Grown (Grown (..))
+import System.Timeout (timeout)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
 import Test.Hspec.QuickCheck (prop)
 
@@ -383,6 +384,35 @@ spec = do
           whole :: Expression
           whole = ExApplication three (ArAlpha (Alpha 0) (ExMeta "n·2"))
        in deepness look (`Map.lookup` depths) whole `shouldBe` deepness look (const Nothing) whole
+
+  describe "reaches" $ do
+    prop "tells a term reaches a depth exactly where it measures at least that deep" $ \(Grown one) ->
+      let deep :: Int
+          deep = deepness (const Nothing) (const Nothing) one
+       in map (\limit -> reaches (const Nothing) (const Nothing) limit one) [0 .. deep + 1] `shouldBe` map (<= deep) [0 .. deep + 1]
+    prop "takes the depth of a name it was told as deepness does" $ \(Grown one) (Grown two) ->
+      let look :: T.Text -> Maybe Expression
+          look name = if name == "n·1" then Just one else Nothing
+          depth :: T.Text -> Maybe Int
+          depth name = if name == "n·1" then Just (deepness look (const Nothing) one) else Nothing
+          whole :: Expression
+          whole = ExApplication two (ArTau (AtLabel "x") (ExMeta "n·1"))
+          deep :: Int
+          deep = deepness look depth whole
+       in map (\limit -> reaches look depth limit whole) [0 .. deep + 1] `shouldBe` map (<= deep) [0 .. deep + 1]
+    it "does not walk an earlier call deeper than the new one when it compares them" $ do
+      let named :: Int -> Expression
+          named idx = ExMeta (T.pack ("n·" ++ show idx))
+          term :: Int -> Expression
+          term idx = ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "a") (named (pred idx)))) (ArTau AtRho (named (pred idx)))
+          look :: T.Text -> Maybe Expression
+          look name = case T.stripPrefix "n·" name of
+            Just idx | idx /= "0" -> Just (term (read (T.unpack idx)))
+            _ -> Nothing
+          call :: Expression -> Expression
+          call arg = ExApplication (ExDispatch ExRoot (AtLabel "g")) (ArTau (AtLabel "x") arg)
+      found <- timeout 1000000 (evaluate (akin' look (const Nothing) (call (ExFormation [BiTau AtRho (named 64)])) (call ExRoot)))
+      found `shouldBe` Just False
 
   describe "hashSkeleton" $ do
     it "does not tell apart two formations that bind other terms to the same attributes" $

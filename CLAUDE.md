@@ -625,7 +625,10 @@ below can match where the looser search found nothing (#2438). The depth of a
 call is measured once per name, since the sides of nested forks share their
 names and walking them again doubles the work per fork: `given` of `Sides.hs`
 measures a name as it makes it and keeps that for the whole run, and
-`deepness` of `AST.hs` reads it with `gauge` (#2442). Every pair `within'`
+`deepness` of `AST.hs` reads it with `gauge` (#2442). Only the later call is
+measured in full: `reaches` of `AST.hs` walks the earlier one down to that
+depth and no further, so a huge earlier argument costs a few nodes (#2443).
+Every pair `within'`
 has answered stays in the `Memo` for the whole run, until it holds a million
 of them (`akin''` and `within''` of `AST.hs`), since the ancestors on the
 stack are the same formations from one firing to the next.
