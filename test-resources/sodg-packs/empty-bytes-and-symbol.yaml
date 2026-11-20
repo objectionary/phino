@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ a ↦ ⟦ Δ ⤍ --, λ ⤍ 𝜎3 ⟧ ⟧'
+output: |
+  F b0 a
+  F b1
+  Δ b1 --
+  λ b1 𝜎3
+  P b0 a b1

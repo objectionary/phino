@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ x ↦ Φ.f( a ↦ ξ.y, b ↦ Φ ), y ↦ ∅ ⟧'
+output: |
+  F b0 x y
+  D b1 b0 f
+  D b2 b0 y
+  A b3 b1 a b2
+  A b4 b3 b b0
+  P b0 x b4

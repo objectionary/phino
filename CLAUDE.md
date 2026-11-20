@@ -69,10 +69,18 @@ sibling, on both sides, under "Scaling".
 components: `library` (`src/`), executable `phino` (`app/`), test suite
 `spec` (`test/`), benchmark suite `bench` (`benchmark/`).
 
-### Seven CLI commands
+### Eight CLI commands
 
-`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` | `compile` —
-all wired in `src/CLI/Runners.hs`, parsed in `src/CLI/Parsers.hs`.
+`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` | `sodg` |
+`compile` — all wired in `src/CLI/Runners.hs`, parsed in
+`src/CLI/Parsers.hs`.
+
+`sodg` (`Sodg.hs`, #2447) walks the term as written, normalizing nothing, and
+prints the commands `F`, `D`, `A`, `P`, `Δ` and `λ` that build its graph,
+naming vertices `b0`, `b1` and so on: a formation takes its name before its
+bindings, a dispatch or an application after its operands, `Φ` is `b0` and `ξ`
+the nearest formation around. A term holding ⊥, a meta or a ξ outside every
+formation is refused.
 
 ### Two-phase rendering pipeline
 

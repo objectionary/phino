@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ x ↦ 42 ⟧'
+output: |
+  F b0 x
+  D b1 b0 number
+  D b2 b0 bytes
+  F b3
+  Δ b3 40-45-00-00-00-00-00-00
+  A b4 b2 φ b3
+  A b5 b1 φ b4
+  P b0 x b5
