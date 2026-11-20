@@ -32,6 +32,7 @@ module AST
   , akin
   , akin'
   , akin''
+  , deepness
   , boxed
   , intact
   , suffixed
@@ -54,7 +55,7 @@ import Data.Bits (xor)
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import Data.Maybe (isJust, isNothing, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Exts (isTrue#, reallyUnsafePtrEquality#)
@@ -345,13 +346,13 @@ alike' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
 alike' = likened
 
 akin :: Expression -> Expression -> Bool
-akin = akin' (const Nothing)
+akin = akin' (const Nothing) (const Nothing)
 
-akin' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
-akin' look before after = fst (akin'' look Map.empty before after)
+akin' :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Expression -> Expression -> Bool
+akin' look depth before after = fst (akin'' look depth Map.empty before after)
 
-akin'' :: (Text -> Maybe Expression) -> Searched -> Expression -> Expression -> (Bool, Searched)
-akin'' look searched one two = case matching look grown searched one two of
+akin'' :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Searched -> Expression -> Expression -> (Bool, Searched)
+akin'' look depth searched one two = case matching look grown searched one two of
   (found, searched') -> (isJust found, searched')
   where
     grown :: Expression -> Expression -> Searched -> (Maybe Bool, Searched)
@@ -363,27 +364,25 @@ akin'' look searched one two = case matching look grown searched one two of
     decided :: (Bool, Searched) -> (Maybe Bool, Searched)
     decided (found, kept) = (Just found, kept)
     deeper :: Expression -> Expression -> Bool
-    deeper before after =
-      let (shallow, depths) = deepness before Map.empty
-       in shallow < fst (deepness after depths)
-    deepness :: Expression -> Map.Map Text Int -> (Int, Map.Map Text Int)
-    deepness (ExMeta name) depths = case Map.lookup name depths of
-      Just found -> (found, depths)
-      Nothing -> case look name of
-        Just term -> let (found, depths') = deepness term depths in (found, Map.insert name found depths')
-        Nothing -> (0, depths)
-    deepness (ExApplication callee (ArTau _ arg)) depths = deepest [callee, arg] depths
-    deepness (ExApplication callee (ArAlpha _ arg)) depths = deepest [callee, arg] depths
-    deepness (ExDispatch inner _) depths = deepest [inner] depths
-    deepness (ExFormation bds) depths = deepest [body | BiTau _ body <- bds] depths
-    deepness _ depths = (0, depths)
-    deepest :: [Expression] -> Map.Map Text Int -> (Int, Map.Map Text Int)
-    deepest parts depths = List.foldl' (\(most, depths') part -> let (found, depths'') = deepness part depths' in (max most (found + 1), depths'')) (1, depths) parts
+    deeper before after = deepness look depth before < deepness look depth after
     pending :: Expression -> Bool
     pending (ExMeta name) = maybe False pending (look name)
     pending (ExApplication _ _) = True
     pending (ExDispatch inner _) = pending inner
     pending _ = False
+
+deepness :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Expression -> Int
+deepness look depth = go
+  where
+    go :: Expression -> Int
+    go (ExMeta name) = fromMaybe (maybe 0 go (look name)) (depth name)
+    go (ExApplication callee (ArTau _ arg)) = deepest [callee, arg]
+    go (ExApplication callee (ArAlpha _ arg)) = deepest [callee, arg]
+    go (ExDispatch inner _) = deepest [inner]
+    go (ExFormation bds) = deepest [body | BiTau _ body <- bds]
+    go _ = 0
+    deepest :: [Expression] -> Int
+    deepest = List.foldl' (\most part -> max most (go part + 1)) 1
 
 boxed :: [Binding] -> Bool
 boxed bds = any phi bds && not (any lambda bds) && not (any delta bds)
