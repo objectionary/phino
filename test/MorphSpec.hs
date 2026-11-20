@@ -201,10 +201,10 @@ spec = do
           [direct (\_ _ -> [Morphs ExRoot world (pure . Concludes . Answered (Morphing, "premise"))])]
       answer `shouldBe` world
 
-  describe "morph' fails when no morphing rule matches the term" $
-    it "throws instead of looping when handed a bare, unmatched meta" $
-      (morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
-        `shouldThrow` (\e -> "Morphing expects a normal form" `isInfixOf` show (e :: SomeException))
+  describe "morph' fails when no morphing rule matches the term"
+    $ it "throws instead of looping when handed a bare, unmatched meta"
+    $ (morph' (ExMeta "unbound", (ExRoot, Nothing) :| []) ExRoot emptyState =<< defaultReduceContext ExRoot)
+      `shouldThrow` (\e -> "Morphing expects a normal form" `isInfixOf` show (e :: SomeException))
 
   describe "execBuildTerm 'morph'" $ do
     let univ = ExFormation []
