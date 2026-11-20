@@ -8,13 +8,16 @@ module SugarSpec (spec) where
 import AST
 import Bytes (NonFinite (..))
 import CST
+import Control.Exception (evaluate)
 import Control.Monad (forM_)
+import Data.Text qualified as T
 import Encoding (Encoding (UNICODE))
 import Lining (LineFormat (SINGLELINE))
 import Margin (defaultMargin)
 import Printer (printExpression')
 import Render (Render (render))
 import Sugar
+import System.Timeout (timeout)
 import Test.Hspec
 
 xiExpr :: EXPRESSION
@@ -705,3 +708,11 @@ spec = do
       printExpression' (applied (ArTau AtRho ExTermination) (ArTau (AtLabel "x") ExXi)) (config SWEET) `shouldBe` "42.0( x ↦ ξ )"
     it "a ρ applied straight to a number literal keeps its place when salted" $
       printExpression' (applied (ArTau AtRho ExTermination) (ArTau (AtLabel "x") ExXi)) (config SALTY) `shouldBe` "Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ) )( ρ ↦ ⊥ )( x ↦ ξ )"
+    it "salts a call of many positional arguments in linear time" $ do
+      let call = foldl (\callee position -> ExApplication callee (ArAlpha (Alpha position) (ExDispatch ExXi (AtLabel "a")))) (ExDispatch ExXi (AtLabel "f")) [0 .. 15999]
+      printed <- timeout 5000000 (evaluate (length (printExpression' call (config SALTY))))
+      printed `shouldSatisfy` (== Just 244893)
+    it "salts a call of many named arguments in linear time" $ do
+      let call = foldl (\callee position -> ExApplication callee (ArTau (AtLabel (T.pack ("a" ++ show position))) ExXi)) (ExDispatch ExXi (AtLabel "f")) [0 .. 15999 :: Int]
+      printed <- timeout 5000000 (evaluate (length (printExpression' call (config SALTY))))
+      printed `shouldSatisfy` (== Just 212893)
