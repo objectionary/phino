@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Sides (Sides, minted, opened, named, resolver, sides, spelled) where
+module Sides (Sides, gauge, minted, opened, named, resolver, sides, spelled) where
 
 import AST
 import Data.IORef (IORef, atomicModifyIORef', modifyIORef', newIORef, readIORef)
@@ -19,12 +19,13 @@ data Store = Store
   , _names :: !(IntMap.IntMap [(Expression, Text)])
   , _count :: !Int
   , _spelt :: !(Set.Set Text)
+  , _depths :: !(Map.Map Text Int)
   }
 
 newtype Sides = Sides (IORef Store)
 
 sides :: IO Sides
-sides = Sides <$> newIORef (Store Map.empty IntMap.empty 0 Set.empty)
+sides = Sides <$> newIORef (Store Map.empty IntMap.empty 0 Set.empty Map.empty)
 
 named :: Sides -> Expression -> IO Expression
 named store term = fst <$> given False store term
@@ -39,15 +40,15 @@ given spelt (Sides store) term = atomicModifyIORef' store found
     digest :: Int
     digest = hashExpression term
     found :: Store -> (Store, (Expression, Bool))
-    found known@(Store terms names count kept) = case lookup term (IntMap.findWithDefault [] digest names) of
+    found known@(Store terms names count kept depths) = case lookup term (IntMap.findWithDefault [] digest names) of
       Just name -> (known, (ExMeta name, False))
       Nothing ->
         let name = T.pack ("n·" ++ show (succ count))
-         in (Store (Map.insert name term terms) (IntMap.insertWith (++) digest [(term, name)] names) (succ count) (if spelt then Set.insert name kept else kept), (ExMeta name, True))
+         in (Store (Map.insert name term terms) (IntMap.insertWith (++) digest [(term, name)] names) (succ count) (if spelt then Set.insert name kept else kept) (Map.insert name (deepness (`Map.lookup` terms) (`Map.lookup` depths) term) depths), (ExMeta name, True))
 
 spelled :: Sides -> Expression -> IO Expression
 spelled (Sides store) whole = do
-  Store terms _ _ kept <- readIORef store
+  Store terms _ _ kept _ <- readIORef store
   cache <- newIORef Map.empty
   let goExpr :: Expression -> IO Expression
       goExpr term@(ExMeta name)
@@ -81,5 +82,10 @@ opened store term = do
 
 resolver :: Sides -> IO (Text -> Maybe Expression)
 resolver (Sides store) = do
-  Store terms _ _ _ <- readIORef store
+  Store terms _ _ _ _ <- readIORef store
   pure (`Map.lookup` terms)
+
+gauge :: Sides -> IO (Text -> Maybe Int)
+gauge (Sides store) = do
+  Store _ _ _ _ depths <- readIORef store
+  pure (`Map.lookup` depths)

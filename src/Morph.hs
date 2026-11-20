@@ -42,7 +42,7 @@ import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
 import Rule (RuleContext (RuleContext), xiFree)
-import Sides (Sides, minted, named, opened, resolver, spelled)
+import Sides (Sides, gauge, minted, named, opened, resolver, spelled)
 import System.Timeout (timeout)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
@@ -756,17 +756,18 @@ admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
 repeats :: Acyclic -> Expression -> ReduceContext -> IO [Expression]
 repeats mode form ctx = do
   look <- resolver ctx._sides
+  depth <- gauge ctx._sides
   start <- maybe (pure Map.empty) readIORef (searching ctx._memo)
-  (hits, kept) <- awaited ctx (evaluate (forced (goHits look start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
+  (hits, kept) <- awaited ctx (evaluate (forced (goHits look depth start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
   mapM_ (\ref -> writeIORef ref (bounded kept)) (searching ctx._memo)
   pure hits
   where
-    goHits :: (T.Text -> Maybe Expression) -> Searched -> Int -> [Expression] -> ([Expression], Searched)
-    goHits _ kept 0 _ = ([], kept)
-    goHits _ kept _ [] = ([], kept)
-    goHits look kept wanted (before : rest) = case repeated look mode before kept of
-      (True, kept') -> first (before :) (goHits look kept' (pred wanted) rest)
-      (False, kept') -> goHits look kept' wanted rest
+    goHits :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> Searched -> Int -> [Expression] -> ([Expression], Searched)
+    goHits _ _ kept 0 _ = ([], kept)
+    goHits _ _ kept _ [] = ([], kept)
+    goHits look depth kept wanted (before : rest) = case repeated look depth mode before kept of
+      (True, kept') -> first (before :) (goHits look depth kept' (pred wanted) rest)
+      (False, kept') -> goHits look depth kept' wanted rest
     forced :: ([Expression], Searched) -> ([Expression], Searched)
     forced result@(hits, kept) = length hits `seq` kept `seq` result
     bounded :: Searched -> Searched
@@ -775,10 +776,10 @@ repeats mode form ctx = do
       | otherwise = kept
     searching :: Maybe Memo -> Maybe (IORef Searched)
     searching = fmap (\(Memo _ _ _ _ _ searched) -> searched)
-    repeated :: (T.Text -> Maybe Expression) -> Acyclic -> Expression -> Searched -> (Bool, Searched)
-    repeated look Proven before kept = (alike' look form before, kept)
-    repeated look Plausible before kept
-      | atomic form = akin'' look kept before form
+    repeated :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> Acyclic -> Expression -> Searched -> (Bool, Searched)
+    repeated look _ Proven before kept = (alike' look form before, kept)
+    repeated look depth Plausible before kept
+      | atomic form = akin'' look depth kept before form
       | otherwise = within'' look kept before form
     atomic :: Expression -> Bool
     atomic (ExFormation bds) = any isLambda bds

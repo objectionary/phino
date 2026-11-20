@@ -203,6 +203,7 @@ test-suite spec
     ReplacerSpec
     RewriterSpec
     RuleSpec
+    SidesSpec
     Spec
     SugarSpec
     TauSpec
