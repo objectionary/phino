@@ -82,7 +82,7 @@ truth = "      rules:\n        - name: true-literal\n          pattern: Φ.true\
 rewrote :: [(String, String)] -> String -> IO Expression
 rewrote rules term = do
   parsed <- mapM (\(source, target) -> (\from to -> Y.Rule "kq" Nothing Nothing from to Nothing Nothing Nothing) <$> parseExpressionThrows source <*> parseExpressionThrows target) rules
-  parseExpressionThrows term >>= rewritten (RuleContext buildTerm Nothing normal) parsed
+  parseExpressionThrows term >>= rewritten (RuleContext buildTerm Nothing normal False) parsed
 
 answers :: Lambdas -> T.Text -> Maybe Expression
 answers known func = case _ending <$> matched known func of
@@ -676,7 +676,7 @@ spec = do
     it "hands back the very term no rule matches, so a shared term stays shared" $ do
       term <- evaluate (iterate (\half -> ExFormation [BiTau (AtLabel "lo") half, BiTau (AtLabel "hi") half]) (ExFormation []) !! 9)
       rule <- (\from to -> Y.Rule "kq" Nothing Nothing from to Nothing Nothing Nothing) <$> parseExpressionThrows "Φ.true" <*> parseExpressionThrows "Φ.vw"
-      made <- rewritten (RuleContext buildTerm Nothing normal) [rule] term >>= evaluate
+      made <- rewritten (RuleContext buildTerm Nothing normal False) [rule] term >>= evaluate
       (==) <$> (makeStableName $! made) <*> (makeStableName $! term) `shouldReturn` True
 
   describe "symbolized" $ do

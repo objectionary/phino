@@ -471,7 +471,10 @@ spec = do
   describe "TAB field accessors" $
     it "exposes every TAB field via its accessor" $ do
       let tabVal = TAB{indent = 3}
-      tabVal.indent `shouldBe` 3
+      case tabVal of
+        actual@TAB{} ->
+          actual.indent `shouldBe` 3
+        _ -> expectationFailure "Expected TAB"
       shouldShowAndEqSelf "TAB" tabVal
       shouldShowAndEqSelf "TAB'" TAB'
       shouldShowAndEqSelf "NO_TAB" NO_TAB
@@ -480,10 +483,16 @@ spec = do
     it "exposes every ALPHA field via its accessor" $ do
       let idxAlpha = AL_IDX{sym = ALPHA, idx = 2}
           metaAlpha = AL_META{sym = ALPHA', meta = META EXCL TAU "x"}
-      idxAlpha.sym `shouldBe` ALPHA
-      idxAlpha.idx `shouldBe` 2
-      metaAlpha.sym `shouldBe` ALPHA'
-      metaAlpha.meta `shouldBe` META EXCL TAU "x"
+      case idxAlpha of
+        actual@AL_IDX{} -> do
+          actual.sym `shouldBe` ALPHA
+          actual.idx `shouldBe` 2
+        _ -> expectationFailure "Expected AL_IDX"
+      case metaAlpha of
+        actual@AL_META{} -> do
+          actual.sym `shouldBe` ALPHA'
+          actual.meta `shouldBe` META EXCL TAU "x"
+        _ -> expectationFailure "Expected AL_META"
       shouldShowAndEqSelf "AL_IDX" idxAlpha
       shouldShowAndEqSelf "AL_META" metaAlpha
 
@@ -504,27 +513,63 @@ spec = do
           pairDelta' = PA_DELTA'{bytes = BT_ONE "40"}
           pairMetaDelta = PA_META_DELTA{meta = metaVal}
           pairMetaDelta' = PA_META_DELTA'{meta = metaVal}
-      pairTau.attr `shouldBe` attrLabel
-      pairTau.arrow `shouldBe` ARROW
-      pairTau.expr `shouldBe` exprGlobal
-      pairAlpha.alpha `shouldBe` AL_IDX ALPHA 0
-      pairAlpha.arrow `shouldBe` ARROW
-      pairAlpha.expr `shouldBe` exprGlobal
-      pairFormation.attr `shouldBe` attrLabel
-      pairFormation.voids `shouldBe` [AT_RHO RHO]
-      pairFormation.arrow `shouldBe` ARROW
-      pairFormation.expr `shouldBe` exprGlobal
-      pairVoid.attr `shouldBe` attrLabel
-      pairVoid.arrow `shouldBe` ARROW
-      pairVoid.void `shouldBe` EMPTY
-      pairLambda.func `shouldBe` "fn"
-      pairLambda'.func `shouldBe` "fn"
-      pairMetaLambda.meta `shouldBe` metaVal
-      pairMetaLambda'.meta `shouldBe` metaVal
-      pairDelta.bytes `shouldBe` BT_ONE "40"
-      pairDelta'.bytes `shouldBe` BT_ONE "40"
-      pairMetaDelta.meta `shouldBe` metaVal
-      pairMetaDelta'.meta `shouldBe` metaVal
+      case pairTau of
+        actual@PA_TAU{} -> do
+          actual.attr `shouldBe` attrLabel
+          actual.arrow `shouldBe` ARROW
+          actual.expr `shouldBe` exprGlobal
+        _ -> expectationFailure "Expected PA_TAU"
+      case pairAlpha of
+        actual@PA_ALPHA{} -> do
+          actual.alpha `shouldBe` AL_IDX ALPHA 0
+          actual.arrow `shouldBe` ARROW
+          actual.expr `shouldBe` exprGlobal
+        _ -> expectationFailure "Expected PA_ALPHA"
+      case pairFormation of
+        actual@PA_FORMATION{} -> do
+          actual.attr `shouldBe` attrLabel
+          actual.voids `shouldBe` [AT_RHO RHO]
+          actual.arrow `shouldBe` ARROW
+          actual.expr `shouldBe` exprGlobal
+        _ -> expectationFailure "Expected PA_FORMATION"
+      case pairVoid of
+        actual@PA_VOID{} -> do
+          actual.attr `shouldBe` attrLabel
+          actual.arrow `shouldBe` ARROW
+          actual.void `shouldBe` EMPTY
+        _ -> expectationFailure "Expected PA_VOID"
+      case pairLambda of
+        actual@PA_LAMBDA{} ->
+          actual.func `shouldBe` "fn"
+        _ -> expectationFailure "Expected PA_LAMBDA"
+      case pairLambda' of
+        actual@PA_LAMBDA'{} ->
+          actual.func `shouldBe` "fn"
+        _ -> expectationFailure "Expected PA_LAMBDA'"
+      case pairMetaLambda of
+        actual@PA_META_LAMBDA{} ->
+          actual.meta `shouldBe` metaVal
+        _ -> expectationFailure "Expected PA_META_LAMBDA"
+      case pairMetaLambda' of
+        actual@PA_META_LAMBDA'{} ->
+          actual.meta `shouldBe` metaVal
+        _ -> expectationFailure "Expected PA_META_LAMBDA'"
+      case pairDelta of
+        actual@PA_DELTA{} ->
+          actual.bytes `shouldBe` BT_ONE "40"
+        _ -> expectationFailure "Expected PA_DELTA"
+      case pairDelta' of
+        actual@PA_DELTA'{} ->
+          actual.bytes `shouldBe` BT_ONE "40"
+        _ -> expectationFailure "Expected PA_DELTA'"
+      case pairMetaDelta of
+        actual@PA_META_DELTA{} ->
+          actual.meta `shouldBe` metaVal
+        _ -> expectationFailure "Expected PA_META_DELTA"
+      case pairMetaDelta' of
+        actual@PA_META_DELTA'{} ->
+          actual.meta `shouldBe` metaVal
+        _ -> expectationFailure "Expected PA_META_DELTA'"
       shouldShowAndEqSelf "PA_TAU" pairTau
       shouldShowAndEqSelf "PA_ALPHA" pairAlpha
       shouldShowAndEqSelf "PA_FORMATION" pairFormation
@@ -552,12 +597,18 @@ spec = do
           bindingsEmpty = BDS_EMPTY{tab = TAB 0}
           biPair = BI_PAIR{pair = pairTau, bindings = bindingsEmpty, tab = TAB 1}
           biMeta = BI_META{meta = metaVal, bindings = bindingsEmpty, tab = TAB 1}
-      biPair.pair `shouldBe` pairTau
-      biPair.bindings `shouldBe` bindingsEmpty
-      biPair.tab `shouldBe` TAB 1
-      biMeta.meta `shouldBe` metaVal
-      biMeta.bindings `shouldBe` bindingsEmpty
-      biMeta.tab `shouldBe` TAB 1
+      case biPair of
+        actual@BI_PAIR{} -> do
+          actual.pair `shouldBe` pairTau
+          actual.bindings `shouldBe` bindingsEmpty
+          actual.tab `shouldBe` TAB 1
+        _ -> expectationFailure "Expected BI_PAIR"
+      case biMeta of
+        actual@BI_META{} -> do
+          actual.meta `shouldBe` metaVal
+          actual.bindings `shouldBe` bindingsEmpty
+          actual.tab `shouldBe` TAB 1
+        _ -> expectationFailure "Expected BI_META"
       shouldShowAndEqSelf "BI_PAIR" biPair
       shouldShowAndEqSelf "BI_META" biMeta
 
@@ -568,14 +619,20 @@ spec = do
           bindingsEmpty = BDS_EMPTY{tab = TAB 0}
           bdsPair = BDS_PAIR{eol = EOL, tab = TAB 1, pair = pairTau, bindings = bindingsEmpty}
           bdsMeta = BDS_META{eol = EOL, tab = TAB 1, meta = metaVal, bindings = bindingsEmpty}
-      bdsPair.eol `shouldBe` EOL
-      bdsPair.tab `shouldBe` TAB 1
-      bdsPair.pair `shouldBe` pairTau
-      bdsPair.bindings `shouldBe` bindingsEmpty
-      bdsMeta.eol `shouldBe` EOL
-      bdsMeta.tab `shouldBe` TAB 1
-      bdsMeta.meta `shouldBe` metaVal
-      bdsMeta.bindings `shouldBe` bindingsEmpty
+      case bdsPair of
+        actual@BDS_PAIR{} -> do
+          actual.eol `shouldBe` EOL
+          actual.tab `shouldBe` TAB 1
+          actual.pair `shouldBe` pairTau
+          actual.bindings `shouldBe` bindingsEmpty
+        _ -> expectationFailure "Expected BDS_PAIR"
+      case bdsMeta of
+        actual@BDS_META{} -> do
+          actual.eol `shouldBe` EOL
+          actual.tab `shouldBe` TAB 1
+          actual.meta `shouldBe` metaVal
+          actual.bindings `shouldBe` bindingsEmpty
+        _ -> expectationFailure "Expected BDS_META"
       shouldShowAndEqSelf "BDS_PAIR" bdsPair
       shouldShowAndEqSelf "BDS_META" bdsMeta
 
@@ -593,10 +650,13 @@ spec = do
       let exprGlobal = EX_GLOBAL Φ
           appArgsEmpty = AAS_EMPTY
           appArgsExpr = AAS_EXPR{eol = EOL, tab = TAB 1, expr = exprGlobal, args = appArgsEmpty}
-      appArgsExpr.eol `shouldBe` EOL
-      appArgsExpr.tab `shouldBe` TAB 1
-      appArgsExpr.expr `shouldBe` exprGlobal
-      appArgsExpr.args `shouldBe` appArgsEmpty
+      case appArgsExpr of
+        actual@AAS_EXPR{} -> do
+          actual.eol `shouldBe` EOL
+          actual.tab `shouldBe` TAB 1
+          actual.expr `shouldBe` exprGlobal
+          actual.args `shouldBe` appArgsEmpty
+        _ -> expectationFailure "Expected AAS_EXPR"
       shouldShowAndEqSelf "AAS_EXPR" appArgsExpr
 
   describe "APP_ARGUMENT derived instances" $
@@ -644,43 +704,82 @@ spec = do
           exMeta = EX_META{meta = metaVal}
           exPhiMeet = EX_PHI_MEET{prefix = Just "p", idx = 1, expr = exGlobal}
           exBytes = EX_BYTES{bytes = BT_ONE "40"}
-      exGlobal.global `shouldBe` Φ
-      exXi.xi `shouldBe` XI
-      exAttr.attr `shouldBe` attrLabel
-      exTermination.termination `shouldBe` DEAD
-      exFormation.lsb `shouldBe` LSB
-      exFormation.eol `shouldBe` EOL
-      exFormation.tab `shouldBe` TAB 1
-      exFormation.binding `shouldBe` bindingEmpty
-      exFormation.eol' `shouldBe` EOL
-      exFormation.tab' `shouldBe` TAB 0
-      exFormation.rsb `shouldBe` RSB
-      exDispatch.expr `shouldBe` exGlobal
-      exDispatch.space `shouldBe` NO_SPACE
-      exDispatch.attr `shouldBe` attrLabel
-      exApplication.expr `shouldBe` exGlobal
-      exApplication.space `shouldBe` NO_SPACE
-      exApplication.eol `shouldBe` EOL
-      exApplication.tab `shouldBe` TAB 1
-      exApplication.argument `shouldBe` argumentVal
-      exApplication.eol' `shouldBe` EOL
-      exApplication.tab' `shouldBe` TAB 0
-      exApplication.indent `shouldBe` 1
-      exString.str `shouldBe` "hi"
-      exString.tab `shouldBe` TAB 0
-      exString.rhos `shouldBe` []
-      exNumber.num `shouldBe` 5
-      exNumber.tab `shouldBe` TAB 0
-      exNumber.rhos `shouldBe` []
-      exNonFinite.global `shouldBe` Φ
-      exNonFinite.nonfinite `shouldBe` NfNan
-      exNonFinite.tab `shouldBe` TAB 0
-      exNonFinite.rhos `shouldBe` []
-      exMeta.meta `shouldBe` metaVal
-      exPhiMeet.prefix `shouldBe` Just "p"
-      exPhiMeet.idx `shouldBe` 1
-      exPhiMeet.expr `shouldBe` exGlobal
-      exBytes.bytes `shouldBe` BT_ONE "40"
+      case exGlobal of
+        actual@EX_GLOBAL{} ->
+          actual.global `shouldBe` Φ
+        _ -> expectationFailure "Expected EX_GLOBAL"
+      case exXi of
+        actual@EX_XI{} ->
+          actual.xi `shouldBe` XI
+        _ -> expectationFailure "Expected EX_XI"
+      case exAttr of
+        actual@EX_ATTR{} ->
+          actual.attr `shouldBe` attrLabel
+        _ -> expectationFailure "Expected EX_ATTR"
+      case exTermination of
+        actual@EX_TERMINATION{} ->
+          actual.termination `shouldBe` DEAD
+        _ -> expectationFailure "Expected EX_TERMINATION"
+      case exFormation of
+        actual@EX_FORMATION{} -> do
+          actual.lsb `shouldBe` LSB
+          actual.eol `shouldBe` EOL
+          actual.tab `shouldBe` TAB 1
+          actual.binding `shouldBe` bindingEmpty
+          actual.eol' `shouldBe` EOL
+          actual.tab' `shouldBe` TAB 0
+          actual.rsb `shouldBe` RSB
+        _ -> expectationFailure "Expected EX_FORMATION"
+      case exDispatch of
+        actual@EX_DISPATCH{} -> do
+          actual.expr `shouldBe` exGlobal
+          actual.space `shouldBe` NO_SPACE
+          actual.attr `shouldBe` attrLabel
+        _ -> expectationFailure "Expected EX_DISPATCH"
+      case exApplication of
+        actual@EX_APPLICATION{} -> do
+          actual.expr `shouldBe` exGlobal
+          actual.space `shouldBe` NO_SPACE
+          actual.eol `shouldBe` EOL
+          actual.tab `shouldBe` TAB 1
+          actual.argument `shouldBe` argumentVal
+          actual.eol' `shouldBe` EOL
+          actual.tab' `shouldBe` TAB 0
+          actual.indent `shouldBe` 1
+        _ -> expectationFailure "Expected EX_APPLICATION"
+      case exString of
+        actual@EX_STRING{} -> do
+          actual.str `shouldBe` "hi"
+          actual.tab `shouldBe` TAB 0
+          actual.rhos `shouldBe` []
+        _ -> expectationFailure "Expected EX_STRING"
+      case exNumber of
+        actual@EX_NUMBER{} -> do
+          actual.num `shouldBe` 5
+          actual.tab `shouldBe` TAB 0
+          actual.rhos `shouldBe` []
+        _ -> expectationFailure "Expected EX_NUMBER"
+      case exNonFinite of
+        actual@EX_NONFINITE{} -> do
+          actual.global `shouldBe` Φ
+          actual.nonfinite `shouldBe` NfNan
+          actual.tab `shouldBe` TAB 0
+          actual.rhos `shouldBe` []
+        _ -> expectationFailure "Expected EX_NONFINITE"
+      case exMeta of
+        actual@EX_META{} ->
+          actual.meta `shouldBe` metaVal
+        _ -> expectationFailure "Expected EX_META"
+      case exPhiMeet of
+        actual@EX_PHI_MEET{} -> do
+          actual.prefix `shouldBe` Just "p"
+          actual.idx `shouldBe` 1
+          actual.expr `shouldBe` exGlobal
+        _ -> expectationFailure "Expected EX_PHI_MEET"
+      case exBytes of
+        actual@EX_BYTES{} ->
+          actual.bytes `shouldBe` BT_ONE "40"
+        _ -> expectationFailure "Expected EX_BYTES"
       shouldShowAndEqSelf "EX_GLOBAL" exGlobal
       shouldShowAndEqSelf "EX_XI" exXi
       shouldShowAndEqSelf "EX_ATTR" exAttr
@@ -705,13 +804,34 @@ spec = do
           atDelta = AT_DELTA{delta = DELTA}
           atMeta = AT_META{meta = metaVal}
           atRest = AT_REST{dots = DOTS}
-      atLabel.label `shouldBe` "x"
-      atRho.rho `shouldBe` RHO
-      atPhi.phi `shouldBe` PHI
-      atLambda.lambda `shouldBe` LAMBDA
-      atDelta.delta `shouldBe` DELTA
-      atMeta.meta `shouldBe` metaVal
-      atRest.dots `shouldBe` DOTS
+      case atLabel of
+        actual@AT_LABEL{} ->
+          actual.label `shouldBe` "x"
+        _ -> expectationFailure "Expected AT_LABEL"
+      case atRho of
+        actual@AT_RHO{} ->
+          actual.rho `shouldBe` RHO
+        _ -> expectationFailure "Expected AT_RHO"
+      case atPhi of
+        actual@AT_PHI{} ->
+          actual.phi `shouldBe` PHI
+        _ -> expectationFailure "Expected AT_PHI"
+      case atLambda of
+        actual@AT_LAMBDA{} ->
+          actual.lambda `shouldBe` LAMBDA
+        _ -> expectationFailure "Expected AT_LAMBDA"
+      case atDelta of
+        actual@AT_DELTA{} ->
+          actual.delta `shouldBe` DELTA
+        _ -> expectationFailure "Expected AT_DELTA"
+      case atMeta of
+        actual@AT_META{} ->
+          actual.meta `shouldBe` metaVal
+        _ -> expectationFailure "Expected AT_META"
+      case atRest of
+        actual@AT_REST{} ->
+          actual.dots `shouldBe` DOTS
+        _ -> expectationFailure "Expected AT_REST"
       shouldShowAndEqSelf "AT_LABEL" atLabel
       shouldShowAndEqSelf "AT_RHO" atRho
       shouldShowAndEqSelf "AT_PHI" atPhi
@@ -730,8 +850,14 @@ spec = do
       let bindingEmpty = BI_EMPTY{tab = TAB 0}
           stBinding = ST_BINDING{binding = bindingEmpty}
           stAttributes = ST_ATTRIBUTES{attrs = [AT_LABEL "x"]}
-      stBinding.binding `shouldBe` bindingEmpty
-      stAttributes.attrs `shouldBe` [AT_LABEL "x"]
+      case stBinding of
+        actual@ST_BINDING{} ->
+          actual.binding `shouldBe` bindingEmpty
+        _ -> expectationFailure "Expected ST_BINDING"
+      case stAttributes of
+        actual@ST_ATTRIBUTES{} ->
+          actual.attrs `shouldBe` [AT_LABEL "x"]
+        _ -> expectationFailure "Expected ST_ATTRIBUTES"
       shouldShowAndEqSelf "ST_BINDING" stBinding
       shouldShowAndEqSelf "ST_ATTRIBUTES" stAttributes
 
@@ -754,9 +880,18 @@ spec = do
           idxMeta = IDX_META{meta = metaVal}
           lengthVal = LENGTH{binding = bindingEmpty}
           literalVal = LITERAL{num = 5}
-      idxMeta.meta `shouldBe` metaVal
-      lengthVal.binding `shouldBe` bindingEmpty
-      literalVal.num `shouldBe` 5
+      case idxMeta of
+        actual@IDX_META{} ->
+          actual.meta `shouldBe` metaVal
+        _ -> expectationFailure "Expected IDX_META"
+      case lengthVal of
+        actual@LENGTH{} ->
+          actual.binding `shouldBe` bindingEmpty
+        _ -> expectationFailure "Expected LENGTH"
+      case literalVal of
+        actual@LITERAL{} ->
+          actual.num `shouldBe` 5
+        _ -> expectationFailure "Expected LITERAL"
       shouldShowAndEqSelf "IDX_META" idxMeta
       shouldShowAndEqSelf "LENGTH" lengthVal
       shouldShowAndEqSelf "LITERAL" literalVal
@@ -768,9 +903,18 @@ spec = do
           cmpAttr = CMP_ATTR{attr = attrLabel}
           cmpExpr = CMP_EXPR{expr = exprGlobal}
           cmpNum = CMP_NUM{num = LITERAL 5}
-      cmpAttr.attr `shouldBe` attrLabel
-      cmpExpr.expr `shouldBe` exprGlobal
-      cmpNum.num `shouldBe` LITERAL 5
+      case cmpAttr of
+        actual@CMP_ATTR{} ->
+          actual.attr `shouldBe` attrLabel
+        _ -> expectationFailure "Expected CMP_ATTR"
+      case cmpExpr of
+        actual@CMP_EXPR{} ->
+          actual.expr `shouldBe` exprGlobal
+        _ -> expectationFailure "Expected CMP_EXPR"
+      case cmpNum of
+        actual@CMP_NUM{} ->
+          actual.num `shouldBe` LITERAL 5
+        _ -> expectationFailure "Expected CMP_NUM"
       shouldShowAndEqSelf "CMP_ATTR" cmpAttr
       shouldShowAndEqSelf "CMP_EXPR" cmpExpr
       shouldShowAndEqSelf "CMP_NUM" cmpNum
@@ -789,22 +933,46 @@ spec = do
           coMatches = CO_MATCHES{regex = "x*", expr = exprGlobal}
           coPartOf = CO_PART_OF{expr = exprGlobal, binding = bindingEmpty}
           coDisjoint = CO_DISJOINT{attrs = [attrLabel], groups = [bindingEmpty]}
-      coBelongs.attr `shouldBe` attrLabel
-      coBelongs.belongs `shouldBe` IN
-      coBelongs.set `shouldBe` ST_BINDING bindingEmpty
-      coLogic.conditions `shouldBe` [CO_EMPTY]
-      coLogic.operator `shouldBe` AND
-      coNf.expr `shouldBe` exprGlobal
-      coNot.condition `shouldBe` CO_EMPTY
-      coCompare.left `shouldBe` cmpAttr
-      coCompare.equal `shouldBe` EQUAL
-      coCompare.right `shouldBe` cmpAttr
-      coMatches.regex `shouldBe` "x*"
-      coMatches.expr `shouldBe` exprGlobal
-      coPartOf.expr `shouldBe` exprGlobal
-      coPartOf.binding `shouldBe` bindingEmpty
-      coDisjoint.attrs `shouldBe` [attrLabel]
-      coDisjoint.groups `shouldBe` [bindingEmpty]
+      case coBelongs of
+        actual@CO_BELONGS{} -> do
+          actual.attr `shouldBe` attrLabel
+          actual.belongs `shouldBe` IN
+          actual.set `shouldBe` ST_BINDING bindingEmpty
+        _ -> expectationFailure "Expected CO_BELONGS"
+      case coLogic of
+        actual@CO_LOGIC{} -> do
+          actual.conditions `shouldBe` [CO_EMPTY]
+          actual.operator `shouldBe` AND
+        _ -> expectationFailure "Expected CO_LOGIC"
+      case coNf of
+        actual@CO_NF{} ->
+          actual.expr `shouldBe` exprGlobal
+        _ -> expectationFailure "Expected CO_NF"
+      case coNot of
+        actual@CO_NOT{} ->
+          actual.condition `shouldBe` CO_EMPTY
+        _ -> expectationFailure "Expected CO_NOT"
+      case coCompare of
+        actual@CO_COMPARE{} -> do
+          actual.left `shouldBe` cmpAttr
+          actual.equal `shouldBe` EQUAL
+          actual.right `shouldBe` cmpAttr
+        _ -> expectationFailure "Expected CO_COMPARE"
+      case coMatches of
+        actual@CO_MATCHES{} -> do
+          actual.regex `shouldBe` "x*"
+          actual.expr `shouldBe` exprGlobal
+        _ -> expectationFailure "Expected CO_MATCHES"
+      case coPartOf of
+        actual@CO_PART_OF{} -> do
+          actual.expr `shouldBe` exprGlobal
+          actual.binding `shouldBe` bindingEmpty
+        _ -> expectationFailure "Expected CO_PART_OF"
+      case coDisjoint of
+        actual@CO_DISJOINT{} -> do
+          actual.attrs `shouldBe` [attrLabel]
+          actual.groups `shouldBe` [bindingEmpty]
+        _ -> expectationFailure "Expected CO_DISJOINT"
       shouldShowAndEqSelf "CO_BELONGS" coBelongs
       shouldShowAndEqSelf "CO_LOGIC" coLogic
       shouldShowAndEqSelf "CO_NF" coNf
@@ -823,10 +991,22 @@ spec = do
           argAttr = ARG_ATTR{attr = attrLabel}
           argBinding = ARG_BINDING{binding = bindingEmpty}
           argBytes = ARG_BYTES{bytes = BT_ONE "40"}
-      argExpr.expr `shouldBe` exprGlobal
-      argAttr.attr `shouldBe` attrLabel
-      argBinding.binding `shouldBe` bindingEmpty
-      argBytes.bytes `shouldBe` BT_ONE "40"
+      case argExpr of
+        actual@ARG_EXPR{} ->
+          actual.expr `shouldBe` exprGlobal
+        _ -> expectationFailure "Expected ARG_EXPR"
+      case argAttr of
+        actual@ARG_ATTR{} ->
+          actual.attr `shouldBe` attrLabel
+        _ -> expectationFailure "Expected ARG_ATTR"
+      case argBinding of
+        actual@ARG_BINDING{} ->
+          actual.binding `shouldBe` bindingEmpty
+        _ -> expectationFailure "Expected ARG_BINDING"
+      case argBytes of
+        actual@ARG_BYTES{} ->
+          actual.bytes `shouldBe` BT_ONE "40"
+        _ -> expectationFailure "Expected ARG_BYTES"
       shouldShowAndEqSelf "ARG_EXPR" argExpr
       shouldShowAndEqSelf "ARG_ATTR" argAttr
       shouldShowAndEqSelf "ARG_BINDING" argBinding

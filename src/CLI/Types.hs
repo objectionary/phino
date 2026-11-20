@@ -107,6 +107,7 @@ data OptsDataize = OptsDataize
   , _headers :: Bool
   , _canonize :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _shuffle :: Bool
   , _seed :: Int
   , _quiet :: Bool
@@ -135,6 +136,7 @@ data OptsDataize = OptsDataize
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
   , _minutes :: Maybe FilePath
+  , _profile :: Bool
   , _abridged :: Maybe Int
   , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath
@@ -157,6 +159,7 @@ data OptsMorph = OptsMorph
   , _headers :: Bool
   , _canonize :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _shuffle :: Bool
   , _seed :: Int
   , _quiet :: Bool
@@ -185,6 +188,7 @@ data OptsMorph = OptsMorph
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
   , _minutes :: Maybe FilePath
+  , _profile :: Bool
   , _abridged :: Maybe Int
   , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath
@@ -220,6 +224,7 @@ data OptsRewrite = OptsRewrite
   , _omitListing :: Bool
   , _omitComments :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _nonumber :: Bool
   , _inPlace :: Bool
   , _update :: Bool

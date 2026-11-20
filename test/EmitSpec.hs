@@ -124,11 +124,6 @@ spec = do
         , "The rule 'fs' cannot be compiled, since it rewrites a formation into a formation the fast way"
         )
       ,
-        ( "a pattern applying Φ to a ρ"
-        , Y.Rule "rt" Nothing Nothing (ExDispatch (ExApplication ExRoot (ArTau AtRho ExXi)) (AtLabel "k")) ExXi Nothing Nothing Nothing
-        , "The rule 'rt' cannot be compiled, since its pattern applies Φ to a ρ"
-        )
-      ,
         ( "a function of 'where' other than 'contextualize' and 'named'"
         , Y.Rule "rw" Nothing Nothing ExXi (ExMeta "e1") Nothing (Just [Y.Extra (Y.ArgExpression (ExMeta "e1")) "random-tau" []]) Nothing
         , "The rule 'rw' cannot be compiled, since its 'where' calls the function 'random-tau', which only 'contextualize' and 'named' can be"

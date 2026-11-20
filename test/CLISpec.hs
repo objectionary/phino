@@ -253,6 +253,22 @@ spec = do
           ["--pin=" ++ showVersion version, "--pin-file=" ++ file, "rewrite"]
           ["[ERROR]: Invalid option `--pin-file=" ++ file ++ "'"]
 
+  describe "--cheat" $ do
+    it "drops a ρ applied to a term that already ends with one"
+      $ withStdin "[[ a -> Q.x(^ -> [[ ]]), b -> [[ ]] ]].a"
+      $ testCLISucceeded ["rewrite", "--normalize", "--flat", "--sweet", "--cheat"] ["Φ.x( ρ ↦ ⟦⟧ )"]
+    it "keeps every ρ the rules prescribe without it"
+      $ withStdin "[[ a -> Q.x(^ -> [[ ]]), b -> [[ ]] ]].a"
+      $ testCLISucceeded ["rewrite", "--normalize", "--flat", "--sweet"] ["Φ.x( ρ ↦ ⟦⟧, ρ ↦ ⟦ a ↦ Φ.x( ρ ↦ ⟦⟧ ), b ↦ ⟦⟧ ⟧ )"]
+    it "keeps the terms of nested forks small while dataizing" $
+      withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
+        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
+          testCLISucceeded ["dataize", "--cheat", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["00-"]
+    it "lets the terms of nested forks grow while dataizing without it" $
+      withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
+        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
+          testCLIFailed ["dataize", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["--max-nodes=5000"]
+
   describe "--hide-rho" $
     forM_
       [
@@ -676,6 +692,28 @@ spec = do
           saved <- mapM (\file -> readFile (dir ++ "/" ++ file)) files
           concat saved `shouldNotContain` "Minus"
           concat saved `shouldNotContain` "Plus"
+
+    it "keeps the name a function has under --sequence in every --steps-dir file under --canonize" $
+      withTempDirectory "phino-steps-canonized" $ \dir ->
+        withStdin "[[ a -> [[ x -> [[ L> Fa ]] ]].q, b -> [[ y -> [[ L> Fb ]] ]].y ]]" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--sequence", "--canonize", "--flat", "--steps-dir=" ++ dir]
+            ["⟦ a ↦ ⊥, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"]
+          saved <- traverse (readUtf8 . (dir </>)) ["00001.phi", "00002.phi", "00003.phi"]
+          map (filter (/= '\n')) saved
+            `shouldBe` [ "⟦ a ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧.q, b ↦ ⟦ λ ⤍ Fn2 ⟧( ρ ↦ ⟦ y ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧ ) ⟧"
+                       , "⟦ a ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧.q, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"
+                       , "⟦ a ↦ ⊥, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"
+                       ]
+
+    it "saves the --canonize steps when --show names an object only the steps hold" $
+      withTempDirectory "phino-steps-shown" $ \dir ->
+        withStdin "[[ app -> [[ x -> [[ L> Fx ]] ]](^ -> [[ ]]) ]]" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--canonize", "--flat", "--show=Q.app.x", "--steps-dir=" ++ dir]
+            ["⟦ app ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧ ⟧"]
+          saved <- readUtf8 (dir </> "00001.phi")
+          filter (/= '\n') saved `shouldBe` "⟦ app ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧ ⟧"
 
     it "gives the saved steps the --focus of the printed ones" $
       withTempDirectory "phino-steps-focused" $ \dir ->
@@ -1476,6 +1514,16 @@ spec = do
         ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
         ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
 
+    it "reads back an application of ξ as it is"
+      $ withStdin "[[ a -> [[ x -> ∅ ]], b -> $(x -> [[ ]]) ]]"
+      $ testCLISucceeded ["rewrite", "--flat"] ["⟦ a ↦ ⟦ x ↦ ∅ ⟧, b ↦ ξ( x ↦ ⟦⟧ ) ⟧"]
+
+    it "keeps the ρ that dot applies to Φ, and reads it back" $ do
+      withStdin "[[ x -> [[ y -> Q ]].y ]]" $
+        testCLISucceeded ["rewrite", "--normalize", "--flat"] ["⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧"]
+      withStdin "⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧" $
+        testCLISucceeded ["rewrite", "--flat"] ["⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧"]
+
   describe "morph --focus under --locator" $ do
     it "finds the same object for the steps and for the answer" $
       withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧ ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $ do
@@ -1677,6 +1725,30 @@ spec = do
         $ testCLISucceeded
           ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-loops=1", "--max-steps=4000"]
           ["40-45-00-00-00-00-00-00"]
+
+      describe "over a recursion that takes an attribute off its own call" $ do
+        let world = "⟦ num(φ) ↦ ⟦ gt(ρ, b) ↦ L_gt:λ, plus(ρ, b) ↦ L_plus:λ ⟧, seq(i) ↦ ⟦ φ ↦ Φ.num( φ ↦ 𝜎1:λ ).gt( i ).if( Φ.seq( i.plus( Φ.num( φ ↦ 01-:Δ ) ) ).plus( Φ.num( φ ↦ 01-:Δ ) ), i ) ⟧, app ↦ Φ.seq( Φ.num( φ ↦ 00-:Δ ) ) ⟧"
+            atoms = T.pack "- λ: L_gt\n  dataize: {𝛿1: $.b}\n  𝑛: ⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧\n- λ: L_fork\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  evaluate: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  symbolize: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  cast: {𝑛7: 𝑛5, 𝑛8: 𝑛6}\n  join: {'on': $.on🌵, left: 𝑛7, right: 𝑛8, otherwise: L_fork}\n- λ: L_plus\n  dataize: {𝛿1: $.ρ}\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
+        it "cuts the recursion by --max-loops, not by --max-steps" $
+          withLambdasOf atoms $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--max-steps=1000", "--max-firings=50"] ["40-45-00-00-00-00-00-00"]
+        it "writes the cut of the dispatch off the copy that repeats one above" $
+          withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf atoms $ \file ->
+              withStdin world $
+                testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+            records <- map (dropWhile (== ' ')) . lines <$> readProtocol path
+            records `shouldContain` ["looped 𝜎5 := 𝑛·5·1.plus  # plausible, repeats 𝑛·0·4"]
+
+      describe "over a recursion that hands its own growing call to an atom" $ do
+        let world = "⟦ go(x) ↦ ⟦ λ ⤍ L_go ⟧, seq(i) ↦ ⟦ ok ↦ Φ.go( Φ.seq( i.next ).ok ) ⟧, app ↦ Φ.seq( 𝜎1:λ ).ok ⟧"
+            atoms = T.pack "- λ: L_go\n  morph: {𝑛1: $.x}\n  𝑛: 𝑛1\n"
+        it "cuts the recursion by --max-loops, not by --max-steps" $
+          withLambdasOf atoms $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--max-steps=200"] ["40-45-00-00-00-00-00-00"]
 
       it "refuses a negative count"
         $ withStdin once
@@ -2117,6 +2189,18 @@ spec = do
             testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
           records <- readProtocol path
           records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
+
+      it "adds the time, the depth, the firings and the memory to every line under --profile" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--profile", "--quiet"] []
+          records <- readProtocol path
+          lines records `shouldSatisfy` all (\line -> all (`isInfixOf` line) [" ms, at ", ", depth ", ", firings ", ", heap ", ", peak "])
+
+      it "refuses --profile without --minutes"
+        $ withStdin "[[ D> 01- ]]"
+        $ testCLIFailed ["dataize", "--profile", "--quiet"] ["The option --profile requires --minutes"]
 
       it "opens the protocol with a header naming the phino that wrote it" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do

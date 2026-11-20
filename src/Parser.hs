@@ -27,7 +27,7 @@ where
 import AST
 import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
-import Control.Monad (guard, void, when)
+import Control.Monad (void, when)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, put)
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.Scientific (scientific, toRealFloat)
@@ -500,12 +500,6 @@ exTail expr =
                 _ <- symbol "."
                 ExDispatch expr <$> attribute
             , do
-                guard
-                  ( case expr of
-                      ExXi -> False
-                      ExRoot -> False
-                      _ -> True
-                  )
                 _ <- symbol "("
                 bds <-
                   choice
