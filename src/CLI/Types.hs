@@ -74,6 +74,7 @@ data Command
   | CmdExplain OptsExplain
   | CmdMerge OptsMerge
   | CmdMatch OptsMatch
+  | CmdSodg OptsSodg
   | CmdCompile OptsCompile
 
 data Pin = PinVersion String | PinFile FilePath
@@ -277,6 +278,13 @@ data OptsMatch = OptsMatch
   , _when :: Maybe String
   , _inputFile :: Maybe FilePath
   , _seed :: Int
+  }
+
+data OptsSodg = OptsSodg
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _inputFormat :: IOFormat
+  , _inputFile :: Maybe FilePath
   }
 
 data OptsCompile = OptsCompile

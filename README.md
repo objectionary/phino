@@ -519,6 +519,19 @@ B >> ⟦⟧
 d >> 68-65-6C-6C-6F
 ```
 
+## SODG
+
+The `sodg` command prints the commands that build the graph of a
+𝜑-expression, one per line, in the language of
+[sodg-maven-plugin](https://github.com/objectionary/sodg-maven-plugin):
+
+```bash
+$ echo '⟦ x ↦ ξ.y, y ↦ ∅ ⟧' | phino sodg
+F c0 x y
+D c1 c0 y
+P c0 x c1
+```
+
 ## Compile
 
 By default, `phino` reads its rules from YAML and interprets them at every

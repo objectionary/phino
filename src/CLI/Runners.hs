@@ -37,13 +37,14 @@ import Margin (defaultMargin)
 import Merge (merge)
 import Metas (Metas (..))
 import Morph
-import Parser (parseExpressionThrows)
+import Parser (Form (POLYFORM), parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
 import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
 import Sides (sides)
 import Slots (anonymous)
+import Sodg (printCommands, sodg)
 import System.Directory (canonicalizePath, doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
 import System.FilePath (takeDirectory, (</>))
@@ -438,6 +439,13 @@ runMatch OptsMatch{..} = do
     unboundMetas ptn condition = filter (`notElem` namedMetas ptn) (namedMetas condition)
     namedMetas :: (Metas a) => a -> [T.Text]
     namedMetas term = filter ((> 1) . T.length) (metas term)
+
+runSodg :: OptsSodg -> IO ()
+runSodg OptsSodg{..} = do
+  input <- readInput _inputFile
+  expr <- parseInput input _inputFormat POLYFORM
+  graph <- sodg expr
+  putStr (printCommands graph)
 
 runCompile :: OptsCompile -> IO ()
 runCompile OptsCompile{..} = do

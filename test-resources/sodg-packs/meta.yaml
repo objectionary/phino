@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ a ↦ 𝑒1 ⟧'
+fails: 'holds 𝑒1, which only a pattern of a rule may hold'
