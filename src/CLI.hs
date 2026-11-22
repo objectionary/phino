@@ -54,6 +54,7 @@ runCLI args = handle handler $ do
     CmdExplain opts -> runExplain opts
     CmdMerge opts -> runMerge opts
     CmdMatch opts -> runMatch opts
+    CmdSodg opts -> runSodg opts
     CmdCompile opts -> runCompile opts
   where
     prefixFirstLine :: String -> String -> String
@@ -77,6 +78,7 @@ runCLI args = handle handler $ do
             CmdExplain OptsExplain{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdMerge OptsMerge{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdMatch OptsMatch{_logLevel, _logLines} -> (_logLevel, _logLines)
+            CmdSodg OptsSodg{_logLevel, _logLines} -> (_logLevel, _logLines)
             CmdCompile OptsCompile{_logLevel, _logLines} -> (_logLevel, _logLines)
        in setLogConfig level lns
     checkPin :: Maybe Pin -> IO ()

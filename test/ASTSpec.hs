@@ -10,9 +10,14 @@ import AST
 import Control.Exception (evaluate)
 import Control.Monad (forM_)
 import Data.List (nub, sort)
+import Data.List qualified as List
+import Data.Map.Strict qualified as Map
 import Data.Text qualified as T
 import GHC.Clock (getMonotonicTime)
+import Grown (Grown (..))
+import System.Timeout (timeout)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
+import Test.Hspec.QuickCheck (prop)
 
 spec :: Spec
 spec = do
@@ -342,6 +347,72 @@ spec = do
       akin (ExFormation [BiTau (AtLabel "w") (down ExXi), BiLambda (Function "L_ab")]) (ExFormation [BiTau (AtLabel "w") (down (next ExXi)), BiLambda (Function "L_cd")]) `shouldBe` False
     it "does not map one symbol outside a boxed formation to two others" $
       akin (atom (down ExRoot) 4) (ExFormation [BiTau (AtLabel "on") (ExFormation [BiLambda (FnSymbol 6)]), BiTau AtRho (ExFormation [BiTau (AtLabel "rt") (down ExRoot), BiTau (AtLabel "of") (ExFormation [BiLambda (FnSymbol 6)])]), BiLambda (Function "L_vex")]) `shouldBe` False
+    it "does not find an atom inside one whose boxed formation is not within, however alike their parts" $
+      akin (atom (ExFormation [BiTau AtPhi ExRoot, BiTau (AtLabel "z") ExXi]) 1) (atom (ExFormation [BiTau AtPhi ExRoot, BiTau (AtLabel "z") ExRoot]) 1) `shouldBe` False
+    prop "finds every term inside itself, as the looser search does" $ \(Grown one) ->
+      (akin one one, within one one) `shouldBe` (True, True)
+    it "does not walk a name it already measured again when it compares how deep two calls are" $ do
+      let named :: Int -> Expression
+          named idx = ExMeta (T.pack ("n·" ++ show idx))
+          term :: Int -> Expression
+          term idx = ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "a") (named (pred idx)))) (ArTau (AtLabel "b") (named (pred idx)))
+          look :: T.Text -> Maybe Expression
+          look name = case T.stripPrefix "n·" name of
+            Just idx | idx /= "0" -> Just (term (read (T.unpack idx)))
+            _ -> Nothing
+          depths :: Map.Map T.Text Int
+          depths = List.foldl' (\kept idx -> Map.insert (T.pack ("n·" ++ show idx)) (deepness look (`Map.lookup` kept) (term idx)) kept) Map.empty [1 .. 22 :: Int]
+      start <- getMonotonicTime
+      found <- evaluate (akin' look (`Map.lookup` depths) (ExDispatch (named 21) (AtLabel "q")) (ExDispatch (named 22) (AtLabel "q")))
+      end <- getMonotonicTime
+      (found, end - start < 1) `shouldBe` (True, True)
+    prop "answers the same with what an earlier search kept as with nothing" $ \(Grown one) (Grown two) (Grown three) ->
+      fst (akin'' (const Nothing) (const Nothing) (snd (akin'' (const Nothing) (const Nothing) Map.empty three one)) one two) `shouldBe` akin one two
+
+  describe "deepness" $ do
+    it "counts a call one deeper than the deepest of its head and its argument" $
+      deepness (const Nothing) (const Nothing) (ExApplication (ExDispatch (ExDispatch ExRoot (AtLabel "f")) (AtLabel "g")) (ArTau (AtLabel "x") ExXi)) `shouldBe` 3
+    it "takes the depth of a name it was told instead of walking its term" $
+      deepness (const (Just (ExDispatch ExRoot (AtLabel "f")))) (const (Just 7)) (ExDispatch (ExMeta "n·1") (AtLabel "q")) `shouldBe` 8
+    prop "measures a term the same with the depths of its names kept as by walking them" $ \(Grown one) (Grown two) (Grown three) ->
+      let terms :: Map.Map T.Text Expression
+          terms = Map.fromList [("n·1", one), ("n·2", ExApplication two (ArTau (AtLabel "x") (ExMeta "n·1")))]
+          look :: T.Text -> Maybe Expression
+          look = (`Map.lookup` terms)
+          depths :: Map.Map T.Text Int
+          depths = List.foldl' (\kept (name, term) -> Map.insert name (deepness look (`Map.lookup` kept) term) kept) Map.empty (Map.toAscList terms)
+          whole :: Expression
+          whole = ExApplication three (ArAlpha (Alpha 0) (ExMeta "n·2"))
+       in deepness look (`Map.lookup` depths) whole `shouldBe` deepness look (const Nothing) whole
+
+  describe "reaches" $ do
+    prop "tells a term reaches a depth exactly where it measures at least that deep" $ \(Grown one) ->
+      let deep :: Int
+          deep = deepness (const Nothing) (const Nothing) one
+       in map (\limit -> reaches (const Nothing) (const Nothing) limit one) [0 .. deep + 1] `shouldBe` map (<= deep) [0 .. deep + 1]
+    prop "takes the depth of a name it was told as deepness does" $ \(Grown one) (Grown two) ->
+      let look :: T.Text -> Maybe Expression
+          look name = if name == "n·1" then Just one else Nothing
+          depth :: T.Text -> Maybe Int
+          depth name = if name == "n·1" then Just (deepness look (const Nothing) one) else Nothing
+          whole :: Expression
+          whole = ExApplication two (ArTau (AtLabel "x") (ExMeta "n·1"))
+          deep :: Int
+          deep = deepness look depth whole
+       in map (\limit -> reaches look depth limit whole) [0 .. deep + 1] `shouldBe` map (<= deep) [0 .. deep + 1]
+    it "does not walk an earlier call deeper than the new one when it compares them" $ do
+      let named :: Int -> Expression
+          named idx = ExMeta (T.pack ("n·" ++ show idx))
+          term :: Int -> Expression
+          term idx = ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "a") (named (pred idx)))) (ArTau AtRho (named (pred idx)))
+          look :: T.Text -> Maybe Expression
+          look name = case T.stripPrefix "n·" name of
+            Just idx | idx /= "0" -> Just (term (read (T.unpack idx)))
+            _ -> Nothing
+          call :: Expression -> Expression
+          call arg = ExApplication (ExDispatch ExRoot (AtLabel "g")) (ArTau (AtLabel "x") arg)
+      found <- timeout 1000000 (evaluate (akin' look (const Nothing) (call (ExFormation [BiTau AtRho (named 64)])) (call ExRoot)))
+      found `shouldBe` Just False
 
   describe "hashSkeleton" $ do
     it "does not tell apart two formations that bind other terms to the same attributes" $

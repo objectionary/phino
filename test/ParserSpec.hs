@@ -205,6 +205,10 @@ spec = do
       , "[[ !tfoo -> !e1Some, !t-BAR -> !e_123someW, !Bhi123 ]]"
       , "[[ !B ]](α𝑖 -> !e)"
       , "[[ 𝜏 -> !e, 𝐵 ]]"
+      , "Q(x -> [[]])"
+      , "$(x -> [[]])"
+      , "[[ a -> [[ x -> ∅ ]], b -> $(x -> [[ ]]) ]]"
+      , "[[ a -> Q(^ -> [[ ]]) ]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
@@ -216,8 +220,6 @@ spec = do
           [ "Q.x()"
           , "[[x(^, @, y) -> [[q -> QQ]] ]]"
           , "Q * !t1 * !t2"
-          , "Q(x -> [[]])"
-          , "$(x -> [[]])"
           , "Q.x(x -> ?)"
           , "Q.x(L> Func)"
           , "Q.x(D> --)"

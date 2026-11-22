@@ -26,7 +26,7 @@ import Dataize
 import Deps (Judgment (..), dontSaveMade)
 import Emit (emitted)
 import Encoding
-import Engine (Engine (..), building, current, stepOf)
+import Engine (Engine (..), building, cheat, current, stepOf)
 import Evaluate (evaluation)
 import Files (overwrite)
 import qualified Filter as F
@@ -37,13 +37,14 @@ import Margin (defaultMargin)
 import Merge (merge)
 import Metas (Metas (..))
 import Morph
-import Parser (parseExpressionThrows)
+import Parser (Form (POLYFORM), parseExpressionThrows)
 import qualified Printer as P
 import qualified Random as R
 import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
 import Sides (sides)
 import Slots (anonymous)
+import Sodg (printCommands, sodg)
 import System.Directory (canonicalizePath, doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
 import System.FilePath (takeDirectory, (</>))
@@ -64,7 +65,7 @@ runRewrite OptsRewrite{..} = do
   validateNoOverlap "show" included "hide" excluded
   setStdGen (mkStdGen _seed)
   rules <- getRules _normalize _shuffle _rules
-  linked <- engine
+  linked <- (if _cheat then cheat else id) <$> engine
   validateBreakpoint _breakpoint rules
   input <- readInput _inputFile
   (expr, atoms) <- parseInputWithAtoms input _inputFormat _monoform
@@ -78,8 +79,8 @@ runRewrite OptsRewrite{..} = do
       printCtx = toPrintCtx xmirCtx foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx included excluded
-  let steps = map (stepOf linked) rules
+  save <- saveStepFunc _stepsDir printCtx included excluded expr
+  let steps = map ((if _cheat then cheating else id) . stepOf linked) rules
   (rewrittens, exceeded) <- rewrite expr steps (RewriteContext loc _maxDepth _maxCycles _depthSensitive Nothing (building linked) linked._normal (every steps) _must _breakpoint save dontSaveMade)
   when (isJust _breakpoint && NE.length rewrittens == 1) (clearedStepsDir _stepsDir)
   rewrittens' <- exclude (if _sequence then NE.toList rewrittens else [NE.last rewrittens]) >>= include
@@ -181,18 +182,19 @@ runDataize args OptsDataize{..} = do
   let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx included excluded
+  save <- saveStepFunc _stepsDir printCtx included excluded expr
   tally <- tallied _maxFirings
   minted <- newIORef 0
   named <- sides
   memo <- memoized _acyclic
   facts <- factual
-  linked <- engine
+  linked <- (if _cheat then cheat else id) <$> engine
   header <- headerOf args _inputFile input expr _symbolic lambdas
   ((outcome, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
       _minutes
+      _profile
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted named deadline memo 1 (Just (1, Dataization, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Dataization [] Map.empty (Just facts) lambdas [] False Nothing (building linked) reduction evaluation save record linked
@@ -224,6 +226,7 @@ runDataize args OptsDataize{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol && isNothing _minutes) (invalidCLIArguments "The option --abridged requires --protocol or --minutes, since only the protocol is abridged")
+      when (_profile && isNothing _minutes) (invalidCLIArguments "The option --profile requires --minutes, since only the minutes are profiled")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when (isJust _inside) $ do
@@ -273,18 +276,19 @@ runMorph args OptsMorph{..} = do
   let printCtx = toPrintCtx atoms foc
       exclude = (`F.exclude` excluded)
       include = (`F.include` included)
-  save <- saveStepFunc _stepsDir printCtx included excluded
+  save <- saveStepFunc _stepsDir printCtx included excluded expr
   tally <- tallied _maxFirings
   minted <- newIORef 0
   named <- sides
   memo <- memoized _acyclic
   facts <- factual
-  linked <- engine
+  linked <- (if _cheat then cheat else id) <$> engine
   header <- headerOf args _inputFile input expr _symbolic lambdas
   ((morphed, chain, _), universe, aim) <-
     withEvalFunc
       _protocol
       _minutes
+      _profile
       printCtx
       ( \record -> do
           let ctx = ReduceContext loc loc Nothing _maxDepth _maxCycles _maxNodes _maxMemory (Steps _maxSteps 0) tally minted named deadline memo 1 (Just (1, Morphing, loc)) _depthSensitive _shuffle _partial _acyclic _maxLoops Morphing [] Map.empty (Just facts) lambdas [] False Nothing (building linked) reduction evaluation save record linked
@@ -312,6 +316,7 @@ runMorph args OptsMorph{..} = do
       validateXmirOptions _outputFormat [(_omitListing, "omit-listing"), (_omitComments, "omit-comments")] _focus
       when (length _show > 1) (invalidCLIArguments "The option --show can be used only once")
       when (isJust _abridged && isNothing _protocol && isNothing _minutes) (invalidCLIArguments "The option --abridged requires --protocol or --minutes, since only the protocol is abridged")
+      when (_profile && isNothing _minutes) (invalidCLIArguments "The option --profile requires --minutes, since only the minutes are profiled")
       when (_abridgedData && isNothing _abridged) (invalidCLIArguments "The option --abridged-data requires --abridged, since only an abridged protocol cuts its data")
       when (_maxLoops > 0 && isNothing _acyclic) (invalidCLIArguments "The option --max-loops requires --acyclic, since only --acyclic cuts a loop")
       when (isJust _inside) $ do
@@ -423,7 +428,7 @@ runMatch OptsMatch{..} = do
       traverse_ (throwIO . AnonymousMetaInCondition . T.unpack) (anonymous condition)
       traverse_ (throwIO . UnboundMetaInCondition . T.unpack) (listToMaybe (unboundMetas ptn condition))
       linked <- engine
-      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext (building linked) Nothing linked._normal)
+      substs <- matchExpressionWithRule expr (rule ptn condition) (RuleContext (building linked) Nothing linked._normal False)
       if null substs
         then throwIO EmptySubstsOnMatch
         else putStrLn (P.printSubsts' substs (_sugarType, UNICODE, _flat, defaultMargin))
@@ -434,6 +439,13 @@ runMatch OptsMatch{..} = do
     unboundMetas ptn condition = filter (`notElem` namedMetas ptn) (namedMetas condition)
     namedMetas :: (Metas a) => a -> [T.Text]
     namedMetas term = filter ((> 1) . T.length) (metas term)
+
+runSodg :: OptsSodg -> IO ()
+runSodg OptsSodg{..} = do
+  input <- readInput _inputFile
+  expr <- parseInput input _inputFormat POLYFORM
+  graph <- sodg expr
+  putStr (printCommands graph)
 
 runCompile :: OptsCompile -> IO ()
 runCompile OptsCompile{..} = do

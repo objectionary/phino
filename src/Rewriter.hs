@@ -9,7 +9,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rewriter (Seen, direct, every, fast, interpreted, rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', seenInsert, seenMember, stepHeaders) where
+module Rewriter (Seen, cheating, direct, every, fast, interpreted, rewrite, RewriteContext (..), Rewritten, Rewrittens, Rewrittens', seenInsert, seenMember, stepHeaders) where
 
 import AST
 import Builder
@@ -110,21 +110,28 @@ instance Show RewriteException where
       rul
       expr
 
-buildAndReplace' :: ToReplace -> ReplaceExpressionFunc -> IO (Expression, [(Expression, Expression)])
-buildAndReplace' (expr, ptn, res, substs) func = do
+buildAndReplace' :: Bool -> ToReplace -> ReplaceExpressionFunc -> IO (Expression, [(Expression, Expression)])
+buildAndReplace' cheat (expr, ptn, res, substs) func = do
   ptns <- buildExpressionsThrows ptn substs
-  repls <- buildExpressionsThrows res substs
+  repls <- map (cheated cheat) <$> buildExpressionsThrows res substs
   pure (func (expr, ptns, map const repls), zip ptns repls)
 
-tryBuildAndReplaceFast :: ToReplace -> IO (Expression, [(Expression, Expression)])
-tryBuildAndReplaceFast state@(expr, ptn@(ExFormation (_ : pbds)), res@(ExFormation (_ : rbds)), substs)
+tryBuildAndReplaceFast :: Bool -> ToReplace -> IO (Expression, [(Expression, Expression)])
+tryBuildAndReplaceFast cheat state@(expr, ptn@(ExFormation (_ : pbds)), res@(ExFormation (_ : rbds)), substs)
   | fast ptn res = do
       logDebug "Applying fast replacing since 'pattern' and 'result' are suitable for this..."
-      buildAndReplace' (expr, ExFormation (init pbds), ExFormation (init rbds), substs) replaceExpressionFast
+      buildAndReplace' cheat (expr, ExFormation (init pbds), ExFormation (init rbds), substs) replaceExpressionFast
   | otherwise = do
       logDebug "Applying regular replacing..."
-      buildAndReplace' state replaceExpression
-tryBuildAndReplaceFast state = buildAndReplace' state replaceExpression
+      buildAndReplace' cheat state replaceExpression
+tryBuildAndReplaceFast cheat state = buildAndReplace' cheat state replaceExpression
+
+cheated :: Bool -> Expression -> Expression
+cheated True (ExApplication inner@(ExApplication _ (ArTau AtRho _)) (ArTau AtRho _)) = cheated True inner
+cheated _ expr = expr
+
+cheating :: Step -> Step
+cheating (Step name applied) = Step name (\ctx -> applied ctx{R._cheat = True})
 
 fast :: Expression -> Expression -> Bool
 fast (ExFormation _pbds@(pbd : pbds)) (ExFormation _rbds@(rbd : rbds)) =
@@ -159,14 +166,14 @@ interpreted rule = Step rule.name applied
       R.matchExpressionWithRule expr rule ctx >>= \case
         [] -> pure Nothing
         matched
-          | isNothing rule.when && isNothing rule.having -> Just <$> tryBuildAndReplaceFast (expr, rule.pattern, rule.result, matched)
-          | otherwise -> Just <$> buildAndReplace' (expr, rule.pattern, rule.result, matched) replaceExpression
+          | isNothing rule.when && isNothing rule.having -> Just <$> tryBuildAndReplaceFast ctx._cheat (expr, rule.pattern, rule.result, matched)
+          | otherwise -> Just <$> buildAndReplace' ctx._cheat (expr, rule.pattern, rule.result, matched) replaceExpression
 
 direct :: String -> Bool -> (Maybe Expression -> Expression -> [Expression]) -> Step
 direct name redex rewritten = Step name applied
   where
     applied :: RuleContext -> Expression -> IO (Maybe (Expression, [(Expression, Expression)]))
-    applied (RuleContext _ universe _) expr = pure $ case sites redex (rewritten universe) expr of
+    applied (RuleContext _ universe _ cheat) expr = pure $ case [(site, cheated cheat made) | (site, made) <- sites redex (rewritten universe) expr] of
       [] -> Nothing
       found -> Just (replaceExpression (expr, map fst found, map (const . snd) found), found)
 
@@ -199,7 +206,7 @@ rewrite' (rewrittens, located, unique, stop, found) ((idx, rule) : rest) iterati
                 else pure (_rewrittens, expression, _unique, False, _found)
             else do
               logDebug (printf "Starting rewriting cycle for rule '%s': %d out of %d" ruleName _count _maxDepth)
-              _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
+              _applied rule (RuleContext _buildTerm _universe _normal False) expression >>= \case
                 Nothing -> do
                   logDebug (printf "Rule '%s' does not match, rewriting is stopped" ruleName)
                   if _breakpoint == Just ruleName && ruleName `notElem` [fired | (_, Just (_, fired)) <- NE.toList _rewrittens]
@@ -246,7 +253,7 @@ applicable expression (rule : rest) ctx@RewriteContext{..} = do
   where
     probe :: Step -> IO Bool
     probe rule =
-      _applied rule (RuleContext _buildTerm _universe _normal) expression >>= \case
+      _applied rule (RuleContext _buildTerm _universe _normal False) expression >>= \case
         Just (changed, _) | changed /= expression -> pure True
         _ -> pure False
     onIOException :: IOException -> IO Bool

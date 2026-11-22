@@ -12,10 +12,10 @@ import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
-import Canonizer (canonizeExpr, lambdaNames)
+import Canonizer (CanonState, canonize, canonizeExpr, canonizeExpression, emptyCanon, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
-import Control.Monad (mfilter, when, (>=>))
+import Control.Monad (mfilter, when, zipWithM, (>=>))
 import qualified Data.ByteString as BS
 import Data.Char (isDigit)
 import Data.Functor ((<&>))
@@ -26,9 +26,10 @@ import Data.Maybe
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Time (getZonedTime)
+import Data.Tuple (swap)
 import Data.Version (showVersion)
 import qualified Data.Yaml as Yaml
-import Deps (Evaluation (EvHeader, EvRun), Header (Header), Judgment, SaveEvalFunc, SaveStepFunc, World (World), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, resited, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvHeader, EvRun), Header (Header), Judgment, SaveEvalFunc, SaveStepFunc, World (World), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, profiling, progressed, resited, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
@@ -38,7 +39,7 @@ import GHC.Clock (getMonotonicTime)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
 import Lambdas (Lambdas, emptyLambdas, readLambdas, sized, taken)
 import Lining (LineFormat (SINGLELINE))
-import Locator (locatedExpression, withLocatedExpression)
+import Locator (LocatorException, locatedExpression, withLocatedExpression)
 import Logger
 import Morph (ReduceContext (..), insideUniverse)
 import Parser (Form, parseExpressionThrows, parseExpressionThrows')
@@ -79,25 +80,36 @@ clearedStepsDir (Just dir) = do
       isFile <- doesFileExist path
       when isFile (removeFile path)
 
-saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> IO SaveStepFunc
-saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
+saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> Expression -> IO SaveStepFunc
+saveStepFunc stepsDir ctx@PrintCtx{..} included excluded start = do
   clearedStepsDir stepsDir
   counter <- newIORef (0 :: Int)
+  names <- newIORef =<< seeded
   let ioToExt :: String
       ioToExt
         | _outputFormat == LATEX = "tex"
         | otherwise = show _outputFormat
+      render :: Expression -> IO String
       render expr = do
-        shown <- F.exclude' expr excluded >>= (`F.include'` included)
-        printAnswer ctx shown
+        visible <- shown expr
+        if _canonize
+          then atomicModifyIORef' names (swap . canonizeExpression visible) >>= printCanonized ctx visible
+          else printAnswer ctx visible
       save :: SaveStepFunc
       save expr = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))
         saveStep stepsDir ioToExt render step expr
   pure save
+  where
+    shown :: Expression -> IO Expression
+    shown expr = F.exclude' expr excluded >>= (`F.include'` included)
+    seeded :: IO CanonState
+    seeded
+      | _canonize && isJust stepsDir = (snd . (`canonizeExpression` emptyCanon) <$> shown start) `catch` (\(_ :: LocatorException) -> pure emptyCanon)
+      | otherwise = pure emptyCanon
 
-withEvalFunc :: forall a. Maybe FilePath -> Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc xml text ctx action = withEvalFunc' xml text ctx (tracked >=> action)
+withEvalFunc :: forall a. Maybe FilePath -> Maybe FilePath -> Bool -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc xml text profile ctx action = withEvalFunc' xml text profile ctx (tracked >=> action)
   where
     tracked :: SaveEvalFunc -> IO SaveEvalFunc
     tracked record = do
@@ -108,8 +120,8 @@ withEvalFunc xml text ctx action = withEvalFunc' xml text ctx (tracked >=> actio
           pure (progressed cursor 5 (flattened ctx) record)
         else pure record
 
-withEvalFunc' :: forall a. Maybe FilePath -> Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc' xml text ctx action =
+withEvalFunc' :: forall a. Maybe FilePath -> Maybe FilePath -> Bool -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc' xml text profile ctx action =
   markedUp xml (\marked -> plain text (\lined -> action (\record -> marked record >> lined record)))
   where
     markedUp :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
@@ -126,8 +138,9 @@ withEvalFunc' xml text ctx action =
       logDebug (printf "The option '--minutes' is specified, every firing will be recorded in '%s' as text" file)
       cursor <- newIORef emptyProtocol
       began <- getMonotonicTime
+      watch <- if profile then Just <$> profiling else pure Nothing
       bracket (opened file) (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
-        go (saveEval protocol cursor (flattened ctx) (salted ctx))
+        go (saveEval protocol cursor (flattened ctx) (salted ctx) watch)
     opened :: FilePath -> IO Handle
     opened file = do
       createDirectoryIfMissing True (takeDirectory file)
@@ -231,6 +244,7 @@ parseInputWithAtoms input format form = (,M.empty) <$> parseInput input format f
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
+  | _canonize = withHeaders <$> zipWithM (printCanonized ctx) (map fst chain) (map fst (canonize chain))
   | otherwise = withHeaders <$> mapM (printAnswer ctx . fst) chain
   where
     withHeaders :: [String] -> String
@@ -243,11 +257,12 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
 
 printAnswer :: PrintContext -> Expression -> IO String
 printAnswer ctx@PrintCtx{..} expr
-  | _canonize = printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
+  | _canonize = printCanonized ctx expr (canonizeExpr expr)
   | otherwise = printFocused ctx expr
-  where
-    canonized :: Expression
-    canonized = canonizeExpr expr
+
+printCanonized :: PrintContext -> Expression -> Expression -> IO String
+printCanonized ctx@PrintCtx{..} expr canonized =
+  printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
 
 printFocused :: PrintContext -> Expression -> IO String
 printFocused ctx@PrintCtx{..} expr

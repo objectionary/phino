@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ ρ ↦ ∅, φ ↦ ξ.ρ ⟧'
+output: |
+  F c0 ρ φ
+  D c1 c0 ρ
+  P c0 φ c1

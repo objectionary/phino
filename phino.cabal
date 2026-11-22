@@ -12,7 +12,7 @@ maintainer: mtrunnikov@gmail.com
 copyright: 2025 Objectionary.com
 category: Language, Code Analysis
 build-type: Simple
-tested-with: GHC ==9.6.7 || ==9.8.4 || ==9.10.3
+tested-with: GHC ==9.6.7 || ==9.8.4 || ==9.10.3 || ==9.14.1
 extra-source-files: resources/normalize/*.yaml resources/morphing/*.yaml resources/dataization/*.yaml resources/contextualization/*.yaml benchmark/demo.phi benchmark/atoms.yaml benchmark/accum.phi benchmark/accum.yaml test-resources/**/*.yaml test-resources/**/*.phi
 extra-doc-files: README.md
 
@@ -90,6 +90,7 @@ library
     Rewriter
     Rule
     Sides
+    Sodg
     Slots
     Sugar
     Tau
@@ -203,6 +204,8 @@ test-suite spec
     ReplacerSpec
     RewriterSpec
     RuleSpec
+    SidesSpec
+    SodgSpec
     Spec
     SugarSpec
     TauSpec

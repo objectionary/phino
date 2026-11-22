@@ -28,8 +28,8 @@ import GHC.Generics
 import Must (Must (..))
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printExpression)
-import Rewriter (RewriteContext (RewriteContext), direct, every, fast, rewrite)
-import Rule (RuleContext (RuleContext), Step (Step, _applied))
+import Rewriter (RewriteContext (RewriteContext), cheating, direct, every, fast, rewrite)
+import Rule (RuleContext (RuleContext), Step (Step, _applied, _name))
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
@@ -321,17 +321,34 @@ spec = do
         `shouldBe` Set.fromList [0, 1, 2]
   describe "direct" $ do
     it "rewrites every place the function matches at" $
-      fmap fst <$> _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch (ExApplication ExXi (ArTau (AtLabel "o") ExXi)) (AtLabel "m"))
+      fmap fst <$> _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True) False) (ExDispatch (ExApplication ExXi (ArTau (AtLabel "o") ExXi)) (AtLabel "m"))
         `shouldReturn` Just (ExDispatch (ExApplication ExRoot (ArTau (AtLabel "o") ExRoot)) (AtLabel "m"))
     it "tells every place it rewrote, beside what it rewrote it to" $
-      fmap snd <$> _applied (direct "tq" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExApplication ExXi (ArTau (AtLabel "ё") ExXi))
+      fmap snd <$> _applied (direct "tq" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True) False) (ExApplication ExXi (ArTau (AtLabel "ё") ExXi))
         `shouldReturn` Just [(ExXi, ExRoot), (ExXi, ExRoot)]
     it "tells it matched nowhere" $
-      _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch ExTermination (AtLabel "m"))
+      _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True) False) (ExDispatch ExTermination (AtLabel "m"))
         `shouldReturn` Nothing
     it "hands the world to the function" $
-      fmap fst <$> _applied (direct "tw" False (\universe expr -> [world | ExXi <- [expr], Just world <- [universe]])) (RuleContext buildTerm (Just ExTermination) (const True)) ExXi
+      fmap fst <$> _applied (direct "tw" False (\universe expr -> [world | ExXi <- [expr], Just world <- [universe]])) (RuleContext buildTerm (Just ExTermination) (const True) False) ExXi
         `shouldReturn` Just ExTermination
+  describe "cheating" $ do
+    it "drops the ρ a rule applies to a term that already ends with one" $ do
+      dot <- maybe (fail "no rule dot") pure (lookup "dot" [(_name step, step) | step <- map (stepOf linked) normalizationRules])
+      term <- parseExpressionThrows "⟦ a ↦ Φ.x( ρ ↦ ⟦⟧ ), b ↦ ⟦⟧ ⟧.a"
+      fmap fst <$> _applied (cheating dot) (RuleContext buildTerm Nothing (const True) False) term
+        `shouldReturn` Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau AtRho (ExFormation [])))
+    it "keeps both ρ when it is not asked to cheat" $ do
+      dot <- maybe (fail "no rule dot") pure (lookup "dot" [(_name step, step) | step <- map (stepOf linked) normalizationRules])
+      term <- parseExpressionThrows "⟦ a ↦ Φ.x( ρ ↦ ⟦⟧ ), b ↦ ⟦⟧ ⟧.a"
+      fmap fst <$> _applied dot (RuleContext buildTerm Nothing (const True) False) term
+        `shouldReturn` Just (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau AtRho (ExFormation []))) (ArTau AtRho (ExFormation [BiTau (AtLabel "a") (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau AtRho (ExFormation []))), BiTau (AtLabel "b") (ExFormation [])])))
+    it "drops the ρ a compiled step applies to a term that already ends with one" $
+      fmap snd <$> _applied (cheating (direct "rr" False (\_ expr -> [ExApplication (ExApplication ExRoot (ArTau AtRho ExXi)) (ArTau AtRho ExRoot) | ExXi <- [expr]]))) (RuleContext buildTerm Nothing (const True) False) ExXi
+        `shouldReturn` Just [(ExXi, ExApplication ExRoot (ArTau AtRho ExXi))]
+    it "keeps a ρ applied to a term ending with another argument" $
+      fmap fst <$> _applied (cheating (direct "ro" False (\_ expr -> [ExApplication (ExApplication ExRoot (ArTau (AtLabel "o") ExXi)) (ArTau AtRho ExRoot) | ExXi <- [expr]]))) (RuleContext buildTerm Nothing (const True) False) ExXi
+        `shouldReturn` Just (ExApplication (ExApplication ExRoot (ArTau (AtLabel "o") ExXi)) (ArTau AtRho ExRoot))
   describe "fast" $ do
     it "holds for a formation rewritten between the same two meta bindings" $
       fast (ExFormation [BiMeta "B1", BiVoid (AtLabel "j"), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "k"), BiMeta "B2"])

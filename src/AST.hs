@@ -3,6 +3,7 @@
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -10,7 +11,7 @@
 
 module AST
   ( Slot (..)
-  , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes)
+  , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes, BaseObject, DataString, DataNumber, DataObject)
   , Argument (..)
   , Alpha (..)
   , Binding (..)
@@ -30,22 +31,23 @@ module AST
   , bijection'
   , akin
   , akin'
+  , akin''
+  , deepness
+  , reaches
   , boxed
   , intact
   , suffixed
   , within
   , within'
+  , within''
+  , Searched
   , isName
   , symbols
   , lifted
   , denoted
   , countNodes
   , matchBaseObject
-  , pattern BaseObject
   , matchDataObject
-  , pattern DataString
-  , pattern DataNumber
-  , pattern DataObject
   , dataBytes
   )
 where
@@ -54,7 +56,7 @@ import Data.Bits (xor)
 import qualified Data.IntMap.Strict as IntMap
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import Data.Maybe (isJust, isNothing, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Exts (isTrue#, reallyUnsafePtrEquality#)
@@ -342,17 +344,58 @@ alike :: Expression -> Expression -> Bool
 alike = alike' (const Nothing)
 
 alike' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
-alike' look = likened look (\_ _ -> False)
+alike' = likened
 
 akin :: Expression -> Expression -> Bool
-akin = akin' (const Nothing)
+akin = akin' (const Nothing) (const Nothing)
 
-akin' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
-akin' look = likened look grown
+akin' :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Expression -> Expression -> Bool
+akin' look depth before after = fst (akin'' look depth Map.empty before after)
+
+akin'' :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Searched -> Expression -> Expression -> (Bool, Searched)
+akin'' look depth searched one two = case matching look grown searched one two of
+  (found, searched') -> (isJust found, searched')
   where
-    grown :: Expression -> Expression -> Bool
-    grown before@(ExFormation left) after@(ExFormation right) = boxed left && boxed right && within' look before after
-    grown _ _ = False
+    grown :: Expression -> Expression -> Searched -> (Maybe Bool, Searched)
+    grown before@(ExFormation left) after@(ExFormation right) kept
+      | boxed left && boxed right = decided (within'' look kept before after)
+    grown before after kept
+      | pending before && pending after && deeper before after = decided (within'' look kept before after)
+    grown _ _ kept = (Nothing, kept)
+    decided :: (Bool, Searched) -> (Maybe Bool, Searched)
+    decided (found, kept) = (Just found, kept)
+    deeper :: Expression -> Expression -> Bool
+    deeper before after = not (reaches look depth (deepness look depth after) before)
+    pending :: Expression -> Bool
+    pending (ExMeta name) = maybe False pending (look name)
+    pending (ExApplication _ _) = True
+    pending (ExDispatch inner _) = pending inner
+    pending _ = False
+
+deepness :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Expression -> Int
+deepness look depth = go
+  where
+    go :: Expression -> Int
+    go (ExMeta name) = fromMaybe (maybe 0 go (look name)) (depth name)
+    go (ExApplication callee (ArTau _ arg)) = deepest [callee, arg]
+    go (ExApplication callee (ArAlpha _ arg)) = deepest [callee, arg]
+    go (ExDispatch inner _) = deepest [inner]
+    go (ExFormation bds) = deepest [body | BiTau _ body <- bds]
+    go _ = 0
+    deepest :: [Expression] -> Int
+    deepest = List.foldl' (\most part -> max most (go part + 1)) 1
+
+reaches :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Int -> Expression -> Bool
+reaches look depth = go
+  where
+    go :: Int -> Expression -> Bool
+    go limit _ | limit <= 0 = True
+    go limit (ExMeta name) = maybe (maybe False (go limit) (look name)) (>= limit) (depth name)
+    go limit (ExApplication callee (ArTau _ arg)) = limit <= 1 || go (pred limit) callee || go (pred limit) arg
+    go limit (ExApplication callee (ArAlpha _ arg)) = limit <= 1 || go (pred limit) callee || go (pred limit) arg
+    go limit (ExDispatch inner _) = limit <= 1 || go (pred limit) inner
+    go limit (ExFormation bds) = limit <= 1 || any (go (pred limit)) [body | BiTau _ body <- bds]
+    go _ _ = False
 
 boxed :: [Binding] -> Bool
 boxed bds = any phi bds && not (any lambda bds) && not (any delta bds)
@@ -371,53 +414,63 @@ bijection :: Expression -> Expression -> Maybe (Map.Map Int Int)
 bijection = bijection' (const Nothing)
 
 bijection' :: (Text -> Maybe Expression) -> Expression -> Expression -> Maybe (Map.Map Int Int)
-bijection' look one two = fst <$> matching look (\_ _ -> False) one two
+bijection' look one two = fst <$> fst (matching look strict () one two)
 
-likened :: (Text -> Maybe Expression) -> (Expression -> Expression -> Bool) -> Expression -> Expression -> Bool
-likened look loose one two = isJust (matching look loose one two)
+likened :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
+likened look one two = isJust (fst (matching look strict () one two))
+
+strict :: Expression -> Expression -> () -> (Maybe Bool, ())
+strict _ _ kept = (Nothing, kept)
 
 type Pairing = (Map.Map Int Int, Map.Map Int Int, Map.Map (Text, Text) ())
 
-matching :: (Text -> Maybe Expression) -> (Expression -> Expression -> Bool) -> Expression -> Expression -> Maybe (Map.Map Int Int, Map.Map Int Int)
-matching look loose one two = (\(forward, backward, _) -> (forward, backward)) <$> goExpr (Map.empty, Map.empty, Map.empty) one two
+matching :: forall state. (Text -> Maybe Expression) -> (Expression -> Expression -> state -> (Maybe Bool, state)) -> state -> Expression -> Expression -> (Maybe (Map.Map Int Int, Map.Map Int Int), state)
+matching look loose initial one two = case goExpr (Map.empty, Map.empty, Map.empty) one two initial of
+  (found, final) -> ((\(forward, backward, _) -> (forward, backward)) <$> found, final)
   where
-    goExpr :: Pairing -> Expression -> Expression -> Maybe Pairing
-    goExpr pairing left right
-      | loose left right = Just pairing
-    goExpr pairing@(forward, backward, met) (ExMeta left) (ExMeta right)
-      | Map.member (left, right) met = Just pairing
+    goExpr :: Pairing -> Expression -> Expression -> state -> (Maybe Pairing, state)
+    goExpr pairing left right kept = case loose left right kept of
+      (Just True, kept') -> (Just pairing, kept')
+      (Just False, kept') -> (Nothing, kept')
+      (Nothing, kept') -> goStrict pairing left right kept'
+    goStrict :: Pairing -> Expression -> Expression -> state -> (Maybe Pairing, state)
+    goStrict pairing@(forward, backward, met) (ExMeta left) (ExMeta right) kept
+      | Map.member (left, right) met = (Just pairing, kept)
       | Just left' <- look left
       , Just right' <- look right =
-          goExpr (forward, backward, Map.insert (left, right) () met) left' right'
-    goExpr pairing (ExMeta left) right
-      | Just left' <- look left = goExpr pairing left' right
-    goExpr pairing left (ExMeta right)
-      | Just right' <- look right = goExpr pairing left right'
-    goExpr pairing (ExFormation left) (ExFormation right) = goList goBinding pairing left right
-    goExpr pairing (ExApplication left arg) (ExApplication right arg') = goExpr pairing left right >>= \next -> goArgument next arg arg'
-    goExpr pairing (ExDispatch left attr) (ExDispatch right attr')
-      | attr == attr' = goExpr pairing left right
-    goExpr pairing (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right)
-      | prefix == prefix' && idx == idx' = goExpr pairing left right
-    goExpr pairing (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right)
-      | prefix == prefix' && idx == idx' = goExpr pairing left right
-    goExpr pairing left right = same pairing left right
-    goBinding :: Pairing -> Binding -> Binding -> Maybe Pairing
-    goBinding pairing (BiTau attr left) (BiTau attr' right)
-      | attr == attr' = goExpr pairing left right
-    goBinding pairing (BiLambda (FnSymbol left)) (BiLambda (FnSymbol right)) = twinned pairing left right
-    goBinding pairing left right = same pairing left right
-    goArgument :: Pairing -> Argument -> Argument -> Maybe Pairing
-    goArgument pairing (ArTau attr left) (ArTau attr' right)
-      | attr == attr' = goExpr pairing left right
-    goArgument pairing (ArAlpha alpha left) (ArAlpha alpha' right)
-      | alpha == alpha' = goExpr pairing left right
-    goArgument pairing left right = same pairing left right
-    goList :: (pairing -> item -> item -> Maybe pairing) -> pairing -> [item] -> [item] -> Maybe pairing
-    goList _ pairing [] [] = Just pairing
-    goList walk pairing (left : lefts) (right : rights) = walk pairing left right >>= \next -> goList walk next lefts rights
-    goList _ _ _ _ = Nothing
-    same :: (Eq item) => pairing -> item -> item -> Maybe pairing
+          goExpr (forward, backward, Map.insert (left, right) () met) left' right' kept
+    goStrict pairing (ExMeta left) right kept
+      | Just left' <- look left = goExpr pairing left' right kept
+    goStrict pairing left (ExMeta right) kept
+      | Just right' <- look right = goExpr pairing left right' kept
+    goStrict pairing (ExFormation left) (ExFormation right) kept = goList goBinding pairing left right kept
+    goStrict pairing (ExApplication left arg) (ExApplication right arg') kept = chained (goExpr pairing left right kept) (\next -> goArgument next arg arg')
+    goStrict pairing (ExDispatch left attr) (ExDispatch right attr') kept
+      | attr == attr' = goExpr pairing left right kept
+    goStrict pairing (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right) kept
+      | prefix == prefix' && idx == idx' = goExpr pairing left right kept
+    goStrict pairing (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right) kept
+      | prefix == prefix' && idx == idx' = goExpr pairing left right kept
+    goStrict pairing left right kept = (same pairing left right, kept)
+    goBinding :: Pairing -> Binding -> Binding -> state -> (Maybe Pairing, state)
+    goBinding pairing (BiTau attr left) (BiTau attr' right) kept
+      | attr == attr' = goExpr pairing left right kept
+    goBinding pairing (BiLambda (FnSymbol left)) (BiLambda (FnSymbol right)) kept = (twinned pairing left right, kept)
+    goBinding pairing left right kept = (same pairing left right, kept)
+    goArgument :: Pairing -> Argument -> Argument -> state -> (Maybe Pairing, state)
+    goArgument pairing (ArTau attr left) (ArTau attr' right) kept
+      | attr == attr' = goExpr pairing left right kept
+    goArgument pairing (ArAlpha alpha left) (ArAlpha alpha' right) kept
+      | alpha == alpha' = goExpr pairing left right kept
+    goArgument pairing left right kept = (same pairing left right, kept)
+    goList :: (Pairing -> item -> item -> state -> (Maybe Pairing, state)) -> Pairing -> [item] -> [item] -> state -> (Maybe Pairing, state)
+    goList _ pairing [] [] kept = (Just pairing, kept)
+    goList walk pairing (left : lefts) (right : rights) kept = chained (walk pairing left right kept) (\next -> goList walk next lefts rights)
+    goList _ _ _ _ kept = (Nothing, kept)
+    chained :: (Maybe Pairing, state) -> (Pairing -> state -> (Maybe Pairing, state)) -> (Maybe Pairing, state)
+    chained (Just pairing, kept) next = next pairing kept
+    chained (Nothing, kept) _ = (Nothing, kept)
+    same :: (Eq item) => Pairing -> item -> item -> Maybe Pairing
     same pairing left right
       | left == right = Just pairing
       | otherwise = Nothing
@@ -435,7 +488,10 @@ within :: Expression -> Expression -> Bool
 within = within' (const Nothing)
 
 within' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
-within' look before after = fst (coupled (opened before) (opened after) Map.empty)
+within' look before after = fst (within'' look Map.empty before after)
+
+within'' :: (Text -> Maybe Expression) -> Searched -> Expression -> Expression -> (Bool, Searched)
+within'' look start before after = coupled (opened before) (opened after) start
   where
     opened :: Expression -> Expression
     opened term = maybe term opened (through term)
