@@ -16,7 +16,7 @@ import Data.Text qualified as T
 import GHC.Clock (getMonotonicTime)
 import Grown (Grown (..))
 import System.Timeout (timeout)
-import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldNotBe, shouldReturn, shouldSatisfy)
 import Test.Hspec.QuickCheck (prop)
 
 spec :: Spec
@@ -204,6 +204,14 @@ spec = do
       let exprs = [ExDispatch ExRoot AtRho, ExApplication ExRoot (ArTau AtRho ExRoot), ExMeta "e", ExTermination, ExRoot, ExXi, ExFormation []]
           first : _ = sort exprs
        in first `shouldBe` ExFormation []
+  describe "Expression Ord instance over a term holding the level below it twice" $
+    it "compares the term with itself without walking it as a tree" $ do
+      let doubled :: Expression -> Expression
+          doubled inner = ExFormation [BiTau AtRho inner, BiTau (AtLabel "qa") inner]
+          deep :: Expression
+          deep = iterate doubled (ExFormation [BiLambda (FnSymbol 3)]) !! 60
+      timeout 10000000 (evaluate (compare (ExApplication deep (ArTau (AtLabel "ve") deep)) (ExApplication deep (ArTau (AtLabel "ve") deep))))
+        `shouldReturn` Just EQ
 
   describe "countNodes counts ExFormation with non-tau bindings" $
     forM_
@@ -603,6 +611,18 @@ spec = do
     it "tells apart two formations that differ deep inside" $
       ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "op"))]
         `shouldNotBe` ExFormation [BiTau (AtLabel "lu") (ExDispatch ExXi (AtLabel "po"))]
+
+  describe "symbols" $ do
+    it "names every symbol once, in the order it first stands" $
+      symbols (ExFormation [BiTau (AtLabel "mo") (ExFormation [BiLambda (FnSymbol 8)]), BiTau (AtLabel "ar") (ExFormation [BiLambda (FnSymbol 2)]), BiTau (AtLabel "si") (ExFormation [BiLambda (FnSymbol 8)])])
+        `shouldBe` [8, 2]
+    it "walks every distinct term once in a term holding the level below it twice" $ do
+      let doubled :: Expression -> Expression
+          doubled inner = ExFormation [BiTau AtRho inner, BiTau (AtLabel "ku") (ExApplication (ExDispatch inner (AtLabel "te")) (ArTau (AtLabel "of") inner))]
+          deep :: Expression
+          deep = iterate doubled (ExFormation [BiLambda (FnSymbol 5), BiTau (AtLabel "ny") (ExFormation [BiLambda (FnSymbol 4)])]) !! 60
+      timeout 10000000 (let found = symbols deep in found <$ evaluate (length found))
+        `shouldReturn` Just [5, 4]
 
   describe "Expression Show instance" $
     it "does not show what a node carries besides its parts" $

@@ -811,11 +811,17 @@ it made of it by `hashExpression`, and a node keeps its `hashShape` beside
 its hash once asked, since a term reaching the value below it twice through
 ρ is a tree doubling per level that is small in memory (#2453). So does
 `spelled` of `Sides.hs`, which walks nothing where no name is spelt back, so
-a run `--partial` parks spells its residue at once (#2456). The walk and every
+a run `--partial` parks spells its residue at once (#2456). So does
+`renamedTerm` of `Morph.hs`, keeping what it made in the `Renaming` that
+`adopted` starts, so the firings an adoption renames in turn share it, and
+`symbols` of `AST.hs`, which names every symbol once, in the order it first
+stands (#2458). The walk and every
 other cache of terms rest on the pointer shortcut of `Eq Expression`, which
 `identical` of `Pointer.hs` takes; that module is built with `-fno-hpc`,
 since a coverage build wraps every use of a variable in a fresh thunk and
-two uses of one term would never be the same pointer.
+two uses of one term would never be the same pointer. `Ord Expression`
+takes it too, so the memo of firings, keyed by their normal forms, finds a
+firing without walking its forms as trees.
 
 A formation a join fabricates binds `left🌵` and `right🌵` to names of its
 sides, `𝑛·1` and `𝑛·2`, not to the sides themselves (`Sides.hs`, `_sides` of

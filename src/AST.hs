@@ -53,6 +53,7 @@ where
 
 import Data.Bits (xor)
 import qualified Data.IntMap.Strict as IntMap
+import qualified Data.IntSet as IntSet
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
@@ -143,16 +144,20 @@ instance Eq Expression where
       alongside (Facts digest _ _ _ _) (Facts digest' _ _ _ _) = digest == digest'
 
 instance Ord Expression where
-  compare (ExFormation bds) (ExFormation bds') = compare bds bds'
-  compare (ExApplication expr arg) (ExApplication expr' arg') = compare expr expr' <> compare arg arg'
-  compare (ExDispatch expr attr) (ExDispatch expr' attr') = compare expr expr' <> compare attr attr'
-  compare (ExMeta meta) (ExMeta meta') = compare meta meta'
-  compare (ExAny slot) (ExAny slot') = compare slot slot'
-  compare (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
-  compare (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
-  compare (ExBytes bts) (ExBytes bts') = compare bts bts'
-  compare left right = compare (rank left) (rank right)
+  compare left right
+    | identical left right = EQ
+    | otherwise = ordered left right
     where
+      ordered :: Expression -> Expression -> Ordering
+      ordered (ExFormation bds) (ExFormation bds') = compare bds bds'
+      ordered (ExApplication expr arg) (ExApplication expr' arg') = compare expr expr' <> compare arg arg'
+      ordered (ExDispatch expr attr) (ExDispatch expr' attr') = compare expr expr' <> compare attr attr'
+      ordered (ExMeta meta) (ExMeta meta') = compare meta meta'
+      ordered (ExAny slot) (ExAny slot') = compare slot slot'
+      ordered (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
+      ordered (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
+      ordered (ExBytes bts) (ExBytes bts') = compare bts bts'
+      ordered one two = compare (rank one) (rank two)
       rank :: Expression -> Int
       rank = \case
         ExFormation _ -> 0
@@ -572,22 +577,38 @@ within'' look start before after = coupled (opened before) (opened after) start
     children _ = []
 
 symbols :: Expression -> [Int]
-symbols = goExpr
+symbols whole = case goExpr (IntMap.empty, IntSet.empty, []) whole of
+  (_, _, found) -> reverse found
   where
-    goExpr :: Expression -> [Int]
-    goExpr (ExFormation bds) = concatMap goBinding bds
-    goExpr (ExApplication expr arg) = goExpr expr ++ goArgument arg
-    goExpr (ExDispatch expr _) = goExpr expr
-    goExpr (ExPhiMeet _ _ expr) = goExpr expr
-    goExpr (ExPhiAgain _ _ expr) = goExpr expr
-    goExpr _ = []
-    goBinding :: Binding -> [Int]
-    goBinding (BiTau _ expr) = goExpr expr
-    goBinding (BiLambda (FnSymbol idx)) = [idx]
-    goBinding _ = []
-    goArgument :: Argument -> [Int]
-    goArgument (ArTau _ expr) = goExpr expr
-    goArgument (ArAlpha _ expr) = goExpr expr
+    goExpr :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Expression -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
+    goExpr walked@(seen, met, found) term
+      | compound term && term `elem` IntMap.findWithDefault [] digest seen = walked
+      | compound term = nested (IntMap.insertWith (++) digest [term] seen, met, found) term
+      | otherwise = nested walked term
+      where
+        digest :: Int
+        digest = hashExpression term
+    compound :: Expression -> Bool
+    compound (ExFormation _) = True
+    compound (ExApplication _ _) = True
+    compound (ExDispatch _ _) = True
+    compound _ = False
+    nested :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Expression -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
+    nested walked (ExFormation bds) = List.foldl' goBinding walked bds
+    nested walked (ExApplication expr arg) = goArgument (goExpr walked expr) arg
+    nested walked (ExDispatch expr _) = goExpr walked expr
+    nested walked (ExPhiMeet _ _ expr) = goExpr walked expr
+    nested walked (ExPhiAgain _ _ expr) = goExpr walked expr
+    nested walked _ = walked
+    goBinding :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Binding -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
+    goBinding walked (BiTau _ expr) = goExpr walked expr
+    goBinding walked@(seen, met, found) (BiLambda (FnSymbol idx))
+      | IntSet.member idx met = walked
+      | otherwise = (seen, IntSet.insert idx met, idx : found)
+    goBinding walked _ = walked
+    goArgument :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Argument -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
+    goArgument walked (ArTau _ expr) = goExpr walked expr
+    goArgument walked (ArAlpha _ expr) = goExpr walked expr
 
 lifted :: Int -> Int -> Expression -> Expression
 lifted floor' offset = goExpr
