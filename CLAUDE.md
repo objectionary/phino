@@ -805,7 +805,11 @@ the firing that minted a symbol the answer holds, and writes `renamed
 markup `<renamed … from="…">` holding an `<as symbol by/>` per symbol. So a
 mutual recursion whose rounds differ only in the symbols of their positions
 costs firings linear in its depth, not exponential, while the cut still
-counts every round that is running (#2374).
+counts every round that is running (#2374). `abstracted` of `Morph.hs`,
+which makes the key of both, walks every distinct term once, keeping what
+it made of it by `hashExpression`, and a node keeps its `hashShape` beside
+its hash, since a term reaching the value below it twice through ρ is a
+tree doubling per level that is small in memory (#2453).
 
 A formation a join fabricates binds `left🌵` and `right🌵` to names of its
 sides, `𝑛·1` and `𝑛·2`, not to the sides themselves (`Sides.hs`, `_sides` of
