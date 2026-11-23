@@ -30,7 +30,7 @@ import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
 import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
-import Morph (Deadline (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, factual, fired, inferred, insideUniverse, morph, morph', normalized, noted, voided)
+import Morph (Answer (..), Deadline (..), Firing (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, factual, fired, inferred, insideUniverse, kindle, kindred, memoized, morph, morph', normalized, noted, placed, voided)
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -311,6 +311,22 @@ spec = do
       ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
       timeout 10000000 (enter (formation ExXi 1700) ctx)
         `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))
+
+  describe "looks for a kindred firing in a term holding the level below it twice" $
+    it "walks every distinct term once" $ do
+      let doubled :: T.Text -> Expression -> Expression
+          doubled label inner = ExFormation [BiTau AtRho inner, BiTau (AtLabel label) inner]
+          leaf = ExFormation [BiDelta (BtOne "01")]
+          deep :: T.Text -> Expression
+          deep label = iterate (doubled label) leaf !! 60
+      memo <- memoized (Just Plausible)
+      ctx <- defaultReduceContext ExRoot
+      placed memo leaf 1
+      found <- timeout 10000000 $ do
+        kindle ctx._sides memo (deep "x") (Firing "L_f" [] []) (Joined (ExFormation [BiLambda (FnSymbol 2)]))
+        kin <- kindred ctx{_memo = memo} (deep "y")
+        pure (maybe [] (\(_, _, posed) -> posed) kin)
+      found `shouldBe` Just []
 
   describe "names a cut by the facts however wide they are" $
     it "names a cut held at the end of a wide fact long before the deadline" $ do

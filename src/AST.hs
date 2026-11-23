@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -59,8 +58,8 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
-import GHC.Exts (isTrue#, reallyUnsafePtrEquality#)
 import GHC.Generics (Generic)
+import Pointer (identical)
 
 data Slot = Slot Text Int
   deriving (Eq, Ord, Show)
@@ -78,7 +77,7 @@ data Expression
   | ExPhiAgain (Maybe String) Int Expression
   | ExBytes Bytes
 
-data Facts = Facts !Int !Int !Int !Bool !Bool
+data Facts = Facts !Int Int !Int !Bool !Bool
 
 {-# COMPLETE ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes #-}
 
@@ -125,7 +124,7 @@ established :: Expression -> Facts
 established term = Facts (layer id hashExpression term) (layer (const 0) hashShape term) (tally term) (calm term) (unrepeated term)
 
 instance Eq Expression where
-  left == right = left `seq` right `seq` (isTrue# (reallyUnsafePtrEquality# left right) || congruent left right)
+  left == right = identical left right || congruent left right
     where
       congruent :: Expression -> Expression -> Bool
       congruent (Formed facts bds) (Formed facts' bds') = alongside facts facts' && bds == bds'
