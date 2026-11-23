@@ -809,7 +809,9 @@ counts every round that is running (#2374). `abstracted` of `Morph.hs`,
 which makes the key of both, walks every distinct term once, keeping what
 it made of it by `hashExpression`, and a node keeps its `hashShape` beside
 its hash once asked, since a term reaching the value below it twice through
-ρ is a tree doubling per level that is small in memory (#2453). The walk and every
+ρ is a tree doubling per level that is small in memory (#2453). So does
+`spelled` of `Sides.hs`, which walks nothing where no name is spelt back, so
+a run `--partial` parks spells its residue at once (#2456). The walk and every
 other cache of terms rest on the pointer shortcut of `Eq Expression`, which
 `identical` of `Pointer.hs` takes; that module is built with `-fno-hpc`,
 since a coverage build wraps every use of a variable in a fresh thunk and
