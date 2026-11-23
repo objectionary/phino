@@ -805,7 +805,15 @@ the firing that minted a symbol the answer holds, and writes `renamed
 markup `<renamed … from="…">` holding an `<as symbol by/>` per symbol. So a
 mutual recursion whose rounds differ only in the symbols of their positions
 costs firings linear in its depth, not exponential, while the cut still
-counts every round that is running (#2374).
+counts every round that is running (#2374). `abstracted` of `Morph.hs`,
+which makes the key of both, walks every distinct term once, keeping what
+it made of it by `hashExpression`, and a node keeps its `hashShape` beside
+its hash once asked, since a term reaching the value below it twice through
+ρ is a tree doubling per level that is small in memory (#2453). The walk and every
+other cache of terms rest on the pointer shortcut of `Eq Expression`, which
+`identical` of `Pointer.hs` takes; that module is built with `-fno-hpc`,
+since a coverage build wraps every use of a variable in a fresh thunk and
+two uses of one term would never be the same pointer.
 
 A formation a join fabricates binds `left🌵` and `right🌵` to names of its
 sides, `𝑛·1` and `𝑛·2`, not to the sides themselves (`Sides.hs`, `_sides` of
@@ -841,7 +849,8 @@ The walks that copy a term to change it, `renamedTerm` and `abstracted` of
 node, binding and argument nothing changed under (`intact` of `AST.hs`), so a
 copy of a wide object stays shared with the world and the memo keeps no
 private copy of it (#2392). For the same reason every field of `Facts` of
-`AST.hs` is strict, so a node carries no thunk, the writers keep the texts
+`AST.hs` but the `hashShape`, which only the memo and the cut ask for, is
+strict, so a node carries no other thunk, the writers keep the texts
 of `_stated` and `_attested` packed, since a `String` costs some forty
 bytes a character, and `forked` builds the `on🌵` binding and the paths
 `ρ.left🌵` and `ρ.right🌵` once for all the branches of a formation.

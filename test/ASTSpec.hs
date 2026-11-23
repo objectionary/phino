@@ -427,6 +427,11 @@ spec = do
         `shouldBe` hashShape (ExFormation [BiTau (AtLabel "n") (ExFormation [BiLambda (FnSymbol 5)])])
     it "does not hash two terms differing by a datum alike" $
       hashShape (ExFormation [BiDelta (BtOne "0A")]) `shouldNotBe` hashShape (ExFormation [BiDelta (BtOne "0B")])
+    it "hashes a term holding the level below it twice without walking it as a tree" $ do
+      let doubled :: Expression -> Expression
+          doubled inner = ExFormation [BiTau AtRho inner, BiTau (AtLabel "x") inner]
+          deep = iterate doubled (ExFormation [BiLambda (FnSymbol 1)]) !! 60
+      hashShape deep `shouldBe` hashShape (doubled (iterate doubled (ExFormation [BiLambda (FnSymbol 2)]) !! 59))
 
   describe "BaseObject pattern" $ do
     it "constructs a Q-dispatch expression" $

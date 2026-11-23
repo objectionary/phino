@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -59,8 +58,8 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
-import GHC.Exts (isTrue#, reallyUnsafePtrEquality#)
 import GHC.Generics (Generic)
+import Pointer (identical)
 
 data Slot = Slot Text Int
   deriving (Eq, Ord, Show)
@@ -78,7 +77,7 @@ data Expression
   | ExPhiAgain (Maybe String) Int Expression
   | ExBytes Bytes
 
-data Facts = Facts !Int !Int !Bool !Bool
+data Facts = Facts !Int Int !Int !Bool !Bool
 
 {-# COMPLETE ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes #-}
 
@@ -122,10 +121,10 @@ known (Dispatched facts _ _) = facts
 known term = established term
 
 established :: Expression -> Facts
-established term = Facts (layer id hashExpression term) (tally term) (calm term) (unrepeated term)
+established term = Facts (layer id hashExpression term) (layer (const 0) hashShape term) (tally term) (calm term) (unrepeated term)
 
 instance Eq Expression where
-  left == right = left `seq` right `seq` (isTrue# (reallyUnsafePtrEquality# left right) || congruent left right)
+  left == right = identical left right || congruent left right
     where
       congruent :: Expression -> Expression -> Bool
       congruent (Formed facts bds) (Formed facts' bds') = alongside facts facts' && bds == bds'
@@ -141,7 +140,7 @@ instance Eq Expression where
       congruent (ExBytes bts) (ExBytes bts') = bts == bts'
       congruent _ _ = False
       alongside :: Facts -> Facts -> Bool
-      alongside (Facts digest _ _ _) (Facts digest' _ _ _) = digest == digest'
+      alongside (Facts digest _ _ _ _) (Facts digest' _ _ _ _) = digest == digest'
 
 instance Ord Expression where
   compare (ExFormation bds) (ExFormation bds') = compare bds bds'
@@ -244,10 +243,11 @@ instance Show Alpha where
 
 hashExpression :: Expression -> Int
 hashExpression term = case known term of
-  Facts digest _ _ _ -> digest
+  Facts digest _ _ _ _ -> digest
 
 hashShape :: Expression -> Int
-hashShape = layer (const 0) hashShape
+hashShape term = case known term of
+  Facts _ shape _ _ _ -> shape
 
 isName :: Text -> Bool
 isName = T.isPrefixOf "n·"
@@ -624,7 +624,7 @@ denoted = goExpr
 
 countNodes :: Expression -> Int
 countNodes term = case known term of
-  Facts _ size _ _ -> size
+  Facts _ _ size _ _ -> size
 
 tally :: Expression -> Int
 tally (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
@@ -643,11 +643,11 @@ tally _ = 1
 
 inert :: Expression -> Bool
 inert term = case known term of
-  Facts _ _ still _ -> still
+  Facts _ _ _ still _ -> still
 
 distinct :: Expression -> Bool
 distinct term = case known term of
-  Facts _ _ _ unique -> unique
+  Facts _ _ _ _ unique -> unique
 
 unrepeated :: Expression -> Bool
 unrepeated (ExFormation bds) = isNothing (repeated bds)

@@ -313,41 +313,45 @@ placed _ _ _ = pure ()
 spotted :: Spots -> Expression -> Maybe Int
 spotted (Spots known _) term = lookup term (Map.findWithDefault [] (hashExpression term) known)
 
+type Abstraction = (Expression, Map.Map Int Expression)
+
 abstracted :: Sides -> Spots -> Expression -> IO (Expression, [(Int, Expression)])
 abstracted store spots form = do
   cache <- newIORef Map.empty
-  goExpr cache form
+  second Map.toList <$> goExpr cache form
   where
-    goExpr :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Expression -> IO (Expression, [(Int, Expression)])
-    goExpr cache term = maybe (nested cache term) (\idx -> pure (ExFormation [BiLambda (FnSymbol idx)], [(idx, term)])) (spotted spots term)
-    nested :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Expression -> IO (Expression, [(Int, Expression)])
+    goExpr :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Expression -> IO Abstraction
+    goExpr cache term = do
+      done <- readIORef cache
+      case lookup term (Map.findWithDefault [] (hashExpression term) done) of
+        Just again -> pure again
+        Nothing -> do
+          made@(made', posed) <- maybe (nested cache term) (\idx -> pure (ExFormation [BiLambda (FnSymbol idx)], Map.singleton idx term)) (spotted spots term)
+          _ <- evaluate made'
+          _ <- evaluate posed
+          made <$ modifyIORef' cache (Map.insertWith (++) (hashExpression term) [(term, made)])
+    nested :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Expression -> IO Abstraction
     nested cache term@(ExMeta name)
       | isName name = do
-          done <- readIORef cache
-          case Map.lookup name done of
-            Just again -> pure again
-            Nothing -> do
-              side <- opened store term
-              made <-
-                if side == term
-                  then pure (term, [])
-                  else do
-                    (side', posed) <- goExpr cache side
-                    if side' == side then pure (term, posed) else (,posed) <$> named store side'
-              made <$ modifyIORef' cache (Map.insert name made)
+          side <- opened store term
+          if side == term
+            then pure (term, Map.empty)
+            else do
+              (side', posed) <- goExpr cache side
+              if side' == side then pure (term, posed) else (,posed) <$> named store side'
     nested cache term@(ExFormation bds) = do
       parts <- mapM (goBinding cache) bds
-      pure (intact bds term ExFormation (map fst parts), concatMap snd parts)
+      pure (intact bds term ExFormation (map fst parts), Map.unions (map snd parts))
     nested cache term@(ExApplication expr arg) = do
       (expr', one) <- goExpr cache expr
       (arg', two) <- goArgument cache arg
-      pure (intact (expr, arg) term (uncurry ExApplication) (expr', arg'), one ++ two)
+      pure (intact (expr, arg) term (uncurry ExApplication) (expr', arg'), Map.union one two)
     nested cache term@(ExDispatch expr attr) = first (intact expr term (`ExDispatch` attr)) <$> goExpr cache expr
-    nested _ term = pure (term, [])
-    goBinding :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Binding -> IO (Binding, [(Int, Expression)])
+    nested _ term = pure (term, Map.empty)
+    goBinding :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Binding -> IO (Binding, Map.Map Int Expression)
     goBinding cache bd@(BiTau attr expr) = first (intact expr bd (BiTau attr)) <$> goExpr cache expr
-    goBinding _ bd = pure (bd, [])
-    goArgument :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Argument -> IO (Argument, [(Int, Expression)])
+    goBinding _ bd = pure (bd, Map.empty)
+    goArgument :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Argument -> IO (Argument, Map.Map Int Expression)
     goArgument cache arg@(ArTau attr expr) = first (intact expr arg (ArTau attr)) <$> goExpr cache expr
     goArgument cache arg@(ArAlpha alpha expr) = first (intact expr arg (ArAlpha alpha)) <$> goExpr cache expr
 

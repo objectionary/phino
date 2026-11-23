@@ -82,6 +82,7 @@ library
     Morph
     Must
     Parser
+    Pointer
     Printer
     Random
     Regexp

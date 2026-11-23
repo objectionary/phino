@@ -1742,6 +1742,20 @@ spec = do
             records <- map (dropWhile (== ' ')) . lines <$> readProtocol path
             records `shouldContain` ["looped 𝜎5 := 𝑛·5·1.plus  # plausible, repeats 𝑛·0·4"]
 
+      describe "over a world whose levels share the value below them twice" $ do
+        let level :: String -> String
+            level inner = "⟦ ρ ↦ ∅, x ↦ ∅, l ↦ ⟦ ρ ↦ ∅, x ↦ ∅, y ↦ ∅, m ↦ ⟦ ρ ↦ ∅, f ↦ ⟦ λ ⤍ L_f, ρ ↦ ∅ ⟧ ⟧ ⟧( x ↦ ξ.x, y ↦ ξ.x ).m ⟧( x ↦ " ++ inner ++ " ).l"
+            world = "⟦ mk ↦ " ++ iterate level "⟦ ρ ↦ ∅ ⟧" !! 24 ++ ", app ↦ Φ.mk.f ⟧"
+            atoms = T.pack "- λ: L_f\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+        it "fires the atom without walking the shared values as a tree" $
+          timeout
+            60000000
+            ( withLambdasOf atoms $ \file ->
+                withStdin world $
+                  testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--max-cycles=1000"] ["40-45-00-00-00-00-00-00"]
+            )
+            >>= (`shouldBe` Just ())
+
       describe "over a recursion that hands its own growing call to an atom" $ do
         let world = "⟦ go(x) ↦ ⟦ λ ⤍ L_go ⟧, seq(i) ↦ ⟦ ok ↦ Φ.go( Φ.seq( i.next ).ok ) ⟧, app ↦ Φ.seq( 𝜎1:λ ).ok ⟧"
             atoms = T.pack "- λ: L_go\n  morph: {𝑛1: $.x}\n  𝑛: 𝑛1\n"
