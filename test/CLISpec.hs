@@ -4797,9 +4797,9 @@ spec = do
       withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
         testCLISucceeded ["sodg", "--input=xmir"] ["F c0 app\nF c1 x\nD c2 c0 number\nP c1 x c2\nP c0 app c1\n"]
 
-    it "fails on ⊥ and names the attribute" $
+    it "prints ⊥ as a terminator" $
       withStdin "⟦ a ↦ ⊥ ⟧" $
-        testCLIFailed ["sodg"] ["The attribute Φ.a is ⊥"]
+        testCLISucceeded ["sodg"] ["F c0 a\nT c1\nP c0 a c1\n"]
 
     it "rejects an option of other commands" $
       withStdin "⟦⟧" $

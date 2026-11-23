@@ -54,7 +54,7 @@ spec = do
       )
 
   describe "sodg keeps its four promises on any program" $ do
-    prop "every F, D and A makes a fresh name and a command uses only names made above it" $ \(Grown grown) ->
+    prop "every F, D, A and T makes a fresh name and a command uses only names made above it" $ \(Grown grown) ->
       let expr = scrubbed False grown
        in either (counterexample "the walk failed" . const False) (ordered expr) (commands expr)
     prop "every attached attribute of every formation gets exactly one P" $ \(Grown grown) ->
@@ -80,6 +80,7 @@ ordered expr graph = counterexample (printExpression expr ++ "\n" ++ printComman
       Formation self _ -> [self]
       Dispatch self _ _ -> [self]
       Application self _ _ _ -> [self]
+      Terminator self -> [self]
       _ -> []
     used :: Command -> [Int]
     used = \case
@@ -89,6 +90,7 @@ ordered expr graph = counterexample (printExpression expr ++ "\n" ++ printComman
       Put self _ kid -> [self, kid]
       Delta self _ -> [self]
       Lambda self _ -> [self]
+      Terminator _ -> []
 
 attached :: Expression -> [Command] -> Property
 attached expr graph =
@@ -129,6 +131,7 @@ scrubbed inside = \case
   ExApplication inner (ArTau attr arg) -> ExApplication (scrubbed inside inner) (ArTau (label attr) (scrubbed inside arg))
   ExApplication inner (ArAlpha alpha arg) -> ExApplication (scrubbed inside inner) (ArAlpha (indexed alpha) (scrubbed inside arg))
   ExXi | inside -> ExXi
+  ExTermination -> ExTermination
   _ -> ExRoot
   where
     binding :: Binding -> Maybe Binding

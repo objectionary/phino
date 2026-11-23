@@ -30,17 +30,15 @@ data Command
   | Put Int Text Int
   | Delta Int Text
   | Lambda Int Text
+  | Terminator Int
   deriving (Eq, Show)
 
 data SodgException
-  = Terminated Text
-  | Patterned Text Text
+  = Patterned Text Text
   | Unbound Text
   deriving (Exception)
 
 instance Show SodgException where
-  show (Terminated place) =
-    T.unpack ("The attribute " <> place <> " is ⊥, which no SODG command makes")
   show (Patterned place what) =
     T.unpack ("The term at " <> place <> " holds " <> what <> ", which only a pattern of a rule may hold, not a program")
   show (Unbound place) =
@@ -62,7 +60,7 @@ commands expr = reverse . snd <$> top expr
     go (Just around) _ ExXi walk = Right (around, walk)
     go Nothing place ExXi _ = Left (Unbound place)
     go _ _ ExRoot walk = Right (0, walk)
-    go _ place ExTermination _ = Left (Terminated place)
+    go _ _ ExTermination (next, done) = Right (next, (next + 1, Terminator next : done))
     go around place (ExDispatch base attr) walk = do
       name <- attribute place attr
       (from, (next, done)) <- go around place base walk
@@ -132,3 +130,4 @@ printCommands = concatMap ((++ "\n") . unwords . spelled)
       Put self attr kid -> ["P", vertex self, T.unpack attr, vertex kid]
       Delta self data' -> ["Δ", vertex self, T.unpack data']
       Lambda self name -> ["λ", vertex self, T.unpack name]
+      Terminator self -> ["T", vertex self]
