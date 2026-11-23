@@ -49,27 +49,39 @@ given spelt (Sides store) term = atomicModifyIORef' store found
 spelled :: Sides -> Expression -> IO Expression
 spelled (Sides store) whole = do
   Store terms _ _ kept _ <- readIORef store
-  cache <- newIORef Map.empty
-  let goExpr :: Expression -> IO Expression
-      goExpr term@(ExMeta name)
-        | Set.member name kept = do
-            done <- readIORef cache
-            case Map.lookup name done of
-              Just again -> pure again
-              Nothing -> do
-                made <- maybe (pure term) goExpr (Map.lookup name terms)
-                made <$ modifyIORef' cache (Map.insert name made)
-      goExpr term@(ExFormation bds) = intact bds term ExFormation <$> mapM goBinding bds
-      goExpr term@(ExApplication inner arg) = intact (inner, arg) term (uncurry ExApplication) <$> ((,) <$> goExpr inner <*> goArgument arg)
-      goExpr term@(ExDispatch inner attr) = intact inner term (`ExDispatch` attr) <$> goExpr inner
-      goExpr term = pure term
-      goBinding :: Binding -> IO Binding
-      goBinding bd@(BiTau attr term) = intact term bd (BiTau attr) <$> goExpr term
-      goBinding bd = pure bd
-      goArgument :: Argument -> IO Argument
-      goArgument arg@(ArTau attr term) = intact term arg (ArTau attr) <$> goExpr term
-      goArgument arg@(ArAlpha alpha term) = intact term arg (ArAlpha alpha) <$> goExpr term
-  goExpr whole
+  if Set.null kept
+    then pure whole
+    else do
+      cache <- newIORef IntMap.empty
+      goExpr terms kept cache whole
+  where
+    goExpr :: Map.Map Text Expression -> Set.Set Text -> IORef (IntMap.IntMap [(Expression, Maybe Expression)]) -> Expression -> IO Expression
+    goExpr terms kept cache term = do
+      done <- readIORef cache
+      case lookup term (IntMap.findWithDefault [] digest done) of
+        Just again -> pure (fromMaybe term again)
+        Nothing -> do
+          made <- nested term
+          let change = if made == term then Nothing else Just made
+          made <$ modifyIORef' cache (IntMap.insertWith (++) digest [(term, change)])
+      where
+        digest :: Int
+        digest = hashExpression term
+        walk :: Expression -> IO Expression
+        walk = goExpr terms kept cache
+        nested :: Expression -> IO Expression
+        nested meta@(ExMeta name)
+          | Set.member name kept = maybe (pure meta) walk (Map.lookup name terms)
+        nested form@(ExFormation bds) = intact bds form ExFormation <$> mapM goBinding bds
+        nested app@(ExApplication inner arg) = intact (inner, arg) app (uncurry ExApplication) <$> ((,) <$> walk inner <*> goArgument arg)
+        nested disp@(ExDispatch inner attr) = intact inner disp (`ExDispatch` attr) <$> walk inner
+        nested other = pure other
+        goBinding :: Binding -> IO Binding
+        goBinding bd@(BiTau attr expr) = intact expr bd (BiTau attr) <$> walk expr
+        goBinding bd = pure bd
+        goArgument :: Argument -> IO Argument
+        goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> walk expr
+        goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> walk expr
 
 opened :: Sides -> Expression -> IO Expression
 opened store term = do
