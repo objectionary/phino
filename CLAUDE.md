@@ -133,6 +133,11 @@ of `Rewriter.hs` wraps the matcher and the replacer; `direct` wraps a compiled
 function, finds the places it matches at with `sites` of `Matcher.hs` in the
 order the deep matcher finds them, and hands them to the same
 `replaceExpression`, so the chain of steps is the same with either engine.
+Once it replaced a site, `replaceExpression` drops the sites that one held
+(`swallowed` of `Replacer.hs`), counting them in it the way the replacer looks
+for a site, so it never walks into an inert term for a site that is not inert.
+A site holds its parent under ρ, which a tree counts again at every place it
+stands, and walking it all cost a step seconds (#2451).
 `rewrite'` tries only the steps `_matching` names, asked again only once a step
 changed the term. The compiled engine finds them all in one walk over the term
 (`hits` of `Matcher.hs`) and builds its normal-form test on the same walk; the
