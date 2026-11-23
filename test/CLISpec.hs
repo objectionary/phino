@@ -1747,6 +1747,18 @@ spec = do
             level inner = "⟦ ρ ↦ ∅, x ↦ ∅, l ↦ ⟦ ρ ↦ ∅, x ↦ ∅, y ↦ ∅, m ↦ ⟦ ρ ↦ ∅, f ↦ ⟦ λ ⤍ L_f, ρ ↦ ∅ ⟧ ⟧ ⟧( x ↦ ξ.x, y ↦ ξ.x ).m ⟧( x ↦ " ++ inner ++ " ).l"
             world = "⟦ mk ↦ " ++ iterate level "⟦ ρ ↦ ∅ ⟧" !! 24 ++ ", app ↦ Φ.mk.f ⟧"
             atoms = T.pack "- λ: L_f\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+            triple :: String -> String
+            triple target = "⟦ dataized(target, big) ↦ L_dataized:λ, peek(target) ↦ L_peek:λ, p ↦ ⟦ a ↦ Φ.dataized( target ↦ Φ.u, big ↦ Φ.mk.f ), b ↦ Φ.peek( target ↦ Φ.v ), c ↦ Φ.dataized( target ↦ Φ." ++ target ++ ", big ↦ Φ.mk.f ), λ ⤍ L_triple ⟧.φ, u ↦ ⟦ λ ⤍ 𝜎1 ⟧, v ↦ ⟦ λ ⤍ 𝜎2 ⟧, w ↦ ⟦ λ ⤍ 𝜎1 ⟧, mk ↦ " ++ iterate level "⟦ ρ ↦ ∅ ⟧" !! 30 ++ " ⟧"
+            firings = T.pack "- λ: L_dataized\n  dataize: {𝛿1: $.target}\n  morph: {𝑛1: $.big}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_peek\n  dataize: {𝛿1: $.target}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_triple\n  morph: {𝑛1: $.a, 𝑛2: $.b, 𝑛3: $.c}\n  evaluate: {𝑛4: 𝑛1, 𝑛5: 𝑛2, 𝑛6: 𝑛3}\n  𝑛: ⟦ φ ↦ ⟦ a ↦ 𝑛4, b ↦ 𝑛5, c ↦ 𝑛6 ⟧ ⟧\n"
+            recorded :: String -> IO (Maybe [String])
+            recorded target =
+              timeout 60000000 $
+                withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+                  hClose stream
+                  withLambdasOf firings $ \file ->
+                    withStdin (triple target) $
+                      testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.p", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--sweet", "--hide-rho", "--max-cycles=1000", "--minutes=" ++ path] ["⊥"]
+                  map (dropWhile (== ' ')) . lines <$> readProtocol path
         it "fires the atom without walking the shared values as a tree" $
           timeout
             60000000
@@ -1755,6 +1767,10 @@ spec = do
                   testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--max-cycles=1000"] ["40-45-00-00-00-00-00-00"]
             )
             >>= (`shouldBe` Just ())
+        it "takes the answer of a kindred firing without walking the shared values as a tree" $
+          recorded "v" >>= (`shouldSatisfy` maybe False (elem "renamed 𝑛·1·14 ⇛ 𝜎5:λ  # from 𝑛·1·5, 𝜎1 as 𝜎2, 𝜎3 as 𝜎5"))
+        it "takes the answer of a firing of the same operands without walking the shared values as a tree" $
+          recorded "w" >>= (`shouldSatisfy` maybe False (elem "recalled 𝑛·1·5 ⇒ 𝜎3:λ"))
 
       describe "over a recursion that hands its own growing call to an atom" $ do
         let world = "⟦ go(x) ↦ ⟦ λ ⤍ L_go ⟧, seq(i) ↦ ⟦ ok ↦ Φ.go( Φ.seq( i.next ).ok ) ⟧, app ↦ Φ.seq( 𝜎1:λ ).ok ⟧"

@@ -11,7 +11,7 @@
 module MorphSpec (spec) where
 
 import AST
-import Control.Exception (SomeException)
+import Control.Exception (SomeException, evaluate)
 import Control.Monad
 import Data.Aeson (FromJSON)
 import Data.IORef (modifyIORef', newIORef, readIORef)
@@ -30,7 +30,7 @@ import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
 import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
-import Morph (Answer (..), Deadline (..), Firing (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, factual, fired, inferred, insideUniverse, kindle, kindred, memoized, morph, morph', normalized, noted, placed, voided)
+import Morph (Answer (..), Deadline (..), Firing (..), ReduceContext (..), adopted, declared, emptyState, ended, enter, execBuildTerm, factual, fired, inferred, insideUniverse, kindle, kindred, memoized, morph, morph', normalized, noted, placed, voided)
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -327,6 +327,25 @@ spec = do
         kin <- kindred ctx{_memo = memo} (deep "y")
         pure (maybe [] (\(_, _, posed) -> posed) kin)
       found `shouldBe` Just []
+
+  describe "takes the answer of a kindred firing holding the level below it twice" $
+    it "renames every distinct term once" $ do
+      let doubled :: Expression -> Expression
+          doubled inner = ExFormation [BiTau AtRho inner, BiTau (AtLabel "zo") inner]
+          deep :: Int -> Expression
+          deep idx = iterate doubled (ExFormation [BiLambda (FnSymbol idx)]) !! 60
+          form :: Int -> Expression
+          form idx = ExFormation [BiTau (AtLabel "on") (ExFormation [BiLambda (FnSymbol idx)]), BiLambda (Function "L_f")]
+          kept :: Expression
+          kept = deep 1
+      memo <- memoized (Just Plausible)
+      ctx <- defaultReduceContext ExRoot
+      renamed <- timeout 10000000 $ do
+        kindle ctx._sides memo (form 1) (Firing "L_f" [Left 1] [kept]) (Joined kept)
+        kin <- kindred ctx{_memo = memo} (form 2)
+        answer <- maybe (pure Raised) (\found -> adopted ctx{_memo = memo} found (form 2)) kin
+        evaluate (hashExpression (ended answer))
+      renamed `shouldBe` Just (hashExpression (deep 2))
 
   describe "names a cut by the facts however wide they are" $
     it "names a cut held at the end of a wide fact long before the deadline" $ do

@@ -79,7 +79,7 @@ data Spots = Spots (Store Int) (Map.Map Int Expression)
 
 data Kindred = Kindred Expression Expression Firing Answer
 
-data Renaming = Renaming (IORef (Map.Map Int Int)) Spots (IORef (Set.Set Firing))
+data Renaming = Renaming (IORef (Map.Map Int Int)) Spots (IORef (Set.Set Firing)) (IORef (Store Expression))
 
 data Answer
   = Answer Expression Expression
@@ -389,12 +389,13 @@ adopted :: ReduceContext -> (Kindred, Map.Map Int Int, [(Int, Expression)]) -> E
 adopted ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places _ _) _)} (Kindred key form firing answer, pairing, posed) target = do
   table <- newIORef pairing
   visiting <- newIORef Set.empty
+  renamed <- newIORef Map.empty
   Spots known _ <- readIORef places
-  adopt ctx (Renaming table (Spots known (Map.fromList [(idx, fromMaybe (ExFormation [BiLambda (FnSymbol idx')]) (lookup idx' posed)) | idx <- symbols key, Just idx' <- [Map.lookup idx pairing]])) visiting) firing key form answer (Just target)
+  adopt ctx (Renaming table (Spots known (Map.fromList [(idx, fromMaybe (ExFormation [BiLambda (FnSymbol idx')]) (lookup idx' posed)) | idx <- symbols key, Just idx' <- [Map.lookup idx pairing]])) visiting renamed) firing key form answer (Just target)
 adopted _ _ _ = throwIO (userError "A renamed answer needs the memo of --acyclic=plausible")
 
 adopt :: ReduceContext -> Renaming -> Firing -> Expression -> Expression -> Answer -> Maybe Expression -> IO Answer
-adopt ctx renaming@(Renaming table _ visiting) firing key form answer target = do
+adopt ctx renaming@(Renaming table _ visiting _) firing key form answer target = do
   modifyIORef' visiting (Set.insert firing)
   firing' <- refired ctx renaming firing
   existing <- remembered ctx._memo firing'
@@ -444,40 +445,37 @@ refired ctx renaming (Firing func operands normals) = Firing func <$> mapM opera
     operand bytes = pure bytes
 
 renamedTerm :: ReduceContext -> Renaming -> Expression -> IO Expression
-renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _) term = do
-  renamed <- newIORef Map.empty
-  goExpr renamed term
+renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _ renamed) = goExpr
   where
-    goExpr :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    goExpr renamed expr = maybe (nested renamed expr) (spot renamed expr) (spotted spots expr)
-    spot :: IORef (Map.Map T.Text Expression) -> Expression -> Int -> IO Expression
-    spot renamed expr idx = maybe (nested renamed expr) pure (Map.lookup idx spelt)
-    nested :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    nested renamed expr@(ExMeta name)
+    goExpr :: Expression -> IO Expression
+    goExpr expr = do
+      done <- readIORef renamed
+      case lookup expr (Map.findWithDefault [] (hashExpression expr) done) of
+        Just again -> pure again
+        Nothing -> do
+          made <- evaluate =<< maybe (nested expr) (spot expr) (spotted spots expr)
+          made <$ modifyIORef' renamed (Map.insertWith (++) (hashExpression expr) [(expr, made)])
+    spot :: Expression -> Int -> IO Expression
+    spot expr idx = maybe (nested expr) pure (Map.lookup idx spelt)
+    nested :: Expression -> IO Expression
+    nested expr@(ExMeta name)
       | isName name = do
-          done <- readIORef renamed
-          case Map.lookup name done of
-            Just again -> pure again
-            Nothing -> do
-              side <- opened ctx._sides expr
-              made <- if side == expr then pure expr else named ctx._sides =<< goExpr renamed side
-              made <$ modifyIORef' renamed (Map.insert name made)
-    nested renamed expr = walked renamed expr
-    walked :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    walked renamed whole@(ExFormation bds) = intact bds whole ExFormation <$> suffixed (goBinding renamed) bds
-    walked renamed whole@(ExApplication expr arg) = intact (expr, arg) whole (uncurry ExApplication) <$> ((,) <$> goExpr renamed expr <*> goArgument renamed arg)
-    walked renamed whole@(ExDispatch expr attr) = intact expr whole (`ExDispatch` attr) <$> goExpr renamed expr
-    walked _ expr = pure expr
-    goBinding :: IORef (Map.Map T.Text Expression) -> Binding -> IO Binding
-    goBinding renamed bd@(BiTau attr expr) = intact expr bd (BiTau attr) <$> goExpr renamed expr
-    goBinding _ (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> renamedSymbol ctx renaming idx
-    goBinding _ bd = pure bd
-    goArgument :: IORef (Map.Map T.Text Expression) -> Argument -> IO Argument
-    goArgument renamed arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> goExpr renamed expr
-    goArgument renamed arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> goExpr renamed expr
+          side <- opened ctx._sides expr
+          if side == expr then pure expr else named ctx._sides =<< goExpr side
+    nested whole@(ExFormation bds) = intact bds whole ExFormation <$> suffixed goBinding bds
+    nested whole@(ExApplication expr arg) = intact (expr, arg) whole (uncurry ExApplication) <$> ((,) <$> goExpr expr <*> goArgument arg)
+    nested whole@(ExDispatch expr attr) = intact expr whole (`ExDispatch` attr) <$> goExpr expr
+    nested expr = pure expr
+    goBinding :: Binding -> IO Binding
+    goBinding bd@(BiTau attr expr) = intact expr bd (BiTau attr) <$> goExpr expr
+    goBinding (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> renamedSymbol ctx renaming idx
+    goBinding bd = pure bd
+    goArgument :: Argument -> IO Argument
+    goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> goExpr expr
+    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> goExpr expr
 
 renamedSymbol :: ReduceContext -> Renaming -> Int -> IO Int
-renamedSymbol ctx renaming@(Renaming table _ visiting) idx = do
+renamedSymbol ctx renaming@(Renaming table _ visiting _) idx = do
   known <- readIORef table
   maybe unknown pure (Map.lookup idx known)
   where
