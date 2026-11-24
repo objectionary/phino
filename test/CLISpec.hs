@@ -4369,6 +4369,30 @@ spec = do
         withStdin rungs $
           testCLIFailed ["morph", "--max-seconds=0"] ["--max-seconds must be positive"]
 
+      forM_ ["0.0", "-0.5", "-1"] $ \given ->
+        it ("fails with non-positive --max-seconds=" ++ given) $
+          withStdin rungs $
+            testCLIFailed ["morph", "--max-seconds=" ++ given] ["--max-seconds must be positive"]
+
+      forM_ ["NaN", "Infinity"] $ \given ->
+        it ("fails with --max-seconds=" ++ given) $
+          withStdin rungs $
+            testCLIFailed ["morph", "--max-seconds=" ++ given] ["--max-seconds must be a finite number"]
+
+      it "fails with a --max-seconds value that is no number" $
+        withStdin rungs $
+          testCLIFailed ["morph", "--max-seconds=1,5"] ["cannot parse '1,5' as a number of seconds"]
+
+      it "fails with a fractional --max-seconds value above maxBound Int, naming the limit" $
+        withStdin rungs $
+          testCLIFailed
+            ["morph", "--max-seconds=9223372036854775808.5"]
+            ["value must be between", "9223372036854775807"]
+
+      it "accepts a fractional --max-seconds a run fits in" $
+        withStdin "⟦ x ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" $
+          testCLISucceeded ["morph", "--locator=Q.x", "--max-seconds=2.5", "--flat"] ["01-"]
+
       it "fails with a --max-seconds value above maxBound Int, naming the limit" $
         withStdin rungs $
           testCLIFailed
@@ -4380,23 +4404,23 @@ spec = do
           bounded $
             withStdin rungs $
               testCLIFailed
-                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
-                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+                ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=0.01"]
+                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=0.01"]
 
       it "fails dataize once the --max-seconds budget is spent" $
         ladder $ \table ->
           bounded $
             withStdin rungs $
               testCLIFailed
-                ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1"]
-                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=1"]
+                ["dataize", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=0.01"]
+                ["[ERROR]: Evaluation did not finish before reaching the limit of seconds: --max-seconds=0.01"]
 
       it "prints the residue once the --max-seconds budget is spent with --partial" $
         ladder $ \table ->
           bounded $
             withStdin rungs $
               testCLISucceeded
-                ["morph", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
+                ["morph", "--symbolic=" ++ table, "--max-seconds=0.01", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
                 ["⟦ λ ⤍ L_split, n ↦ Φ.l1 ⟧.foo"]
 
       it "prints the residue of a dataization once the --max-seconds budget is spent with --partial" $
@@ -4404,10 +4428,10 @@ spec = do
           bounded $
             withStdin rungs $
               testCLISucceeded
-                ["dataize", "--symbolic=" ++ table, "--max-seconds=1", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
+                ["dataize", "--symbolic=" ++ table, "--max-seconds=0.01", "--locator=Q.x", "--partial", "--flat", "--hide-rho", "--sweet"]
                 ["⟦ λ ⤍ L_split, n ↦ Φ.l1 ⟧.foo"]
 
-      forM_ [(testCLIFailed, ["--max-seconds=1"], ["--locator=Q.x"]), (testCLISucceeded, [], ["--locator=Q.x", "--partial"])] $ \(run, outputs, opts) ->
+      forM_ [(testCLIFailed, ["--max-seconds=0.01"], ["--locator=Q.x"]), (testCLISucceeded, [], ["--locator=Q.x", "--partial"])] $ \(run, outputs, opts) ->
         it ("writes the timeout as the last line of the protocol with " ++ unwords opts) $
           ladder $ \table ->
             withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -4415,10 +4439,10 @@ spec = do
               bounded $
                 withStdin rungs $
                   run
-                    (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--minutes=" ++ path, "--quiet"] ++ opts)
+                    (["morph", "--symbolic=" ++ table, "--max-seconds=0.01", "--minutes=" ++ path, "--quiet"] ++ opts)
                     outputs
               records <- readProtocol path
-              take 2 (words (last (lines records))) `shouldBe` ["timeout", "1"]
+              take 2 (words (last (lines records))) `shouldBe` ["timeout", "0.01"]
 
       it "writes the timeout once to the XML protocol" $
         ladder $ \table ->
@@ -4427,10 +4451,10 @@ spec = do
             bounded $
               withStdin rungs $
                 testCLISucceeded
-                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--partial", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
+                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--partial", "--max-seconds=0.01", "--protocol=" ++ path, "--quiet"]
                   []
             records <- readProtocol path
-            length (filter (isInfixOf "<timeout limit=\"1\" by=\"morph\" at=\"") (lines records)) `shouldBe` 1
+            length (filter (isInfixOf "<timeout limit=\"0.01\" by=\"morph\" at=\"") (lines records)) `shouldBe` 1
 
       it "closes the XML protocol of a run out of time" $
         ladder $ \table ->
@@ -4439,8 +4463,8 @@ spec = do
             bounded $
               withStdin rungs $
                 testCLIFailed
-                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=1", "--protocol=" ++ path, "--quiet"]
-                  ["--max-seconds=1"]
+                  ["morph", "--symbolic=" ++ table, "--locator=Q.x", "--max-seconds=0.01", "--protocol=" ++ path, "--quiet"]
+                  ["--max-seconds=0.01"]
             document <- X.readFile X.def path
             X.nameLocalName (X.elementName (X.documentRoot document)) `shouldBe` T.pack "protocol"
 

@@ -7,7 +7,7 @@ import CLI.Types
 import Data.Char (isDigit, toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
-import Deps (Acyclic, certainty)
+import Deps (Acyclic, Duration (..), certainty)
 import LaTeX (defaultMeetLength, defaultMeetPopularity)
 import Lining (LineFormat (..))
 import Logger
@@ -18,6 +18,7 @@ import Parser (Form (..))
 import Paths_phino (version)
 import Sugar (SugarType (..))
 import Text.Printf (printf)
+import Text.Read (readMaybe)
 
 validateIntOption :: (Int -> Bool) -> String -> Int -> ReadM Int
 validateIntOption cmp msg num
@@ -108,12 +109,25 @@ optMaxFirings =
         (long "max-firings" <> metavar "FIRINGS" <> help "Maximum number of λ functions the whole run may fire, unlimited unless given")
     )
 
-optMaxSeconds :: Parser (Maybe Int)
+durationOption :: ReadM Duration
+durationOption = do
+  given <- str
+  case readMaybe given :: Maybe Integer of
+    Just _ -> Duration given . fromIntegral <$> (boundedIntOption >>= validateIntOption (> 0) "--max-seconds must be positive")
+    Nothing -> case readMaybe given :: Maybe Double of
+      Just span'
+        | isNaN span' || isInfinite span' -> readerError (printf "--max-seconds must be a finite number, not '%s'" given)
+        | span' >= fromIntegral (maxBound :: Int) -> readerError (printf "value must be between %d and %d" (minBound :: Int) (maxBound :: Int))
+        | span' > 0 -> return (Duration given span')
+        | otherwise -> readerError "--max-seconds must be positive"
+      Nothing -> readerError (printf "cannot parse '%s' as a number of seconds" given)
+
+optMaxSeconds :: Parser (Maybe Duration)
 optMaxSeconds =
   optional
     ( option
-        (boundedIntOption >>= validateIntOption (> 0) "--max-seconds must be positive")
-        (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, unlimited unless given")
+        durationOption
+        (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, such as 2 or 0.5, unlimited unless given")
     )
 
 optMaxNodes :: Parser (Maybe Int)

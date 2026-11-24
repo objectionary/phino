@@ -234,7 +234,8 @@ Five options stop a run that goes on for too long:
 * `--max-steps` bounds how deep morphing and dataization may nest,
   `1000` by default;
 * `--max-firings` bounds how many λ functions the whole run may fire;
-* `--max-seconds` bounds how many seconds the whole run may take;
+* `--max-seconds` bounds how many seconds the whole run may take,
+  such as `0.5`;
 * `--max-nodes` bounds how many nodes the term of the run may grow to;
 * `--max-memory` bounds the live heap of the run, such as `8G`.
 

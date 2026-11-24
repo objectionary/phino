@@ -29,7 +29,7 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe, maybeToList)
 import qualified Data.Set as Set
 import qualified Data.Text as T
-import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep, sized)
+import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Duration (..), Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep, sized)
 import Engine (Engine (..))
 import GHC.Clock (getMonotonicTime)
 import GHC.Stats (GCDetails (..), RTSStats (..), getRTSStats, getRTSStatsEnabled)
@@ -67,7 +67,7 @@ data Tally = Tally
   }
 
 data Deadline = Deadline
-  { _seconds :: Int
+  { _seconds :: Duration
   , _until :: Double
   }
 
@@ -150,7 +150,7 @@ data Budget
   | Cycles Int
   | Nodes Int
   | Memory Int
-  | Seconds Int
+  | Seconds Duration
 
 data ReduceException
   = OutOfSteps Budget
@@ -177,7 +177,7 @@ instance Show ReduceException where
   show (OutOfSteps (Memory limit)) =
     printf "Evaluation did not finish before reaching the limit of memory: --max-memory=%s" (sized limit)
   show (OutOfSteps (Seconds limit)) =
-    printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%d" limit
+    printf "Evaluation did not finish before reaching the limit of seconds: --max-seconds=%s" limit._given
   show (OutOfStepsAt budget _ _) = show (OutOfSteps budget)
   show (Stuck func) = printf "No entry of --symbolic answers the λ function '%s'" (T.unpack func)
   show (StuckAt func _ _) = show (Stuck func)
@@ -221,8 +221,8 @@ measured ctx term = do
 tallied :: Maybe Int -> IO (Maybe Tally)
 tallied = traverse (\cap -> Tally cap <$> newIORef 0)
 
-timed :: Maybe Int -> IO (Maybe Deadline)
-timed = traverse (\cap -> Deadline cap . (+ fromIntegral cap) <$> getMonotonicTime)
+timed :: Maybe Duration -> IO (Maybe Deadline)
+timed = traverse (\cap -> Deadline cap . (+ cap._span) <$> getMonotonicTime)
 
 charged :: ReduceContext -> IO ()
 charged ctx = do
@@ -245,7 +245,7 @@ clocked ctx = mapM_ clock ctx._deadline
       now <- getMonotonicTime
       when (now >= due) (expired ctx cap)
 
-expired :: ReduceContext -> Int -> IO a
+expired :: ReduceContext -> Duration -> IO a
 expired ctx cap = do
   ctx._saveEval (EvTimeout ctx._nesting cap ctx._judgment ctx._site)
   throwIO (OutOfSteps (Seconds cap))
@@ -255,7 +255,7 @@ awaited ctx action = case ctx._deadline of
   Nothing -> action
   Just (Deadline cap due) -> do
     now <- getMonotonicTime
-    maybe (expired ctx cap) pure =<< timeout (ceiling (max 0 (due - now) * 1000000)) action
+    maybe (expired ctx cap) pure =<< timeout (ceiling (min (fromIntegral (maxBound `div` 2 :: Int)) (max 0 (due - now) * 1000000))) action
 
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
 memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> (Kin <$> newIORef (Spots Map.empty Map.empty) <*> newIORef Map.empty <*> newIORef Map.empty) <*> newIORef Map.empty)

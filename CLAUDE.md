@@ -771,7 +771,9 @@ timeout. The first step, firing, comparison or walk after the deadline writes
 `timeout …` (`EvTimeout`) and throws `OutOfSteps (Seconds …)`, so the run
 fails, or under `--partial` prints the residue the way it does for the other
 limits (#2355), and a caller that cannot wait gets a closed protocol ending in
-the timeout instead of killing the process (#1607).
+the timeout instead of killing the process (#1607). The limit may be a
+fraction, such as `0.01`, kept as a `Duration` of `Deps.hs` with the text the
+user gave, so the error and the `timeout` record print `1` as `1` (#2473).
 
 Every use of a binding copies the term bound to it, so one formation is fired as
 many times as the program reads it, and every firing mints symbols of its own. A
