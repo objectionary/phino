@@ -634,10 +634,15 @@ formation holding a λ, is the exception: under `plausible` too it repeats
 only a formation `alike` it, since copies of one atom called from different
 places resemble each other once a symbol stands in one of them, and a loop
 through copies of atoms alone repeats them exactly (`repeats` of `Morph.hs`,
-issue #2347). Only a boxed formation the copy holds, one binding φ and no λ
-or Δ, may grow inside it as `within` lets it (`akin` in `AST.hs`), so a
-recursion through a side of a fork, whose fabricated copies hold a copy of
-the recursive object with a bigger argument every round, is cut too (#2372).
+issue #2347). Where 𝔻 or 𝔼 enters a copy of an atom, though, a copy the
+facts lead back to the same object repeats it whatever its arguments, so an
+atom whose operand comes to another copy of it every round is cut too, unless
+an argument it binds anew is held inside the copy above, as in nested calls
+such as `Φ.d( Φ.d( 01-:Δ ) )`, whose arguments shrink (`shrunk`, #2466).
+Only a boxed formation the copy holds, one binding φ and no λ or Δ, may grow
+inside it as `within` lets it (`akin` in `AST.hs`), so a recursion
+through a side of a fork, whose fabricated copies hold a copy of the
+recursive object with a bigger argument every round, is cut too (#2372).
 So may a call not made yet, an application or a dispatch off one, seen
 through the names of `shared`, where the later one is deeper than the
 earlier one and holds it as `within` lets it, so a recursion handing its

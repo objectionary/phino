@@ -1806,6 +1806,33 @@ spec = do
             protocol <- readProtocol path
             length (filter (\record -> "𝑛" `isPrefixOf` record && "φ ↦ x.call ⟧" `isSuffixOf` record) (map (dropWhile (== ' ')) (lines protocol))) `shouldBe` 3
 
+      describe "over copies of one atom fired inside each other with a new argument every time" $ do
+        let world = "⟦ f ↦ ⟦ x ↦ ∅, λ ⤍ L_g ⟧, " ++ intercalate ", " [printf "a%d ↦ ⟦ φ ↦ Φ.f( x ↦ Φ.a%d ) ⟧" index (index `mod` 5 + 1) | index <- [1 .. 5 :: Int]] ++ ", app ↦ Φ.f( x ↦ Φ.a1 ) ⟧"
+            atoms = T.pack "- λ: L_g\n  dataize:\n    𝛿1: $.x\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+            firings :: String -> IO Int
+            firings loops =
+              withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+                hClose stream
+                withLambdasOf atoms $ \file ->
+                  withStdin world $
+                    testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=" ++ loops, "--partial", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+                length . filter ("𝔼(L_g)" `isPrefixOf`) . map (dropWhile (== ' ')) . lines <$> readProtocol path
+        it "cuts the second firing with --max-loops=0" $
+          firings "0" >>= (`shouldBe` 1)
+        it "cuts the third firing with --max-loops=1" $
+          firings "1" >>= (`shouldBe` 2)
+        it "cuts the fourth firing with --max-loops=2" $
+          firings "2" >>= (`shouldBe` 3)
+
+      it "dont cut copies of one atom fired inside each other with an argument the copy above holds" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf (T.pack "- λ: L_d\n  dataize:\n    𝛿1: $.t\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \file ->
+            withStdin "⟦ d(t) ↦ ⟦ λ ⤍ L_d ⟧, e ↦ Φ.d( Φ.d( Φ.d( Φ.d( Φ.d( Φ.d( 01-:Δ ) ) ) ) ) ) ⟧" $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.e", "--acyclic=plausible", "--max-loops=0", "--partial", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+          records <- readProtocol path
+          lines records `shouldNotSatisfy` any (isInfixOf "looped")
+
       it "refuses a negative count" $
         withStdin once $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=-1"] ["--max-loops must be >= 0"]
@@ -1937,7 +1964,7 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
       it "writes the copy holding a λ it cuts to the protocol as a call of the object" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["                                looped 𝜎6 := Φ.dataized( target ↦ 𝜎5:λ )  # plausible, repeats 𝑛·9·3"])
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["                      looped 𝜎8 := Φ.dataized( target ↦ 𝜎7:λ )  # plausible, repeats 𝑛·7·2"])
 
     describe "--acyclic at a copy holding a λ that evaluate fires" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ ⟦ φ ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.x ) ) ) ⟧ ⟧"
