@@ -2,4 +2,9 @@
 # SPDX-License-Identifier: MIT
 ---
 input: '⟦ a ↦ Φ.f( x ↦ ⊥ ) ⟧'
-fails: 'The attribute Φ.a.x is ⊥'
+output: |
+  F c0 a
+  D c1 c0 f
+  T c2
+  A c3 c1 x c2
+  P c0 a c3

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ x ↦ ⊥.foo, y ↦ ⊥( α0 ↦ ⟦⟧ ) ⟧'
+output: |
+  F c0 x y
+  T c1
+  D c2 c1 foo
+  P c0 x c2
+  T c3
+  F c4
+  A c5 c3 α0 c4
+  P c0 y c5

@@ -76,11 +76,12 @@ components: `library` (`src/`), executable `phino` (`app/`), test suite
 `src/CLI/Parsers.hs`.
 
 `sodg` (`Sodg.hs`, #2447) walks the term as written, normalizing nothing, and
-prints the commands `F`, `D`, `A`, `P`, `Δ` and `λ` that build its graph,
-naming cells `c0`, `c1` and so on: a formation takes its name before its
-bindings, a dispatch or an application after its operands, `Φ` is `c0` and `ξ`
-the nearest formation around. A term holding ⊥, a meta or a ξ outside every
-formation is refused.
+prints the commands `F`, `D`, `A`, `P`, `Δ`, `λ` and `T` that build its
+graph, naming cells `c0`, `c1` and so on: a formation takes its name before
+its bindings, a dispatch or an application after its operands, `Φ` is `c0`,
+`ξ` the nearest formation around, and every ⊥ a fresh cell `T` makes a
+terminator (#2455). A term holding a meta or a ξ outside every formation is
+refused.
 
 ### Two-phase rendering pipeline
 
