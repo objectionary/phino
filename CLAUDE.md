@@ -619,7 +619,12 @@ symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
 every round and never repeats a term (#1420). Under `plausible` the earlier one
 is embedded in the later one (`within` in `AST.hs`), so a recursion whose
 accumulator gains a wrapper every round is cut too, at the price of cutting
-now and then one that would have stopped (#1451). A copy of an atom, a
+now and then one that would have stopped (#1451). So is any other formation
+the facts lead back to the same object of the world as the earlier one, the
+way `Φ.f( x ↦ Φ.a2 )` leads to `Φ.f` as `Φ.f( x ↦ Φ.a1 )` does, whatever
+their arguments, since a recursion handing a new argument every round, such
+as one walking a ring of objects, never embeds one round in the next
+(`origin` of `repeats`, #2462). A copy of an atom, a
 formation holding a λ, is the exception: under `plausible` too it repeats
 only a formation `alike` it, since copies of one atom called from different
 places resemble each other once a symbol stands in one of them, and a loop

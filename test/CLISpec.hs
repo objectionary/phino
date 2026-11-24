@@ -12,7 +12,7 @@ import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
-import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
+import Data.List (intercalate, isInfixOf, isPrefixOf, isSuffixOf, sort)
 import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
@@ -1779,6 +1779,22 @@ spec = do
           withLambdasOf atoms $ \file ->
             withStdin world $
               testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--max-steps=200"] ["40-45-00-00-00-00-00-00"]
+
+      describe "over copies of one object made inside each other with a new argument every time" $ do
+        let world = "⟦ f ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.call ⟧, " ++ intercalate ", " [printf "a%d ↦ ⟦ call ↦ Φ.f( x ↦ Φ.a%d ) ⟧" index (index `mod` 5 + 1) | index <- [1 .. 5 :: Int]] ++ ", app ↦ Φ.f( x ↦ Φ.a1 ) ⟧"
+            copies :: String -> IO Int
+            copies loops =
+              withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+                hClose stream
+                withStdin world $
+                  testCLISucceeded ["dataize", "--locator=Q.app", "--acyclic=plausible", "--max-loops=" ++ loops, "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+                length . filter (\record -> "𝑛" `isPrefixOf` record && "φ ↦ x.call ⟧" `isSuffixOf` record) . map (dropWhile (== ' ')) . lines <$> readProtocol path
+        it "cuts the second copy with --max-loops=0" $
+          copies "0" >>= (`shouldBe` 2)
+        it "cuts the third copy with --max-loops=1" $
+          copies "1" >>= (`shouldBe` 3)
+        it "cuts the fourth copy with --max-loops=2" $
+          copies "2" >>= (`shouldBe` 4)
 
       it "refuses a negative count" $
         withStdin once $
