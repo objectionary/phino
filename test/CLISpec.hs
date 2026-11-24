@@ -4471,7 +4471,7 @@ spec = do
               hClose stream
               withLambdasOf entries $ \joins ->
                 withStdin program $
-                  testCLIFailed (["dataize", "--symbolic=" ++ joins, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) ["No entry of --symbolic answers the λ function 'L_fork'"]
+                  testCLISucceeded (["dataize", "--symbolic=" ++ joins, "--locator=Q.y", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] ++ options) []
               lines <$> readProtocol path
           deferred :: [String] -> String -> IO [String]
           deferred = recordedWith joining
@@ -4501,8 +4501,11 @@ spec = do
                      , "    <recalled of=\"𝑛·1·4\" as=\"𝑒·1·1\"/>"
                      , "    <recalled of=\"𝑛·1·2\" as=\"Φ.step\"/>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol attr=\"tup\">𝜎1</symbol></with></deferred>"
-                     , "    <diverged left=\"01-\" right=\"𝜎3\" at=\".Δ\" reason=\"the join names no otherwise\"><left Δ=\"01-\"/><right/></diverged>"
+                     , "    <assumed symbol=\"𝜎3\" as=\"01-\"/>"
+                     , "    <answered meta=\"𝑛·1·6\">01-</answered>"
+                     , "    <evaluated meta=\"𝑛·1·7\" of=\"Φ.y\">01-</evaluated>"
                      , "  </evaluate>"
+                     , "  <dataized meta=\"𝛿·0·1\">01-</dataized>"
                      , "</dataize>"
                      ]
 

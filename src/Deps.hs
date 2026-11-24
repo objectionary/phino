@@ -163,6 +163,7 @@ data Evaluation
   | EvNormalized Int Expression Expression
   | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int) (Maybe Expression)
   | EvGuarded Int (Either T.Text Expression) (Expression, Expression) (Expression, Expression) Side (Maybe Expression)
+  | EvAssumed Int (Expression, Expression) (Expression, Expression)
   | EvDiverged Int (Expression, Expression) (Expression, Expression) [Attribute] Refusal
   | EvUnripe Int (Expression, Expression) (Expression, Expression) Side Attribute
   | EvFabricated Int (Expression, Expression) (Expression, Expression) [(Expression, Expression)] Expression
@@ -244,6 +245,7 @@ tier (EvMorphed depth _) = depth
 tier (EvNormalized depth _ _) = depth
 tier (EvJoined depth _ _ _ _ _) = depth
 tier (EvGuarded depth _ _ _ _ _) = depth
+tier (EvAssumed depth _ _) = depth
 tier (EvDiverged depth _ _ _ _) = depth
 tier (EvUnripe depth _ _ _ _) = depth
 tier (EvFabricated depth _ _ _ _) = depth
@@ -582,6 +584,10 @@ saveEval handle cursor printed printed' profile report = do
       termination <- render ExTermination
       raiser <- traverse salted raised
       pure (protocol, Just (indented at (remarked (printf "guarded %s ? %s : %s" on one two) [printf "where %s is %s%s" (if side == Lefthand then one else two) termination (maybe "" (printf " raised by %s") raiser :: String)])))
+    written at (EvAssumed _ symbol kept) protocol = do
+      bare <- sided protocol symbol
+      other <- sided protocol kept
+      pure (protocol, Just (indented at (printf "assumed %s ≡ %s" bare other)))
     written at (EvDiverged _ left right path refusal) protocol = do
       one <- sided protocol left
       two <- sided protocol right
@@ -965,6 +971,11 @@ saveEvalXml handle cursor printed report = do
         two <- sided depth nesting right
         raiser <- traverse (leaf depth) (maybeToList raised)
         pure (printf "<guarded on=\"%s\" left=\"%s\" right=\"%s\" terminator=\"%s\"%s/>" (escapeXML on) (escapeXML one) (escapeXML two) (if side == Lefthand then "left" else "right" :: String) (concat [printf " raised=\"%s\"" (escapeXML name) :: String | name <- raiser]))
+    elements at (EvAssumed depth symbol kept) nesting =
+      placed at nesting $ do
+        bare <- sided depth nesting symbol
+        other <- sided depth nesting kept
+        pure (printf "<assumed symbol=\"%s\" as=\"%s\"/>" (escapeXML bare) (escapeXML other))
     elements at (EvDiverged depth left right path refusal) nesting =
       placed at nesting $ do
         one <- sided depth nesting left

@@ -28,8 +28,16 @@ spec = do
       joined (ExFormation [BiDelta (BtOne "01"), BiLambda (FnSymbol 4)]) (ExFormation [BiDelta (BtOne "02"), BiLambda (FnSymbol 9)]) 10 `shouldBe` Left [AtDelta]
     it "tells the λ of two formations naming two functions" $
       joined (ExFormation [BiLambda (Function "L_one")]) (ExFormation [BiLambda (Function "L_two")]) 7 `shouldBe` Left [AtLambda]
-    it "tells the λ of two formations naming a symbol and a function" $
-      joined (ExFormation [BiLambda (FnSymbol 3)]) (ExFormation [BiLambda (Function "L_three")]) 5 `shouldBe` Left [AtLambda]
+    it "takes the other side for a bare symbol" $
+      joined (ExFormation [BiLambda (FnSymbol 3)]) (ExFormation [BiLambda (Function "L_three")]) 5 `shouldBe` Right (ExFormation [BiLambda (Function "L_three")], [], Nothing, 5)
+    it "takes the left side for a bare symbol on the right" $
+      joined (ExFormation [BiDelta (BtOne "01")]) (ExFormation [BiLambda (FnSymbol 8)]) 5 `shouldBe` Right (ExFormation [BiDelta (BtOne "01")], [], Nothing, 5)
+    it "pairs two bare symbols rather than taking either" $
+      joined (ExFormation [BiLambda (FnSymbol 2)]) (ExFormation [BiLambda (FnSymbol 3)]) 5 `shouldBe` Right (ExFormation [BiLambda (FnSymbol 6)], [(6, (2, 3))], Nothing, 6)
+    it "joins a bare symbol with a bottom rather than taking the bottom" $
+      joined (ExFormation [BiLambda (FnSymbol 2)]) ExTermination 5 `shouldBe` Right (ExFormation [BiLambda (FnSymbol 7)], [(7, (2, 6))], Just 6, 7)
+    it "tells the λ of a symbol held beside another binding and a function" $
+      joined (ExFormation [BiTau (AtLabel "k") (ExFormation []), BiLambda (FnSymbol 3)]) (ExFormation [BiTau (AtLabel "k") (ExFormation []), BiLambda (Function "L_three")]) 5 `shouldBe` Left [AtLambda]
     it "tells no attribute of two dispatches of two attributes" $
       joined (ExDispatch (application [3]) (AtLabel "a")) (ExDispatch (application [8]) (AtLabel "b")) 9 `shouldBe` Left []
     it "tells no attribute inside an application whose arguments differ" $

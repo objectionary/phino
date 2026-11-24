@@ -4,7 +4,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Forks (Refusal (..), Side (..), forked, joined) where
+module Forks (Refusal (..), Side (..), bared, forked, joined) where
 
 import AST (Argument (..), Attribute (AtDelta, AtLabel, AtLambda, AtRho), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet, ExTermination, ExXi), Function (FnSymbol), attributeFromBinding, symbols)
 import Control.Monad.Trans.State.Strict (State, runState, state)
@@ -35,6 +35,9 @@ joined ExTermination right spent
   | null (symbols right) = Right (right, [], Nothing, spent)
 joined left ExTermination spent
   | null (symbols left) = Right (left, [], Nothing, spent)
+joined left right spent
+  | Just Lefthand <- bared left right = Right (right, [], Nothing, spent)
+  | Just Righthand <- bared left right = Right (left, [], Nothing, spent)
 joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse made, bottom, spent')) <$> goExpr left right (spent, Nothing, Map.empty, [])
   where
     goExpr :: Expression -> Expression -> Joining -> Either [Attribute] (Expression, Joining)
@@ -103,6 +106,19 @@ joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse 
     picked pair joining@(spent', bottom, names, made) = case Map.lookup pair names of
       Just name -> (name, joining)
       Nothing -> (succ spent', (succ spent', bottom, Map.insert pair (succ spent') names, (succ spent', pair) : made))
+
+bared :: Expression -> Expression -> Maybe Side
+bared left right
+  | bare left && taken right = Just Lefthand
+  | bare right && taken left = Just Righthand
+  | otherwise = Nothing
+  where
+    bare :: Expression -> Bool
+    bare (ExFormation [BiLambda (FnSymbol _)]) = True
+    bare _ = False
+    taken :: Expression -> Bool
+    taken ExTermination = False
+    taken side = not (bare side)
 
 forked :: Function -> Either Int Bytes -> (Expression, Expression) -> (Expression, Expression) -> Either Refusal Expression
 forked func condition (leftName, left) (rightName, right) = do
