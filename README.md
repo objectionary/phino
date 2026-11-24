@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.158
+cabal install --overwrite-policy=always phino-0.0.167
 phino --version
 ```
 
@@ -59,7 +59,7 @@ In a [GitHub Actions][gha] workflow, one step downloads the binary
 for the runner and puts it on the `PATH`:
 
 ```yaml
-- uses: objectionary/phino@0.0.158
+- uses: objectionary/phino@0.0.167
   with:
     version-file: phino-version.txt
 - run: phino --version
@@ -126,10 +126,12 @@ $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho sum.phi
 ```
 
 Dataizing a symbol always gives the same bytes, the number 42, as above.
+Like `morph`, `dataize` fails on a term that is not a normal form.
 
 Inside an entry, `$` is the formation being fired and `Φ` is the universe.
 A meta is a named placeholder: `𝛿1`, `𝛿2` and so on hold bytes, while `𝑛1`,
-`𝑛2` and so on hold terms.
+`𝑛2` and so on hold normal forms, and a line that would bind one to any other
+term fails the run.
 An entry may hold only the keys below, and any other key refuses the whole
 file:
 
@@ -149,7 +151,8 @@ file:
   meta holds, through evaluation, 𝔼, as in `𝑛2: 𝑛1`.
 * `defer` binds a term meta to a fresh symbol when another meta holds a copy
   of an object whose argument is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and to that
-  term as it is otherwise.
+  term as it is otherwise, or when under `--acyclic` the φ of the copy
+  repeats a formation the run is inside.
 * `stay` binds a term meta to the term another meta holds, with every
   `( ρ ↦ … )` applied to a dispatch dropped.
 * `symbolize` binds a term meta to the term another meta holds, with every
@@ -158,9 +161,9 @@ file:
   rules under `rules` applied and nothing normalized afterwards.
   The rules are written as in a [rule file](#rule-structure).
 * `cast` holds exactly two lines and binds their two metas as one pair.
-  When one term is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and the φ chain of the other
-  ends in the only symbol it holds, the bare symbol becomes a copy of the other
-  term with `𝜎1` at the end of that chain.
+  When one term is a bare symbol, `⟦ λ ⤍ 𝜎1 ⟧`, and the other is a formation
+  binding φ, the bare symbol becomes a copy of the other term with `𝜎1` in
+  place of the term its φ chain ends in, whatever that term is.
 * `𝑛` is the term the entry answers with.
   A bare `𝜎` in it stands for a fresh symbol, and no `𝛿` may appear in it.
 * `join` answers with one term made of two sides, in place of `𝑛`.
@@ -170,6 +173,10 @@ file:
   meta.
   It may hold `otherwise`, a λ name that joins two formations of different
   shapes one attribute at a time, and the file must answer that name too.
+* `terminators` lists λ names that only raise, as in `[L_throw]`.
+  A term holding one of them, or an application of one, passes every line
+  as it is, and `join` takes it for a side that raises, as it takes `⊥`.
+  No entry of the file may answer such a name.
 
 An entry holds either `𝑛` or `join`, never both.
 The lines of all blocks run in the order of the metas they read, not in the
@@ -222,15 +229,17 @@ $ phino dataize --symbolic=atoms.yaml --inside='5.plus( 6 )' universe.phi
 
 ### Limits
 
-Three options stop a run that goes on for too long:
+Five options stop a run that goes on for too long:
 
 * `--max-steps` bounds how deep morphing and dataization may nest,
   `1000` by default;
 * `--max-firings` bounds how many λ functions the whole run may fire;
-* `--max-seconds` bounds how many seconds the whole run may take.
+* `--max-seconds` bounds how many seconds the whole run may take;
+* `--max-nodes` bounds how many nodes the term of the run may grow to;
+* `--max-memory` bounds the live heap of the run, such as `8G`.
 
-`--partial` leaves a site in place when it runs out of steps or firings, but
-a run out of time always fails.
+`--partial` leaves a site in place when it runs out of steps, firings,
+seconds, nodes or memory.
 
 ## Morph
 
@@ -259,10 +268,13 @@ It takes every option of `dataize`.
 ### Acyclic morphing
 
 `phino` stops no recursion by itself, so a run that never ends fails once
-`--max-steps` runs out.
+`--max-steps` runs out, with `Morphing did not finish before reaching the
+limit of steps: --max-steps=<n>`.
 The `--acyclic=<mode>` option makes the run notice a loop instead.
 When a reduction is about to enter a formation it is already inside, the run
-stops there and leaves the term in place, as `--partial` does.
+answers a copy of an object binding φ with a fresh symbol and goes on, and
+stops at any other formation and leaves the term in place, as `--partial`
+does.
 The mode says when two formations are the same:
 
 * `proven` means equal up to a renaming of symbols;
@@ -274,15 +286,17 @@ Under `plausible`, a formation is fired only once, and a later firing of it
 takes the answer of the first one.
 The `--max-loops=<n>` option lets a reduction enter such a formation `n` more
 times before it is cut.
-`dataize` takes `--acyclic` too, and fails on a cut unless `--partial` is
-given, since a cut term holds no data to print.
+`dataize` takes `--acyclic` too, and fails on a term left in place unless
+`--partial` is given, since such a term holds no data to print.
 
 ## Protocol
 
 The `--protocol` option writes every λ function the run fired into a file,
-as a tree.
-A file whose name ends in `.xml` gets the tree as XML, for a program to read,
-and any other name gets indented text.
+as a tree in XML, for a program to read.
+The `--minutes` option writes the same tree as indented text, and one run
+may take both.
+With `--profile`, every record of the minutes ends with the milliseconds
+it took, the time since the start, and the memory in use.
 Here, `L_down` answers with a call of its own object over a fresh symbol, so
 without `--acyclic` the run would go on until `--max-steps` runs out:
 
@@ -298,23 +312,32 @@ $ cat down.phi
   y ↦ Φ.down( x ↦ ⟦ λ ⤍ 𝜎1 ⟧ ).φ
 ⟧
 $ phino morph --symbolic=down.yaml --locator=Q.y --acyclic=proven \
-    --protocol=down.txt --sweet --hide-rho down.phi
-⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧.φ
+    --minutes=down.txt --sweet --hide-rho down.phi
+𝜎3:λ
 $ cat down.txt
 𝕄(Φ.y):
-  𝑛·0·1 := Φ.down( x ↦ 𝜎1:λ )
-  𝑛·0·2 := ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
+  remembered 𝑛·0·1 ≡ Φ.down  # ⟦ x ↦ ∅, λ ⤍ L_down ⟧
+  𝑛·0·2 := Φ.down( x ↦ 𝜎1:λ )
+  𝑛·0·3 := ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
+  remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ 𝜎1:λ )
   𝔼(L_down):
     𝔻(ξ.x):
       𝛿·1·1 := 𝔻(𝜎1:λ)
     𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
-    𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛
+    𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛 of L_down
     𝕄(𝑛·1·1):
       𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
       𝑛·1·3 := ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
+      remembered 𝑛·1·3 ≡ 𝑛·0·1( x ↦ 𝜎2:λ )
       morphed 𝑛·1·4 := 𝑛·1·3
     𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
-  looped 𝑛·0·2  # proven
+    remembered 𝑛·1·3 ≡ 𝑛·0·3
+    evaluated 𝑛·1·6 := 𝑛·1·3  # 𝑛·0·3
+  recalled 𝑛·1·3 ⇒ 𝑛·0·3
+  recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ 𝜎1:λ )
+  recalled 𝑛·0·1 ⇒ Φ.down
+  looped 𝜎3 := 𝑛·0·2.φ  # proven, repeats 𝑛·0·3
+  morphed 𝑛·0·4 := 𝜎3:λ
 ```
 
 In a name such as `𝑛·1·2`, the first number counts the firings, `0` outside
@@ -335,27 +358,48 @@ A protocol may hold these lines:
   commented with `𝕄(𝑛·1·1)` is its normal form.
 * `boxed …` is dataization stepping into the `φ` of a formation.
 * `undressed …` is an `undress` line taking the `φ` of a formation.
+* `shared 𝑛·1 := …` names an argument a recursion keeps wrapping, so later
+  lines spell it by that name.
 * `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.
-* `joined …`, `fabricated …` and `diverged …` are what a `join` made of its
-  two sides, or why it could not join them.
+* `evaluated …` closes an `𝔼` block with what the firing answered, and the
+  comment names the formation fired.
+* `normalized …` is the term a normalization came to, where no line named it
+  before, and the comment names the term it came from.
+* `joined …`, `fabricated …`, `diverged …` and `unripe …` are what a `join`
+  made of its two sides, or why it could not join them.
 * `deferred …` and `symbolized …` are the symbols a `defer` or a `symbolize`
   line minted.
 * `cast …` binds a meta to the copy a `cast` block made of a bare symbol, and
   the comment names the meta it read and the meta whose shape it took.
-* `unanswered …` is a λ name no entry answers.
+* `unanswered …` is a λ name no entry answers, and `opaque …` a symbol
+  nothing can fire; the comment names the term 𝕄 or 𝔻 worked on.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
-* `looped …` is where `--acyclic` cut a loop.
-* `starved …`, `spent …` and `timeout …` are where `--max-steps`,
-  `--max-firings` and `--max-seconds` ran out.
+* `remembered 𝑛·0·1 ≡ Φ.down` is a fact the run keeps: the term on the
+  left came from the one on the right, a path or a call of the world, or
+  a formation it was the answer of.
+* `memoized 𝑛·0·5 ⇛ 𝑛·1·9` is what `--acyclic=plausible` keeps: the
+  formation on the left fired to the term on the right.
+* `renamed 𝑛·1·10 ⇛ 𝜎5:λ` is a memo entry used for a formation alike it up
+  to symbols, with the symbols the comment lists renamed.
+* `recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )` is a fact or a memo entry used again,
+  spelled as its `remembered` or `memoized` line spelled it.
+* `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
+  the call of the object it answered with that symbol, when a fact names it.
+* `passed 𝑛·1·2 := …` is where an operand came to an object `--acyclic`
+  takes for a loop, handed on as it is.
+* `starved …`, `spent …`, `timeout …`, `oversized …` and `blown …` are
+  where `--max-steps`, `--max-firings`, `--max-seconds`, `--max-nodes` and
+  `--max-memory` ran out.
 * `msec …`, `firings …` and `fps …` close the file, and the listing above
   leaves them and the `# …` lines out, since they differ from run to run.
 
 The `--abridged` option folds every formation longer than sixty-four
 characters, or than `--abridged=WIDTH`, into its `φ`, `Δ` and `λ` and a count
-of the rest.
+of the rest, and every application that long into its head and a count of its
+arguments.
 The `--abridged-data` option also cuts every byte string longer than eight
 bytes down to its first two bytes and its last two.
 
@@ -475,6 +519,19 @@ B >> ⟦⟧
 d >> 68-65-6C-6C-6F
 ```
 
+## SODG
+
+The `sodg` command prints the commands that build the graph of a
+𝜑-expression, one per line, in the language of
+[sodg-maven-plugin](https://github.com/objectionary/sodg-maven-plugin):
+
+```bash
+$ echo '⟦ x ↦ ξ.y, y ↦ ∅ ⟧' | phino sodg
+F c0 x y
+D c1 c0 y
+P c0 x c1
+```
+
 ## Compile
 
 By default, `phino` reads its rules from YAML and interprets them at every
@@ -586,6 +643,13 @@ ExtArgument
   | Attribute'           # !t
 ```
 
+Regular expressions in `matches` and `sed` are limited to 1,000,000 match
+calls and 256 levels of recursion per execution. Exceeding either limit
+stops the command with `Regex execution failed` and exit code 1. The recursion
+limit protects small native thread stacks; a repeated capturing group such as
+`(a|b)*` can reach it even on a string of a few hundred characters. Long strings
+can still be matched with patterns that need little recursion, such as `[ab]*`.
+
 Here's list of functions that are supported for extensions:
 
 * `contextualize` - function of two arguments, that rewrites given expression
@@ -605,7 +669,10 @@ Here's list of functions that are supported for extensions:
   separated by `/`, for example, this pattern `s/\\s+//g`
   replaces all the spaces with empty string. To escape braces and slashes
   in pattern and replacement parts - use them with `\\`,
-  e.g. `s/\\(.+\\)//g`.
+  e.g. `s/\\(.+\\)//g`. In the replacement, `\\1` to `\\9`, as well as
+  `$1`, put what a group of the pattern matched, e.g. `s/([0-9]+)/\\1!/g`,
+  and `&` puts the whole match, e.g. `s/[0-9]+/<&>/g`, while `\\&` puts a
+  literal `&`.
 * `random-string` - accepts dataizable expression or bytes as pattern.
   Replaces `%x` and `%d` formatters with random hex numbers and
   decimals accordingly. Uniqueness is guaranteed during one
@@ -682,119 +749,119 @@ entries of `benchmark/demo.phi` symbolically, one case per entry.
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      1409532.338 μs
-  avg:        140953.234 μs
-  min:        123104.580 μs
-  max:        169752.210 μs
-  std dev:    19431.803 μs
+  total:      2413980.968 μs
+  avg:        241398.097 μs
+  min:        215225.227 μs
+  max:        284695.902 μs
+  std dev:    25724.434 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      6269190.661 μs
-  avg:        626919.066 μs
-  min:        570410.014 μs
-  max:        708906.404 μs
-  std dev:    53168.480 μs
+  total:      10044170.261 μs
+  avg:        1004417.026 μs
+  min:        928746.607 μs
+  max:        1079348.074 μs
+  std dev:    50756.236 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      10.204 μs
-  avg:        1.020 μs
-  min:        0.842 μs
-  max:        1.442 μs
-  std dev:    0.179 μs
+  total:      20.328 μs
+  avg:        2.033 μs
+  min:        1.723 μs
+  max:        2.685 μs
+  std dev:    0.289 μs
 === print/sweet/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      3999871.155 μs
-  avg:        399987.116 μs
-  min:        357813.221 μs
-  max:        448393.174 μs
-  std dev:    27725.936 μs
+  total:      1911999.027 μs
+  avg:        191199.903 μs
+  min:        185908.584 μs
+  max:        202990.068 μs
+  std dev:    4905.518 μs
 === print/sweet/flat ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      455172.450 μs
-  avg:        45517.245 μs
-  min:        40716.412 μs
-  max:        55514.792 μs
-  std dev:    6068.706 μs
+  total:      1145909.419 μs
+  avg:        114590.942 μs
+  min:        92613.667 μs
+  max:        139357.482 μs
+  std dev:    15308.656 μs
 === print/salty/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      11916902.966 μs
-  avg:        1191690.297 μs
-  min:        1124787.007 μs
-  max:        1324046.797 μs
-  std dev:    62960.748 μs
+  total:      7468225.700 μs
+  avg:        746822.570 μs
+  min:        735697.009 μs
+  max:        774034.524 μs
+  std dev:    10278.722 μs
 === morph/symbolic/demo/e1 ===
   warmup:     3 iterations
-  batches:    10 x 15
-  total:      8063.096 μs
-  avg:        53.754 μs
-  min:        52.409 μs
-  max:        56.184 μs
-  std dev:    0.955 μs
+  batches:    10 x 9
+  total:      13798.063 μs
+  avg:        153.312 μs
+  min:        149.894 μs
+  max:        163.169 μs
+  std dev:    3.598 μs
 === morph/symbolic/demo/e2 ===
   warmup:     3 iterations
-  batches:    10 x 294
-  total:      163954.216 μs
-  avg:        55.767 μs
-  min:        54.415 μs
-  max:        56.517 μs
-  std dev:    0.716 μs
+  batches:    10 x 116
+  total:      177830.095 μs
+  avg:        153.302 μs
+  min:        152.510 μs
+  max:        155.166 μs
+  std dev:    0.755 μs
 === morph/symbolic/demo/e3 ===
   warmup:     3 iterations
-  batches:    10 x 277
-  total:      161047.794 μs
-  avg:        58.140 μs
-  min:        57.025 μs
-  max:        58.757 μs
-  std dev:    0.553 μs
+  batches:    10 x 109
+  total:      172419.898 μs
+  avg:        158.183 μs
+  min:        156.401 μs
+  max:        160.218 μs
+  std dev:    1.203 μs
 === morph/symbolic/demo/e4 ===
   warmup:     3 iterations
-  batches:    10 x 271
-  total:      156357.626 μs
-  avg:        57.697 μs
-  min:        57.150 μs
-  max:        58.248 μs
-  std dev:    0.363 μs
+  batches:    10 x 114
+  total:      179087.429 μs
+  avg:        157.094 μs
+  min:        155.294 μs
+  max:        159.724 μs
+  std dev:    1.170 μs
 === morph/symbolic/demo/e5 ===
   warmup:     3 iterations
-  batches:    10 x 260
-  total:      160590.902 μs
-  avg:        61.766 μs
-  min:        59.089 μs
-  max:        79.533 μs
-  std dev:    5.932 μs
+  batches:    10 x 96
+  total:      169758.902 μs
+  avg:        176.832 μs
+  min:        175.759 μs
+  max:        177.918 μs
+  std dev:    0.603 μs
 === morph/symbolic/native/e5 ===
   warmup:     3 iterations
   batches:    10 x 5
-  total:      35947.906 μs
-  avg:        718.958 μs
-  min:        682.191 μs
-  max:        764.860 μs
-  std dev:    22.764 μs
+  total:      54422.069 μs
+  avg:        1088.441 μs
+  min:        1031.613 μs
+  max:        1174.642 μs
+  std dev:    53.929 μs
 === morph/symbolic/accum/0 ===
   warmup:     3 iterations
-  batches:    10 x 142
-  total:      68966.685 μs
-  avg:        48.568 μs
-  min:        47.428 μs
-  max:        49.936 μs
-  std dev:    0.778 μs
+  batches:    10 x 68
+  total:      87262.677 μs
+  avg:        128.327 μs
+  min:        126.014 μs
+  max:        130.276 μs
+  std dev:    1.292 μs
 === morph/symbolic/accum/400 ===
   warmup:     3 iterations
-  batches:    10 x 112
-  total:      63083.756 μs
-  avg:        56.325 μs
-  min:        55.561 μs
-  max:        57.281 μs
-  std dev:    0.537 μs
+  batches:    10 x 48
+  total:      70884.786 μs
+  avg:        147.677 μs
+  min:        144.986 μs
+  max:        152.842 μs
+  std dev:    1.934 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-10-26 at 12:05,
+on 2026-11-19 at 15:32,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -837,4 +904,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/40319368788
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/44555174198

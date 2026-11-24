@@ -70,14 +70,20 @@ spec = do
       apart "⟦ ub ↦ ⊥, xe ↦ ⊥ ⟧" "⟦ ub ↦ ⟦ λ ⤍ 𝜎5 ⟧, xe ↦ ⟦ λ ⤍ 𝜎6 ⟧ ⟧" >>= (`shouldBe` Right (expected, [(43, (42, 5)), (44, (42, 6))], Just 42, 44))
     it "mints nothing for two sides of ⊥" $
       joined ExTermination ExTermination 4 `shouldBe` Right (ExTermination, [], Nothing, 4)
-    it "tells no attribute of ⊥ and a side holding no symbol to stand for ⊥" $
-      apart "⟦ φ ↦ Φ.ab, ko ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" "⊥" >>= (`shouldBe` Left [])
+    it "keeps as it is a side facing ⊥ that holds no symbol to stand for ⊥" $ do
+      expected <- parseExpressionThrows "⟦ φ ↦ Φ.ab, ko ↦ ⟦ Δ ⤍ 01- ⟧ ⟧"
+      apart "⟦ φ ↦ Φ.ab, ko ↦ ⟦ Δ ⤍ 01- ⟧ ⟧" "⊥" >>= (`shouldBe` Right (expected, [], Nothing, 41))
+    it "keeps as it is a side holding no symbol that ⊥ faces from the left" $ do
+      expected <- parseExpressionThrows "⟦ x ↦ ∅, φ ↦ ξ.x.yu ⟧"
+      apart "⊥" "⟦ x ↦ ∅, φ ↦ ξ.x.yu ⟧" >>= (`shouldBe` Right (expected, [], Nothing, 41))
     it "tells the attribute of a formation binding ⊥ where the other one binds no symbol" $
       apart "⟦ φ ↦ ⊥ ⟧" "⟦ φ ↦ Φ.ix ⟧" >>= (`shouldBe` Left [AtPhi])
 
   describe "forked" $ do
     let fork :: Text -> Either Int Bytes -> String -> String -> IO (Either Refusal Expression)
-        fork func condition left right = forked (Function func) condition <$> parseExpressionThrows left <*> parseExpressionThrows right
+        fork func condition left right = forked (Function func) condition <$> fmap twice (parseExpressionThrows left) <*> fmap twice (parseExpressionThrows right)
+        twice :: Expression -> (Expression, Expression)
+        twice side = (side, side)
     it "asks the copies of both sides for an attribute the λ it is given picks between" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ φ ↦ Φ.hx ⟧, right🌵 ↦ ⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_qw, on🌵 ↦ ⟦ Δ ⤍ 1C- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_qw" (Right (BtOne "1C")) "⟦ φ ↦ Φ.hx ⟧" "⟦ φ ↦ Φ.zu( ke ↦ Φ.ty ) ⟧" >>= (`shouldBe` Right expected)
@@ -96,9 +102,15 @@ spec = do
     it "keeps one void for an attribute both sides leave void" $ do
       expected <- parseExpressionThrows "⟦ dk ↦ ∅, left🌵 ↦ ⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧( dk ↦ ξ.dk ), right🌵 ↦ ⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧( dk ↦ ξ.dk ), φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vb, on🌵 ↦ ⟦ Δ ⤍ 3E- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_vb" (Right (BtOne "3E")) "⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧" "⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧" >>= (`shouldBe` Right expected)
-    it "takes as its own void an attribute one side leaves void and the other binds" $ do
-      expected <- parseExpressionThrows "⟦ ws ↦ ∅, left🌵 ↦ ⟦ ws ↦ ∅ ⟧( ws ↦ ξ.ws ), right🌵 ↦ ⟦ ws ↦ Φ.ug ⟧ ⟧"
-      fork "L_oh" (Right (BtOne "52")) "⟦ ws ↦ ∅ ⟧" "⟦ ws ↦ Φ.ug ⟧" >>= (`shouldBe` Right expected)
+    it "tells that the left side leaves void an attribute the right side binds" $
+      fork "L_oh" (Right (BtOne "52")) "⟦ ws ↦ ∅ ⟧" "⟦ ws ↦ Φ.ug ⟧" >>= (`shouldBe` Left (Unripe Lefthand (AtLabel "ws")))
+    it "tells that the right side leaves void an attribute the left side binds" $
+      fork "L_yk" (Left 17) "⟦ φ ↦ Φ.di, ob ↦ ⟦ ⟧ ⟧" "⟦ ob ↦ ∅, φ ↦ Φ.ru( ξ.ob ) ⟧" >>= (`shouldBe` Left (Unripe Righthand (AtLabel "ob")))
+    it "tells about a void of the left side before a void of the right side" $
+      fork "L_ze" (Right (BtOne "6A")) "⟦ ma ↦ Φ.pi, iv ↦ ∅ ⟧" "⟦ ma ↦ ∅, iv ↦ Φ.go ⟧" >>= (`shouldBe` Left (Unripe Lefthand (AtLabel "iv")))
+    it "fabricates a formation of a side leaving its ρ void and a side binding it" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ρ ↦ ∅, φ ↦ Φ.ah ⟧, right🌵 ↦ ⟦ ρ ↦ Φ.nu, φ ↦ Φ.ek ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_sa, on🌵 ↦ ⟦ Δ ⤍ 0D- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
+      fork "L_sa" (Right (BtOne "0D")) "⟦ ρ ↦ ∅, φ ↦ Φ.ah ⟧" "⟦ ρ ↦ Φ.nu, φ ↦ Φ.ek ⟧" >>= (`shouldBe` Right expected)
     it "skips an attribute of a side whose name ends with the 🌵 mark" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ left🌵 ↦ Φ.ub, rq🌵 ↦ ∅, φ ↦ Φ.ar ⟧, right🌵 ↦ ⟦ φ ↦ Φ.se ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_hn, on🌵 ↦ ⟦ Δ ⤍ 19- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_hn" (Right (BtOne "19")) "⟦ left🌵 ↦ Φ.ub, rq🌵 ↦ ∅, φ ↦ Φ.ar ⟧" "⟦ φ ↦ Φ.se ⟧" >>= (`shouldBe` Right expected)
@@ -129,6 +141,24 @@ spec = do
     it "hands the voids of a copy of the function to a side that does not bind its attribute" $ do
       expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ke ↦ ⟦ ev ↦ ∅, jo ↦ ∅ ⟧ ⟧, right🌵 ↦ ⟦ φ ↦ Φ.ty ⟧, ke ↦ ⟦ ρ ↦ ∅, λ ⤍ L_pu, ev ↦ ∅, jo ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 5C- ⟧, left🌵 ↦ ξ.ρ.left🌵.ke( ev ↦ ξ.ev, jo ↦ ξ.jo ), right🌵 ↦ ξ.ρ.right🌵.ke( ev ↦ ξ.ev, jo ↦ ξ.jo ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_pu, on🌵 ↦ ⟦ Δ ⤍ 5C- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_pu" (Right (BtOne "5C")) "⟦ ke ↦ ⟦ ev ↦ ∅, jo ↦ ∅ ⟧ ⟧" "⟦ φ ↦ Φ.ty ⟧" >>= (`shouldBe` Right expected)
+    it "takes the voids of the formation an attribute both sides alias as voids of its copy of the function" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ wa ↦ ⟦ ov ↦ ∅, φ ↦ ξ.ov ⟧, ky ↦ ξ.wa ⟧, right🌵 ↦ ⟦ wa ↦ ⟦ ov ↦ ∅, ip ↦ ∅, φ ↦ ξ.ip ⟧, ky ↦ ξ.wa ⟧, wa ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ko, ov ↦ ∅, ip ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎14 ⟧, left🌵 ↦ ξ.ρ.left🌵.wa( ov ↦ ξ.ov ), right🌵 ↦ ξ.ρ.right🌵.wa( ov ↦ ξ.ov, ip ↦ ξ.ip ) ⟧, ky ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ko, ov ↦ ∅, ip ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎14 ⟧, left🌵 ↦ ξ.ρ.left🌵.ky( ov ↦ ξ.ov ), right🌵 ↦ ξ.ρ.right🌵.ky( ov ↦ ξ.ov, ip ↦ ξ.ip ) ⟧ ⟧"
+      fork "L_ko" (Left 14) "⟦ wa ↦ ⟦ ov ↦ ∅, φ ↦ ξ.ov ⟧, ky ↦ ξ.wa ⟧" "⟦ wa ↦ ⟦ ov ↦ ∅, ip ↦ ∅, φ ↦ ξ.ip ⟧, ky ↦ ξ.wa ⟧" >>= (`shouldBe` Right expected)
+    it "takes the voids of the formation an attribute only the left side aliases as voids of its copy of the function" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ fk ↦ ⟦ le ↦ ∅, ri ↦ ∅ ⟧, ik ↦ ξ.fk ⟧, right🌵 ↦ ⟦ φ ↦ Φ.dw ⟧, fk ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vo, le ↦ ∅, ri ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎22 ⟧, left🌵 ↦ ξ.ρ.left🌵.fk( le ↦ ξ.le, ri ↦ ξ.ri ), right🌵 ↦ ξ.ρ.right🌵.fk( le ↦ ξ.le, ri ↦ ξ.ri ) ⟧, ik ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vo, le ↦ ∅, ri ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎22 ⟧, left🌵 ↦ ξ.ρ.left🌵.ik( le ↦ ξ.le, ri ↦ ξ.ri ), right🌵 ↦ ξ.ρ.right🌵.ik( le ↦ ξ.le, ri ↦ ξ.ri ) ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vo, on🌵 ↦ ⟦ λ ⤍ 𝜎22 ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
+      fork "L_vo" (Left 22) "⟦ fk ↦ ⟦ le ↦ ∅, ri ↦ ∅ ⟧, ik ↦ ξ.fk ⟧" "⟦ φ ↦ Φ.dw ⟧" >>= (`shouldBe` Right expected)
+    it "follows a chain of aliases down to the formation it ends in" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ φ ↦ Φ.gu ⟧, right🌵 ↦ ⟦ oq ↦ ξ.ha, ha ↦ ξ.ym, ym ↦ ⟦ qe ↦ ∅ ⟧ ⟧, φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_bx, on🌵 ↦ ⟦ Δ ⤍ 4D- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧, oq ↦ ⟦ ρ ↦ ∅, λ ⤍ L_bx, qe ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 4D- ⟧, left🌵 ↦ ξ.ρ.left🌵.oq( qe ↦ ξ.qe ), right🌵 ↦ ξ.ρ.right🌵.oq( qe ↦ ξ.qe ) ⟧, ha ↦ ⟦ ρ ↦ ∅, λ ⤍ L_bx, qe ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 4D- ⟧, left🌵 ↦ ξ.ρ.left🌵.ha( qe ↦ ξ.qe ), right🌵 ↦ ξ.ρ.right🌵.ha( qe ↦ ξ.qe ) ⟧, ym ↦ ⟦ ρ ↦ ∅, λ ⤍ L_bx, qe ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 4D- ⟧, left🌵 ↦ ξ.ρ.left🌵.ym( qe ↦ ξ.qe ), right🌵 ↦ ξ.ρ.right🌵.ym( qe ↦ ξ.qe ) ⟧ ⟧"
+      fork "L_bx" (Right (BtOne "4D")) "⟦ φ ↦ Φ.gu ⟧" "⟦ oq ↦ ξ.ha, ha ↦ ξ.ym, ym ↦ ⟦ qe ↦ ∅ ⟧ ⟧" >>= (`shouldBe` Right expected)
+    it "leaves a circle of aliases as it is" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ec ↦ ξ.ul, ul ↦ ξ.ec ⟧, right🌵 ↦ ⟦ ec ↦ ⟦ ah ↦ ∅ ⟧ ⟧, ec ↦ ⟦ ρ ↦ ∅, λ ⤍ L_jt, ah ↦ ∅, on🌵 ↦ ⟦ Δ ⤍ 0E- ⟧, left🌵 ↦ ξ.ρ.left🌵.ec( ah ↦ ξ.ah ), right🌵 ↦ ξ.ρ.right🌵.ec( ah ↦ ξ.ah ) ⟧, ul ↦ ⟦ ρ ↦ ∅, λ ⤍ L_jt, on🌵 ↦ ⟦ Δ ⤍ 0E- ⟧, left🌵 ↦ ξ.ρ.left🌵.ul, right🌵 ↦ ξ.ρ.right🌵.ul ⟧ ⟧"
+      fork "L_jt" (Right (BtOne "0E")) "⟦ ec ↦ ξ.ul, ul ↦ ξ.ec ⟧" "⟦ ec ↦ ⟦ ah ↦ ∅ ⟧ ⟧" >>= (`shouldBe` Right expected)
+    it "asks the copies of both sides for an attribute both bind to an attribute the fabricated formation lacks" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ky ↦ ξ.ub ⟧, right🌵 ↦ ⟦ ky ↦ ξ.ub ⟧, ky ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ex, on🌵 ↦ ⟦ Δ ⤍ 2A- ⟧, left🌵 ↦ ξ.ρ.left🌵.ky, right🌵 ↦ ξ.ρ.right🌵.ky ⟧ ⟧"
+      fork "L_ex" (Right (BtOne "2A")) "⟦ ky ↦ ξ.ub ⟧" "⟦ ky ↦ ξ.ub ⟧" >>= (`shouldBe` Right expected)
+    it "asks the copies of both sides for an attribute they bind to two other attributes" $ do
+      expected <- parseExpressionThrows "⟦ left🌵 ↦ ⟦ ma ↦ Φ.ro, ni ↦ Φ.su, ky ↦ ξ.ma ⟧, right🌵 ↦ ⟦ ma ↦ Φ.ro, ni ↦ Φ.su, ky ↦ ξ.ni ⟧, ma ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ud, on🌵 ↦ ⟦ Δ ⤍ 3B- ⟧, left🌵 ↦ ξ.ρ.left🌵.ma, right🌵 ↦ ξ.ρ.right🌵.ma ⟧, ni ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ud, on🌵 ↦ ⟦ Δ ⤍ 3B- ⟧, left🌵 ↦ ξ.ρ.left🌵.ni, right🌵 ↦ ξ.ρ.right🌵.ni ⟧, ky ↦ ⟦ ρ ↦ ∅, λ ⤍ L_ud, on🌵 ↦ ⟦ Δ ⤍ 3B- ⟧, left🌵 ↦ ξ.ρ.left🌵.ky, right🌵 ↦ ξ.ρ.right🌵.ky ⟧ ⟧"
+      fork "L_ud" (Right (BtOne "3B")) "⟦ ma ↦ Φ.ro, ni ↦ Φ.su, ky ↦ ξ.ma ⟧" "⟦ ma ↦ Φ.ro, ni ↦ Φ.su, ky ↦ ξ.ni ⟧" >>= (`shouldBe` Right expected)
     it "tells that the left side has a datum" $
       fork "L_ax" (Right (BtOne "11")) "⟦ Δ ⤍ 4F- ⟧" "⟦ φ ↦ Φ.bu ⟧" >>= (`shouldBe` Left (Holding Lefthand AtDelta))
     it "tells that the left side has a λ function" $

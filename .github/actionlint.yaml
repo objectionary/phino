@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# Hosted runner available before actionlint added it to its built-in labels.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

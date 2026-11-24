@@ -4,7 +4,7 @@
 module CLI.Parsers where
 
 import CLI.Types
-import Data.Char (toLower, toUpper)
+import Data.Char (isDigit, toLower, toUpper)
 import Data.List (intercalate)
 import Data.Version (showVersion)
 import Deps (Acyclic, certainty)
@@ -115,6 +115,33 @@ optMaxSeconds =
         (boundedIntOption >>= validateIntOption (> 0) "--max-seconds must be positive")
         (long "max-seconds" <> metavar "SECONDS" <> help "Maximum number of seconds the whole run may take, unlimited unless given")
     )
+
+optMaxNodes :: Parser (Maybe Int)
+optMaxNodes =
+  optional
+    ( option
+        (boundedIntOption >>= validateIntOption (> 0) "--max-nodes must be positive")
+        (long "max-nodes" <> metavar "NODES" <> help "Maximum number of nodes the term of the run may grow to, unlimited unless given")
+    )
+
+optMaxMemory :: Parser (Maybe Int)
+optMaxMemory =
+  optional
+    ( option
+        (eitherReader bytes >>= validateIntOption (> 0) "--max-memory must be positive")
+        (long "max-memory" <> metavar "BYTES" <> help "Maximum size of the live heap the run may grow to, such as 512M or 8G, unlimited unless given")
+    )
+  where
+    bytes :: String -> Either String Int
+    bytes spelling = case span isDigit spelling of
+      (digits@(_ : _), unit) -> maybe malformed (bounded . (read digits *)) (lookup (map toUpper unit) (zip ["", "K", "M", "G", "T"] (iterate (* 1024) 1)))
+      _ -> malformed
+    bounded :: Integer -> Either String Int
+    bounded num
+      | num > toInteger (maxBound :: Int) = Left (printf "--max-memory must not exceed %d bytes" (maxBound :: Int))
+      | otherwise = Right (fromInteger num)
+    malformed :: Either String Int
+    malformed = Left "--max-memory must be a number of bytes, optionally ending with K, M, G or T"
 
 optMargin :: Parser Int
 optMargin =
@@ -235,7 +262,7 @@ optPartial :: Parser Bool
 optPartial = switch (long "partial" <> help "Partial evaluation: compute what the known inputs decide and, instead of failing on a λ function that cannot fire (no entry of the --symbolic file answers it), leave it in place and print the residual 𝜑-program")
 
 optAcyclic :: Parser (Maybe Acyclic)
-optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again) instead of going round until --max-steps runs out, and leave the term in place the way --partial leaves a λ function that cannot fire; 'proven' takes it for the same one up to a renaming of symbols, 'plausible' also when it holds the earlier one under wrappers it gained, such as a growing accumulator"))
+optAcyclic = optional (option parseAcyclic (long "acyclic" <> metavar "MODE" <> help "Stop reducing as soon as the reduction enters a formation it is already inside (fires its λ function or dataizes its φ body again) instead of going round until --max-steps runs out, answering a copy of an object binding φ with a fresh symbol and leaving any other term in place the way --partial leaves a λ function that cannot fire; 'proven' takes it for the same one up to a renaming of symbols, 'plausible' also when it holds the earlier one under wrappers it gained, such as a growing accumulator"))
   where
     parseAcyclic :: ReadM Acyclic
     parseAcyclic = eitherReader $ \mode -> case filter ((== map toLower mode) . certainty) [minBound .. maxBound] of
@@ -264,7 +291,8 @@ optSymbolic =
               \\"defer\", the terms it keeps with every ρ applied to a dispatch dropped under \"stay\", the terms \
               \it rewrites with rules spelled as in a rule file under \"rewrite\", the terms it keeps with \
               \every datum they hold turned into a fresh symbol under \"symbolize\", the pair of terms whose \
-              \bare symbol it casts into the shape of the other under \"cast\", and \
+              \bare symbol it casts into the shape of the other under \"cast\", the λ functions that only \
+              \raise, whose objects pass every line as they are and join as ⊥, under \"terminators\", and \
               \answering with the term under \"𝑛\", or joining under \"join\" the two sides of a datum of \
               \\"dataize\" into one term, with a fresh symbol where they differ"
         )
@@ -290,11 +318,32 @@ optProtocol =
         ( long "protocol"
             <> metavar "FILE"
             <> help
-              "File to record every λ function fired during the run: the run at the top, one block per firing \
-              \under it, and inside each block the operands it bound and the term it answered with, with a \
-              \firing nested in the reduction of an operand one level deeper again. The name of the file \
-              \decides the format: '.xml' writes XML, every other name writes the same tree as indented text"
+              "File to record every λ function fired during the run as XML, for a program to read: the run at \
+              \the top, one block per firing under it, and inside each block the operands it bound and the term \
+              \it answered with, with a firing nested in the reduction of an operand one level deeper again"
         )
+    )
+
+optMinutes :: Parser (Maybe FilePath)
+optMinutes =
+  optional
+    ( strOption
+        ( long "minutes"
+            <> metavar "FILE"
+            <> help
+              "File to record the same tree as --protocol does, as indented text for a person to read; \
+              \given together with --protocol, one run writes both files"
+        )
+    )
+
+optProfile :: Parser Bool
+optProfile =
+  switch
+    ( long "profile"
+        <> help
+          "Close every record of the --minutes file with a comment holding the milliseconds since the record \
+          \above and since the start, the depth of the record, the firings so far, the live heap and the peak memory, \
+          \so a slow or memory-hungry spot shows next to the lines that caused it"
     )
 
 optAbridged :: Parser (Maybe Int)
@@ -304,9 +353,10 @@ optAbridged =
         64
         ( long "abridged"
             <> help
-              "Shorten every 𝜑-expression written to the --protocol file: a formation longer than the width \
-              \keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', while every byte string \
-              \it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
+              "Shorten every 𝜑-expression written to the --protocol and --minutes files: a formation longer \
+              \than the width keeps its φ, Δ and λ bindings and folds the rest into a count, as '+34', an \
+              \application longer than the width keeps its head and folds its arguments the same way, while \
+              \every byte string it writes stays whole; the width is 64 characters unless given as --abridged=WIDTH"
         )
         <|> option
           (boundedIntOption >>= validateIntOption (> 0) "--abridged must be positive")
@@ -338,6 +388,9 @@ optSeed =
 
 optSugar :: Parser SugarType
 optSugar = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-expressions using syntax sugar" _intermediateOptions))
+
+optCheat :: Parser Bool
+optCheat = switch (long "cheat" <> help "Let normalization take shortcuts its rules do not spell, such as dropping a ρ applied to a term that already ends with one; the steps then differ from what the rules prescribe")
 
 optHideRho :: Parser Bool
 optHideRho = switch (long "hide-rho" <> help "Remove every ρ binding from result and intermediate 𝜑-expressions for cleaner output")
@@ -409,6 +462,7 @@ dataizeParser =
             <*> optHeaders
             <*> optCanonize
             <*> optDepthSensitive
+            <*> optCheat
             <*> optShuffle
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
@@ -421,6 +475,8 @@ dataizeParser =
             <*> optMaxSteps
             <*> optMaxFirings
             <*> optMaxSeconds
+            <*> optMaxNodes
+            <*> optMaxMemory
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -434,6 +490,8 @@ dataizeParser =
             <*> optInside
             <*> optStepsDir
             <*> optProtocol
+            <*> optMinutes
+            <*> optProfile
             <*> optAbridged
             <*> optAbridgedData
             <*> optSymbolic
@@ -459,6 +517,7 @@ morphParser =
             <*> optHeaders
             <*> optCanonize
             <*> optDepthSensitive
+            <*> optCheat
             <*> optShuffle
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
@@ -471,6 +530,8 @@ morphParser =
             <*> optMaxSteps
             <*> optMaxFirings
             <*> optMaxSeconds
+            <*> optMaxNodes
+            <*> optMaxMemory
             <*> optMargin
             <*> optMeetPopularity
             <*> optMeetLength
@@ -484,6 +545,8 @@ morphParser =
             <*> optInside
             <*> optStepsDir
             <*> optProtocol
+            <*> optMinutes
+            <*> optProfile
             <*> optAbridged
             <*> optAbridgedData
             <*> optSymbolic
@@ -509,6 +572,7 @@ rewriteParser =
             <*> optOmitListing
             <*> optOmitComments
             <*> optDepthSensitive
+            <*> optCheat
             <*> optNonumber
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> switch (long "update" <> help "Skip rewriting if --target file is newer than the input file")
@@ -569,6 +633,16 @@ matchParser =
             <*> optSeed
         )
 
+sodgParser :: Parser Command
+sodgParser =
+  CmdSodg
+    <$> ( OptsSodg
+            <$> optLogLevel
+            <*> optLogLines
+            <*> optInputFormat
+            <*> argInputFile
+        )
+
 compileParser :: Parser Command
 compileParser =
   CmdCompile
@@ -588,6 +662,7 @@ commandParser =
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
         <> command "merge" (info mergeParser (progDesc "Merge 𝜑-expressions into single one by merging their top level formations"))
         <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))
+        <> command "sodg" (info sodgParser (progDesc "Print the SODG commands that build the graph of the 𝜑-expression"))
         <> command "compile" (info compileParser (progDesc "Compile the rules into a Haskell module a build with the flag 'compiled' links in"))
     )
 

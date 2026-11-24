@@ -21,7 +21,9 @@ abridged cut width = goExpr
       | short expr || salient pair = EX_SINGLE (goPair pair) space (goExpr formation)
       | otherwise = goExpr formation
     goExpr EX_DISPATCH{..} = EX_DISPATCH (goExpr expr) space attr
-    goExpr EX_APPLICATION{..} = EX_APPLICATION (goExpr expr) space eol tab (goArgument argument) eol' tab' indent
+    goExpr app@EX_APPLICATION{..}
+      | short app = EX_APPLICATION (goExpr expr) space eol tab (goArgument argument) eol' tab' indent
+      | otherwise = EX_APPLICATION (goExpr expr) space eol tab (AA_TAU (APP_BINDING (PA_FOLDED (counted argument)))) eol' tab' indent
     goExpr EX_PHI_MEET{..} = EX_PHI_MEET prefix idx (goExpr expr)
     goExpr EX_PHI_AGAIN{..} = EX_PHI_AGAIN prefix idx (goExpr expr)
     goExpr EX_BYTES{..} = EX_BYTES (goBytes bytes)
@@ -55,6 +57,23 @@ abridged cut width = goExpr
     goArgument (AA_TAU APP_BINDING{..}) = AA_TAU (APP_BINDING (goPair pair))
     goArgument (AA_TAUS binding) = AA_TAUS (goIntact binding)
     goArgument (AA_EXPRS APP_ARG{..}) = AA_EXPRS (APP_ARG (goExpr expr) (goAppArgs args))
+    counted :: APP_ARGUMENT -> Int
+    counted (AA_TAU _) = 1
+    counted (AA_TAUS binding) = goCount binding
+      where
+        goCount :: BINDING -> Int
+        goCount BI_EMPTY{} = 0
+        goCount BI_PAIR{..} = 1 + goCounts bindings
+        goCount BI_META{..} = 1 + goCounts bindings
+        goCounts :: BINDINGS -> Int
+        goCounts BDS_EMPTY{} = 0
+        goCounts BDS_PAIR{..} = 1 + goCounts bindings
+        goCounts BDS_META{..} = 1 + goCounts bindings
+    counted (AA_EXPRS APP_ARG{args = rest}) = 1 + goCount rest
+      where
+        goCount :: APP_ARGS -> Int
+        goCount AAS_EMPTY = 0
+        goCount AAS_EXPR{..} = 1 + goCount args
     goIntact :: BINDING -> BINDING
     goIntact BI_PAIR{..} = BI_PAIR (goPair pair) (goIntacts bindings) tab
     goIntact BI_META{..} = BI_META meta (goIntacts bindings) tab

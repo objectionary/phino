@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: |
+  ⟦
+    foo ↦ ⟦ x ↦ ⟦ Δ ⤍ 2A- ⟧, y ↦ Φ.bar( z ↦ ξ.x ).t, λ ⤍ L_foo ⟧,
+    bar ↦ ⟦ z ↦ ∅, t ↦ ξ.ρ.z ⟧
+  ⟧
+output: |
+  F c0 foo bar
+  F c1 x y
+  F c2
+  Δ c2 2A-
+  P c1 x c2
+  D c3 c0 bar
+  D c4 c1 x
+  A c5 c3 z c4
+  D c6 c5 t
+  P c1 y c6
+  λ c1 L_foo
+  P c0 foo c1
+  F c7 z t
+  D c8 c7 ρ
+  D c9 c8 z
+  P c7 t c9
+  P c0 bar c7
