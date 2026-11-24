@@ -629,7 +629,10 @@ the facts lead back to the same object of the world as the earlier one, the
 way `Φ.f( x ↦ Φ.a2 )` leads to `Φ.f` as `Φ.f( x ↦ Φ.a1 )` does, whatever
 their arguments, since a recursion handing a new argument every round, such
 as one walking a ring of objects, never embeds one round in the next
-(`origin` of `repeats`, #2462). A copy of an atom, a
+(`origins` of `repeats`, #2462). Every fact of a formation counts, not the
+newest alone, so a copy an atom gives back as its φ, which gains a fact
+naming the place of the atom, still leads back to its object (#2467).
+A copy of an atom, a
 formation holding a λ, is the exception: under `plausible` too it repeats
 only a formation `alike` it, since copies of one atom called from different
 places resemble each other once a symbol stands in one of them, and a loop

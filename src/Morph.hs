@@ -761,7 +761,7 @@ repeats mode form ctx = do
   depth <- gauge ctx._sides
   start <- maybe (pure Map.empty) readIORef (searching ctx._memo)
   known <- maybe (pure Map.empty) (\(Facts facts _ _) -> readIORef facts) ctx._facts
-  (hits, kept) <- awaited ctx (evaluate (forced (goHits look depth (sibling known (origin known (Map.size known) form)) start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
+  (hits, kept) <- awaited ctx (evaluate (forced (goHits look depth (sibling known (origins known form)) start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
   mapM_ (\ref -> writeIORef ref (bounded kept)) (searching ctx._memo)
   pure hits
   where
@@ -813,20 +813,25 @@ repeats mode form ctx = do
         parts (ExDispatch inner _) = [inner]
         parts (ExFormation bds) = [body | BiTau attr body <- bds, attr /= AtRho]
         parts _ = []
-    sibling :: Store Expression -> Maybe Expression -> Expression -> Bool
-    sibling _ Nothing _ = False
-    sibling known own before = origin known (Map.size known) before == own
-    origin :: Store Expression -> Int -> Expression -> Maybe Expression
-    origin known budget term@(ExFormation _)
-      | budget > 0 = lookup term (Map.findWithDefault [] (hashExpression term) known) >>= goSource
+    sibling :: Store Expression -> [Expression] -> Expression -> Bool
+    sibling _ [] _ = False
+    sibling known own before = any (`elem` own) (origins known before)
+    origins :: Store Expression -> Expression -> [Expression]
+    origins known start = List.nub (goOrigins Set.empty [(Map.size known, Set.empty, start, [])])
       where
-        goSource :: Expression -> Maybe Expression
-        goSource ExRoot = Just ExRoot
-        goSource (ExApplication target _) = goSource target
-        goSource (ExDispatch target attr) = (`ExDispatch` attr) <$> goSource target
-        goSource source@(ExFormation _) = origin known (pred budget) source
-        goSource _ = Nothing
-    origin _ _ _ = Nothing
+        goOrigins :: Set.Set (Int, [Attribute]) -> [(Int, Set.Set Int, Expression, [Attribute])] -> [Expression]
+        goOrigins _ [] = []
+        goOrigins seen ((budget, path, term@(ExFormation _), attrs) : rest)
+          | budget > 0 && Set.notMember (hashExpression term) path && Set.notMember (hashExpression term, attrs) seen =
+              case foldr (goSource (pred budget, Set.insert (hashExpression term) path) attrs) ([], rest) [source | (object, source) <- Map.findWithDefault [] (hashExpression term) known, object == term] of
+                (found, pending) -> found ++ goOrigins (Set.insert (hashExpression term, attrs) seen) pending
+        goOrigins seen (_ : rest) = goOrigins seen rest
+        goSource :: (Int, Set.Set Int) -> [Attribute] -> Expression -> ([Expression], [(Int, Set.Set Int, Expression, [Attribute])]) -> ([Expression], [(Int, Set.Set Int, Expression, [Attribute])])
+        goSource _ attrs ExRoot (found, pending) = (List.foldl' ExDispatch ExRoot attrs : found, pending)
+        goSource trail attrs (ExApplication target _) acc = goSource trail attrs target acc
+        goSource trail attrs (ExDispatch target attr) acc = goSource trail (attr : attrs) target acc
+        goSource (budget, path) attrs source@(ExFormation _) (found, pending) = (found, (budget, path, source, attrs) : pending)
+        goSource _ _ _ acc = acc
     atomic :: Expression -> Bool
     atomic (ExFormation bds) = any isLambda bds
     atomic _ = False

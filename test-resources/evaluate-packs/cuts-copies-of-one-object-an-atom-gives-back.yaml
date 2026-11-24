@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A recursion through copies of 'f', each one made inside the one before it
+# with a new argument, 'Φ.a1', 'Φ.a2', 'Φ.a3' and around again, where the atom
+# 'L_m' morphs the next copy and gives it back as its 'φ'. That copy gets a
+# second fact, naming the place of the atom, such as 'Φ.a1.call.φ', yet the
+# first one still leads it back to 'Φ.f', so under '--acyclic=plausible' it
+# repeats the copies above it and '--max-loops=1' lets one repeat through: the
+# third copy is cut, however many objects the ring holds (#2467).
+symbolic: |
+  - λ: L_m
+    morph:
+      𝑛1: $.t
+    evaluate:
+      𝑛2: 𝑛1
+    𝑛: ⟦ φ ↦ 𝑛2 ⟧
+location: 'Q.app'
+acyclic: plausible
+loops: 1
+partial: true
+input: >
+  ⟦ f(x) ↦ ⟦ φ ↦ ξ.x.call ⟧,
+    a1 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a2 ) ⟧ ⟧,
+    a2 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a3 ) ⟧ ⟧,
+    a3 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a1 ) ⟧ ⟧,
+    app ↦ Φ.f( Φ.a1 ).q ⟧
+result: '𝜎1:λ'
+protocol: |
+  𝕄(Φ.app):
+    remembered 𝑛·0·1 ≡ Φ.f  # ⟦ x ↦ ∅, φ ↦ x.call ⟧
+    𝑛·0·2 := Φ.f( x ↦ Φ.a1 )
+    𝑛·0·3 := ⟦ x ↦ Φ.a1, φ ↦ x.call ⟧
+    remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ Φ.a1 )
+    normalized 𝑛·0·4 := Φ.a1.call.q  # 𝑛·0·3.φ.q
+    normalized 𝑛·0·5 := ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a2 ) ⟧:call  # Φ.a1
+    remembered 𝑛·0·6 ≡ Φ.a1.call  # ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a2 ) ⟧
+    𝔼(L_m):
+      𝕄(ξ.t):
+        𝑛·1·1 := Φ.f( x ↦ Φ.a2 )
+        𝑛·1·2 := ⟦ x ↦ Φ.a2, φ ↦ x.call ⟧
+        remembered 𝑛·1·2 ≡ 𝑛·0·1( x ↦ Φ.a2 )
+        morphed 𝑛·1·3 := 𝑛·1·2
+      𝑛1·1 := 𝑛·1·3  # 𝕄(ξ.t)
+      recalled 𝑛·1·2 ⇒ 𝑛·0·1( x ↦ Φ.a2 )
+      recalled 𝑛·0·1 ⇒ Φ.f
+      𝑛·1·4 := 𝑛·1·3:φ  # 𝑛 of L_m
+      𝕄(𝑛·1·4):
+        morphed 𝑛·1·5 := 𝑛·1·3:φ
+      𝑛·1·6 := 𝑛·1·5  # 𝕄(𝑛·1·4)
+      remembered 𝑛·1·6 ≡ 𝑛·0·6
+      memoized 𝑛·0·6 ⇛ 𝑛·1·6
+      evaluated 𝑛·1·7 := 𝑛·1·6  # 𝑛·0·6
+    remembered 𝑛·1·3 ≡ 𝑛·1·7.φ
+    normalized 𝑛·0·7 := 𝑛·1·3.q  # 𝑛·1·7.φ.q
+    normalized 𝑛·0·8 := Φ.a2.call.q  # 𝑛·1·3.φ.q
+    normalized 𝑛·0·9 := ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a3 ) ⟧:call  # Φ.a2
+    remembered 𝑛·0·10 ≡ Φ.a2.call  # ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a3 ) ⟧
+    𝔼(L_m):
+      𝕄(ξ.t):
+        𝑛·2·1 := Φ.f( x ↦ Φ.a3 )
+        𝑛·2·2 := ⟦ x ↦ Φ.a3, φ ↦ x.call ⟧
+        remembered 𝑛·2·2 ≡ 𝑛·0·1( x ↦ Φ.a3 )
+        morphed 𝑛·2·3 := 𝑛·2·2
+        recalled 𝑛·2·2 ⇒ 𝑛·0·1( x ↦ Φ.a3 )
+        recalled 𝑛·0·1 ⇒ Φ.f
+        passed 𝑛·2·4 := Φ.f( x ↦ Φ.a3 )  # plausible, repeats 𝑛·0·3
+      𝑛1·2 := 𝑛·2·4  # 𝕄(ξ.t)
+      recalled 𝑛·2·2 ⇒ 𝑛·0·1( x ↦ Φ.a3 )
+      recalled 𝑛·0·1 ⇒ Φ.f
+      𝑛·2·5 := 𝑛·2·4:φ  # 𝑛 of L_m
+      𝕄(𝑛·2·5):
+        morphed 𝑛·2·6 := 𝑛·2·4:φ
+      𝑛·2·7 := 𝑛·2·6  # 𝕄(𝑛·2·5)
+      remembered 𝑛·2·7 ≡ 𝑛·0·10
+      memoized 𝑛·0·10 ⇛ 𝑛·2·7
+      evaluated 𝑛·2·8 := 𝑛·2·7  # 𝑛·0·10
+    remembered 𝑛·2·4 ≡ 𝑛·2·8.φ
+    normalized 𝑛·0·11 := 𝑛·2·4.q  # 𝑛·2·8.φ.q
+    recalled 𝑛·2·4 ⇒ 𝑛·2·8.φ
+    recalled 𝑛·2·7 ⇒ 𝑛·0·10
+    recalled 𝑛·0·10 ⇒ Φ.a2.call
+    looped 𝜎1 := Φ.a2.call.φ.q  # plausible, repeats 𝑛·0·3
+    morphed 𝑛·0·12 := 𝜎1:λ
