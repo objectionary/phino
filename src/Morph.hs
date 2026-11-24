@@ -760,16 +760,17 @@ repeats mode form ctx = do
   look <- resolver ctx._sides
   depth <- gauge ctx._sides
   start <- maybe (pure Map.empty) readIORef (searching ctx._memo)
-  (hits, kept) <- awaited ctx (evaluate (forced (goHits look depth start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
+  known <- maybe (pure Map.empty) (\(Facts facts _) -> readIORef facts) ctx._facts
+  (hits, kept) <- awaited ctx (evaluate (forced (goHits look depth (sibling known (origin known (Map.size known) form)) start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
   mapM_ (\ref -> writeIORef ref (bounded kept)) (searching ctx._memo)
   pure hits
   where
-    goHits :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> Searched -> Int -> [Expression] -> ([Expression], Searched)
-    goHits _ _ kept 0 _ = ([], kept)
-    goHits _ _ kept _ [] = ([], kept)
-    goHits look depth kept wanted (before : rest) = case repeated look depth mode before kept of
-      (True, kept') -> first (before :) (goHits look depth kept' (pred wanted) rest)
-      (False, kept') -> goHits look depth kept' wanted rest
+    goHits :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> (Expression -> Bool) -> Searched -> Int -> [Expression] -> ([Expression], Searched)
+    goHits _ _ _ kept 0 _ = ([], kept)
+    goHits _ _ _ kept _ [] = ([], kept)
+    goHits look depth kin kept wanted (before : rest) = case repeated look depth kin mode before kept of
+      (True, kept') -> first (before :) (goHits look depth kin kept' (pred wanted) rest)
+      (False, kept') -> goHits look depth kin kept' wanted rest
     forced :: ([Expression], Searched) -> ([Expression], Searched)
     forced result@(hits, kept) = length hits `seq` kept `seq` result
     bounded :: Searched -> Searched
@@ -778,11 +779,26 @@ repeats mode form ctx = do
       | otherwise = kept
     searching :: Maybe Memo -> Maybe (IORef Searched)
     searching = fmap (\(Memo _ _ _ _ _ searched) -> searched)
-    repeated :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> Acyclic -> Expression -> Searched -> (Bool, Searched)
-    repeated look _ Proven before kept = (alike' look form before, kept)
-    repeated look depth Plausible before kept
+    repeated :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> (Expression -> Bool) -> Acyclic -> Expression -> Searched -> (Bool, Searched)
+    repeated look _ _ Proven before kept = (alike' look form before, kept)
+    repeated look depth kin Plausible before kept
       | atomic form = akin'' look depth kept before form
+      | kin before = (True, kept)
       | otherwise = within'' look kept before form
+    sibling :: Store Expression -> Maybe Expression -> Expression -> Bool
+    sibling _ Nothing _ = False
+    sibling known own before = origin known (Map.size known) before == own
+    origin :: Store Expression -> Int -> Expression -> Maybe Expression
+    origin known budget term@(ExFormation _)
+      | budget > 0 = lookup term (Map.findWithDefault [] (hashExpression term) known) >>= goSource
+      where
+        goSource :: Expression -> Maybe Expression
+        goSource ExRoot = Just ExRoot
+        goSource (ExApplication target _) = goSource target
+        goSource (ExDispatch target attr) = (`ExDispatch` attr) <$> goSource target
+        goSource source@(ExFormation _) = origin known (pred budget) source
+        goSource _ = Nothing
+    origin _ _ _ = Nothing
     atomic :: Expression -> Bool
     atomic (ExFormation bds) = any isLambda bds
     atomic _ = False
