@@ -32,15 +32,15 @@ protocol: |
     𝔼(L_pair):
       𝕄(ξ.c):
         remembered 𝑛·1·1 ≡ Φ.box  # ⟦ s ↦ ∅, x ↦ ∅, φ ↦ s.next ⟧
-        𝑛·1·2 := Φ.box( s ↦ 𝜎1:λ )
-        𝑛·1·3 := ⟦ s ↦ 𝜎1:λ, x ↦ ∅, φ ↦ s.next ⟧
+        𝑛·1·2 ≔ Φ.box( s ↦ 𝜎1:λ )
+        𝑛·1·3 ≔ ⟦ s ↦ 𝜎1:λ, x ↦ ∅, φ ↦ s.next ⟧
         remembered 𝑛·1·3 ≡ 𝑛·1·1( s ↦ 𝜎1:λ )
-        shared 𝑛·1 := ⟦ arg ↦ L_none:λ, λ ⤍ L_outer ⟧.φ
-        𝑛·1·4 := 𝑛·1·2( x ↦ 𝑛·1 )
-        𝑛·1·5 := ⟦ s ↦ 𝜎1:λ, x ↦ 𝑛·1, φ ↦ s.next ⟧
+        shared 𝑛·1 ≔ ⟦ arg ↦ L_none:λ, λ ⤍ L_outer ⟧.φ
+        𝑛·1·4 ≔ 𝑛·1·2( x ↦ 𝑛·1 )
+        𝑛·1·5 ≔ ⟦ s ↦ 𝜎1:λ, x ↦ 𝑛·1, φ ↦ s.next ⟧
         remembered 𝑛·1·5 ≡ 𝑛·1·3( x ↦ 𝑛·1 )
-        morphed 𝑛·1·6 := 𝑛·1·5
-      𝑛1·1 := 𝑛·1·6  # 𝕄(ξ.c)
+        morphed 𝑛·1·6 ≔ 𝑛·1·5
+      𝑛1·1 ≔ 𝑛·1·6  # 𝕄(ξ.c)
       recalled 𝑛·1·5 ⇒ 𝑛·1·3( x ↦ 𝑛·1 )
       recalled 𝑛·1·3 ⇒ 𝑛·1·1( s ↦ 𝜎1:λ )
       recalled 𝑛·1·1 ⇒ Φ.box

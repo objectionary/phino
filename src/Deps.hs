@@ -454,16 +454,16 @@ saveEval handle cursor printed printed' profile report = do
     written at (EvDelta _ bytes) protocol = do
       datum <- render (ExBytes bytes)
       let (naming, protocol') = stored (Right bytes) protocol
-      pure (protocol', Just (indented at (remarked (printf "%s := %s" naming datum) (maybe [] pure (ieee bytes)))))
+      pure (protocol', Just (indented at (remarked (printf "%s ≔ %s" naming datum) (maybe [] pure (ieee bytes)))))
     written at (EvManufactured _ symbol) protocol = do
       datum <- spelt (Left symbol)
       let (naming, protocol') = stored (Left symbol) protocol
-      pure (protocol', Just (indented at (printf "%s := %s" naming datum)))
+      pure (protocol', Just (indented at (printf "%s ≔ %s" naming datum)))
     written at (EvBoxed _ term) protocol = taking at "boxed" term protocol
     written at (EvShared _ name term) protocol = do
       label <- render name
       value <- printed (abbreviatedInside protocol._made term)
-      pure (protocol, Just (indented at (printf "shared %s := %s" label value)))
+      pure (protocol, Just (indented at (printf "shared %s ≔ %s" label value)))
     written at (EvUndressed _ term) protocol = taking at "undressed" term protocol
     written at (EvLooped _ judgment mode self site answered) protocol = do
       form <- render self
@@ -474,7 +474,7 @@ saveEval handle cursor printed printed' profile report = do
         severed :: String -> (Int, Maybe Expression) -> IO (String, [String])
         severed form (symbol, call) = do
           made <- traverse (printed . abbreviatedInside protocol._made) call
-          pure (printf "looped %s%s" (printFunction (FnSymbol symbol)) (maybe "" (" := " ++) made), [printf "repeats %s" form])
+          pure (printf "looped %s%s" (printFunction (FnSymbol symbol)) (maybe "" (" ≔ " ++) made), [printf "repeats %s" form])
     written at (EvPassed _ judgment mode self site term call) protocol = do
       form <- render self
       remarks <- context protocol judgment site
@@ -482,7 +482,7 @@ saveEval handle cursor printed printed' profile report = do
           naming :: String
           naming = printf "%s·%d" (labelled protocol answer) index
       value <- maybe (borrowed protocol term) (printed . abbreviatedInside protocol._made) call
-      pure (counted{_made = namedFormation term (alias (opener protocol) index) counted._made}, Just (indented at (remarked (printf "passed %s := %s" naming value) (remarks ++ [certainty mode, printf "repeats %s" form]))))
+      pure (counted{_made = namedFormation term (alias (opener protocol) index) counted._made}, Just (indented at (remarked (printf "passed %s ≔ %s" naming value) (remarks ++ [certainty mode, printf "repeats %s" form]))))
     written at (EvStuck _ key judgment self) protocol = do
       form <- render self
       pure (protocol, Just (indented at (printf "unanswered %s  # %s(%s)" (T.unpack key) (letter judgment) form)))
@@ -513,34 +513,34 @@ saveEval handle cursor printed printed' profile report = do
       pure (protocol, Just (indented at (remarked (printf "blown %s" (sized limit)) remarks)))
     written at (EvData _ spelling operand value) protocol = do
       datum <- maybe (spelt value) pure (found value protocol._found)
-      line <- commented protocol (printf "%s := %s" (labelled protocol spelling) datum) Dataization operand
+      line <- commented protocol (printf "%s ≔ %s" (labelled protocol spelling) datum) Dataization operand
       pure (either (const protocol) (\bytes -> protocol{_spelt = Map.insertWith Map.union (opener protocol) (Map.singleton bytes (labelled protocol spelling)) protocol._spelt}) value, Just (indented at line))
     written at (EvTerm _ spelling judgment operand term) protocol = do
       let naming = labelled protocol spelling
       (protocol', value) <- inscribed protocol naming term
-      line <- commented protocol (printf "%s := %s" naming value) judgment operand
+      line <- commented protocol (printf "%s ≔ %s" naming value) judgment operand
       pure (protocol', Just (indented at line))
     written _ (EvBound _ meta term) protocol =
       pure (protocol{_unwritten = Map.alter (Just . namedInsert meta term . fromMaybe Map.empty) (opener protocol) protocol._unwritten}, Nothing)
     written at (EvReshaped _ spelling block source term) protocol = do
       let naming = labelled protocol spelling
       (protocol', value) <- inscribed protocol naming term
-      line <- printf "%s := %s  # %s(%s)" naming value (T.unpack block) . owned protocol source <$> salted (unwritten protocol source)
+      line <- printf "%s ≔ %s  # %s(%s)" naming value (T.unpack block) . owned protocol source <$> salted (unwritten protocol source)
       pure (protocol', Just (indented at line))
     written at (EvSymbolized _ symbol bytes) protocol = do
       datum <- render (ExBytes bytes)
-      pure (protocol, Just (indented at (remarked (printf "symbolized %s := %s" (printFunction (FnSymbol symbol)) datum) (catMaybes [Map.lookup (opener protocol) protocol._spelt >>= Map.lookup bytes, ieee bytes]))))
+      pure (protocol, Just (indented at (remarked (printf "symbolized %s ≔ %s" (printFunction (FnSymbol symbol)) datum) (catMaybes [Map.lookup (opener protocol) protocol._spelt >>= Map.lookup bytes, ieee bytes]))))
     written at (EvCast _ spelling source model term) protocol = do
       let naming = labelled protocol spelling
       (protocol', value) <- inscribed protocol naming term
       one <- spoken protocol source
       two <- spoken protocol model
-      pure (protocol', Just (indented at (printf "cast %s := %s  # %s up to %s" naming value one two)))
+      pure (protocol', Just (indented at (printf "cast %s ≔ %s  # %s up to %s" naming value one two)))
     written _ EvMinted{} protocol = pure (protocol, Nothing)
     written at (EvDeferred _ symbol judgment copy call site) protocol = do
       form <- maybe (render copy) (printed . abbreviatedInside protocol._made) call
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "deferred %s := %s" (printFunction (FnSymbol symbol)) form) remarks)))
+      pure (protocol, Just (indented at (remarked (printf "deferred %s ≔ %s" (printFunction (FnSymbol symbol)) form) remarks)))
     written at (EvApplied _ judgment call object site) protocol = do
       let (index, counted) = numbered protocol
           (index', counted') = numbered counted
@@ -551,13 +551,13 @@ saveEval handle cursor printed printed' profile report = do
       remarks <- context protocol judgment site
       pure
         ( counted'{_made = namedInsert call (alias (opener protocol) index) (namedInsert object (alias (opener protocol) index') counted'._made)}
-        , Just (unlines [indented at (remarked (printf "%s·%d := %s" stem index form) remarks), indented at (printf "%s·%d := %s" stem index' body)])
+        , Just (unlines [indented at (remarked (printf "%s·%d ≔ %s" stem index form) remarks), indented at (printf "%s·%d ≔ %s" stem index' body)])
         )
     written at (EvBuilt depth term) protocol = do
       let (index, counted) = numbered protocol
       value <- borrowed protocol term
       let naming = printf "%s·%d" (labelled protocol answer) index
-      pure (counted{_built = Map.insert (opener protocol) index counted._built, _answered = (depth, term, naming) : counted._answered}, Just (indented at (printf "%s := %s  # %s" naming value (entered protocol (T.unpack answer)))))
+      pure (counted{_built = Map.insert (opener protocol) index counted._built, _answered = (depth, term, naming) : counted._answered}, Just (indented at (printf "%s ≔ %s  # %s" naming value (entered protocol (T.unpack answer)))))
     written at (EvAnswer _ term) protocol = do
       let (index, counted) = numbered protocol
           stem :: String
@@ -565,7 +565,7 @@ saveEval handle cursor printed printed' profile report = do
           naming :: String
           naming = printf "%s·%d" stem index
       (protocol', value) <- valued counted naming term
-      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s ≔ %s  # 𝕄(%s·%d)" naming value stem (Map.findWithDefault 1 (opener protocol) protocol._built))))
     written at (EvMorphed _ term) protocol = concluding at "morphed" term protocol
     written at (EvNormalized _ source term) protocol
       | isJust (namedLookup term protocol._named) || isJust (namedLookup term protocol._made) = pure (protocol, Nothing)
@@ -576,7 +576,7 @@ saveEval handle cursor printed printed' profile report = do
       on <- either (pure . labelled protocol) salted condition
       termination <- render ExTermination
       raiser <- traverse salted raised
-      pure (protocol, Just (indented at (remarked (printf "joined %s := %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right))) [printf "where %s is %s%s" (printFunction (FnSymbol idx)) termination (maybe "" (printf " raised by %s") raiser :: String) | Just idx <- [bottom], idx `elem` [left, right]])))
+      pure (protocol, Just (indented at (remarked (printf "joined %s ≔ %s ? %s : %s" (printFunction (FnSymbol symbol)) on (printFunction (FnSymbol left)) (printFunction (FnSymbol right))) [printf "where %s is %s%s" (printFunction (FnSymbol idx)) termination (maybe "" (printf " raised by %s") raiser :: String) | Just idx <- [bottom], idx `elem` [left, right]])))
     written at (EvGuarded _ condition left right side raised) protocol = do
       on <- either (pure . labelled protocol) salted condition
       one <- sided protocol left
@@ -602,13 +602,13 @@ saveEval handle cursor printed printed' profile report = do
       two <- sided protocol right
       body <- printed (abbreviatedInside protocol._made (unnamed names term))
       let (index, counted) = numbered protocol
-      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "fabricated %s·%d := %s and %s  # %s" (labelled protocol answer) index one two body)))
+      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "fabricated %s·%d ≔ %s and %s  # %s" (labelled protocol answer) index one two body)))
     written at (EvTaken _ term) protocol = do
       let (index, counted) = numbered protocol
           naming :: String
           naming = printf "%s·%d" (labelled protocol answer) index
       (protocol', value) <- valued counted naming term
-      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s := %s" naming value)))
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s ≔ %s" naming value)))
     written at (EvRemembered _ object source) protocol = stating at "remembered" "≡" object source protocol
     written at (EvMemoized _ form reply) protocol = stating at "memoized" "⇛" form reply protocol
     written at (EvEvaluated _ form reply) protocol = do
@@ -711,12 +711,12 @@ saveEval handle cursor printed printed' profile report = do
       (protocol', value) <- case (namedLookup term protocol._made, namedLookup term protocol._named) of
         (Nothing, Nothing) -> valued counted naming term
         _ -> (,) counted <$> borrowed protocol term
-      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s %s := %s" word naming value)))
+      pure (protocol'{_made = namedFormation term (alias (opener protocol) index) protocol'._made}, Just (indented at (printf "%s %s ≔ %s" word naming value)))
     taking :: Int -> String -> Expression -> Protocol -> IO (Protocol, Maybe String)
     taking at word term protocol = do
       let (index, counted) = numbered protocol
       taken <- printed (abbreviatedInside protocol._made term)
-      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "%s %s·%d := %s" word (labelled protocol answer) index taken)))
+      pure (counted{_made = namedInsert term (alias (opener protocol) index) counted._made}, Just (indented at (printf "%s %s·%d ≔ %s" word (labelled protocol answer) index taken)))
 
 data Profile = Profile
   { _start :: Double

@@ -24,27 +24,27 @@ result: '𝜎1:λ'
 protocol: |
   𝕄(Φ.app):
     remembered 𝑛·0·1 ≡ Φ.f  # ⟦ x ↦ ∅, φ ↦ x.call ⟧
-    𝑛·0·2 := Φ.f( x ↦ Φ.a1 )
-    𝑛·0·3 := ⟦ x ↦ Φ.a1, φ ↦ x.call ⟧
+    𝑛·0·2 ≔ Φ.f( x ↦ Φ.a1 )
+    𝑛·0·3 ≔ ⟦ x ↦ Φ.a1, φ ↦ x.call ⟧
     remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ Φ.a1 )
-    normalized 𝑛·0·4 := Φ.a1.call.q  # 𝑛·0·3.φ.q
-    normalized 𝑛·0·5 := Φ.f( Φ.a2 ):call  # Φ.a1
-    normalized 𝑛·0·6 := Φ.f( Φ.a2 )  # 𝑛·0·5.call
-    𝑛·0·7 := Φ.f( x ↦ Φ.a2 )
-    𝑛·0·8 := ⟦ x ↦ Φ.a2, φ ↦ x.call ⟧
+    normalized 𝑛·0·4 ≔ Φ.a1.call.q  # 𝑛·0·3.φ.q
+    normalized 𝑛·0·5 ≔ Φ.f( Φ.a2 ):call  # Φ.a1
+    normalized 𝑛·0·6 ≔ Φ.f( Φ.a2 )  # 𝑛·0·5.call
+    𝑛·0·7 ≔ Φ.f( x ↦ Φ.a2 )
+    𝑛·0·8 ≔ ⟦ x ↦ Φ.a2, φ ↦ x.call ⟧
     remembered 𝑛·0·8 ≡ 𝑛·0·1( x ↦ Φ.a2 )
-    normalized 𝑛·0·9 := Φ.a2.call.q  # 𝑛·0·8.φ.q
-    normalized 𝑛·0·10 := Φ.f( Φ.a3 ):call  # Φ.a2
-    normalized 𝑛·0·11 := Φ.f( Φ.a3 )  # 𝑛·0·10.call
-    𝑛·0·12 := Φ.f( x ↦ Φ.a3 )
-    𝑛·0·13 := ⟦ x ↦ Φ.a3, φ ↦ x.call ⟧
+    normalized 𝑛·0·9 ≔ Φ.a2.call.q  # 𝑛·0·8.φ.q
+    normalized 𝑛·0·10 ≔ Φ.f( Φ.a3 ):call  # Φ.a2
+    normalized 𝑛·0·11 ≔ Φ.f( Φ.a3 )  # 𝑛·0·10.call
+    𝑛·0·12 ≔ Φ.f( x ↦ Φ.a3 )
+    𝑛·0·13 ≔ ⟦ x ↦ Φ.a3, φ ↦ x.call ⟧
     remembered 𝑛·0·13 ≡ 𝑛·0·1( x ↦ Φ.a3 )
-    normalized 𝑛·0·14 := Φ.a3.call.q  # 𝑛·0·13.φ.q
-    normalized 𝑛·0·15 := Φ.f( Φ.a1 ):call  # Φ.a3
-    normalized 𝑛·0·16 := Φ.f( Φ.a1 )  # 𝑛·0·15.call
-    𝑛·0·17 := Φ.f( x ↦ Φ.a1 )
-    𝑛·0·18 := ⟦ x ↦ Φ.a1, φ ↦ x.call ⟧
+    normalized 𝑛·0·14 ≔ Φ.a3.call.q  # 𝑛·0·13.φ.q
+    normalized 𝑛·0·15 ≔ Φ.f( Φ.a1 ):call  # Φ.a3
+    normalized 𝑛·0·16 ≔ Φ.f( Φ.a1 )  # 𝑛·0·15.call
+    𝑛·0·17 ≔ Φ.f( x ↦ Φ.a1 )
+    𝑛·0·18 ≔ ⟦ x ↦ Φ.a1, φ ↦ x.call ⟧
     recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ Φ.a1 )
     recalled 𝑛·0·1 ⇒ Φ.f
-    looped 𝜎1 := 𝑛·0·17.q  # plausible, repeats 𝑛·0·18
-    morphed 𝑛·0·19 := 𝜎1:λ
+    looped 𝜎1 ≔ 𝑛·0·17.q  # plausible, repeats 𝑛·0·18
+    morphed 𝑛·0·19 ≔ 𝜎1:λ
