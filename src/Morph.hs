@@ -26,7 +26,7 @@ import qualified Data.List as List
 import Data.List.NonEmpty (NonEmpty (..))
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as Map
-import Data.Maybe (fromMaybe, isJust, listToMaybe, maybeToList)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe, maybeToList)
 import qualified Data.Set as Set
 import qualified Data.Text as T
 import Deps (Acyclic (..), BuildTermFunc, BuildTermMethod, Evaluation (..), Judgment (..), SaveEvalFunc, SaveStepFunc, State (..), Term (..), dispatched, dontSaveStep, sized)
@@ -101,7 +101,7 @@ data Kept
 
 type Store answer = Map.Map Int [(Expression, answer)]
 
-data Facts = Facts (IORef (Store Expression)) (IORef Lodgings)
+data Facts = Facts (IORef (Store Expression)) (IORef Lodgings) (IORef (Store Expression))
 
 data Lodging = Lodging [(Expression, Attribute)] [(Attribute, Expression)]
 
@@ -572,10 +572,10 @@ recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
 
 factual :: IO Facts
-factual = Facts <$> newIORef Map.empty <*> newIORef (Lodgings Map.empty Map.empty)
+factual = Facts <$> newIORef Map.empty <*> newIORef (Lodgings Map.empty Map.empty) <*> newIORef Map.empty
 
 noted :: ReduceContext -> Expression -> Expression -> IO ()
-noted ctx object source = forM_ ctx._facts $ \(Facts facts lodgings) -> do
+noted ctx object source = forM_ ctx._facts $ \(Facts facts lodgings _) -> do
   known <- (Just source ==) . lookup object . Map.findWithDefault [] (hashExpression object) <$> readIORef facts
   unless known $ do
     modifyIORef' facts (Map.insertWith (++) (hashExpression object) [(object, source)])
@@ -604,11 +604,11 @@ rholess = filter ((/= Just AtRho) . attributeFromBinding)
 
 remembering :: Maybe Facts -> Expression -> IO Bool
 remembering Nothing _ = pure False
-remembering (Just (Facts facts _)) term = isJust . lookup term . Map.findWithDefault [] (hashExpression term) <$> readIORef facts
+remembering (Just (Facts facts _ _)) term = isJust . lookup term . Map.findWithDefault [] (hashExpression term) <$> readIORef facts
 
 traced :: Maybe Facts -> Expression -> IO (Maybe (Expression, [(Expression, Expression)]))
 traced Nothing _ = pure Nothing
-traced (Just (Facts facts lodgings)) form = do
+traced (Just (Facts facts lodgings _)) form = do
   known <- readIORef facts
   index <- readIORef lodgings
   pure (go index known [] form)
@@ -666,7 +666,7 @@ fired univ ctx site state form = sever Nothing form univ state ctx{_judgment = E
 
 voided :: ReduceContext -> Expression -> IO (Maybe [Attribute])
 voided ReduceContext{_facts = Nothing} _ = pure Nothing
-voided ctx@ReduceContext{_facts = Just (Facts facts _)} form@(ExFormation bds) = do
+voided ctx@ReduceContext{_facts = Just (Facts facts _ _)} form@(ExFormation bds) = do
   known <- readIORef facts
   case lookup form (Map.findWithDefault [] (hashExpression form) known) of
     Just source -> do
@@ -760,7 +760,7 @@ repeats mode form ctx = do
   look <- resolver ctx._sides
   depth <- gauge ctx._sides
   start <- maybe (pure Map.empty) readIORef (searching ctx._memo)
-  known <- maybe (pure Map.empty) (\(Facts facts _) -> readIORef facts) ctx._facts
+  known <- maybe (pure Map.empty) (\(Facts facts _ _) -> readIORef facts) ctx._facts
   (hits, kept) <- awaited ctx (evaluate (forced (goHits look depth (sibling known (origin known (Map.size known) form)) start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
   mapM_ (\ref -> writeIORef ref (bounded kept)) (searching ctx._memo)
   pure hits
@@ -1029,10 +1029,9 @@ normalized expr seq ctx@ReduceContext{..} = do
               whole._saveEval (EvApplied whole._nesting whole._judgment (called whole._universe redex) object whole._site)
               known <- remembering whole._facts head'
               when (known && copied bds) (noted whole object redex)
-    made taken _ _ whole redex@(ExApplication _ (ArTau AtRho _)) object@(ExFormation bds)
-      | copied bds = do
-          pending <- readIORef taken
-          forM_ (lookup redex (Map.findWithDefault [] (hashExpression redex) pending)) (noted whole object)
+    made taken _ _ whole redex@(ExApplication _ (ArTau AtRho _)) object@(ExFormation bds) = do
+      pending <- readIORef taken
+      forM_ (lookup redex (Map.findWithDefault [] (hashExpression redex) pending)) (if copied bds then noted whole object else located whole object)
     made taken peeled _ whole redex@(ExDispatch target attr) object
       | attr /= AtRho = do
           stripped peeled whole target attr
@@ -1047,10 +1046,9 @@ normalized expr seq ctx@ReduceContext{..} = do
         left inner = ExFormation [bd | bd <- inner, attributeFromBinding bd /= Just attr]
     stripped _ _ _ _ = pure ()
     dispatched :: IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
-    dispatched taken peeled whole redex object@(ExApplication (ExFormation bds) (ArTau AtRho _))
-      | copied bds = sourced peeled whole redex >>= mapM_ (\path -> modifyIORef' taken (Map.insertWith (++) (hashExpression object) [(object, path)]))
-    dispatched _ peeled whole redex object@(ExFormation bds)
-      | copied bds = sourced peeled whole redex >>= mapM_ (noted whole object)
+    dispatched taken peeled whole redex object@(ExApplication (ExFormation _) (ArTau AtRho _)) =
+      sourced peeled whole redex >>= mapM_ (\path -> modifyIORef' taken (Map.insertWith (++) (hashExpression object) [(object, path)]))
+    dispatched _ peeled whole redex object@(ExFormation bds) = sourced peeled whole redex >>= mapM_ (if copied bds then noted whole object else located whole object)
     dispatched taken peeled whole redex (ExApplication name@(ExMeta _) rho@(ArTau AtRho _)) = do
       side <- opened whole._sides name
       case side of
@@ -1066,8 +1064,14 @@ normalized expr seq ctx@ReduceContext{..} = do
       Nothing -> do
         known <- remembering whole._facts target
         held <- readIORef peeled
-        pure (if known then Just redex else (`ExDispatch` attr) <$> lookup target (Map.findWithDefault [] (hashExpression target) held))
+        plain <- maybe (pure Map.empty) (\(Facts _ _ places) -> readIORef places) whole._facts
+        let found = lookup target . Map.findWithDefault [] (hashExpression target)
+        pure (if known then Just redex else (`ExDispatch` attr) <$> (found held <|> found plain))
     sourced _ _ _ = pure Nothing
+    located :: ReduceContext -> Expression -> Expression -> IO ()
+    located whole object source = forM_ whole._facts $ \(Facts _ _ places) -> do
+      held <- readIORef places
+      when (isNothing (lookup object (Map.findWithDefault [] (hashExpression object) held))) (writeIORef places (Map.insertWith (++) (hashExpression object) [(object, source)] held))
     copied :: [Binding] -> Bool
     copied bds = boxed bds || isJust (lambda bds)
     worldly :: Maybe Expression -> Expression -> Maybe Expression

@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# The recursion of #2462 with 'f' one level down, inside 'o', which binds
+# neither φ nor λ. The facts never hold 'o', yet they lead every copy back to
+# 'Φ.o.f', since a dispatch off 'Φ.o' is traced to that path all the same, so
+# under '--acyclic=plausible' with '--max-loops=1' the third copy is cut, as
+# it is for 'Φ.f' (#2464).
+symbolic: |
+  []
+location: 'Q.app'
+acyclic: plausible
+loops: 1
+partial: true
+input: >
+  ⟦ o ↦ ⟦ f(x) ↦ ⟦ φ ↦ ξ.x.call ⟧ ⟧,
+    a1 ↦ ⟦ call ↦ Φ.o.f( Φ.a2 ) ⟧,
+    a2 ↦ ⟦ call ↦ Φ.o.f( Φ.a3 ) ⟧,
+    a3 ↦ ⟦ call ↦ Φ.o.f( Φ.a1 ) ⟧,
+    app ↦ Φ.o.f( Φ.a1 ).q ⟧
+result: '𝜎1:λ'
+protocol: |
+  𝕄(Φ.app):
+    normalized 𝑛·0·1 := ⟦ f(x) ↦ x.call:φ ⟧  # Φ.o
+    remembered 𝑛·0·2 ≡ Φ.o.f  # ⟦ x ↦ ∅, φ ↦ x.call ⟧
+    𝑛·0·3 := 𝑛·0·2( x ↦ Φ.a1 )
+    𝑛·0·4 := ⟦ x ↦ Φ.a1, φ ↦ x.call ⟧
+    remembered 𝑛·0·4 ≡ 𝑛·0·3
+    normalized 𝑛·0·5 := Φ.a1.call.q  # 𝑛·0·4.φ.q
+    normalized 𝑛·0·6 := Φ.o.f( Φ.a2 ):call  # Φ.a1
+    normalized 𝑛·0·7 := Φ.o.f( Φ.a2 )  # 𝑛·0·6.call
+    𝑛·0·8 := 𝑛·0·2( x ↦ Φ.a2 )
+    𝑛·0·9 := ⟦ x ↦ Φ.a2, φ ↦ x.call ⟧
+    remembered 𝑛·0·9 ≡ 𝑛·0·8
+    normalized 𝑛·0·10 := Φ.a2.call.q  # 𝑛·0·9.φ.q
+    normalized 𝑛·0·11 := Φ.o.f( Φ.a3 ):call  # Φ.a2
+    normalized 𝑛·0·12 := Φ.o.f( Φ.a3 )  # 𝑛·0·11.call
+    𝑛·0·13 := 𝑛·0·2( x ↦ Φ.a3 )
+    𝑛·0·14 := ⟦ x ↦ Φ.a3, φ ↦ x.call ⟧
+    remembered 𝑛·0·14 ≡ 𝑛·0·13
+    recalled 𝑛·0·14 ⇒ 𝑛·0·13
+    recalled 𝑛·0·2 ⇒ Φ.o.f
+    looped 𝜎1 := Φ.o.f( x ↦ Φ.a3 ).q  # plausible, repeats 𝑛·0·4
+    morphed 𝑛·0·15 := 𝜎1:λ
