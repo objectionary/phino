@@ -1,8 +1,17 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "automerge": true,
   "extends": [
     "config:recommended"
   ],
-  "automerge": true,
+  "packageRules": [
+    {
+      "allowedVersions": "/^\\d+(\\.\\d+)*\\+\\d{1,3}(\\.\\d+)?(\\.LTS)?$/",
+      "description": "setup-java cannot install Temurin builds with synthetic build numbers, such as 25.0.5+100000002.0.LTS",
+      "matchDepNames": [
+        "java-jdk"
+      ]
+    }
+  ],
   "platformAutomerge": true
 }

@@ -28,8 +28,8 @@ import GHC.Generics
 import Must (Must (..))
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printExpression)
-import Rewriter (RewriteContext (RewriteContext), direct, every, fast, rewrite)
-import Rule (RuleContext (RuleContext), Step (Step, _applied))
+import Rewriter (RewriteContext (RewriteContext), cheating, direct, every, fast, rewrite)
+import Rule (RuleContext (RuleContext), Step (Step, _applied, _name))
 import System.FilePath (makeRelative, replaceExtension, (</>))
 import Tau (seedTaus)
 import Test.Hspec (Spec, describe, expectationFailure, it, pending, runIO, shouldBe, shouldReturn, shouldSatisfy, shouldThrow)
@@ -194,14 +194,18 @@ spec = do
       made <- newIORef []
       _ <- rewrite (ExApplication (ExFormation [BiVoid (AtLabel "ж")]) (ArTau (AtLabel "ж") (ExFormation []))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
       readIORef made `shouldReturn` [(ExApplication (ExFormation [BiVoid (AtLabel "ж")]) (ArTau (AtLabel "ж") (ExFormation [])), ExFormation [BiTau (AtLabel "ж") (ExFormation [])])]
-    it "tells nothing of an application a step left the object it was" $ do
+    it "tells an application a step left the object it was" $ do
       made <- newIORef []
-      _ <- rewrite (ExApplication (ExFormation [BiTau (AtLabel "ъ") (ExFormation [])]) (ArTau AtRho (ExFormation []))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
-      readIORef made `shouldReturn` []
-    it "tells nothing of the ρ a dispatch fills" $ do
+      _ <- rewrite (ExApplication (ExFormation [BiTau AtRho (ExFormation []), BiTau (AtLabel "ъ") (ExFormation [])]) (ArTau AtRho (ExFormation [BiVoid (AtLabel "ц")]))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
+      readIORef made `shouldReturn` [(ExApplication (ExFormation [BiTau AtRho (ExFormation []), BiTau (AtLabel "ъ") (ExFormation [])]) (ArTau AtRho (ExFormation [BiVoid (AtLabel "ц")])), ExFormation [BiTau AtRho (ExFormation []), BiTau (AtLabel "ъ") (ExFormation [])])]
+    it "tells the ρ a dispatch fills, beside the object it made" $ do
       made <- newIORef []
       _ <- rewrite (ExApplication (ExFormation [BiVoid AtRho, BiVoid (AtLabel "щ")]) (ArTau AtRho (ExFormation [BiTau (AtLabel "ё") (ExFormation [])]))) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
-      readIORef made `shouldReturn` []
+      readIORef made `shouldReturn` [(ExApplication (ExFormation [BiVoid AtRho, BiVoid (AtLabel "щ")]) (ArTau AtRho (ExFormation [BiTau (AtLabel "ё") (ExFormation [])])), ExFormation [BiTau AtRho (ExFormation [BiTau (AtLabel "ё") (ExFormation [])]), BiVoid (AtLabel "щ")])]
+    it "tells the dispatch a step took into an object" $ do
+      made <- newIORef []
+      _ <- rewrite (ExDispatch (ExFormation [BiTau (AtLabel "ыж") (ExFormation [BiVoid (AtLabel "ю")])]) (AtLabel "ыж")) (map (stepOf linked) normalizationRules) (RewriteContext ExRoot 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep (\redex copy -> modifyIORef' made ((redex, copy) :)))
+      readIORef made >>= (`shouldSatisfy` elem (ExDispatch (ExFormation [BiTau (AtLabel "ыж") (ExFormation [BiVoid (AtLabel "ю")])]) (AtLabel "ыж")) . map fst)
 
   describe "rewrites by a locator" $ do
     it "rewrites the located part step after step" $ do
@@ -212,6 +216,28 @@ spec = do
       expr <- parseExpressionThrows "⟦ t ↦ ⊥.a ⟧"
       rewrite expr [] (RewriteContext (ExDispatch ExRoot (AtLabel "w")) 25 25 False Nothing (building linked) (_normal linked) (_matching linked) MtDisabled Nothing dontSaveStep dontSaveMade)
         `shouldThrow` (\exc -> "Can't find object by locator" `isInfixOf` show (exc :: SomeException))
+
+  describe "catches a loop that comes back to the term the run started from" $ do
+    let steps =
+          [ direct "a-to-b" False (\_ expr -> [ExFormation [BiTau (AtLabel "b") ExXi] | ExFormation [BiTau (AtLabel "a") ExXi] <- [expr]])
+          , direct "b-to-a" False (\_ expr -> [ExFormation [BiTau (AtLabel "a") ExXi] | ExFormation [BiTau (AtLabel "b") ExXi] <- [expr]])
+          ]
+        context cycles locator some =
+          RewriteContext locator 25 cycles False Nothing (building linked) (_normal linked) (every some) MtDisabled Nothing dontSaveStep dontSaveMade
+        looping exc = "looping" `isInfixOf` show (exc :: SomeException)
+    it "catches a loop that comes back to the term the run started from" $ do
+      forM_
+        [ (ExFormation [BiTau (AtLabel "a") ExXi], steps)
+        , (ExFormation [BiTau (AtLabel "b") ExXi], steps)
+        , (ExFormation [BiTau (AtLabel "a") ExXi], reverse steps)
+        , (ExFormation [BiTau (AtLabel "b") ExXi], reverse steps)
+        ]
+        (\(start, some) -> rewrite start some (context 25 ExRoot some) `shouldThrow` looping)
+      rewrite
+        (ExFormation [BiTau (AtLabel "x") (ExFormation [BiTau (AtLabel "a") ExXi])])
+        steps
+        (context 1 (ExDispatch ExRoot (AtLabel "x")) steps)
+        `shouldThrow` looping
 
   describe "rewrite packs" $ do
     let resources = "test-resources/rewriter-packs"
@@ -295,17 +321,34 @@ spec = do
         `shouldBe` Set.fromList [0, 1, 2]
   describe "direct" $ do
     it "rewrites every place the function matches at" $
-      fmap fst <$> _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch (ExApplication ExXi (ArTau (AtLabel "o") ExXi)) (AtLabel "m"))
+      fmap fst <$> _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True) False) (ExDispatch (ExApplication ExXi (ArTau (AtLabel "o") ExXi)) (AtLabel "m"))
         `shouldReturn` Just (ExDispatch (ExApplication ExRoot (ArTau (AtLabel "o") ExRoot)) (AtLabel "m"))
     it "tells every place it rewrote, beside what it rewrote it to" $
-      fmap snd <$> _applied (direct "tq" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExApplication ExXi (ArTau (AtLabel "ё") ExXi))
+      fmap snd <$> _applied (direct "tq" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True) False) (ExApplication ExXi (ArTau (AtLabel "ё") ExXi))
         `shouldReturn` Just [(ExXi, ExRoot), (ExXi, ExRoot)]
     it "tells it matched nowhere" $
-      _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True)) (ExDispatch ExTermination (AtLabel "m"))
+      _applied (direct "tx" False (\_ expr -> [ExRoot | ExXi <- [expr]])) (RuleContext buildTerm Nothing (const True) False) (ExDispatch ExTermination (AtLabel "m"))
         `shouldReturn` Nothing
     it "hands the world to the function" $
-      fmap fst <$> _applied (direct "tw" False (\universe expr -> [world | ExXi <- [expr], Just world <- [universe]])) (RuleContext buildTerm (Just ExTermination) (const True)) ExXi
+      fmap fst <$> _applied (direct "tw" False (\universe expr -> [world | ExXi <- [expr], Just world <- [universe]])) (RuleContext buildTerm (Just ExTermination) (const True) False) ExXi
         `shouldReturn` Just ExTermination
+  describe "cheating" $ do
+    it "drops the ρ a rule applies to a term that already ends with one" $ do
+      dot <- maybe (fail "no rule dot") pure (lookup "dot" [(_name step, step) | step <- map (stepOf linked) normalizationRules])
+      term <- parseExpressionThrows "⟦ a ↦ Φ.x( ρ ↦ ⟦⟧ ), b ↦ ⟦⟧ ⟧.a"
+      fmap fst <$> _applied (cheating dot) (RuleContext buildTerm Nothing (const True) False) term
+        `shouldReturn` Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau AtRho (ExFormation [])))
+    it "keeps both ρ when it is not asked to cheat" $ do
+      dot <- maybe (fail "no rule dot") pure (lookup "dot" [(_name step, step) | step <- map (stepOf linked) normalizationRules])
+      term <- parseExpressionThrows "⟦ a ↦ Φ.x( ρ ↦ ⟦⟧ ), b ↦ ⟦⟧ ⟧.a"
+      fmap fst <$> _applied dot (RuleContext buildTerm Nothing (const True) False) term
+        `shouldReturn` Just (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau AtRho (ExFormation []))) (ArTau AtRho (ExFormation [BiTau (AtLabel "a") (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau AtRho (ExFormation []))), BiTau (AtLabel "b") (ExFormation [])])))
+    it "drops the ρ a compiled step applies to a term that already ends with one" $
+      fmap snd <$> _applied (cheating (direct "rr" False (\_ expr -> [ExApplication (ExApplication ExRoot (ArTau AtRho ExXi)) (ArTau AtRho ExRoot) | ExXi <- [expr]]))) (RuleContext buildTerm Nothing (const True) False) ExXi
+        `shouldReturn` Just [(ExXi, ExApplication ExRoot (ArTau AtRho ExXi))]
+    it "keeps a ρ applied to a term ending with another argument" $
+      fmap fst <$> _applied (cheating (direct "ro" False (\_ expr -> [ExApplication (ExApplication ExRoot (ArTau (AtLabel "o") ExXi)) (ArTau AtRho ExRoot) | ExXi <- [expr]]))) (RuleContext buildTerm Nothing (const True) False) ExXi
+        `shouldReturn` Just (ExApplication (ExApplication ExRoot (ArTau (AtLabel "o") ExXi)) (ArTau AtRho ExRoot))
   describe "fast" $ do
     it "holds for a formation rewritten between the same two meta bindings" $
       fast (ExFormation [BiMeta "B1", BiVoid (AtLabel "j"), BiMeta "B2"]) (ExFormation [BiMeta "B1", BiVoid (AtLabel "k"), BiMeta "B2"])

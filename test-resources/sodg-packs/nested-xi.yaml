@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ a ↦ ⟦ b ↦ ξ.c, c ↦ ξ ⟧, d ↦ ξ.a ⟧'
+output: |
+  F c0 a d
+  F c1 b c
+  D c2 c1 c
+  P c1 b c2
+  P c1 c c1
+  P c0 a c1
+  D c3 c0 a
+  P c0 d c3

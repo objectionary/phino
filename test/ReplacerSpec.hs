@@ -6,8 +6,11 @@
 module ReplacerSpec where
 
 import AST
+import Control.Exception (evaluate)
 import Control.Monad (forM_)
+import Data.Text qualified as T
 import Replacer
+import System.Timeout (timeout)
 import Test.Hspec (Example (Arg), Expectation, Spec, SpecWith, describe, it, shouldBe)
 
 test :: ReplaceExpressionFunc -> [(String, Expression, [Expression], [Expression], Expression)] -> SpecWith (Arg Expectation)
@@ -353,3 +356,12 @@ spec = do
         , ExFormation [BiTau (AtLabel "vt") (ExDispatch ExXi (AtLabel "ek")), BiTau (AtLabel "te") ExRoot]
         )
       ]
+
+  describe "replace expression around a shared inert term" $
+    it "does not walk an inert term for the sites a replaced site may hold" $ do
+      let shared = iterate (\inner -> ExFormation [BiTau (AtLabel "l") inner, BiTau (AtLabel "r") inner]) ExRoot !! 20
+          nested = ExDispatch (ExFormation []) (AtLabel "go")
+          site = ExDispatch (ExFormation (BiTau (AtLabel "h") shared : [BiTau (AtLabel (T.pack ("n" ++ show idx))) nested | idx <- [1 .. 1000 :: Int]])) (AtLabel "go")
+          expr = ExFormation [BiTau (AtLabel "a") site, BiTau (AtLabel "b") nested]
+      replaced <- timeout 5000000 (evaluate (replaceExpression (expr, site : replicate 1001 nested, map const (ExRoot : replicate 1001 ExXi)) == ExFormation [BiTau (AtLabel "a") ExRoot, BiTau (AtLabel "b") ExXi]))
+      replaced `shouldBe` Just True

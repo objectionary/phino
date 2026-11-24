@@ -12,12 +12,12 @@ import Abridge (abridged)
 import CLI.Types
 import CLI.Validators (invalidCLIArguments)
 import CST (EXPRESSION)
-import Canonizer (canonizeExpr, lambdaNames)
+import Canonizer (CanonState, canonize, canonizeExpr, canonizeExpression, emptyCanon, lambdaNames)
 import Compiled (compiled)
 import Control.Exception
-import Control.Monad (mfilter, when, (>=>))
+import Control.Monad (mfilter, when, zipWithM, (>=>))
 import qualified Data.ByteString as BS
-import Data.Char (isDigit, toLower)
+import Data.Char (isDigit)
 import Data.Functor ((<&>))
 import Data.IORef
 import Data.List (intercalate, nub)
@@ -26,9 +26,10 @@ import Data.Maybe
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Time (getZonedTime)
+import Data.Tuple (swap)
 import Data.Version (showVersion)
 import qualified Data.Yaml as Yaml
-import Deps (Evaluation (EvHeader, EvRun), Header (Header), Judgment, SaveEvalFunc, SaveStepFunc, World (World), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, progressed, resited, saveEval, saveEvalXml, saveStep)
+import Deps (Evaluation (EvHeader, EvRun), Header (Header), Judgment, SaveEvalFunc, SaveStepFunc, World (World), dontSaveEval, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, profiling, progressed, resited, saveEval, saveEvalXml, saveStep)
 import Encoding
 import Engine (Engine, fresh, yaml)
 import Files (ensuredFile, overwrite)
@@ -38,7 +39,7 @@ import GHC.Clock (getMonotonicTime)
 import LaTeX (LatexContext (LatexContext), defaultMeetLength, defaultMeetPopularity, expressionToLaTeX, rewrittensToLatex)
 import Lambdas (Lambdas, emptyLambdas, readLambdas, sized, taken)
 import Lining (LineFormat (SINGLELINE))
-import Locator (locatedExpression, withLocatedExpression)
+import Locator (LocatorException, locatedExpression, withLocatedExpression)
 import Logger
 import Morph (ReduceContext (..), insideUniverse)
 import Parser (Form, parseExpressionThrows, parseExpressionThrows')
@@ -48,7 +49,7 @@ import qualified Random as R
 import Rewriter (Rewrittens', stepHeaders)
 import Sugar (SugarType (SALTY), withoutRho)
 import System.Directory (createDirectoryIfMissing, doesDirectoryExist, doesFileExist, listDirectory, removeFile)
-import System.FilePath (splitExtension, takeDirectory, takeExtension, (</>))
+import System.FilePath (splitExtension, takeDirectory, (</>))
 import System.IO (Handle, IOMode (WriteMode), getContents', hClose, hSetEncoding, openFile, utf8)
 import Text.Printf (printf)
 import XMIR (Atoms, expressionToXMIR, gitRevision, parseXMIRThrows, printXMIR, renameAtoms, xmirAtoms, xmirToPhi)
@@ -79,25 +80,36 @@ clearedStepsDir (Just dir) = do
       isFile <- doesFileExist path
       when isFile (removeFile path)
 
-saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> IO SaveStepFunc
-saveStepFunc stepsDir ctx@PrintCtx{..} included excluded = do
+saveStepFunc :: Maybe FilePath -> PrintContext -> [Expression] -> [Expression] -> Expression -> IO SaveStepFunc
+saveStepFunc stepsDir ctx@PrintCtx{..} included excluded start = do
   clearedStepsDir stepsDir
   counter <- newIORef (0 :: Int)
+  names <- newIORef =<< seeded
   let ioToExt :: String
       ioToExt
         | _outputFormat == LATEX = "tex"
         | otherwise = show _outputFormat
+      render :: Expression -> IO String
       render expr = do
-        shown <- F.exclude' expr excluded >>= (`F.include'` included)
-        printAnswer ctx shown
+        visible <- shown expr
+        if _canonize
+          then atomicModifyIORef' names (swap . canonizeExpression visible) >>= printCanonized ctx visible
+          else printAnswer ctx visible
       save :: SaveStepFunc
       save expr = do
         step <- atomicModifyIORef' counter (\value -> (value + 1, value + 1))
         saveStep stepsDir ioToExt render step expr
   pure save
+  where
+    shown :: Expression -> IO Expression
+    shown expr = F.exclude' expr excluded >>= (`F.include'` included)
+    seeded :: IO CanonState
+    seeded
+      | _canonize && isJust stepsDir = (snd . (`canonizeExpression` emptyCanon) <$> shown start) `catch` (\(_ :: LocatorException) -> pure emptyCanon)
+      | otherwise = pure emptyCanon
 
-withEvalFunc :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc target ctx action = withEvalFunc' target ctx (tracked >=> action)
+withEvalFunc :: forall a. Maybe FilePath -> Maybe FilePath -> Bool -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc xml text profile ctx action = withEvalFunc' xml text profile ctx (tracked >=> action)
   where
     tracked :: SaveEvalFunc -> IO SaveEvalFunc
     tracked record = do
@@ -108,29 +120,30 @@ withEvalFunc target ctx action = withEvalFunc' target ctx (tracked >=> action)
           pure (progressed cursor 5 (flattened ctx) record)
         else pure record
 
-withEvalFunc' :: forall a. Maybe FilePath -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
-withEvalFunc' Nothing _ action = action dontSaveEval
-withEvalFunc' (Just file) ctx action = do
-  createDirectoryIfMissing True (takeDirectory file)
-  logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as %s" file (if markup then "XML" else "text"))
-  if markup then markedUp else plain
+withEvalFunc' :: forall a. Maybe FilePath -> Maybe FilePath -> Bool -> PrintContext -> (SaveEvalFunc -> IO a) -> IO a
+withEvalFunc' xml text profile ctx action =
+  markedUp xml (\marked -> plain text (\lined -> action (\record -> marked record >> lined record)))
   where
-    markup :: Bool
-    markup = map toLower (takeExtension file) == ".xml"
-    markedUp :: IO a
-    markedUp = do
+    markedUp :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
+    markedUp Nothing go = go dontSaveEval
+    markedUp (Just file) go = do
+      logDebug (printf "The option '--protocol' is specified, every firing will be recorded in '%s' as XML" file)
       cursor <- newIORef emptyNesting
       began <- getMonotonicTime
-      bracket opened (\protocol -> endEvalXml protocol cursor began `finally` hClose protocol) $ \protocol ->
-        action (saveEvalXml protocol cursor (flattened ctx))
-    plain :: IO a
-    plain = do
+      bracket (opened file) (\protocol -> endEvalXml protocol cursor began `finally` hClose protocol) $ \protocol ->
+        go (saveEvalXml protocol cursor (flattened ctx))
+    plain :: Maybe FilePath -> (SaveEvalFunc -> IO a) -> IO a
+    plain Nothing go = go dontSaveEval
+    plain (Just file) go = do
+      logDebug (printf "The option '--minutes' is specified, every firing will be recorded in '%s' as text" file)
       cursor <- newIORef emptyProtocol
       began <- getMonotonicTime
-      bracket opened (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
-        action (saveEval protocol cursor (flattened ctx) (salted ctx))
-    opened :: IO Handle
-    opened = do
+      watch <- if profile then Just <$> profiling else pure Nothing
+      bracket (opened file) (\protocol -> endEval protocol cursor began `finally` hClose protocol) $ \protocol ->
+        go (saveEval protocol cursor (flattened ctx) (salted ctx) watch)
+    opened :: FilePath -> IO Handle
+    opened file = do
+      createDirectoryIfMissing True (takeDirectory file)
       protocol <- openFile file WriteMode
       hSetEncoding protocol utf8
       pure protocol
@@ -198,7 +211,7 @@ aimed printCtx judgment header (Just src) expr@(ExFormation _) ctx = do
   ctx._saveEval (EvHeader header aiming._locator target)
   heading ctx._saveEval printCtx judgment aiming._locator
   mapM_ (ctx._saveEval . resited ctx._site aiming._locator) . reverse =<< readIORef held
-  pure (universe, aiming{_site = aiming._locator, _saveEval = ctx._saveEval})
+  pure (universe, aiming{_site = aiming._locator, _opened = Just (ctx._nesting, judgment, aiming._locator), _saveEval = ctx._saveEval})
 aimed _ _ _ (Just _) expr _ =
   invalidCLIArguments
     (printf "The option --inside requires the input expression to be a formation, but given: %s" (P.printExpression expr))
@@ -231,6 +244,7 @@ parseInputWithAtoms input format form = (,M.empty) <$> parseInput input format f
 printRewrittens :: PrintContext -> Rewrittens' -> IO String
 printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
   | _outputFormat == LATEX && _sequence = rewrittensToLatex rewrittens (printCtxToLatexCtx ctx)
+  | _canonize = withHeaders <$> zipWithM (printCanonized ctx) (map fst chain) (map fst (canonize chain))
   | otherwise = withHeaders <$> mapM (printAnswer ctx . fst) chain
   where
     withHeaders :: [String] -> String
@@ -243,11 +257,12 @@ printRewrittens ctx@PrintCtx{..} rewrittens@(chain, _)
 
 printAnswer :: PrintContext -> Expression -> IO String
 printAnswer ctx@PrintCtx{..} expr
-  | _canonize = printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
+  | _canonize = printCanonized ctx expr (canonizeExpr expr)
   | otherwise = printFocused ctx expr
-  where
-    canonized :: Expression
-    canonized = canonizeExpr expr
+
+printCanonized :: PrintContext -> Expression -> Expression -> IO String
+printCanonized ctx@PrintCtx{..} expr canonized =
+  printFocused ctx{_xmirCtx = renameAtoms (zip (lambdaNames expr) (lambdaNames canonized)) _xmirCtx} canonized
 
 printFocused :: PrintContext -> Expression -> IO String
 printFocused ctx@PrintCtx{..} expr
@@ -340,10 +355,33 @@ validateRewriteRule rule =
    in case filter (\fn -> fn `notElem` (buildFunctions ++ execFunctions)) used of
         (fn : _) -> invalidCLIArguments (printf "Function '%s' in rule '%s' is not supported" fn rule.name)
         [] -> case filter (`elem` execFunctions) used of
-          [] -> pure rule
+          [] -> case filter (\extra -> returned (Y.function extra) /= kind (Y.meta extra)) (fromMaybe [] rule.where_) of
+            [] -> pure rule
+            (extra : _) ->
+              invalidCLIArguments
+                ( printf
+                    "Function '%s' in rule '%s' returns %s, but its meta '%s' is %s"
+                    (Y.function extra)
+                    rule.name
+                    (returned (Y.function extra))
+                    (P.printExtraArg (Y.meta extra))
+                    (kind (Y.meta extra))
+                )
           (fn : _) ->
             invalidCLIArguments
               (printf "Function '%s' in rule '%s' is available only for dataization and morphing, not for rewriting" fn rule.name)
+  where
+    returned :: String -> String
+    returned "random-tau" = "an attribute"
+    returned "tau" = "an attribute"
+    returned "join" = "bindings"
+    returned "dataize" = "bytes"
+    returned _ = "an expression"
+    kind :: Y.ExtraArgument -> String
+    kind (Y.ArgAttribute _) = "an attribute"
+    kind (Y.ArgBinding _) = "bindings"
+    kind (Y.ArgBytes _) = "bytes"
+    kind (Y.ArgExpression _) = "an expression"
 
 printOut :: Maybe FilePath -> String -> IO ()
 printOut target content = case target of
