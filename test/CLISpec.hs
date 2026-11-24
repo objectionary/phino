@@ -1796,6 +1796,16 @@ spec = do
         it "cuts the fourth copy with --max-loops=2" $
           copies "2" >>= (`shouldBe` 4)
 
+      describe "over copies of one object two levels down made inside each other with a new argument every time" $ do
+        let world = "⟦ p ↦ ⟦ o ↦ ⟦ f ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.call ⟧ ⟧ ⟧, " ++ intercalate ", " [printf "a%d ↦ ⟦ call ↦ Φ.p.o.f( x ↦ Φ.a%d ) ⟧" index (index `mod` 5 + 1) | index <- [1 .. 5 :: Int]] ++ ", app ↦ Φ.p.o.f( x ↦ Φ.a1 ) ⟧"
+        it "cuts the third copy with --max-loops=1" $
+          withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withStdin world $
+              testCLISucceeded ["dataize", "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+            protocol <- readProtocol path
+            length (filter (\record -> "𝑛" `isPrefixOf` record && "φ ↦ x.call ⟧" `isSuffixOf` record) (map (dropWhile (== ' ')) (lines protocol))) `shouldBe` 3
+
       it "refuses a negative count" $
         withStdin once $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=-1"] ["--max-loops must be >= 0"]

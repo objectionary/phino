@@ -593,6 +593,11 @@ from leads back to that copy, so a circle of facts is left after one lap
 A dispatch off a copy the facts hold leaves that copy without the attribute
 it took, and `normalized` keeps that copy as an alias of the one it came
 from (`peeled`), so a copy made of it later is traced back all the same.
+A dispatch off a path of the world that comes to a formation binding
+neither φ nor λ, such as `Φ.o`, writes no fact, but keeps the formation by
+that path for the whole run (`located`, the third store of `Facts`), so a
+dispatch off it, as `.f`, is traced to `Φ.o.f` and the copies of `f` are
+facts all the same (#2464).
 Every `recalled` line repeats both sides of a `remembered` or `memoized`
 line above it:
 both writers keep the text they wrote for every fact (`_stated` of
