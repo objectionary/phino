@@ -315,6 +315,12 @@ condition, and the firing writes `guarded 𝛿1·1 ? 𝑛1·1 : 𝑛2·1  # wher
 is ⊥` (`EvGuarded`) and the markup
 `<guarded on="𝛿1·1" left="𝑛1·1" right="𝑛2·1" terminator="right"/>` (#2370).
 A ⊥ deeper inside a side still joins only with a symbol facing it.
+Where one whole side is a bare symbol, `⟦ λ ⤍ 𝜎2 ⟧`, and the other is
+neither a bare symbol nor ⊥, `joined` answers the other side as it is, taking
+the symbol, a value nobody worked out, for that side (`bared` of `Forks.hs`),
+and the firing writes `assumed 𝛿1·1 ? 𝑛1·1 : 𝜎2:λ  # where 𝜎2:λ stands for
+𝑛1·1` (`EvAssumed`) and the markup `<assumed … symbol="right"/>`, so a cut
+that came to one side of a join no longer gets the firing stuck (#2469).
 In an entry that joins, an operand of `morph` or `undress` or a line whose
 term gets `opaque`, such as a dispatch off the bare symbol of a cut,
 `⟦ λ ⤍ 𝜎5 ⟧.if`, binds its meta to ⊥ rather than getting the firing stuck,
