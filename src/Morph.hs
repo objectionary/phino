@@ -782,9 +782,37 @@ repeats mode form ctx = do
     repeated :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> (Expression -> Bool) -> Acyclic -> Expression -> Searched -> (Bool, Searched)
     repeated look _ _ Proven before kept = (alike' look form before, kept)
     repeated look depth kin Plausible before kept
+      | kin before && not (atomic form) = (True, kept)
+      | kin before && ctx._judgment /= Morphing && not (shrunk look before) = (True, kept)
       | atomic form = akin'' look depth kept before form
-      | kin before = (True, kept)
       | otherwise = within'' look kept before form
+    shrunk :: (T.Text -> Maybe Expression) -> Expression -> Bool
+    shrunk look (ExFormation above) = any (held look [body | BiTau attr body <- above, attr /= AtRho]) (changed above form)
+    shrunk _ _ = False
+    changed :: [Binding] -> Expression -> [Expression]
+    changed above (ExFormation bds) = [body | BiTau attr body <- bds, attr /= AtRho, BiTau attr body `notElem` above]
+    changed _ _ = []
+    held :: (T.Text -> Maybe Expression) -> [Expression] -> Expression -> Bool
+    held look roots part = goHeld Set.empty roots
+      where
+        wanted :: [Expression]
+        wanted = part : maybe [] (maybeToList . look) (metaName part)
+        metaName :: Expression -> Maybe T.Text
+        metaName (ExMeta name) = Just name
+        metaName _ = Nothing
+        goHeld :: Set.Set Int -> [Expression] -> Bool
+        goHeld _ [] = False
+        goHeld seen (term : rest)
+          | term `elem` wanted = True
+          | Set.member (hashExpression term) seen = goHeld seen rest
+          | otherwise = goHeld (Set.insert (hashExpression term) seen) (parts term ++ rest)
+        parts :: Expression -> [Expression]
+        parts (ExMeta name) = maybeToList (look name)
+        parts (ExApplication callee (ArTau _ arg)) = [callee, arg]
+        parts (ExApplication callee (ArAlpha _ arg)) = [callee, arg]
+        parts (ExDispatch inner _) = [inner]
+        parts (ExFormation bds) = [body | BiTau attr body <- bds, attr /= AtRho]
+        parts _ = []
     sibling :: Store Expression -> Maybe Expression -> Expression -> Bool
     sibling _ Nothing _ = False
     sibling known own before = origin known (Map.size known) before == own
