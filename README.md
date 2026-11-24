@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.165
+cabal install --overwrite-policy=always phino-0.0.167
 phino --version
 ```
 
@@ -59,7 +59,7 @@ In a [GitHub Actions][gha] workflow, one step downloads the binary
 for the runner and puts it on the `PATH`:
 
 ```yaml
-- uses: objectionary/phino@0.0.165
+- uses: objectionary/phino@0.0.167
   with:
     version-file: phino-version.txt
 - run: phino --version
@@ -295,6 +295,8 @@ The `--protocol` option writes every λ function the run fired into a file,
 as a tree in XML, for a program to read.
 The `--minutes` option writes the same tree as indented text, and one run
 may take both.
+With `--profile`, every record of the minutes ends with the milliseconds
+it took, the time since the start, and the memory in use.
 Here, `L_down` answers with a call of its own object over a fresh symbol, so
 without `--acyclic` the run would go on until `--max-steps` runs out:
 
@@ -322,7 +324,7 @@ $ cat down.txt
     𝔻(ξ.x):
       𝛿·1·1 := 𝔻(𝜎1:λ)
     𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
-    𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛
+    𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛 of L_down
     𝕄(𝑛·1·1):
       𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
       𝑛·1·3 := ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
@@ -330,6 +332,7 @@ $ cat down.txt
       morphed 𝑛·1·4 := 𝑛·1·3
     𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
     remembered 𝑛·1·3 ≡ 𝑛·0·3
+    evaluated 𝑛·1·6 := 𝑛·1·3  # 𝑛·0·3
   recalled 𝑛·1·3 ⇒ 𝑛·0·3
   recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ 𝜎1:λ )
   recalled 𝑛·0·1 ⇒ Φ.down
@@ -355,9 +358,13 @@ A protocol may hold these lines:
   commented with `𝕄(𝑛·1·1)` is its normal form.
 * `boxed …` is dataization stepping into the `φ` of a formation.
 * `undressed …` is an `undress` line taking the `φ` of a formation.
+* `shared 𝑛·1 := …` names an argument a recursion keeps wrapping, so later
+  lines spell it by that name.
 * `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.
+* `evaluated …` closes an `𝔼` block with what the firing answered, and the
+  comment names the formation fired.
 * `normalized …` is the term a normalization came to, where no line named it
   before, and the comment names the term it came from.
 * `joined …`, `fabricated …`, `diverged …` and `unripe …` are what a `join`
@@ -366,7 +373,8 @@ A protocol may hold these lines:
   line minted.
 * `cast …` binds a meta to the copy a `cast` block made of a bare symbol, and
   the comment names the meta it read and the meta whose shape it took.
-* `unanswered …` is a λ name no entry answers.
+* `unanswered …` is a λ name no entry answers, and `opaque …` a symbol
+  nothing can fire; the comment names the term 𝕄 or 𝔻 worked on.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
 * `remembered 𝑛·0·1 ≡ Φ.down` is a fact the run keeps: the term on the
@@ -380,6 +388,8 @@ A protocol may hold these lines:
   spelled as its `remembered` or `memoized` line spelled it.
 * `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
   the call of the object it answered with that symbol, when a fact names it.
+* `passed 𝑛·1·2 := …` is where an operand came to an object `--acyclic`
+  takes for a loop, handed on as it is.
 * `starved …`, `spent …`, `timeout …`, `oversized …` and `blown …` are
   where `--max-steps`, `--max-firings`, `--max-seconds`, `--max-nodes` and
   `--max-memory` ran out.
@@ -509,6 +519,19 @@ B >> ⟦⟧
 d >> 68-65-6C-6C-6F
 ```
 
+## SODG
+
+The `sodg` command prints the commands that build the graph of a
+𝜑-expression, one per line, in the language of
+[sodg-maven-plugin](https://github.com/objectionary/sodg-maven-plugin):
+
+```bash
+$ echo '⟦ x ↦ ξ.y, y ↦ ∅ ⟧' | phino sodg
+F c0 x y
+D c1 c0 y
+P c0 x c1
+```
+
 ## Compile
 
 By default, `phino` reads its rules from YAML and interprets them at every
@@ -620,6 +643,13 @@ ExtArgument
   | Attribute'           # !t
 ```
 
+Regular expressions in `matches` and `sed` are limited to 1,000,000 match
+calls and 256 levels of recursion per execution. Exceeding either limit
+stops the command with `Regex execution failed` and exit code 1. The recursion
+limit protects small native thread stacks; a repeated capturing group such as
+`(a|b)*` can reach it even on a string of a few hundred characters. Long strings
+can still be matched with patterns that need little recursion, such as `[ab]*`.
+
 Here's list of functions that are supported for extensions:
 
 * `contextualize` - function of two arguments, that rewrites given expression
@@ -719,119 +749,119 @@ entries of `benchmark/demo.phi` symbolically, one case per entry.
 === parse/phi ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      2066554.596 μs
-  avg:        206655.460 μs
-  min:        185040.330 μs
-  max:        240448.721 μs
-  std dev:    25205.367 μs
+  total:      2413980.968 μs
+  avg:        241398.097 μs
+  min:        215225.227 μs
+  max:        284695.902 μs
+  std dev:    25724.434 μs
 === parse/xmir ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      8379123.666 μs
-  avg:        837912.367 μs
-  min:        789526.681 μs
-  max:        896836.784 μs
-  std dev:    41239.371 μs
+  total:      10044170.261 μs
+  avg:        1004417.026 μs
+  min:        928746.607 μs
+  max:        1079348.074 μs
+  std dev:    50756.236 μs
 === rewrite/normalize ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      15.728 μs
-  avg:        1.573 μs
-  min:        1.396 μs
-  max:        1.809 μs
-  std dev:    0.148 μs
+  total:      20.328 μs
+  avg:        2.033 μs
+  min:        1.723 μs
+  max:        2.685 μs
+  std dev:    0.289 μs
 === print/sweet/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      5290672.593 μs
-  avg:        529067.259 μs
-  min:        490103.770 μs
-  max:        570559.154 μs
-  std dev:    29509.749 μs
+  total:      1911999.027 μs
+  avg:        191199.903 μs
+  min:        185908.584 μs
+  max:        202990.068 μs
+  std dev:    4905.518 μs
 === print/sweet/flat ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      660420.084 μs
-  avg:        66042.008 μs
-  min:        56619.561 μs
-  max:        77989.203 μs
-  std dev:    9209.215 μs
+  total:      1145909.419 μs
+  avg:        114590.942 μs
+  min:        92613.667 μs
+  max:        139357.482 μs
+  std dev:    15308.656 μs
 === print/salty/multiline ===
   warmup:     3 iterations
   batches:    10 x 1
-  total:      16195964.493 μs
-  avg:        1619596.449 μs
-  min:        1603119.283 μs
-  max:        1640364.088 μs
-  std dev:    11249.344 μs
+  total:      7468225.700 μs
+  avg:        746822.570 μs
+  min:        735697.009 μs
+  max:        774034.524 μs
+  std dev:    10278.722 μs
 === morph/symbolic/demo/e1 ===
   warmup:     3 iterations
   batches:    10 x 9
-  total:      9958.392 μs
-  avg:        110.649 μs
-  min:        105.527 μs
-  max:        118.163 μs
-  std dev:    3.123 μs
+  total:      13798.063 μs
+  avg:        153.312 μs
+  min:        149.894 μs
+  max:        163.169 μs
+  std dev:    3.598 μs
 === morph/symbolic/demo/e2 ===
   warmup:     3 iterations
-  batches:    10 x 165
-  total:      182361.874 μs
-  avg:        110.522 μs
-  min:        108.306 μs
-  max:        112.929 μs
-  std dev:    1.482 μs
+  batches:    10 x 116
+  total:      177830.095 μs
+  avg:        153.302 μs
+  min:        152.510 μs
+  max:        155.166 μs
+  std dev:    0.755 μs
 === morph/symbolic/demo/e3 ===
   warmup:     3 iterations
-  batches:    10 x 156
-  total:      171525.942 μs
-  avg:        109.953 μs
-  min:        108.482 μs
-  max:        112.194 μs
-  std dev:    1.069 μs
+  batches:    10 x 109
+  total:      172419.898 μs
+  avg:        158.183 μs
+  min:        156.401 μs
+  max:        160.218 μs
+  std dev:    1.203 μs
 === morph/symbolic/demo/e4 ===
   warmup:     3 iterations
-  batches:    10 x 150
-  total:      165133.575 μs
-  avg:        110.089 μs
-  min:        108.778 μs
-  max:        111.813 μs
-  std dev:    1.096 μs
+  batches:    10 x 114
+  total:      179087.429 μs
+  avg:        157.094 μs
+  min:        155.294 μs
+  max:        159.724 μs
+  std dev:    1.170 μs
 === morph/symbolic/demo/e5 ===
   warmup:     3 iterations
-  batches:    10 x 152
-  total:      171745.199 μs
-  avg:        112.990 μs
-  min:        111.030 μs
-  max:        114.832 μs
-  std dev:    1.047 μs
+  batches:    10 x 96
+  total:      169758.902 μs
+  avg:        176.832 μs
+  min:        175.759 μs
+  max:        177.918 μs
+  std dev:    0.603 μs
 === morph/symbolic/native/e5 ===
   warmup:     3 iterations
-  batches:    10 x 4
-  total:      66231.880 μs
-  avg:        1655.797 μs
-  min:        1610.435 μs
-  max:        1802.427 μs
-  std dev:    59.996 μs
+  batches:    10 x 5
+  total:      54422.069 μs
+  avg:        1088.441 μs
+  min:        1031.613 μs
+  max:        1174.642 μs
+  std dev:    53.929 μs
 === morph/symbolic/accum/0 ===
   warmup:     3 iterations
-  batches:    10 x 98
-  total:      93066.937 μs
-  avg:        94.966 μs
-  min:        93.247 μs
-  max:        97.688 μs
-  std dev:    1.266 μs
+  batches:    10 x 68
+  total:      87262.677 μs
+  avg:        128.327 μs
+  min:        126.014 μs
+  max:        130.276 μs
+  std dev:    1.292 μs
 === morph/symbolic/accum/400 ===
   warmup:     3 iterations
-  batches:    10 x 76
-  total:      86811.834 μs
-  avg:        114.226 μs
-  min:        112.182 μs
-  max:        117.413 μs
-  std dev:    1.690 μs
+  batches:    10 x 48
+  total:      70884.786 μs
+  avg:        147.677 μs
+  min:        144.986 μs
+  max:        152.842 μs
+  std dev:    1.934 μs
 ```
 
 The results were calculated in [this GHA job][benchmark-gha]
-on 2026-11-13 at 14:11,
+on 2026-11-19 at 15:32,
 on Linux with 4 CPUs.
 
 <!-- benchmark_end -->
@@ -874,4 +904,4 @@ or [Stack ≥ 3.0][stack] installed.
 [jna]: https://github.com/java-native-access/jna
 [jna-native]: https://github.com/java-native-access/jna/blob/master/src/com/sun/jna/Native.java
 [jeo]: https://github.com/objectionary/jeo-maven-plugin
-[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/43439923868
+[benchmark-gha]: https://github.com/objectionary/phino/actions/runs/44555174198

@@ -44,6 +44,7 @@ data SymbolPack = SymbolPack
   , input :: String
   , partial :: Maybe Bool
   , acyclic :: Maybe String
+  , loops :: Maybe Int
   , steps :: Maybe Int
   , firings :: Maybe Int
   , protocol :: String
@@ -75,6 +76,7 @@ testSymbols pth = do
             base
               { _partial = partial == Just True
               , _acyclic = mode
+              , _maxLoops = fromMaybe 0 loops
               , _memo = cells
               , _facts = Just facts
               , _steps = Steps (fromMaybe 250 steps) 0
@@ -165,7 +167,7 @@ spec = do
         let stuck = ctx{_saveEval = record}
             fire = execBuildTerm univ stuck "evaluate" [ArgExpression (ExFormation [BiLambda (FnSymbol 1)]), ArgExpression univ] substEmpty
         fire `shouldThrow` (\e -> "No entry of --symbolic answers the λ function '𝜎1'" `isInfixOf` show (e :: SomeException))
-      written `shouldBe` "  unanswered 𝜎1  # 𝕄(𝜎1:λ)\n"
+      written `shouldBe` "  opaque 𝜎1  # 𝕄(𝜎1:λ)\n"
 
     it "throws when the formation carries more than one λ binding" $
       runEvaluate [ArgExpression (ExFormation [BiLambda (Function "L_one"), BiLambda (Function "L_two")]), ArgExpression univ]

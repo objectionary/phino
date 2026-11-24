@@ -11,7 +11,7 @@
 module MorphSpec (spec) where
 
 import AST
-import Control.Exception (SomeException)
+import Control.Exception (SomeException, evaluate)
 import Control.Monad
 import Data.Aeson (FromJSON)
 import Data.IORef (modifyIORef', newIORef, readIORef)
@@ -30,7 +30,7 @@ import GHC.Generics (Generic)
 import Inference (Conclusion (Answered), Premises (Concludes, Morphs), direct)
 import Lambdas (Lambdas, emptyLambdas)
 import Matcher (substEmpty)
-import Morph (Deadline (..), ReduceContext (..), declared, emptyState, enter, execBuildTerm, factual, fired, inferred, insideUniverse, morph, morph', noted, voided)
+import Morph (Answer (..), Deadline (..), Firing (..), ReduceContext (..), adopted, declared, emptyState, ended, enter, execBuildTerm, factual, fired, inferred, insideUniverse, kindle, kindred, memoized, morph, morph', normalized, noted, placed, voided)
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Rewriter (Rewritten)
 import Rule (RuleContext (RuleContext), matchExpressionWithRule')
@@ -264,7 +264,7 @@ spec = do
 
   describe "morphing 'md' is disjoint from 'ml'" $ do
     ctx <- runIO (defaultReduceContext ExRoot)
-    let rctx = RuleContext (execBuildTerm ExRoot ctx) Nothing (_normal linked)
+    let rctx = RuleContext (execBuildTerm ExRoot ctx) Nothing (_normal linked) False
         morphRule :: String -> Yaml.MorphRule
         morphRule nm = fromMaybe (error ("no morphing rule named " ++ nm)) (find (\r -> r.name == nm) Yaml.morphingRules)
         asRule :: Yaml.MorphRule -> Yaml.Rule
@@ -295,6 +295,12 @@ spec = do
       ctx <- defaultReduceContext ExRoot
       (residue, _, _) <- morph expr emptyState ctx{_deadline = Just deadline, _partial = True}
       residue `shouldBe` expr
+    it "fails a normalization once the deadline has passed" $ do
+      expr <- parseExpressionThrows "[[ w -> [[ y -> ? ]]( y -> [[ ]] ) ]]"
+      deadline <- overdue 19
+      ctx <- defaultReduceContext ExRoot
+      normalized expr ((expr, Nothing) :| []) ctx{_deadline = Just deadline}
+        `shouldThrow` (\e -> "--max-seconds=19" `isInfixOf` show (e :: SomeException))
 
   describe "stops an entrance by the clock of --max-seconds" $
     it "fails a comparison that outlasts the deadline" $ do
@@ -305,6 +311,41 @@ spec = do
       ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
       timeout 10000000 (enter (formation ExXi 1700) ctx)
         `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))
+
+  describe "looks for a kindred firing in a term holding the level below it twice" $
+    it "walks every distinct term once" $ do
+      let doubled :: T.Text -> Expression -> Expression
+          doubled label inner = ExFormation [BiTau AtRho inner, BiTau (AtLabel label) inner]
+          leaf = ExFormation [BiDelta (BtOne "01")]
+          deep :: T.Text -> Expression
+          deep label = iterate (doubled label) leaf !! 60
+      memo <- memoized (Just Plausible)
+      ctx <- defaultReduceContext ExRoot
+      placed memo leaf 1
+      found <- timeout 10000000 $ do
+        kindle ctx._sides memo (deep "x") (Firing "L_f" [] []) (Joined (ExFormation [BiLambda (FnSymbol 2)]))
+        kin <- kindred ctx{_memo = memo} (deep "y")
+        pure (maybe [] (\(_, _, posed) -> posed) kin)
+      found `shouldBe` Just []
+
+  describe "takes the answer of a kindred firing holding the level below it twice" $
+    it "renames every distinct term once" $ do
+      let doubled :: Expression -> Expression
+          doubled inner = ExFormation [BiTau AtRho inner, BiTau (AtLabel "zo") inner]
+          deep :: Int -> Expression
+          deep idx = iterate doubled (ExFormation [BiLambda (FnSymbol idx)]) !! 60
+          form :: Int -> Expression
+          form idx = ExFormation [BiTau (AtLabel "on") (ExFormation [BiLambda (FnSymbol idx)]), BiLambda (Function "L_f")]
+          kept :: Expression
+          kept = deep 1
+      memo <- memoized (Just Plausible)
+      ctx <- defaultReduceContext ExRoot
+      renamed <- timeout 10000000 $ do
+        kindle ctx._sides memo (form 1) (Firing "L_f" [Left 1] [kept]) (Joined kept)
+        kin <- kindred ctx{_memo = memo} (form 2)
+        answer <- maybe (pure Raised) (\found -> adopted ctx{_memo = memo} found (form 2)) kin
+        evaluate (hashExpression (ended answer))
+      renamed `shouldBe` Just (hashExpression (deep 2))
 
   describe "names a cut by the facts however wide they are" $
     it "names a cut held at the end of a wide fact long before the deadline" $ do

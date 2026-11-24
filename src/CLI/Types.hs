@@ -74,6 +74,7 @@ data Command
   | CmdExplain OptsExplain
   | CmdMerge OptsMerge
   | CmdMatch OptsMatch
+  | CmdSodg OptsSodg
   | CmdCompile OptsCompile
 
 data Pin = PinVersion String | PinFile FilePath
@@ -107,6 +108,7 @@ data OptsDataize = OptsDataize
   , _headers :: Bool
   , _canonize :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _shuffle :: Bool
   , _seed :: Int
   , _quiet :: Bool
@@ -135,6 +137,7 @@ data OptsDataize = OptsDataize
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
   , _minutes :: Maybe FilePath
+  , _profile :: Bool
   , _abridged :: Maybe Int
   , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath
@@ -157,6 +160,7 @@ data OptsMorph = OptsMorph
   , _headers :: Bool
   , _canonize :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _shuffle :: Bool
   , _seed :: Int
   , _quiet :: Bool
@@ -185,6 +189,7 @@ data OptsMorph = OptsMorph
   , _stepsDir :: Maybe FilePath
   , _protocol :: Maybe FilePath
   , _minutes :: Maybe FilePath
+  , _profile :: Bool
   , _abridged :: Maybe Int
   , _abridgedData :: Bool
   , _symbolic :: Maybe FilePath
@@ -220,6 +225,7 @@ data OptsRewrite = OptsRewrite
   , _omitListing :: Bool
   , _omitComments :: Bool
   , _depthSensitive :: Bool
+  , _cheat :: Bool
   , _nonumber :: Bool
   , _inPlace :: Bool
   , _update :: Bool
@@ -272,6 +278,13 @@ data OptsMatch = OptsMatch
   , _when :: Maybe String
   , _inputFile :: Maybe FilePath
   , _seed :: Int
+  }
+
+data OptsSodg = OptsSodg
+  { _logLevel :: LogLevel
+  , _logLines :: Int
+  , _inputFormat :: IOFormat
+  , _inputFile :: Maybe FilePath
   }
 
 data OptsCompile = OptsCompile

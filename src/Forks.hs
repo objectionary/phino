@@ -125,11 +125,17 @@ forked func condition (leftName, left) (rightName, right) = do
         heldTwo :: Map Attribute [Attribute]
         heldTwo = held two
         branch :: Attribute -> Binding
-        branch attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition]), ask "left🌵" heldOne attr, ask "right🌵" heldTwo attr]))
+        branch attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [weighing, ask "left🌵" leftward heldOne attr, ask "right🌵" rightward heldTwo attr]))
+        weighing :: Binding
+        weighing = BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition])
+        leftward :: Expression
+        leftward = ExDispatch (ExDispatch ExXi AtRho) (AtLabel "left🌵")
+        rightward :: Expression
+        rightward = ExDispatch (ExDispatch ExXi AtRho) (AtLabel "right🌵")
         inner :: Attribute -> [Attribute]
         inner attr = nub (concat (mapMaybe (Map.lookup attr) [heldOne, heldTwo]))
-        ask :: Text -> Map Attribute [Attribute] -> Attribute -> Binding
-        ask name holding attr = BiTau (AtLabel name) (applied (ExDispatch (ExDispatch (ExDispatch ExXi AtRho) (AtLabel name)) attr) (fromMaybe (inner attr) (Map.lookup attr holding)))
+        ask :: Text -> Expression -> Map Attribute [Attribute] -> Attribute -> Binding
+        ask name side holding attr = BiTau (AtLabel name) (applied (ExDispatch side attr) (fromMaybe (inner attr) (Map.lookup attr holding)))
     inlined :: [Binding] -> [Binding]
     inlined bds = map goBinding bds
       where

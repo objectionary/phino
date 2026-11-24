@@ -10,6 +10,7 @@ module RuleSpec where
 
 import AST (Argument (..), Attribute (..), Binding (..), Bytes (..), Expression (..), Function (..), Slot (..), inert)
 import Builder (buildExpressionThrows)
+import Control.Exception (evaluate)
 import Control.Monad
 import Data.Aeson
 import Data.List (isInfixOf)
@@ -23,10 +24,11 @@ import Logger (LogLevel (DEBUG, ERROR), setLogConfig)
 import Matcher
 import Parser (Form (MONOFORM), parseExpressionThrows, parseExpressionThrows')
 import Printer (printSubsts)
-import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normalHeld, redex)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule, meetCondition, normal, normalHeld, redex)
 import System.FilePath
 import System.IO (stderr)
 import System.IO.Silently (hCapture)
+import System.Timeout (timeout)
 import Test.Hspec (Spec, after_, describe, expectationFailure, it, runIO, shouldBe, shouldReturn, shouldSatisfy)
 import Yaml qualified
 
@@ -50,7 +52,7 @@ spec = do
           expr <- parseExpressionThrows' MONOFORM (expression pack)
           let matched = matchExpression (pattern pack) expr
           unless (matched /= []) (expectationFailure "List of matched substitutions is empty which is not expected")
-          met <- meetCondition (condition pack) matched (RuleContext buildTerm Nothing (_normal linked))
+          met <- meetCondition (condition pack) matched (RuleContext buildTerm Nothing (_normal linked) False)
           case failure pack of
             Just True ->
               unless
@@ -68,7 +70,7 @@ spec = do
                 )
       )
   describe "an 'or' condition does not depend on the order of its items" $ do
-    let ctx = RuleContext buildTerm Nothing (_normal linked)
+    let ctx = RuleContext buildTerm Nothing (_normal linked) False
         rule :: Yaml.Condition -> Yaml.Rule
         rule cond =
           Yaml.Rule
@@ -98,7 +100,7 @@ spec = do
       buildE1 (Yaml.Not (Yaml.Or [raising, unmatched])) `shouldReturn` []
 
   describe "isNF determines normal form" $ do
-    let ctx = RuleContext buildTerm Nothing (_normal linked)
+    let ctx = RuleContext buildTerm Nothing (_normal linked) False
     forM_
       [ ("returns true for ExXi", ExXi, True)
       , ("returns true for ExRoot", ExRoot, True)
@@ -119,9 +121,16 @@ spec = do
       ]
       (\(desc, expr, expected) -> it desc $ isNF expr ctx `shouldBe` expected)
 
+  describe "tells a normal form of a chain of nested copies in time" $ do
+    let chain :: Int -> Expression
+        chain depth = iterate (ExApplication (ExFormation [BiVoid (AtLabel "x"), BiTau (AtLabel "y") (ExDispatch ExXi (AtLabel "x"))]) . ArTau (AtLabel "x")) (ExFormation [BiDelta (BtOne "00")]) !! depth
+    forM_ [("the rules of YAML", normal), ("the engine linked", _normal linked)] $ \(name, test) ->
+      it ("by " ++ name) $
+        timeout 10000000 (evaluate (test (chain 40))) `shouldReturn` Just False
+
   describe "matchExpressionWithRule via a 'where' extension or a φ-marker meta" $ do
     let ctx :: RuleContext
-        ctx = RuleContext buildTerm Nothing (_normal linked)
+        ctx = RuleContext buildTerm Nothing (_normal linked) False
 
         joinRule :: Yaml.Rule
         joinRule =
@@ -218,10 +227,10 @@ spec = do
         world :: Expression
         world = ExFormation [BiTau (AtLabel "qwj") (ExFormation [BiDelta (BtOne "7C")]), BiVoid AtRho]
     it "writes Φ for the whole program the context stands in" $ do
-      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm (Just world) (_normal linked)))
+      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm (Just world) (_normal linked) False))
         `shouldReturn` [ExRoot]
     it "writes the formation itself where the context knows no universe" $ do
-      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing (_normal linked)))
+      (mapM (buildExpressionThrows (ExMeta "e2")) =<< matchExpressionWithRule world namingRule (RuleContext buildTerm Nothing (_normal linked) False))
         `shouldReturn` [world]
 
   describe "normalHeld" $ do
@@ -250,7 +259,7 @@ spec = do
           , "⟦ x ↦ ∅, dd ↦ ⟦ λ ⤍ L_dd, ρ ↦ ∅ ⟧, m1 ↦ ⟦ b ↦ ∅, φ ↦ ξ.ρ.dd( b ↦ ξ.b ), ρ ↦ ∅ ⟧ ⟧"
           ]
         context :: RuleContext
-        context = RuleContext buildTerm Nothing (_normal linked)
+        context = RuleContext buildTerm Nothing (_normal linked) False
         matches :: Expression -> Yaml.Rule -> IO [Subst]
         matches term rule = maybe pure (\cond substs -> meetCondition cond substs context) rule.when (matchExpressionDeep rule.pattern term)
     it "takes every sample for inert" $ do
@@ -264,7 +273,7 @@ spec = do
   describe "a condition that cannot be built" $ do
     after_ (setLogConfig ERROR 25) $ do
       let context :: RuleContext
-          context = RuleContext buildTerm Nothing (_normal linked)
+          context = RuleContext buildTerm Nothing (_normal linked) False
       it "logs an unbound meta in 'part-of' and treats the condition as not met" $ do
         expr <- parseExpressionThrows "[[ x -> Q.y ]]"
         let substs = matchExpressionDeep (ExFormation [BiTau (AtLabel "x") (ExMeta "e1")]) expr

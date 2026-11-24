@@ -26,7 +26,7 @@ import Morph (ReduceContext (..), Steps (..), emptyState, morph')
 import Must (Must (MtDisabled))
 import Parser (Form (MONOFORM), parseExpressionThrows')
 import Rewriter (RewriteContext (RewriteContext), rewrite)
-import Rule (RuleContext (RuleContext), matchExpressionWithRule)
+import Rule (RuleContext (RuleContext), isNF, matchExpressionWithRule)
 import System.Random (StdGen, mkStdGen, randomR)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 import Yaml qualified as Y
@@ -61,6 +61,9 @@ spec =
     it "tells a normal form of a term holding metas the way the rules of YAML do" $
       filter (\seed -> _normal linked (term True seed) /= _normal yaml (term True seed)) [3001 .. 6000]
         `shouldBe` []
+    it "tells a normal form the way a test asking every meta the whole test again does" $
+      filter (\seed -> any (\metas -> _normal linked (term metas seed) /= nested (term metas seed)) [False, True]) [1 .. 3000]
+        `shouldBe` []
     it "contextualizes random terms the way the rules of YAML do, failures included" $
       filterM (\seed -> (/=) <$> contextualized linked (term True seed) (term False (seed + 1)) <*> contextualized yaml (term True seed) (term False (seed + 1))) [1 .. 3000]
         `shouldReturn` []
@@ -84,8 +87,10 @@ spec =
               (_normalization engine)
               (RewriteContext ExRoot 25 25 False universe (building engine) (_normal engine) (_matching engine) MtDisabled Nothing dontSaveStep dontSaveMade)
         )
+    nested :: Expression -> Bool
+    nested expr = isNF expr (RuleContext (building yaml) Nothing nested False)
     matched :: Expression -> IO (Set.Set Int)
-    matched expr = Set.fromList . map fst <$> filterM (\(_, rule) -> not . null <$> matchExpressionWithRule expr rule (RuleContext (building yaml) Nothing (_normal yaml))) (zip [0 ..] Y.normalizationRules)
+    matched expr = Set.fromList . map fst <$> filterM (\(_, rule) -> not . null <$> matchExpressionWithRule expr rule (RuleContext (building yaml) Nothing (_normal yaml) False)) (zip [0 ..] Y.normalizationRules)
     morphed :: Lambdas -> Engine -> Expression -> IO (Either String String)
     morphed lambdas engine world = settled (show . fst <$> (morph' (ExDispatch ExRoot (AtLabel "x"), (world, Nothing) :| []) world emptyState =<< reducing lambdas engine))
     dataized :: Lambdas -> Engine -> Expression -> IO (Either String String)

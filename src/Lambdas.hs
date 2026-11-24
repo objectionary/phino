@@ -434,20 +434,20 @@ stayed :: Expression -> Expression
 stayed = goExpr
   where
     goExpr :: Expression -> Expression
-    goExpr (ExFormation bds) = ExFormation (map goBinding bds)
-    goExpr (ExApplication expr arg) = case (goExpr expr, arg) of
+    goExpr term@(ExFormation bds) = intact bds term ExFormation (map goBinding bds)
+    goExpr term@(ExApplication expr arg) = case (goExpr expr, arg) of
       (target, ArTau AtRho _) | dispatched target -> target
-      (target, _) -> ExApplication target (goArgument arg)
-    goExpr (ExDispatch expr attr) = ExDispatch (goExpr expr) attr
+      (target, _) -> intact (expr, arg) term (uncurry ExApplication) (target, goArgument arg)
+    goExpr term@(ExDispatch expr attr) = intact expr term (`ExDispatch` attr) (goExpr expr)
     goExpr (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx (goExpr expr)
     goExpr (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx (goExpr expr)
     goExpr expr = expr
     goBinding :: Binding -> Binding
-    goBinding (BiTau attr expr) = BiTau attr (goExpr expr)
+    goBinding bd@(BiTau attr expr) = intact expr bd (BiTau attr) (goExpr expr)
     goBinding bd = bd
     goArgument :: Argument -> Argument
-    goArgument (ArTau attr expr) = ArTau attr (goExpr expr)
-    goArgument (ArAlpha alpha expr) = ArAlpha alpha (goExpr expr)
+    goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) (goExpr expr)
+    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) (goExpr expr)
     dispatched :: Expression -> Bool
     dispatched (ExDispatch _ _) = True
     dispatched (ExApplication expr _) = dispatched expr
@@ -505,16 +505,16 @@ symbolized term spent = case runState (goExpr term) (spent, []) of
   (masked, (spent', known)) -> (masked, reverse known, spent')
   where
     goExpr :: Expression -> State Minting Expression
-    goExpr (ExFormation bds) = ExFormation <$> mapM (goBinding (Just AtLambda `elem` map attributeFromBinding bds)) bds
-    goExpr (ExApplication expr arg) = ExApplication <$> goExpr expr <*> goArgument arg
-    goExpr (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr expr
+    goExpr whole@(ExFormation bds) = intact bds whole ExFormation <$> mapM (goBinding (Just AtLambda `elem` map attributeFromBinding bds)) bds
+    goExpr whole@(ExApplication expr arg) = intact (expr, arg) whole (uncurry ExApplication) <$> ((,) <$> goExpr expr <*> goArgument arg)
+    goExpr whole@(ExDispatch expr attr) = intact expr whole (`ExDispatch` attr) <$> goExpr expr
     goExpr (ExPhiMeet prefix idx expr) = ExPhiMeet prefix idx <$> goExpr expr
     goExpr (ExPhiAgain prefix idx expr) = ExPhiAgain prefix idx <$> goExpr expr
     goExpr expr = pure expr
     goBinding :: Bool -> Binding -> State Minting Binding
     goBinding _ (BiDelta bts) = state (\(count, known) -> (BiLambda (FnSymbol (succ count)), (succ count, (succ count, bts) : known)))
-    goBinding atom (BiTau attr expr) | atom || attr == AtPhi = BiTau attr <$> goExpr expr
+    goBinding atom bd@(BiTau attr expr) | atom || attr == AtPhi = intact expr bd (BiTau attr) <$> goExpr expr
     goBinding _ bd = pure bd
     goArgument :: Argument -> State Minting Argument
-    goArgument (ArTau attr expr) = ArTau attr <$> goExpr expr
-    goArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr expr
+    goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> goExpr expr
+    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> goExpr expr

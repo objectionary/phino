@@ -69,10 +69,19 @@ sibling, on both sides, under "Scaling".
 components: `library` (`src/`), executable `phino` (`app/`), test suite
 `spec` (`test/`), benchmark suite `bench` (`benchmark/`).
 
-### Seven CLI commands
+### Eight CLI commands
 
-`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` | `compile` —
-all wired in `src/CLI/Runners.hs`, parsed in `src/CLI/Parsers.hs`.
+`rewrite` | `dataize` | `morph` | `explain` | `merge` | `match` | `sodg` |
+`compile` — all wired in `src/CLI/Runners.hs`, parsed in
+`src/CLI/Parsers.hs`.
+
+`sodg` (`Sodg.hs`, #2447) walks the term as written, normalizing nothing, and
+prints the commands `F`, `D`, `A`, `P`, `Δ`, `λ` and `T` that build its
+graph, naming cells `c0`, `c1` and so on: a formation takes its name before
+its bindings, a dispatch or an application after its operands, `Φ` is `c0`,
+`ξ` the nearest formation around, and every ⊥ a fresh cell `T` makes a
+terminator (#2455). A term holding a meta or a ξ outside every formation is
+refused.
 
 ### Two-phase rendering pipeline
 
@@ -125,6 +134,11 @@ of `Rewriter.hs` wraps the matcher and the replacer; `direct` wraps a compiled
 function, finds the places it matches at with `sites` of `Matcher.hs` in the
 order the deep matcher finds them, and hands them to the same
 `replaceExpression`, so the chain of steps is the same with either engine.
+Once it replaced a site, `replaceExpression` drops the sites that one held
+(`swallowed` of `Replacer.hs`), counting them in it the way the replacer looks
+for a site, so it never walks into an inert term for a site that is not inert.
+A site holds its parent under ρ, which a tree counts again at every place it
+stands, and walking it all cost a step seconds (#2451).
 `rewrite'` tries only the steps `_matching` names, asked again only once a step
 changed the term. The compiled engine finds them all in one walk over the term
 (`hits` of `Matcher.hs`) and builds its normal-form test on the same walk; the
@@ -138,6 +152,17 @@ the CLI refuses it once they changed (`fresh`). `CompiledSpec.hs` runs both
 engines over random terms and compares the chains, the normal-form test and 𝒞,
 and the chains 𝕄 and 𝔻 make of an object of random programs; it also checks
 that the compiled test of which rules match never misses one.
+
+The normal-form test of either engine (`normal` of `Rule.hs`, `nf` of the
+generated module) takes for a normal form every meta a rule asks about: the meta
+holds a part of the term, and a part that is no normal form holds a match the
+walk meets anyway. Asking it again ran the whole test on every part, which
+doubled the work per level of a chain of nested copies (#2409). So a generated
+rule takes the test as an argument, the steps and `matching` hand it `nf`, and
+`nf` hands it `const True` (`matchingBy`). This holds while no rule of
+normalization asks for a normal form under `not` and every 𝑛 or 𝑘 meta binds a
+proper part of the term the rule matches; `nested` of `CompiledSpec.hs` compares
+the test with the one asking every meta the whole test again.
 
 A rule of 𝕄 or 𝔻 is an `Inference` of `Inference.hs`: matched against a term
 and a universe it answers the `Premises` it runs beside its spine, in order —
@@ -290,6 +315,14 @@ condition, and the firing writes `guarded 𝛿1·1 ? 𝑛1·1 : 𝑛2·1  # wher
 is ⊥` (`EvGuarded`) and the markup
 `<guarded on="𝛿1·1" left="𝑛1·1" right="𝑛2·1" terminator="right"/>` (#2370).
 A ⊥ deeper inside a side still joins only with a symbol facing it.
+In an entry that joins, an operand of `morph` or `undress` or a line whose
+term gets `opaque`, such as a dispatch off the bare symbol of a cut,
+`⟦ λ ⤍ 𝜎5 ⟧.if`, binds its meta to ⊥ rather than getting the firing stuck,
+so that side ends as a raise does and the join keeps the other one
+(`blanked` of `Evaluate.hs`, #2427). The failure is told by its name, a
+symbol, which no λ name spells, so a stall the memo replays is caught too.
+An operand of `dataize`, the condition among them, and an entry that
+computes still get stuck.
 Two formations of other shapes, neither holding a datum nor a λ (#2041), are
 joined attribute by attribute when the block names a λ function under
 `otherwise` (#2024):
@@ -346,10 +379,11 @@ throws `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around
 it write `stuck` as for a λ function no entry answers. A side or an operand
 whose morph throws fails the firing with what it threw, so a run never
-splits and prints one result (#1996). It does so under `--partial` too:
-`morphing` of `Morph.hs` runs the operand through `morph'` and parks nothing,
-so no later block runs on a term that was never morphed, and `--partial`
-parks the firing as a whole (#2014).
+splits and prints one result (#1996), unless an entry that joins meets an
+`opaque` there, which ends that side alone, as said above. It does so under
+`--partial` too: `morphing` of `Morph.hs` runs the operand through `morph'`
+and parks nothing, so no later block runs on a term that was never morphed,
+and `--partial` parks the firing as a whole (#2014).
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
@@ -373,7 +407,8 @@ is no bare symbol: it morphs the argument in the copy, at a site such as
 does, and writes every step to the protocol, so the markup names the argument
 by the object an application made of it, such as `𝑛·77·3`. An argument whose
 morph or firing gets stuck, is cut or runs out of steps gets the firing stuck
-at once, as an operand does (#2014).
+at once, as an operand does (#2014), but for an `opaque` in an entry that
+joins, which binds the meta of the `defer` line to ⊥.
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
@@ -384,7 +419,11 @@ there would hand out again the symbols its protocol records already spell
 carries. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
-parks on, and the protocol records it as `unanswered name` either way. What
+parks on. The protocol records the first as `unanswered L_none` (`EvStuck`)
+and the second as `opaque 𝜎1` (`EvOpaque`, `<opaque symbol="𝜎1">` in the
+markup), since no entry of the file may answer a symbol, and both comment
+with the whole term the judgment worked on, as `𝕄(𝜎1:λ.at)`: `premised` of
+`Morph.hs` hands it to the firing in `_working` of `ReduceContext` (#2404). What
 fired is written as a tree by `--protocol` and `--minutes`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments
 the way the calculus does: `𝕄(…)` or `𝔻(…)` opens the run, `𝔼(…)` names a
@@ -392,13 +431,21 @@ firing and `𝔻(𝜎1)` is the datum manufactured for a symbol. Every comment o
 line is a judgment applied to a term — the intent the value beside it came
 from: the judgment that asked for a firing and the site it was fired at
 (`_site` of `ReduceContext`), and the one that reduced an operand and the term
-it was reduced from. The option picks the format, whatever the file is
-named: `--protocol` gets markup (`Nesting` and `saveEvalXml`) and `--minutes`
+it was reduced from. A comment naming a meta of an entry alone, such as `𝑛`,
+`stay(𝑛1)` or `𝔼(𝑛3)`, writes after it the λ name of the firing it belongs to,
+as `𝔼(𝑛3 of L_fork)` (`_lambdas` of `Protocol`, #2402), since the heading of
+that firing may stand far above. The option picks the format, whatever the
+file is named: `--protocol` gets markup (`Nesting` and `saveEvalXml`) and `--minutes`
 the indented text, and one run given both writes both files (`withEvalFunc'`
 of `CLI/Helpers.hs`, #2335). Both carry the same facts and both stream, so
 a run that fails still leaves a complete file; the markup references a value by
 the symbol it denotes and spells it `𝜎1` as everywhere else, where the text
-names a line by counting.
+names a line by counting. Given `--profile`, which needs `--minutes`, the
+text closes the last line of every record but the header with a comment, as
+`# +3 ms, at 512 ms, depth 4, firings 80, heap 9.8 MB, peak 14.1 MB`: the
+time since the record above and since the start, the depth of the record,
+the firings so far, and the live heap and peak memory of `getRTSStats`
+(`Profile` and `stamped` of `Deps.hs`, issue #2434).
 
 An application writes a line too, `𝑛·1·1 := …` (`EvApplied`, #1745). A `Step`
 answers the term it made and the pairs of redex and result it replaced, and
@@ -449,6 +496,22 @@ and holds only the attributes it binds anew (`copied`); the world is the
 normalized universe, which `universed` of `Morph.hs` hands to the writers as
 `EvWorld` and the text writer ignores.
 
+### Cheating
+
+By default normalization does what the rules say, step by step, so a run
+printed with `--sequence` or as LaTeX shows every step the rules prescribe.
+Given `--cheat`, the `rewrite`, `morph` and `dataize` commands let it take
+shortcuts no rule spells (`cheat` of `Engine.hs`, `cheating` and `cheated` of
+`Rewriter.hs`, `_cheat` of `RuleContext`). The only one so far drops a ρ a
+step applies to a term already ending with one, so `dot` makes
+`𝑒1(ρ ↦ 𝑒2)` and not `𝑒1(ρ ↦ 𝑒2)(ρ ↦ 𝑒3)`, since the inner ρ always wins
+through `copy`, `stay` or `skip`. Without it a body such as `Φ.outer(ρ ↦ X)`
+taken out of a fabricated formation gains a ρ holding that formation every
+time, and the tree doubles per `dot` (#2415). It works on what a step built,
+in `interpreted` and `direct` alike, so both engines cheat the same. An
+application of `Φ` or `ξ`, such as `Φ(ρ ↦ 𝑒)`, is a term like any other: the
+parser and the XMIR reader accept it and the builder keeps it (#2417, #2418).
+
 ### Dependency inversion for circular imports
 
 `Deps.hs` exists solely to break the cycle
@@ -488,16 +551,19 @@ The step budget `--max-steps` is what ends that recursion, and the only thing
 that does unless `morph` or `dataize` is given `--acyclic=<mode>`: the option
 has every 𝕄 and every 𝔻 frame remember the formations its ancestors have
 entered (`severing` and `enter` in `Morph.hs`, one store for both judgments,
-since only `box` and `fire` of 𝔻, `ml` of 𝕄 and an `evaluate` line, `fired`
-of `Morph.hs`, enter one, and the line spends a step of `deeper` as a frame
-does, #1882) and park the site the moment a frame is about to enter one of
-them again, the way `--partial` parks a λ that cannot fire. Where `box` of 𝔻
+since only `box` and `fire` of 𝔻, `ml` and `mphi` of 𝕄 and an `evaluate`
+line, `fired` of `Morph.hs`, enter one, and the line spends a step of
+`deeper` as a frame does, #1882) and park the site the moment a frame is
+about to enter one of them again, the way `--partial` parks a λ that cannot
+fire. Where `box` of 𝔻
 or an `evaluate` line is about to enter a formation binding φ and holding no λ,
 `sever` answers it with a fresh symbol, and the run goes on (#2226). Where 𝔻 or
 an `evaluate` line is about to enter a formation holding a λ, such as a copy of
 an atom whose operand dataizes the call again, or the φ of a formation a join
 fabricated, `sever` answers it the same way (#2272, #2275, #2278). Where 𝕄 is
-about to dispatch off a formation holding a λ that repeats one above, `sever`
+about to dispatch off a formation holding a λ, or off one binding φ and
+holding no λ, which `mphi` takes the attribute off through its φ the way
+`box` of 𝔻 goes into it (#2422), and the formation repeats one above, `sever`
 answers the whole dispatch with a fresh symbol and names it after the call the
 facts trace with the attribute on top, as `looped 𝜎1 := 𝑛·2·1.q`, leaving the
 arguments as they are, since working them out runs into the same loop again
@@ -533,13 +599,18 @@ both writers keep the text they wrote for every fact (`_stated` of
 `Protocol`, `_attested` of `Nesting`) and recall a fact by that text, though
 a later line names the term anew, and `EvaluateSpec.hs` checks it on every
 pack.
-The morphing of an operand of an entry (`morphing` of `Morph.hs`) answers
-such a copy the same way where the operand comes to one that repeats the
-formations above it more often than `--max-loops` lets through, since a
-recursion through a fork reaches the copy of every round only as a side of
-the fork and never boxes it (#2228). That side is morphed in a
-context of its own, gone once the firing answers, so `morphing` hands a copy
-it lets through while it repeats one above back in `_copies` of `State`, and
+The morphing of an operand of an entry (`morphing` of `Morph.hs`) never cuts
+a copy the operand comes to, even one that repeats the formations above it
+more often than `--max-loops` lets through, since an entry may only hand it
+back and the program take a plain attribute off it, and a symbol in its place
+has no attribute to take (#2401). It hands the copy back as it is and writes
+`passed 𝑛·1·2 := Φ.down  # plausible, repeats 𝑛·1·1` (`EvPassed`, `passing`
+of `Morph.hs`), naming the copy anew and after the call the facts trace, as
+`looped` does but working out no argument, and the markup as `<passed>`; the
+frame that enters the copy cuts it, if anything does. A recursion through a
+fork reaches the copy of every round only as a side of the fork, morphed in
+a context of its own and gone once the firing answers (#2228), so `morphing`
+hands every copy that repeats one above back in `_copies` of `State`, and
 the next frame of the 𝔻 chain that fired the entry adds it to the formations
 it remembers (`carried` of `Morph.hs`), which `--max-loops` counts.
 The mode `Acyclic` of `Deps.hs` says what "again" means, and there is no
@@ -548,7 +619,12 @@ symbols (`alike` in `AST.hs`), since a recursion over a symbol mints fresh ones
 every round and never repeats a term (#1420). Under `plausible` the earlier one
 is embedded in the later one (`within` in `AST.hs`), so a recursion whose
 accumulator gains a wrapper every round is cut too, at the price of cutting
-now and then one that would have stopped (#1451). A copy of an atom, a
+now and then one that would have stopped (#1451). So is any other formation
+the facts lead back to the same object of the world as the earlier one, the
+way `Φ.f( x ↦ Φ.a2 )` leads to `Φ.f` as `Φ.f( x ↦ Φ.a1 )` does, whatever
+their arguments, since a recursion handing a new argument every round, such
+as one walking a ring of objects, never embeds one round in the next
+(`origin` of `repeats`, #2462). A copy of an atom, a
 formation holding a λ, is the exception: under `plausible` too it repeats
 only a formation `alike` it, since copies of one atom called from different
 places resemble each other once a symbol stands in one of them, and a loop
@@ -557,6 +633,24 @@ issue #2347). Only a boxed formation the copy holds, one binding φ and no λ
 or Δ, may grow inside it as `within` lets it (`akin` in `AST.hs`), so a
 recursion through a side of a fork, whose fabricated copies hold a copy of
 the recursive object with a bigger argument every round, is cut too (#2372).
+So may a call not made yet, an application or a dispatch off one, seen
+through the names of `shared`, where the later one is deeper than the
+earlier one and holds it as `within` lets it, so a recursion handing its
+own growing call to an atom, as `Φ.go( Φ.seq( i.next ).ok )`, is cut too,
+while nested calls whose arguments shrink, such as five `or` in each other,
+are not (#2428).
+Where `within'` says no at such a pair, `matching` stops there, since nothing
+below can match where the looser search found nothing (#2438). The depth of a
+call is measured once per name, since the sides of nested forks share their
+names and walking them again doubles the work per fork: `given` of `Sides.hs`
+measures a name as it makes it and keeps that for the whole run, and
+`deepness` of `AST.hs` reads it with `gauge` (#2442). Only the later call is
+measured in full: `reaches` of `AST.hs` walks the earlier one down to that
+depth and no further, so a huge earlier argument costs a few nodes (#2443).
+Every pair `within'`
+has answered stays in the `Memo` for the whole run, until it holds a million
+of them (`akin''` and `within''` of `AST.hs`), since the ancestors on the
+stack are the same formations from one firing to the next.
 `--max-loops=<n>`
 (`_maxLoops` of `ReduceContext`) softens either mode: `enter` cuts a frame only
 once more than `n` of the formations above it are the same as its own, so a
@@ -595,6 +689,11 @@ in `of` of `<normalized>` in the markup, the universe spelled `Φ` (#2366). It
 writes nothing where the term is the one it came from, with or without the
 arguments the normalization dropped, and nothing where the term is one an
 earlier line named, since the line would only repeat that name.
+A firing that answered, made, recalled from the memo or renamed, closes its
+block the same way, as `evaluated 𝑛·1·5 := 𝜎1:λ  # 𝑛·0·7` (`EvEvaluated`,
+`closed` of `symbol` in `Evaluate.hs`, issue #2406), with the formation fired
+in the comment and in `of` of `<evaluated>` in the markup, so a line after the
+block is plainly not part of the firing; a firing with no answer writes none.
 A cut is a line too,
 `looped …` (`EvLooped`), written by `enter` where the refused frame would have
 opened, carrying the formation its ancestor entered (#1434) and naming the mode
@@ -641,7 +740,8 @@ state it started from and would refund the firings made inside it (#1472).
 `--max-seconds` bounds the time of the whole run the same way (`Deadline` and
 `clocked` in `Morph.hs`, off unless given), read by `deeper` at every step and
 by `charged` at every firing, since a run may spend its time rewriting terms
-that fire nothing (#1619), and by `enter` while it compares formations, since
+that fire nothing (#1619), by `normalized` at every step of normalization
+(#2409), and by `enter` while it compares formations, since
 under `plausible` one comparison by `within` may outlast the whole run, so a
 timer cuts that comparison where it stands (#1622). The same timer
 (`awaited` of `Morph.hs`) cuts the walk of a `rewrite` line, which takes no
@@ -711,7 +811,23 @@ the firing that minted a symbol the answer holds, and writes `renamed
 markup `<renamed … from="…">` holding an `<as symbol by/>` per symbol. So a
 mutual recursion whose rounds differ only in the symbols of their positions
 costs firings linear in its depth, not exponential, while the cut still
-counts every round that is running (#2374).
+counts every round that is running (#2374). `abstracted` of `Morph.hs`,
+which makes the key of both, walks every distinct term once, keeping what
+it made of it by `hashExpression`, and a node keeps its `hashShape` beside
+its hash once asked, since a term reaching the value below it twice through
+ρ is a tree doubling per level that is small in memory (#2453). So does
+`spelled` of `Sides.hs`, which walks nothing where no name is spelt back, so
+a run `--partial` parks spells its residue at once (#2456). So does
+`renamedTerm` of `Morph.hs`, keeping what it made in the `Renaming` that
+`adopted` starts, so the firings an adoption renames in turn share it, and
+`symbols` of `AST.hs`, which names every symbol once, in the order it first
+stands (#2458). The walk and every
+other cache of terms rest on the pointer shortcut of `Eq Expression`, which
+`identical` of `Pointer.hs` takes; that module is built with `-fno-hpc`,
+since a coverage build wraps every use of a variable in a fresh thunk and
+two uses of one term would never be the same pointer. `Ord Expression`
+takes it too, so the memo of firings, keyed by their normal forms, finds a
+firing without walking its forms as trees.
 
 A formation a join fabricates binds `left🌵` and `right🌵` to names of its
 sides, `𝑛·1` and `𝑛·2`, not to the sides themselves (`Sides.hs`, `_sides` of
@@ -725,6 +841,37 @@ no walk copies a side out again and terms stay as small as the graph they
 are. The `fabricated` record spells the sides back (`unnamed` of `Deps.hs`);
 any other record and the result print the names.
 
+The same store names the arguments of a call a rule normalizes (`shared` of
+`Morph.hs`, #2397): before a `normalize` premise of a rule of 𝕄, every argument
+of an application along the spine of the term, other than a name alone, that
+holds no ξ, ρ or other meta, and holds a name or a dispatch off something other
+than a path of `Φ`, gets a name (`minted` of `Sides.hs`), so an accumulator a
+recursion wraps every round, as `Φ.more( Φ.state( Φ.plus( ξ.acc.at ),
+ξ.acc.groups ) )`, is spelled once and not again in every round that copies it.
+A number, a path or a formation stays as it is. An argument applying ρ to a
+dispatch, or to a name standing for one, as `𝑛·2( ρ ↦ … )` that `dot` makes of
+`ξ.i`, is named without that ρ, which `stayed` drops too, so one value never
+gets a second name every round (#2413). The first time a term gets its
+name the run writes `shared 𝑛·1 := …` (`EvShared`), and the markup `<shared
+meta="𝑛·1">`. Unlike the name of a side, the name of an argument is spelled back
+in what `morph` and `dataize` print, the result and the residue of `--partial`
+alike (`spelled` of `Sides.hs`), so the output parses again. The firings stay as
+many as before: the memo still sees the same terms.
+
+The walks that copy a term to change it, `renamedTerm` and `abstracted` of
+`Morph.hs` and `stayed` and `symbolized` of `Lambdas.hs`, hand back every
+node, binding and argument nothing changed under (`intact` of `AST.hs`), so a
+copy of a wide object stays shared with the world and the memo keeps no
+private copy of it (#2392). For the same reason every field of `Facts` of
+`AST.hs` but the `hashShape`, which only the memo and the cut ask for, is
+strict, so a node carries no other thunk, the writers keep the texts
+of `_stated` and `_attested` packed, since a `String` costs some forty
+bytes a character, and `forked` builds the `on🌵` binding and the paths
+`ρ.left🌵` and `ρ.right🌵` once for all the branches of a formation.
+`renamedTerm` walks the bindings of a formation with `suffixed` of `AST.hs`,
+which hands back the tail of the list no binding changed in, so a copy
+renamed in its first binding keeps the cells of all the others.
+
 ### Test pattern: YAML packs
 
 Most spec files load test cases from `test-resources/*-packs/*.yaml` at
@@ -734,10 +881,9 @@ Test files map 1:1 with source modules (`RewriterSpec.hs` ↔ `Rewriter.hs`).
 `PrinterSpec.hs` also states the round trip of the printer and the parser as
 a QuickCheck property over `Grown` of `test/Grown.hs`, a term grown at random
 and shrunk to the smallest one still failing (#2002). The generator grows only
-what the sweet syntax spells back: it applies nothing to ξ or Φ, closes a
-formation with its λ and Δ, since neither takes a position (#1411), and
-applies no ρ straight to a number or string literal, since the sweet syntax
-drops such a ρ (#451).
+what the sweet syntax spells back: it closes a formation with its λ and Δ,
+since neither takes a position (#1411), and applies no ρ straight to a number
+or string literal, since the sweet syntax drops such a ρ (#451).
 
 ### Style
 

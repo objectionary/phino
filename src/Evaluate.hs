@@ -33,26 +33,30 @@ import qualified Sides
 import Text.Printf (printf)
 
 evaluation :: ReduceContext -> State -> Expression -> Expression -> IO (Expression, State)
-evaluation ctx state form univ = case form of
+evaluation asked state form univ = case form of
   ExFormation bds
     | not (any isLambda bds) -> pure (form, state)
     | otherwise -> case lambda bds of
         Just (func, args) -> do
-          (raw, state') <- symbol func form args univ state ctx
+          (raw, state') <- symbol func form worked args univ state ctx
           (normal, _) <- normalized raw ((univ, Nothing) :| []) ctx
           pure (normal, state')
         Nothing -> case unknown bds of
-          Just idx -> stuck idx form
+          Just idx -> opaque idx
           Nothing -> throwIO (userError "Function evaluate() expects a formation with a single λ binding naming a function")
   _ -> throwIO (userError "Function evaluate() expects a formation")
   where
+    ctx :: ReduceContext
+    ctx = asked{_working = Nothing}
+    worked :: Expression
+    worked = fromMaybe form asked._working
     unknown :: [Binding] -> Maybe Int
     unknown bindings = case partition isLambda bindings of
       ([BiLambda (FnSymbol idx)], _) -> Just idx
       _ -> Nothing
-    stuck :: Int -> Expression -> IO (Expression, State)
-    stuck idx form = do
-      unless (name `elem` ctx._parked) (ctx._saveEval (EvStuck ctx._nesting name ctx._judgment form))
+    opaque :: Int -> IO (Expression, State)
+    opaque idx = do
+      unless (name `elem` ctx._parked) (ctx._saveEval (EvOpaque ctx._nesting idx ctx._judgment worked))
       throwIO (Stuck name)
       where
         name :: T.Text
@@ -62,10 +66,10 @@ data Raise = Raise
   deriving stock (Show)
   deriving anyclass (Exception)
 
-symbol :: T.Text -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-symbol func form self univ state caller = case matched caller._symbolic func of
+symbol :: T.Text -> Expression -> Expression -> Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
+symbol func form whole self univ state caller = case matched caller._symbolic func of
   Nothing -> do
-    unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment form))
+    unless (func `elem` caller._parked) (caller._saveEval (EvStuck caller._nesting func caller._judgment whole))
     throwIO (Stuck func)
   Just entry -> do
     charged caller
@@ -77,6 +81,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       answer <- adopted caller kin form
       shown (caller._nesting + 1) answer
+      closed answer
       pure (ended answer, state)
     made :: Lambda -> IO (Expression, State)
     made entry = do
@@ -86,8 +91,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       let ctx = caller{_nesting = caller._nesting + 1, _raising = entry._terminators}
       outcome <- try $ raised ctx $ do
         (bound, dataized, conditions) <- foldM (down ctx) (substEmpty, state, []) entry._dataized
-        (bound', morphed, normals) <- foldM (through ctx "morph" (still pure)) (bound, dataized, []) entry._morphed
-        (bound'', undressed, normals') <- foldM (through ctx "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
+        (bound', morphed, normals) <- foldM (through ctx (joining entry._ending) "morph" (still pure)) (bound, dataized, []) entry._morphed
+        (bound'', undressed, normals') <- foldM (through ctx (joining entry._ending) "undress" (peeled ctx)) (bound', morphed, normals) entry._undressed
         firing <- Firing func (reverse conditions) . (reverse normals' ++) <$> sides entry._ending
         known <- remembered caller._memo firing
         (answer, state') <- maybe (worked ctx entry firing bound'' undressed) (\(first, answer) -> (answer, undressed) <$ recited ctx._nesting first answer) known
@@ -96,6 +101,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         Right (answer, state') -> do
           retained caller._memo form stamp (Answered answer)
           when (isJust caller._memo) (caller._saveEval (EvMemoized (caller._nesting + 1) form (ended answer)))
+          closed answer
           pure (ended answer, state')
         Left failure -> do
           exhausted' <- starved caller._memo
@@ -142,13 +148,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     sourced _ = Nothing
     line :: ReduceContext -> Ending -> (Subst, State) -> Line -> IO (Subst, State)
     line ctx _ held (Dataized meta source) = lowered ctx held meta source
-    line ctx _ held (Morphed meta source) = reduced ctx held meta source
+    line ctx ending held (Morphed meta source) = reduced ctx (joining ending) held meta source
     line ctx ending held (Evaluated meta source) = evaluated ctx ending held meta source
-    line ctx _ (bound, state') (Deferred meta source) = (,state') <$> deferred ctx state' meta source bound
-    line ctx _ held (Stayed meta source) = reshaped ctx "stay" (still (pure . stayed)) meta source held
-    line ctx _ held (Rewritten meta source rules) = reshaped ctx "rewrite" (still (awaited ctx . rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal) rules)) meta source held
-    line ctx _ held (Symbolized meta source) = reshaped ctx "symbolize" (still (masked ctx)) meta source held
-    line ctx _ held (Undressed meta source) = reshaped ctx "undress" (peeled ctx) meta source held
+    line ctx ending (bound, state') (Deferred meta source) = (,state') <$> deferred ctx (joining ending) state' meta source bound
+    line ctx ending held (Stayed meta source) = reshaped ctx (joining ending) "stay" (still (pure . stayed)) meta source held
+    line ctx ending held (Rewritten meta source rules) = reshaped ctx (joining ending) "rewrite" (still (awaited ctx . rewritten (RuleContext ctx._buildTerm ctx._universe ctx._engine._normal False) rules)) meta source held
+    line ctx ending held (Symbolized meta source) = reshaped ctx (joining ending) "symbolize" (still (masked ctx)) meta source held
+    line ctx ending held (Undressed meta source) = reshaped ctx (joining ending) "undress" (peeled ctx) meta source held
     line ctx _ held (Cast one first two second) = casting ctx held (one, first) (two, second)
     shown :: Int -> Answer -> IO ()
     shown depth (Answer built normal) = do
@@ -180,6 +186,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     told (Answered answer) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       recited (caller._nesting + 1) form answer
+      closed answer
       pure (ended answer, state)
     told (Looped term) = do
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
@@ -189,6 +196,8 @@ symbol func form self univ state caller = case matched caller._symbolic func of
       caller._saveEval (EvFiring caller._nesting func caller._judgment caller._site)
       caller._saveEval (EvStall (caller._nesting + 1) name)
       throwIO (Stuck name)
+    closed :: Answer -> IO ()
+    closed answer = caller._saveEval (EvEvaluated (caller._nesting + 1) form (ended answer))
     recited :: Int -> Expression -> Answer -> IO ()
     recited depth term answer = do
       caller._saveEval (EvRecalled depth term (ended answer))
@@ -217,11 +226,13 @@ symbol func form self univ state caller = case matched caller._symbolic func of
           ctx._saveEval (EvData ctx._nesting meta._spelling origin datum)
           bound' <- bind meta (MvBytes bytes) bound
           pure (datum, bound', state'')
-    through :: ReduceContext -> T.Text -> (State -> Expression -> IO (Expression, State)) -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
-    through ctx block change (bound, state', normals) (meta, term) = do
+    through :: ReduceContext -> Bool -> T.Text -> (State -> Expression -> IO (Expression, State)) -> (Subst, State, [Expression]) -> (Meta, Expression) -> IO (Subst, State, [Expression])
+    through ctx side block change (bound, state', normals) (meta, term) = do
       placed <- operand term
-      (normal, state'') <- morphing univ ctx{_site = term} placed state'
-      (shaped, state''') <- change state'' normal
+      ((normal, shaped), state''') <- blanked side ((ExTermination, ExTermination), state') $ do
+        (normal, state'') <- morphing univ ctx{_site = term} placed state'
+        (shaped, state''') <- change state'' normal
+        pure ((normal, shaped), state''')
       ctx._saveEval
         ( if shaped == normal
             then EvTerm ctx._nesting meta._spelling Morphing term normal
@@ -229,17 +240,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
         )
       bound' <- bind meta (MvExpression shaped) bound
       pure (bound', state''', shaped : normals)
-    reduced :: ReduceContext -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
-    reduced ctx (bound, state') meta source = do
+    reduced :: ReduceContext -> Bool -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
+    reduced ctx side (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      (normal, state'') <- morphing univ ctx{_site = ExMeta source._name} term state'
+      (normal, state'') <- blanked side (ExTermination, state') (morphing univ ctx{_site = ExMeta source._name} term state')
       ctx._saveEval (EvTerm ctx._nesting meta._spelling Morphing (ExMeta source._name) normal)
       bound' <- bind meta (MvExpression normal) bound
       pure (bound', state'')
-    reshaped :: ReduceContext -> T.Text -> (State -> Expression -> IO (Expression, State)) -> Meta -> Meta -> (Subst, State) -> IO (Subst, State)
-    reshaped ctx block change meta source (bound, state') = do
+    reshaped :: ReduceContext -> Bool -> T.Text -> (State -> Expression -> IO (Expression, State)) -> Meta -> Meta -> (Subst, State) -> IO (Subst, State)
+    reshaped ctx side block change meta source (bound, state') = do
       kept <- buildExpressionThrows (ExMeta source._name) bound
-      (term, state'') <- change state' kept
+      (term, state'') <- blanked side (ExTermination, state') (change state' kept)
       ctx._saveEval
         ( if term == kept
             then EvBound ctx._nesting (ExMeta meta._name) term
@@ -287,7 +298,7 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     evaluated :: ReduceContext -> Ending -> (Subst, State) -> Meta -> Meta -> IO (Subst, State)
     evaluated ctx ending (bound, state') meta source = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      (answer, state'') <- kindled ctx ending (ExMeta source._name) state' term
+      (answer, state'') <- blanked (joining ending) (ExTermination, state') (kindled ctx ending (ExMeta source._name) state' term)
       ctx._saveEval
         ( if answer == term
             then EvBound ctx._nesting (ExMeta meta._name) term
@@ -314,10 +325,10 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     named :: Attribute -> Binding -> Bool
     named attr (BiTau attr' _) = attr == attr'
     named _ _ = False
-    deferred :: ReduceContext -> State -> Meta -> Meta -> Subst -> IO Subst
-    deferred ctx state' meta source bound = do
+    deferred :: ReduceContext -> Bool -> State -> Meta -> Meta -> Subst -> IO Subst
+    deferred ctx side state' meta source bound = do
       term <- buildExpressionThrows (ExMeta source._name) bound
-      answer <- postponing ctx state' (ExMeta source._name) term >>= maybe (kept term) pure
+      answer <- blanked side ExTermination (postponing ctx state' (ExMeta source._name) term >>= maybe (kept term) pure)
       bind meta (MvExpression answer) bound
       where
         kept :: Expression -> IO Expression
@@ -449,7 +460,17 @@ symbol func form self univ state caller = case matched caller._symbolic func of
     walked term = Just term
     reached :: ReduceContext -> Subst -> Expression -> State -> IO (Expression, State)
     reached _ bound (ExMeta name) state' = (,state') <$> buildExpressionThrows (ExMeta name) bound
-    reached ctx _ side state' = (\placed -> morphing univ ctx{_site = side} placed state') =<< operand side
+    reached ctx _ side state' = (\placed -> blanked True (ExTermination, state') (morphing univ ctx{_site = side} placed state')) =<< operand side
+    joining :: Ending -> Bool
+    joining Joining{} = True
+    joining _ = False
+    blanked :: Bool -> result -> IO result -> IO result
+    blanked True fallback work = catch work (\failure -> if opaqued failure then pure fallback else throwIO failure)
+    blanked False _ work = work
+    opaqued :: ReduceException -> Bool
+    opaqued (Stuck name) = "𝜎" `T.isPrefixOf` name
+    opaqued (StuckAt name _ _) = "𝜎" `T.isPrefixOf` name
+    opaqued _ = False
     mint :: Subst -> (Slot, Function) -> IO Subst
     mint bound (slot, fresh) = case combine (substSlot slot (MvFunction fresh)) bound of
       Just bound' -> pure bound'

@@ -22,6 +22,7 @@ import qualified Inference as In
 import Locator (locatedExpression)
 import Morph (Morphed, ReduceContext (..), ReduceException (..), ReductionFunc, carried, deeper, inferred, insideUniverse, leadsTo, onward, opening, parking, severing, universed, vetted)
 import Rewriter (Rewritten)
+import Sides (spelled)
 
 type Dataized = (Bytes, [Rewritten])
 
@@ -52,7 +53,7 @@ dataize universe state ctx@ReduceContext{..} = do
     dead = "⊥"
     residual :: NonEmpty Rewritten -> State -> IO (Outcome, [Rewritten], State)
     residual seq parked = do
-      residue <- locatedExpression _locator (fst (NE.head seq))
+      residue <- spelled _sides =<< locatedExpression _locator (fst (NE.head seq))
       pure (Residual residue, reverse (NE.toList seq), parked)
 
 dataize' :: Dataizable -> Expression -> State -> ReduceContext -> IO (Dataized, State)

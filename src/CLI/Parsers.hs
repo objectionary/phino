@@ -336,6 +336,16 @@ optMinutes =
         )
     )
 
+optProfile :: Parser Bool
+optProfile =
+  switch
+    ( long "profile"
+        <> help
+          "Close every record of the --minutes file with a comment holding the milliseconds since the record \
+          \above and since the start, the depth of the record, the firings so far, the live heap and the peak memory, \
+          \so a slow or memory-hungry spot shows next to the lines that caused it"
+    )
+
 optAbridged :: Parser (Maybe Int)
 optAbridged =
   optional
@@ -378,6 +388,9 @@ optSeed =
 
 optSugar :: Parser SugarType
 optSugar = flag SALTY SWEET (long "sweet" <> help (printf "Print result and intermediate (see %s option(s)) 𝜑-expressions using syntax sugar" _intermediateOptions))
+
+optCheat :: Parser Bool
+optCheat = switch (long "cheat" <> help "Let normalization take shortcuts its rules do not spell, such as dropping a ρ applied to a term that already ends with one; the steps then differ from what the rules prescribe")
 
 optHideRho :: Parser Bool
 optHideRho = switch (long "hide-rho" <> help "Remove every ρ binding from result and intermediate 𝜑-expressions for cleaner output")
@@ -449,6 +462,7 @@ dataizeParser =
             <*> optHeaders
             <*> optCanonize
             <*> optDepthSensitive
+            <*> optCheat
             <*> optShuffle
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of dataization")
@@ -477,6 +491,7 @@ dataizeParser =
             <*> optStepsDir
             <*> optProtocol
             <*> optMinutes
+            <*> optProfile
             <*> optAbridged
             <*> optAbridgedData
             <*> optSymbolic
@@ -502,6 +517,7 @@ morphParser =
             <*> optHeaders
             <*> optCanonize
             <*> optDepthSensitive
+            <*> optCheat
             <*> optShuffle
             <*> optSeed
             <*> switch (long "quiet" <> help "Don't print the result of morphing")
@@ -530,6 +546,7 @@ morphParser =
             <*> optStepsDir
             <*> optProtocol
             <*> optMinutes
+            <*> optProfile
             <*> optAbridged
             <*> optAbridgedData
             <*> optSymbolic
@@ -555,6 +572,7 @@ rewriteParser =
             <*> optOmitListing
             <*> optOmitComments
             <*> optDepthSensitive
+            <*> optCheat
             <*> optNonumber
             <*> switch (long "in-place" <> help "Edit file in-place instead of printing to output")
             <*> switch (long "update" <> help "Skip rewriting if --target file is newer than the input file")
@@ -615,6 +633,16 @@ matchParser =
             <*> optSeed
         )
 
+sodgParser :: Parser Command
+sodgParser =
+  CmdSodg
+    <$> ( OptsSodg
+            <$> optLogLevel
+            <*> optLogLines
+            <*> optInputFormat
+            <*> argInputFile
+        )
+
 compileParser :: Parser Command
 compileParser =
   CmdCompile
@@ -634,6 +662,7 @@ commandParser =
         <> command "explain" (info explainParser (progDesc "Explain rules in LaTeX format"))
         <> command "merge" (info mergeParser (progDesc "Merge 𝜑-expressions into single one by merging their top level formations"))
         <> command "match" (info matchParser (progDesc "Match 𝜑-expression against provided pattern and build matched substitutions"))
+        <> command "sodg" (info sodgParser (progDesc "Print the SODG commands that build the graph of the 𝜑-expression"))
         <> command "compile" (info compileParser (progDesc "Compile the rules into a Haskell module a build with the flag 'compiled' links in"))
     )
 

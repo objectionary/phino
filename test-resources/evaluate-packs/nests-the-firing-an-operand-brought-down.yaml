@@ -25,8 +25,9 @@ protocol: |
     𝑛·0·2 := 5.0
     𝑛·0·3 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧
     normalized 𝑛·0·4 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·3.plus
-    𝑛·0·5 := 𝑛·0·2.plus( x ↦ 6.0.plus( 7.0 ) )
-    𝑛·0·6 := ⟦ x ↦ 6.0.plus( 7.0 ), λ ⤍ L_number_plus ⟧
+    shared 𝑛·1 := 6.0.plus( 7.0 )
+    𝑛·0·5 := 𝑛·0·2.plus( x ↦ 𝑛·1 )
+    𝑛·0·6 := ⟦ x ↦ 𝑛·1, λ ⤍ L_number_plus ⟧
     𝔼(L_number_plus):
       𝔻(ξ.ρ):
         𝕄(ξ.ρ):
@@ -83,23 +84,25 @@ protocol: |
             normalized 𝑛·2·20 := 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·19
             𝛿·2·2 := 40-1C-00-00-00-00-00-00  # 7.0
           𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)
-          𝑛·2·21 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛
+          𝑛·2·21 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus
           𝕄(𝑛·2·21):
             𝑛·2·22 := Φ.number( φ ↦ 𝜎1:λ )
             𝑛·2·23 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧
             morphed 𝑛·2·24 := 𝑛·2·23
           𝑛·2·25 := 𝑛·2·24  # 𝕄(𝑛·2·21)
-        boxed 𝑛·1·18 := 𝑛·2·25.φ
+          evaluated 𝑛·2·26 := 𝑛·2·25  # 𝑛·1·16
+        boxed 𝑛·1·18 := 𝑛·2·26.φ
         normalized 𝑛·1·19 := 𝜎1:λ  # 𝑛·1·18
         𝛿·1·2 := 𝔻(𝜎1:λ)
       𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)
-      𝑛·1·20 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛
+      𝑛·1·20 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_plus
       𝕄(𝑛·1·20):
         𝑛·1·21 := Φ.number( φ ↦ 𝜎2:λ )
         𝑛·1·22 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧
         morphed 𝑛·1·23 := 𝑛·1·22
       𝑛·1·24 := 𝑛·1·23  # 𝕄(𝑛·1·20)
-    normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·24.plus
+      evaluated 𝑛·1·25 := 𝑛·1·24  # 𝑛·0·6
+    normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·25.plus
     𝑛·0·8 := 𝑛·1·21.plus( x ↦ 8.0 )
     𝑛·0·9 := ⟦ x ↦ 8.0, λ ⤍ L_number_plus ⟧
     morphed 𝑛·0·10 := 𝑛·0·9

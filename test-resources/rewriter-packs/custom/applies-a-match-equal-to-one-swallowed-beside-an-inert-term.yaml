@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+repeat: 1
+input: |
+  [[
+    a -> [[ k -> [[ m -> [[ ]].go ]], s -> [[ q -> Q ]] ]].go,
+    b -> [[ ]].go
+  ]]
+output: '[[ a -> Q.done, b -> Q.done ]]'
+rules:
+  custom:
+    - name: go-done
+      pattern: '[[ !B1 ]].go'
+      result: 'Q.done'

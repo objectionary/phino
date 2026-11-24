@@ -9,7 +9,8 @@ import Bytes (NonFinite (..))
 import CST
 import Control.Monad (forM_)
 import Data.Text qualified as T
-import Render (Render (render))
+import Grown (Grown (..))
+import Render (Render (..), displayWidth, lastLineWidthAtMost, widthAtMost)
 import Test.Hspec
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck (chooseInt, forAll)
@@ -28,6 +29,36 @@ bindingXi attrLabel = BI_PAIR (pairXi attrLabel) (BDS_EMPTY NO_TAB) NO_TAB
 
 spec :: Spec
 spec = do
+  describe "widthAtMost" $ do
+    prop "agrees with measuring the complete rendering" $ \(Grown expression) ->
+      forAll (chooseInt (0, 120)) $ \limit ->
+        let node = expressionToCST expression
+         in widthAtMost limit node == min (limit + 1) (displayWidth (render node))
+    it "stops at the limit without rendering the preceding subtree" $
+      let node = EX_DISPATCH (error "callee rendered") NO_SPACE (AT_LABEL (T.replicate 100 "x"))
+       in widthAtMost 80 node `shouldBe` 81
+
+  describe "lastLineWidthAtMost" $ do
+    prop "agrees with measuring the rendered last line" $ \(Grown expression) ->
+      forAll (chooseInt (0, 120)) $ \limit ->
+        let node = expressionToCST expression
+            expected = case T.lines (render node) of
+              [] -> 0
+              lines' -> displayWidth (last lines')
+         in lastLineWidthAtMost limit node == min (limit + 1) expected
+    it "stops at a newline without rendering the preceding subtrees" $
+      let node = EX_APPLICATION (error "callee rendered") NO_SPACE EOL (TAB 1) (error "argument rendered") EOL (TAB 0) 1
+       in lastLineWidthAtMost 80 node `shouldBe` 1
+    it "stops at the width limit without rendering the preceding subtree" $
+      let node = EX_DISPATCH (error "callee rendered") NO_SPACE (AT_LABEL (T.replicate 100 "x"))
+       in lastLineWidthAtMost 80 node `shouldBe` 81
+    forM_ ["", "\n", "x\n", "x\n\n", "x\n大家e\769", "\n大家e\769\n"] $ \value ->
+      it ("measures the final line of " ++ show value) $
+        let expected = case T.lines value of
+              [] -> 0
+              lines' -> displayWidth (last lines')
+         in lastLineWidthAtMost 80 value `shouldBe` expected
+
   describe "render primitive wrapper instances" $
     forM_
       [ ("String", render ("hi" :: String), "hi")

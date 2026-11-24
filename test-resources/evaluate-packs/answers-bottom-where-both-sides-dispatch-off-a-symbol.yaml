@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# Both sides dispatch off a bare symbol, so both are 'opaque' and both end as
+# ⊥ (#2427). Two sides that are the same join, and the fork answers ⊥.
+symbolic: |
+  - λ: L_fork
+    dataize:
+      𝛿1: $.on🌵
+    morph:
+      𝑛1: $.left🌵
+      𝑛2: $.right🌵
+    join:
+      on: 𝛿1
+      left: 𝑛1
+      right: 𝑛2
+      otherwise: L_fork
+location: 'Q.e1'
+input: '⟦ e1 ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ Δ ⤍ 00- ⟧, left🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧.p, right🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧.q ⟧.φ ⟧'
+result: '⊥'
+protocol: |
+  𝕄(Φ.e1):
+    𝔼(L_fork):
+      𝔻(ξ.on🌵):
+        𝛿·1·1 := 00-
+      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.on🌵)
+      𝕄(ξ.left🌵):
+        opaque 𝜎1  # 𝕄(𝜎1:λ.p)
+      𝑛1·1 := ⊥  # 𝕄(ξ.left🌵)
+      𝕄(ξ.right🌵):
+        opaque 𝜎1  # 𝕄(𝜎1:λ.q)
+      𝑛2·1 := ⊥  # 𝕄(ξ.right🌵)
+      𝑛·1·1 := ⊥
+      evaluated 𝑛·1·2 := ⊥  # ⟦ λ ⤍ L_fork, on🌵 ↦ 00-:Δ, left🌵 ↦ 𝜎1:λ.p, right🌵 ↦ 𝜎1:λ.q ⟧
+    normalized 𝑛·0·1 := ⊥  # ⊥.φ
+    morphed 𝑛·0·2 := ⊥

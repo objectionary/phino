@@ -12,7 +12,7 @@ import Control.Concurrent (threadDelay)
 import Control.Exception
 import Control.Monad (forM_, unless)
 import Data.Char (isDigit)
-import Data.List (intercalate, isInfixOf, isPrefixOf, sort)
+import Data.List (intercalate, isInfixOf, isPrefixOf, isSuffixOf, sort)
 import Data.Text qualified as T
 import Data.Time.Clock (addUTCTime, getCurrentTime)
 import Data.Time.Clock.POSIX (getPOSIXTime)
@@ -135,6 +135,50 @@ rule file = "--rule=test-resources/cli/rules/" <> file
 
 spec :: Spec
 spec = do
+  describe "regex execution limits" $ do
+    forM_
+      [ ("matches", ["  matches: ['^(a|b)*$', '!e1']"])
+      , ("or", ["  or:", "    - matches: ['^(a|b)*$', '!e1']", "    - eq: [1, 1]"])
+      ]
+      ( \(desc, condition) ->
+          it ("fails normally when a " ++ desc ++ " condition exceeds the recursion limit") $
+            withTempFileContent
+              "regex-limit.yaml"
+              ( unlines
+                  ( [ "name: mt"
+                    , "pattern: '[[ x -> !e1 ]]'"
+                    , "result: '[[ y -> !e1 ]]'"
+                    , "when:"
+                    ]
+                      ++ condition
+                  )
+              )
+              ( \path ->
+                  withStdin ("[[ x -> \"" ++ replicate 9000 'a' ++ "\" ]]") $
+                    testCLIFailed ["rewrite", "--sweet", "--rule=" ++ path] ["Regex execution failed:"]
+              )
+      )
+
+    forM_ ["(a|b)*", "(ab)+"] $ \pattern ->
+      forM_ ["", "g"] $ \flag ->
+        it ("fails normally when sed exceeds the recursion limit with " ++ pattern ++ " and flag '" ++ flag ++ "'") $
+          withTempFileContent
+            "regex-limit.yaml"
+            ( unlines
+                [ "name: sed-limit"
+                , "pattern: '[[ x -> !e1 ]]'"
+                , "result: '[[ y -> !e2 ]]'"
+                , "where:"
+                , "  - meta: '!e2'"
+                , "    function: sed"
+                , "    args: ['!e1', '\"s/" ++ pattern ++ "/X/" ++ flag ++ "\"']"
+                ]
+            )
+            ( \path ->
+                withStdin ("[[ x -> \"" ++ concat (replicate 10000 "ab") ++ "\" ]]") $
+                  testCLIFailed ["rewrite", "--sweet", "--rule=" ++ path] ["Regex execution failed:"]
+            )
+
   it "prints version" $
     testCLISucceeded ["--version"] [showVersion version]
 
@@ -208,6 +252,22 @@ spec = do
         testCLIFailed
           ["--pin=" ++ showVersion version, "--pin-file=" ++ file, "rewrite"]
           ["[ERROR]: Invalid option `--pin-file=" ++ file ++ "'"]
+
+  describe "--cheat" $ do
+    it "drops a ρ applied to a term that already ends with one" $
+      withStdin "[[ a -> Q.x(^ -> [[ ]]), b -> [[ ]] ]].a" $
+        testCLISucceeded ["rewrite", "--normalize", "--flat", "--sweet", "--cheat"] ["Φ.x( ρ ↦ ⟦⟧ )"]
+    it "keeps every ρ the rules prescribe without it" $
+      withStdin "[[ a -> Q.x(^ -> [[ ]]), b -> [[ ]] ]].a" $
+        testCLISucceeded ["rewrite", "--normalize", "--flat", "--sweet"] ["Φ.x( ρ ↦ ⟦⟧, ρ ↦ ⟦ a ↦ Φ.x( ρ ↦ ⟦⟧ ), b ↦ ⟦⟧ ⟧ )"]
+    it "keeps the terms of nested forks small while dataizing" $
+      withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
+        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
+          testCLISucceeded ["dataize", "--cheat", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["00-"]
+    it "lets the terms of nested forks grow while dataizing without it" $
+      withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
+        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
+          testCLIFailed ["dataize", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["--max-nodes=5000"]
 
   describe "--hide-rho" $
     forM_
@@ -462,6 +522,16 @@ spec = do
           , ["--label option can stay together with --output=latex only"]
           )
         ,
+          ( "with a '%' in --meet-prefix and --output=latex"
+          , ["rewrite", "--meet-prefix=a%b", "--output=latex"]
+          , ["The --meet-prefix option must contain only letters, numbers, colons, periods, underscores, and hyphens"]
+          )
+        ,
+          ( "with a '}' in --meet-prefix and --output=latex"
+          , ["rewrite", "--meet-prefix=a}b", "--output=latex"]
+          , ["The --meet-prefix option must contain only letters, numbers, colons, periods, underscores, and hyphens"]
+          )
+        ,
           ( "with an unsafe --label and --output=latex"
           , ["rewrite", "--label=eq:bad%tag", "--output=latex"]
           , ["The --label option must contain only letters, numbers, colons, periods, underscores, and hyphens"]
@@ -622,6 +692,28 @@ spec = do
           saved <- mapM (\file -> readFile (dir ++ "/" ++ file)) files
           concat saved `shouldNotContain` "Minus"
           concat saved `shouldNotContain` "Plus"
+
+    it "keeps the name a function has under --sequence in every --steps-dir file under --canonize" $
+      withTempDirectory "phino-steps-canonized" $ \dir ->
+        withStdin "[[ a -> [[ x -> [[ L> Fa ]] ]].q, b -> [[ y -> [[ L> Fb ]] ]].y ]]" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--sequence", "--canonize", "--flat", "--steps-dir=" ++ dir]
+            ["⟦ a ↦ ⊥, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"]
+          saved <- traverse (readUtf8 . (dir </>)) ["00001.phi", "00002.phi", "00003.phi"]
+          map (filter (/= '\n')) saved
+            `shouldBe` [ "⟦ a ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧.q, b ↦ ⟦ λ ⤍ Fn2 ⟧( ρ ↦ ⟦ y ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧ ) ⟧"
+                       , "⟦ a ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧.q, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"
+                       , "⟦ a ↦ ⊥, b ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧"
+                       ]
+
+    it "saves the --canonize steps when --show names an object only the steps hold" $
+      withTempDirectory "phino-steps-shown" $ \dir ->
+        withStdin "[[ app -> [[ x -> [[ L> Fx ]] ]](^ -> [[ ]]) ]]" $ do
+          testCLISucceeded
+            ["rewrite", "--normalize", "--canonize", "--flat", "--show=Q.app.x", "--steps-dir=" ++ dir]
+            ["⟦ app ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧ ⟧"]
+          saved <- readUtf8 (dir </> "00001.phi")
+          filter (/= '\n') saved `shouldBe` "⟦ app ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧ ⟧ ⟧"
 
     it "gives the saved steps the --focus of the printed ones" $
       withTempDirectory "phino-steps-focused" $ \dir ->
@@ -1380,6 +1472,14 @@ spec = do
           ["rewrite", "--canonize", "--sweet", "--flat"]
           ["⟦ x ↦ ⟦ y ↦ Fn1:λ.q, z ↦ Φ.x( a ↦ ⟦ w ↦ Fn2:λ, λ ⤍ Fn3 ⟧ ) ⟧, λ ⤍ Package ⟧"]
 
+    it "keeps the name of a function across the steps of --sequence under --canonize" $
+      withStdin "[[ a -> [[ x -> [[ L> Fa ]], y -> [[ L> Fb ]] ]] ]]" $
+        testCLISucceeded
+          ["rewrite", rule "drop-x.yaml", "--sequence", "--canonize", "--flat"]
+          [ "⟦ a ↦ ⟦ x ↦ ⟦ λ ⤍ Fn1 ⟧, y ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧ ⟧"
+          , "⟦ a ↦ ⟦ y ↦ ⟦ λ ⤍ Fn2 ⟧ ⟧ ⟧"
+          ]
+
     it "rewrites by locator" $
       withStdin "[[ ex -> [[ x -> [[ y -> 5 ]].y ]], abc -> [[ x -> ? ]](x -> 5) ]]" $
         testCLISucceeded
@@ -1413,6 +1513,16 @@ spec = do
         testCLISucceeded
           ["rewrite", "--flat", "--normalize", "--breakpoint=dot"]
           ["⟦ a ↦ Φ( ρ ↦ ⟦ b ↦ Φ ⟧ ) ⟧"]
+
+    it "reads back an application of ξ as it is" $
+      withStdin "[[ a -> [[ x -> ∅ ]], b -> $(x -> [[ ]]) ]]" $
+        testCLISucceeded ["rewrite", "--flat"] ["⟦ a ↦ ⟦ x ↦ ∅ ⟧, b ↦ ξ( x ↦ ⟦⟧ ) ⟧"]
+
+    it "keeps the ρ that dot applies to Φ, and reads it back" $ do
+      withStdin "[[ x -> [[ y -> Q ]].y ]]" $
+        testCLISucceeded ["rewrite", "--normalize", "--flat"] ["⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧"]
+      withStdin "⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧" $
+        testCLISucceeded ["rewrite", "--flat"] ["⟦ x ↦ Φ( ρ ↦ ⟦ y ↦ Φ ⟧ ) ⟧"]
 
   describe "morph --focus under --locator" $ do
     it "finds the same object for the steps and for the answer" $
@@ -1616,6 +1726,76 @@ spec = do
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-loops=1", "--max-steps=4000"]
             ["40-45-00-00-00-00-00-00"]
 
+      describe "over a recursion that takes an attribute off its own call" $ do
+        let world = "⟦ num(φ) ↦ ⟦ gt(ρ, b) ↦ L_gt:λ, plus(ρ, b) ↦ L_plus:λ ⟧, seq(i) ↦ ⟦ φ ↦ Φ.num( φ ↦ 𝜎1:λ ).gt( i ).if( Φ.seq( i.plus( Φ.num( φ ↦ 01-:Δ ) ) ).plus( Φ.num( φ ↦ 01-:Δ ) ), i ) ⟧, app ↦ Φ.seq( Φ.num( φ ↦ 00-:Δ ) ) ⟧"
+            atoms = T.pack "- λ: L_gt\n  dataize: {𝛿1: $.b}\n  𝑛: ⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧\n- λ: L_fork\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  evaluate: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  symbolize: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  cast: {𝑛7: 𝑛5, 𝑛8: 𝑛6}\n  join: {'on': $.on🌵, left: 𝑛7, right: 𝑛8, otherwise: L_fork}\n- λ: L_plus\n  dataize: {𝛿1: $.ρ}\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
+        it "cuts the recursion by --max-loops, not by --max-steps" $
+          withLambdasOf atoms $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--max-steps=1000", "--max-firings=50"] ["40-45-00-00-00-00-00-00"]
+        it "writes the cut of the dispatch off the copy that repeats one above" $
+          withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+            hClose stream
+            withLambdasOf atoms $ \file ->
+              withStdin world $
+                testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+            records <- map (dropWhile (== ' ')) . lines <$> readProtocol path
+            records `shouldContain` ["looped 𝜎5 := 𝑛·5·1.plus  # plausible, repeats 𝑛·0·4"]
+
+      describe "over a world whose levels share the value below them twice" $ do
+        let level :: String -> String
+            level inner = "⟦ ρ ↦ ∅, x ↦ ∅, l ↦ ⟦ ρ ↦ ∅, x ↦ ∅, y ↦ ∅, m ↦ ⟦ ρ ↦ ∅, f ↦ ⟦ λ ⤍ L_f, ρ ↦ ∅ ⟧ ⟧ ⟧( x ↦ ξ.x, y ↦ ξ.x ).m ⟧( x ↦ " ++ inner ++ " ).l"
+            world = "⟦ mk ↦ " ++ iterate level "⟦ ρ ↦ ∅ ⟧" !! 24 ++ ", app ↦ Φ.mk.f ⟧"
+            atoms = T.pack "- λ: L_f\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+            triple :: String -> String
+            triple target = "⟦ dataized(target, big) ↦ L_dataized:λ, peek(target) ↦ L_peek:λ, p ↦ ⟦ a ↦ Φ.dataized( target ↦ Φ.u, big ↦ Φ.mk.f ), b ↦ Φ.peek( target ↦ Φ.v ), c ↦ Φ.dataized( target ↦ Φ." ++ target ++ ", big ↦ Φ.mk.f ), λ ⤍ L_triple ⟧.φ, u ↦ ⟦ λ ⤍ 𝜎1 ⟧, v ↦ ⟦ λ ⤍ 𝜎2 ⟧, w ↦ ⟦ λ ⤍ 𝜎1 ⟧, mk ↦ " ++ iterate level "⟦ ρ ↦ ∅ ⟧" !! 30 ++ " ⟧"
+            firings = T.pack "- λ: L_dataized\n  dataize: {𝛿1: $.target}\n  morph: {𝑛1: $.big}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_peek\n  dataize: {𝛿1: $.target}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_triple\n  morph: {𝑛1: $.a, 𝑛2: $.b, 𝑛3: $.c}\n  evaluate: {𝑛4: 𝑛1, 𝑛5: 𝑛2, 𝑛6: 𝑛3}\n  𝑛: ⟦ φ ↦ ⟦ a ↦ 𝑛4, b ↦ 𝑛5, c ↦ 𝑛6 ⟧ ⟧\n"
+            recorded :: String -> IO (Maybe [String])
+            recorded target =
+              timeout 60000000 $
+                withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+                  hClose stream
+                  withLambdasOf firings $ \file ->
+                    withStdin (triple target) $
+                      testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.p", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--sweet", "--hide-rho", "--max-cycles=1000", "--minutes=" ++ path] ["⊥"]
+                  map (dropWhile (== ' ')) . lines <$> readProtocol path
+        it "fires the atom without walking the shared values as a tree" $
+          timeout
+            60000000
+            ( withLambdasOf atoms $ \file ->
+                withStdin world $
+                  testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--max-cycles=1000"] ["40-45-00-00-00-00-00-00"]
+            )
+            >>= (`shouldBe` Just ())
+        it "takes the answer of a kindred firing without walking the shared values as a tree" $
+          recorded "v" >>= (`shouldSatisfy` maybe False (elem "renamed 𝑛·1·14 ⇛ 𝜎5:λ  # from 𝑛·1·5, 𝜎1 as 𝜎2, 𝜎3 as 𝜎5"))
+        it "takes the answer of a firing of the same operands without walking the shared values as a tree" $
+          recorded "w" >>= (`shouldSatisfy` maybe False (elem "recalled 𝑛·1·5 ⇒ 𝜎3:λ"))
+
+      describe "over a recursion that hands its own growing call to an atom" $ do
+        let world = "⟦ go(x) ↦ ⟦ λ ⤍ L_go ⟧, seq(i) ↦ ⟦ ok ↦ Φ.go( Φ.seq( i.next ).ok ) ⟧, app ↦ Φ.seq( 𝜎1:λ ).ok ⟧"
+            atoms = T.pack "- λ: L_go\n  morph: {𝑛1: $.x}\n  𝑛: 𝑛1\n"
+        it "cuts the recursion by --max-loops, not by --max-steps" $
+          withLambdasOf atoms $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--max-steps=200"] ["40-45-00-00-00-00-00-00"]
+
+      describe "over copies of one object made inside each other with a new argument every time" $ do
+        let world = "⟦ f ↦ ⟦ x ↦ ∅, φ ↦ ξ.x.call ⟧, " ++ intercalate ", " [printf "a%d ↦ ⟦ call ↦ Φ.f( x ↦ Φ.a%d ) ⟧" index (index `mod` 5 + 1) | index <- [1 .. 5 :: Int]] ++ ", app ↦ Φ.f( x ↦ Φ.a1 ) ⟧"
+            copies :: String -> IO Int
+            copies loops =
+              withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+                hClose stream
+                withStdin world $
+                  testCLISucceeded ["dataize", "--locator=Q.app", "--acyclic=plausible", "--max-loops=" ++ loops, "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+                length . filter (\record -> "𝑛" `isPrefixOf` record && "φ ↦ x.call ⟧" `isSuffixOf` record) . map (dropWhile (== ' ')) . lines <$> readProtocol path
+        it "cuts the second copy with --max-loops=0" $
+          copies "0" >>= (`shouldBe` 2)
+        it "cuts the third copy with --max-loops=1" $
+          copies "1" >>= (`shouldBe` 3)
+        it "cuts the fourth copy with --max-loops=2" $
+          copies "2" >>= (`shouldBe` 4)
+
       it "refuses a negative count" $
         withStdin once $
           testCLIFailed ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=-1"] ["--max-loops must be >= 0"]
@@ -1631,6 +1811,23 @@ spec = do
         withLambdasOf atoms $ \file ->
           withStdin world $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=1", "--max-firings=400"] ["40-45-00-00-00-00-00-00"]
+
+    describe "--acyclic=plausible over an accumulator that grows every round" $ do
+      let world = "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, state(at, groups) ↦ ⟦ φ ↦ ξ.at ⟧, more(acc) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.acc.at ), 29-:Δ ).if( ξ.acc, Φ.more( Φ.more( Φ.state( Φ.plus( ξ.acc.at ), ξ.acc.groups ) ) ) ) ⟧, e1 ↦ Φ.byte( 𝜎1:λ, Φ.more( Φ.state( 00-:Δ, 00-:Δ ) ).at ) ⟧"
+          atoms = T.pack "- λ: L_fork\n  dataize: {𝛿1: $.on🌵}\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  stay: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  evaluate: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  undress: {𝑛15: 𝑛5, 𝑛16: 𝑛6}\n  symbolize: {𝑛11: 𝑛15, 𝑛12: 𝑛16}\n  defer: {𝑛13: 𝑛11, 𝑛14: 𝑛12}\n  cast: {𝑛19: 𝑛13, 𝑛20: 𝑛14}\n  join: {'on': 𝛿1, left: 𝑛19, right: 𝑛20, otherwise: L_fork}\n- λ: L_eq\n  dataize: {𝛿1: $.a, 𝛿2: $.b}\n  𝑛: Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ )\n- λ: L_byte\n  dataize: {𝛿1: $.data, 𝛿2: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_plus\n  dataize: {𝛿1: $.x}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+      it "shares the accumulator by a name, so no line of the minutes grows with the rounds" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withLambdasOf atoms $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.e1", "--acyclic=plausible", "--max-loops=2", "--max-seconds=60", "--minutes=" ++ path, "--sweet", "--hide-rho"] ["40-45-00-00-00-00-00-00"]
+          records <- lines <$> readProtocol path
+          (any (isPrefixOf "shared " . dropWhile (== ' ')) records, maximum (map length records) < 1000) `shouldBe` (True, True)
+
+      it "gives an argument read off a copy one name, so a chain of recursions stays within a cap of firings" $
+        withLambdasOf atoms $ \file ->
+          withStdin "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, num(v) ↦ ⟦ φ ↦ ξ.v, next ↦ Φ.num( ξ.v ) ⟧, r1(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 0A-:Δ ).if( ξ.i, Φ.r1( ξ.i.next ) ) ⟧, r2(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 22-:Δ ).if( Φ.r2( Φ.r1( ξ.i.next ) ), ξ.i ) ⟧, r3(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 23-:Δ ).if( Φ.r3( Φ.r2( ξ.i.next ) ), ξ.i ) ⟧, r4(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 24-:Δ ).if( Φ.r4( Φ.r3( ξ.i.next ) ), ξ.i ) ⟧, e1 ↦ Φ.byte( 𝜎1:λ, Φ.r4( Φ.num( 00-:Δ ) ) ) ⟧" $
+            testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.e1", "--acyclic=plausible", "--max-loops=1", "--max-firings=600"] ["40-45-00-00-00-00-00-00"]
 
     describe "--acyclic at a recursive call" $ do
       let recursive = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.call( a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ) ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
@@ -1650,11 +1847,14 @@ spec = do
           withStdin recursive $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible"] ["40-45-00-00-00-00-00-00"]
 
-      it "writes the recursive call it cuts to the protocol as a call of the object" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["      looped 𝜎1 := Φ.down( i ↦ 𝑛·1·7 )  # plausible, repeats 𝑛·0·4"])
+      it "writes the recursive call an operand comes to to the protocol as passed, as a call of the object" $
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["      passed 𝑛·1·4 := Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # plausible, repeats 𝑛·0·4"])
 
-      it "writes the recursive call it cuts to the XML protocol with the object and the metas of its arguments" $
-        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["      <looped symbol=\"𝜎1\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·1·7</meta></with></looped>"])
+      it "writes the recursive call an operand comes to to the XML protocol as passed, with the object and the metas of its arguments" $
+        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["      <passed meta=\"𝑛·1·4\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑒·0·2</meta></with></passed>"])
+
+      it "cuts the recursive call after the firing that handed it back" $
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["  looped 𝜎1 := Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # 𝔼(𝑛·0·13.a), plausible, repeats 𝑛·0·13"])
 
     describe "--acyclic at a recursive call through a fork" $ do
       let recursive = "⟦ if(c, a, b) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ξ.c, left🌵 ↦ ξ.a, right🌵 ↦ ξ.b ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.if( c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ), b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
@@ -1674,14 +1874,39 @@ spec = do
           withStdin recursive $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=1"] ["40-45-00-00-00-00-00-00"]
 
-      it "writes the copy it cuts in a side of a fork to the protocol as a call of the object" $
-        recorded "1" "protocolXXXXXX.txt" >>= (`shouldContain` ["        looped 𝜎3 := Φ.down( i ↦ 𝑛·3·7 )  # plausible, repeats 𝑛·0·4"])
+      it "writes the copy a side of a fork comes to again to the protocol as passed, as a call of the object" $
+        recorded "1" "protocolXXXXXX.txt" >>= (`shouldContain` ["        passed 𝑛·3·4 := Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) )  # plausible, repeats 𝑛·0·4"])
 
-      it "writes the copy it cuts in a side of a fork to the XML protocol with the object and the metas of its arguments" $
-        recorded "1" "protocolXXXXXX.xml" >>= (`shouldContain` ["        <looped symbol=\"𝜎3\" by=\"morph\" match=\"plausible\" at=\"ξ.left🌵\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑛·3·7</meta></with></looped>"])
+      it "writes the copy a side of a fork comes to again to the XML protocol as passed, with the object and the metas of its arguments" $
+        recorded "1" "protocolXXXXXX.xml" >>= (`shouldContain` ["        <passed meta=\"𝑛·3·4\" by=\"morph\" match=\"plausible\" at=\"ξ.left🌵\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑒·2·3</meta></with></passed>"])
 
       it "counts the copies the sides of earlier rounds of a fork made under --max-loops=2" $
-        recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          looped 𝜎3 := Φ.down( i ↦ 𝑛·6·7 )  # plausible, repeats 𝑛·0·4"])
+        recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          passed 𝑛·6·4 := Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) ) )  # plausible, repeats 𝑛·0·4"])
+
+    describe "--acyclic at an object an atom only hands back" $ do
+      let world = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, down ↦ ⟦ φ ↦ Φ.call( Φ.down ).at, at ↦ 2A-:Δ ⟧, t ↦ Φ.down ⟧"
+          calling = T.pack "- λ: L_call\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
+          recorded :: String -> IO [String]
+          recorded name =
+            withTempFile name $ \(path, stream) -> do
+              hClose stream
+              withLambdasOf calling $ \file ->
+                withStdin world $
+                  testCLISucceeded
+                    ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", recording path, "--quiet", "--sweet", "--hide-rho"]
+                    []
+              lines <$> readProtocol path
+      forM_ ["plausible", "proven"] $ \mode ->
+        it ("hands the object back as it is and takes the attribute off it under --acyclic=" ++ mode) $
+          withLambdasOf calling $ \file ->
+            withStdin world $
+              testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=" ++ mode] ["2A-"]
+
+      it "writes the object it hands back to the protocol as passed" $
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["        passed 𝑛·1·2 := Φ.down  # plausible, repeats 𝑛·1·1"])
+
+      it "writes the object it hands back to the XML protocol as passed" $
+        recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["        <passed meta=\"𝑛·1·2\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·1·1\" object=\"Φ.down\"/>"])
 
     describe "--acyclic at a copy holding a λ" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, x ↦ Φ.dataized( Φ.fork( Φ.dataized( Φ.x ), ⟦ λ ⤍ 𝜎3 ⟧ ) ) ⟧"
@@ -1726,10 +1951,10 @@ spec = do
                     []
               lines <$> readProtocol path
       it "writes the copy it cuts to the protocol as a call of the object with the attribute it ends with" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·9·9, right ↦ 𝑛·11·1 ).right🌵.φ  # plausible"))
+        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·9·9, right ↦ 𝑛·11·2 ).right🌵.φ  # plausible"))
 
       it "writes the copy it cuts to the XML protocol with the object, the metas of its arguments and the attribute it ends with" $
-        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·1</meta></with></looped>"))
+        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·2</meta></with></looped>"))
 
     describe "--acyclic at a copy whose argument repeats the same loop" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, times(b) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ) ) ⟧"
@@ -2011,6 +2236,18 @@ spec = do
           records <- readProtocol path
           records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
 
+      it "adds the time, the depth, the firings and the memory to every line under --profile" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "[[ D> 01- ]]" $
+            testCLISucceeded ["dataize", "--minutes=" ++ path, "--profile", "--quiet"] []
+          records <- readProtocol path
+          lines records `shouldSatisfy` all (\line -> all (`isInfixOf` line) [" ms, at ", ", depth ", ", firings ", ", heap ", ", peak "])
+
+      it "refuses --profile without --minutes" $
+        withStdin "[[ D> 01- ]]" $
+          testCLIFailed ["dataize", "--profile", "--quiet"] ["The option --profile requires --minutes"]
+
       it "opens the protocol with a header naming the phino that wrote it" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -2165,13 +2402,14 @@ spec = do
                        , "      normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
                        , "      𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "    𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "    𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "    𝕄(𝑛·1·22):"
                        , "      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "      morphed 𝑛·1·25 := 𝑛·1·24"
                        , "    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "  boxed 𝑛·0·10 := 𝑛·1·26.φ"
+                       , "    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "  boxed 𝑛·0·10 := 𝑛·1·27.φ"
                        , "  normalized 𝑛·0·11 := 𝜎1:λ  # 𝑛·0·10"
                        , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
                        ]
@@ -2194,12 +2432,13 @@ spec = do
                        , "    remembered 𝑛·0·5 ≡ Φ.make  # L_make:λ"
                        , "    morphed 𝑛·0·6 := 𝑛·0·5"
                        , "  𝔼(L_make):  # 𝔻(𝑛·0·3)"
-                       , "    𝑛·1·1 := Φ.bytes( φ ↦ 𝜎1:λ ):φ  # 𝑛"
+                       , "    𝑛·1·1 := Φ.bytes( φ ↦ 𝜎1:λ ):φ  # 𝑛 of L_make"
                        , "    𝕄(𝑛·1·1):"
                        , "      morphed 𝑛·1·2 := Φ.bytes( φ ↦ 𝜎1:λ ):φ"
                        , "    𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)"
                        , "    remembered 𝑛·1·3 ≡ 𝑛·0·5"
-                       , "  boxed 𝑛·0·7 := 𝑛·1·3.φ"
+                       , "    evaluated 𝑛·1·4 := 𝑛·1·3  # 𝑛·0·5"
+                       , "  boxed 𝑛·0·7 := 𝑛·1·4.φ"
                        , "  normalized 𝑛·0·8 := Φ.bytes( φ ↦ 𝜎1:λ )  # 𝑛·0·7"
                        , "  𝕄(𝑛·0·7):"
                        , "    normalized 𝑛·0·9 := ∅:φ  # Φ.bytes"
@@ -2260,13 +2499,14 @@ spec = do
                        , "        normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
                        , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "      𝕄(𝑛·1·22):"
                        , "        𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "        morphed 𝑛·1·25 := 𝑛·1·24"
                        , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·26.plus"
+                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·27.plus"
                        , "    𝑛·0·10 := 𝑛·1·23.plus( x ↦ 7.0 )"
                        , "    𝑛·0·11 := ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
                        , "    morphed 𝑛·0·12 := 𝑛·0·11"
@@ -2295,13 +2535,14 @@ spec = do
                        , "      normalized 𝑛·2·15 := 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·14"
                        , "      𝛿·2·2 := 40-1C-00-00-00-00-00-00  # 7.0"
                        , "    𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)"
-                       , "    𝑛·2·16 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝑛·2·16 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_plus"
                        , "    𝕄(𝑛·2·16):"
                        , "      𝑛·2·17 := Φ.number( φ ↦ 𝜎2:λ )"
                        , "      𝑛·2·18 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "      morphed 𝑛·2·19 := 𝑛·2·18"
                        , "    𝑛·2·20 := 𝑛·2·19  # 𝕄(𝑛·2·16)"
-                       , "  boxed 𝑛·0·13 := 𝑛·2·20.φ"
+                       , "    evaluated 𝑛·2·21 := 𝑛·2·20  # 𝑛·0·11"
+                       , "  boxed 𝑛·0·13 := 𝑛·2·21.φ"
                        , "  normalized 𝑛·0·14 := 𝜎2:λ  # 𝑛·0·13"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
@@ -2355,13 +2596,14 @@ spec = do
                        , "        normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
                        , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "      𝕄(𝑛·1·22):"
                        , "        𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
                        , "        morphed 𝑛·1·25 := 𝑛·1·24"
                        , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·1·26.times"
+                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·1·27.times"
                        , "    𝑛·0·10 := 𝑛·1·23.times( x ↦ 7.0 )"
                        , "    𝑛·0·11 := ⟦ x ↦ 7.0, λ ⤍ L_number_times ⟧"
                        , "    morphed 𝑛·0·12 := 𝑛·0·11"
@@ -2390,13 +2632,14 @@ spec = do
                        , "      normalized 𝑛·2·15 := 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·14"
                        , "      𝛿·2·2 := 40-1C-00-00-00-00-00-00  # 7.0"
                        , "    𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)"
-                       , "    𝑛·2·16 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝑛·2·16 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_times"
                        , "    𝕄(𝑛·2·16):"
                        , "      𝑛·2·17 := Φ.number( φ ↦ 𝜎2:λ )"
                        , "      𝑛·2·18 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
                        , "      morphed 𝑛·2·19 := 𝑛·2·18"
                        , "    𝑛·2·20 := 𝑛·2·19  # 𝕄(𝑛·2·16)"
-                       , "  boxed 𝑛·0·13 := 𝑛·2·20.φ"
+                       , "    evaluated 𝑛·2·21 := 𝑛·2·20  # 𝑛·0·11"
+                       , "  boxed 𝑛·0·13 := 𝑛·2·21.φ"
                        , "  normalized 𝑛·0·14 := 𝜎2:λ  # 𝑛·0·13"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
@@ -2416,8 +2659,9 @@ spec = do
                        , "    𝑛·0·4 := 5.0"
                        , "    𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
                        , "    normalized 𝑛·0·6 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
-                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 6.0.plus( 7.0 ) )"
-                       , "    𝑛·0·8 := ⟦ x ↦ 6.0.plus( 7.0 ), λ ⤍ L_number_plus ⟧"
+                       , "    shared 𝑛·1 := 6.0.plus( 7.0 )"
+                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 𝑛·1 )"
+                       , "    𝑛·0·8 := ⟦ x ↦ 𝑛·1, λ ⤍ L_number_plus ⟧"
                        , "    morphed 𝑛·0·9 := 𝑛·0·8"
                        , "  𝔼(L_number_plus):  # 𝔻(𝑛·0·1)"
                        , "    𝔻(ξ.ρ):"
@@ -2475,23 +2719,25 @@ spec = do
                        , "          normalized 𝑛·2·20 := 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·19"
                        , "          𝛿·2·2 := 40-1C-00-00-00-00-00-00  # 7.0"
                        , "        𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)"
-                       , "        𝑛·2·21 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "        𝑛·2·21 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "        𝕄(𝑛·2·21):"
                        , "          𝑛·2·22 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "          𝑛·2·23 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "          morphed 𝑛·2·24 := 𝑛·2·23"
                        , "        𝑛·2·25 := 𝑛·2·24  # 𝕄(𝑛·2·21)"
-                       , "      boxed 𝑛·1·18 := 𝑛·2·25.φ"
+                       , "        evaluated 𝑛·2·26 := 𝑛·2·25  # 𝑛·1·16"
+                       , "      boxed 𝑛·1·18 := 𝑛·2·26.φ"
                        , "      normalized 𝑛·1·19 := 𝜎1:λ  # 𝑛·1·18"
                        , "      𝛿·1·2 := 𝔻(𝜎1:λ)"
                        , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "    𝑛·1·20 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛"
+                       , "    𝑛·1·20 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_plus"
                        , "    𝕄(𝑛·1·20):"
                        , "      𝑛·1·21 := Φ.number( φ ↦ 𝜎2:λ )"
                        , "      𝑛·1·22 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"
                        , "      morphed 𝑛·1·23 := 𝑛·1·22"
                        , "    𝑛·1·24 := 𝑛·1·23  # 𝕄(𝑛·1·20)"
-                       , "  boxed 𝑛·0·10 := 𝑛·1·24.φ"
+                       , "    evaluated 𝑛·1·25 := 𝑛·1·24  # 𝑛·0·8"
+                       , "  boxed 𝑛·0·10 := 𝑛·1·25.φ"
                        , "  normalized 𝑛·0·11 := 𝜎2:λ  # 𝑛·0·10"
                        , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
                        ]
@@ -2611,13 +2857,14 @@ spec = do
                        , "        normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
                        , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                        , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "      𝕄(𝑛·1·22):"
                        , "        𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
                        , "        morphed 𝑛·1·25 := 𝑛·1·24"
                        , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·26.nope"
+                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·27.nope"
                        , "    morphed 𝑛·0·10 := L_number_nope:λ"
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
@@ -2635,7 +2882,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          records `shouldEndWith` "    𝕄(𝑛·1·22):\n      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )\n      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧\n      morphed 𝑛·1·25 := 𝑛·1·24\n    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)\n  boxed 𝑛·0·10 := 𝑛·1·26.φ\n  normalized 𝑛·0·11 := 𝜎1:λ  # 𝑛·0·10\n  𝛿·0·1 := 𝔻(𝜎1:λ)\n"
+          records `shouldEndWith` "    𝕄(𝑛·1·22):\n      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )\n      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧\n      morphed 𝑛·1·25 := 𝑛·1·24\n    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)\n    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8\n  boxed 𝑛·0·10 := 𝑛·1·27.φ\n  normalized 𝑛·0·11 := 𝜎1:λ  # 𝑛·0·10\n  𝛿·0·1 := 𝔻(𝜎1:λ)\n"
 
       it "numbers every step in the text as the XML of the same run numbers it" $
         withTempFile "protocolXXXXXX.txt" $ \(text, one) ->
@@ -2648,7 +2895,7 @@ spec = do
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ xml, "--quiet", "--sweet", "--hide-rho"] []
             lined <- readProtocol text
             marked <- readProtocol xml
-            [meta | meta : ":=" : _ <- map (dropWhile (`elem` ["boxed", "morphed", "normalized", "fabricated"]) . words) (lines lined), "𝑛·" `isPrefixOf` meta]
+            [meta | meta : ":=" : _ <- map (dropWhile (`elem` ["boxed", "morphed", "normalized", "fabricated", "evaluated", "shared"]) . words) (lines lined), "𝑛·" `isPrefixOf` meta]
               `shouldBe` [takeWhile (/= '"') (drop 6 token) | token <- words marked, "meta=\"𝑛·" `isPrefixOf` token]
 
       describe "as XML" $ do
@@ -2726,8 +2973,9 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·25\">𝑛·1·24</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·26\">𝑛·1·25</answered>"
+                         , "    <evaluated meta=\"𝑛·1·27\" of=\"𝑛·0·8\">𝑛·1·26</evaluated>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·10\">𝑛·1·26.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·10\">𝑛·1·27.φ</boxed>"
                          , "  <normalized meta=\"𝑛·0·11\" of=\"𝑛·0·10\">𝜎1</normalized>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎1</manufactured>"
                          , "</dataize>"
@@ -2878,8 +3126,9 @@ spec = do
                          , "        <morphed meta=\"𝑛·1·25\">𝑛·1·24</morphed>"
                          , "      </morph>"
                          , "      <answered meta=\"𝑛·1·26\">𝑛·1·25</answered>"
+                         , "      <evaluated meta=\"𝑛·1·27\" of=\"𝑛·0·8\">𝑛·1·26</evaluated>"
                          , "    </evaluate>"
-                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·26.plus\">𝑛·1·23.plus</normalized>"
+                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·27.plus\">𝑛·1·23.plus</normalized>"
                          , "    <applied meta=\"𝑛·0·10\" by=\"morph\" at=\"𝑛·0·1\" of=\"𝑛·1·23.plus\"><meta attr=\"x\">𝑒·0·7</meta></applied>"
                          , "    <formed meta=\"𝑛·0·11\" of=\"𝑛·1·23.plus\"><meta attr=\"x\">𝑒·0·7</meta></formed>"
                          , "    <morphed meta=\"𝑛·0·12\">𝑛·0·11</morphed>"
@@ -2924,8 +3173,9 @@ spec = do
                          , "      <morphed meta=\"𝑛·2·19\">𝑛·2·18</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·2·20\">𝑛·2·19</answered>"
+                         , "    <evaluated meta=\"𝑛·2·21\" of=\"𝑛·0·11\">𝑛·2·20</evaluated>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·13\">𝑛·2·20.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·13\">𝑛·2·21.φ</boxed>"
                          , "  <normalized meta=\"𝑛·0·14\" of=\"𝑛·0·13\">𝜎2</normalized>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎2</manufactured>"
                          , "</dataize>"
@@ -2985,8 +3235,10 @@ spec = do
                          , "    <joined symbol=\"𝜎4\" on=\"𝛿1·1\" left=\"𝜎2\" right=\"𝜎3\"/>"
                          , "    <formed meta=\"𝑒·1·3\"><symbol attr=\"φ\">𝜎4</symbol></formed>"
                          , "    <answered meta=\"𝑛·1·3\">𝑒·1·3</answered>"
+                         , "    <formed meta=\"𝑒·1·4\" λ=\"L_fork\"><symbol attr=\"c\">𝜎1</symbol><meta attr=\"a\">𝑛·1·1</meta><meta attr=\"b\">𝑛·1·2</meta></formed>"
+                         , "    <evaluated meta=\"𝑛·1·4\" of=\"𝑒·1·4\">𝑛·1·3</evaluated>"
                          , "  </evaluate>"
-                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·3.φ\">𝜎4</normalized>"
+                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·4.φ\">𝜎4</normalized>"
                          , "  <morphed meta=\"𝑛·0·2\">𝜎4</morphed>"
                          , "</morph>"
                          ]
@@ -3014,8 +3266,10 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·3\">𝑒·1·1</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·4\">𝑛·1·3</answered>"
+                         , "    <formed meta=\"𝑒·1·2\" λ=\"L_pair\"><datum attr=\"x\">01-</datum></formed>"
+                         , "    <evaluated meta=\"𝑛·1·5\" of=\"𝑒·1·2\">𝑛·1·4</evaluated>"
                          , "  </evaluate>"
-                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·4.left\">𝜎1</normalized>"
+                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·5.left\">𝜎1</normalized>"
                          , "  <morphed meta=\"𝑛·0·2\">𝜎1</morphed>"
                          , "</morph>"
                          ]
@@ -3041,8 +3295,10 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·3\">𝑒·1·1</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·4\">𝑛·1·3</answered>"
+                         , "    <formed meta=\"𝑒·1·2\" λ=\"L_keep\"><datum attr=\"x\">01-</datum></formed>"
+                         , "    <evaluated meta=\"𝑛·1·5\" of=\"𝑒·1·2\">𝑛·1·4</evaluated>"
                          , "  </evaluate>"
-                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·4.z\">01-</normalized>"
+                         , "  <normalized meta=\"𝑛·0·1\" of=\"𝑛·1·5.z\">01-</normalized>"
                          , "  <morphed meta=\"𝑛·0·2\">01-</morphed>"
                          , "</morph>"
                          ]
@@ -3071,8 +3327,10 @@ spec = do
                          , "    <applied meta=\"𝑛·0·4\" by=\"morph\" at=\"𝑛·0·1\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></applied>"
                          , "    <formed meta=\"𝑛·0·5\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></formed>"
                          , "    <normalized meta=\"𝑛·0·6\" of=\"𝑛·0·5.plus\">𝑛·0·4.plus</normalized>"
-                         , "    <applied meta=\"𝑛·0·7\" by=\"morph\" at=\"𝑛·0·1\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑒·0·7</meta></applied>"
-                         , "    <formed meta=\"𝑛·0·8\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑒·0·7</meta></formed>"
+                         , "    <applied meta=\"𝑒·0·9\" of=\"𝑒·0·4.plus\"><meta attr=\"α0\">𝑒·0·6</meta></applied>"
+                         , "    <shared meta=\"𝑛·1\">𝑒·0·9</shared>"
+                         , "    <applied meta=\"𝑛·0·7\" by=\"morph\" at=\"𝑛·0·1\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑛·1</meta></applied>"
+                         , "    <formed meta=\"𝑛·0·8\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑛·1</meta></formed>"
                          , "    <morphed meta=\"𝑛·0·9\">𝑛·0·8</morphed>"
                          , "  </morph>"
                          , "  <evaluate λ=\"L_number_plus\" by=\"dataize\" at=\"𝑛·0·1\">"
@@ -3153,8 +3411,9 @@ spec = do
                          , "          <morphed meta=\"𝑛·2·24\">𝑛·2·23</morphed>"
                          , "        </morph>"
                          , "        <answered meta=\"𝑛·2·25\">𝑛·2·24</answered>"
+                         , "        <evaluated meta=\"𝑛·2·26\" of=\"𝑛·1·16\">𝑛·2·25</evaluated>"
                          , "      </evaluate>"
-                         , "      <boxed meta=\"𝑛·1·18\">𝑛·2·25.φ</boxed>"
+                         , "      <boxed meta=\"𝑛·1·18\">𝑛·2·26.φ</boxed>"
                          , "      <normalized meta=\"𝑛·1·19\" of=\"𝑛·1·18\">𝜎1</normalized>"
                          , "      <manufactured meta=\"𝛿·1·2\">𝜎1</manufactured>"
                          , "    </dataize>"
@@ -3168,8 +3427,9 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·23\">𝑛·1·22</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·24\">𝑛·1·23</answered>"
+                         , "    <evaluated meta=\"𝑛·1·25\" of=\"𝑛·0·8\">𝑛·1·24</evaluated>"
                          , "  </evaluate>"
-                         , "  <boxed meta=\"𝑛·0·10\">𝑛·1·24.φ</boxed>"
+                         , "  <boxed meta=\"𝑛·0·10\">𝑛·1·25.φ</boxed>"
                          , "  <normalized meta=\"𝑛·0·11\" of=\"𝑛·0·10\">𝜎2</normalized>"
                          , "  <manufactured meta=\"𝛿·0·1\">𝜎2</manufactured>"
                          , "</dataize>"
@@ -3248,8 +3508,9 @@ spec = do
                          , "        <morphed meta=\"𝑛·1·25\">𝑛·1·24</morphed>"
                          , "      </morph>"
                          , "      <answered meta=\"𝑛·1·26\">𝑛·1·25</answered>"
+                         , "      <evaluated meta=\"𝑛·1·27\" of=\"𝑛·0·8\">𝑛·1·26</evaluated>"
                          , "    </evaluate>"
-                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·26.nope\">𝑛·1·23.nope</normalized>"
+                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·27.nope\">𝑛·1·23.nope</normalized>"
                          , "    <morphed meta=\"𝑛·0·10\">𝑛·1·23.nope</morphed>"
                          , "  </morph>"
                          , "  <unanswered λ=\"L_number_nope\" by=\"dataize\">𝑛·1·23.nope</unanswered>"
@@ -3266,7 +3527,7 @@ spec = do
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                          , "<morph at=\"Φ.x\">"
                          , "  <formed meta=\"𝑒·0·1\" λ=\"L_number_nope\"/>"
-                         , "  <unanswered λ=\"L_number_nope\" by=\"morph\">𝑒·0·1</unanswered>"
+                         , "  <unanswered λ=\"L_number_nope\" by=\"morph\">𝑒·0·1.foo</unanswered>"
                          , "</morph>"
                          ]
 
@@ -3343,8 +3604,9 @@ spec = do
                          , "        <morphed meta=\"𝑛·1·25\">𝑛·1·24</morphed>"
                          , "      </morph>"
                          , "      <answered meta=\"𝑛·1·26\">𝑛·1·25</answered>"
+                         , "      <evaluated meta=\"𝑛·1·27\" of=\"𝑛·0·8\">𝑛·1·26</evaluated>"
                          , "    </evaluate>"
-                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·26.nope\">𝑛·1·23.nope</normalized>"
+                         , "    <normalized meta=\"𝑛·0·9\" of=\"𝑛·1·27.nope\">𝑛·1·23.nope</normalized>"
                          , "    <morphed meta=\"𝑛·0·10\">𝑛·1·23.nope</morphed>"
                          , "  </morph>"
                          , "  <unanswered λ=\"L_number_nope\" by=\"dataize\">𝑛·1·23.nope</unanswered>"
@@ -3372,8 +3634,11 @@ spec = do
                          , "      <morphed meta=\"𝑛·1·3\">𝜎1</morphed>"
                          , "    </morph>"
                          , "    <answered meta=\"𝑛·1·4\">𝜎1</answered>"
+                         , "    <formed meta=\"𝑒·1·1\"/>"
+                         , "    <formed meta=\"𝑒·1·2\" λ=\"L_pick\"><meta attr=\"here\">𝑒·1·1</meta></formed>"
+                         , "    <evaluated meta=\"𝑛·1·5\" of=\"𝑒·1·2\">𝜎1</evaluated>"
                          , "  </evaluate>"
-                         , "  <unanswered λ=\"𝜎1\" by=\"morph\">𝜎1</unanswered>"
+                         , "  <opaque symbol=\"𝜎1\" by=\"morph\">𝜎1.foo</opaque>"
                          , "</morph>"
                          ]
 
@@ -3500,13 +3765,14 @@ spec = do
                        , "        normalized 𝑛·1·21 := 40-08-00-00-00-00-00-00:Δ  # 𝑛·1·20"
                        , "        𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
                        , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_times"
                        , "      𝕄(𝑛·1·22):"
                        , "        𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
                        , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
                        , "        morphed 𝑛·1·25 := 𝑛·1·24"
                        , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·26.nope"
+                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·27.nope"
                        , "    morphed 𝑛·0·10 := L_number_nope:λ"
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
@@ -3541,6 +3807,37 @@ spec = do
       it "prints the terminator ⊥ the object reduces to as the residue" $
         withStdin "[[ ]]" $
           testCLISucceeded ["dataize", "--partial"] ["⊥"]
+
+      describe "--focus under --locator" $ do
+        it "finds the same object for the steps and for the answer when --locator has no matching child" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $
+            testCLISucceeded
+              ["dataize", "--partial", "--locator=Q.t", "--focus=Q.a", "--flat"]
+              ["⟦ Δ ⤍ 02- ⟧"]
+        it "finds the same object for the steps and for the answer even when --locator also binds that attribute" $
+          withStdin "⟦ t ↦ ⟦ a ↦ ⟦ Δ ⤍ 01- ⟧, λ ⤍ L_nope ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $ do
+            (out, _) <- withStdout (runCLI ["dataize", "--partial", "--locator=Q.t", "--focus=Q.a", "--flat", "--sequence"])
+            filter (not . null) (lines out) `shouldSatisfy` (not . null)
+            filter (not . null) (lines out) `shouldSatisfy` all (== "⟦ Δ ⤍ 02- ⟧")
+        it "prints the residual when --focus names the object at --locator" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $
+            testCLISucceeded
+              ["dataize", "--partial", "--locator=Q.t", "--focus=Q.t", "--flat"]
+              ["⟦ λ ⤍ L_nope ⟧"]
+        it "respects --hide together with --focus and --locator" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧, a ↦ ⟦ x ↦ ⟦ Δ ⤍ 01- ⟧, y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧ ⟧" $
+            testCLISucceeded
+              ["dataize", "--partial", "--locator=Q.t", "--focus=Q.a", "--hide=Q.a.x", "--flat"]
+              ["⟦ y ↦ ⟦ Δ ⤍ 02- ⟧ ⟧"]
+        it "fails on a --focus it cannot find before it prints any step" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧ ⟧" $ do
+            (out, _) <- withStdout (try (runCLI ["dataize", "--partial", "--locator=Q.t", "--focus=Q.nope", "--flat", "--sequence"]) :: IO (Either ExitCode ()))
+            out `shouldNotContain` "⟦ λ ⤍"
+        it "prints the answer at --focus in LaTeX format under --locator" $
+          withStdin "⟦ t ↦ ⟦ λ ⤍ L_nope ⟧, a ↦ ⟦ Δ ⤍ 02- ⟧ ⟧" $
+            testCLISucceeded
+              ["dataize", "--partial", "--locator=Q.t", "--focus=Q.a", "--flat", "--output=latex"]
+              ["\\begin{phiquation}", "[[ D> |02-| ]]{.}", "\\end{phiquation}"]
 
     describe "--symbolic" $ do
       let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
@@ -3644,6 +3941,39 @@ spec = do
             testCLISucceeded ["dataize", "--inside=[[ x -> ? ]]( x -> [[ D> 2A- ]] ).x", "--minutes=" ++ path, "--sweet", "--quiet"] []
           records <- readProtocol path
           take 2 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝑛·0·1 := ∅:x( x ↦ 2A-:Δ )"]
+
+      it "opens a single morph block in the text protocol it aims inside" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ app ↦ ⟦ x ↦ ∅, φ ↦ ξ.x ⟧ ⟧" $
+            testCLISucceeded ["morph", "--inside=Φ.app( x ↦ ⟦ Δ ⤍ 02- ⟧ )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+          records <- readProtocol path
+          length (filter ("𝕄(Φ.a🌵0):" `isInfixOf`) (lines records)) `shouldBe` 1
+          take 2 (drop 1 (lines records)) `shouldBe` ["  remembered 𝑛·0·1 ≡ Φ.app  # ⟦ x ↦ ∅, φ ↦ x ⟧", "  𝑛·0·2 := Φ.app( x ↦ 02-:Δ )"]
+
+      it "opens a single dataize element in the XML protocol it aims inside" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ app ↦ ⟦ x ↦ ∅, φ ↦ ξ.x ⟧ ⟧" $
+            testCLISucceeded ["dataize", "--inside=⟦ Δ ⤍ 02- ⟧", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+          records <- readProtocol path
+          length (filter (isInfixOf "<dataize at=\"Φ.a🌵0\">") (lines records)) `shouldBe` 1
+
+      it "keeps opening the block of a judgment nested in the universe it aims inside" $
+        withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+          hClose stream
+          withStdin universe $
+            testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+          records <- readProtocol path
+          take 3 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝕄(Φ.a🌵0):", "    normalized 𝑛·0·1 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"]
+
+      it "opens a single morph element in the XML protocol it aims inside" $
+        withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+          hClose stream
+          withStdin "⟦ app ↦ ⟦ x ↦ ∅, φ ↦ ξ.x ⟧ ⟧" $
+            testCLISucceeded ["morph", "--inside=Φ.app( x ↦ ⟦ Δ ⤍ 02- ⟧ )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+          records <- readProtocol path
+          length (filter (isInfixOf "<morph at=\"Φ.a🌵0\">") (lines records)) `shouldBe` 1
 
       it "cannot be used together with --locator" $
         withStdin universe $
@@ -3868,13 +4198,14 @@ spec = do
                      , "      normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
                      , "      𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
                      , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                     , "    𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛"
+                     , "    𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                      , "    𝕄(𝑛·1·22):"
                      , "      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
                      , "      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
                      , "      morphed 𝑛·1·25 := 𝑛·1·24"
                      , "    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                     , "  normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·26.plus"
+                     , "    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·6"
+                     , "  normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·27.plus"
                      , "  𝑛·0·8 := 𝑛·1·23.plus( x ↦ 7.0 )"
                      , "  𝑛·0·9 := ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
                      , "  morphed 𝑛·0·10 := 𝑛·0·9"
@@ -4050,7 +4381,7 @@ spec = do
                     (["morph", "--symbolic=" ++ table, "--max-seconds=1", "--minutes=" ++ path, "--quiet"] ++ opts)
                     outputs
               records <- readProtocol path
-              dropWhile (== ' ') (last (lines records)) `shouldBe` "timeout 1"
+              take 2 (words (last (lines records))) `shouldBe` ["timeout", "1"]
 
       it "writes the timeout once to the XML protocol" $
         ladder $ \table ->
@@ -4152,7 +4483,7 @@ spec = do
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
         records <- recordedWith (joining <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
-        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·2·6</meta></with></deferred>"]
+        filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·2·7</meta></with></deferred>"]
 
     describe "--acyclic=plausible" $ do
       let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"
@@ -4198,7 +4529,7 @@ spec = do
         recorded "plausible" >>= (`shouldSatisfy` ((== 3) . length . filter (isInfixOf "𝔼(L_number_plus)")))
 
       it "answers a recalled firing with the line of the first under plausible" $
-        recorded "plausible" >>= (`shouldContain` ["      𝑛·4·1 := 𝑛·2·21  # 𝑛"])
+        recorded "plausible" >>= (`shouldContain` ["      𝑛·4·1 := 𝑛·2·21  # 𝑛 of L_number_plus"])
 
       it "dataizes to the same datum under plausible" $
         withStdin chained $
@@ -4499,6 +4830,29 @@ spec = do
         createDirectoryIfMissing True dir
         writeFile (dir </> "having.yaml") "name: hv\npattern: '[[ x -> !e1, !B1 ]]'\nresult: '[[ !B1 ]]'\nhaving:\n  eq: ['!e1', '!e1']\n"
         withCurrentDirectory dir (testCLIFailed ["compile", "--rule=having.yaml", "--target=Compiled.hs"] ["The rule 'hv' cannot be compiled, since it has a 'having' condition"])
+
+  describe "sodg" $ do
+    it "prints help" $
+      testCLISucceeded ["sodg", "--help"] ["Print the SODG commands that build the graph of the 𝜑-expression"]
+
+    it "takes from stdin" $
+      withStdin "⟦ x ↦ ξ.y, y ↦ ∅ ⟧" $
+        testCLISucceeded ["sodg"] ["F c0 x y\nD c1 c0 y\nP c0 x c1\n"]
+
+    it "takes from file" $
+      testCLISucceeded ["sodg", resource "foo.phi"] ["F c0 foo\nD c1 c0 org\nD c2 c1 eolang\nD c3 c2 x\nP c0 foo c3\n"]
+
+    it "reads XMIR" $
+      withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/></o></object>" $
+        testCLISucceeded ["sodg", "--input=xmir"] ["F c0 app\nF c1 x\nD c2 c0 number\nP c1 x c2\nP c0 app c1\n"]
+
+    it "prints ⊥ as a terminator" $
+      withStdin "⟦ a ↦ ⊥ ⟧" $
+        testCLISucceeded ["sodg"] ["F c0 a\nT c1\nP c0 a c1\n"]
+
+    it "rejects an option of other commands" $
+      withStdin "⟦⟧" $
+        testCLIFailed ["sodg", "--sweet"] ["Invalid option"]
 
   describe "match" $ do
     it "prints help" $

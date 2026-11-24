@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ order(qty, price) ↦ ⟦ cost ↦ ξ.qty.mul( ξ.price ) ⟧ ⟧'
+output: |
+  F c0 order
+  F c1 qty price cost
+  D c2 c1 qty
+  D c3 c2 mul
+  D c4 c1 price
+  A c5 c3 α0 c4
+  P c1 cost c5
+  P c0 order c1

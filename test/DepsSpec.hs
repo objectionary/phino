@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvPassed, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvShared, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -138,6 +138,12 @@ spec = do
     it "writes an application as a line binding its call to a fresh 𝑛" $ do
       (_, written) <- recorded (\record -> record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "w"))))
       take 1 (lines written) `shouldBe` ["  𝑛·0·1 := Φ.ёж( q ↦ ⟦⟧ )  # 𝕄(Φ.w)"]
+    it "writes a symbol nothing can fire as opaque, with the attribute taken off it" $ do
+      (_, written) <- recorded (\record -> record (EvOpaque 1 7 Morphing (ExDispatch (ExFormation [BiLambda (FnSymbol 7)]) (AtLabel "ёж"))))
+      lines written `shouldBe` ["  opaque 𝜎7  # 𝕄(𝜎7:λ.ёж)"]
+    it "writes a λ function no entry answers as unanswered, with the attribute taken off it" $ do
+      (_, written) <- recorded (\record -> record (EvStuck 1 "L_ёж" Morphing (ExDispatch (ExFormation [BiLambda (Function "L_ёж")]) (AtLabel "уж"))))
+      lines written `shouldBe` ["  unanswered L_ёж  # 𝕄(L_ёж:λ.уж)"]
     it "writes the formation an application made on a line of its own after the line of the application" $ do
       (_, written) <- recorded (\record -> record (EvApplied 1 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "сом")) (ArTau (AtLabel "ус") (ExFormation []))) (ExFormation [BiTau (AtLabel "ус") (ExFormation []), BiTau (AtLabel "хвост") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "пруд"))))
       last (lines written) `shouldBe` "  𝑛·0·2 := ⟦ ус ↦ ⟦⟧, хвост ↦ ⟦⟧ ⟧"
@@ -183,6 +189,9 @@ spec = do
     it "writes the term a morphing came to as a line binding it to a fresh 𝑛 under the heading of the morphing" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "жук")), EvMorphed 2 (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.жук):", "    morphed 𝑛·0·1 := Φ.щука"]
+    it "writes the term a meta was shared for as a line binding that meta" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "сом")), EvShared 2 (ExMeta "n·1") (ExApplication (ExDispatch ExRoot (AtLabel "карп")) (ArTau (AtLabel "икра") (ExDispatch ExRoot (AtLabel "линь"))))])
+      lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.сом):", "    shared 𝑛·1 := Φ.карп( икра ↦ Φ.линь )"]
     it "writes the term a normalization came to as a line binding it to a fresh 𝑛 and naming what it came from" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing (ExDispatch ExRoot (AtLabel "лось")), EvNormalized 2 (ExDispatch (ExDispatch ExRoot (AtLabel "кедр")) (AtLabel "шишка")) (ExDispatch ExRoot (AtLabel "выпь"))])
       lines written `shouldBe` ["𝕄(Φ):", "  𝕄(Φ.лось):", "    normalized 𝑛·0·1 := Φ.выпь  # Φ.кедр.шишка"]
@@ -279,6 +288,9 @@ spec = do
     it "writes the answer the memo keeps for a formation as a memoized line" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvMemoized 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 8)])])
       last (lines written) `shouldBe` "    memoized 𝑛·1·1 ⇛ 𝜎8:λ  # Φ.налим"
+    it "closes a firing that answered with an evaluated line naming the formation fired" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvEvaluated 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 8)])])
+      last (lines written) `shouldBe` "    evaluated 𝑛·1·1 := 𝜎8:λ  # Φ.налим"
     it "writes an answer the memo renamed as a renamed line naming the formation it came from and every symbol it renamed" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvRenamed 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 9)]) (ExDispatch ExRoot (AtLabel "карп")) [(3, 7), (4, 9)]])
       last (lines written) `shouldBe` "    renamed 𝑛·1·1 ⇛ 𝜎9:λ  # Φ.налим, from Φ.карп, 𝜎3 as 𝜎7, 𝜎4 as 𝜎9"
@@ -291,6 +303,15 @@ spec = do
     it "writes a cut that answered a copy as the call of the object it repeats" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvLooped 1 Dataization Proven (ExFormation []) ExRoot (Just (14, Just (ExApplication (ExDispatch ExRoot (AtLabel "клён")) (ArTau (AtLabel "ось") (ExFormation [BiLambda (FnSymbol 3)])))))])
       last (lines written) `shouldBe` "  looped 𝜎14 := Φ.клён( ось ↦ 𝜎3:λ )  # proven, repeats ⟦⟧"
+    it "writes a copy handed back as it is under a name of its own and the call of the object it repeats" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation []) ExRoot (ExFormation [BiTau (AtLabel "ъ") ExRoot]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "клён")) (ArTau (AtLabel "ось") (ExFormation [BiLambda (FnSymbol 3)]))))])
+      last (lines written) `shouldBe` "  passed 𝑛·0·1 := Φ.клён( ось ↦ 𝜎3:λ )  # proven, repeats ⟦⟧"
+    it "writes a copy handed back as it is that no fact names by the copy itself" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation []) ExRoot (ExFormation [BiTau (AtLabel "ъ") ExRoot]) Nothing])
+      last (lines written) `shouldBe` "  passed 𝑛·0·1 := Φ:ъ  # proven, repeats ⟦⟧"
+    it "names a copy handed back as it is by its name from then on" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation []) ExRoot (ExFormation [BiTau (AtLabel "ъ") ExRoot]) Nothing, EvBoxed 1 (ExDispatch (ExFormation [BiTau (AtLabel "ъ") ExRoot]) AtPhi)])
+      last (lines written) `shouldBe` "  boxed 𝑛·0·2 := 𝑛·0·1.φ"
     it "names the block over an answer by the line that built it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ф" Dataization ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю")), EvStarted 2 Morphing (ExDispatch ExRoot (AtLabel "ю")), EvApplied 3 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "ёж")) (ArTau (AtLabel "q") (ExFormation []))) (ExFormation [BiTau (AtLabel "q") (ExFormation [])]) (ExDispatch ExRoot (AtLabel "ю"))])
       lines written `shouldContain` ["    𝕄(𝑛·1·1):"]
@@ -305,10 +326,19 @@ spec = do
       last (lines written) `shouldBe` "    𝑛·1·1 := 𝜎3:λ"
     it "writes the term a stay line dropped a ρ from beside the stay of the meta it read" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvReshaped 2 "𝑛3" "stay" (ExMeta "n1") (ExFormation [BiLambda (FnSymbol 3)])])
-      last (lines written) `shouldBe` "    𝑛3·1 := 𝜎3:λ  # stay(𝑛1)"
+      last (lines written) `shouldBe` "    𝑛3·1 := 𝜎3:λ  # stay(𝑛1 of L_ф)"
     it "writes the term a symbolize line turned a datum of into a symbol beside the symbolize of the meta it read" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvReshaped 2 "𝑛4" "symbolize" (ExMeta "n2") (ExFormation [BiLambda (FnSymbol 6)])])
-      last (lines written) `shouldBe` "    𝑛4·1 := 𝜎6:λ  # symbolize(𝑛2)"
+      last (lines written) `shouldBe` "    𝑛4·1 := 𝜎6:λ  # symbolize(𝑛2 of L_ф)"
+    it "names the entry a meta belongs to beside the firing an evaluate line made of it" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_вилка" Morphing ExRoot, EvFiring 2 "L_плюс" Evaluation (ExMeta "n3")])
+      last (lines written) `shouldBe` "    𝔼(L_плюс):  # 𝔼(𝑛3 of L_вилка)"
+    it "names the entry beside the answer it built" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_зов" Morphing ExRoot, EvBuilt 2 (ExDispatch ExRoot (AtLabel "ю"))])
+      last (lines written) `shouldBe` "    𝑛·1·1 := Φ.ю  # 𝑛 of L_зов"
+    it "leaves a meta numbered by its firing as it is" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvReshaped 2 "𝑛3" "stay" (ExMeta "n1·1") (ExFormation [BiLambda (FnSymbol 3)])])
+      last (lines written) `shouldBe` "    𝑛3·1 := 𝜎3:λ  # stay(𝑛1·1)"
     it "writes the symbol a symbolize line minted beside the datum it stands for" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvSymbolized 2 6 (BtOne "4A")])
       last (lines written) `shouldBe` "    symbolized 𝜎6 := 4A-"
@@ -574,6 +604,9 @@ spec = do
     it "writes the term a morphing came to as an element with its name" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvMorphed 1 (ExDispatch ExRoot (AtLabel "щука"))])
       lines written `shouldContain` ["  <morphed meta=\"𝑛·0·1\">Φ.щука</morphed>"]
+    it "writes the term a meta was shared for as an element naming that meta" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvShared 1 (ExMeta "n·1") (ExDispatch ExRoot (AtLabel "налим"))])
+      lines written `shouldContain` ["  <shared meta=\"𝑛·1\">Φ.налим</shared>"]
     it "writes the term a normalization came to as an element with its name and what it came from" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvNormalized 1 (ExDispatch (ExDispatch ExRoot (AtLabel "бор")) (AtLabel "пень")) (ExDispatch ExRoot (AtLabel "сыч"))])
       lines written `shouldContain` ["  <normalized meta=\"𝑛·0·1\" of=\"Φ.бор.пень\">Φ.сыч</normalized>"]
@@ -679,6 +712,9 @@ spec = do
     it "writes the answer the memo keeps for a formation as a memoized element" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvMemoized 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 8)])])
       lines written `shouldContain` ["    <memoized meta=\"𝑛·1·1\" as=\"𝜎8\"/>"]
+    it "closes a firing that answered with an evaluated element naming the formation fired" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvEvaluated 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 8)])])
+      lines written `shouldContain` ["    <evaluated meta=\"𝑛·1·1\" of=\"Φ.налим\">𝜎8</evaluated>"]
     it "writes an answer the memo renamed as a renamed element naming the formation it came from and every symbol it renamed" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvFiring 1 "L_ёрш" Dataization ExRoot, EvRenamed 2 (ExDispatch ExRoot (AtLabel "налим")) (ExFormation [BiLambda (FnSymbol 9)]) (ExDispatch ExRoot (AtLabel "карп")) [(3, 7), (4, 9)]])
       lines written `shouldContain` ["    <renamed meta=\"𝑛·1·1\" as=\"𝜎9\" from=\"Φ.карп\"><as symbol=\"𝜎3\" by=\"𝜎7\"/><as symbol=\"𝜎4\" by=\"𝜎9\"/></renamed>"]
@@ -688,6 +724,12 @@ spec = do
     it "writes a cut that answered a copy as an element naming the formation it repeats, the object and its arguments" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvLooped 1 Dataization Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (Just (14, Just (ExApplication (ExDispatch ExRoot (AtLabel "клён")) (ArTau (AtLabel "ось") (ExFormation [BiLambda (FnSymbol 3)])))))])
       lines written `shouldContain` ["  <looped symbol=\"𝜎14\" by=\"dataize\" match=\"proven\" at=\"Φ\" of=\"𝑒·0·1\" object=\"Φ.клён\"><with><symbol attr=\"ось\">𝜎3</symbol></with></looped>"]
+    it "writes a copy handed back as it is as an element naming the formation it repeats, the object and its arguments" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (ExFormation [BiTau (AtLabel "ь") ExRoot]) (Just (ExApplication (ExDispatch ExRoot (AtLabel "клён")) (ArTau (AtLabel "ось") (ExFormation [BiLambda (FnSymbol 3)]))))])
+      lines written `shouldContain` ["  <passed meta=\"𝑛·0·1\" by=\"dataize\" match=\"proven\" at=\"Φ\" of=\"𝑒·0·1\" object=\"Φ.клён\"><with><symbol attr=\"ось\">𝜎3</symbol></with></passed>"]
+    it "writes a copy handed back as it is that no fact names as an empty element naming the copy" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvPassed 1 Dataization Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (ExFormation [BiTau (AtLabel "ь") ExRoot]) Nothing])
+      lines written `shouldContain` ["  <passed meta=\"𝑛·0·1\" by=\"dataize\" match=\"proven\" at=\"Φ\" of=\"𝑒·0·1\" object=\"𝑒·0·2\"/>"]
     it "writes a cut whose call ends with attributes as an element naming the object, its arguments and those attributes" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Dataization "Φ", EvLooped 1 Dataization Proven (ExFormation [BiTau (AtLabel "ъ") ExRoot]) ExRoot (Just (19, Just (ExDispatch (ExDispatch (ExApplication (ExDispatch ExRoot (AtLabel "вяз")) (ArTau (AtLabel "корень") (ExFormation [BiLambda (FnSymbol 5)]))) AtPhi) (AtLabel "ветка"))))])
       lines written `shouldContain` ["  <looped symbol=\"𝜎19\" by=\"dataize\" match=\"proven\" at=\"Φ\" of=\"𝑒·0·1\" object=\"Φ.вяз\" dispatch=\"φ.ветка\"><with><symbol attr=\"корень\">𝜎5</symbol></with></looped>"]
@@ -757,6 +799,9 @@ spec = do
     it "writes a firing no entry answered as an element naming the term it got stuck on" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvStuck 2 "L_щ" Morphing (ExFormation [BiLambda (FnSymbol 120)])])
       lines written `shouldContain` ["    <unanswered λ=\"L_щ\" by=\"morph\">𝜎120</unanswered>"]
+    it "writes a symbol nothing can fire as an element of its own, naming the term 𝕄 worked on" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvOpaque 1 120 Morphing (ExDispatch (ExFormation [BiLambda (FnSymbol 120)]) (AtLabel "щ"))])
+      lines written `shouldContain` ["  <opaque symbol=\"𝜎120\" by=\"morph\">𝜎120.щ</opaque>"]
     it "writes a stuck firing as an element of the word the text uses" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvStuckOn 2 "L_жук"])
       lines written `shouldContain` ["    <stuck λ=\"L_жук\"/>"]

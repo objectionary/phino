@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: 'Φ.foo.bar'
+output: |
+  F c0
+  D c1 c0 foo
+  D c2 c1 bar

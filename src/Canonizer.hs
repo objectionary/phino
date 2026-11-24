@@ -1,7 +1,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Canonizer (canonize, canonizeExpr, lambdaNames) where
+module Canonizer (CanonState, canonize, canonizeExpr, canonizeExpression, emptyCanon, lambdaNames) where
 
 import AST
 import qualified Data.Map as Map
@@ -9,6 +9,9 @@ import qualified Data.Text as T
 import Rewriter (Rewritten)
 
 type CanonState = (Map.Map T.Text T.Text, Int)
+
+emptyCanon :: CanonState
+emptyCanon = (Map.empty, 1)
 
 canonizeBindings :: [Binding] -> CanonState -> ([Binding], CanonState)
 canonizeBindings [] st = ([], st)
@@ -75,8 +78,13 @@ lambdaNames (ExPhiAgain _ _ expr) = lambdaNames expr
 lambdaNames _ = []
 
 canonizeExpr :: Expression -> Expression
-canonizeExpr expr = fst (canonizeExpression expr (Map.empty, 1))
+canonizeExpr expr = fst (canonizeExpression expr emptyCanon)
 
 canonize :: [Rewritten] -> [Rewritten]
-canonize [] = []
-canonize ((expr, maybeRule) : rest) = (canonizeExpr expr, maybeRule) : canonize rest
+canonize rewrittens = go rewrittens emptyCanon
+  where
+    go :: [Rewritten] -> CanonState -> [Rewritten]
+    go [] _ = []
+    go ((expr, maybeRule) : rest) st =
+      let (expr', st') = canonizeExpression expr st
+       in (expr', maybeRule) : go rest st'

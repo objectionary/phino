@@ -59,7 +59,7 @@ defaultReduceContext :: Expression -> IO ReduceContext
 defaultReduceContext loc = do
   minted <- newIORef 0
   named <- sides
-  pure (ReduceContext loc loc Nothing 25 25 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty Nothing emptyLambdas [] False (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
+  pure (ReduceContext loc loc Nothing 25 25 Nothing Nothing (Steps 250 0) Nothing minted named Nothing Nothing 1 Nothing False True False Nothing 0 Morphing [] Map.empty Nothing emptyLambdas [] False Nothing (building linked) reduction evaluation dontSaveStep dontSaveEval linked)
 
 linked :: Engine
 linked = fromMaybe yaml compiled
@@ -115,21 +115,21 @@ recorded = recorded' False
 recorded' :: Bool -> (SaveEvalFunc -> IO a) -> IO (a, String)
 recorded' hidden action =
   withTemp "phino-protocol-.txt" BS.empty $ \path -> do
-    answer <- withEvalFunc Nothing (Just path) (printing hidden) action
+    answer <- withEvalFunc Nothing (Just path) False (printing hidden) action
     written <- withoutTotals <$> readUtf8 path
     pure (answer, written)
 
 recordedXml :: (SaveEvalFunc -> IO a) -> IO (a, String)
 recordedXml action =
   withTemp "phino-protocol-.xml" BS.empty $ \path -> do
-    answer <- withEvalFunc (Just path) Nothing (printing False) action
+    answer <- withEvalFunc (Just path) Nothing False (printing False) action
     written <- readProtocol path
     pure (answer, written)
 
 recordedWhole :: (SaveEvalFunc -> IO a) -> IO (a, String)
 recordedWhole action =
   withTemp "phino-protocol-.xml" BS.empty $ \path -> do
-    answer <- withEvalFunc (Just path) Nothing (printing False) action
+    answer <- withEvalFunc (Just path) Nothing False (printing False) action
     written <- readUtf8 path
     pure (answer, written)
 

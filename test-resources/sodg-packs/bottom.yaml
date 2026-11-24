@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '⟦ a ↦ ⟦ b ↦ ⊥ ⟧ ⟧'
+output: |
+  F c0 a
+  F c1 b
+  T c2
+  P c1 b c2
+  P c0 a c1

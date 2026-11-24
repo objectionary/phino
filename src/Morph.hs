@@ -42,7 +42,7 @@ import Printer (printExpression)
 import Random (shuffle)
 import Rewriter (RewriteContext (RewriteContext), Rewritten, Seen, rewrite, seenInsert)
 import Rule (RuleContext (RuleContext), xiFree)
-import Sides (Sides, named, opened, resolver)
+import Sides (Sides, gauge, minted, named, opened, resolver, spelled)
 import System.Timeout (timeout)
 import Text.Printf (printf)
 import Yaml (ExtraArgument (..))
@@ -71,7 +71,7 @@ data Deadline = Deadline
   , _until :: Double
   }
 
-data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression, Answer))) (IORef Int) (IORef Int) Kin
+data Memo = Memo (IORef (Store (Int, Kept))) (IORef (Map.Map Firing (Expression, Answer))) (IORef Int) (IORef Int) Kin (IORef Searched)
 
 data Kin = Kin (IORef Spots) (IORef (Map.Map Int [Kindred])) (IORef (Map.Map Int Firing))
 
@@ -79,7 +79,7 @@ data Spots = Spots (Store Int) (Map.Map Int Expression)
 
 data Kindred = Kindred Expression Expression Firing Answer
 
-data Renaming = Renaming (IORef (Map.Map Int Int)) Spots (IORef (Set.Set Firing))
+data Renaming = Renaming (IORef (Map.Map Int Int)) Spots (IORef (Set.Set Firing)) (IORef (Store Expression))
 
 data Answer
   = Answer Expression Expression
@@ -135,6 +135,7 @@ data ReduceContext = ReduceContext
   , _symbolic :: Lambdas
   , _raising :: [T.Text]
   , _reckoning :: Bool
+  , _working :: Maybe Expression
   , _buildTerm :: BuildTermFunc
   , _reduce :: ReductionFunc
   , _evaluate :: EvaluationFunc
@@ -200,7 +201,7 @@ deeper ctx@ReduceContext{_steps = Steps limit spent} = do
   where
     starve :: Maybe Memo -> IO ()
     starve Nothing = pure ()
-    starve (Just (Memo _ _ _ exhausted _)) = modifyIORef' exhausted (+ 1)
+    starve (Just (Memo _ _ _ exhausted _ _)) = modifyIORef' exhausted (+ 1)
 
 measured :: ReduceContext -> Expression -> IO ()
 measured ctx term = do
@@ -257,12 +258,12 @@ awaited ctx action = case ctx._deadline of
     maybe (expired ctx cap) pure =<< timeout (ceiling (max 0 (due - now) * 1000000)) action
 
 memoized :: Maybe Acyclic -> IO (Maybe Memo)
-memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> (Kin <$> newIORef (Spots Map.empty Map.empty) <*> newIORef Map.empty <*> newIORef Map.empty))
+memoized (Just Plausible) = Just <$> (Memo <$> newIORef Map.empty <*> newIORef Map.empty <*> newIORef 0 <*> newIORef 0 <*> (Kin <$> newIORef (Spots Map.empty Map.empty) <*> newIORef Map.empty <*> newIORef Map.empty) <*> newIORef Map.empty)
 memoized _ = pure Nothing
 
 recalled :: Maybe Memo -> Expression -> Int -> IO (Maybe Kept)
 recalled Nothing _ _ = pure Nothing
-recalled (Just (Memo store _ answers _ _)) form spent = do
+recalled (Just (Memo store _ answers _ _ _)) form spent = do
   kept <- readIORef store
   count <- readIORef answers
   let live = [known | (term, (stamp, known)) <- Map.findWithDefault [] (hashExpression form) kept, term == form, current count stamp known]
@@ -277,29 +278,29 @@ recalled (Just (Memo store _ answers _ _)) form spent = do
 
 counted :: Maybe Memo -> IO Int
 counted Nothing = pure 0
-counted (Just (Memo _ _ answers _ _)) = readIORef answers
+counted (Just (Memo _ _ answers _ _ _)) = readIORef answers
 
 starved :: Maybe Memo -> IO Int
 starved Nothing = pure 0
-starved (Just (Memo _ _ _ exhausted _)) = readIORef exhausted
+starved (Just (Memo _ _ _ exhausted _ _)) = readIORef exhausted
 
 retained :: Maybe Memo -> Expression -> Int -> Kept -> IO ()
 retained Nothing _ _ _ = pure ()
-retained (Just (Memo store _ _ _ _)) form stamp kept =
+retained (Just (Memo store _ _ _ _ _)) form stamp kept =
   modifyIORef' store (Map.insertWith (++) (hashExpression form) [(form, (stamp, kept))])
 
 remembered :: Maybe Memo -> Firing -> IO (Maybe (Expression, Answer))
 remembered Nothing _ = pure Nothing
-remembered (Just (Memo _ firings _ _ _)) firing = Map.lookup firing <$> readIORef firings
+remembered (Just (Memo _ firings _ _ _ _)) firing = Map.lookup firing <$> readIORef firings
 
 remember :: Maybe Memo -> Firing -> Expression -> Answer -> IO ()
 remember Nothing _ _ _ = pure ()
-remember (Just (Memo _ firings answers _ _)) firing form answer = do
+remember (Just (Memo _ firings answers _ _ _)) firing form answer = do
   modifyIORef' firings (Map.insert firing (form, answer))
   modifyIORef' answers (+ 1)
 
 placed :: Maybe Memo -> Expression -> Int -> IO ()
-placed (Just (Memo _ _ _ _ (Kin places _ _))) term idx
+placed (Just (Memo _ _ _ _ (Kin places _ _) _)) term idx
   | not (bare term) = modifyIORef' places (\spots -> List.foldl' spot spots (List.nub [term, stayed term]))
   where
     spot :: Spots -> Expression -> Spots
@@ -312,53 +313,57 @@ placed _ _ _ = pure ()
 spotted :: Spots -> Expression -> Maybe Int
 spotted (Spots known _) term = lookup term (Map.findWithDefault [] (hashExpression term) known)
 
+type Abstraction = (Expression, Map.Map Int Expression)
+
 abstracted :: Sides -> Spots -> Expression -> IO (Expression, [(Int, Expression)])
 abstracted store spots form = do
   cache <- newIORef Map.empty
-  goExpr cache form
+  second Map.toList <$> goExpr cache form
   where
-    goExpr :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Expression -> IO (Expression, [(Int, Expression)])
-    goExpr cache term = maybe (nested cache term) (\idx -> pure (ExFormation [BiLambda (FnSymbol idx)], [(idx, term)])) (spotted spots term)
-    nested :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Expression -> IO (Expression, [(Int, Expression)])
+    goExpr :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Expression -> IO Abstraction
+    goExpr cache term = do
+      done <- readIORef cache
+      case lookup term (Map.findWithDefault [] (hashExpression term) done) of
+        Just again -> pure again
+        Nothing -> do
+          made@(made', posed) <- maybe (nested cache term) (\idx -> pure (ExFormation [BiLambda (FnSymbol idx)], Map.singleton idx term)) (spotted spots term)
+          _ <- evaluate made'
+          _ <- evaluate posed
+          made <$ modifyIORef' cache (Map.insertWith (++) (hashExpression term) [(term, made)])
+    nested :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Expression -> IO Abstraction
     nested cache term@(ExMeta name)
       | isName name = do
-          done <- readIORef cache
-          case Map.lookup name done of
-            Just again -> pure again
-            Nothing -> do
-              side <- opened store term
-              made <-
-                if side == term
-                  then pure (term, [])
-                  else do
-                    (side', posed) <- goExpr cache side
-                    if side' == side then pure (term, posed) else (,posed) <$> named store side'
-              made <$ modifyIORef' cache (Map.insert name made)
-    nested cache (ExFormation bds) = do
+          side <- opened store term
+          if side == term
+            then pure (term, Map.empty)
+            else do
+              (side', posed) <- goExpr cache side
+              if side' == side then pure (term, posed) else (,posed) <$> named store side'
+    nested cache term@(ExFormation bds) = do
       parts <- mapM (goBinding cache) bds
-      pure (ExFormation (map fst parts), concatMap snd parts)
-    nested cache (ExApplication expr arg) = do
+      pure (intact bds term ExFormation (map fst parts), Map.unions (map snd parts))
+    nested cache term@(ExApplication expr arg) = do
       (expr', one) <- goExpr cache expr
       (arg', two) <- goArgument cache arg
-      pure (ExApplication expr' arg', one ++ two)
-    nested cache (ExDispatch expr attr) = first (`ExDispatch` attr) <$> goExpr cache expr
-    nested _ term = pure (term, [])
-    goBinding :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Binding -> IO (Binding, [(Int, Expression)])
-    goBinding cache (BiTau attr expr) = first (BiTau attr) <$> goExpr cache expr
-    goBinding _ bd = pure (bd, [])
-    goArgument :: IORef (Map.Map T.Text (Expression, [(Int, Expression)])) -> Argument -> IO (Argument, [(Int, Expression)])
-    goArgument cache (ArTau attr expr) = first (ArTau attr) <$> goExpr cache expr
-    goArgument cache (ArAlpha alpha expr) = first (ArAlpha alpha) <$> goExpr cache expr
+      pure (intact (expr, arg) term (uncurry ExApplication) (expr', arg'), Map.union one two)
+    nested cache term@(ExDispatch expr attr) = first (intact expr term (`ExDispatch` attr)) <$> goExpr cache expr
+    nested _ term = pure (term, Map.empty)
+    goBinding :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Binding -> IO (Binding, Map.Map Int Expression)
+    goBinding cache bd@(BiTau attr expr) = first (intact expr bd (BiTau attr)) <$> goExpr cache expr
+    goBinding _ bd = pure (bd, Map.empty)
+    goArgument :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Argument -> IO (Argument, Map.Map Int Expression)
+    goArgument cache arg@(ArTau attr expr) = first (intact expr arg (ArTau attr)) <$> goExpr cache expr
+    goArgument cache arg@(ArAlpha alpha expr) = first (intact expr arg (ArAlpha alpha)) <$> goExpr cache expr
 
 kindle :: Sides -> Maybe Memo -> Expression -> Firing -> Answer -> IO ()
-kindle store (Just (Memo _ _ _ _ (Kin places likes _))) form firing answer = do
+kindle store (Just (Memo _ _ _ _ (Kin places likes _) _)) form firing answer = do
   spots <- readIORef places
   key <- fst <$> abstracted store spots form
   modifyIORef' likes (Map.insertWith (++) (hashShape key) [Kindred key form firing answer])
 kindle _ _ _ _ _ = pure ()
 
 minting :: Maybe Memo -> Firing -> Answer -> IO ()
-minting (Just (Memo _ _ _ _ (Kin _ _ minters))) firing@(Firing _ operands normals) answer =
+minting (Just (Memo _ _ _ _ (Kin _ _ minters) _)) firing@(Firing _ operands normals) answer =
   modifyIORef' minters (\known -> List.foldl' (\held idx -> Map.insertWith (\_ old -> old) idx firing held) known [idx | idx <- answered answer, idx `notElem` inputs])
   where
     inputs :: [Int]
@@ -371,7 +376,7 @@ answered (Joined normal) = List.nub (symbols normal)
 answered Raised = []
 
 kindred :: ReduceContext -> Expression -> IO (Maybe (Kindred, Map.Map Int Int, [(Int, Expression)]))
-kindred ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places likes _))} form = do
+kindred ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places likes _) _)} form = do
   spots <- readIORef places
   known <- readIORef likes
   (key, posed) <- abstracted ctx._sides spots form
@@ -381,15 +386,16 @@ kindred ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places likes _))} form
 kindred _ _ = pure Nothing
 
 adopted :: ReduceContext -> (Kindred, Map.Map Int Int, [(Int, Expression)]) -> Expression -> IO Answer
-adopted ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places _ _))} (Kindred key form firing answer, pairing, posed) target = do
+adopted ctx@ReduceContext{_memo = Just (Memo _ _ _ _ (Kin places _ _) _)} (Kindred key form firing answer, pairing, posed) target = do
   table <- newIORef pairing
   visiting <- newIORef Set.empty
+  renamed <- newIORef Map.empty
   Spots known _ <- readIORef places
-  adopt ctx (Renaming table (Spots known (Map.fromList [(idx, fromMaybe (ExFormation [BiLambda (FnSymbol idx')]) (lookup idx' posed)) | idx <- symbols key, Just idx' <- [Map.lookup idx pairing]])) visiting) firing key form answer (Just target)
+  adopt ctx (Renaming table (Spots known (Map.fromList [(idx, fromMaybe (ExFormation [BiLambda (FnSymbol idx')]) (lookup idx' posed)) | idx <- symbols key, Just idx' <- [Map.lookup idx pairing]])) visiting renamed) firing key form answer (Just target)
 adopted _ _ _ = throwIO (userError "A renamed answer needs the memo of --acyclic=plausible")
 
 adopt :: ReduceContext -> Renaming -> Firing -> Expression -> Expression -> Answer -> Maybe Expression -> IO Answer
-adopt ctx renaming@(Renaming table _ visiting) firing key form answer target = do
+adopt ctx renaming@(Renaming table _ visiting _) firing key form answer target = do
   modifyIORef' visiting (Set.insert firing)
   firing' <- refired ctx renaming firing
   existing <- remembered ctx._memo firing'
@@ -425,10 +431,10 @@ adopt ctx renaming@(Renaming table _ visiting) firing key form answer target = d
     reanswered (Joined normal) = Joined <$> renamedTerm ctx renaming normal
     reanswered Raised = pure Raised
     held :: Maybe Memo -> IO (Map.Map Int Firing)
-    held (Just (Memo _ _ _ _ (Kin _ _ minters))) = readIORef minters
+    held (Just (Memo _ _ _ _ (Kin _ _ minters) _)) = readIORef minters
     held Nothing = pure Map.empty
     minted' :: Maybe Memo -> Firing -> [Int] -> IO ()
-    minted' (Just (Memo _ _ _ _ (Kin _ _ minters))) firing' fresh = modifyIORef' minters (\known -> List.foldl' (\kept idx -> Map.insert idx firing' kept) known fresh)
+    minted' (Just (Memo _ _ _ _ (Kin _ _ minters) _)) firing' fresh = modifyIORef' minters (\known -> List.foldl' (\kept idx -> Map.insert idx firing' kept) known fresh)
     minted' Nothing _ _ = pure ()
 
 refired :: ReduceContext -> Renaming -> Firing -> IO Firing
@@ -439,47 +445,44 @@ refired ctx renaming (Firing func operands normals) = Firing func <$> mapM opera
     operand bytes = pure bytes
 
 renamedTerm :: ReduceContext -> Renaming -> Expression -> IO Expression
-renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _) term = do
-  renamed <- newIORef Map.empty
-  goExpr renamed term
+renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _ renamed) = goExpr
   where
-    goExpr :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    goExpr renamed expr = maybe (nested renamed expr) (spot renamed expr) (spotted spots expr)
-    spot :: IORef (Map.Map T.Text Expression) -> Expression -> Int -> IO Expression
-    spot renamed expr idx = maybe (nested renamed expr) pure (Map.lookup idx spelt)
-    nested :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    nested renamed expr@(ExMeta name)
+    goExpr :: Expression -> IO Expression
+    goExpr expr = do
+      done <- readIORef renamed
+      case lookup expr (Map.findWithDefault [] (hashExpression expr) done) of
+        Just again -> pure again
+        Nothing -> do
+          made <- evaluate =<< maybe (nested expr) (spot expr) (spotted spots expr)
+          made <$ modifyIORef' renamed (Map.insertWith (++) (hashExpression expr) [(expr, made)])
+    spot :: Expression -> Int -> IO Expression
+    spot expr idx = maybe (nested expr) pure (Map.lookup idx spelt)
+    nested :: Expression -> IO Expression
+    nested expr@(ExMeta name)
       | isName name = do
-          done <- readIORef renamed
-          case Map.lookup name done of
-            Just again -> pure again
-            Nothing -> do
-              side <- opened ctx._sides expr
-              made <- if side == expr then pure expr else named ctx._sides =<< goExpr renamed side
-              made <$ modifyIORef' renamed (Map.insert name made)
-    nested renamed expr = walked renamed expr
-    walked :: IORef (Map.Map T.Text Expression) -> Expression -> IO Expression
-    walked renamed (ExFormation bds) = ExFormation <$> mapM (goBinding renamed) bds
-    walked renamed (ExApplication expr arg) = ExApplication <$> goExpr renamed expr <*> goArgument renamed arg
-    walked renamed (ExDispatch expr attr) = (`ExDispatch` attr) <$> goExpr renamed expr
-    walked _ expr = pure expr
-    goBinding :: IORef (Map.Map T.Text Expression) -> Binding -> IO Binding
-    goBinding renamed (BiTau attr expr) = BiTau attr <$> goExpr renamed expr
-    goBinding _ (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> renamedSymbol ctx renaming idx
-    goBinding _ bd = pure bd
-    goArgument :: IORef (Map.Map T.Text Expression) -> Argument -> IO Argument
-    goArgument renamed (ArTau attr expr) = ArTau attr <$> goExpr renamed expr
-    goArgument renamed (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr renamed expr
+          side <- opened ctx._sides expr
+          if side == expr then pure expr else named ctx._sides =<< goExpr side
+    nested whole@(ExFormation bds) = intact bds whole ExFormation <$> suffixed goBinding bds
+    nested whole@(ExApplication expr arg) = intact (expr, arg) whole (uncurry ExApplication) <$> ((,) <$> goExpr expr <*> goArgument arg)
+    nested whole@(ExDispatch expr attr) = intact expr whole (`ExDispatch` attr) <$> goExpr expr
+    nested expr = pure expr
+    goBinding :: Binding -> IO Binding
+    goBinding bd@(BiTau attr expr) = intact expr bd (BiTau attr) <$> goExpr expr
+    goBinding (BiLambda (FnSymbol idx)) = BiLambda . FnSymbol <$> renamedSymbol ctx renaming idx
+    goBinding bd = pure bd
+    goArgument :: Argument -> IO Argument
+    goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> goExpr expr
+    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> goExpr expr
 
 renamedSymbol :: ReduceContext -> Renaming -> Int -> IO Int
-renamedSymbol ctx renaming@(Renaming table _ visiting) idx = do
+renamedSymbol ctx renaming@(Renaming table _ visiting _) idx = do
   known <- readIORef table
   maybe unknown pure (Map.lookup idx known)
   where
     unknown :: IO Int
     unknown = do
       minter <- case ctx._memo of
-        Just (Memo _ _ _ _ (Kin _ _ minters)) -> Map.lookup idx <$> readIORef minters
+        Just (Memo _ _ _ _ (Kin _ _ minters) _) -> Map.lookup idx <$> readIORef minters
         Nothing -> pure Nothing
       seen <- readIORef visiting
       case minter of
@@ -542,9 +545,8 @@ sever taken form univ state ctx = admitted form ctx >>= either cut (pure . Right
 
 severed :: Maybe Attribute -> Expression -> ReduceContext -> State -> Expression -> [Binding] -> (Acyclic, Expression) -> IO Expression
 severed taken univ ctx state form bds (mode, before) = do
-  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
-  forM_ call (recited ctx . snd)
-  reckoned <- traverse (spelled taken . fst) call
+  call <- tracing ctx form before
+  reckoned <- traverse (spelled taken) call
   fresh <- coined ctx
   ctx._saveEval (EvLooped ctx._nesting ctx._judgment mode before ctx._site (Just (fresh, reckoned)))
   pure (ExFormation [BiLambda (FnSymbol fresh)])
@@ -554,6 +556,17 @@ severed taken univ ctx state form bds (mode, before) = do
     spelled Nothing found
       | ctx._reckoning = pure found
       | otherwise = argued univ ctx{_reckoning = True} state form bds found
+
+passing :: ReduceContext -> Expression -> (Acyclic, Expression) -> IO ()
+passing ctx form (mode, before) = do
+  call <- tracing ctx form before
+  ctx._saveEval (EvPassed ctx._nesting ctx._judgment mode before ctx._site form call)
+
+tracing :: ReduceContext -> Expression -> Expression -> IO (Maybe Expression)
+tracing ctx form before = do
+  call <- awaited ctx (evaluate =<< ((<|>) <$> traced ctx._facts form <*> traced ctx._facts before))
+  forM_ call (recited ctx . snd)
+  pure (fst <$> call)
 
 recited :: ReduceContext -> [(Expression, Expression)] -> IO ()
 recited ctx = mapM_ (\(term, source) -> ctx._saveEval (EvRecalled ctx._nesting term source))
@@ -745,14 +758,47 @@ admitted form ctx = maybe (pure (Right ctx)) remembered ctx._acyclic
 repeats :: Acyclic -> Expression -> ReduceContext -> IO [Expression]
 repeats mode form ctx = do
   look <- resolver ctx._sides
-  let hits = take (succ ctx._maxLoops) (filter (repeated look mode) (Map.findWithDefault [] (digest mode form) ctx._entered))
-  awaited ctx (evaluate (length hits `seq` hits))
+  depth <- gauge ctx._sides
+  start <- maybe (pure Map.empty) readIORef (searching ctx._memo)
+  known <- maybe (pure Map.empty) (\(Facts facts _) -> readIORef facts) ctx._facts
+  (hits, kept) <- awaited ctx (evaluate (forced (goHits look depth (sibling known (origin known (Map.size known) form)) start (succ ctx._maxLoops) (Map.findWithDefault [] (digest mode form) ctx._entered))))
+  mapM_ (\ref -> writeIORef ref (bounded kept)) (searching ctx._memo)
+  pure hits
   where
-    repeated :: (T.Text -> Maybe Expression) -> Acyclic -> Expression -> Bool
-    repeated look Proven before = alike' look form before
-    repeated look Plausible before
-      | atomic form = akin' look before form
-      | otherwise = within' look before form
+    goHits :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> (Expression -> Bool) -> Searched -> Int -> [Expression] -> ([Expression], Searched)
+    goHits _ _ _ kept 0 _ = ([], kept)
+    goHits _ _ _ kept _ [] = ([], kept)
+    goHits look depth kin kept wanted (before : rest) = case repeated look depth kin mode before kept of
+      (True, kept') -> first (before :) (goHits look depth kin kept' (pred wanted) rest)
+      (False, kept') -> goHits look depth kin kept' wanted rest
+    forced :: ([Expression], Searched) -> ([Expression], Searched)
+    forced result@(hits, kept) = length hits `seq` kept `seq` result
+    bounded :: Searched -> Searched
+    bounded kept
+      | Map.size kept > 1000000 = Map.empty
+      | otherwise = kept
+    searching :: Maybe Memo -> Maybe (IORef Searched)
+    searching = fmap (\(Memo _ _ _ _ _ searched) -> searched)
+    repeated :: (T.Text -> Maybe Expression) -> (T.Text -> Maybe Int) -> (Expression -> Bool) -> Acyclic -> Expression -> Searched -> (Bool, Searched)
+    repeated look _ _ Proven before kept = (alike' look form before, kept)
+    repeated look depth kin Plausible before kept
+      | atomic form = akin'' look depth kept before form
+      | kin before = (True, kept)
+      | otherwise = within'' look kept before form
+    sibling :: Store Expression -> Maybe Expression -> Expression -> Bool
+    sibling _ Nothing _ = False
+    sibling known own before = origin known (Map.size known) before == own
+    origin :: Store Expression -> Int -> Expression -> Maybe Expression
+    origin known budget term@(ExFormation _)
+      | budget > 0 = lookup term (Map.findWithDefault [] (hashExpression term) known) >>= goSource
+      where
+        goSource :: Expression -> Maybe Expression
+        goSource ExRoot = Just ExRoot
+        goSource (ExApplication target _) = goSource target
+        goSource (ExDispatch target attr) = (`ExDispatch` attr) <$> goSource target
+        goSource source@(ExFormation _) = origin known (pred budget) source
+        goSource _ = Nothing
+    origin _ _ _ = Nothing
     atomic :: Expression -> Bool
     atomic (ExFormation bds) = any isLambda bds
     atomic _ = False
@@ -765,7 +811,7 @@ entrance :: Judgment -> Expression -> Maybe Expression
 entrance Dataization term@(ExFormation bds)
   | boxed bds || isJust (lambda bds) = Just term
 entrance Morphing (ExDispatch form@(ExFormation bds) _)
-  | isJust (lambda bds) = Just form
+  | isJust (lambda bds) || boxed bds = Just form
 entrance Evaluation term@(ExFormation bds)
   | isJust (lambda bds) = Just term
 entrance _ _ = Nothing
@@ -824,7 +870,7 @@ morph universe state caller@ReduceContext{..} = do
     reduced expr ctx = do
       result <- try (morph' (expr, (universe, Nothing) :| []) universe state ctx)
       case result of
-        Right ((morphed, seq), state') -> pure (morphed, reverse (NE.toList seq), state')
+        Right ((morphed, seq), state') -> (,reverse (NE.toList seq),state') <$> spelled _sides morphed
         Left (StuckAt func seq parked) | _partial -> residue seq parked{_stuck = Just func}
         Left (OutOfStepsAt _ seq parked) | _partial -> residue seq parked
         Left (OutOfSteps _) | _partial -> pure (expr, [(universe, Nothing)], state)
@@ -832,7 +878,7 @@ morph universe state caller@ReduceContext{..} = do
         Left failure -> throwIO (failure :: ReduceException)
     residue :: NonEmpty Rewritten -> State -> IO (Expression, [Rewritten], State)
     residue seq parked = do
-      expr <- locatedExpression _locator (fst (NE.head seq))
+      expr <- spelled _sides =<< locatedExpression _locator (fst (NE.head seq))
       pure (expr, reverse (NE.toList seq), parked)
 
 vetted :: Judgment -> Expression -> ReduceContext -> IO ()
@@ -846,14 +892,14 @@ inferred expr univ state ctx rules = do
   where
     go :: [In.Inference value] -> IO (Maybe (In.Premises value))
     go [] = pure Nothing
-    go (rule : rest) = rule (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal) expr univ >>= maybe (go rest) (pure . Just)
+    go (rule : rest) = rule (RuleContext (execBuildTerm univ ctx) (Just univ) ctx._engine._normal False) expr univ >>= maybe (go rest) (pure . Just)
     premised :: State -> In.Premises value -> IO (In.Conclusion value, State)
     premised state' (In.Concludes conclusion) = pure (conclusion, state')
     premised state' (In.Morphs term world next) = do
       (morphed, state'') <- detached term world state' ctx
       next morphed >>= premised state''
     premised state' (In.Evaluates form world next) = do
-      (answer, state'') <- ctx._evaluate ctx state' form world
+      (answer, state'') <- ctx._evaluate ctx{_working = Just expr} state' form world
       next answer >>= premised state''
     premised state' (In.Contextualizes term context next) = ctx._engine._contextualize term context >>= next >>= premised state'
 
@@ -861,7 +907,8 @@ onward :: NonEmpty Rewritten -> State -> In.Way -> Expression -> Expression -> R
 onward seq state (In.Taken step) _ expr ctx = do
   seq' <- leadsTo seq step expr ctx
   pure ((expr, seq'), state)
-onward seq state (In.Normalized step) univ expr ctx = do
+onward seq state (In.Normalized step) univ expr' ctx = do
+  expr <- shared ctx expr'
   labelled <- leadsTo seq step expr ctx
   normal@(term, _) <- normalized expr labelled ctx
   unless (term `elem` [expr, bare expr]) (ctx._saveEval (EvNormalized ctx._nesting (rooted expr) term))
@@ -880,6 +927,62 @@ onward seq state (In.Named step) univ expr ctx = case ctx._universe of
   Just world -> onward seq state (In.Taken step) univ world ctx
   Nothing -> onward seq state (In.Normalized step) univ expr ctx
 onward seq state (In.Staged stage) _ expr ctx = morph' (expr, seq) stage state ctx
+
+shared :: ReduceContext -> Expression -> IO Expression
+shared ctx = go
+  where
+    go :: Expression -> IO Expression
+    go term@(ExApplication head' arg) = do
+      head'' <- go head'
+      arg' <- goArgument arg
+      pure (if head'' == head' && arg' == arg then term else ExApplication head'' arg')
+    go term@(ExDispatch inner attr) = do
+      inner' <- go inner
+      pure (if inner' == inner then term else ExDispatch inner' attr)
+    go term = pure term
+    goArgument :: Argument -> IO Argument
+    goArgument arg@(ArTau AtRho _) = pure arg
+    goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> (goValue =<< go expr)
+    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> (goValue =<< go expr)
+    goValue :: Expression -> IO Expression
+    goValue value@(ExMeta _) = pure value
+    goValue value@(ExApplication inner (ArTau AtRho _))
+      | closed value && growing value = do
+          look <- resolver ctx._sides
+          if dispatching look inner then goValue inner else kept value
+    goValue value = kept value
+    dispatching :: (T.Text -> Maybe Expression) -> Expression -> Bool
+    dispatching _ (ExDispatch _ _) = True
+    dispatching look (ExApplication inner _) = dispatching look inner
+    dispatching look (ExMeta name) = maybe False (dispatching look) (look name)
+    dispatching _ _ = False
+    kept :: Expression -> IO Expression
+    kept value
+      | closed value && growing value = do
+          (name, fresh) <- minted ctx._sides value
+          when fresh (ctx._saveEval (EvShared ctx._nesting name value))
+          pure name
+      | otherwise = pure value
+    growing :: Expression -> Bool
+    growing (ExMeta _) = True
+    growing (ExDispatch inner _) = not (path inner) || growing inner
+    growing (ExApplication inner (ArTau _ arg)) = growing inner || growing arg
+    growing (ExApplication inner (ArAlpha _ arg)) = growing inner || growing arg
+    growing _ = False
+    path :: Expression -> Bool
+    path (ExDispatch inner _) = path inner
+    path ExRoot = True
+    path _ = False
+    closed :: Expression -> Bool
+    closed (ExApplication inner (ArTau _ arg)) = closed inner && closed arg
+    closed (ExApplication inner (ArAlpha _ arg)) = closed inner && closed arg
+    closed (ExDispatch inner _) = closed inner
+    closed (ExFormation _) = True
+    closed ExRoot = True
+    closed (ExBytes _) = True
+    closed ExTermination = True
+    closed (ExMeta name) = isName name
+    closed _ = False
 
 leadsTo :: NonEmpty Rewritten -> (Judgment, String) -> Expression -> ReduceContext -> IO (NonEmpty Rewritten)
 leadsTo ((current, _) :| rest) rule expr ReduceContext{..} = do
@@ -914,7 +1017,7 @@ normalized expr seq ctx@ReduceContext{..} = do
     spined _ _ term = term
     rewriteContext :: IORef (Store Expression) -> IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> RewriteContext
     rewriteContext taken peeled copies whole@ReduceContext{..} =
-      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled copies whole)
+      RewriteContext _locator _maxDepth _maxCycles _depthSensitive _universe _buildTerm _engine._normal _engine._matching MtDisabled Nothing (\term -> clocked whole >> (measured whole =<< locatedExpression _locator term) >> _saveStep term) (made taken peeled copies whole)
     made :: IORef (Store Expression) -> IORef (Store Expression) -> IORef (Store Expression) -> ReduceContext -> Expression -> Expression -> IO ()
     made _ _ copies whole redex@(ExApplication head' (ArTau attr _)) object@(ExFormation bds)
       | attr /= AtRho && object /= head' = do
@@ -1017,19 +1120,16 @@ morphing univ ctx expr state = do
   unparked $ do
     opened <- opening Morphing =<< universed universe aiming
     ((morphed, _), state') <- morph' (normal, (universe, Nothing) :| []) universe state{_copies = []} opened
-    recurring morphed universe state'{_copies = state._copies ++ state'._copies} opened
+    recurring morphed state'{_copies = state._copies ++ state'._copies} opened
   where
-    recurring :: Expression -> Expression -> State -> ReduceContext -> IO (Expression, State)
-    recurring term@(ExFormation bds) world state' opened
+    recurring :: Expression -> State -> ReduceContext -> IO (Expression, State)
+    recurring term@(ExFormation bds) state' opened
       | Just mode <- opened._acyclic
       , boxed bds = do
           hits <- repeats mode term opened
-          case drop opened._maxLoops hits of
-            before : _ -> (,state') <$> severed Nothing world opened state' term bds (mode, before)
-            []
-              | null hits -> pure (term, state')
-              | otherwise -> pure (term, state'{_copies = state'._copies ++ [term]})
-    recurring term _ state' _ = pure (term, state')
+          forM_ (listToMaybe (drop opened._maxLoops hits)) (passing opened term . (mode,))
+          pure (term, if null hits then state' else state'{_copies = state'._copies ++ [term]})
+    recurring term state' _ = pure (term, state')
 
 carried :: State -> ReduceContext -> (State, ReduceContext)
 carried state ctx = (state{_copies = []}, maybe ctx (\mode -> ctx{_entered = foldr (\form -> seenInsert (digest mode form) form) ctx._entered state._copies}) ctx._acyclic)
