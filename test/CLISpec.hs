@@ -4501,7 +4501,7 @@ spec = do
                      , "    <recalled of=\"𝑛·1·4\" as=\"𝑒·1·1\"/>"
                      , "    <recalled of=\"𝑛·1·2\" as=\"Φ.step\"/>"
                      , "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.step\"><with><symbol attr=\"tup\">𝜎1</symbol></with></deferred>"
-                     , "    <assumed on=\"𝛿1·1\" left=\"01-\" right=\"𝜎3\" symbol=\"right\"/>"
+                     , "    <assumed symbol=\"𝜎3\" as=\"01-\"/>"
                      , "    <answered meta=\"𝑛·1·6\">01-</answered>"
                      , "    <evaluated meta=\"𝑛·1·7\" of=\"Φ.y\">01-</evaluated>"
                      , "  </evaluate>"

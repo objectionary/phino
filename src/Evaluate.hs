@@ -425,7 +425,7 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
         Right (term, made, bottom, spent') -> do
           writeIORef ctx._minted spent'
           mapM_ (\(fresh, pair) -> ctx._saveEval (EvJoined ctx._nesting (either (Left . _spelling) Right on) fresh pair bottom raised)) made
-          mapM_ (ctx._saveEval . EvAssumed ctx._nesting (either (Left . _spelling) Right on) (left, one) (right, two)) (bared (stopped one) (stopped two))
+          mapM_ (\side -> ctx._saveEval (if side == Lefthand then EvAssumed ctx._nesting (left, one) (right, two) else EvAssumed ctx._nesting (right, two) (left, one))) (bared (stopped one) (stopped two))
           mapM_ (\side -> ctx._saveEval (EvGuarded ctx._nesting (either (Left . _spelling) Right on) (left, one) (right, two) side raised)) [side | null made, term /= ExTermination, (side, ExTermination) <- [(Lefthand, stopped one), (Righthand, stopped two)]]
           ctx._saveEval (EvTaken ctx._nesting term)
           pure (Joined term, state''')

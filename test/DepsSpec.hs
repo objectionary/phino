@@ -391,8 +391,8 @@ spec = do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvGuarded 2 (Left "𝛿1") (ExMeta "n1", ExDispatch ExRoot (AtLabel "ёж")) (ExMeta "n2", ExTermination) Righthand Nothing])
       last (lines written) `shouldBe` "    guarded 𝛿1·1 ? 𝑛1·1 : 𝑛2·1  # where 𝑛2·1 is ⊥"
     it "writes a side a join took for the bare symbol facing it" $ do
-      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvAssumed 2 (Left "𝛿1") (ExMeta "n1", ExFormation [BiLambda (FnSymbol 7)]) (ExMeta "n2", ExDispatch ExRoot (AtLabel "ёж")) Lefthand])
-      last (lines written) `shouldBe` "    assumed 𝛿1·1 ? 𝜎7:λ : 𝑛2·1  # where 𝜎7:λ stands for 𝑛2·1"
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvAssumed 2 (ExMeta "n1", ExFormation [BiLambda (FnSymbol 7)]) (ExMeta "n2", ExDispatch ExRoot (AtLabel "ёж"))])
+      last (lines written) `shouldBe` "    assumed 𝜎7:λ ≡ 𝑛2·1"
     it "writes a side a join kept since the left one is ⊥ with the object it raises with" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "бросок")) (ArTau (AtLabel "весть") (ExFormation []))) (ExFormation [BiTau (AtLabel "весть") (ExFormation []), BiLambda (Function "L_бросок")]) ExRoot, EvGuarded 2 (Right (ExDispatch ExXi (AtLabel "щит"))) (ExMeta "n3", ExTermination) (ExMeta "n4", ExDispatch ExRoot (AtLabel "ёж")) Lefthand (Just (ExFormation [BiTau (AtLabel "весть") (ExFormation []), BiLambda (Function "L_бросок")]))])
       last (lines written) `shouldBe` "    guarded ξ.щит ? 𝑛3·1 : 𝑛4·1  # where 𝑛3·1 is ⊥ raised by 𝑛·1·2"
@@ -760,9 +760,9 @@ spec = do
     it "writes a side a join kept since the other one is ⊥ as an element naming the side that raises" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvGuarded 2 (Left "𝛿4") (ExMeta "n1", ExDispatch ExRoot (AtLabel "ёж")) (ExMeta "n2", ExTermination) Righthand Nothing])
       lines written `shouldContain` ["    <guarded on=\"𝛿4·1\" left=\"𝑛1·1\" right=\"𝑛2·1\" terminator=\"right\"/>"]
-    it "writes a side a join took for the bare symbol facing it as an element naming the symbol's side" $ do
-      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvAssumed 2 (Right (ExDispatch ExXi (AtLabel "щит"))) (ExMeta "n1", ExDispatch ExRoot (AtLabel "ёж")) (ExMeta "n2", ExFormation [BiLambda (FnSymbol 7)]) Righthand])
-      lines written `shouldContain` ["    <assumed on=\"ξ.щит\" left=\"𝑛1·1\" right=\"𝜎7\" symbol=\"right\"/>"]
+    it "writes a side a join took for the bare symbol facing it as an element naming both" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvAssumed 2 (ExMeta "n2", ExFormation [BiLambda (FnSymbol 7)]) (ExMeta "n1", ExDispatch ExRoot (AtLabel "ёж"))])
+      lines written `shouldContain` ["    <assumed symbol=\"𝜎7\" as=\"𝑛1·1\"/>"]
     it "names in the markup the object the side a guard kept away raises with" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "бросок")) (ArTau (AtLabel "весть") (ExFormation []))) (ExFormation [BiTau (AtLabel "весть") (ExFormation []), BiLambda (Function "L_бросок")]) ExRoot, EvGuarded 2 (Right (ExDispatch ExXi (AtLabel "щит"))) (ExMeta "n3", ExTermination) (ExMeta "n4", ExDispatch ExRoot (AtLabel "ёж")) Lefthand (Just (ExFormation [BiTau (AtLabel "весть") (ExFormation []), BiLambda (Function "L_бросок")]))])
       lines written `shouldContain` ["    <guarded on=\"ξ.щит\" left=\"𝑛3·1\" right=\"𝑛4·1\" terminator=\"left\" raised=\"𝑛·1·2\"/>"]

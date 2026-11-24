@@ -39,7 +39,7 @@ protocol: |
       𝕄(ξ.b):
         morphed 𝑛·1·5 := 2A-:Δ:k
       𝑛2·1 := 𝑛·1·5  # 𝕄(ξ.b)
-      assumed 𝛿1·1 ? 𝜎2:λ : 𝑛2·1  # where 𝜎2:λ stands for 𝑛2·1
+      assumed 𝜎2:λ ≡ 𝑛2·1
       𝑛·1·6 := 𝑛·1·5
       evaluated 𝑛·1·7 := 𝑛·1·6  # ⟦ c ↦ Φ.x, a ↦ Φ.y, b ↦ 𝑛·1·6, λ ⤍ L_fork ⟧
     normalized 𝑛·0·1 := 2A-:Δ  # 𝑛·1·7.k
