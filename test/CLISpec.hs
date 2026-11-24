@@ -1630,22 +1630,22 @@ spec = do
             `shouldBe` [ "𝔻(Φ.t):"
                        , "  𝕄(Φ.t):"
                        , "    remembered 𝑛·0·1 ≡ Φ.cyc  # ⟦ x ↦ ∅, φ ↦ Φ.cyc( x ) ⟧"
-                       , "    𝑛·0·2 := Φ.cyc( x ↦ ⟦⟧ )"
-                       , "    𝑛·0·3 := ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
+                       , "    𝑛·0·2 ≔ Φ.cyc( x ↦ ⟦⟧ )"
+                       , "    𝑛·0·3 ≔ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
                        , "    remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ ⟦⟧ )"
-                       , "    morphed 𝑛·0·4 := 𝑛·0·3"
-                       , "  boxed 𝑛·0·5 := 𝑛·0·4.φ"
-                       , "  normalized 𝑛·0·6 := Φ.cyc( ⟦⟧ )  # 𝑛·0·5"
+                       , "    morphed 𝑛·0·4 ≔ 𝑛·0·3"
+                       , "  boxed 𝑛·0·5 ≔ 𝑛·0·4.φ"
+                       , "  normalized 𝑛·0·6 ≔ Φ.cyc( ⟦⟧ )  # 𝑛·0·5"
                        , "  𝕄(𝑛·0·5):"
-                       , "    𝑛·0·7 := Φ.cyc( x ↦ ⟦⟧ )"
-                       , "    𝑛·0·8 := ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
-                       , "    morphed 𝑛·0·9 := 𝑛·0·8"
+                       , "    𝑛·0·7 ≔ Φ.cyc( x ↦ ⟦⟧ )"
+                       , "    𝑛·0·8 ≔ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
+                       , "    morphed 𝑛·0·9 ≔ 𝑛·0·8"
                        , "  recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )"
                        , "  recalled 𝑛·0·1 ⇒ Φ.cyc"
                        , "  𝕄(𝑛·0·9.x):"
-                       , "    morphed 𝑛·0·10 := ⟦⟧"
-                       , "  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·10 )  # 𝔻(𝑛·0·5), proven, repeats 𝑛·0·9"
-                       , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
+                       , "    morphed 𝑛·0·10 ≔ ⟦⟧"
+                       , "  looped 𝜎1 ≔ Φ.cyc( x ↦ 𝑛·0·10 )  # 𝔻(𝑛·0·5), proven, repeats 𝑛·0·9"
+                       , "  𝛿·0·1 ≔ 𝔻(𝜎1:λ)"
                        ]
 
       it "writes the cut to the XML protocol with the formation in an element of its own" $
@@ -1694,7 +1694,7 @@ spec = do
               ["dataize", "--locator=Q.t", "--acyclic=plausible", "--partial", "--minutes=" ++ path, "--sweet", "--hide-rho", "--flat", "--quiet"]
               []
           records <- readProtocol path
-          lines records `shouldContain` ["  looped 𝜎1 := Φ.cyc( x ↦ 𝑛·0·10 )  # 𝔻(𝑛·0·5), plausible, repeats 𝑛·0·9"]
+          lines records `shouldContain` ["  looped 𝜎1 ≔ Φ.cyc( x ↦ 𝑛·0·10 )  # 𝔻(𝑛·0·5), plausible, repeats 𝑛·0·9"]
 
       it "refuses the flag without a mode" $
         withStdin "⟦ t ↦ ⟦ Δ ⤍ 01-02 ⟧ ⟧" $
@@ -1740,7 +1740,7 @@ spec = do
               withStdin world $
                 testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.app", "--acyclic=plausible", "--max-loops=1", "--partial", "--cheat", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
             records <- map (dropWhile (== ' ')) . lines <$> readProtocol path
-            records `shouldContain` ["looped 𝜎5 := 𝑛·5·1.plus  # plausible, repeats 𝑛·0·4"]
+            records `shouldContain` ["looped 𝜎5 ≔ 𝑛·5·1.plus  # plausible, repeats 𝑛·0·4"]
 
       describe "over a world whose levels share the value below them twice" $ do
         let level :: String -> String
@@ -1885,13 +1885,13 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible"] ["40-45-00-00-00-00-00-00"]
 
       it "writes the recursive call an operand comes to to the protocol as passed, as a call of the object" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["      passed 𝑛·1·4 := Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # plausible, repeats 𝑛·0·4"])
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["      passed 𝑛·1·4 ≔ Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # plausible, repeats 𝑛·0·4"])
 
       it "writes the recursive call an operand comes to to the XML protocol as passed, with the object and the metas of its arguments" $
         recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["      <passed meta=\"𝑛·1·4\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑒·0·2</meta></with></passed>"])
 
       it "cuts the recursive call after the firing that handed it back" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["  looped 𝜎1 := Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # 𝔼(𝑛·0·13.a), plausible, repeats 𝑛·0·13"])
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["  looped 𝜎1 ≔ Φ.down( i ↦ Φ.wrap( v ↦ 01-:Δ ) )  # 𝔼(𝑛·0·13.a), plausible, repeats 𝑛·0·13"])
 
     describe "--acyclic at a recursive call through a fork" $ do
       let recursive = "⟦ if(c, a, b) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ξ.c, left🌵 ↦ ξ.a, right🌵 ↦ ξ.b ⟧, wrap(v) ↦ ⟦⟧, down(i) ↦ ⟦ φ ↦ Φ.if( c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ Φ.down( i ↦ Φ.wrap( v ↦ i ) ), b ↦ ⟦ φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ⟧ ) ⟧, t ↦ Φ.down( i ↦ ⟦ Δ ⤍ 01- ⟧ ) ⟧"
@@ -1912,13 +1912,13 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=1"] ["40-45-00-00-00-00-00-00"]
 
       it "writes the copy a side of a fork comes to again to the protocol as passed, as a call of the object" $
-        recorded "1" "protocolXXXXXX.txt" >>= (`shouldContain` ["        passed 𝑛·3·4 := Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) )  # plausible, repeats 𝑛·0·4"])
+        recorded "1" "protocolXXXXXX.txt" >>= (`shouldContain` ["        passed 𝑛·3·4 ≔ Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) )  # plausible, repeats 𝑛·0·4"])
 
       it "writes the copy a side of a fork comes to again to the XML protocol as passed, with the object and the metas of its arguments" $
         recorded "1" "protocolXXXXXX.xml" >>= (`shouldContain` ["        <passed meta=\"𝑛·3·4\" by=\"morph\" match=\"plausible\" at=\"ξ.left🌵\" of=\"𝑛·0·4\" object=\"Φ.down\"><with><meta attr=\"i\">𝑒·2·3</meta></with></passed>"])
 
       it "counts the copies the sides of earlier rounds of a fork made under --max-loops=2" $
-        recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          passed 𝑛·6·4 := Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) ) )  # plausible, repeats 𝑛·0·4"])
+        recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          passed 𝑛·6·4 ≔ Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) ) )  # plausible, repeats 𝑛·0·4"])
 
     describe "--acyclic at an object an atom only hands back" $ do
       let world = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, down ↦ ⟦ φ ↦ Φ.call( Φ.down ).at, at ↦ 2A-:Δ ⟧, t ↦ Φ.down ⟧"
@@ -1940,7 +1940,7 @@ spec = do
               testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=" ++ mode] ["2A-"]
 
       it "writes the object it hands back to the protocol as passed" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["        passed 𝑛·1·2 := Φ.down  # plausible, repeats 𝑛·1·1"])
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["        passed 𝑛·1·2 ≔ Φ.down  # plausible, repeats 𝑛·1·1"])
 
       it "writes the object it hands back to the XML protocol as passed" $
         recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["        <passed meta=\"𝑛·1·2\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·1·1\" object=\"Φ.down\"/>"])
@@ -1964,7 +1964,7 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
       it "writes the copy holding a λ it cuts to the protocol as a call of the object" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["                      looped 𝜎8 := Φ.dataized( target ↦ 𝜎7:λ )  # plausible, repeats 𝑛·7·2"])
+        recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["                      looped 𝜎8 ≔ Φ.dataized( target ↦ 𝜎7:λ )  # plausible, repeats 𝑛·7·2"])
 
     describe "--acyclic at a copy holding a λ that evaluate fires" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ ⟦ φ ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.x ) ) ) ⟧ ⟧"
@@ -1988,7 +1988,7 @@ spec = do
                     []
               lines <$> readProtocol path
       it "writes the copy it cuts to the protocol as a call of the object with the attribute it ends with" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·7·5, right ↦ 𝑛·8·2 ).right🌵.φ  # 𝔼(𝑛2 of L_fork), plausible"))
+        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 ≔ Φ.fork( left ↦ 𝑛·7·5, right ↦ 𝑛·8·2 ).right🌵.φ  # 𝔼(𝑛2 of L_fork), plausible"))
 
       it "writes the copy it cuts to the XML protocol with the object, the metas of its arguments and the attribute it ends with" $
         recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·7·5</meta><meta attr=\"right\">𝑛·8·2</meta></with></looped>"))
@@ -2010,7 +2010,7 @@ spec = do
                 ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                 []
           records <- readProtocol path
-          filter (isInfixOf "looped") (lines records) `shouldBe` ["                          looped 𝜎1 := Φ.dataized( target ↦ Φ.x )  # 𝔼(𝑛·6·3.b), plausible, repeats 𝑛·6·6", "                          looped 𝜎2 := Φ.times( b ↦ 𝜎1:λ )  # plausible, repeats 𝑛·6·3"]
+          filter (isInfixOf "looped") (lines records) `shouldBe` ["                          looped 𝜎1 ≔ Φ.dataized( target ↦ Φ.x )  # 𝔼(𝑛·6·3.b), plausible, repeats 𝑛·6·6", "                          looped 𝜎2 ≔ Φ.times( b ↦ 𝜎1:λ )  # plausible, repeats 𝑛·6·3"]
 
     describe "--acyclic at a copy whose argument raises" $
       it "writes the copy of the terminator into the call it cuts by its name, never firing it" $
@@ -2022,7 +2022,7 @@ spec = do
                 ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                 []
           records <- readProtocol path
-          filter (isInfixOf "looped 𝜎3") (lines records) `shouldBe` ["                          looped 𝜎3 := Φ.times( b ↦ 𝜎2:λ, c ↦ 𝑛·6·12 )  # plausible, repeats 𝑛·6·5"]
+          filter (isInfixOf "looped 𝜎3") (lines records) `shouldBe` ["                          looped 𝜎3 ≔ Φ.times( b ↦ 𝜎2:λ, c ↦ 𝑛·6·12 )  # plausible, repeats 𝑛·6·5"]
 
     describe "--acyclic at a fork the memo fabricated" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.p, Φ.q ) ⟧"
@@ -2069,7 +2069,7 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
       it "writes the loop it cuts as a call of the object whose bindings the copy repeats exactly" $
-        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎5 := Φ.p  #"))
+        recorded >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎5 ≔ Φ.p  #"))
 
       it "dont get stuck above the fork it cuts" $
         recorded >>= (`shouldNotSatisfy` any (isInfixOf "stuck L_dataized"))
@@ -2201,7 +2201,7 @@ spec = do
           records <- readProtocol path
           lines records `shouldContain` ["  <unanswered λ=\"L_weit\" by=\"dataize\">Φ.t</unanswered>"]
       forM_
-        [ ("textXXXXXX.txt", "      𝛿·1·1 := 01-02-..(8b)..-0B-0C")
+        [ ("textXXXXXX.txt", "      𝛿·1·1 ≔ 01-02-..(8b)..-0B-0C")
         , ("XMLXXXXXX.xml", "      <dataized meta=\"𝛿·1·1\">01-02-..(8b)..-0B-0C</dataized>")
         ]
         ( \(template, line) ->
@@ -2215,7 +2215,7 @@ spec = do
                 lines records `shouldContain` [line]
         )
       forM_
-        [ ("textXXXXXX.txt", "      𝛿·1·1 := 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46")
+        [ ("textXXXXXX.txt", "      𝛿·1·1 ≔ 30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46")
         , ("XMLXXXXXX.xml", "      <dataized meta=\"𝛿·1·1\">30-31-32-33-34-35-36-37-38-39-41-42-43-44-45-46</dataized>")
         ]
         ( \(template, line) ->
@@ -2271,7 +2271,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
           records <- readProtocol path
-          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
+          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 ≔ 01-\n"
 
       it "adds the time, the depth, the firings and the memory to every line under --profile" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -2397,58 +2397,58 @@ spec = do
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
-                       , "  boxed 𝑛·0·1 := Φ.φ"
-                       , "  normalized 𝑛·0·2 := 5.0.plus( 6.0 )  # Φ.φ"
+                       , "  boxed 𝑛·0·1 ≔ Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0 )  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
-                       , "    normalized 𝑛·0·3 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
-                       , "    𝑛·0·4 := 5.0"
-                       , "    𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "    normalized 𝑛·0·6 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
-                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 6.0 )"
-                       , "    𝑛·0·8 := ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
-                       , "    morphed 𝑛·0·9 := 𝑛·0·8"
+                       , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
+                       , "    𝑛·0·4 ≔ 5.0"
+                       , "    𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "    normalized 𝑛·0·6 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
+                       , "    𝑛·0·7 ≔ 𝑛·0·4.plus( x ↦ 6.0 )"
+                       , "    𝑛·0·8 ≔ ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
+                       , "    morphed 𝑛·0·9 ≔ 𝑛·0·8"
                        , "  𝔼(L_number_plus):  # 𝔻(𝑛·0·1)"
                        , "    𝔻(ξ.ρ):"
                        , "      𝕄(ξ.ρ):"
-                       , "        𝑛·1·1 := 5.0"
-                       , "        𝑛·1·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "        morphed 𝑛·1·3 := 𝑛·1·2"
-                       , "      boxed 𝑛·1·4 := 𝑛·1·3.φ"
-                       , "      normalized 𝑛·1·5 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
+                       , "        𝑛·1·1 ≔ 5.0"
+                       , "        𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "        morphed 𝑛·1·3 ≔ 𝑛·1·2"
+                       , "      boxed 𝑛·1·4 ≔ 𝑛·1·3.φ"
+                       , "      normalized 𝑛·1·5 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
                        , "      𝕄(𝑛·1·4):"
-                       , "        normalized 𝑛·1·6 := ∅:φ  # Φ.bytes"
-                       , "        𝑛·1·7 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "        𝑛·1·8 := 40-14-00-00-00-00-00-00:Δ:φ"
-                       , "        morphed 𝑛·1·9 := 𝑛·1·8"
-                       , "      boxed 𝑛·1·10 := 𝑛·1·9.φ"
-                       , "      normalized 𝑛·1·11 := 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
-                       , "      𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
+                       , "        normalized 𝑛·1·6 ≔ ∅:φ  # Φ.bytes"
+                       , "        𝑛·1·7 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "        𝑛·1·8 ≔ 40-14-00-00-00-00-00-00:Δ:φ"
+                       , "        morphed 𝑛·1·9 ≔ 𝑛·1·8"
+                       , "      boxed 𝑛·1·10 ≔ 𝑛·1·9.φ"
+                       , "      normalized 𝑛·1·11 ≔ 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
+                       , "      𝛿·1·1 ≔ 40-14-00-00-00-00-00-00  # 5.0"
+                       , "    𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "    𝔻(ξ.x):"
                        , "      𝕄(ξ.x):"
-                       , "        𝑛·1·12 := 6.0"
-                       , "        𝑛·1·13 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "        morphed 𝑛·1·14 := 𝑛·1·13"
-                       , "      boxed 𝑛·1·15 := 𝑛·1·14.φ"
-                       , "      normalized 𝑛·1·16 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
+                       , "        𝑛·1·12 ≔ 6.0"
+                       , "        𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "        morphed 𝑛·1·14 ≔ 𝑛·1·13"
+                       , "      boxed 𝑛·1·15 ≔ 𝑛·1·14.φ"
+                       , "      normalized 𝑛·1·16 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
                        , "      𝕄(𝑛·1·15):"
-                       , "        𝑛·1·17 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "        𝑛·1·18 := 40-18-00-00-00-00-00-00:Δ:φ"
-                       , "        morphed 𝑛·1·19 := 𝑛·1·18"
-                       , "      boxed 𝑛·1·20 := 𝑛·1·19.φ"
-                       , "      normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
-                       , "      𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "    𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
+                       , "        𝑛·1·17 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "        𝑛·1·18 ≔ 40-18-00-00-00-00-00-00:Δ:φ"
+                       , "        morphed 𝑛·1·19 ≔ 𝑛·1·18"
+                       , "      boxed 𝑛·1·20 ≔ 𝑛·1·19.φ"
+                       , "      normalized 𝑛·1·21 ≔ 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
+                       , "      𝛿·1·2 ≔ 40-18-00-00-00-00-00-00  # 6.0"
+                       , "    𝛿2·1 ≔ 𝛿·1·2  # 𝔻(ξ.x)"
+                       , "    𝑛·1·22 ≔ Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "    𝕄(𝑛·1·22):"
-                       , "      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
-                       , "      morphed 𝑛·1·25 := 𝑛·1·24"
-                       , "    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
-                       , "  boxed 𝑛·0·10 := 𝑛·1·27.φ"
-                       , "  normalized 𝑛·0·11 := 𝜎1:λ  # 𝑛·0·10"
-                       , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
+                       , "      𝑛·1·23 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                       , "      𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
+                       , "      morphed 𝑛·1·25 ≔ 𝑛·1·24"
+                       , "    𝑛·1·26 ≔ 𝑛·1·25  # 𝕄(𝑛·1·22)"
+                       , "    evaluated 𝑛·1·27 ≔ 𝑛·1·26  # 𝑛·0·8"
+                       , "  boxed 𝑛·0·10 ≔ 𝑛·1·27.φ"
+                       , "  normalized 𝑛·0·11 ≔ 𝜎1:λ  # 𝑛·0·10"
+                       , "  𝛿·0·1 ≔ 𝔻(𝜎1:λ)"
                        ]
 
       it "writes what every morphing a dataization ran came to" $
@@ -2462,29 +2462,29 @@ spec = do
             `shouldBe` [ "𝔻(Φ.e):"
                        , "  𝕄(Φ.e):"
                        , "    remembered 𝑛·0·1 ≡ Φ.foo  # Φ.make:φ"
-                       , "    morphed 𝑛·0·2 := 𝑛·0·1"
-                       , "  boxed 𝑛·0·3 := 𝑛·0·2.φ"
-                       , "  normalized 𝑛·0·4 := Φ.make  # 𝑛·0·3"
+                       , "    morphed 𝑛·0·2 ≔ 𝑛·0·1"
+                       , "  boxed 𝑛·0·3 ≔ 𝑛·0·2.φ"
+                       , "  normalized 𝑛·0·4 ≔ Φ.make  # 𝑛·0·3"
                        , "  𝕄(𝑛·0·3):"
                        , "    remembered 𝑛·0·5 ≡ Φ.make  # L_make:λ"
-                       , "    morphed 𝑛·0·6 := 𝑛·0·5"
+                       , "    morphed 𝑛·0·6 ≔ 𝑛·0·5"
                        , "  𝔼(L_make):  # 𝔻(𝑛·0·3)"
-                       , "    𝑛·1·1 := Φ.bytes( φ ↦ 𝜎1:λ ):φ  # 𝑛 of L_make"
+                       , "    𝑛·1·1 ≔ Φ.bytes( φ ↦ 𝜎1:λ ):φ  # 𝑛 of L_make"
                        , "    𝕄(𝑛·1·1):"
-                       , "      morphed 𝑛·1·2 := Φ.bytes( φ ↦ 𝜎1:λ ):φ"
-                       , "    𝑛·1·3 := 𝑛·1·2  # 𝕄(𝑛·1·1)"
+                       , "      morphed 𝑛·1·2 ≔ Φ.bytes( φ ↦ 𝜎1:λ ):φ"
+                       , "    𝑛·1·3 ≔ 𝑛·1·2  # 𝕄(𝑛·1·1)"
                        , "    remembered 𝑛·1·3 ≡ 𝑛·0·5"
-                       , "    evaluated 𝑛·1·4 := 𝑛·1·3  # 𝑛·0·5"
-                       , "  boxed 𝑛·0·7 := 𝑛·1·4.φ"
-                       , "  normalized 𝑛·0·8 := Φ.bytes( φ ↦ 𝜎1:λ )  # 𝑛·0·7"
+                       , "    evaluated 𝑛·1·4 ≔ 𝑛·1·3  # 𝑛·0·5"
+                       , "  boxed 𝑛·0·7 ≔ 𝑛·1·4.φ"
+                       , "  normalized 𝑛·0·8 ≔ Φ.bytes( φ ↦ 𝜎1:λ )  # 𝑛·0·7"
                        , "  𝕄(𝑛·0·7):"
-                       , "    normalized 𝑛·0·9 := ∅:φ  # Φ.bytes"
-                       , "    𝑛·0·10 := Φ.bytes( φ ↦ 𝜎1:λ )"
-                       , "    𝑛·0·11 := 𝜎1:λ:φ"
-                       , "    morphed 𝑛·0·12 := 𝑛·0·11"
-                       , "  boxed 𝑛·0·13 := 𝑛·0·12.φ"
-                       , "  normalized 𝑛·0·14 := 𝜎1:λ  # 𝑛·0·13"
-                       , "  𝛿·0·1 := 𝔻(𝜎1:λ)"
+                       , "    normalized 𝑛·0·9 ≔ ∅:φ  # Φ.bytes"
+                       , "    𝑛·0·10 ≔ Φ.bytes( φ ↦ 𝜎1:λ )"
+                       , "    𝑛·0·11 ≔ 𝜎1:λ:φ"
+                       , "    morphed 𝑛·0·12 ≔ 𝑛·0·11"
+                       , "  boxed 𝑛·0·13 ≔ 𝑛·0·12.φ"
+                       , "  normalized 𝑛·0·14 ≔ 𝜎1:λ  # 𝑛·0·13"
+                       , "  𝛿·0·1 ≔ 𝔻(𝜎1:λ)"
                        ]
 
       it "numbers the firings of one entry apart and names the symbol between them" $
@@ -2495,93 +2495,93 @@ spec = do
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
-                       , "  boxed 𝑛·0·1 := Φ.φ"
-                       , "  normalized 𝑛·0·2 := 5.0.plus( 6.0 ).plus( 7.0 )  # Φ.φ"
+                       , "  boxed 𝑛·0·1 ≔ Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0 ).plus( 7.0 )  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
-                       , "    normalized 𝑛·0·3 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
-                       , "    𝑛·0·4 := 5.0"
-                       , "    𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "    normalized 𝑛·0·6 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
-                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 6.0 )"
-                       , "    𝑛·0·8 := ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
+                       , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
+                       , "    𝑛·0·4 ≔ 5.0"
+                       , "    𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "    normalized 𝑛·0·6 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
+                       , "    𝑛·0·7 ≔ 𝑛·0·4.plus( x ↦ 6.0 )"
+                       , "    𝑛·0·8 ≔ ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(ξ.ρ):"
                        , "        𝕄(ξ.ρ):"
-                       , "          𝑛·1·1 := 5.0"
-                       , "          𝑛·1·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "          morphed 𝑛·1·3 := 𝑛·1·2"
-                       , "        boxed 𝑛·1·4 := 𝑛·1·3.φ"
-                       , "        normalized 𝑛·1·5 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
+                       , "          𝑛·1·1 ≔ 5.0"
+                       , "          𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "          morphed 𝑛·1·3 ≔ 𝑛·1·2"
+                       , "        boxed 𝑛·1·4 ≔ 𝑛·1·3.φ"
+                       , "        normalized 𝑛·1·5 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
                        , "        𝕄(𝑛·1·4):"
-                       , "          normalized 𝑛·1·6 := ∅:φ  # Φ.bytes"
-                       , "          𝑛·1·7 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "          𝑛·1·8 := 40-14-00-00-00-00-00-00:Δ:φ"
-                       , "          morphed 𝑛·1·9 := 𝑛·1·8"
-                       , "        boxed 𝑛·1·10 := 𝑛·1·9.φ"
-                       , "        normalized 𝑛·1·11 := 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
-                       , "        𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
+                       , "          normalized 𝑛·1·6 ≔ ∅:φ  # Φ.bytes"
+                       , "          𝑛·1·7 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "          𝑛·1·8 ≔ 40-14-00-00-00-00-00-00:Δ:φ"
+                       , "          morphed 𝑛·1·9 ≔ 𝑛·1·8"
+                       , "        boxed 𝑛·1·10 ≔ 𝑛·1·9.φ"
+                       , "        normalized 𝑛·1·11 ≔ 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
+                       , "        𝛿·1·1 ≔ 40-14-00-00-00-00-00-00  # 5.0"
+                       , "      𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "      𝔻(ξ.x):"
                        , "        𝕄(ξ.x):"
-                       , "          𝑛·1·12 := 6.0"
-                       , "          𝑛·1·13 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "          morphed 𝑛·1·14 := 𝑛·1·13"
-                       , "        boxed 𝑛·1·15 := 𝑛·1·14.φ"
-                       , "        normalized 𝑛·1·16 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
+                       , "          𝑛·1·12 ≔ 6.0"
+                       , "          𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "          morphed 𝑛·1·14 ≔ 𝑛·1·13"
+                       , "        boxed 𝑛·1·15 ≔ 𝑛·1·14.φ"
+                       , "        normalized 𝑛·1·16 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
                        , "        𝕄(𝑛·1·15):"
-                       , "          𝑛·1·17 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "          𝑛·1·18 := 40-18-00-00-00-00-00-00:Δ:φ"
-                       , "          morphed 𝑛·1·19 := 𝑛·1·18"
-                       , "        boxed 𝑛·1·20 := 𝑛·1·19.φ"
-                       , "        normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
-                       , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
+                       , "          𝑛·1·17 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "          𝑛·1·18 ≔ 40-18-00-00-00-00-00-00:Δ:φ"
+                       , "          morphed 𝑛·1·19 ≔ 𝑛·1·18"
+                       , "        boxed 𝑛·1·20 ≔ 𝑛·1·19.φ"
+                       , "        normalized 𝑛·1·21 ≔ 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
+                       , "        𝛿·1·2 ≔ 40-18-00-00-00-00-00-00  # 6.0"
+                       , "      𝛿2·1 ≔ 𝛿·1·2  # 𝔻(ξ.x)"
+                       , "      𝑛·1·22 ≔ Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "      𝕄(𝑛·1·22):"
-                       , "        𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
-                       , "        morphed 𝑛·1·25 := 𝑛·1·24"
-                       , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
-                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·27.plus"
-                       , "    𝑛·0·10 := 𝑛·1·23.plus( x ↦ 7.0 )"
-                       , "    𝑛·0·11 := ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
-                       , "    morphed 𝑛·0·12 := 𝑛·0·11"
+                       , "        𝑛·1·23 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                       , "        𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
+                       , "        morphed 𝑛·1·25 ≔ 𝑛·1·24"
+                       , "      𝑛·1·26 ≔ 𝑛·1·25  # 𝕄(𝑛·1·22)"
+                       , "      evaluated 𝑛·1·27 ≔ 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·27.plus"
+                       , "    𝑛·0·10 ≔ 𝑛·1·23.plus( x ↦ 7.0 )"
+                       , "    𝑛·0·11 ≔ ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
+                       , "    morphed 𝑛·0·12 ≔ 𝑛·0·11"
                        , "  𝔼(L_number_plus):  # 𝔻(𝑛·0·1)"
                        , "    𝔻(ξ.ρ):"
                        , "      𝕄(ξ.ρ):"
-                       , "        𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "        𝑛·2·2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
-                       , "        morphed 𝑛·2·3 := 𝑛·1·26"
-                       , "      boxed 𝑛·2·4 := 𝑛·2·3.φ"
-                       , "      normalized 𝑛·2·5 := 𝜎1:λ  # 𝑛·2·4"
-                       , "      𝛿·2·1 := 𝔻(𝜎1:λ)"
-                       , "    𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.ρ)"
+                       , "        𝑛·2·1 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                       , "        𝑛·2·2 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
+                       , "        morphed 𝑛·2·3 ≔ 𝑛·1·26"
+                       , "      boxed 𝑛·2·4 ≔ 𝑛·2·3.φ"
+                       , "      normalized 𝑛·2·5 ≔ 𝜎1:λ  # 𝑛·2·4"
+                       , "      𝛿·2·1 ≔ 𝔻(𝜎1:λ)"
+                       , "    𝛿1·2 ≔ 𝛿·2·1  # 𝔻(ξ.ρ)"
                        , "    𝔻(ξ.x):"
                        , "      𝕄(ξ.x):"
-                       , "        𝑛·2·6 := 7.0"
-                       , "        𝑛·2·7 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "        morphed 𝑛·2·8 := 𝑛·2·7"
-                       , "      boxed 𝑛·2·9 := 𝑛·2·8.φ"
-                       , "      normalized 𝑛·2·10 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )  # 𝑛·2·9"
+                       , "        𝑛·2·6 ≔ 7.0"
+                       , "        𝑛·2·7 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "        morphed 𝑛·2·8 ≔ 𝑛·2·7"
+                       , "      boxed 𝑛·2·9 ≔ 𝑛·2·8.φ"
+                       , "      normalized 𝑛·2·10 ≔ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )  # 𝑛·2·9"
                        , "      𝕄(𝑛·2·9):"
-                       , "        𝑛·2·11 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
-                       , "        𝑛·2·12 := 40-1C-00-00-00-00-00-00:Δ:φ"
-                       , "        morphed 𝑛·2·13 := 𝑛·2·12"
-                       , "      boxed 𝑛·2·14 := 𝑛·2·13.φ"
-                       , "      normalized 𝑛·2·15 := 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·14"
-                       , "      𝛿·2·2 := 40-1C-00-00-00-00-00-00  # 7.0"
-                       , "    𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)"
-                       , "    𝑛·2·16 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_plus"
+                       , "        𝑛·2·11 ≔ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
+                       , "        𝑛·2·12 ≔ 40-1C-00-00-00-00-00-00:Δ:φ"
+                       , "        morphed 𝑛·2·13 ≔ 𝑛·2·12"
+                       , "      boxed 𝑛·2·14 ≔ 𝑛·2·13.φ"
+                       , "      normalized 𝑛·2·15 ≔ 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·14"
+                       , "      𝛿·2·2 ≔ 40-1C-00-00-00-00-00-00  # 7.0"
+                       , "    𝛿2·2 ≔ 𝛿·2·2  # 𝔻(ξ.x)"
+                       , "    𝑛·2·16 ≔ Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_plus"
                        , "    𝕄(𝑛·2·16):"
-                       , "      𝑛·2·17 := Φ.number( φ ↦ 𝜎2:λ )"
-                       , "      𝑛·2·18 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"
-                       , "      morphed 𝑛·2·19 := 𝑛·2·18"
-                       , "    𝑛·2·20 := 𝑛·2·19  # 𝕄(𝑛·2·16)"
-                       , "    evaluated 𝑛·2·21 := 𝑛·2·20  # 𝑛·0·11"
-                       , "  boxed 𝑛·0·13 := 𝑛·2·21.φ"
-                       , "  normalized 𝑛·0·14 := 𝜎2:λ  # 𝑛·0·13"
-                       , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
+                       , "      𝑛·2·17 ≔ Φ.number( φ ↦ 𝜎2:λ )"
+                       , "      𝑛·2·18 ≔ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"
+                       , "      morphed 𝑛·2·19 ≔ 𝑛·2·18"
+                       , "    𝑛·2·20 ≔ 𝑛·2·19  # 𝕄(𝑛·2·16)"
+                       , "    evaluated 𝑛·2·21 ≔ 𝑛·2·20  # 𝑛·0·11"
+                       , "  boxed 𝑛·0·13 ≔ 𝑛·2·21.φ"
+                       , "  normalized 𝑛·0·14 ≔ 𝜎2:λ  # 𝑛·0·13"
+                       , "  𝛿·0·1 ≔ 𝔻(𝜎2:λ)"
                        ]
 
       it "numbers the firings of different entries apart" $
@@ -2592,93 +2592,93 @@ spec = do
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
-                       , "  boxed 𝑛·0·1 := Φ.φ"
-                       , "  normalized 𝑛·0·2 := 5.0.plus( 6.0 ).times( 7.0 )  # Φ.φ"
+                       , "  boxed 𝑛·0·1 ≔ Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0 ).times( 7.0 )  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
-                       , "    normalized 𝑛·0·3 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧  # Φ.number"
-                       , "    𝑛·0·4 := 5.0"
-                       , "    𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
-                       , "    normalized 𝑛·0·6 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
-                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 6.0 )"
-                       , "    𝑛·0·8 := ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
+                       , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧  # Φ.number"
+                       , "    𝑛·0·4 ≔ 5.0"
+                       , "    𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
+                       , "    normalized 𝑛·0·6 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
+                       , "    𝑛·0·7 ≔ 𝑛·0·4.plus( x ↦ 6.0 )"
+                       , "    𝑛·0·8 ≔ ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(ξ.ρ):"
                        , "        𝕄(ξ.ρ):"
-                       , "          𝑛·1·1 := 5.0"
-                       , "          𝑛·1·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
-                       , "          morphed 𝑛·1·3 := 𝑛·1·2"
-                       , "        boxed 𝑛·1·4 := 𝑛·1·3.φ"
-                       , "        normalized 𝑛·1·5 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
+                       , "          𝑛·1·1 ≔ 5.0"
+                       , "          𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
+                       , "          morphed 𝑛·1·3 ≔ 𝑛·1·2"
+                       , "        boxed 𝑛·1·4 ≔ 𝑛·1·3.φ"
+                       , "        normalized 𝑛·1·5 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
                        , "        𝕄(𝑛·1·4):"
-                       , "          normalized 𝑛·1·6 := ∅:φ  # Φ.bytes"
-                       , "          𝑛·1·7 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "          𝑛·1·8 := 40-14-00-00-00-00-00-00:Δ:φ"
-                       , "          morphed 𝑛·1·9 := 𝑛·1·8"
-                       , "        boxed 𝑛·1·10 := 𝑛·1·9.φ"
-                       , "        normalized 𝑛·1·11 := 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
-                       , "        𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
+                       , "          normalized 𝑛·1·6 ≔ ∅:φ  # Φ.bytes"
+                       , "          𝑛·1·7 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "          𝑛·1·8 ≔ 40-14-00-00-00-00-00-00:Δ:φ"
+                       , "          morphed 𝑛·1·9 ≔ 𝑛·1·8"
+                       , "        boxed 𝑛·1·10 ≔ 𝑛·1·9.φ"
+                       , "        normalized 𝑛·1·11 ≔ 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
+                       , "        𝛿·1·1 ≔ 40-14-00-00-00-00-00-00  # 5.0"
+                       , "      𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "      𝔻(ξ.x):"
                        , "        𝕄(ξ.x):"
-                       , "          𝑛·1·12 := 6.0"
-                       , "          𝑛·1·13 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
-                       , "          morphed 𝑛·1·14 := 𝑛·1·13"
-                       , "        boxed 𝑛·1·15 := 𝑛·1·14.φ"
-                       , "        normalized 𝑛·1·16 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
+                       , "          𝑛·1·12 ≔ 6.0"
+                       , "          𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
+                       , "          morphed 𝑛·1·14 ≔ 𝑛·1·13"
+                       , "        boxed 𝑛·1·15 ≔ 𝑛·1·14.φ"
+                       , "        normalized 𝑛·1·16 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
                        , "        𝕄(𝑛·1·15):"
-                       , "          𝑛·1·17 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "          𝑛·1·18 := 40-18-00-00-00-00-00-00:Δ:φ"
-                       , "          morphed 𝑛·1·19 := 𝑛·1·18"
-                       , "        boxed 𝑛·1·20 := 𝑛·1·19.φ"
-                       , "        normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
-                       , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
+                       , "          𝑛·1·17 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "          𝑛·1·18 ≔ 40-18-00-00-00-00-00-00:Δ:φ"
+                       , "          morphed 𝑛·1·19 ≔ 𝑛·1·18"
+                       , "        boxed 𝑛·1·20 ≔ 𝑛·1·19.φ"
+                       , "        normalized 𝑛·1·21 ≔ 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
+                       , "        𝛿·1·2 ≔ 40-18-00-00-00-00-00-00  # 6.0"
+                       , "      𝛿2·1 ≔ 𝛿·1·2  # 𝔻(ξ.x)"
+                       , "      𝑛·1·22 ≔ Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "      𝕄(𝑛·1·22):"
-                       , "        𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
-                       , "        morphed 𝑛·1·25 := 𝑛·1·24"
-                       , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
-                       , "    normalized 𝑛·0·9 := ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·1·27.times"
-                       , "    𝑛·0·10 := 𝑛·1·23.times( x ↦ 7.0 )"
-                       , "    𝑛·0·11 := ⟦ x ↦ 7.0, λ ⤍ L_number_times ⟧"
-                       , "    morphed 𝑛·0·12 := 𝑛·0·11"
+                       , "        𝑛·1·23 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                       , "        𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
+                       , "        morphed 𝑛·1·25 ≔ 𝑛·1·24"
+                       , "      𝑛·1·26 ≔ 𝑛·1·25  # 𝕄(𝑛·1·22)"
+                       , "      evaluated 𝑛·1·27 ≔ 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·1·27.times"
+                       , "    𝑛·0·10 ≔ 𝑛·1·23.times( x ↦ 7.0 )"
+                       , "    𝑛·0·11 ≔ ⟦ x ↦ 7.0, λ ⤍ L_number_times ⟧"
+                       , "    morphed 𝑛·0·12 ≔ 𝑛·0·11"
                        , "  𝔼(L_number_times):  # 𝔻(𝑛·0·1)"
                        , "    𝔻(ξ.ρ):"
                        , "      𝕄(ξ.ρ):"
-                       , "        𝑛·2·1 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "        𝑛·2·2 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
-                       , "        morphed 𝑛·2·3 := 𝑛·1·26"
-                       , "      boxed 𝑛·2·4 := 𝑛·2·3.φ"
-                       , "      normalized 𝑛·2·5 := 𝜎1:λ  # 𝑛·2·4"
-                       , "      𝛿·2·1 := 𝔻(𝜎1:λ)"
-                       , "    𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.ρ)"
+                       , "        𝑛·2·1 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                       , "        𝑛·2·2 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
+                       , "        morphed 𝑛·2·3 ≔ 𝑛·1·26"
+                       , "      boxed 𝑛·2·4 ≔ 𝑛·2·3.φ"
+                       , "      normalized 𝑛·2·5 ≔ 𝜎1:λ  # 𝑛·2·4"
+                       , "      𝛿·2·1 ≔ 𝔻(𝜎1:λ)"
+                       , "    𝛿1·2 ≔ 𝛿·2·1  # 𝔻(ξ.ρ)"
                        , "    𝔻(ξ.x):"
                        , "      𝕄(ξ.x):"
-                       , "        𝑛·2·6 := 7.0"
-                       , "        𝑛·2·7 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
-                       , "        morphed 𝑛·2·8 := 𝑛·2·7"
-                       , "      boxed 𝑛·2·9 := 𝑛·2·8.φ"
-                       , "      normalized 𝑛·2·10 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )  # 𝑛·2·9"
+                       , "        𝑛·2·6 ≔ 7.0"
+                       , "        𝑛·2·7 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
+                       , "        morphed 𝑛·2·8 ≔ 𝑛·2·7"
+                       , "      boxed 𝑛·2·9 ≔ 𝑛·2·8.φ"
+                       , "      normalized 𝑛·2·10 ≔ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )  # 𝑛·2·9"
                        , "      𝕄(𝑛·2·9):"
-                       , "        𝑛·2·11 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
-                       , "        𝑛·2·12 := 40-1C-00-00-00-00-00-00:Δ:φ"
-                       , "        morphed 𝑛·2·13 := 𝑛·2·12"
-                       , "      boxed 𝑛·2·14 := 𝑛·2·13.φ"
-                       , "      normalized 𝑛·2·15 := 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·14"
-                       , "      𝛿·2·2 := 40-1C-00-00-00-00-00-00  # 7.0"
-                       , "    𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)"
-                       , "    𝑛·2·16 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_times"
+                       , "        𝑛·2·11 ≔ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
+                       , "        𝑛·2·12 ≔ 40-1C-00-00-00-00-00-00:Δ:φ"
+                       , "        morphed 𝑛·2·13 ≔ 𝑛·2·12"
+                       , "      boxed 𝑛·2·14 ≔ 𝑛·2·13.φ"
+                       , "      normalized 𝑛·2·15 ≔ 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·14"
+                       , "      𝛿·2·2 ≔ 40-1C-00-00-00-00-00-00  # 7.0"
+                       , "    𝛿2·2 ≔ 𝛿·2·2  # 𝔻(ξ.x)"
+                       , "    𝑛·2·16 ≔ Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_times"
                        , "    𝕄(𝑛·2·16):"
-                       , "      𝑛·2·17 := Φ.number( φ ↦ 𝜎2:λ )"
-                       , "      𝑛·2·18 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
-                       , "      morphed 𝑛·2·19 := 𝑛·2·18"
-                       , "    𝑛·2·20 := 𝑛·2·19  # 𝕄(𝑛·2·16)"
-                       , "    evaluated 𝑛·2·21 := 𝑛·2·20  # 𝑛·0·11"
-                       , "  boxed 𝑛·0·13 := 𝑛·2·21.φ"
-                       , "  normalized 𝑛·0·14 := 𝜎2:λ  # 𝑛·0·13"
-                       , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
+                       , "      𝑛·2·17 ≔ Φ.number( φ ↦ 𝜎2:λ )"
+                       , "      𝑛·2·18 ≔ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧"
+                       , "      morphed 𝑛·2·19 ≔ 𝑛·2·18"
+                       , "    𝑛·2·20 ≔ 𝑛·2·19  # 𝕄(𝑛·2·16)"
+                       , "    evaluated 𝑛·2·21 ≔ 𝑛·2·20  # 𝑛·0·11"
+                       , "  boxed 𝑛·0·13 ≔ 𝑛·2·21.φ"
+                       , "  normalized 𝑛·0·14 ≔ 𝜎2:λ  # 𝑛·0·13"
+                       , "  𝛿·0·1 ≔ 𝔻(𝜎2:λ)"
                        ]
 
       it "nests the firing an operand of another firing brought down" $
@@ -2689,94 +2689,94 @@ spec = do
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
-                       , "  boxed 𝑛·0·1 := Φ.φ"
-                       , "  normalized 𝑛·0·2 := 5.0.plus( 6.0.plus( 7.0 ) )  # Φ.φ"
+                       , "  boxed 𝑛·0·1 ≔ Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0.plus( 7.0 ) )  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
-                       , "    normalized 𝑛·0·3 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
-                       , "    𝑛·0·4 := 5.0"
-                       , "    𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "    normalized 𝑛·0·6 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
-                       , "    shared 𝑛·1 := 6.0.plus( 7.0 )"
-                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 𝑛·1 )"
-                       , "    𝑛·0·8 := ⟦ x ↦ 𝑛·1, λ ⤍ L_number_plus ⟧"
-                       , "    morphed 𝑛·0·9 := 𝑛·0·8"
+                       , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
+                       , "    𝑛·0·4 ≔ 5.0"
+                       , "    𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "    normalized 𝑛·0·6 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
+                       , "    shared 𝑛·1 ≔ 6.0.plus( 7.0 )"
+                       , "    𝑛·0·7 ≔ 𝑛·0·4.plus( x ↦ 𝑛·1 )"
+                       , "    𝑛·0·8 ≔ ⟦ x ↦ 𝑛·1, λ ⤍ L_number_plus ⟧"
+                       , "    morphed 𝑛·0·9 ≔ 𝑛·0·8"
                        , "  𝔼(L_number_plus):  # 𝔻(𝑛·0·1)"
                        , "    𝔻(ξ.ρ):"
                        , "      𝕄(ξ.ρ):"
-                       , "        𝑛·1·1 := 5.0"
-                       , "        𝑛·1·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "        morphed 𝑛·1·3 := 𝑛·1·2"
-                       , "      boxed 𝑛·1·4 := 𝑛·1·3.φ"
-                       , "      normalized 𝑛·1·5 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
+                       , "        𝑛·1·1 ≔ 5.0"
+                       , "        𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "        morphed 𝑛·1·3 ≔ 𝑛·1·2"
+                       , "      boxed 𝑛·1·4 ≔ 𝑛·1·3.φ"
+                       , "      normalized 𝑛·1·5 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
                        , "      𝕄(𝑛·1·4):"
-                       , "        normalized 𝑛·1·6 := ∅:φ  # Φ.bytes"
-                       , "        𝑛·1·7 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "        𝑛·1·8 := 40-14-00-00-00-00-00-00:Δ:φ"
-                       , "        morphed 𝑛·1·9 := 𝑛·1·8"
-                       , "      boxed 𝑛·1·10 := 𝑛·1·9.φ"
-                       , "      normalized 𝑛·1·11 := 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
-                       , "      𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
+                       , "        normalized 𝑛·1·6 ≔ ∅:φ  # Φ.bytes"
+                       , "        𝑛·1·7 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "        𝑛·1·8 ≔ 40-14-00-00-00-00-00-00:Δ:φ"
+                       , "        morphed 𝑛·1·9 ≔ 𝑛·1·8"
+                       , "      boxed 𝑛·1·10 ≔ 𝑛·1·9.φ"
+                       , "      normalized 𝑛·1·11 ≔ 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
+                       , "      𝛿·1·1 ≔ 40-14-00-00-00-00-00-00  # 5.0"
+                       , "    𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "    𝔻(ξ.x):"
                        , "      𝕄(ξ.x):"
-                       , "        𝑛·1·12 := 6.0"
-                       , "        𝑛·1·13 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "        normalized 𝑛·1·14 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·13.plus"
-                       , "        𝑛·1·15 := 𝑛·1·12.plus( x ↦ 7.0 )"
-                       , "        𝑛·1·16 := ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
-                       , "        morphed 𝑛·1·17 := 𝑛·1·16"
+                       , "        𝑛·1·12 ≔ 6.0"
+                       , "        𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "        normalized 𝑛·1·14 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·13.plus"
+                       , "        𝑛·1·15 ≔ 𝑛·1·12.plus( x ↦ 7.0 )"
+                       , "        𝑛·1·16 ≔ ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
+                       , "        morphed 𝑛·1·17 ≔ 𝑛·1·16"
                        , "      𝔼(L_number_plus):"
                        , "        𝔻(ξ.ρ):"
                        , "          𝕄(ξ.ρ):"
-                       , "            𝑛·2·1 := 6.0"
-                       , "            𝑛·2·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "            morphed 𝑛·2·3 := 𝑛·2·2"
-                       , "          boxed 𝑛·2·4 := 𝑛·2·3.φ"
-                       , "          normalized 𝑛·2·5 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·2·4"
+                       , "            𝑛·2·1 ≔ 6.0"
+                       , "            𝑛·2·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "            morphed 𝑛·2·3 ≔ 𝑛·2·2"
+                       , "          boxed 𝑛·2·4 ≔ 𝑛·2·3.φ"
+                       , "          normalized 𝑛·2·5 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·2·4"
                        , "          𝕄(𝑛·2·4):"
-                       , "            𝑛·2·6 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "            𝑛·2·7 := 40-18-00-00-00-00-00-00:Δ:φ"
-                       , "            morphed 𝑛·2·8 := 𝑛·2·7"
-                       , "          boxed 𝑛·2·9 := 𝑛·2·8.φ"
-                       , "          normalized 𝑛·2·10 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·2·9"
-                       , "          𝛿·2·1 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "        𝛿1·2 := 𝛿·2·1  # 𝔻(ξ.ρ)"
+                       , "            𝑛·2·6 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "            𝑛·2·7 ≔ 40-18-00-00-00-00-00-00:Δ:φ"
+                       , "            morphed 𝑛·2·8 ≔ 𝑛·2·7"
+                       , "          boxed 𝑛·2·9 ≔ 𝑛·2·8.φ"
+                       , "          normalized 𝑛·2·10 ≔ 40-18-00-00-00-00-00-00:Δ  # 𝑛·2·9"
+                       , "          𝛿·2·1 ≔ 40-18-00-00-00-00-00-00  # 6.0"
+                       , "        𝛿1·2 ≔ 𝛿·2·1  # 𝔻(ξ.ρ)"
                        , "        𝔻(ξ.x):"
                        , "          𝕄(ξ.x):"
-                       , "            𝑛·2·11 := 7.0"
-                       , "            𝑛·2·12 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                       , "            morphed 𝑛·2·13 := 𝑛·2·12"
-                       , "          boxed 𝑛·2·14 := 𝑛·2·13.φ"
-                       , "          normalized 𝑛·2·15 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )  # 𝑛·2·14"
+                       , "            𝑛·2·11 ≔ 7.0"
+                       , "            𝑛·2·12 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                       , "            morphed 𝑛·2·13 ≔ 𝑛·2·12"
+                       , "          boxed 𝑛·2·14 ≔ 𝑛·2·13.φ"
+                       , "          normalized 𝑛·2·15 ≔ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )  # 𝑛·2·14"
                        , "          𝕄(𝑛·2·14):"
-                       , "            𝑛·2·16 := Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
-                       , "            𝑛·2·17 := 40-1C-00-00-00-00-00-00:Δ:φ"
-                       , "            morphed 𝑛·2·18 := 𝑛·2·17"
-                       , "          boxed 𝑛·2·19 := 𝑛·2·18.φ"
-                       , "          normalized 𝑛·2·20 := 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·19"
-                       , "          𝛿·2·2 := 40-1C-00-00-00-00-00-00  # 7.0"
-                       , "        𝛿2·2 := 𝛿·2·2  # 𝔻(ξ.x)"
-                       , "        𝑛·2·21 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
+                       , "            𝑛·2·16 ≔ Φ.bytes( φ ↦ 40-1C-00-00-00-00-00-00:Δ )"
+                       , "            𝑛·2·17 ≔ 40-1C-00-00-00-00-00-00:Δ:φ"
+                       , "            morphed 𝑛·2·18 ≔ 𝑛·2·17"
+                       , "          boxed 𝑛·2·19 ≔ 𝑛·2·18.φ"
+                       , "          normalized 𝑛·2·20 ≔ 40-1C-00-00-00-00-00-00:Δ  # 𝑛·2·19"
+                       , "          𝛿·2·2 ≔ 40-1C-00-00-00-00-00-00  # 7.0"
+                       , "        𝛿2·2 ≔ 𝛿·2·2  # 𝔻(ξ.x)"
+                       , "        𝑛·2·21 ≔ Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "        𝕄(𝑛·2·21):"
-                       , "          𝑛·2·22 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "          𝑛·2·23 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
-                       , "          morphed 𝑛·2·24 := 𝑛·2·23"
-                       , "        𝑛·2·25 := 𝑛·2·24  # 𝕄(𝑛·2·21)"
-                       , "        evaluated 𝑛·2·26 := 𝑛·2·25  # 𝑛·1·16"
-                       , "      boxed 𝑛·1·18 := 𝑛·2·26.φ"
-                       , "      normalized 𝑛·1·19 := 𝜎1:λ  # 𝑛·1·18"
-                       , "      𝛿·1·2 := 𝔻(𝜎1:λ)"
-                       , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "    𝑛·1·20 := Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_plus"
+                       , "          𝑛·2·22 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                       , "          𝑛·2·23 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
+                       , "          morphed 𝑛·2·24 ≔ 𝑛·2·23"
+                       , "        𝑛·2·25 ≔ 𝑛·2·24  # 𝕄(𝑛·2·21)"
+                       , "        evaluated 𝑛·2·26 ≔ 𝑛·2·25  # 𝑛·1·16"
+                       , "      boxed 𝑛·1·18 ≔ 𝑛·2·26.φ"
+                       , "      normalized 𝑛·1·19 ≔ 𝜎1:λ  # 𝑛·1·18"
+                       , "      𝛿·1·2 ≔ 𝔻(𝜎1:λ)"
+                       , "    𝛿2·1 ≔ 𝛿·1·2  # 𝔻(ξ.x)"
+                       , "    𝑛·1·20 ≔ Φ.number( φ ↦ 𝜎2:λ )  # 𝑛 of L_number_plus"
                        , "    𝕄(𝑛·1·20):"
-                       , "      𝑛·1·21 := Φ.number( φ ↦ 𝜎2:λ )"
-                       , "      𝑛·1·22 := ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"
-                       , "      morphed 𝑛·1·23 := 𝑛·1·22"
-                       , "    𝑛·1·24 := 𝑛·1·23  # 𝕄(𝑛·1·20)"
-                       , "    evaluated 𝑛·1·25 := 𝑛·1·24  # 𝑛·0·8"
-                       , "  boxed 𝑛·0·10 := 𝑛·1·25.φ"
-                       , "  normalized 𝑛·0·11 := 𝜎2:λ  # 𝑛·0·10"
-                       , "  𝛿·0·1 := 𝔻(𝜎2:λ)"
+                       , "      𝑛·1·21 ≔ Φ.number( φ ↦ 𝜎2:λ )"
+                       , "      𝑛·1·22 ≔ ⟦ φ ↦ 𝜎2:λ, plus(x) ↦ L_number_plus:λ ⟧"
+                       , "      morphed 𝑛·1·23 ≔ 𝑛·1·22"
+                       , "    𝑛·1·24 ≔ 𝑛·1·23  # 𝕄(𝑛·1·20)"
+                       , "    evaluated 𝑛·1·25 ≔ 𝑛·1·24  # 𝑛·0·8"
+                       , "  boxed 𝑛·0·10 ≔ 𝑛·1·25.φ"
+                       , "  normalized 𝑛·0·11 ≔ 𝜎2:λ  # 𝑛·0·10"
+                       , "  𝛿·0·1 ≔ 𝔻(𝜎2:λ)"
                        ]
 
       it "writes a stuck firing to the XML protocol" $
@@ -2853,56 +2853,56 @@ spec = do
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
-                       , "  boxed 𝑛·0·1 := Φ.φ"
-                       , "  normalized 𝑛·0·2 := 5.0.plus( 6.0 ).nope  # Φ.φ"
+                       , "  boxed 𝑛·0·1 ≔ Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0 ).nope  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
-                       , "    normalized 𝑛·0·3 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # Φ.number"
-                       , "    𝑛·0·4 := 5.0"
-                       , "    𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
-                       , "    normalized 𝑛·0·6 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
-                       , "    𝑛·0·7 := 𝑛·0·4.plus( x ↦ 6.0 )"
-                       , "    𝑛·0·8 := ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
+                       , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # Φ.number"
+                       , "    𝑛·0·4 ≔ 5.0"
+                       , "    𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
+                       , "    normalized 𝑛·0·6 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
+                       , "    𝑛·0·7 ≔ 𝑛·0·4.plus( x ↦ 6.0 )"
+                       , "    𝑛·0·8 ≔ ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
                        , "    𝔼(L_number_plus):"
                        , "      𝔻(ξ.ρ):"
                        , "        𝕄(ξ.ρ):"
-                       , "          𝑛·1·1 := 5.0"
-                       , "          𝑛·1·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
-                       , "          morphed 𝑛·1·3 := 𝑛·1·2"
-                       , "        boxed 𝑛·1·4 := 𝑛·1·3.φ"
-                       , "        normalized 𝑛·1·5 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
+                       , "          𝑛·1·1 ≔ 5.0"
+                       , "          𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
+                       , "          morphed 𝑛·1·3 ≔ 𝑛·1·2"
+                       , "        boxed 𝑛·1·4 ≔ 𝑛·1·3.φ"
+                       , "        normalized 𝑛·1·5 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
                        , "        𝕄(𝑛·1·4):"
-                       , "          normalized 𝑛·1·6 := ∅:φ  # Φ.bytes"
-                       , "          𝑛·1·7 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                       , "          𝑛·1·8 := 40-14-00-00-00-00-00-00:Δ:φ"
-                       , "          morphed 𝑛·1·9 := 𝑛·1·8"
-                       , "        boxed 𝑛·1·10 := 𝑛·1·9.φ"
-                       , "        normalized 𝑛·1·11 := 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
-                       , "        𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
-                       , "      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
+                       , "          normalized 𝑛·1·6 ≔ ∅:φ  # Φ.bytes"
+                       , "          𝑛·1·7 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                       , "          𝑛·1·8 ≔ 40-14-00-00-00-00-00-00:Δ:φ"
+                       , "          morphed 𝑛·1·9 ≔ 𝑛·1·8"
+                       , "        boxed 𝑛·1·10 ≔ 𝑛·1·9.φ"
+                       , "        normalized 𝑛·1·11 ≔ 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
+                       , "        𝛿·1·1 ≔ 40-14-00-00-00-00-00-00  # 5.0"
+                       , "      𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "      𝔻(ξ.x):"
                        , "        𝕄(ξ.x):"
-                       , "          𝑛·1·12 := 6.0"
-                       , "          𝑛·1·13 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
-                       , "          morphed 𝑛·1·14 := 𝑛·1·13"
-                       , "        boxed 𝑛·1·15 := 𝑛·1·14.φ"
-                       , "        normalized 𝑛·1·16 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
+                       , "          𝑛·1·12 ≔ 6.0"
+                       , "          𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
+                       , "          morphed 𝑛·1·14 ≔ 𝑛·1·13"
+                       , "        boxed 𝑛·1·15 ≔ 𝑛·1·14.φ"
+                       , "        normalized 𝑛·1·16 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
                        , "        𝕄(𝑛·1·15):"
-                       , "          𝑛·1·17 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                       , "          𝑛·1·18 := 40-18-00-00-00-00-00-00:Δ:φ"
-                       , "          morphed 𝑛·1·19 := 𝑛·1·18"
-                       , "        boxed 𝑛·1·20 := 𝑛·1·19.φ"
-                       , "        normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
-                       , "        𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
-                       , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
+                       , "          𝑛·1·17 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                       , "          𝑛·1·18 ≔ 40-18-00-00-00-00-00-00:Δ:φ"
+                       , "          morphed 𝑛·1·19 ≔ 𝑛·1·18"
+                       , "        boxed 𝑛·1·20 ≔ 𝑛·1·19.φ"
+                       , "        normalized 𝑛·1·21 ≔ 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
+                       , "        𝛿·1·2 ≔ 40-18-00-00-00-00-00-00  # 6.0"
+                       , "      𝛿2·1 ≔ 𝛿·1·2  # 𝔻(ξ.x)"
+                       , "      𝑛·1·22 ≔ Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                        , "      𝕄(𝑛·1·22):"
-                       , "        𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
-                       , "        morphed 𝑛·1·25 := 𝑛·1·24"
-                       , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
-                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·27.nope"
-                       , "    morphed 𝑛·0·10 := L_number_nope:λ"
+                       , "        𝑛·1·23 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                       , "        𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧"
+                       , "        morphed 𝑛·1·25 ≔ 𝑛·1·24"
+                       , "      𝑛·1·26 ≔ 𝑛·1·25  # 𝕄(𝑛·1·22)"
+                       , "      evaluated 𝑛·1·27 ≔ 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 ≔ L_number_nope:λ  # 𝑛·1·27.nope"
+                       , "    morphed 𝑛·0·10 ≔ L_number_nope:λ"
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
 
@@ -2911,7 +2911,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
           records <- readProtocol path
-          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
+          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 ≔ 01-\n"
 
       it "writes the lines in 𝜑 even with --output=xmir" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -2919,7 +2919,7 @@ spec = do
           withStdin sum' $
             testCLISucceeded ["dataize", symbolic, "--minutes=" ++ path, "--output=xmir", "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          records `shouldEndWith` "    𝕄(𝑛·1·22):\n      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )\n      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧\n      morphed 𝑛·1·25 := 𝑛·1·24\n    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)\n    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8\n  boxed 𝑛·0·10 := 𝑛·1·27.φ\n  normalized 𝑛·0·11 := 𝜎1:λ  # 𝑛·0·10\n  𝛿·0·1 := 𝔻(𝜎1:λ)\n"
+          records `shouldEndWith` "    𝕄(𝑛·1·22):\n      𝑛·1·23 ≔ Φ.number( φ ↦ 𝜎1:λ )\n      𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧\n      morphed 𝑛·1·25 ≔ 𝑛·1·24\n    𝑛·1·26 ≔ 𝑛·1·25  # 𝕄(𝑛·1·22)\n    evaluated 𝑛·1·27 ≔ 𝑛·1·26  # 𝑛·0·8\n  boxed 𝑛·0·10 ≔ 𝑛·1·27.φ\n  normalized 𝑛·0·11 ≔ 𝜎1:λ  # 𝑛·0·10\n  𝛿·0·1 ≔ 𝔻(𝜎1:λ)\n"
 
       it "numbers every step in the text as the XML of the same run numbers it" $
         withTempFile "protocolXXXXXX.txt" $ \(text, one) ->
@@ -2932,7 +2932,7 @@ spec = do
               testCLISucceeded ["dataize", symbolic, "--protocol=" ++ xml, "--quiet", "--sweet", "--hide-rho"] []
             lined <- readProtocol text
             marked <- readProtocol xml
-            [meta | meta : ":=" : _ <- map (dropWhile (`elem` ["boxed", "morphed", "normalized", "fabricated", "evaluated", "shared"]) . words) (lines lined), "𝑛·" `isPrefixOf` meta]
+            [meta | meta : "≔" : _ <- map (dropWhile (`elem` ["boxed", "morphed", "normalized", "fabricated", "evaluated", "shared"]) . words) (lines lined), "𝑛·" `isPrefixOf` meta]
               `shouldBe` [takeWhile (/= '"') (drop 6 token) | token <- words marked, "meta=\"𝑛·" `isPrefixOf` token]
 
       describe "as XML" $ do
@@ -3695,7 +3695,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--minutes=" ++ path, "--quiet"] []
           records <- readProtocol path
-          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
+          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 ≔ 01-\n"
 
       it "writes the same text beside --protocol as alone" $
         withTempFile "minutesXXXXXX.txt" $ \(alone, one) ->
@@ -3729,7 +3729,7 @@ spec = do
           withStdin "[[ D> 01- ]]" $
             testCLISucceeded ["dataize", "--minutes=" ++ path, "--abridged", "--quiet"] []
           records <- readProtocol path
-          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 := 01-\n"
+          records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 ≔ 01-\n"
 
     describe "--partial" $ do
       let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
@@ -3761,56 +3761,56 @@ spec = do
           records <- readProtocol path
           lines records
             `shouldBe` [ "𝔻(Φ):"
-                       , "  boxed 𝑛·0·1 := Φ.φ"
-                       , "  normalized 𝑛·0·2 := 2.0.times( 3.0 ).nope  # Φ.φ"
+                       , "  boxed 𝑛·0·1 ≔ Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 2.0.times( 3.0 ).nope  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
-                       , "    normalized 𝑛·0·3 := ⟦ φ ↦ ∅, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧  # Φ.number"
-                       , "    𝑛·0·4 := 2.0"
-                       , "    𝑛·0·5 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
-                       , "    normalized 𝑛·0·6 := ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·0·5.times"
-                       , "    𝑛·0·7 := 𝑛·0·4.times( x ↦ 3.0 )"
-                       , "    𝑛·0·8 := ⟦ x ↦ 3.0, λ ⤍ L_number_times ⟧"
+                       , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧  # Φ.number"
+                       , "    𝑛·0·4 ≔ 2.0"
+                       , "    𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
+                       , "    normalized 𝑛·0·6 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·0·5.times"
+                       , "    𝑛·0·7 ≔ 𝑛·0·4.times( x ↦ 3.0 )"
+                       , "    𝑛·0·8 ≔ ⟦ x ↦ 3.0, λ ⤍ L_number_times ⟧"
                        , "    𝔼(L_number_times):"
                        , "      𝔻(ξ.ρ):"
                        , "        𝕄(ξ.ρ):"
-                       , "          𝑛·1·1 := 2.0"
-                       , "          𝑛·1·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
-                       , "          morphed 𝑛·1·3 := 𝑛·1·2"
-                       , "        boxed 𝑛·1·4 := 𝑛·1·3.φ"
-                       , "        normalized 𝑛·1·5 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
+                       , "          𝑛·1·1 ≔ 2.0"
+                       , "          𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
+                       , "          morphed 𝑛·1·3 ≔ 𝑛·1·2"
+                       , "        boxed 𝑛·1·4 ≔ 𝑛·1·3.φ"
+                       , "        normalized 𝑛·1·5 ≔ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
                        , "        𝕄(𝑛·1·4):"
-                       , "          normalized 𝑛·1·6 := ∅:φ  # Φ.bytes"
-                       , "          𝑛·1·7 := Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
-                       , "          𝑛·1·8 := 40-00-00-00-00-00-00-00:Δ:φ"
-                       , "          morphed 𝑛·1·9 := 𝑛·1·8"
-                       , "        boxed 𝑛·1·10 := 𝑛·1·9.φ"
-                       , "        normalized 𝑛·1·11 := 40-00-00-00-00-00-00-00:Δ  # 𝑛·1·10"
-                       , "        𝛿·1·1 := 40-00-00-00-00-00-00-00  # 2.0"
-                       , "      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
+                       , "          normalized 𝑛·1·6 ≔ ∅:φ  # Φ.bytes"
+                       , "          𝑛·1·7 ≔ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ )"
+                       , "          𝑛·1·8 ≔ 40-00-00-00-00-00-00-00:Δ:φ"
+                       , "          morphed 𝑛·1·9 ≔ 𝑛·1·8"
+                       , "        boxed 𝑛·1·10 ≔ 𝑛·1·9.φ"
+                       , "        normalized 𝑛·1·11 ≔ 40-00-00-00-00-00-00-00:Δ  # 𝑛·1·10"
+                       , "        𝛿·1·1 ≔ 40-00-00-00-00-00-00-00  # 2.0"
+                       , "      𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.ρ)"
                        , "      𝔻(ξ.x):"
                        , "        𝕄(ξ.x):"
-                       , "          𝑛·1·12 := 3.0"
-                       , "          𝑛·1·13 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
-                       , "          morphed 𝑛·1·14 := 𝑛·1·13"
-                       , "        boxed 𝑛·1·15 := 𝑛·1·14.φ"
-                       , "        normalized 𝑛·1·16 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
+                       , "          𝑛·1·12 ≔ 3.0"
+                       , "          𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
+                       , "          morphed 𝑛·1·14 ≔ 𝑛·1·13"
+                       , "        boxed 𝑛·1·15 ≔ 𝑛·1·14.φ"
+                       , "        normalized 𝑛·1·16 ≔ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
                        , "        𝕄(𝑛·1·15):"
-                       , "          𝑛·1·17 := Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
-                       , "          𝑛·1·18 := 40-08-00-00-00-00-00-00:Δ:φ"
-                       , "          morphed 𝑛·1·19 := 𝑛·1·18"
-                       , "        boxed 𝑛·1·20 := 𝑛·1·19.φ"
-                       , "        normalized 𝑛·1·21 := 40-08-00-00-00-00-00-00:Δ  # 𝑛·1·20"
-                       , "        𝛿·1·2 := 40-08-00-00-00-00-00-00  # 3.0"
-                       , "      𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                       , "      𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_times"
+                       , "          𝑛·1·17 ≔ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ )"
+                       , "          𝑛·1·18 ≔ 40-08-00-00-00-00-00-00:Δ:φ"
+                       , "          morphed 𝑛·1·19 ≔ 𝑛·1·18"
+                       , "        boxed 𝑛·1·20 ≔ 𝑛·1·19.φ"
+                       , "        normalized 𝑛·1·21 ≔ 40-08-00-00-00-00-00-00:Δ  # 𝑛·1·20"
+                       , "        𝛿·1·2 ≔ 40-08-00-00-00-00-00-00  # 3.0"
+                       , "      𝛿2·1 ≔ 𝛿·1·2  # 𝔻(ξ.x)"
+                       , "      𝑛·1·22 ≔ Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_times"
                        , "      𝕄(𝑛·1·22):"
-                       , "        𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
-                       , "        𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
-                       , "        morphed 𝑛·1·25 := 𝑛·1·24"
-                       , "      𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                       , "      evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·8"
-                       , "    normalized 𝑛·0·9 := L_number_nope:λ  # 𝑛·1·27.nope"
-                       , "    morphed 𝑛·0·10 := L_number_nope:λ"
+                       , "        𝑛·1·23 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                       , "        𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧"
+                       , "        morphed 𝑛·1·25 ≔ 𝑛·1·24"
+                       , "      𝑛·1·26 ≔ 𝑛·1·25  # 𝕄(𝑛·1·22)"
+                       , "      evaluated 𝑛·1·27 ≔ 𝑛·1·26  # 𝑛·0·8"
+                       , "    normalized 𝑛·0·9 ≔ L_number_nope:λ  # 𝑛·1·27.nope"
+                       , "    morphed 𝑛·0·10 ≔ L_number_nope:λ"
                        , "  unanswered L_number_nope  # 𝔻(L_number_nope:λ)"
                        ]
 
@@ -3935,7 +3935,7 @@ spec = do
             withStdin "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ λ ⤍ 𝜎2 ⟧, b ↦ ⊥, λ ⤍ L_fork ⟧ ⟧" $
               testCLISucceeded ["dataize", "--symbolic=" ++ joins, "--locator=Q.y", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
           records <- readProtocol path
-          lines records `shouldContain` ["    joined 𝜎4 := 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥"]
+          lines records `shouldContain` ["    joined 𝜎4 ≔ 𝛿1·1 ? 𝜎2 : 𝜎3  # where 𝜎3 is ⊥"]
 
     describe "--inside" $ do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
@@ -3977,7 +3977,7 @@ spec = do
           withStdin universe $
             testCLISucceeded ["dataize", "--inside=[[ x -> ? ]]( x -> [[ D> 2A- ]] ).x", "--minutes=" ++ path, "--sweet", "--quiet"] []
           records <- readProtocol path
-          take 2 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝑛·0·1 := ∅:x( x ↦ 2A-:Δ )"]
+          take 2 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝑛·0·1 ≔ ∅:x( x ↦ 2A-:Δ )"]
 
       it "opens a single morph block in the text protocol it aims inside" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
@@ -3986,7 +3986,7 @@ spec = do
             testCLISucceeded ["morph", "--inside=Φ.app( x ↦ ⟦ Δ ⤍ 02- ⟧ )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           length (filter ("𝕄(Φ.a🌵0):" `isInfixOf`) (lines records)) `shouldBe` 1
-          take 2 (drop 1 (lines records)) `shouldBe` ["  remembered 𝑛·0·1 ≡ Φ.app  # ⟦ x ↦ ∅, φ ↦ x ⟧", "  𝑛·0·2 := Φ.app( x ↦ 02-:Δ )"]
+          take 2 (drop 1 (lines records)) `shouldBe` ["  remembered 𝑛·0·1 ≡ Φ.app  # ⟦ x ↦ ∅, φ ↦ x ⟧", "  𝑛·0·2 ≔ Φ.app( x ↦ 02-:Δ )"]
 
       it "opens a single dataize element in the XML protocol it aims inside" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -4002,7 +4002,7 @@ spec = do
           withStdin universe $
             testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
-          take 3 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝕄(Φ.a🌵0):", "    normalized 𝑛·0·1 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"]
+          take 3 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝕄(Φ.a🌵0):", "    normalized 𝑛·0·1 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"]
 
       it "opens a single morph element in the XML protocol it aims inside" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -4197,55 +4197,55 @@ spec = do
         records <- readProtocol path
         lines records
           `shouldBe` [ "𝕄(Φ.φ):"
-                     , "  normalized 𝑛·0·1 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
-                     , "  𝑛·0·2 := 5.0"
-                     , "  𝑛·0·3 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                     , "  normalized 𝑛·0·4 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·3.plus"
-                     , "  𝑛·0·5 := 𝑛·0·2.plus( x ↦ 6.0 )"
-                     , "  𝑛·0·6 := ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
+                     , "  normalized 𝑛·0·1 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
+                     , "  𝑛·0·2 ≔ 5.0"
+                     , "  𝑛·0·3 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                     , "  normalized 𝑛·0·4 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·3.plus"
+                     , "  𝑛·0·5 ≔ 𝑛·0·2.plus( x ↦ 6.0 )"
+                     , "  𝑛·0·6 ≔ ⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"
                      , "  𝔼(L_number_plus):"
                      , "    𝔻(ξ.ρ):"
                      , "      𝕄(ξ.ρ):"
-                     , "        𝑛·1·1 := 5.0"
-                     , "        𝑛·1·2 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                     , "        morphed 𝑛·1·3 := 𝑛·1·2"
-                     , "      boxed 𝑛·1·4 := 𝑛·1·3.φ"
-                     , "      normalized 𝑛·1·5 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
+                     , "        𝑛·1·1 ≔ 5.0"
+                     , "        𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                     , "        morphed 𝑛·1·3 ≔ 𝑛·1·2"
+                     , "      boxed 𝑛·1·4 ≔ 𝑛·1·3.φ"
+                     , "      normalized 𝑛·1·5 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )  # 𝑛·1·4"
                      , "      𝕄(𝑛·1·4):"
-                     , "        normalized 𝑛·1·6 := ∅:φ  # Φ.bytes"
-                     , "        𝑛·1·7 := Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
-                     , "        𝑛·1·8 := 40-14-00-00-00-00-00-00:Δ:φ"
-                     , "        morphed 𝑛·1·9 := 𝑛·1·8"
-                     , "      boxed 𝑛·1·10 := 𝑛·1·9.φ"
-                     , "      normalized 𝑛·1·11 := 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
-                     , "      𝛿·1·1 := 40-14-00-00-00-00-00-00  # 5.0"
-                     , "    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.ρ)"
+                     , "        normalized 𝑛·1·6 ≔ ∅:φ  # Φ.bytes"
+                     , "        𝑛·1·7 ≔ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ )"
+                     , "        𝑛·1·8 ≔ 40-14-00-00-00-00-00-00:Δ:φ"
+                     , "        morphed 𝑛·1·9 ≔ 𝑛·1·8"
+                     , "      boxed 𝑛·1·10 ≔ 𝑛·1·9.φ"
+                     , "      normalized 𝑛·1·11 ≔ 40-14-00-00-00-00-00-00:Δ  # 𝑛·1·10"
+                     , "      𝛿·1·1 ≔ 40-14-00-00-00-00-00-00  # 5.0"
+                     , "    𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.ρ)"
                      , "    𝔻(ξ.x):"
                      , "      𝕄(ξ.x):"
-                     , "        𝑛·1·12 := 6.0"
-                     , "        𝑛·1·13 := ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
-                     , "        morphed 𝑛·1·14 := 𝑛·1·13"
-                     , "      boxed 𝑛·1·15 := 𝑛·1·14.φ"
-                     , "      normalized 𝑛·1·16 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
+                     , "        𝑛·1·12 ≔ 6.0"
+                     , "        𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
+                     , "        morphed 𝑛·1·14 ≔ 𝑛·1·13"
+                     , "      boxed 𝑛·1·15 ≔ 𝑛·1·14.φ"
+                     , "      normalized 𝑛·1·16 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )  # 𝑛·1·15"
                      , "      𝕄(𝑛·1·15):"
-                     , "        𝑛·1·17 := Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
-                     , "        𝑛·1·18 := 40-18-00-00-00-00-00-00:Δ:φ"
-                     , "        morphed 𝑛·1·19 := 𝑛·1·18"
-                     , "      boxed 𝑛·1·20 := 𝑛·1·19.φ"
-                     , "      normalized 𝑛·1·21 := 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
-                     , "      𝛿·1·2 := 40-18-00-00-00-00-00-00  # 6.0"
-                     , "    𝛿2·1 := 𝛿·1·2  # 𝔻(ξ.x)"
-                     , "    𝑛·1·22 := Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
+                     , "        𝑛·1·17 ≔ Φ.bytes( φ ↦ 40-18-00-00-00-00-00-00:Δ )"
+                     , "        𝑛·1·18 ≔ 40-18-00-00-00-00-00-00:Δ:φ"
+                     , "        morphed 𝑛·1·19 ≔ 𝑛·1·18"
+                     , "      boxed 𝑛·1·20 ≔ 𝑛·1·19.φ"
+                     , "      normalized 𝑛·1·21 ≔ 40-18-00-00-00-00-00-00:Δ  # 𝑛·1·20"
+                     , "      𝛿·1·2 ≔ 40-18-00-00-00-00-00-00  # 6.0"
+                     , "    𝛿2·1 ≔ 𝛿·1·2  # 𝔻(ξ.x)"
+                     , "    𝑛·1·22 ≔ Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_plus"
                      , "    𝕄(𝑛·1·22):"
-                     , "      𝑛·1·23 := Φ.number( φ ↦ 𝜎1:λ )"
-                     , "      𝑛·1·24 := ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
-                     , "      morphed 𝑛·1·25 := 𝑛·1·24"
-                     , "    𝑛·1·26 := 𝑛·1·25  # 𝕄(𝑛·1·22)"
-                     , "    evaluated 𝑛·1·27 := 𝑛·1·26  # 𝑛·0·6"
-                     , "  normalized 𝑛·0·7 := ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·27.plus"
-                     , "  𝑛·0·8 := 𝑛·1·23.plus( x ↦ 7.0 )"
-                     , "  𝑛·0·9 := ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
-                     , "  morphed 𝑛·0·10 := 𝑛·0·9"
+                     , "      𝑛·1·23 ≔ Φ.number( φ ↦ 𝜎1:λ )"
+                     , "      𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, plus(x) ↦ L_number_plus:λ ⟧"
+                     , "      morphed 𝑛·1·25 ≔ 𝑛·1·24"
+                     , "    𝑛·1·26 ≔ 𝑛·1·25  # 𝕄(𝑛·1·22)"
+                     , "    evaluated 𝑛·1·27 ≔ 𝑛·1·26  # 𝑛·0·6"
+                     , "  normalized 𝑛·0·7 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·1·27.plus"
+                     , "  𝑛·0·8 ≔ 𝑛·1·23.plus( x ↦ 7.0 )"
+                     , "  𝑛·0·9 ≔ ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
+                     , "  morphed 𝑛·0·10 ≔ 𝑛·0·9"
                      ]
 
     it "saves morphing steps to dir with --steps-dir" $
@@ -4569,7 +4569,7 @@ spec = do
         recorded "plausible" >>= (`shouldSatisfy` ((== 3) . length . filter (isInfixOf "𝔼(L_number_plus)")))
 
       it "answers a recalled firing with the line of the first under plausible" $
-        recorded "plausible" >>= (`shouldContain` ["      𝑛·4·1 := 𝑛·2·21  # 𝑛 of L_number_plus"])
+        recorded "plausible" >>= (`shouldContain` ["      𝑛·4·1 ≔ 𝑛·2·21  # 𝑛 of L_number_plus"])
 
       it "dataizes to the same datum under plausible" $
         withStdin chained $

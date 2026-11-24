@@ -17,5 +17,5 @@ result: ⟦⟧
 protocol: |
   𝕄(Φ.φ):
     remembered 𝑛·0·1 ≡ Φ.x  # ⟦⟧:a:φ
-    normalized 𝑛·0·2 := ⟦⟧  # 𝑛·0·1.φ.a
-    morphed 𝑛·0·3 := 𝑛·0·2
+    normalized 𝑛·0·2 ≔ ⟦⟧  # 𝑛·0·1.φ.a
+    morphed 𝑛·0·3 ≔ 𝑛·0·2

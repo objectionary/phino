@@ -118,10 +118,10 @@ testRecalls pth = do
       _ -> orphans rest (applied line rest ++ facts)
     applied :: String -> [String] -> [(String, String)]
     applied line (next : _)
-      | " := " `T.isInfixOf` T.pack line && " := " `T.isInfixOf` T.pack next = [(named line, named next)]
+      | " ≔ " `T.isInfixOf` T.pack line && " ≔ " `T.isInfixOf` T.pack next = [(named line, named next)]
     applied _ _ = []
     named :: String -> String
-    named = T.unpack . fst . T.breakOn " := " . T.pack
+    named = T.unpack . fst . T.breakOn " ≔ " . T.pack
     paired :: T.Text -> T.Text -> (String, String)
     paired arrow text = let (left, right) = T.breakOn arrow text in (T.unpack left, T.unpack (T.drop (T.length arrow) right))
 

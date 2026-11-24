@@ -23,10 +23,10 @@ protocol: |
   𝕄(Φ.y):
     𝔼(L_fork):
       𝔻(ξ.c):
-        𝛿·1·1 := 𝔻(𝜎1:λ)
-      𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.c)
+        𝛿·1·1 ≔ 𝔻(𝜎1:λ)
+      𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.c)
       𝕄(ξ.a):
-        morphed 𝑛·1·1 := ⟦ φ ↦ 𝜎2:λ, k ↦ ∅ ⟧
+        morphed 𝑛·1·1 ≔ ⟦ φ ↦ 𝜎2:λ, k ↦ ∅ ⟧
       𝕄(ξ.b):
-        morphed 𝑛·1·2 := ⟦ φ ↦ 𝜎3:λ, k ↦ ⟦⟧ ⟧
+        morphed 𝑛·1·2 ≔ ⟦ φ ↦ 𝜎3:λ, k ↦ ⟦⟧ ⟧
       unripe 𝑛·1·1 vs 𝑛·1·2  # k is void on the left and attached on the right
