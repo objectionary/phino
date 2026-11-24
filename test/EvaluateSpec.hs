@@ -44,6 +44,7 @@ data SymbolPack = SymbolPack
   , input :: String
   , partial :: Maybe Bool
   , acyclic :: Maybe String
+  , loops :: Maybe Int
   , steps :: Maybe Int
   , firings :: Maybe Int
   , protocol :: String
@@ -75,6 +76,7 @@ testSymbols pth = do
             base
               { _partial = partial == Just True
               , _acyclic = mode
+              , _maxLoops = fromMaybe 0 loops
               , _memo = cells
               , _facts = Just facts
               , _steps = Steps (fromMaybe 250 steps) 0
