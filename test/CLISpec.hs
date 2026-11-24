@@ -3930,7 +3930,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin "⟦ app ↦ ⟦ x ↦ ∅, φ ↦ ξ.x ⟧ ⟧" $
-            testCLISucceeded ["morph", "--inside=Φ.app( x ↦ ⟦ Δ ⤍ 02- ⟧ )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["morph", "--inside=Φ.app( x ↦ ⟦ Δ ⤍ 02- ⟧ )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           length (filter ("𝕄(Φ.a🌵0):" `isInfixOf`) (lines records)) `shouldBe` 1
           take 2 (drop 1 (lines records)) `shouldBe` ["  remembered 𝑛·0·1 ≡ Φ.app  # ⟦ x ↦ ∅, φ ↦ x ⟧", "  𝑛·0·2 := Φ.app( x ↦ 02-:Δ )"]
@@ -3947,9 +3947,9 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin universe $
-            testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
-          take 3 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝕄(Φ.a🌵0):", "    𝑛·0·1 := 5.0"]
+          take 3 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝕄(Φ.a🌵0):", "    normalized 𝑛·0·1 := ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"]
 
       it "opens a single morph element in the XML protocol it aims inside" $
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
