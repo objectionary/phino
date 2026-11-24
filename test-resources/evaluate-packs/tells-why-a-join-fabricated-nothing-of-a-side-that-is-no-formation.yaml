@@ -38,5 +38,5 @@ protocol: |
       𝕄(ξ.a):
         morphed 𝑛·1·1 := Φ.k:φ
       𝑛1·1 := 𝑛·1·1  # 𝕄(ξ.a)
-      𝑛2·1 := Φ.k  # rewrite(𝑛1)
-      diverged 𝑛1·1 vs 𝑛2·1  # the right side is no formation
+      𝑛2·1 := Φ.k  # rewrite(𝑛1 of L_fork)
+      diverged 𝑛1·1 vs 𝑛2·1  # cannot join: the left side is 𝑛·1·1 and the right side is Φ.k; cannot fabricate: the right side is no formation

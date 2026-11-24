@@ -209,11 +209,11 @@ spec = do
       buildExpression (ExMeta "e") (substSingle "e" (MvExpression (ExFormation [BiVoid AtRho, BiVoid AtRho]))) `shouldSatisfy` isLeft
 
   describe "buildExpression" $
-    it "does not leave an invalid global application around rho" $
+    it "keeps an application of the global object as it is" $
       buildExpression
         (ExApplication ExRoot (ArTau AtRho (ExFormation [BiVoid AtRho])))
         substEmpty
-        `shouldBe` Right ExRoot
+        `shouldBe` Right (ExApplication ExRoot (ArTau AtRho (ExFormation [BiVoid AtRho])))
 
   describe "pathOf" $
     it "names the world itself as Φ" $

@@ -10,6 +10,7 @@ module EvaluateSpec (spec) where
 
 import AST
 import CLI.Helpers (started)
+import Control.Applicative ((<|>))
 import Control.Exception (SomeException)
 import Control.Monad
 import Data.Aeson (FromJSON (parseJSON), camelTo2, defaultOptions, fieldLabelModifier, genericParseJSON)
@@ -27,7 +28,7 @@ import Lambdas (readLambdas)
 import Lining (LineFormat (SINGLELINE))
 import Margin (defaultMargin)
 import Matcher (substEmpty)
-import Morph (Deadline (..), ReduceContext (..), Steps (..), emptyState, execBuildTerm, memoized, morph, tallied)
+import Morph (Deadline (..), ReduceContext (..), Steps (..), emptyState, execBuildTerm, factual, memoized, morph, tallied)
 import Parser (Form (MONOFORM), parseExpressionThrows')
 import Printer (printExpression, printExpression', printExpressionHidingRho')
 import Sugar (SugarType (SWEET))
@@ -43,6 +44,7 @@ data SymbolPack = SymbolPack
   , input :: String
   , partial :: Maybe Bool
   , acyclic :: Maybe String
+  , loops :: Maybe Int
   , steps :: Maybe Int
   , firings :: Maybe Int
   , protocol :: String
@@ -67,13 +69,16 @@ testSymbols pth = do
     (_, written) <- recorded' hidden $ \record -> do
       let mode = named <$> acyclic
       cells <- memoized mode
+      facts <- factual
       tally <- tallied firings
       base <- defaultReduceContext loc
       let ctx =
             base
               { _partial = partial == Just True
               , _acyclic = mode
+              , _maxLoops = fromMaybe 0 loops
               , _memo = cells
+              , _facts = Just facts
               , _steps = Steps (fromMaybe 250 steps) 0
               , _tally = tally
               , _symbolic = known
@@ -98,6 +103,28 @@ testSymbols pth = do
     spelled hidden term =
       (if hidden then printExpressionHidingRho' else printExpression') term (SWEET, UNICODE, SINGLELINE, defaultMargin)
 
+testRecalls :: FilePath -> Expectation
+testRecalls pth = do
+  pack <- Decode.decodeFileThrow pth
+  orphans (map (dropWhile (== ' ')) (lines (protocol (pack :: SymbolPack)))) [] `shouldBe` []
+  where
+    orphans :: [String] -> [(String, String)] -> [String]
+    orphans [] _ = []
+    orphans (line : rest) facts = case (T.stripPrefix "remembered " (T.pack line) <|> T.stripPrefix "memoized " (T.pack line) <|> T.stripPrefix "renamed " (T.pack line), T.stripPrefix "recalled " (T.pack line)) of
+      (Just fact, _) -> orphans rest ([paired arrow (fst (T.breakOn "  # " fact)) | arrow <- [" ≡ ", " ⇛ "], arrow `T.isInfixOf` fact] ++ facts)
+      (_, Just recall)
+        | paired " ⇒ " recall `elem` facts -> orphans rest facts
+        | otherwise -> line : orphans rest facts
+      _ -> orphans rest (applied line rest ++ facts)
+    applied :: String -> [String] -> [(String, String)]
+    applied line (next : _)
+      | " := " `T.isInfixOf` T.pack line && " := " `T.isInfixOf` T.pack next = [(named line, named next)]
+    applied _ _ = []
+    named :: String -> String
+    named = T.unpack . fst . T.breakOn " := " . T.pack
+    paired :: T.Text -> T.Text -> (String, String)
+    paired arrow text = let (left, right) = T.breakOn arrow text in (T.unpack left, T.unpack (T.drop (T.length arrow) right))
+
 spec :: Spec
 spec = do
   known <- runIO fixtureLambdas
@@ -106,6 +133,11 @@ spec = do
     let resources = "test-resources/evaluate-packs"
     packs <- runIO (allPathsIn resources)
     forM_ packs (\pth -> it (makeRelative resources pth) (testSymbols pth))
+
+  describe "recalls only what the protocol of a pack remembered above" $ do
+    let resources = "test-resources/evaluate-packs"
+    packs <- runIO (allPathsIn resources)
+    forM_ packs (\pth -> it (makeRelative resources pth) (testRecalls pth))
 
   describe "execBuildTerm 'evaluate'" $ do
     let univ = ExFormation []
@@ -135,7 +167,7 @@ spec = do
         let stuck = ctx{_saveEval = record}
             fire = execBuildTerm univ stuck "evaluate" [ArgExpression (ExFormation [BiLambda (FnSymbol 1)]), ArgExpression univ] substEmpty
         fire `shouldThrow` (\e -> "No entry of --symbolic answers the λ function '𝜎1'" `isInfixOf` show (e :: SomeException))
-      written `shouldBe` "  unanswered 𝜎1  # 𝕄(𝜎1:λ)\n"
+      written `shouldBe` "  opaque 𝜎1  # 𝕄(𝜎1:λ)\n"
 
     it "throws when the formation carries more than one λ binding" $
       runEvaluate [ArgExpression (ExFormation [BiLambda (Function "L_one"), BiLambda (Function "L_two")]), ArgExpression univ]
@@ -171,3 +203,19 @@ spec = do
       ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
       timeout 10000000 (morph program emptyState ctx{_deadline = Just (Deadline 37 due)})
         `shouldThrow` (\e -> "--max-seconds=37" `isInfixOf` show (e :: SomeException))
+
+  describe "fabricates a formation of two sides of different shapes" $
+    it "binds the sides by the names the run gave them, not by the sides themselves" $ do
+      let program = "⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ Φ.ty ⟧, b ↦ ⟦ φ ↦ Φ.zu ⟧, λ ⤍ L_fork ⟧.ke ⟧"
+      expr <- parseExpressionThrows' MONOFORM program
+      table <- withLambdasOf "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: $.a\n    right: $.b\n    otherwise: L_join\n" readLambdas
+      ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
+      (morphed, _, _) <- morph expr emptyState ctx
+      sides morphed `shouldSatisfy` (\found -> length found == 2 && all named' found)
+  where
+    sides :: Expression -> [Expression]
+    sides (ExFormation bds) = [side | BiTau AtRho (ExFormation fabricated) <- bds, BiTau (AtLabel label) side <- fabricated, label `elem` ["left🌵", "right🌵"]]
+    sides _ = []
+    named' :: Expression -> Bool
+    named' (ExMeta meta) = isName meta
+    named' _ = False

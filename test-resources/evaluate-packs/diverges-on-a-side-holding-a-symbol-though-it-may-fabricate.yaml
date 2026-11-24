@@ -30,4 +30,4 @@ protocol: |
         morphed 𝑛·1·1 := 𝜎2:λ
       𝕄(ξ.b):
         morphed 𝑛·1·2 := ⟦ φ ↦ Φ.zu, ke ↦ Φ.ty ⟧
-      diverged 𝜎2:λ vs 𝑛·1·2  # they differ at .λ, and the left side has λ
+      diverged 𝜎2:λ vs 𝑛·1·2  # cannot join: at .λ the left side has λ ⤍ 𝜎2 and the right side has no λ; cannot fabricate: the left side is an atom

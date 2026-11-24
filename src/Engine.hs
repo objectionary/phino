@@ -3,7 +3,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Engine (Engine (..), building, current, fresh, stepOf, yaml) where
+module Engine (Engine (..), building, cheat, current, fresh, stepOf, yaml) where
 
 import AST
 import Contextualize (contextualize)
@@ -14,7 +14,7 @@ import Data.Set (Set)
 import Deps (BuildTermFunc)
 import Functions (buildTerm, contextualizing)
 import Inference (Inference, dataizationOf, morphingOf)
-import Rewriter (every, interpreted)
+import Rewriter (cheating, every, interpreted)
 import Rule (Step, normal)
 import qualified Yaml as Y
 
@@ -34,6 +34,9 @@ yaml = Engine steps (every steps) Map.empty normal contextualize (map morphingOf
   where
     steps :: [Step]
     steps = map interpreted Y.normalizationRules
+
+cheat :: Engine -> Engine
+cheat engine = engine{_normalization = map cheating engine._normalization, _rules = Map.map cheating engine._rules}
 
 stepOf :: Engine -> Y.Rule -> Step
 stepOf engine rule = fromMaybe (interpreted rule) (Map.lookup (show rule) engine._rules)

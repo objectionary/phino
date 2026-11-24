@@ -23,11 +23,12 @@ import Lambdas (Lambdas, readLambdas)
 import Lining (LineFormat (MULTILINE, SINGLELINE))
 import Margin (defaultMargin)
 import Merge (merge)
-import Morph (Memo, ReduceContext (ReduceContext), Steps (Steps), emptyState, memoized, morph)
+import Morph (Facts, Memo, ReduceContext (ReduceContext), Steps (Steps), emptyState, factual, memoized, morph)
 import Must (Must (MtDisabled))
 import Parser (parseExpressionThrows)
 import Printer (printExpression')
 import Rewriter (RewriteContext (RewriteContext), rewrite)
+import Sides (Sides, sides)
 import Sugar (SugarType (SALTY, SWEET))
 import Tau (seedTaus)
 import Text.Printf (printf)
@@ -62,17 +63,20 @@ rewriteCtx =
     dontSaveStep
     dontSaveMade
 
-symbolicCtx :: Acyclic -> Maybe Memo -> IORef Int -> Lambdas -> Expression -> ReduceContext
-symbolicCtx acyclic memo minted lambdas locator =
+symbolicCtx :: Acyclic -> Maybe Memo -> Maybe Facts -> IORef Int -> Sides -> Lambdas -> Expression -> ReduceContext
+symbolicCtx acyclic memo facts minted named lambdas locator =
   ReduceContext
     locator
     locator
     Nothing
     25
     25
+    Nothing
+    Nothing
     (Steps 1000 0)
     Nothing
     minted
+    named
     Nothing
     memo
     1
@@ -85,7 +89,11 @@ symbolicCtx acyclic memo minted lambdas locator =
     Morphing
     []
     Map.empty
+    facts
     lambdas
+    []
+    False
+    Nothing
     (building linked)
     reduction
     evaluation
@@ -194,8 +202,10 @@ main = do
     symbolic acyclic universe lambdas locator = do
       seedTaus universe
       memo <- memoized (Just acyclic)
+      facts <- Just <$> factual
       minted <- newIORef 0
-      let ctx = symbolicCtx acyclic memo minted lambdas locator
+      named <- sides
+      let ctx = symbolicCtx acyclic memo facts minted named lambdas locator
       started universe ctx
       (answer, _, _) <- morph universe emptyState ctx
       pure (hashExpression answer)

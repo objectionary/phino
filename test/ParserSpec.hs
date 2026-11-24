@@ -103,22 +103,6 @@ spec = do
             )
         )
       ,
-        ( "!e1(x(^,@) -> [[w -> !e2]])"
-        , Just
-            ( ExApplication
-                (ExMeta "e1")
-                ( ArTau
-                    (AtLabel "x")
-                    ( ExFormation
-                        [ BiVoid AtRho
-                        , BiVoid AtPhi
-                        , BiTau (AtLabel "w") (ExMeta "e2")
-                        ]
-                    )
-                )
-            )
-        )
-      ,
         ( "[[x -> y.z, w -> ^, u -> @, p -> !t1, q -> !e1]]"
         , Just
             ( ExFormation
@@ -205,9 +189,6 @@ spec = do
     forM_
       [ "[[x -> $, y -> ?]]"
       , "[[x() -> [[]] ]]"
-      , "Q.x(y() -> [[]])"
-      , "Q.x(y(q) -> [[w -> !e]])"
-      , "Q.x(~1(^,@) -> [[]])"
       , "Q.x.^.@.!t1"
       , "[[x -> y.z]]"
       , "[[x -> ^, y -> @, z -> !t]]"
@@ -224,6 +205,10 @@ spec = do
       , "[[ !tfoo -> !e1Some, !t-BAR -> !e_123someW, !Bhi123 ]]"
       , "[[ !B ]](α𝑖 -> !e)"
       , "[[ 𝜏 -> !e, 𝐵 ]]"
+      , "Q(x -> [[]])"
+      , "$(x -> [[]])"
+      , "[[ a -> [[ x -> ∅ ]], b -> $(x -> [[ ]]) ]]"
+      , "[[ a -> Q(^ -> [[ ]]) ]]"
       ]
       (\expr -> it expr (parseExpression expr `shouldSatisfy` isRight))
 
@@ -235,8 +220,6 @@ spec = do
           [ "Q.x()"
           , "[[x(^, @, y) -> [[q -> QQ]] ]]"
           , "Q * !t1 * !t2"
-          , "Q(x -> [[]])"
-          , "$(x -> [[]])"
           , "Q.x(x -> ?)"
           , "Q.x(L> Func)"
           , "Q.x(D> --)"
@@ -270,6 +253,14 @@ spec = do
       , ("[[ x -> ]]", "expression:1:9:")
       , ("[[ x -> Q.y(] ]]", "expression:1:13:")
       , ("[[ y -> 5, x -> Q.z(} ]]", "expression:1:21:")
+      ]
+
+  describe "points at the typo inside a list of named arguments instead of its first arrow" $
+    fails
+      parseExpression
+      [ ("⟦ a ↦ Φ.foo( x ↦ 1, y ↦ ) ⟧", "expression:1:25:")
+      , ("⟦ a ↦ Φ.foo( x ↦ 1, 2 ) ⟧", "expression:1:21:")
+      , ("⟦\n  app ↦ Φ.io.stdout(\n    text ↦ Φ.string(\n      ⟦ Δ ⤍ 48-65-6C-6C-6F ⟧\n    ),\n    size ↦ Φ.number( ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧,\n    mode ↦ ⟦⟧\n  )\n⟧", "expression:7:10:")
       ]
 
   describe "tells what a binding prefix may be followed by" $
@@ -579,6 +570,7 @@ spec = do
       , ("[[]](~!i1 -> $)", Just (ExApplication (ExFormation []) (ArAlpha (AlMeta "i1") ExXi)))
       , ("[[]](α𝑖1 -> Q)", Just (ExApplication (ExFormation []) (ArAlpha (AlMeta "i1") ExRoot)))
       , ("Q.foo(a1 -> Q.y)", Just (ExApplication (ExDispatch ExRoot (AtLabel "foo")) (ArTau (AtLabel "a1") (ExDispatch ExRoot (AtLabel "y")))))
+      , ("Q.f(b(c), d)", Just (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArAlpha (Alpha 0) (ExApplication (ExDispatch ExXi (AtLabel "b")) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "c")))))) (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "d")))))
       ]
 
   describe "parse meta expressions" $
@@ -740,13 +732,11 @@ spec = do
       , ("⟦ x(y) ↦ 42:a:b ⟧", "⟦ x ↦ ⟦ y ↦ ∅, b ↦ ⟦ a ↦ 42 ⟧ ⟧ ⟧")
       , ("⟦ x(y, z) ↦ ∅:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, z ↦ ∅, a ↦ ∅ ⟧ ⟧")
       , ("[[ x(y) -> Plus:L ]]", "⟦ x ↦ ⟦ y ↦ ∅, λ ⤍ Plus ⟧ ⟧")
-      , ("Q.x(y(z) ↦ FF-:Δ)", "Q.x(y ↦ ⟦ z ↦ ∅, Δ ⤍ FF- ⟧)")
       , ("⟦ x(y) ↦ ⟦ z ↦ ξ ⟧:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ z ↦ ξ ⟧ ⟧ ⟧")
       , ("⟦ x(y) ↦ ⟦ ⟧ : a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ ⟧ ⟧ ⟧")
       , ("⟦ x(y) ↦ ⟦ z ↦ ξ ⟧.z:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ z ↦ ξ ⟧.z ⟧ ⟧")
       , ("⟦ x(y) ↦ ⟦ z ↦ ∅ ⟧(z ↦ Φ):a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ z ↦ ∅ ⟧(z ↦ Φ) ⟧ ⟧")
       , ("⟦ x(y) ↦ ⟦ z(w) ↦ ⟦ ⟧:b ⟧:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ ⟦ z ↦ ⟦ w ↦ ∅, b ↦ ⟦ ⟧ ⟧ ⟧ ⟧ ⟧")
-      , ("Q.x(y(z) ↦ ⟦ w ↦ ξ ⟧:a)", "Q.x(y ↦ ⟦ z ↦ ∅, a ↦ ⟦ w ↦ ξ ⟧ ⟧)")
       ]
       ( \(sweet, plain) ->
           it sweet $ do
@@ -767,7 +757,15 @@ spec = do
       parseExpression
       ( map
           (\ipt -> (ipt, Nothing :: Maybe Expression))
-          ["⟦ x(y) ↦ 42 ⟧", "⟦ x(y) ↦ 42:a.b ⟧", "⟦ x(y) ↦ 42:a(z) ⟧", "⟦ x(y) ↦ ξ.a ⟧", "Q.x(y(z) ↦ FF-:Δ.b)", "⟦ x(y) ↦ ⟦ ⟧.a ⟧", "⟦ x(y) ↦ ⟦ ⟧(a ↦ ξ) ⟧", "⟦ x(y) ↦ ⟦ ⟧:y ⟧"]
+          ["⟦ x(y) ↦ 42 ⟧", "⟦ x(y) ↦ 42:a.b ⟧", "⟦ x(y) ↦ 42:a(z) ⟧", "⟦ x(y) ↦ ξ.a ⟧", "⟦ x(y) ↦ ⟦ ⟧.a ⟧", "⟦ x(y) ↦ ⟦ ⟧(a ↦ ξ) ⟧", "⟦ x(y) ↦ ⟦ ⟧:y ⟧"]
+      )
+
+  describe "rejects inline voids in an argument of an application (#2258)" $
+    test
+      parseExpression
+      ( map
+          (\ipt -> (ipt, Nothing :: Maybe Expression))
+          ["Φ.bool(v(x) ↦ ⟦ λ ⤍ L_fork ⟧)", "Q.x(y(z) ↦ FF-:Δ)", "Q.x(y(z) ↦ ⟦ w ↦ ξ ⟧:a)", "Q.x(α0(z) ↦ ⟦ ⟧)", "Q.x(a ↦ ξ, y(z, w) ↦ ⟦ ⟧)", "!e1(x(^,@) -> [[w -> !e2]])", "Q.x(y() -> [[]])", "Q.x(y(q) -> [[w -> !e]])", "Q.x(~1(^,@) -> [[]])"]
       )
 
   describe "rejects a mix of ASCII and Unicode symbols under monoform" $

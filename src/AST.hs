@@ -1,8 +1,8 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns #-}
 
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
@@ -10,7 +10,7 @@
 
 module AST
   ( Slot (..)
-  , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes)
+  , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes, BaseObject, DataString, DataNumber, DataObject)
   , Argument (..)
   , Alpha (..)
   , Binding (..)
@@ -25,30 +25,42 @@ module AST
   , repeated
   , attributeFromBinding
   , alike
+  , alike'
+  , bijection
+  , bijection'
+  , akin
+  , akin'
+  , akin''
+  , deepness
+  , reaches
+  , boxed
+  , intact
+  , suffixed
   , within
+  , within'
+  , within''
+  , Searched
+  , isName
   , symbols
   , lifted
   , denoted
   , countNodes
   , matchBaseObject
-  , pattern BaseObject
   , matchDataObject
-  , pattern DataString
-  , pattern DataNumber
-  , pattern DataObject
   , dataBytes
   )
 where
 
 import Data.Bits (xor)
 import qualified Data.IntMap.Strict as IntMap
-import Data.List (foldl')
+import qualified Data.IntSet as IntSet
+import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import Data.Maybe (isJust, isNothing, listToMaybe)
+import Data.Maybe (fromMaybe, isJust, isNothing, listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
-import GHC.Exts (isTrue#, reallyUnsafePtrEquality#)
 import GHC.Generics (Generic)
+import Pointer (identical)
 
 data Slot = Slot Text Int
   deriving (Eq, Ord, Show)
@@ -66,7 +78,7 @@ data Expression
   | ExPhiAgain (Maybe String) Int Expression
   | ExBytes Bytes
 
-data Facts = Facts !Int Int !Bool Bool
+data Facts = Facts !Int Int !Int !Bool !Bool
 
 {-# COMPLETE ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes #-}
 
@@ -85,6 +97,21 @@ pattern ExDispatch expr attr <- Dispatched _ expr attr
   where
     ExDispatch expr attr = cached (\facts -> Dispatched facts expr attr)
 
+intact :: (Eq part) => part -> whole -> (part -> whole) -> part -> whole
+intact old whole make new
+  | new == old = whole
+  | otherwise = make new
+
+suffixed :: (Monad walk, Eq item) => (item -> walk item) -> [item] -> walk [item]
+suffixed change items = snd <$> go change items
+  where
+    go :: (Monad walk, Eq item) => (item -> walk item) -> [item] -> walk (Bool, [item])
+    go _ [] = pure (True, [])
+    go turn whole@(item : rest) = do
+      item' <- turn item
+      (same, rest') <- go turn rest
+      pure (if same && item' == item then (True, whole) else (False, item' : rest'))
+
 cached :: (Facts -> Expression) -> Expression
 cached node = let term = node (established term) in term
 
@@ -95,10 +122,10 @@ known (Dispatched facts _ _) = facts
 known term = established term
 
 established :: Expression -> Facts
-established term = Facts (layer id hashExpression term) (tally term) (calm term) (unrepeated term)
+established term = Facts (layer id hashExpression term) (layer (const 0) hashShape term) (tally term) (calm term) (unrepeated term)
 
 instance Eq Expression where
-  left == right = isTrue# (reallyUnsafePtrEquality# left right) || congruent left right
+  left == right = identical left right || congruent left right
     where
       congruent :: Expression -> Expression -> Bool
       congruent (Formed facts bds) (Formed facts' bds') = alongside facts facts' && bds == bds'
@@ -114,19 +141,23 @@ instance Eq Expression where
       congruent (ExBytes bts) (ExBytes bts') = bts == bts'
       congruent _ _ = False
       alongside :: Facts -> Facts -> Bool
-      alongside (Facts digest _ _ _) (Facts digest' _ _ _) = digest == digest'
+      alongside (Facts digest _ _ _ _) (Facts digest' _ _ _ _) = digest == digest'
 
 instance Ord Expression where
-  compare (ExFormation bds) (ExFormation bds') = compare bds bds'
-  compare (ExApplication expr arg) (ExApplication expr' arg') = compare expr expr' <> compare arg arg'
-  compare (ExDispatch expr attr) (ExDispatch expr' attr') = compare expr expr' <> compare attr attr'
-  compare (ExMeta meta) (ExMeta meta') = compare meta meta'
-  compare (ExAny slot) (ExAny slot') = compare slot slot'
-  compare (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
-  compare (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
-  compare (ExBytes bts) (ExBytes bts') = compare bts bts'
-  compare left right = compare (rank left) (rank right)
+  compare left right
+    | identical left right = EQ
+    | otherwise = ordered left right
     where
+      ordered :: Expression -> Expression -> Ordering
+      ordered (ExFormation bds) (ExFormation bds') = compare bds bds'
+      ordered (ExApplication expr arg) (ExApplication expr' arg') = compare expr expr' <> compare arg arg'
+      ordered (ExDispatch expr attr) (ExDispatch expr' attr') = compare expr expr' <> compare attr attr'
+      ordered (ExMeta meta) (ExMeta meta') = compare meta meta'
+      ordered (ExAny slot) (ExAny slot') = compare slot slot'
+      ordered (ExPhiMeet prefix idx expr) (ExPhiMeet prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
+      ordered (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr') = compare prefix prefix' <> compare idx idx' <> compare expr expr'
+      ordered (ExBytes bts) (ExBytes bts') = compare bts bts'
+      ordered one two = compare (rank one) (rank two)
       rank :: Expression -> Int
       rank = \case
         ExFormation _ -> 0
@@ -217,10 +248,14 @@ instance Show Alpha where
 
 hashExpression :: Expression -> Int
 hashExpression term = case known term of
-  Facts digest _ _ _ -> digest
+  Facts digest _ _ _ _ -> digest
 
 hashShape :: Expression -> Int
-hashShape = layer (const 0) hashShape
+hashShape term = case known term of
+  Facts _ shape _ _ _ -> shape
+
+isName :: Text -> Bool
+isName = T.isPrefixOf "n·"
 
 hashSkeleton :: Expression -> Int
 hashSkeleton =
@@ -248,7 +283,7 @@ layer symbol child = goExpr fnvOffset
     hashText :: Int -> Text -> Int
     hashText = T.foldl' (\h c -> step h (fromEnum c))
     hashString :: Int -> String -> Int
-    hashString = foldl' (\h c -> step h (fromEnum c))
+    hashString = List.foldl' (\h c -> step h (fromEnum c))
     goSlot :: Int -> Slot -> Int
     goSlot h (Slot kind idx) = step (hashText h kind) idx
     hashMaybeString :: Int -> Maybe String -> Int
@@ -256,13 +291,15 @@ layer symbol child = goExpr fnvOffset
     hashMaybeString h (Just s) = hashString (step h 1) s
     goExpr :: Int -> Expression -> Int
     goExpr h = \case
-      ExFormation bds -> foldl' goBinding (step h 1) bds
+      ExFormation bds -> List.foldl' goBinding (step h 1) bds
       ExXi -> step h 2
       ExRoot -> step h 3
       ExTermination -> step h 4
       ExApplication ex arg -> goArgument (step (step h 5) (child ex)) arg
       ExDispatch ex at -> goAttribute (step (step h 6) (child ex)) at
-      ExMeta t -> hashText (step h 7) t
+      ExMeta t
+        | isName t -> step (step h 40) (symbol (hashText fnvOffset t))
+        | otherwise -> hashText (step h 7) t
       ExAny slot -> goSlot (step h 32) slot
       ExPhiMeet ms i ex -> step (hashMaybeString (step (step h 9) i) ms) (child ex)
       ExPhiAgain ms i ex -> step (hashMaybeString (step (step h 10) i) ms) (child ex)
@@ -279,7 +316,7 @@ layer symbol child = goExpr fnvOffset
     goBytes h = \case
       BtEmpty -> step h 17
       BtOne s -> hashString (step h 18) s
-      BtMany ss -> foldl' hashString (step h 19) ss
+      BtMany ss -> List.foldl' hashString (step h 19) ss
       BtMeta t -> hashText (step h 20) t
       BtAny slot -> goSlot (step h 34) slot
     goAttribute :: Int -> Attribute -> Int
@@ -309,41 +346,143 @@ layer symbol child = goExpr fnvOffset
       FnFresh slot -> goSlot (step h 39) slot
 
 alike :: Expression -> Expression -> Bool
-alike one two = isJust (goExpr (Map.empty, Map.empty) one two)
+alike = alike' (const Nothing)
+
+alike' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
+alike' = likened
+
+akin :: Expression -> Expression -> Bool
+akin = akin' (const Nothing) (const Nothing)
+
+akin' :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Expression -> Expression -> Bool
+akin' look depth before after = fst (akin'' look depth Map.empty before after)
+
+akin'' :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Searched -> Expression -> Expression -> (Bool, Searched)
+akin'' look depth searched one two = case matching look grown searched one two of
+  (found, searched') -> (isJust found, searched')
   where
-    goExpr :: (Map.Map Int Int, Map.Map Int Int) -> Expression -> Expression -> Maybe (Map.Map Int Int, Map.Map Int Int)
-    goExpr pairing (ExFormation left) (ExFormation right) = goList goBinding pairing left right
-    goExpr pairing (ExApplication left arg) (ExApplication right arg') = goExpr pairing left right >>= \next -> goArgument next arg arg'
-    goExpr pairing (ExDispatch left attr) (ExDispatch right attr')
-      | attr == attr' = goExpr pairing left right
-    goExpr pairing (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right)
-      | prefix == prefix' && idx == idx' = goExpr pairing left right
-    goExpr pairing (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right)
-      | prefix == prefix' && idx == idx' = goExpr pairing left right
-    goExpr pairing left right = same pairing left right
-    goBinding :: (Map.Map Int Int, Map.Map Int Int) -> Binding -> Binding -> Maybe (Map.Map Int Int, Map.Map Int Int)
-    goBinding pairing (BiTau attr left) (BiTau attr' right)
-      | attr == attr' = goExpr pairing left right
-    goBinding pairing (BiLambda (FnSymbol left)) (BiLambda (FnSymbol right)) = paired pairing left right
-    goBinding pairing left right = same pairing left right
-    goArgument :: (Map.Map Int Int, Map.Map Int Int) -> Argument -> Argument -> Maybe (Map.Map Int Int, Map.Map Int Int)
-    goArgument pairing (ArTau attr left) (ArTau attr' right)
-      | attr == attr' = goExpr pairing left right
-    goArgument pairing (ArAlpha alpha left) (ArAlpha alpha' right)
-      | alpha == alpha' = goExpr pairing left right
-    goArgument pairing left right = same pairing left right
-    goList :: (pairing -> item -> item -> Maybe pairing) -> pairing -> [item] -> [item] -> Maybe pairing
-    goList _ pairing [] [] = Just pairing
-    goList walk pairing (left : lefts) (right : rights) = walk pairing left right >>= \next -> goList walk next lefts rights
-    goList _ _ _ _ = Nothing
-    same :: (Eq item) => pairing -> item -> item -> Maybe pairing
+    grown :: Expression -> Expression -> Searched -> (Maybe Bool, Searched)
+    grown before@(ExFormation left) after@(ExFormation right) kept
+      | boxed left && boxed right = decided (within'' look kept before after)
+    grown before after kept
+      | pending before && pending after && deeper before after = decided (within'' look kept before after)
+    grown _ _ kept = (Nothing, kept)
+    decided :: (Bool, Searched) -> (Maybe Bool, Searched)
+    decided (found, kept) = (Just found, kept)
+    deeper :: Expression -> Expression -> Bool
+    deeper before after = not (reaches look depth (deepness look depth after) before)
+    pending :: Expression -> Bool
+    pending (ExMeta name) = maybe False pending (look name)
+    pending (ExApplication _ _) = True
+    pending (ExDispatch inner _) = pending inner
+    pending _ = False
+
+deepness :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Expression -> Int
+deepness look depth = go
+  where
+    go :: Expression -> Int
+    go (ExMeta name) = fromMaybe (maybe 0 go (look name)) (depth name)
+    go (ExApplication callee (ArTau _ arg)) = deepest [callee, arg]
+    go (ExApplication callee (ArAlpha _ arg)) = deepest [callee, arg]
+    go (ExDispatch inner _) = deepest [inner]
+    go (ExFormation bds) = deepest [body | BiTau _ body <- bds]
+    go _ = 0
+    deepest :: [Expression] -> Int
+    deepest = List.foldl' (\most part -> max most (go part + 1)) 1
+
+reaches :: (Text -> Maybe Expression) -> (Text -> Maybe Int) -> Int -> Expression -> Bool
+reaches look depth = go
+  where
+    go :: Int -> Expression -> Bool
+    go limit _ | limit <= 0 = True
+    go limit (ExMeta name) = maybe (maybe False (go limit) (look name)) (>= limit) (depth name)
+    go limit (ExApplication callee (ArTau _ arg)) = limit <= 1 || go (pred limit) callee || go (pred limit) arg
+    go limit (ExApplication callee (ArAlpha _ arg)) = limit <= 1 || go (pred limit) callee || go (pred limit) arg
+    go limit (ExDispatch inner _) = limit <= 1 || go (pred limit) inner
+    go limit (ExFormation bds) = limit <= 1 || any (go (pred limit)) [body | BiTau _ body <- bds]
+    go _ _ = False
+
+boxed :: [Binding] -> Bool
+boxed bds = any phi bds && not (any lambda bds) && not (any delta bds)
+  where
+    phi :: Binding -> Bool
+    phi (BiTau AtPhi _) = True
+    phi _ = False
+    lambda :: Binding -> Bool
+    lambda (BiLambda _) = True
+    lambda _ = False
+    delta :: Binding -> Bool
+    delta (BiDelta _) = True
+    delta _ = False
+
+bijection :: Expression -> Expression -> Maybe (Map.Map Int Int)
+bijection = bijection' (const Nothing)
+
+bijection' :: (Text -> Maybe Expression) -> Expression -> Expression -> Maybe (Map.Map Int Int)
+bijection' look one two = fst <$> fst (matching look strict () one two)
+
+likened :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
+likened look one two = isJust (fst (matching look strict () one two))
+
+strict :: Expression -> Expression -> () -> (Maybe Bool, ())
+strict _ _ kept = (Nothing, kept)
+
+type Pairing = (Map.Map Int Int, Map.Map Int Int, Map.Map (Text, Text) ())
+
+matching :: forall state. (Text -> Maybe Expression) -> (Expression -> Expression -> state -> (Maybe Bool, state)) -> state -> Expression -> Expression -> (Maybe (Map.Map Int Int, Map.Map Int Int), state)
+matching look loose initial one two = case goExpr (Map.empty, Map.empty, Map.empty) one two initial of
+  (found, final) -> ((\(forward, backward, _) -> (forward, backward)) <$> found, final)
+  where
+    goExpr :: Pairing -> Expression -> Expression -> state -> (Maybe Pairing, state)
+    goExpr pairing left right kept = case loose left right kept of
+      (Just True, kept') -> (Just pairing, kept')
+      (Just False, kept') -> (Nothing, kept')
+      (Nothing, kept') -> goStrict pairing left right kept'
+    goStrict :: Pairing -> Expression -> Expression -> state -> (Maybe Pairing, state)
+    goStrict pairing@(forward, backward, met) (ExMeta left) (ExMeta right) kept
+      | Map.member (left, right) met = (Just pairing, kept)
+      | Just left' <- look left
+      , Just right' <- look right =
+          goExpr (forward, backward, Map.insert (left, right) () met) left' right' kept
+    goStrict pairing (ExMeta left) right kept
+      | Just left' <- look left = goExpr pairing left' right kept
+    goStrict pairing left (ExMeta right) kept
+      | Just right' <- look right = goExpr pairing left right' kept
+    goStrict pairing (ExFormation left) (ExFormation right) kept = goList goBinding pairing left right kept
+    goStrict pairing (ExApplication left arg) (ExApplication right arg') kept = chained (goExpr pairing left right kept) (\next -> goArgument next arg arg')
+    goStrict pairing (ExDispatch left attr) (ExDispatch right attr') kept
+      | attr == attr' = goExpr pairing left right kept
+    goStrict pairing (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right) kept
+      | prefix == prefix' && idx == idx' = goExpr pairing left right kept
+    goStrict pairing (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right) kept
+      | prefix == prefix' && idx == idx' = goExpr pairing left right kept
+    goStrict pairing left right kept = (same pairing left right, kept)
+    goBinding :: Pairing -> Binding -> Binding -> state -> (Maybe Pairing, state)
+    goBinding pairing (BiTau attr left) (BiTau attr' right) kept
+      | attr == attr' = goExpr pairing left right kept
+    goBinding pairing (BiLambda (FnSymbol left)) (BiLambda (FnSymbol right)) kept = (twinned pairing left right, kept)
+    goBinding pairing left right kept = (same pairing left right, kept)
+    goArgument :: Pairing -> Argument -> Argument -> state -> (Maybe Pairing, state)
+    goArgument pairing (ArTau attr left) (ArTau attr' right) kept
+      | attr == attr' = goExpr pairing left right kept
+    goArgument pairing (ArAlpha alpha left) (ArAlpha alpha' right) kept
+      | alpha == alpha' = goExpr pairing left right kept
+    goArgument pairing left right kept = (same pairing left right, kept)
+    goList :: (Pairing -> item -> item -> state -> (Maybe Pairing, state)) -> Pairing -> [item] -> [item] -> state -> (Maybe Pairing, state)
+    goList _ pairing [] [] kept = (Just pairing, kept)
+    goList walk pairing (left : lefts) (right : rights) kept = chained (walk pairing left right kept) (\next -> goList walk next lefts rights)
+    goList _ _ _ _ kept = (Nothing, kept)
+    chained :: (Maybe Pairing, state) -> (Pairing -> state -> (Maybe Pairing, state)) -> (Maybe Pairing, state)
+    chained (Just pairing, kept) next = next pairing kept
+    chained (Nothing, kept) _ = (Nothing, kept)
+    same :: (Eq item) => Pairing -> item -> item -> Maybe Pairing
     same pairing left right
       | left == right = Just pairing
       | otherwise = Nothing
-    paired :: (Map.Map Int Int, Map.Map Int Int) -> Int -> Int -> Maybe (Map.Map Int Int, Map.Map Int Int)
-    paired (forward, backward) left right = case (Map.lookup left forward, Map.lookup right backward) of
-      (Nothing, Nothing) -> Just (Map.insert left right forward, Map.insert right left backward)
-      (Just right', Just _) | right' == right -> Just (forward, backward)
+    twinned :: Pairing -> Int -> Int -> Maybe Pairing
+    twinned (forward, backward, met) left right = case (Map.lookup left forward, Map.lookup right backward) of
+      (Nothing, Nothing) -> Just (Map.insert left right forward, Map.insert right left backward, met)
+      (Just right', Just _) | right' == right -> Just (forward, backward, met)
       _ -> Nothing
 
 type Searched = Map.Map (Int, Int) [(Expression, Expression, Bool)]
@@ -351,12 +490,28 @@ type Searched = Map.Map (Int, Int) [(Expression, Expression, Bool)]
 type Search = Searched -> (Bool, Searched)
 
 within :: Expression -> Expression -> Bool
-within before after = fst (coupled before after Map.empty)
+within = within' (const Nothing)
+
+within' :: (Text -> Maybe Expression) -> Expression -> Expression -> Bool
+within' look before after = fst (within'' look Map.empty before after)
+
+within'' :: (Text -> Maybe Expression) -> Searched -> Expression -> Expression -> (Bool, Searched)
+within'' look start before after = coupled (opened before) (opened after) start
   where
+    opened :: Expression -> Expression
+    opened term = maybe term opened (through term)
+    through :: Expression -> Maybe Expression
+    through (ExMeta name) = look name
+    through _ = Nothing
     embedded :: Expression -> Expression -> Search
-    embedded inner outer searched = case recalled inner outer searched of
+    embedded inner' outer' searched = case recalled inner outer searched of
       Just found -> (found, searched)
       Nothing -> remembered inner outer (some [answered (general inner outer), coupled inner outer, some (map (embedded inner) (children outer))] searched)
+      where
+        inner :: Expression
+        inner = opened inner'
+        outer :: Expression
+        outer = opened outer'
     recalled :: Expression -> Expression -> Searched -> Maybe Bool
     recalled inner outer searched = listToMaybe [found | (inner', outer', found) <- Map.findWithDefault [] (digests inner outer) searched, inner' == inner, outer' == outer]
     remembered :: Expression -> Expression -> (Bool, Searched) -> (Bool, Searched)
@@ -386,6 +541,11 @@ within before after = fst (coupled before after Map.empty)
     coupled (ExDispatch left attr) (ExDispatch right attr') = every [answered (attr == attr'), embedded left right]
     coupled (ExPhiMeet prefix idx left) (ExPhiMeet prefix' idx' right) = every [answered (prefix == prefix' && idx == idx'), embedded left right]
     coupled (ExPhiAgain prefix idx left) (ExPhiAgain prefix' idx' right) = every [answered (prefix == prefix' && idx == idx'), embedded left right]
+    coupled (ExMeta left) (ExMeta right) | left == right = answered True
+    coupled left@(ExMeta _) right
+      | Just left' <- through left = coupled left' right
+    coupled left right@(ExMeta _)
+      | Just right' <- through right = coupled left right'
     coupled left right = answered (left == right)
     goBinding :: Binding -> Binding -> Search
     goBinding (BiTau attr left) (BiTau attr' right) = every [answered (attr == attr'), embedded left right]
@@ -417,22 +577,38 @@ within before after = fst (coupled before after Map.empty)
     children _ = []
 
 symbols :: Expression -> [Int]
-symbols = goExpr
+symbols whole = case goExpr (IntMap.empty, IntSet.empty, []) whole of
+  (_, _, found) -> reverse found
   where
-    goExpr :: Expression -> [Int]
-    goExpr (ExFormation bds) = concatMap goBinding bds
-    goExpr (ExApplication expr arg) = goExpr expr ++ goArgument arg
-    goExpr (ExDispatch expr _) = goExpr expr
-    goExpr (ExPhiMeet _ _ expr) = goExpr expr
-    goExpr (ExPhiAgain _ _ expr) = goExpr expr
-    goExpr _ = []
-    goBinding :: Binding -> [Int]
-    goBinding (BiTau _ expr) = goExpr expr
-    goBinding (BiLambda (FnSymbol idx)) = [idx]
-    goBinding _ = []
-    goArgument :: Argument -> [Int]
-    goArgument (ArTau _ expr) = goExpr expr
-    goArgument (ArAlpha _ expr) = goExpr expr
+    goExpr :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Expression -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
+    goExpr walked@(seen, met, found) term
+      | compound term && term `elem` IntMap.findWithDefault [] digest seen = walked
+      | compound term = nested (IntMap.insertWith (++) digest [term] seen, met, found) term
+      | otherwise = nested walked term
+      where
+        digest :: Int
+        digest = hashExpression term
+    compound :: Expression -> Bool
+    compound (ExFormation _) = True
+    compound (ExApplication _ _) = True
+    compound (ExDispatch _ _) = True
+    compound _ = False
+    nested :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Expression -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
+    nested walked (ExFormation bds) = List.foldl' goBinding walked bds
+    nested walked (ExApplication expr arg) = goArgument (goExpr walked expr) arg
+    nested walked (ExDispatch expr _) = goExpr walked expr
+    nested walked (ExPhiMeet _ _ expr) = goExpr walked expr
+    nested walked (ExPhiAgain _ _ expr) = goExpr walked expr
+    nested walked _ = walked
+    goBinding :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Binding -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
+    goBinding walked (BiTau _ expr) = goExpr walked expr
+    goBinding walked@(seen, met, found) (BiLambda (FnSymbol idx))
+      | IntSet.member idx met = walked
+      | otherwise = (seen, IntSet.insert idx met, idx : found)
+    goBinding walked _ = walked
+    goArgument :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Argument -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
+    goArgument walked (ArTau _ expr) = goExpr walked expr
+    goArgument walked (ArAlpha _ expr) = goExpr walked expr
 
 lifted :: Int -> Int -> Expression -> Expression
 lifted floor' offset = goExpr
@@ -469,7 +645,7 @@ denoted = goExpr
 
 countNodes :: Expression -> Int
 countNodes term = case known term of
-  Facts _ size _ _ -> size
+  Facts _ _ size _ _ -> size
 
 tally :: Expression -> Int
 tally (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
@@ -488,11 +664,11 @@ tally _ = 1
 
 inert :: Expression -> Bool
 inert term = case known term of
-  Facts _ _ still _ -> still
+  Facts _ _ _ still _ -> still
 
 distinct :: Expression -> Bool
 distinct term = case known term of
-  Facts _ _ _ unique -> unique
+  Facts _ _ _ _ unique -> unique
 
 unrepeated :: Expression -> Bool
 unrepeated (ExFormation bds) = isNothing (repeated bds)

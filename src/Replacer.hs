@@ -97,7 +97,10 @@ swallowed replaced = go []
       | length (filter (== ptn) dropped) < sum (map (occurrences ptn) (children replaced)) = go (ptn : dropped) (ptns, repls)
     go _ pending = pending
     occurrences :: Expression -> Expression -> Int
-    occurrences ptn term = (if term == ptn then 1 else 0) + sum (map (occurrences ptn) (children term))
+    occurrences ptn term
+      | inert term && not (inert ptn) = 0
+      | term == ptn = 1
+      | otherwise = sum (map (occurrences ptn) (children term))
     children :: Expression -> [Expression]
     children (ExFormation bds) = [inner | BiTau _ inner <- bds]
     children (ExDispatch inner _) = [inner]
