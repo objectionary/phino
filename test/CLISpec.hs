@@ -263,11 +263,11 @@ spec = do
     it "keeps the terms of nested forks small while dataizing" $
       withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
         withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
-          testCLISucceeded ["dataize", "--cheat", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["00-"]
+          testCLISucceeded ["dataize", "--cheat", "--acyclic=plausible", "--max-loops=2", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["00-"]
     it "lets the terms of nested forks grow while dataizing without it" $
       withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
         withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
-          testCLIFailed ["dataize", "--acyclic=plausible", "--max-loops=1", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["--max-nodes=5000"]
+          testCLIFailed ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["--max-nodes=5000"]
 
   describe "--hide-rho" $
     forM_
@@ -1988,10 +1988,10 @@ spec = do
                     []
               lines <$> readProtocol path
       it "writes the copy it cuts to the protocol as a call of the object with the attribute it ends with" $
-        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·9·9, right ↦ 𝑛·11·2 ).right🌵.φ  # plausible"))
+        recorded "protocolXXXXXX.txt" >>= (`shouldSatisfy` any (isInfixOf "looped 𝜎6 := Φ.fork( left ↦ 𝑛·7·5, right ↦ 𝑛·8·2 ).right🌵.φ  # 𝔼(𝑛2 of L_fork), plausible"))
 
       it "writes the copy it cuts to the XML protocol with the object, the metas of its arguments and the attribute it ends with" $
-        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·9·9</meta><meta attr=\"right\">𝑛·11·2</meta></with></looped>"))
+        recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·7·5</meta><meta attr=\"right\">𝑛·8·2</meta></with></looped>"))
 
     describe "--acyclic at a copy whose argument repeats the same loop" $ do
       let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, times(b) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ) ) ⟧"
