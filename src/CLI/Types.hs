@@ -284,6 +284,7 @@ data OptsSodg = OptsSodg
   { _logLevel :: LogLevel
   , _logLines :: Int
   , _inputFormat :: IOFormat
+  , _dropTests :: Bool
   , _inputFile :: Maybe FilePath
   }
 

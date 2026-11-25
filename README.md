@@ -540,6 +540,9 @@ D c1 c0 y
 P c0 x c1
 ```
 
+With `--drop-tests`, it skips the unit tests of every object, the attributes
+named `p🌵…` and `n🌵…`, with all the cells they hold.
+
 ## Compile
 
 By default, `phino` reads its rules from YAML and interprets them at every
