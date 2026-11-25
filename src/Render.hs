@@ -287,7 +287,6 @@ instance Render LOGIC_OPERATOR where
 
 instance Render NUMBER where
   rendering LENGTH{..} = "\\vert " <> rendering binding <> " \\vert"
-  rendering DOMAIN{..} = "\\vert \\overline{ " <> rendering binding <> " } \\vert"
   rendering LITERAL{..} = fromString (show num)
 
 instance Render COMPARABLE where

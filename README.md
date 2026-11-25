@@ -629,8 +629,6 @@ Comparable:              # comparable object that may be used in 'eq' condition
 Number:                  # comparable number
   = Integer              # just regular integer
   | length: BiMeta'      # calculate length of bindings by given meta binding
-  | domain: BiMeta'      # calculate number of unique attributes in given
-                         # meta binding (excluding 'assets')
 
 Extension:               # substitutions extension used to introduce new meta variables
   meta: [ExtArgument]    # new introduced meta variable
@@ -655,7 +653,7 @@ Here's list of functions that are supported for extensions:
 
 * `contextualize` - function of two arguments, that rewrites given expression
   depending on provided context according to the contextualization
-  [rules](assets/contextualize.jpg)
+  [rules](resources/contextualization)
 * `random-tau` - creates an attribute with a random unique name. It accepts no
   arguments; uniqueness is guaranteed across all names already taken in the
   document.

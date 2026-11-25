@@ -96,11 +96,8 @@ instance FromJSON Binding where
 instance FromJSON Number where
   parseJSON v = case v of
     Object o -> do
-      validateYamlObject o ["length", "domain"]
-      asum
-        [ Length <$> o .: "length"
-        , Domain <$> o .: "domain"
-        ]
+      validateYamlObject o ["length"]
+      Length <$> o .: "length"
     Number num
       | toRational (round num :: Integer) /= toRational num -> fail (printf "Expected an integer, got a fractional number %s" (show num))
       | (round num :: Integer) < toInteger (minBound :: Int) || (round num :: Integer) > toInteger (maxBound :: Int) -> fail (printf "The literal %s does not fit into Int" (show num))
@@ -120,7 +117,7 @@ instance FromJSON Comparable where
       [ CmpAttr <$> parseJSON v
       , CmpExpr <$> parseJSON v
       ]
-  parseJSON _ = fail "An argument of 'eq' or 'gt' is a number, an attribute, an expression, or an object of 'length' or 'domain'"
+  parseJSON _ = fail "An argument of 'eq' or 'gt' is a number, an attribute, an expression, or an object of 'length'"
 
 instance FromJSON Condition where
   parseJSON = withObject "Condition" $ \v -> do
@@ -284,7 +281,6 @@ instance FromJSON Rule where
 
 data Number
   = Length Binding
-  | Domain Binding
   | Literal Int
   deriving (Eq, Generic, Show)
 
@@ -356,7 +352,6 @@ instance Slots Comparable where
 
 instance Slots Number where
   slots (Length bd) = slots bd
-  slots (Domain bd) = slots bd
   slots (Literal _) = []
 
 instance Slots ExtraArgument where
@@ -414,10 +409,8 @@ instance Metas Comparable where
 
 instance Metas Number where
   metas (Length bd) = metas bd
-  metas (Domain bd) = metas bd
   metas (Literal _) = []
   bare names (Length bd) = Length (bare names bd)
-  bare names (Domain bd) = Domain (bare names bd)
   bare _ num = num
 
 instance Metas ExtraArgument where

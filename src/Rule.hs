@@ -6,7 +6,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Rule (RuleContext (..), Step (..), domainOf, isFormation, isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, normal, normalHeld, normalWith, presentIn, redex, xiFree) where
+module Rule (RuleContext (..), Step (..), isFormation, isNF, matchExpressionWithRule, matchExpressionWithRule', meetCondition, normal, normalHeld, normalWith, presentIn, redex, xiFree) where
 
 import AST
 import Builder
@@ -133,21 +133,8 @@ numToInt :: Y.Number -> Subst -> Maybe Int
 numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
   Just (MvBindings bds) -> Just (length bds)
   _ -> Nothing
-numToInt (Y.Domain (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
-  Just (MvBindings bds) -> Just (domainOf bds)
-  _ -> Nothing
 numToInt (Y.Literal num) _ = Just num
 numToInt _ _ = Nothing
-
-domainOf :: [Binding] -> Int
-domainOf = length . filter notAsset
-  where
-    notAsset :: Binding -> Bool
-    notAsset (BiDelta _) = False
-    notAsset (BiLambda _) = False
-    notAsset (BiVoid AtRho) = False
-    notAsset (BiTau AtRho _) = False
-    notAsset _ = True
 
 _eq :: Y.Comparable -> Y.Comparable -> Subst -> RuleContext -> IO [Subst]
 _eq (Y.CmpNum left) (Y.CmpNum right) subst _ = case (numToInt left subst, numToInt right subst) of

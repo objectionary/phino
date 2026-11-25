@@ -374,11 +374,6 @@ spec = do
         , Y.Length (BiVoid (AtLabel "y"))
         , LENGTH (BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0))
         )
-      ,
-        ( "Domain"
-        , Y.Domain (BiVoid (AtLabel "y"))
-        , DOMAIN (BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0))
-        )
       , ("Literal", Y.Literal 5, LITERAL 5)
       ]
       (\(desc, number, expected) -> it desc (numberToCST number `shouldBe` expected))

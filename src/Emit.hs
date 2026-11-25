@@ -539,7 +539,6 @@ compared _ _ _ = "False"
 
 number :: Y.Number -> Emitting (Maybe String)
 number (Y.Length (BiMeta meta)) = fmap ("length " ++) <$> known (Named meta)
-number (Y.Domain (BiMeta meta)) = fmap ("Ru.domainOf " ++) <$> known (Named meta)
 number (Y.Literal num) = pure (Just (show num))
 number _ = pure Nothing
 

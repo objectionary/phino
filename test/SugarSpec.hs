@@ -389,7 +389,6 @@ spec = do
         , LENGTH (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_ATTR (AT_LABEL "y"))) (BDS_EMPTY (TAB 1)) (TAB 1))
         , LENGTH (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "y"))) (BDS_EMPTY (TAB 1)) (TAB 1))
         )
-      , ("DOMAIN recurses into its binding", DOMAIN (BI_EMPTY (TAB 1)), DOMAIN (BI_EMPTY (TAB 1)))
       , ("LITERAL is unchanged", LITERAL 3, LITERAL 3)
       ]
       (\(desc, sweet, salty) -> it desc (toSalty sweet `shouldBe` salty))

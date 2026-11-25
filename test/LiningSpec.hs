@@ -135,11 +135,8 @@ spec = do
       (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
   describe "toSingleLine on NUMBER" $ do
-    forM_
-      [ ("recurses through LENGTH", LENGTH biPair, LENGTH expectedBiPair)
-      , ("recurses through DOMAIN", DOMAIN biPair, DOMAIN expectedBiPair)
-      ]
-      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
+    it "recurses through LENGTH" $
+      toSingleLine (LENGTH biPair) `shouldBe` LENGTH expectedBiPair
 
     it "leaves LITERAL untouched" $
       toSingleLine (LITERAL 5) `shouldBe` LITERAL 5

@@ -199,7 +199,6 @@ spec = do
   describe "toASCII on NUMBER" $
     forM_
       [ ("recurses through LENGTH", toASCII (LENGTH biPair), LENGTH biPairASCII)
-      , ("recurses through DOMAIN", toASCII (DOMAIN biPair), DOMAIN biPairASCII)
       , ("leaves LITERAL untouched", toASCII (LITERAL 5), LITERAL 5)
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))

@@ -288,7 +288,6 @@ spec = do
   describe "render NUMBER" $
     forM_
       [ ("LENGTH", LENGTH (bindingXi "x"), "\\vert x ↦ ξ \\vert")
-      , ("DOMAIN", DOMAIN (bindingXi "x"), "\\vert \\overline{ x ↦ ξ } \\vert")
       , ("LITERAL", LITERAL 7, "7")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))

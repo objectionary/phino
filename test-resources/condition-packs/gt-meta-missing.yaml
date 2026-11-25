@@ -6,5 +6,5 @@ pattern: '[[ !B1 ]](!t1 -> Q)'
 condition:
   not:
     gt:
-      - domain: '!Bx'
+      - length: '!Bx'
       - 0

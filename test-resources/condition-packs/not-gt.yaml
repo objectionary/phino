@@ -6,5 +6,5 @@ expression: '[[ x -> $, w -> $ ]](x -> Q)'
 pattern: '[[ !B1 ]](!t1 -> Q)'
 condition:
   gt:
-    - domain: '!B1'
+    - length: '!B1'
     - 3

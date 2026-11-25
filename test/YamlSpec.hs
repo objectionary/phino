@@ -320,8 +320,9 @@ spec = do
     forM_
       [ ("bytes missing a dash in 'eq'", "eq: ['𝑒1', '⟦ Δ ⤍ 01 ⟧']", "expecting '-'")
       , ("bytes missing a dash in 'gt'", "gt: ['⟦ Δ ⤍ 7F ⟧', 3]", "expecting '-'")
-      , ("a list in 'gt'", "gt: [[1], 2]", "is a number, an attribute, an expression, or an object of 'length' or 'domain'")
-      , ("a boolean in 'eq'", "eq: [true, 'x']", "is a number, an attribute, an expression, or an object of 'length' or 'domain'")
+      , ("a list in 'gt'", "gt: [[1], 2]", "is a number, an attribute, an expression, or an object of 'length'")
+      , ("a boolean in 'eq'", "eq: [true, 'x']", "is a number, an attribute, an expression, or an object of 'length'")
+      , ("a 'domain' in 'eq'", "eq: [{domain: '𝐵1'}, 1]", "expected one of: [\"length\"]")
       ]
       (\(desc, yaml, message) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` failsWith message))
 
