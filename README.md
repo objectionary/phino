@@ -34,7 +34,7 @@ Install [Cabal][cabal] first and then:
 
 ```bash
 cabal update
-cabal install --overwrite-policy=always phino-0.0.167
+cabal install --overwrite-policy=always phino-0.0.168
 phino --version
 ```
 
@@ -59,7 +59,7 @@ In a [GitHub Actions][gha] workflow, one step downloads the binary
 for the runner and puts it on the `PATH`:
 
 ```yaml
-- uses: objectionary/phino@0.0.167
+- uses: objectionary/phino@0.0.168
   with:
     version-file: phino-version.txt
 - run: phino --version
@@ -317,27 +317,27 @@ $ phino morph --symbolic=down.yaml --locator=Q.y --acyclic=proven \
 $ cat down.txt
 𝕄(Φ.y):
   remembered 𝑛·0·1 ≡ Φ.down  # ⟦ x ↦ ∅, λ ⤍ L_down ⟧
-  𝑛·0·2 := Φ.down( x ↦ 𝜎1:λ )
-  𝑛·0·3 := ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
+  𝑛·0·2 ≔ Φ.down( x ↦ 𝜎1:λ )
+  𝑛·0·3 ≔ ⟦ x ↦ 𝜎1:λ, λ ⤍ L_down ⟧
   remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ 𝜎1:λ )
   𝔼(L_down):
     𝔻(ξ.x):
-      𝛿·1·1 := 𝔻(𝜎1:λ)
-    𝛿1·1 := 𝛿·1·1  # 𝔻(ξ.x)
-    𝑛·1·1 := Φ.down( x ↦ 𝜎2:λ )  # 𝑛 of L_down
+      𝛿·1·1 ≔ 𝔻(𝜎1:λ)
+    𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.x)
+    𝑛·1·1 ≔ Φ.down( x ↦ 𝜎2:λ )  # 𝑛 of L_down
     𝕄(𝑛·1·1):
-      𝑛·1·2 := Φ.down( x ↦ 𝜎2:λ )
-      𝑛·1·3 := ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
+      𝑛·1·2 ≔ Φ.down( x ↦ 𝜎2:λ )
+      𝑛·1·3 ≔ ⟦ x ↦ 𝜎2:λ, λ ⤍ L_down ⟧
       remembered 𝑛·1·3 ≡ 𝑛·0·1( x ↦ 𝜎2:λ )
-      morphed 𝑛·1·4 := 𝑛·1·3
-    𝑛·1·5 := 𝑛·1·3  # 𝕄(𝑛·1·1)
+      morphed 𝑛·1·4 ≔ 𝑛·1·3
+    𝑛·1·5 ≔ 𝑛·1·3  # 𝕄(𝑛·1·1)
     remembered 𝑛·1·3 ≡ 𝑛·0·3
-    evaluated 𝑛·1·6 := 𝑛·1·3  # 𝑛·0·3
+    evaluated 𝑛·1·6 ≔ 𝑛·1·3  # 𝑛·0·3
   recalled 𝑛·1·3 ⇒ 𝑛·0·3
   recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ 𝜎1:λ )
   recalled 𝑛·0·1 ⇒ Φ.down
-  looped 𝜎3 := 𝑛·0·2.φ  # proven, repeats 𝑛·0·3
-  morphed 𝑛·0·4 := 𝜎3:λ
+  looped 𝜎3 ≔ 𝑛·0·2.φ  # proven, repeats 𝑛·0·3
+  morphed 𝑛·0·4 ≔ 𝜎3:λ
 ```
 
 In a name such as `𝑛·1·2`, the first number counts the firings, `0` outside
@@ -350,17 +350,17 @@ A protocol may hold these lines:
 * `𝔻(…):` and `𝕄(…):` open a block where dataization or morphing starts at a
   new site, and what it does stands under it.
 * `𝔼(…):` opens one firing, named by its λ function.
-* `𝑛·0·1 := …` names an application, and the line after it names the
+* `𝑛·0·1 ≔ …` names an application, and the line after it names the
   object the application made.
-* `𝛿1·1 := …` binds a meta of the entry, and the comment names the judgment
+* `𝛿1·1 ≔ …` binds a meta of the entry, and the comment names the judgment
   and the term it came from.
-* `𝑛·1·1 := …  # 𝑛` is the term the entry answered with, and the line
+* `𝑛·1·1 ≔ …  # 𝑛` is the term the entry answered with, and the line
   commented with `𝕄(𝑛·1·1)` is its normal form.
 * `boxed …` is dataization stepping into the `φ` of a formation.
 * `undressed …` is an `undress` line taking the `φ` of a formation.
-* `shared 𝑛·1 := …` names an argument a recursion keeps wrapping, so later
+* `shared 𝑛·1 ≔ …` names an argument a recursion keeps wrapping, so later
   lines spell it by that name.
-* `𝛿·1·1 := …` closes a `𝔻` block with the data it found, or with
+* `𝛿·1·1 ≔ …` closes a `𝔻` block with the data it found, or with
   `𝔻(𝜎1:λ)` where it came down to a symbol.
 * `morphed …` closes a `𝕄` block with the term it came to.
 * `evaluated …` closes an `𝔼` block with what the firing answered, and the
@@ -386,9 +386,9 @@ A protocol may hold these lines:
   to symbols, with the symbols the comment lists renamed.
 * `recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )` is a fact or a memo entry used again,
   spelled as its `remembered` or `memoized` line spelled it.
-* `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 := …` names
+* `looped …` is where `--acyclic` cut a loop, and `looped 𝜎1 ≔ …` names
   the call of the object it answered with that symbol, when a fact names it.
-* `passed 𝑛·1·2 := …` is where an operand came to an object `--acyclic`
+* `passed 𝑛·1·2 ≔ …` is where an operand came to an object `--acyclic`
   takes for a loop, handed on as it is.
 * `starved …`, `spent …`, `timeout …`, `oversized …` and `blown …` are
   where `--max-steps`, `--max-firings`, `--max-seconds`, `--max-nodes` and
