@@ -1569,6 +1569,22 @@ spec = do
       withStdin "[[ D> 01- ]]" $
         testCLISucceeded ["dataize", "--seed=7"] ["01-"]
 
+    it "feeds an argument to a bare symbol and gets a new symbol, not ⊥" $
+      withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+        hClose stream
+        withStdin "⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧, app ↦ Φ.x( 01-:Δ ) ⟧" $
+          testCLISucceeded ["dataize", "--locator=Q.app", "--partial", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+        protocol <- readProtocol path
+        map (dropWhile (== ' ')) (lines protocol) `shouldContain` ["fed 𝜎2:λ ≔ 𝜎1:λ( 01-:Δ )", "morphed 𝑛·0·2 ≔ 𝜎2:λ", "𝛿·0·1 ≔ 𝔻(𝜎2:λ)"]
+
+    it "feeds a named argument to a bare symbol and writes it to the XML protocol" $
+      withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+        hClose stream
+        withStdin "⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧, app ↦ Φ.x( k ↦ 01-:Δ ) ⟧" $
+          testCLISucceeded ["dataize", "--locator=Q.app", "--partial", "--quiet", "--sweet", "--hide-rho", "--protocol=" ++ path] []
+        protocol <- readProtocol path
+        map (dropWhile (== ' ')) (lines protocol) `shouldContain` ["<applied meta=\"𝑒·0·1\" of=\"𝜎1\"><datum attr=\"k\">01-</datum></applied>", "<fed symbol=\"𝜎2\" of=\"𝑒·0·1\"/>"]
+
     it "fails to dataize an empty object, which dataizes the terminator ⊥" $
       withStdin "[[ ]]" $
         testCLIFailed ["dataize"] ["terminator ⊥"]

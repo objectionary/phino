@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvAssumed, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvPassed, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvShared, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvAssumed, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFed, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvPassed, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvShared, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -393,6 +393,9 @@ spec = do
     it "writes a side a join took for the bare symbol facing it" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvAssumed 2 (ExMeta "n1", ExFormation [BiLambda (FnSymbol 7)]) (ExMeta "n2", ExDispatch ExRoot (AtLabel "ёж"))])
       last (lines written) `shouldBe` "    assumed 𝜎7:λ ≡ 𝑛2·1"
+    it "writes the symbol an argument fed to a bare symbol gave" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing ExRoot, EvFed 1 8 (ExApplication (ExFormation [BiLambda (FnSymbol 7)]) (ArTau (AtLabel "ёж") (ExDispatch ExRoot (AtLabel "уж"))))])
+      last (lines written) `shouldBe` "  fed 𝜎8:λ ≔ 𝜎7:λ( ёж ↦ Φ.уж )"
     it "writes a side a join kept since the left one is ⊥ with the object it raises with" $ do
       (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "бросок")) (ArTau (AtLabel "весть") (ExFormation []))) (ExFormation [BiTau (AtLabel "весть") (ExFormation []), BiLambda (Function "L_бросок")]) ExRoot, EvGuarded 2 (Right (ExDispatch ExXi (AtLabel "щит"))) (ExMeta "n3", ExTermination) (ExMeta "n4", ExDispatch ExRoot (AtLabel "ёж")) Lefthand (Just (ExFormation [BiTau (AtLabel "весть") (ExFormation []), BiLambda (Function "L_бросок")]))])
       last (lines written) `shouldBe` "    guarded ξ.щит ? 𝑛3·1 : 𝑛4·1  # where 𝑛3·1 is ⊥ raised by 𝑛·1·2"
@@ -763,6 +766,9 @@ spec = do
     it "writes a side a join took for the bare symbol facing it as an element naming both" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvAssumed 2 (ExMeta "n2", ExFormation [BiLambda (FnSymbol 7)]) (ExMeta "n1", ExDispatch ExRoot (AtLabel "ёж"))])
       lines written `shouldContain` ["    <assumed symbol=\"𝜎7\" as=\"𝑛1·1\"/>"]
+    it "writes the symbol an argument fed to a bare symbol gave as an element naming the application" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing ExRoot, EvFed 1 8 (ExApplication (ExFormation [BiLambda (FnSymbol 7)]) (ArTau (AtLabel "ёж") (ExDispatch ExRoot (AtLabel "уж"))))])
+      lines written `shouldContain` ["  <fed symbol=\"𝜎8\" of=\"𝑒·0·1\"/>"]
     it "names in the markup the object the side a guard kept away raises with" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_ф" Morphing ExRoot, EvApplied 2 Morphing (ExApplication (ExDispatch ExRoot (AtLabel "бросок")) (ArTau (AtLabel "весть") (ExFormation []))) (ExFormation [BiTau (AtLabel "весть") (ExFormation []), BiLambda (Function "L_бросок")]) ExRoot, EvGuarded 2 (Right (ExDispatch ExXi (AtLabel "щит"))) (ExMeta "n3", ExTermination) (ExMeta "n4", ExDispatch ExRoot (AtLabel "ёж")) Lefthand (Just (ExFormation [BiTau (AtLabel "весть") (ExFormation []), BiLambda (Function "L_бросок")]))])
       lines written `shouldContain` ["    <guarded on=\"ξ.щит\" left=\"𝑛3·1\" right=\"𝑛4·1\" terminator=\"left\" raised=\"𝑛·1·2\"/>"]
