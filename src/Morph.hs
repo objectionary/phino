@@ -943,10 +943,26 @@ onward seq state (In.Taken step) _ expr ctx = do
 onward seq state (In.Normalized step) univ expr' ctx = do
   expr <- shared ctx expr'
   labelled <- leadsTo seq step expr ctx
-  normal@(term, _) <- normalized expr labelled ctx
-  unless (term `elem` [expr, bare expr]) (ctx._saveEval (EvNormalized ctx._nesting (rooted expr) term))
-  pure (normal, state)
+  if fed expr
+    then do
+      symbol <- coined ctx
+      let answer = ExFormation [BiLambda (FnSymbol symbol)]
+      ctx._saveEval (EvFed ctx._nesting symbol (rooted expr))
+      seq' <- leadsTo labelled (Morphing, "fed") answer ctx
+      pure ((answer, seq'), state)
+    else do
+      normal@(term, _) <- normalized expr labelled ctx
+      unless (term `elem` [expr, bare expr]) (ctx._saveEval (EvNormalized ctx._nesting (rooted expr) term))
+      pure (normal, state)
   where
+    fed :: Expression -> Bool
+    fed (ExApplication inner (ArTau AtRho _)) = fed inner
+    fed (ExApplication inner _) = symbolic inner
+    fed _ = False
+    symbolic :: Expression -> Bool
+    symbolic (ExApplication inner _) = symbolic inner
+    symbolic (ExFormation [BiLambda (FnSymbol _)]) = True
+    symbolic _ = False
     bare :: Expression -> Expression
     bare (ExApplication inner _) = bare inner
     bare inner = inner

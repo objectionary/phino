@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# An argument fed to a bare symbol, an object nobody knows, gives another
+# object nobody knows: 𝕄 mints a fresh symbol and writes 'fed', rather than
+# letting 'amiss' or 'miss' make the application ⊥ (#2476).
+symbolic: '[]'
+location: 'Q.app'
+input: '⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧, app ↦ Φ.x( k ↦ 01-:Δ ) ⟧'
+result: '⟦ λ ⤍ 𝜎2 ⟧'
+protocol: |
+  𝕄(Φ.app):
+    normalized 𝑛·0·1 ≔ 𝜎1:λ  # Φ.x
+    fed 𝜎2:λ ≔ 𝜎1:λ( k ↦ 01-:Δ )
+    morphed 𝑛·0·2 ≔ 𝜎2:λ

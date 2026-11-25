@@ -708,6 +708,12 @@ in `of` of `<normalized>` in the markup, the universe spelled `Φ` (#2366). It
 writes nothing where the term is the one it came from, with or without the
 arguments the normalization dropped, and nothing where the term is one an
 earlier line named, since the line would only repeat that name.
+Where the term is a bare symbol applied to an argument other than ρ, such as
+`⟦ λ ⤍ 𝜎1 ⟧( 01-:Δ )`, the premise normalizes nothing, since `amiss` and
+`miss` would make it ⊥, while an object nobody knows fed an argument is
+another object nobody knows: it mints a fresh symbol and writes
+`fed 𝜎2:λ ≔ 𝜎1:λ( 01-:Δ )` (`EvFed`), and the markup `<fed symbol="𝜎2"
+of="𝑒·0·1"/>` (#2476).
 A firing that answered, made, recalled from the memo or renamed, closes its
 block the same way, as `evaluated 𝑛·1·5 ≔ 𝜎1:λ  # 𝑛·0·7` (`EvEvaluated`,
 `closed` of `symbol` in `Evaluate.hs`, issue #2406), with the formation fired

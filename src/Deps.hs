@@ -161,6 +161,7 @@ data Evaluation
   | EvAnswer Int Expression
   | EvMorphed Int Expression
   | EvNormalized Int Expression Expression
+  | EvFed Int Int Expression
   | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int) (Maybe Expression)
   | EvGuarded Int (Either T.Text Expression) (Expression, Expression) (Expression, Expression) Side (Maybe Expression)
   | EvAssumed Int (Expression, Expression) (Expression, Expression)
@@ -243,6 +244,7 @@ tier (EvBuilt depth _) = depth
 tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
 tier (EvNormalized depth _ _) = depth
+tier (EvFed depth _ _) = depth
 tier (EvJoined depth _ _ _ _ _) = depth
 tier (EvGuarded depth _ _ _ _ _) = depth
 tier (EvAssumed depth _ _) = depth
@@ -572,6 +574,10 @@ saveEval handle cursor printed printed' profile report = do
       | otherwise = do
           origin <- render source
           second (fmap (`remarked` [origin])) <$> concluding at "normalized" term protocol
+    written at (EvFed _ symbol term) protocol = do
+      fresh <- render (ExFormation [BiLambda (FnSymbol symbol)])
+      origin <- render term
+      pure (protocol, Just (indented at (printf "fed %s ≔ %s" fresh origin)))
     written at (EvJoined _ condition symbol (left, right) bottom raised) protocol = do
       on <- either (pure . labelled protocol) salted condition
       termination <- render ExTermination
@@ -959,6 +965,10 @@ saveEvalXml handle cursor printed report = do
     elements at (EvNormalized depth source term) nesting
       | echoed nesting term = pure (nesting, [])
       | otherwise = placed at nesting (leaf depth source >>= \origin -> concluded "normalized" (printf " of=\"%s\"" (escapeXML origin)) depth term)
+    elements at (EvFed depth symbol term) nesting =
+      placed at nesting $ do
+        origin <- leaf depth term
+        pure (printf "<fed symbol=\"%s\" of=\"%s\"/>" (sigma symbol) (escapeXML origin))
     elements at (EvJoined depth condition symbol (left, right) bottom raised) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition
