@@ -335,8 +335,8 @@ and the firing writes `assumed 𝜎2:λ ≡ 𝑛1·1` (`EvAssumed`) and the mark
 `<assumed symbol="𝜎2" as="𝑛1·1"/>`, the symbol and the side taken for it, so
 a cut that came to one side of a join no longer gets the firing stuck (#2469).
 In an entry that joins, an operand of `morph` or `undress` or a line whose
-term gets `opaque`, such as a dispatch off the bare symbol of a cut,
-`⟦ λ ⤍ 𝜎5 ⟧.if`, binds its meta to ⊥ rather than getting the firing stuck,
+term gets stuck on a symbol, such as a firing of a formation whose λ is a
+symbol, binds its meta to ⊥ rather than getting the firing stuck,
 so that side ends as a raise does and the join keeps the other one
 (`blanked` of `Evaluate.hs`, #2427). The failure is told by its name, a
 symbol, which no λ name spells, so a stall the memo replays is caught too.
@@ -398,11 +398,11 @@ throws `Diverged`, which the
 firing rethrows as `Stuck`, so `--partial` parks it and the firings around
 it write `stuck` as for a λ function no entry answers. A side or an operand
 whose morph throws fails the firing with what it threw, so a run never
-splits and prints one result (#1996), unless an entry that joins meets an
-`opaque` there, which ends that side alone, as said above. It does so under
-`--partial` too: `morphing` of `Morph.hs` runs the operand through `morph'`
-and parks nothing, so no later block runs on a term that was never morphed,
-and `--partial` parks the firing as a whole (#2014).
+splits and prints one result (#1996), unless an entry that joins meets a
+firing stuck on a symbol there, which ends that side alone, as said above.
+It does so under `--partial` too: `morphing` of `Morph.hs` runs the operand
+through `morph'` and parks nothing, so no later block runs on a term that
+was never morphed, and `--partial` parks the firing as a whole (#2014).
 
 A `defer` line, `𝑛3: 𝑛1` (`Deferred` of `Lambdas.hs`, `deferred` of
 `Evaluate.hs`, #1933), looks at a copy, a formation with no λ, no void and
@@ -426,8 +426,8 @@ is no bare symbol: it morphs the argument in the copy, at a site such as
 does, and writes every step to the protocol, so the markup names the argument
 by the object an application made of it, such as `𝑛·77·3`. An argument whose
 morph or firing gets stuck, is cut or runs out of steps gets the firing stuck
-at once, as an operand does (#2014), but for an `opaque` in an entry that
-joins, which binds the meta of the `defer` line to ⊥.
+at once, as an operand does (#2014), but for a firing stuck on a symbol in
+an entry that joins, which binds the meta of the `defer` line to ⊥.
 
 An entry answers, it never computes: the answer carries a symbol `𝜎` standing
 for a value nobody worked out, minted fresh per firing and counted by `_minted`
@@ -438,10 +438,16 @@ there would hand out again the symbols its protocol records already spell
 carries. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
-parks on. The protocol records the first as `unanswered L_none` (`EvStuck`)
-and the second as `opaque 𝜎1` (`EvOpaque`, `<opaque symbol="𝜎1">` in the
+parks on. A dispatch off a formation whose λ is a symbol, such as
+`⟦ λ ⤍ 𝜎1 ⟧.foo`, fires nothing: an attribute of an object nobody knows is
+another object nobody knows, so `morph''` of `Morph.hs` answers it with a
+fresh symbol before any rule and writes `opaque 𝜎2:λ ≔ 𝜎1:λ.foo`
+(`EvOpaqued`), and the markup `<opaque symbol="𝜎2" of="𝜎1.foo"/>`, the way
+`fed` does for an argument (#2479). The protocol records a λ name no entry
+answers as `unanswered L_none` (`EvStuck`) and a firing of a λ naming a
+symbol as `opaque 𝜎1` (`EvOpaque`, `<opaque symbol="𝜎1">` in the
 markup), since no entry of the file may answer a symbol, and both comment
-with the whole term the judgment worked on, as `𝕄(𝜎1:λ.at)`: `premised` of
+with the whole term the judgment worked on, as `𝕄(𝜎1:λ)`: `premised` of
 `Morph.hs` hands it to the firing in `_working` of `ReduceContext` (#2404). What
 fired is written as a tree by `--protocol` and `--minutes`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments

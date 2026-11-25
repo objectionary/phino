@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+# yamllint disable rule:line-length
+# A λ binding naming a symbol rather than a name, which is what a value nobody
+# worked out looks like: ⟦ λ ⤍ 𝜎1 ⟧. An attribute of an object nobody knows is
+# another object nobody knows, so dispatching 'plus' off it is 'opaque' and
+# gives a new symbol, 𝜎2 (#2479), the way an argument fed to a bare symbol
+# gives one (#2476). The argument then fed to 𝜎2 gives 𝜎3.
+symbolic: '[]'
+location: 'Q.a'
+partial: true
+input: '⟦ a ↦ ⟦ λ ⤍ 𝜎1 ⟧.plus( x ↦ 5 ) ⟧'
+result: '𝜎3:λ'
+protocol: |
+  𝕄(Φ.a):
+    opaque 𝜎2:λ ≔ 𝜎1:λ.plus
+    fed 𝜎3:λ ≔ 𝜎2:λ( x ↦ 5.0 )
+    morphed 𝑛·0·1 ≔ 𝜎3:λ

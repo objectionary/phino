@@ -1566,6 +1566,22 @@ spec = do
         protocol <- readProtocol path
         map (dropWhile (== ' ')) (lines protocol) `shouldContain` ["fed 𝜎2:λ ≔ 𝜎1:λ( k ↦ 01-:Δ )", "morphed 𝑛·0·2 ≔ 𝜎2:λ", "𝛿·0·1 ≔ 𝔻(𝜎2:λ)"]
 
+    it "dispatches an attribute off a bare symbol and gets a new symbol, not a stop" $
+      withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
+        hClose stream
+        withStdin "⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧, app ↦ Φ.x.foo ⟧" $
+          testCLISucceeded ["dataize", "--locator=Q.app", "--partial", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
+        protocol <- readProtocol path
+        map (dropWhile (== ' ')) (lines protocol) `shouldContain` ["opaque 𝜎2:λ ≔ 𝜎1:λ.foo", "morphed 𝑛·0·2 ≔ 𝜎2:λ", "𝛿·0·1 ≔ 𝔻(𝜎2:λ)"]
+
+    it "dispatches an attribute off a bare symbol and writes the new symbol to the XML protocol" $
+      withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
+        hClose stream
+        withStdin "⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧, app ↦ Φ.x.foo ⟧" $
+          testCLISucceeded ["dataize", "--locator=Q.app", "--partial", "--quiet", "--sweet", "--hide-rho", "--protocol=" ++ path] []
+        protocol <- readProtocol path
+        map (dropWhile (== ' ')) (lines protocol) `shouldContain` ["<opaque symbol=\"𝜎2\" of=\"𝜎1.foo\"/>", "<morphed meta=\"𝑛·0·2\">𝜎2</morphed>"]
+
     it "feeds a named argument to a bare symbol and writes it to the XML protocol" $
       withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
         hClose stream
@@ -3660,7 +3676,7 @@ spec = do
             hClose stream
             withLambdasOf (T.pack "- λ: L_pick\n  morph:\n    𝑛1: ξ.absent\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \picks ->
               withStdin "[[ x -> [[ here -> [[ ]], L> L_pick ]].foo ]]" $
-                testCLIFailed ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] ["No entry of --symbolic answers the λ function '𝜎1'"]
+                testCLISucceeded ["morph", "--symbolic=" ++ picks, "--locator=Q.x", "--protocol=" ++ path, "--quiet", "--hide-rho"] []
             records <- readProtocol path
             lines records
               `shouldBe` [ "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -3680,7 +3696,8 @@ spec = do
                          , "    <formed meta=\"𝑒·1·2\" λ=\"L_pick\"><meta attr=\"here\">𝑒·1·1</meta></formed>"
                          , "    <evaluated meta=\"𝑛·1·5\" of=\"𝑒·1·2\">𝜎1</evaluated>"
                          , "  </evaluate>"
-                         , "  <opaque symbol=\"𝜎1\" by=\"morph\">𝜎1.foo</opaque>"
+                         , "  <opaque symbol=\"𝜎2\" of=\"𝜎1.foo\"/>"
+                         , "  <morphed meta=\"𝑛·0·1\">𝜎2</morphed>"
                          , "</morph>"
                          ]
 

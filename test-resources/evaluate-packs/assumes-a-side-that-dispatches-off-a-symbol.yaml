@@ -3,10 +3,8 @@
 ---
 # yamllint disable rule:line-length
 # The right side dispatches 'q' off a bare symbol, which nothing answers, so
-# its morph is 'opaque'. Before #2427 that got the whole fork stuck and threw
-# away the left side. Now the opaque ends that side alone, as ⊥ does: the side
-# is ⊥ and the join answers the left side under the condition, writing a
-# 'guarded' line.
+# its morph is 'opaque' and gives a new symbol (#2479). The join takes the
+# left side for that symbol and writes an 'assumed' line (#2469).
 symbolic: |
   - λ: L_fork
     dataize:
@@ -32,11 +30,12 @@ protocol: |
         morphed 𝑛·1·1 ≔ Φ.k:φ
       𝑛1·1 ≔ 𝑛·1·1  # 𝕄(ξ.left🌵)
       𝕄(ξ.right🌵):
-        opaque 𝜎1  # 𝕄(𝜎1:λ.q)
-      𝑛2·1 ≔ ⊥  # 𝕄(ξ.right🌵)
-      guarded 𝛿1·1 ? 𝑛1·1 : 𝑛2·1  # where 𝑛2·1 is ⊥
-      𝑛·1·2 ≔ 𝑛·1·1
-      evaluated 𝑛·1·3 ≔ 𝑛·1·2  # ⟦ λ ⤍ L_fork, on🌵 ↦ 00-:Δ, left🌵 ↦ 𝑛·1·2, right🌵 ↦ 𝜎1:λ.q ⟧
-    normalized 𝑛·0·1 ≔ Φ.k  # 𝑛·1·3.φ
+        opaque 𝜎2:λ ≔ 𝜎1:λ.q
+        morphed 𝑛·1·2 ≔ 𝜎2:λ
+      𝑛2·1 ≔ 𝑛·1·2  # 𝕄(ξ.right🌵)
+      assumed 𝜎2:λ ≡ 𝑛1·1
+      𝑛·1·3 ≔ 𝑛·1·1
+      evaluated 𝑛·1·4 ≔ 𝑛·1·3  # ⟦ λ ⤍ L_fork, on🌵 ↦ 00-:Δ, left🌵 ↦ 𝑛·1·3, right🌵 ↦ 𝜎1:λ.q ⟧
+    normalized 𝑛·0·1 ≔ Φ.k  # 𝑛·1·4.φ
     normalized 𝑛·0·2 ≔ ⟦⟧:q  # Φ.k
     morphed 𝑛·0·3 ≔ 𝑛·0·2
