@@ -201,16 +201,16 @@ spec = do
   describe "partially evaluates around a λ function that cannot fire (--partial)" $ do
     let placeholder = ExFormation [BiLambda (Function "Sym_arg_0")]
     it "fails on it without the flag, naming the λ function" $ do
-      expr <- parseExpressionThrows (primitives "2.times(3).nope")
+      expr <- parseExpressionThrows (primitives "2.times(x -> 3).nope")
       (dataize expr emptyState . withLambdas known =<< defaultReduceContext ExRoot)
         `shouldThrow` (\e -> "No entry of --symbolic answers the λ function 'L_number_nope'" `isInfixOf` show (e :: SomeException))
     it "leaves the application of the unanswered λ function in place" $ do
-      ((outcome, _), _) <- partially known "2.times(3).nope"
+      ((outcome, _), _) <- partially known "2.times(x -> 3).nope"
       case outcome of
         Residual (ExFormation bds) -> bds `shouldContain` [BiLambda (Function "L_number_nope")]
         other -> expectationFailure ("expected a residual formation, got " ++ show other)
     it "keeps what was evaluated before the stuck site in the residue" $ do
-      ((outcome, _), _) <- partially known "2.times(3).nope"
+      ((outcome, _), _) <- partially known "2.times(x -> 3).nope"
       case outcome of
         Residual (ExFormation bds) -> do
           let rho = [value | BiTau AtRho value <- bds]
@@ -218,16 +218,16 @@ spec = do
           [() | ExApplication (ExDispatch ExRoot (AtLabel "number")) (ArTau AtPhi _) <- rho] `shouldBe` [()]
         other -> expectationFailure ("expected a residual formation, got " ++ show other)
     it "writes the firing that answered into the protocol and stops at the stuck one" $ do
-      (_, protocol) <- partially known "2.times(3).nope"
+      (_, protocol) <- partially known "2.times(x -> 3).nope"
       protocol
         `shouldBe` unlines
           [ "  𝔻(Φ):"
           , "    boxed 𝑛·0·1 ≔ Φ.φ"
-          , "    normalized 𝑛·0·2 ≔ 2.0.times( 3.0 ).nope( ρ ↦ Φ )  # Φ.φ"
+          , "    normalized 𝑛·0·2 ≔ 2.0.times( x ↦ 3.0 ).nope( ρ ↦ Φ )  # Φ.φ"
           , "    𝕄(𝑛·0·1):"
-          , "      normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧  # Φ.number"
+          , "      normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( b ↦ x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧  # Φ.number"
           , "      𝑛·0·4 ≔ 2.0"
-          , "      𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
+          , "      𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( b ↦ x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
           , "      normalized 𝑛·0·6 ≔ ⟦ ρ ↦ 𝑛·0·4, x ↦ ∅, λ ⤍ L_number_times ⟧  # 𝑛·0·5.times"
           , "      𝑛·0·7 ≔ 𝑛·0·4.times( x ↦ 3.0 )"
           , "      𝑛·0·8 ≔ ⟦ ρ ↦ 𝑛·0·4, x ↦ 3.0, λ ⤍ L_number_times ⟧"
@@ -235,7 +235,7 @@ spec = do
           , "        𝔻(ξ.ρ):"
           , "          𝕄(ξ.ρ):"
           , "            𝑛·1·1 ≔ 2.0"
-          , "            𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
+          , "            𝑛·1·2 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( b ↦ x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
           , "            morphed 𝑛·1·3 ≔ 𝑛·1·2"
           , "          boxed 𝑛·1·4 ≔ 𝑛·1·3.φ"
           , "          normalized 𝑛·1·5 ≔ Φ.bytes( φ ↦ 40-00-00-00-00-00-00-00:Δ, ρ ↦ 𝑛·1·1 )  # 𝑛·1·4"
@@ -251,7 +251,7 @@ spec = do
           , "        𝔻(ξ.x):"
           , "          𝕄(ξ.x):"
           , "            𝑛·1·12 ≔ 3.0"
-          , "            𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
+          , "            𝑛·1·13 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ ), as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( b ↦ x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
           , "            morphed 𝑛·1·14 ≔ 𝑛·1·13"
           , "          boxed 𝑛·1·15 ≔ 𝑛·1·14.φ"
           , "          normalized 𝑛·1·16 ≔ Φ.bytes( φ ↦ 40-08-00-00-00-00-00-00:Δ, ρ ↦ 𝑛·1·12 )  # 𝑛·1·15"
@@ -266,7 +266,7 @@ spec = do
           , "        𝑛·1·22 ≔ Φ.number( φ ↦ 𝜎1:λ )  # 𝑛 of L_number_times"
           , "        𝕄(𝑛·1·22):"
           , "          𝑛·1·23 ≔ Φ.number( φ ↦ 𝜎1:λ )"
-          , "          𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
+          , "          𝑛·1·24 ≔ ⟦ φ ↦ 𝜎1:λ, as-bytes ↦ φ, plus(ρ, x) ↦ L_number_plus:λ, times(ρ, x) ↦ L_number_times:λ, div(ρ, x) ↦ L_number_div:λ, gt(ρ, x) ↦ L_number_gt:λ, eq(ρ, x) ↦ ρ.as-bytes.eq( b ↦ x.as-bytes ):φ, nope(ρ) ↦ L_number_nope:λ ⟧"
           , "          morphed 𝑛·1·25 ≔ 𝑛·1·24"
           , "        𝑛·1·26 ≔ 𝑛·1·25  # 𝕄(𝑛·1·22)"
           , "        evaluated 𝑛·1·27 ≔ 𝑛·1·26  # 𝑛·0·8"
@@ -295,10 +295,10 @@ spec = do
       (_, protocol) <- partially known "73.25"
       lines protocol `shouldContain` ["    boxed 𝑛·0·1 ≔ Φ.φ", "    normalized 𝑛·0·2 ≔ 73.25  # Φ.φ", "    𝕄(𝑛·0·1):"]
     it "still reaches the manufactured datum when nothing is stuck" $ do
-      ((outcome, _), _) <- partially known "2.times(3)"
+      ((outcome, _), _) <- partially known "2.times(x -> 3)"
       outcome `shouldBe` Dataized (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])
     it "parks a firing whose operand dataizes the terminator ⊥" $ do
-      ((outcome, _), protocol) <- partially known "5.plus( ⟦ ⟧ )"
+      ((outcome, _), protocol) <- partially known "5.plus( x -> ⟦ ⟧ )"
       case outcome of
         Residual (ExFormation bds) -> bds `shouldContain` [BiLambda (Function "L_number_plus")]
         other -> expectationFailure ("expected a residual formation, got " ++ show other)
@@ -357,7 +357,7 @@ spec = do
             ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.morphingRules
             ++ concatMap (map (verb . (.operation)) . (.premises)) Yaml.dataizationRules
     it "uses no step label without a defining rule or operation" $ do
-      expr <- parseExpressionThrows (primitives "5.plus(6)")
+      expr <- parseExpressionThrows (primitives "5.plus(x -> 6)")
       loc <- parseExpressionThrows "Q"
       (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext loc
       let orphans = nub [label | (_, Just (_, label)) <- chain, label `notElem` allowed, label /= "symbol"]
@@ -365,7 +365,7 @@ spec = do
         (null orphans)
         (expectationFailure ("Dataization emitted step labels with no defining rule or operation: " ++ show orphans))
     it "takes the step of a firing by evaluation" $ do
-      expr <- parseExpressionThrows (primitives "5.plus(6)")
+      expr <- parseExpressionThrows (primitives "5.plus(x -> 6)")
       loc <- parseExpressionThrows "Q"
       (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext loc
       map snd chain `shouldContain` [Just (Evaluation, "evaluate")]
@@ -394,11 +394,11 @@ spec = do
           loc' <- parseExpressionThrows loc
           (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext loc'
           pure [label | (_, Just (_, label)) <- chain]
-    it "dataizes 5.plus(6) through the expected rules" $ do
+    it "dataizes 5.plus(x -> 6) through the expected rules" $ do
       labels <-
         labelsOf
           "Q"
-          "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+          "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6) ]]"
       labels
         `shouldBe` [ "box"
                    , "dot"
@@ -414,8 +414,8 @@ spec = do
     it "dataizes a located reference through the expected rules" $ do
       labels <- labelsOf "Q.foo.bar" "[[ foo -> [[ bar -> [[ @ -> Q.x ]] ]], x -> [[ D> 42- ]] ]]"
       labels `shouldBe` ["box", "dot", "ma", "skip", "mf", "delta"]
-    it "takes every step of 5.plus(6) by the judgment of its rule" $ do
-      expr <- parseExpressionThrows "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+    it "takes every step of 5.plus(x -> 6) by the judgment of its rule" $ do
+      expr <- parseExpressionThrows "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6) ]]"
       (_, chain, _) <- dataize expr emptyState . withLambdas known =<< defaultReduceContext ExRoot
       [judgment | (_, Just (judgment, _)) <- chain]
         `shouldBe` [ Dataization

@@ -109,7 +109,7 @@ spec = do
       let leaf = EX_GLOBAL Φ
           nested = iterate call leaf !! 10000
           call :: EXPRESSION -> EXPRESSION
-          call inner = EX_APPLICATION inner NO_SPACE EOL (TAB 1) (AA_EXPRS (APP_ARG leaf AAS_EMPTY)) EOL (TAB 0) 1
+          call inner = EX_APPLICATION inner NO_SPACE EOL (TAB 1) (AA_TAUS (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW leaf) (BDS_EMPTY NO_TAB) NO_TAB)) EOL (TAB 0) 1
       result <- timeout 5000000 (evaluate (T.count "(" (render (withMargin 80 nested))))
       result `shouldBe` Just 10000
 
@@ -176,31 +176,17 @@ spec = do
       ]
       (\(desc, margin, expression, expected) -> it desc (render (withMargin margin (expressionToCST expression)) `shouldBe` expected))
 
-  describe "withMargin on positional (AA_EXPRS) application arguments" $
+  describe "withMargin on several application arguments" $
     forM_
-      [ (100, "Φ.x( ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ, ρ ↦ Φ ⟧ )")
+      [ (100, "Φ.x( a ↦ Φ, bq ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ, ρ ↦ Φ ⟧ )")
       ,
         ( 1
-        , "Φ.x(\n  ⟦\n    aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n    ρ ↦ Φ\n  ⟧\n)"
+        , "Φ.x(\n  a ↦ Φ,\n  bq ↦ ⟦\n    aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n    ρ ↦ Φ\n  ⟧\n)"
         )
       ]
       ( \(margin, expected) ->
           it ("margin " ++ show margin) $
-            let ex = ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArAlpha (Alpha 0) (ExFormation [BiTau bigLabel ExRoot, BiTau AtRho ExRoot]))
-             in render (withMargin margin (expressionToCST ex)) `shouldBe` expected
-      )
-
-  describe "withMargin on mixed tau/alpha (AA_TAUS with PA_ALPHA) application arguments" $
-    forM_
-      [ (100, "Φ.x( a ↦ Φ, α5 ↦ ⟦ aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ, ρ ↦ Φ ⟧ )")
-      ,
-        ( 1
-        , "Φ.x(\n  a ↦ Φ,\n  α5 ↦ ⟦\n    aVeryLongAttributeNameThatWontFitOnOneLine ↦ Φ,\n    ρ ↦ Φ\n  ⟧\n)"
-        )
-      ]
-      ( \(margin, expected) ->
-          it ("margin " ++ show margin) $
-            let ex = ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "a") ExRoot)) (ArAlpha (Alpha 5) bigFormation)
+            let ex = ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "a") ExRoot)) (ArTau (AtLabel "bq") bigFormation)
              in render (withMargin margin (expressionToCST ex)) `shouldBe` expected
       )
 

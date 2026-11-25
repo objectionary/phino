@@ -178,19 +178,6 @@ spec = do
         , "ξ(\n  a ↦ ξ\n)(\n  b ↦ ξ\n)"
         )
       ,
-        ( "EX_APPLICATION with positional arguments (AA_EXPRS) sugars them into alpha-indexed applications"
-        , EX_APPLICATION
-            xiExpr
-            NO_SPACE
-            EOL
-            (TAB 1)
-            (AA_EXPRS (APP_ARG xiExpr (AAS_EXPR EOL (TAB 1) rootExpr AAS_EMPTY)))
-            EOL
-            (TAB 0)
-            1
-        , "ξ(\n  α0 ↦ ξ\n)(\n  α1 ↦ Φ\n)"
-        )
-      ,
         ( "EX_NUMBER with no extra rho expands into the Q.number(Q.bytes(...)) form"
         , EX_NUMBER 42 (TAB 1) []
         , "Φ.number(\n    φ ↦ Φ.bytes(\n      φ ↦ ⟦\n        Δ ⤍ 40-45-00-00-00-00-00-00\n      ⟧\n    )\n  )"
@@ -286,11 +273,6 @@ spec = do
         ( "PA_TAU recurses into its value"
         , PA_TAU (AT_LABEL "x") ARROW (EX_ATTR (AT_LABEL "y"))
         , PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "y"))
-        )
-      ,
-        ( "PA_ALPHA recurses into its value"
-        , PA_ALPHA (AL_IDX ALPHA 0) ARROW (EX_ATTR (AT_LABEL "y"))
-        , PA_ALPHA (AL_IDX ALPHA 0) ARROW (EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "y"))
         )
       ,
         ( "PA_FORMATION with an empty object body joins its void params ahead of the body"
@@ -407,7 +389,6 @@ spec = do
         , LENGTH (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_ATTR (AT_LABEL "y"))) (BDS_EMPTY (TAB 1)) (TAB 1))
         , LENGTH (BI_PAIR (PA_TAU (AT_LABEL "x") ARROW (EX_DISPATCH (EX_XI XI) NO_SPACE (AT_LABEL "y"))) (BDS_EMPTY (TAB 1)) (TAB 1))
         )
-      , ("DOMAIN recurses into its binding", DOMAIN (BI_EMPTY (TAB 1)), DOMAIN (BI_EMPTY (TAB 1)))
       , ("LITERAL is unchanged", LITERAL 3, LITERAL 3)
       ]
       (\(desc, sweet, salty) -> it desc (toSalty sweet `shouldBe` salty))
@@ -510,11 +491,6 @@ spec = do
             RSB
         )
       ,
-        ( "a positional alpha binding is not rho and is kept, recursing through goPair"
-        , EX_APPLICATION xiExpr NO_SPACE EOL (TAB 1) (AA_TAUS (BI_PAIR (PA_ALPHA (AL_IDX ALPHA 0) ARROW xiExpr) (BDS_EMPTY (TAB 1)) (TAB 1))) EOL (TAB 0) 1
-        , EX_APPLICATION xiExpr NO_SPACE EOL (TAB 1) (AA_TAUS (BI_PAIR (PA_ALPHA (AL_IDX ALPHA 0) ARROW xiExpr) (BDS_EMPTY (TAB 1)) (TAB 1))) EOL (TAB 0) 1
-        )
-      ,
         ( "an application whose only tau argument (AA_TAU) is rho collapses to its bare callee"
         , EX_APPLICATION rootDotX NO_SPACE EOL (TAB 1) (AA_TAU (APP_BINDING (PA_TAU (AT_RHO RHO) ARROW xiExpr))) EOL (TAB 0) 1
         , rootDotX
@@ -588,11 +564,6 @@ spec = do
             EOL
             (TAB 0)
             1
-        )
-      ,
-        ( "an application argument list (AA_EXPRS) is always kept and recurses"
-        , EX_APPLICATION xiExpr NO_SPACE EOL (TAB 1) (AA_EXPRS (APP_ARG xiExpr (AAS_EXPR EOL (TAB 1) rootExpr AAS_EMPTY))) EOL (TAB 0) 1
-        , EX_APPLICATION xiExpr NO_SPACE EOL (TAB 1) (AA_EXPRS (APP_ARG xiExpr (AAS_EXPR EOL (TAB 1) rootExpr AAS_EMPTY))) EOL (TAB 0) 1
         )
       ,
         ( "a xi.rho dispatch value is left untouched (only bindings and app arguments are stripped)"
@@ -680,11 +651,11 @@ spec = do
         printExpression' string (config SWEET) `shouldBe` "\"hi\""
         printExpression' string (config SALTY) `shouldBe` "Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-69 ⟧ ) )"
     it
-      "an application with multiple positional arguments sugars/salts between e(e0, e1) and e(α0 ↦ e0)(α1 ↦ e1)"
+      "an application with several arguments sugars/salts between e(u ↦ e0, v ↦ e1) and e(u ↦ e0)(v ↦ e1)"
       $ do
-        let multiArgApp = ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "e")) (ArAlpha (Alpha 0) ExRoot)) (ArAlpha (Alpha 1) ExXi)
-        printExpression' multiArgApp (config SWEET) `shouldBe` "Φ.e( Φ, ξ )"
-        printExpression' multiArgApp (config SALTY) `shouldBe` "Φ.e( α0 ↦ Φ )( α1 ↦ ξ )"
+        let multiArgApp = ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "e")) (ArTau (AtLabel "u") ExRoot)) (ArTau (AtLabel "v") ExXi)
+        printExpression' multiArgApp (config SWEET) `shouldBe` "Φ.e( u ↦ Φ, v ↦ ξ )"
+        printExpression' multiArgApp (config SALTY) `shouldBe` "Φ.e( u ↦ Φ )( v ↦ ξ )"
     it
       "a nested object-with-params formation sugars/salts between obj(p, q) -> [[..]] and its expanded void bindings"
       $ do

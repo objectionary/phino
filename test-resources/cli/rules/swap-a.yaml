@@ -3,4 +3,4 @@
 ---
 name: swap-a
 pattern: ⟦ x -> !e1 ⟧
-result: Q.a(!e1)
+result: Q.a(k -> !e1)

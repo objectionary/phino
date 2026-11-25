@@ -24,7 +24,7 @@ symbolic: |
       right: $.right🌵
       otherwise: L_join
 location: 'Q.y'
-input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ ⟦ x ↦ ∅, k ↦ ξ.x ⟧ ⟧, b ↦ ⟦ ke ↦ ⟦ x ↦ ∅, k ↦ ξ.x ⟧ ⟧, λ ⤍ L_fork ⟧.ke( ⟦ λ ⤍ 𝜎2 ⟧ ).k ⟧'
+input: '⟦ y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎1 ⟧, a ↦ ⟦ φ ↦ Φ.hx, ke ↦ ⟦ x ↦ ∅, k ↦ ξ.x ⟧ ⟧, b ↦ ⟦ ke ↦ ⟦ x ↦ ∅, k ↦ ξ.x ⟧ ⟧, λ ⤍ L_fork ⟧.ke( x ↦ ⟦ λ ⤍ 𝜎2 ⟧ ).k ⟧'
 result: '𝜎2:λ'
 protocol: |
   𝕄(Φ.y):

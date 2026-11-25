@@ -114,8 +114,6 @@ spec = do
       , (A, "t")
       , (TAU, "𝜏")
       , (TAU', "\\tau")
-      , (I, "𝑖")
-      , (I', "i")
       , (B, "𝐵")
       , (B', "B")
       , (D, "𝛿")
@@ -137,22 +135,6 @@ spec = do
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-  describe "render ALPHA'" $
-    forM_
-      [ ("ALPHA", ALPHA, "α")
-      , ("ALPHA'", ALPHA', "~")
-      ]
-      (\(desc, node, expected) -> it desc (render node `shouldBe` expected))
-
-  describe "render ALPHA" $
-    forM_
-      [ ("AL_IDX unicode", AL_IDX ALPHA 3, "α3")
-      , ("AL_IDX ascii", AL_IDX ALPHA' 3, "~3")
-      , ("AL_META unicode", AL_META ALPHA (META NO_EXCL I "5"), "α𝑖5")
-      , ("AL_META ascii", AL_META ALPHA' (META EXCL I' "5"), "~!i5")
-      ]
-      (\(desc, node, expected) -> it desc (render node `shouldBe` expected))
-
   describe "render TAB" $
     forM_
       [ ("no indent", TAB 0, "")
@@ -165,7 +147,6 @@ spec = do
   describe "render PAIR" $
     forM_
       [ ("PA_TAU", PA_TAU (AT_LABEL "x") ARROW xiExpr, "x ↦ ξ")
-      , ("PA_ALPHA", PA_ALPHA (AL_IDX ALPHA 0) ARROW xiExpr, "α0 ↦ ξ")
       , ("PA_FORMATION with no voids delegates to PA_TAU", PA_FORMATION (AT_LABEL "f") [] ARROW xiExpr, "f ↦ ξ")
       ,
         ( "PA_FORMATION with voids"
@@ -217,17 +198,8 @@ spec = do
     forM_
       [ ("AA_TAU", AA_TAU (APP_BINDING (pairXi "a")), "a ↦ ξ")
       , ("AA_TAUS", AA_TAUS (bindingXi "a"), "a ↦ ξ")
-      , ("AA_EXPRS", AA_EXPRS (APP_ARG xiExpr AAS_EMPTY), "ξ")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))
-
-  describe "render APP_ARG and APP_ARGS" $
-    forM_
-      [ ("APP_ARG with trailing arg", render (APP_ARG xiExpr (AAS_EXPR EOL (TAB 1) xiExpr AAS_EMPTY)), "ξ,\n  ξ")
-      , ("APP_ARGS empty", render AAS_EMPTY, "")
-      , ("APP_ARGS one", render (AAS_EXPR EOL (TAB 1) xiExpr AAS_EMPTY), ",\n  ξ")
-      ]
-      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
   describe "render EXPRESSION" $
     forM_
@@ -315,9 +287,7 @@ spec = do
 
   describe "render NUMBER" $
     forM_
-      [ ("IDX_META", IDX_META (META NO_EXCL I "x"), "𝑖x")
-      , ("LENGTH", LENGTH (bindingXi "x"), "\\vert x ↦ ξ \\vert")
-      , ("DOMAIN", DOMAIN (bindingXi "x"), "\\vert \\overline{ x ↦ ξ } \\vert")
+      [ ("LENGTH", LENGTH (bindingXi "x"), "\\vert x ↦ ξ \\vert")
       , ("LITERAL", LITERAL 7, "7")
       ]
       (\(desc, node, expected) -> it desc (render node `shouldBe` expected))

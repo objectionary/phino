@@ -64,8 +64,6 @@ joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse 
     goArgument :: Argument -> Argument -> Joining -> Either [Attribute] (Argument, Joining)
     goArgument (ArTau attr one) (ArTau attr' two) joining
       | attr == attr' = first (ArTau attr) <$> goExpr one two joining
-    goArgument (ArAlpha alpha one) (ArAlpha alpha' two) joining
-      | alpha == alpha' = first (ArAlpha alpha) <$> goExpr one two joining
     goArgument one two joining = same one two joining
     goBindings :: [Binding] -> [Binding] -> Joining -> Either [Attribute] ([Binding], Joining)
     goBindings [] [] joining = Right ([], joining)
@@ -101,7 +99,6 @@ joined left right spent = (\(term, (spent', bottom, _, made)) -> (term, reverse 
         goFacedBinding bd = pure bd
         goFacedArgument :: Argument -> State Joining Argument
         goFacedArgument (ArTau attr expr) = ArTau attr <$> goFaced expr
-        goFacedArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goFaced expr
     picked :: (Int, Int) -> Joining -> (Int, Joining)
     picked pair joining@(spent', bottom, names, made) = case Map.lookup pair names of
       Just name -> (name, joining)

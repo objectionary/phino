@@ -14,7 +14,6 @@ import Data.Text (Text)
 
 data MetaValue
   = MvAttribute Attribute
-  | MvIndex Int
   | MvBytes Bytes
   | MvBindings [Binding]
   | MvFunction Function
@@ -61,13 +60,6 @@ matchAttribute ptn tgt
   | ptn == tgt = [substEmpty]
   | otherwise = []
 
-matchAlpha :: Alpha -> Alpha -> [Subst]
-matchAlpha (AlMeta meta) (Alpha idx) = [substSingle meta (MvIndex idx)]
-matchAlpha (AlAny slot) (Alpha idx) = [substSlot slot (MvIndex idx)]
-matchAlpha ptn tgt
-  | ptn == tgt = [substEmpty]
-  | otherwise = []
-
 matchFunction :: Function -> Function -> [Subst]
 matchFunction (FnMeta meta) tgt
   | named tgt = [substSingle meta (MvFunction tgt)]
@@ -95,8 +87,6 @@ matchBinding _ _ = []
 
 matchArgument :: Argument -> Argument -> [Subst]
 matchArgument (ArTau pattr pexp) (ArTau tattr texp) = combineMany (matchAttribute pattr tattr) (matchExpression' pexp texp)
-matchArgument (ArAlpha palpha pexp) (ArAlpha talpha texp) = combineMany (matchAlpha palpha talpha) (matchExpression' pexp texp)
-matchArgument _ _ = []
 
 matchBindings :: [Binding] -> [Binding] -> [Subst]
 matchBindings [] [] = [substEmpty]
@@ -126,7 +116,6 @@ matchExpression' ExTermination ExTermination = [substEmpty]
 matchExpression' (ExFormation pbs) (ExFormation tbs) = matchBindings pbs tbs
 matchExpression' (ExDispatch pexp pattr) (ExDispatch texp tattr) = combineMany (matchAttribute pattr tattr) (matchExpression' (pinned pattr tattr pexp) texp)
 matchExpression' (ExApplication pexp parg@(ArTau pattr _)) (ExApplication texp targ@(ArTau tattr _)) = combineMany (matchExpression' (pinned pattr tattr pexp) texp) (matchArgument parg targ)
-matchExpression' (ExApplication pexp parg) (ExApplication texp targ) = combineMany (matchExpression' pexp texp) (matchArgument parg targ)
 matchExpression' (ExPhiAgain prefix idx expr) (ExPhiAgain prefix' idx' expr')
   | prefix == prefix' && idx == idx' = matchExpression' expr expr'
   | otherwise = []
@@ -142,7 +131,6 @@ pinned (AtMeta meta) tattr = goExpr
     goExpr (ExFormation bds) = ExFormation (map goBinding bds)
     goExpr (ExDispatch expr attr) = ExDispatch (goExpr expr) (goAttribute attr)
     goExpr (ExApplication expr (ArTau attr arg)) = ExApplication (goExpr expr) (ArTau (goAttribute attr) (goExpr arg))
-    goExpr (ExApplication expr (ArAlpha alpha arg)) = ExApplication (goExpr expr) (ArAlpha alpha (goExpr arg))
     goExpr expr = expr
     goBinding :: Binding -> Binding
     goBinding (BiTau attr expr) = BiTau (goAttribute attr) (goExpr expr)
@@ -169,7 +157,6 @@ matchExpressionDeep' redex ptn tgt = go tgt []
     below (ExFormation bds) rest = foldr inside rest bds
     below (ExDispatch expr _) rest = go expr rest
     below (ExApplication expr (ArTau _ arg)) rest = go expr (go arg rest)
-    below (ExApplication expr (ArAlpha _ arg)) rest = go expr (go arg rest)
     below _ rest = rest
     inside :: Binding -> [Subst] -> [Subst]
     inside (BiTau _ expr) rest = go expr rest
@@ -192,7 +179,6 @@ reachable' redex ptn = go
             ExFormation bds -> any inside bds
             ExDispatch expr _ -> go expr
             ExApplication expr (ArTau _ arg) -> go expr || go arg
-            ExApplication expr (ArAlpha _ arg) -> go expr || go arg
             _ -> False
     inside :: Binding -> Bool
     inside (BiTau _ expr) = go expr
@@ -210,7 +196,6 @@ fitting = go
     go (ExFormation pbs) (ExFormation tbs) = all (\pbd -> loose pbd || any (kin pbd) tbs) pbs
     go (ExDispatch pexp pattr) (ExDispatch texp tattr) = same pattr tattr && go pexp texp
     go (ExApplication pexp (ArTau pattr _)) (ExApplication texp (ArTau tattr _)) = same pattr tattr && go pexp texp
-    go (ExApplication pexp (ArAlpha _ _)) (ExApplication texp (ArAlpha _ _)) = go pexp texp
     go (ExPhiAgain{}) (ExPhiAgain{}) = True
     go (ExPhiMeet{}) (ExPhiMeet{}) = True
     go _ _ = False
@@ -240,7 +225,6 @@ sites redex rule tgt = go tgt []
     below (ExFormation bds) rest = foldr inside rest bds
     below (ExDispatch expr _) rest = go expr rest
     below (ExApplication expr (ArTau _ arg)) rest = go expr (go arg rest)
-    below (ExApplication expr (ArAlpha _ arg)) rest = go expr (go arg rest)
     below _ rest = rest
     inside :: Binding -> [(Expression, a)] -> [(Expression, a)]
     inside (BiTau _ expr) rest = go expr rest
@@ -261,7 +245,6 @@ hits rules universe tgt = go [tgt] rules
     below (ExFormation bds) rest = foldr inside rest bds
     below (ExDispatch expr _) rest = expr : rest
     below (ExApplication expr (ArTau _ arg)) rest = expr : arg : rest
-    below (ExApplication expr (ArAlpha _ arg)) rest = expr : arg : rest
     below _ rest = rest
     inside :: Binding -> [Expression] -> [Expression]
     inside (BiTau _ expr) rest = expr : rest

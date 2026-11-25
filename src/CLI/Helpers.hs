@@ -192,7 +192,6 @@ headerOf args file input expr table lambdas = do
     bindings :: Expression -> Int
     bindings (ExFormation bds) = length bds + sum [bindings inner | BiTau _ inner <- bds]
     bindings (ExApplication inner (ArTau _ arg)) = bindings inner + bindings arg
-    bindings (ExApplication inner (ArAlpha _ arg)) = bindings inner + bindings arg
     bindings (ExDispatch inner _) = bindings inner
     bindings (ExPhiMeet _ _ inner) = bindings inner
     bindings (ExPhiAgain _ _ inner) = bindings inner
@@ -295,7 +294,6 @@ printPhi PrintCtx{..} expr = P.printExpression' (if _hideRho then rholess expr e
     rholess (ExDispatch inner attr) = ExDispatch (rholess inner) attr
     rholess (ExApplication inner (ArTau AtRho _)) = rholess inner
     rholess (ExApplication inner (ArTau attr arg)) = ExApplication (rholess inner) (ArTau attr (rholess arg))
-    rholess (ExApplication inner (ArAlpha alpha arg)) = ExApplication (rholess inner) (ArAlpha alpha (rholess arg))
     rholess (ExPhiMeet prefix idx inner) = ExPhiMeet prefix idx (rholess inner)
     rholess (ExPhiAgain prefix idx inner) = ExPhiAgain prefix idx (rholess inner)
     rholess other = other

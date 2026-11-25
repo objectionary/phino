@@ -6,8 +6,8 @@ xmir: |
   <object>
     <o name="app">
       <o name="x" base="Φ.org.eolang">
-        <o base="Φ.x"/>
-        <o as="α1" base=".plus">
+        <o as="first" base="Φ.x"/>
+        <o as="second" base=".plus">
           <o base="Φ.y"/>
         </o>
         <o as="arg">
@@ -16,4 +16,4 @@ xmir: |
       </o>
     </o>
   </object>
-phi: '[[ app -> [[ x -> Q.org.eolang(~0 -> Q.x)(~1 -> Q.y.plus)(arg -> [[ y -> $ ]]) ]] ]]'
+phi: '[[ app -> [[ x -> Q.org.eolang(first -> Q.x)(second -> Q.y.plus)(arg -> [[ y -> $ ]]) ]] ]]'

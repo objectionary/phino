@@ -6,21 +6,21 @@
     plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧,
     times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧,
     gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
-    neg(ρ) ↦ ⟦ φ ↦ ξ.ρ.times( -1 ) ⟧,
-    minus(ρ, x) ↦ ⟦ φ ↦ ξ.ρ.plus( ξ.x.neg ) ⟧
+    neg(ρ) ↦ ⟦ φ ↦ ξ.ρ.times( x ↦ -1 ) ⟧,
+    minus(ρ, x) ↦ ⟦ φ ↦ ξ.ρ.plus( x ↦ ξ.x.neg ) ⟧
   ⟧,
   demo ↦ ⟦
-    gap(a, b) ↦ ⟦ φ ↦ ξ.a.minus( ξ.b ).times( ξ.a.minus( ξ.b ) ) ⟧,
-    far(p, q) ↦ ⟦ φ ↦ Φ.demo.gap( ξ.p, ξ.q ).gt( 100 ) ⟧,
-    clamp(x, lo, hi) ↦ ⟦ φ ↦ ξ.x.gt( ξ.hi ).if( ξ.hi, ξ.lo.gt( ξ.x ).if( ξ.lo, ξ.x ) ) ⟧,
-    twice(t) ↦ ⟦ φ ↦ ξ.t.gt( 0 ).if( ξ.t.plus( 1 ), ξ.t.plus( 2 ) ).plus( ξ.t.plus( 1 ) ) ⟧
+    gap(a, b) ↦ ⟦ φ ↦ ξ.a.minus( x ↦ ξ.b ).times( x ↦ ξ.a.minus( x ↦ ξ.b ) ) ⟧,
+    far(p, q) ↦ ⟦ φ ↦ Φ.demo.gap( a ↦ ξ.p, b ↦ ξ.q ).gt( x ↦ 100 ) ⟧,
+    clamp(x, lo, hi) ↦ ⟦ φ ↦ ξ.x.gt( x ↦ ξ.hi ).if( left ↦ ξ.hi, right ↦ ξ.lo.gt( x ↦ ξ.x ).if( left ↦ ξ.lo, right ↦ ξ.x ) ) ⟧,
+    twice(t) ↦ ⟦ φ ↦ ξ.t.gt( x ↦ 0 ).if( left ↦ ξ.t.plus( x ↦ 1 ), right ↦ ξ.t.plus( x ↦ 2 ) ).plus( x ↦ ξ.t.plus( x ↦ 1 ) ) ⟧
   ⟧,
   l🌵 ↦ ⟦
     mark(n, v) ↦ ⟦ λ ⤍ L_entry ⟧,
-    e1 ↦ Φ.l🌵.mark( 1, Φ.demo.gap( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ), Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ) ),
-    e2 ↦ Φ.l🌵.mark( 2, Φ.demo.far( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ), Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ) ) ),
-    e3 ↦ Φ.l🌵.mark( 3, Φ.demo.clamp( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ), Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ) ), Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ) ) ) ),
-    e4 ↦ Φ.l🌵.mark( 4, Φ.demo.twice( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ) ) ) ),
-    e5 ↦ Φ.l🌵.mark( 5, Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎9 ⟧ ) ).neg )
+    e1 ↦ Φ.l🌵.mark( n ↦ 1, v ↦ Φ.demo.gap( a ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎1 ⟧ ) ), b ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎2 ⟧ ) ) ) ),
+    e2 ↦ Φ.l🌵.mark( n ↦ 2, v ↦ Φ.demo.far( p ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ), q ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎4 ⟧ ) ) ) ),
+    e3 ↦ Φ.l🌵.mark( n ↦ 3, v ↦ Φ.demo.clamp( x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ), lo ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎6 ⟧ ) ), hi ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎7 ⟧ ) ) ) ),
+    e4 ↦ Φ.l🌵.mark( n ↦ 4, v ↦ Φ.demo.twice( t ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎8 ⟧ ) ) ) ),
+    e5 ↦ Φ.l🌵.mark( n ↦ 5, v ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ λ ⤍ 𝜎9 ⟧ ) ).neg )
   ⟧
 ⟧

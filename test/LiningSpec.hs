@@ -103,11 +103,6 @@ spec = do
         , PA_TAU (AT_LABEL "x") ARROW singlelineFormation
         )
       ,
-        ( "recurses through PA_ALPHA"
-        , PA_ALPHA (AL_IDX ALPHA 0) ARROW multilineFormation
-        , PA_ALPHA (AL_IDX ALPHA 0) ARROW singlelineFormation
-        )
-      ,
         ( "recurses through PA_FORMATION"
         , PA_FORMATION (AT_LABEL "x") [AT_RHO RHO] ARROW multilineFormation
         , PA_FORMATION (AT_LABEL "x") [AT_RHO RHO] ARROW singlelineFormation
@@ -129,28 +124,6 @@ spec = do
         , AA_TAU (APP_BINDING (PA_TAU (AT_LABEL "x") ARROW singlelineFormation))
         )
       , ("recurses through AA_TAUS", AA_TAUS biPair, AA_TAUS expectedBiPair)
-      ,
-        ( "recurses through AA_EXPRS"
-        , AA_EXPRS (APP_ARG multilineFormation AAS_EMPTY)
-        , AA_EXPRS (APP_ARG singlelineFormation AAS_EMPTY)
-        )
-      ]
-      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
-
-  describe "toSingleLine on APP_ARG" $
-    it "recurses through both fields" $ do
-      let appArg = APP_ARG multilineFormation (AAS_EXPR EOL (TAB 1) leafExpr AAS_EMPTY)
-          expected = APP_ARG singlelineFormation (AAS_EXPR NO_EOL TAB' leafExpr AAS_EMPTY)
-      toSingleLine appArg `shouldBe` expected
-
-  describe "toSingleLine on APP_ARGS" $
-    forM_
-      [
-        ( "recurses through AAS_EXPR"
-        , AAS_EXPR EOL (TAB 1) multilineFormation AAS_EMPTY
-        , AAS_EXPR NO_EOL TAB' singlelineFormation AAS_EMPTY
-        )
-      , ("leaves AAS_EMPTY untouched", AAS_EMPTY, AAS_EMPTY)
       ]
       (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
@@ -162,17 +135,11 @@ spec = do
       (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
 
   describe "toSingleLine on NUMBER" $ do
-    forM_
-      [ ("recurses through LENGTH", LENGTH biPair, LENGTH expectedBiPair)
-      , ("recurses through DOMAIN", DOMAIN biPair, DOMAIN expectedBiPair)
-      ]
-      (\(desc, node, expected) -> it desc (toSingleLine node `shouldBe` expected))
+    it "recurses through LENGTH" $
+      toSingleLine (LENGTH biPair) `shouldBe` LENGTH expectedBiPair
 
-    it "leaves IDX_META and LITERAL untouched" $ do
-      let idxMeta = IDX_META (META NO_EXCL I "x")
-          literalNum = LITERAL 5
-      toSingleLine idxMeta `shouldBe` idxMeta
-      toSingleLine literalNum `shouldBe` literalNum
+    it "leaves LITERAL untouched" $
+      toSingleLine (LITERAL 5) `shouldBe` LITERAL 5
 
   describe "toSingleLine on COMPARABLE" $
     forM_

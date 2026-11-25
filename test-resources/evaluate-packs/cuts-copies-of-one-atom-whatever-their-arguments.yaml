@@ -19,10 +19,10 @@ loops: 1
 partial: true
 input: >
   ⟦ f(x) ↦ ⟦ λ ⤍ L_g ⟧,
-    a1 ↦ ⟦ φ ↦ Φ.f( Φ.a2 ) ⟧,
-    a2 ↦ ⟦ φ ↦ Φ.f( Φ.a3 ) ⟧,
-    a3 ↦ ⟦ φ ↦ Φ.f( Φ.a1 ) ⟧,
-    app ↦ Φ.f( Φ.a1 ).q ⟧
+    a1 ↦ ⟦ φ ↦ Φ.f( x ↦ Φ.a2 ) ⟧,
+    a2 ↦ ⟦ φ ↦ Φ.f( x ↦ Φ.a3 ) ⟧,
+    a3 ↦ ⟦ φ ↦ Φ.f( x ↦ Φ.a1 ) ⟧,
+    app ↦ Φ.f( x ↦ Φ.a1 ).q ⟧
 protocol: |
   𝕄(Φ.app):
     remembered 𝑛·0·1 ≡ Φ.f  # ⟦ x ↦ ∅, λ ⤍ L_g ⟧
@@ -32,10 +32,10 @@ protocol: |
     𝔼(L_g):
       𝔻(ξ.x):
         𝕄(ξ.x):
-          remembered 𝑛·1·1 ≡ Φ.a1  # Φ.f( Φ.a2 ):φ
+          remembered 𝑛·1·1 ≡ Φ.a1  # Φ.f( x ↦ Φ.a2 ):φ
           morphed 𝑛·1·2 ≔ 𝑛·1·1
         boxed 𝑛·1·3 ≔ 𝑛·1·2.φ
-        normalized 𝑛·1·4 ≔ Φ.f( Φ.a2 )  # 𝑛·1·3
+        normalized 𝑛·1·4 ≔ Φ.f( x ↦ Φ.a2 )  # 𝑛·1·3
         𝕄(𝑛·1·3):
           𝑛·1·5 ≔ Φ.f( x ↦ Φ.a2 )
           𝑛·1·6 ≔ ⟦ x ↦ Φ.a2, λ ⤍ L_g ⟧
@@ -44,10 +44,10 @@ protocol: |
         𝔼(L_g):  # 𝔻(𝑛·1·3)
           𝔻(𝑛·1·3):
             𝕄(𝑛·1·3):
-              remembered 𝑛·2·1 ≡ Φ.a2  # Φ.f( Φ.a3 ):φ
+              remembered 𝑛·2·1 ≡ Φ.a2  # Φ.f( x ↦ Φ.a3 ):φ
               morphed 𝑛·2·2 ≔ 𝑛·2·1
             boxed 𝑛·2·3 ≔ 𝑛·2·2.φ
-            normalized 𝑛·2·4 ≔ Φ.f( Φ.a3 )  # 𝑛·2·3
+            normalized 𝑛·2·4 ≔ Φ.f( x ↦ Φ.a3 )  # 𝑛·2·3
             𝕄(𝑛·2·3):
               𝑛·2·5 ≔ Φ.f( x ↦ Φ.a3 )
               𝑛·2·6 ≔ ⟦ x ↦ Φ.a3, λ ⤍ L_g ⟧
@@ -56,7 +56,7 @@ protocol: |
             recalled 𝑛·2·6 ⇒ 𝑛·0·1( x ↦ Φ.a3 )
             recalled 𝑛·0·1 ⇒ Φ.f
             𝕄(𝑛·2·6.x):
-              remembered 𝑛·2·8 ≡ Φ.a3  # Φ.f( Φ.a1 ):φ
+              remembered 𝑛·2·8 ≡ Φ.a3  # 𝑛·0·2:φ
               morphed 𝑛·2·9 ≔ 𝑛·2·8
             looped 𝜎1 ≔ Φ.f( x ↦ 𝑛·2·9 )  # 𝔻(𝑛·2·3), plausible, repeats 𝑛·0·3
             𝛿·2·1 ≔ 𝔻(𝜎1:λ)

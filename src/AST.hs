@@ -12,7 +12,6 @@ module AST
   ( Slot (..)
   , Expression (ExFormation, ExXi, ExRoot, ExTermination, ExApplication, ExDispatch, ExMeta, ExAny, ExPhiMeet, ExPhiAgain, ExBytes, BaseObject, DataString, DataNumber, DataObject)
   , Argument (..)
-  , Alpha (..)
   , Binding (..)
   , Bytes (..)
   , Attribute (..)
@@ -188,14 +187,7 @@ instance Show Expression where
 
 data Argument
   = ArTau Attribute Expression
-  | ArAlpha Alpha Expression
   deriving (Eq, Ord, Show, Generic)
-
-data Alpha
-  = Alpha Int
-  | AlMeta Text
-  | AlAny Slot
-  deriving (Eq, Ord, Generic)
 
 data Binding
   = BiTau Attribute Expression
@@ -241,11 +233,6 @@ instance Show Attribute where
   show (AtMeta meta) = '!' : T.unpack meta
   show (AtAny (Slot kind _)) = '!' : T.unpack kind
 
-instance Show Alpha where
-  show (Alpha idx) = 'α' : show idx
-  show (AlMeta meta) = 'α' : '!' : T.unpack meta
-  show (AlAny (Slot kind _)) = 'α' : '!' : T.unpack kind
-
 hashExpression :: Expression -> Int
 hashExpression term = case known term of
   Facts digest _ _ _ _ -> digest
@@ -262,7 +249,6 @@ hashSkeleton =
   hashShape . \case
     ExFormation bds -> ExFormation (map bare bds)
     ExApplication _ (ArTau attr _) -> ExApplication ExXi (ArTau attr ExXi)
-    ExApplication _ (ArAlpha alpha _) -> ExApplication ExXi (ArAlpha alpha ExXi)
     ExDispatch _ attr -> ExDispatch ExXi attr
     ExPhiMeet prefix idx _ -> ExPhiMeet prefix idx ExXi
     ExPhiAgain prefix idx _ -> ExPhiAgain prefix idx ExXi
@@ -331,12 +317,6 @@ layer symbol child = goExpr fnvOffset
     goArgument :: Int -> Argument -> Int
     goArgument h = \case
       ArTau at ex -> step (goAttribute (step h 22) at) (child ex)
-      ArAlpha al ex -> step (goAlpha (step h 30) al) (child ex)
-    goAlpha :: Int -> Alpha -> Int
-    goAlpha h = \case
-      Alpha idx -> step (step h 31) idx
-      AlMeta t -> hashText (step h 28) t
-      AlAny slot -> goSlot (step h 36) slot
     goFunction :: Int -> Function -> Int
     goFunction h = \case
       Function t -> hashText (step h 16) t
@@ -383,7 +363,6 @@ deepness look depth = go
     go :: Expression -> Int
     go (ExMeta name) = fromMaybe (maybe 0 go (look name)) (depth name)
     go (ExApplication callee (ArTau _ arg)) = deepest [callee, arg]
-    go (ExApplication callee (ArAlpha _ arg)) = deepest [callee, arg]
     go (ExDispatch inner _) = deepest [inner]
     go (ExFormation bds) = deepest [body | BiTau _ body <- bds]
     go _ = 0
@@ -397,7 +376,6 @@ reaches look depth = go
     go limit _ | limit <= 0 = True
     go limit (ExMeta name) = maybe (maybe False (go limit) (look name)) (>= limit) (depth name)
     go limit (ExApplication callee (ArTau _ arg)) = limit <= 1 || go (pred limit) callee || go (pred limit) arg
-    go limit (ExApplication callee (ArAlpha _ arg)) = limit <= 1 || go (pred limit) callee || go (pred limit) arg
     go limit (ExDispatch inner _) = limit <= 1 || go (pred limit) inner
     go limit (ExFormation bds) = limit <= 1 || any (go (pred limit)) [body | BiTau _ body <- bds]
     go _ _ = False
@@ -465,8 +443,6 @@ matching look loose initial one two = case goExpr (Map.empty, Map.empty, Map.emp
     goArgument :: Pairing -> Argument -> Argument -> state -> (Maybe Pairing, state)
     goArgument pairing (ArTau attr left) (ArTau attr' right) kept
       | attr == attr' = goExpr pairing left right kept
-    goArgument pairing (ArAlpha alpha left) (ArAlpha alpha' right) kept
-      | alpha == alpha' = goExpr pairing left right kept
     goArgument pairing left right kept = (same pairing left right, kept)
     goList :: (Pairing -> item -> item -> state -> (Maybe Pairing, state)) -> Pairing -> [item] -> [item] -> state -> (Maybe Pairing, state)
     goList _ pairing [] [] kept = (Just pairing, kept)
@@ -525,7 +501,6 @@ within'' look start before after = coupled (opened before) (opened after) start
     plain (ExFormation bds) = all plainBinding bds
     plain (ExApplication expr (ArTau AtRho _)) = plain expr
     plain (ExApplication expr (ArTau _ arg)) = plain expr && plain arg
-    plain (ExApplication expr (ArAlpha _ arg)) = plain expr && plain arg
     plain (ExDispatch expr _) = plain expr
     plain (ExPhiMeet _ _ expr) = plain expr
     plain (ExPhiAgain _ _ expr) = plain expr
@@ -553,8 +528,6 @@ within'' look start before after = coupled (opened before) (opened after) start
     goBinding left right = answered (left == right)
     goArgument :: Argument -> Argument -> Search
     goArgument (ArTau attr left) (ArTau attr' right) = every [answered (attr == attr'), embedded left right]
-    goArgument (ArAlpha alpha left) (ArAlpha alpha' right) = every [answered (alpha == alpha'), embedded left right]
-    goArgument _ _ = answered False
     answered :: Bool -> Search
     answered = (,)
     every :: [Search] -> Search
@@ -570,7 +543,6 @@ within'' look start before after = coupled (opened before) (opened after) start
     children :: Expression -> [Expression]
     children (ExFormation bds) = [expr | BiTau attr expr <- bds, attr /= AtRho]
     children (ExApplication expr (ArTau _ arg)) = [expr, arg]
-    children (ExApplication expr (ArAlpha _ arg)) = [expr, arg]
     children (ExDispatch expr _) = [expr]
     children (ExPhiMeet _ _ expr) = [expr]
     children (ExPhiAgain _ _ expr) = [expr]
@@ -608,7 +580,6 @@ symbols whole = case goExpr (IntMap.empty, IntSet.empty, []) whole of
     goBinding walked _ = walked
     goArgument :: (IntMap.IntMap [Expression], IntSet.IntSet, [Int]) -> Argument -> (IntMap.IntMap [Expression], IntSet.IntSet, [Int])
     goArgument walked (ArTau _ expr) = goExpr walked expr
-    goArgument walked (ArAlpha _ expr) = goExpr walked expr
 
 lifted :: Int -> Int -> Expression -> Expression
 lifted floor' offset = goExpr
@@ -626,7 +597,6 @@ lifted floor' offset = goExpr
     goBinding bd = bd
     goArgument :: Argument -> Argument
     goArgument (ArTau attr expr) = ArTau attr (goExpr expr)
-    goArgument (ArAlpha alpha expr) = ArAlpha alpha (goExpr expr)
 
 denoted :: Expression -> Maybe Int
 denoted = goExpr
@@ -656,7 +626,6 @@ tally (ExFormation bds) = 1 + sum (map nodesInBinding bds) + length bds
     nodesInBinding (BiAny _) = 1
     nodesInBinding _ = 3
 tally (ExApplication expr (ArTau _ expr')) = 4 + countNodes expr + countNodes expr'
-tally (ExApplication expr (ArAlpha _ expr')) = 4 + countNodes expr + countNodes expr'
 tally (ExDispatch expr' _) = 2 + countNodes expr'
 tally (ExPhiMeet _ _ expr) = countNodes expr
 tally (ExPhiAgain _ _ expr) = countNodes expr
@@ -702,7 +671,6 @@ calm = \case
   ExFormation bds -> settled False False bds
   ExDispatch expr attr -> inert expr && headless expr && plain attr
   ExApplication expr (ArTau attr arg) -> inert expr && headless expr && plain attr && inert arg
-  ExApplication expr (ArAlpha (Alpha _) arg) -> inert expr && headless expr && inert arg
   ExXi -> True
   ExRoot -> True
   ExTermination -> True
@@ -751,12 +719,10 @@ matchDataObject (ExApplication outer arg)
     asBytesArg :: Argument -> Maybe Expression
     asBytesArg (ArTau AtPhi inner) = Just inner
     asBytesArg (ArTau (AtLabel "as-bytes") inner) = Just inner
-    asBytesArg (ArAlpha (Alpha 0) inner) = Just inner
     asBytesArg _ = Nothing
     dataArg :: Argument -> Maybe Expression
     dataArg (ArTau AtPhi formation) = Just formation
     dataArg (ArTau (AtLabel "data") formation) = Just formation
-    dataArg (ArAlpha (Alpha 0) formation) = Just formation
     dataArg _ = Nothing
     matchOuter :: Expression -> Maybe T.Text
     matchOuter (BaseObject label) = Just label

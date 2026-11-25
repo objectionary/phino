@@ -2,10 +2,10 @@
   eo ↦ ⟦
     example ↦ ⟦
       fibonacci(n) ↦ ⟦
-        φ ↦ n.lt(2).if(
-          n,
-          Φ.eo.example.fibonacci(n.minus(1)).plus(
-            Φ.eo.example.fibonacci(n.minus(2))
+        φ ↦ n.lt(x ↦ 2).if(
+          left ↦ n,
+          right ↦ Φ.eo.example.fibonacci(n ↦ n.minus(x ↦ 1)).plus(
+            x ↦ Φ.eo.example.fibonacci(n ↦ n.minus(x ↦ 2))
           )
         )
       ⟧,

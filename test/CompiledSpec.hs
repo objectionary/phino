@@ -107,7 +107,7 @@ spec =
     term metas seed = fst (grown metas (4 :: Int) (mkStdGen seed))
     grown :: Bool -> Int -> StdGen -> (Expression, StdGen)
     grown metas depth gen =
-      let (pick, gen') = randomR (0, if depth == 0 then 3 else 9 :: Int) gen
+      let (pick, gen') = randomR (0, if depth == 0 then 3 else 8 :: Int) gen
        in case pick of
             0 -> (ExXi, gen')
             1 -> (ExRoot, gen')
@@ -124,11 +124,6 @@ spec =
                   (attr, gen''') = attribute gen''
                   (arg, gen'''') = grown metas (depth - 1) gen'''
                in (ExApplication expr (ArTau attr arg), gen'''')
-            8 ->
-              let (expr, gen'') = grown metas (depth - 1) gen'
-                  (idx, gen''') = randomR (0, 2) gen''
-                  (arg, gen'''') = grown metas (depth - 1) gen'''
-               in (ExApplication expr (ArAlpha (Alpha idx) arg), gen'''')
             _ -> formation metas depth gen'
     formation :: Bool -> Int -> StdGen -> (Expression, StdGen)
     formation metas depth gen =

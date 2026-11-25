@@ -175,8 +175,6 @@ instance Render META_HEAD where
   render A = "t"
   render TAU = "𝜏"
   render TAU' = "\\tau"
-  render I = "𝑖"
-  render I' = "i"
   render B = "𝐵"
   render B' = "B"
   render D = "𝛿"
@@ -192,14 +190,6 @@ instance Render META_HEAD where
 instance Render META where
   rendering META{..} = rendering excl <> rendering hd <> rendering rest
 
-instance Render ALPHA' where
-  render ALPHA = "α"
-  render ALPHA' = "~"
-
-instance Render ALPHA where
-  rendering AL_IDX{..} = rendering sym <> rendering idx
-  rendering AL_META{..} = rendering sym <> rendering meta
-
 instance Render TAB where
   render TAB{..} = T.replicate indent "  "
   render TAB' = " "
@@ -207,7 +197,6 @@ instance Render TAB where
 
 instance Render PAIR where
   rendering PA_TAU{..} = rendering attr <> rendering SPACE <> rendering arrow <> rendering SPACE <> rendering expr
-  rendering PA_ALPHA{..} = rendering alpha <> rendering SPACE <> rendering arrow <> rendering SPACE <> rendering expr
   rendering PA_FORMATION{voids = [], attr, arrow, expr} = rendering (PA_TAU attr arrow expr)
   rendering PA_FORMATION{..} = rendering attr <> "(" <> rendering voids <> ")" <> rendering SPACE <> rendering arrow <> rendering SPACE <> rendering expr
   rendering PA_LAMBDA{..} = rendering LAMBDA <> rendering SPACE <> rendering DASHED_ARROW <> rendering SPACE <> rendering func
@@ -237,14 +226,6 @@ instance Render BINDING where
 instance Render APP_ARGUMENT where
   rendering (AA_TAU tau) = rendering tau
   rendering (AA_TAUS taus) = rendering taus
-  rendering (AA_EXPRS args) = rendering args
-
-instance Render APP_ARG where
-  rendering APP_ARG{..} = rendering expr <> rendering args
-
-instance Render APP_ARGS where
-  rendering AAS_EMPTY = mempty
-  rendering AAS_EXPR{..} = rendering COMMA <> rendering eol <> rendering tab <> rendering expr <> rendering args
 
 instance Render EXPRESSION where
   rendering EX_GLOBAL{..} = rendering global
@@ -305,9 +286,7 @@ instance Render LOGIC_OPERATOR where
   render OR = "\\phiText{or}"
 
 instance Render NUMBER where
-  rendering IDX_META{..} = rendering meta
   rendering LENGTH{..} = "\\vert " <> rendering binding <> " \\vert"
-  rendering DOMAIN{..} = "\\vert \\overline{ " <> rendering binding <> " } \\vert"
   rendering LITERAL{..} = fromString (show num)
 
 instance Render COMPARABLE where

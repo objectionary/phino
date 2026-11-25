@@ -59,9 +59,6 @@ canonizeArgument :: Argument -> CanonState -> (Argument, CanonState)
 canonizeArgument (ArTau attr expr) st =
   let (expr', st') = canonizeExpression expr st
    in (ArTau attr expr', st')
-canonizeArgument (ArAlpha alpha expr) st =
-  let (expr', st') = canonizeExpression expr st
-   in (ArAlpha alpha expr', st')
 
 lambdaNames :: Expression -> [T.Text]
 lambdaNames (ExFormation bds) = concatMap named bds
@@ -72,7 +69,6 @@ lambdaNames (ExFormation bds) = concatMap named bds
     named _ = []
 lambdaNames (ExDispatch expr _) = lambdaNames expr
 lambdaNames (ExApplication expr (ArTau _ arg)) = lambdaNames expr ++ lambdaNames arg
-lambdaNames (ExApplication expr (ArAlpha _ arg)) = lambdaNames expr ++ lambdaNames arg
 lambdaNames (ExPhiMeet _ _ expr) = lambdaNames expr
 lambdaNames (ExPhiAgain _ _ expr) = lambdaNames expr
 lambdaNames _ = []

@@ -17,7 +17,7 @@ location: 'Q.@'
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    φ ↦ 5.plus( 6 ).φ ⟧
+    φ ↦ 5.plus( x ↦ 6 ).φ ⟧
 protocol: |
   𝕄(Φ.φ):
     normalized 𝑛·0·1 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number

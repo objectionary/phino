@@ -65,15 +65,6 @@ buildAttribute (AtAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
   _ -> Left (slotMsg slot)
 buildAttribute attr _ = Right attr
 
-buildAlpha :: Alpha -> Subst -> Built Alpha
-buildAlpha (AlMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
-  Just (MvIndex idx) -> Right (Alpha idx)
-  _ -> Left (metaMsg meta)
-buildAlpha (AlAny slot) (Subst mp) = case Map.lookup (Anon slot) mp of
-  Just (MvIndex idx) -> Right (Alpha idx)
-  _ -> Left (slotMsg slot)
-buildAlpha a _ = Right a
-
 buildBytes :: Bytes -> Subst -> Built Bytes
 buildBytes (BtMeta meta) (Subst mp) = case Map.lookup (Named meta) mp of
   Just (MvBytes bytes) -> Right bytes
@@ -119,10 +110,6 @@ buildArgument (ArTau attr expr) subst = do
   attribute <- buildAttribute attr subst
   expression <- buildExpression expr subst
   Right (ArTau attribute expression)
-buildArgument (ArAlpha alpha expr) subst = do
-  alpha' <- buildAlpha alpha subst
-  expression <- buildExpression expr subst
-  Right (ArAlpha alpha' expression)
 
 buildBindings :: [Binding] -> Subst -> Built [Binding]
 buildBindings [] _ = Right []
@@ -176,7 +163,6 @@ pathOf universe@(ExFormation world) form@(ExFormation bds)
     closed ExRoot = True
     closed ExTermination = True
     closed (ExApplication target (ArTau _ value)) = closed target && closed value
-    closed (ExApplication target (ArAlpha _ value)) = closed target && closed value
     closed (ExDispatch target _) = closed target
     closed _ = False
 pathOf _ form = form

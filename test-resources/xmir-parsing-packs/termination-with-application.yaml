@@ -5,8 +5,8 @@ xmir: |
   <object>
     <o name="app">
       <o name="x" base="⊥">
-        <o base="Φ.number"/>
+        <o as="b" base="Φ.number"/>
       </o>
     </o>
   </object>
-phi: '[[ app -> [[ x -> T(Q.number) ]] ]]'
+phi: '[[ app -> [[ x -> T(b -> Q.number) ]] ]]'

@@ -122,14 +122,12 @@ attached expr graph =
       _ -> 0
     held :: Argument -> Expression
     held (ArTau _ inner) = inner
-    held (ArAlpha _ inner) = inner
 
 scrubbed :: Bool -> Expression -> Expression
 scrubbed inside = \case
   ExFormation bds -> ExFormation (mapMaybe binding bds)
   ExDispatch inner attr -> ExDispatch (scrubbed inside inner) (label attr)
   ExApplication inner (ArTau attr arg) -> ExApplication (scrubbed inside inner) (ArTau (label attr) (scrubbed inside arg))
-  ExApplication inner (ArAlpha alpha arg) -> ExApplication (scrubbed inside inner) (ArAlpha (indexed alpha) (scrubbed inside arg))
   ExXi | inside -> ExXi
   ExTermination -> ExTermination
   _ -> ExRoot
@@ -143,9 +141,6 @@ scrubbed inside = \case
       BiLambda (FnMeta _) -> Just (BiLambda (Function "L_scrubbed"))
       BiMeta _ -> Nothing
       other -> Just other
-    indexed :: Alpha -> Alpha
-    indexed (AlMeta _) = Alpha 0
-    indexed alpha = alpha
     label :: Attribute -> Attribute
     label (AtMeta _) = AtLabel "scrubbed"
     label attr = attr

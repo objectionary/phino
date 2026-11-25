@@ -155,7 +155,7 @@ spec = do
       )
 
     it "renders a non-finite double as a piped dispatch off the root" $ do
-      nan <- parseExpressionThrows "[[ x -> Q.number(Q.bytes([[ D> 7F-F8-00-00-00-00-00-00 ]])) ]]"
+      nan <- parseExpressionThrows "[[ x -> Q.number(@ -> Q.bytes(@ -> [[ D> 7F-F8-00-00-00-00-00-00 ]])) ]]"
       expressionToLaTeX nan defaultLatexContext
         `shouldBe` "\\begin{phiquation}\nQ . |nan| : |x|{.}\n\\end{phiquation}"
 

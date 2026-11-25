@@ -35,7 +35,7 @@ input: >
     number(φ) ↦ ⟦
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    φ ↦ 5.gt( 0 ).if( 1.plus( 2 ), 3.plus( 4 ) ).φ ⟧
+    φ ↦ 5.gt( x ↦ 0 ).if( then ↦ 1.plus( x ↦ 2 ), else ↦ 3.plus( x ↦ 4 ) ).φ ⟧
 fails: "No entry of --symbolic answers the λ function 'L_fork'"
 protocol: |
   𝕄(Φ.φ):
@@ -86,10 +86,10 @@ protocol: |
       𝑛·1·27 ≔ 𝑛·1·26  # 𝕄(𝑛·1·22)
       evaluated 𝑛·1·28 ≔ 𝑛·1·27  # 𝑛·0·6
     normalized 𝑛·0·7 ≔ ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·28.if
-    shared 𝑛·1 ≔ 1.0.plus( 2.0 )
+    shared 𝑛·1 ≔ 1.0.plus( x ↦ 2.0 )
     𝑛·0·8 ≔ 𝑛·1·24.if( then ↦ 𝑛·1 )
     𝑛·0·9 ≔ ⟦ then ↦ 𝑛·1, else ↦ ∅, λ ⤍ L_fork ⟧
-    shared 𝑛·2 ≔ 3.0.plus( 4.0 )
+    shared 𝑛·2 ≔ 3.0.plus( x ↦ 4.0 )
     𝑛·0·10 ≔ 𝑛·0·9( else ↦ 𝑛·2 )
     𝑛·0·11 ≔ ⟦ then ↦ 𝑛·1, else ↦ 𝑛·2, λ ⤍ L_fork ⟧
     𝔼(L_fork):

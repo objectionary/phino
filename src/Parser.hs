@@ -13,8 +13,6 @@ module Parser
   , parseAttribute
   , parseAttributeThrows
   , ParserException (..)
-  , parseAlpha
-  , parseIndex
   , parseNumber
   , parseNumberThrows
   , parseBinding
@@ -27,7 +25,7 @@ where
 import AST
 import Bytes (nonFiniteBts, nonFiniteOf, numToBts, strToBts)
 import Control.Exception (Exception)
-import Control.Monad (void, when)
+import Control.Monad (when)
 import Control.Monad.Trans.State.Strict (StateT, evalStateT, get, put)
 import Data.Char (isAsciiLower, isAsciiUpper, isDigit)
 import Data.Scientific (scientific, toRealFloat)
@@ -60,15 +58,13 @@ data ParserException
 
 data PhiParser = PhiParser
   { _attribute :: Parsec Void String Attribute
-  , _alpha :: Parsec Void String Alpha
-  , _index :: Parsec Void String (Either Slot T.Text)
   , _binding :: Parsec Void String Binding
   , _expression :: Parsec Void String Expression
   , _string :: Parsec Void String String
   }
 
 phiParser :: PhiParser
-phiParser = PhiParser (free attribute) (free alpha) (free indexVar) (free binding) (free expression) (free quotedStr)
+phiParser = PhiParser (free attribute) (free binding) (free expression) (free quotedStr)
   where
     free :: Parser a -> Parsec Void String a
     free parser = evalStateT parser Free
@@ -407,30 +403,12 @@ attribute =
     ]
     <?> "attribute"
 
-indexVar :: Parser (Either Slot T.Text)
-indexVar = metaVar 'i' "𝑖"
-
-alpha :: Parser Alpha
-alpha = do
-  _ <- twofold (symbol "~") (symbol "α")
-  choice
-    [ lexeme L.decimal >>= ranged
-    , either AlAny AlMeta <$> indexVar
-    ]
-    <?> "alpha"
-  where
-    ranged :: Integer -> Parser Alpha
-    ranged idx
-      | idx > toInteger (maxBound :: Int) = fail (printf "the index of 'α%d' is too big, while it must fit into %d" idx (maxBound :: Int))
-      | otherwise = pure (Alpha (fromInteger idx))
-
 argument :: Parser Argument
-argument =
-  choice
-    [ ArAlpha <$> try alpha <* arrow <*> expression
-    , ArTau <$> attribute <* arrow <*> expression
-    ]
-    <?> "argument"
+argument = do
+  named <- option False (True <$ lookAhead (try (attribute >> arrow)))
+  if named
+    then ArTau <$> attribute <* arrow <*> expression
+    else fail "An argument is given by the name of the attribute it goes to, as in 'f( x ↦ … )', since a positional one, 'α0 ↦ …' or 'f( … )', is not supported"
 
 validatedBindings :: [Binding] -> Parser [Binding]
 validatedBindings bds = case uniqueBindings bds of
@@ -501,13 +479,7 @@ exTail expr =
                 ExDispatch expr <$> attribute
             , do
                 _ <- symbol "("
-                bds <-
-                  choice
-                    [ lookAhead (try named) >> argument `sepBy1` symbol ","
-                    , do
-                        exprs <- expression `sepBy1` symbol ","
-                        return (zipWith (ArAlpha . Alpha) [0 ..] exprs)
-                    ]
+                bds <- argument `sepBy1` symbol ","
                 _ <- symbol ")"
                 return (application expr bds)
             , do
@@ -518,9 +490,6 @@ exTail expr =
         exTail next
     , return expr
     ]
-  where
-    named :: Parser String
-    named = choice [void (try alpha), void attribute] >> arrow
 
 expression :: Parser Expression
 expression = do
@@ -560,12 +529,6 @@ parseNumberThrows num = orThrow CouldNotParseNumber (parseNumber num)
 
 parseAttribute :: String -> Either String Attribute
 parseAttribute = parse' "attribute" attribute
-
-parseAlpha :: String -> Either String Alpha
-parseAlpha = parse' "alpha" alpha
-
-parseIndex :: String -> Either String (Either Slot T.Text)
-parseIndex = parse' "index meta" indexVar
 
 parseAttributeThrows :: String -> IO Attribute
 parseAttributeThrows attr = orThrow CouldNotParseAttribute (parseAttribute attr)

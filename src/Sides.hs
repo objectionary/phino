@@ -81,7 +81,6 @@ spelled (Sides store) whole = do
         goBinding bd = pure bd
         goArgument :: Argument -> IO Argument
         goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> walk expr
-        goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> walk expr
 
 opened :: Sides -> Expression -> IO Expression
 opened store term = do

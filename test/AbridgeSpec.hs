@@ -95,7 +95,7 @@ spec =
     it "folds a long application its dispatch is made of" $
       printExpressionWith
         (const (abridged True 64))
-        (ExDispatch (foldl (\expr idx -> ExApplication expr (ArAlpha (Alpha idx) (ExDispatch ExRoot (AtLabel "langer-name")))) (ExDispatch ExRoot (AtLabel "fluss")) [0 .. 5 :: Int]) (AtLabel "ufer"))
+        (ExDispatch (foldl (\expr idx -> ExApplication expr (ArTau (AtLabel (T.pack ("arm" ++ show idx))) (ExDispatch ExRoot (AtLabel "langer-name")))) (ExDispatch ExRoot (AtLabel "fluss")) [0 .. 5 :: Int]) (AtLabel "ufer"))
         (SWEET, UNICODE, SINGLELINE, defaultMargin)
         `shouldBe` "Φ.fluss( +6 ).ufer"
     it "cuts a long byte string to its first bytes, its last bytes and the count of the bytes between them" $

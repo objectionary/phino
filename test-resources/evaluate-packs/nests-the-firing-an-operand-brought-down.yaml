@@ -18,14 +18,14 @@ location: 'Q.@'
 input: >
   ⟦ bytes(φ) ↦ ⟦⟧,
     number(φ) ↦ ⟦ plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    φ ↦ 5.plus( 6.plus( 7 ) ).plus( 8 ) ⟧
+    φ ↦ 5.plus( x ↦ 6.plus( x ↦ 7 ) ).plus( x ↦ 8 ) ⟧
 protocol: |
   𝕄(Φ.φ):
     normalized 𝑛·0·1 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number
     𝑛·0·2 ≔ 5.0
     𝑛·0·3 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧
     normalized 𝑛·0·4 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·3.plus
-    shared 𝑛·1 ≔ 6.0.plus( 7.0 )
+    shared 𝑛·1 ≔ 6.0.plus( x ↦ 7.0 )
     𝑛·0·5 ≔ 𝑛·0·2.plus( x ↦ 𝑛·1 )
     𝑛·0·6 ≔ ⟦ x ↦ 𝑛·1, λ ⤍ L_number_plus ⟧
     𝔼(L_number_plus):

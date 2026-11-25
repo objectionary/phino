@@ -64,9 +64,7 @@ instance Metas Expression where
 
 instance Metas Argument where
   metas (ArTau attr expr) = metas attr ++ metas expr
-  metas (ArAlpha alpha expr) = metas alpha ++ metas expr
   bare names (ArTau attr expr) = ArTau (bare names attr) (bare names expr)
-  bare names (ArAlpha alpha expr) = ArAlpha (bare names alpha) (bare names expr)
 
 instance Metas Binding where
   metas (BiTau attr expr) = metas attr ++ metas expr
@@ -88,13 +86,6 @@ instance Metas Attribute where
   metas _ = []
   bare names (AtMeta name) = AtMeta (bare names name)
   bare _ attr = attr
-
-instance Metas Alpha where
-  metas (AlMeta name) = metas name
-  metas (AlAny slot) = metas slot
-  metas _ = []
-  bare names (AlMeta name) = AlMeta (bare names name)
-  bare _ alpha = alpha
 
 instance Metas Bytes where
   metas (BtMeta name) = metas name

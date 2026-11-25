@@ -5,5 +5,5 @@
 # the join answers that number and the program needs no decision at all.
 model: true
 symbolic: true
-input: '5.gt( 6 ).if( 1, 1 )'
+input: '5.gt( x -> 6 ).if( then -> 1, else -> 1 )'
 result: '3F-F0-00-00-00-00-00-00'

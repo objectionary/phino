@@ -21,8 +21,8 @@ spec = do
       [ "in (!t, !B)"
       , " not   (in (!t1,   !B))   "
       , "eq(1, 1)"
-      , "gt(domain(!B), !i)"
-      , "or(eq(!i,1),eq(length(!B),-2),eq(!e1,!e2),eq(!t1,x),eq(Q.org.eolang,[[ x -> 2 ]]))"
+      , "gt(length(!B), 1)"
+      , "or(eq(1,1),eq(length(!B),-2),eq(!e1,!e2),eq(!t1,x),eq(Q.org.eolang,[[ x -> 2 ]]))"
       , "nf([[ x -> !e ]].x)"
       , "absolute(!e1)"
       , "matches(\"hello(\\\"\\u0000)\", !e)"
@@ -36,9 +36,8 @@ spec = do
       [ ("in(!t1, !B1)", Y.In [AtMeta "t1"] [BiMeta "B1"])
       , ("not(in(!t1,!B1))", Y.Not (Y.In [AtMeta "t1"] [BiMeta "B1"]))
       , ("eq(1,-2)", Y.Eq (Y.CmpNum (Y.Literal 1)) (Y.CmpNum (Y.Literal (-2))))
-      , ("eq(!i1,length(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i1")) (Y.CmpNum (Y.Length (BiMeta "B1"))))
-      , ("eq(!i2,domain(!B1))", Y.Eq (Y.CmpNum (Y.MetaIndex "i2")) (Y.CmpNum (Y.Domain (BiMeta "B1"))))
-      , ("gt(domain(!B1),!i1)", Y.Gt (Y.CmpNum (Y.Domain (BiMeta "B1"))) (Y.CmpNum (Y.MetaIndex "i1")))
+      , ("eq(2,length(!B1))", Y.Eq (Y.CmpNum (Y.Literal 2)) (Y.CmpNum (Y.Length (BiMeta "B1"))))
+      , ("gt(length(!B1),1)", Y.Gt (Y.CmpNum (Y.Length (BiMeta "B1"))) (Y.CmpNum (Y.Literal 1)))
       , ("or(absolute(!e1), nf(Q.x))", Y.Or [Y.Absolute (ExMeta "e1"), Y.NF (ExDispatch ExRoot (AtLabel "x"))])
       , ("and(matches(\"hi\", !e1),part-of(!e1, !B1))", Y.And [Y.Matches "hi" (ExMeta "e1"), Y.PartOf (ExMeta "e1") (BiMeta "B1")])
       , ("not(formation(!n1))", Y.Not (Y.IsFormation (ExMeta "n1")))
@@ -54,6 +53,10 @@ spec = do
       , "in(!t, !t)"
       , "or(or(), or())"
       , "eq(!t1, !e2)"
+      , "eq(!i1, 1)"
+      , "gt(length(!B), 𝑖1)"
+      , "eq(3, domain(!B))"
+      , "gt(domain(!B), 1)"
       ]
       (\expr -> it expr (parseCondition expr `shouldSatisfy` isLeft))
 

@@ -95,7 +95,6 @@ meetInExpression expr len = meetIn expr
     meetInBindings (_ : bds) target = meetInBindings bds target
     argExpr :: Argument -> Expression
     argExpr (ArTau _ ex) = ex
-    argExpr (ArAlpha _ ex) = ex
 
 meetInExpressions :: [Expression] -> LatexContext -> [Expression]
 meetInExpressions exprs LatexContext{..} = go exprs 1
@@ -319,11 +318,6 @@ instance ToLaTeX PAIR where
   toLaTeX PA_LAMBDA'{..} = PA_LAMBDA' (piped func)
   toLaTeX PA_VOID{..} = PA_VOID (toLaTeX attr) arrow void
   toLaTeX PA_TAU{..} = PA_TAU (toLaTeX attr) arrow (toLaTeX expr)
-  toLaTeX PA_ALPHA{..} =
-    let subscript = case alpha of
-          AL_IDX _ n -> render n
-          AL_META _ mt -> render (hd mt) <> rest mt
-     in PA_TAU (AT_LABEL ("\\phiTerminal{\\alpha_{" <> subscript <> "}}")) arrow (toLaTeX expr)
   toLaTeX PA_FORMATION{..} = PA_FORMATION (toLaTeX attr) (map toLaTeX voids) arrow (toLaTeX expr)
   toLaTeX PA_META_DELTA{..} = toLaTeX (PA_META_DELTA' meta)
   toLaTeX PA_META_DELTA'{..} = PA_META_DELTA' (toLaTeX meta)
@@ -362,14 +356,6 @@ instance ToLaTeX BYTES where
 instance ToLaTeX APP_ARGUMENT where
   toLaTeX (AA_TAU tau) = AA_TAU (toLaTeX tau)
   toLaTeX (AA_TAUS taus) = AA_TAUS (toLaTeX taus)
-  toLaTeX (AA_EXPRS args) = AA_EXPRS (toLaTeX args)
-
-instance ToLaTeX APP_ARG where
-  toLaTeX APP_ARG{..} = APP_ARG (toLaTeX expr) (toLaTeX args)
-
-instance ToLaTeX APP_ARGS where
-  toLaTeX AAS_EXPR{..} = AAS_EXPR eol tab (toLaTeX expr) (toLaTeX args)
-  toLaTeX args = args
 
 instance ToLaTeX T.Text where
   toLaTeX = T.concatMap escape
@@ -397,9 +383,7 @@ instance ToLaTeX SET where
   toLaTeX ST_ATTRIBUTES{..} = ST_ATTRIBUTES (map toLaTeX attrs)
 
 instance ToLaTeX NUMBER where
-  toLaTeX IDX_META{..} = IDX_META (toLaTeX meta)
   toLaTeX LENGTH{..} = LENGTH (toLaTeX binding)
-  toLaTeX DOMAIN{..} = DOMAIN (toLaTeX binding)
   toLaTeX literal@LITERAL{} = literal
 
 instance ToLaTeX COMPARABLE where

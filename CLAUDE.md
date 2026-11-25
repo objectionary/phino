@@ -96,6 +96,18 @@ CST to `Text`. This keeps layout concerns out of the semantic layer.
 phi-calculus. The `ToSalty` typeclass in `Sugar.hs` transforms CST nodes
 between these representations before rendering.
 
+### Named arguments only
+
+An argument of an application is always given by the name of the attribute
+it goes to, `ArTau` of `AST.hs`, and nothing is given by its position
+(#2478). The parser refuses `α0 ↦ …`, `~0 -> …` and the sugar `f( a, b )`,
+and the XMIR reader refuses an `@as` spelling `αN` and an argument with no
+`@as`. No rule counts the voids of a formation to find where an argument
+goes, and no meta captures an index. A number or a string is
+`Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ … ⟧ ) )`, and `matchDataObject` of
+`AST.hs` finds its bytes by a name alone: φ, or `as-bytes` and `data`, the
+voids EO declares there.
+
 ### Pattern-based rewriting
 
 YAML rule files (`resources/<judgment>/<rule>.yaml`, plus user-supplied via
@@ -276,9 +288,10 @@ to `joined` as ⊥ when the other side does not raise, so the `joined` record
 names it under `raised`. A firing hands its terminators to every 𝕄 it runs
 in (`_raising` of `ReduceContext`), which answers a dispatch off a formation
 holding one of them with that formation, never firing it, so a side such as
-`Φ.throw( 𝜎2 ).q` raises the way `Φ.throw( 𝜎2 )` does (#2308). An operand
-of `dataize`, a path from `$` or a meta alone, that holds one of them makes
-the firing answer ⊥ (`raising` of `Evaluate.hs`, `Raised` of `Answer`),
+`Φ.throw( m ↦ 𝜎2:λ ).q` raises the way `Φ.throw( m ↦ 𝜎2:λ )` does (#2308).
+An operand of `dataize`, a path from `$` or a meta alone, that holds one of
+them makes the firing answer ⊥ (`raising` of `Evaluate.hs`, `Raised` of
+`Answer`),
 never firing the terminator, since data that comes from a raise is the same
 raise, so a join takes such a side for one that raises (#2330).
 
@@ -647,7 +660,8 @@ issue #2347). Where 𝔻 or 𝔼 enters a copy of an atom, though, a copy the
 facts lead back to the same object repeats it whatever its arguments, so an
 atom whose operand comes to another copy of it every round is cut too, unless
 an argument it binds anew is held inside the copy above, as in nested calls
-such as `Φ.d( Φ.d( 01-:Δ ) )`, whose arguments shrink (`shrunk`, #2466).
+such as `Φ.d( t ↦ Φ.d( t ↦ 01-:Δ ) )`, whose arguments shrink (`shrunk`,
+issue #2466).
 Only a boxed formation the copy holds, one binding φ and no λ or Δ, may grow
 inside it as `within` lets it (`akin` in `AST.hs`), so a recursion
 through a side of a fork, whose fabricated copies hold a copy of the
@@ -655,8 +669,8 @@ recursive object with a bigger argument every round, is cut too (#2372).
 So may a call not made yet, an application or a dispatch off one, seen
 through the names of `shared`, where the later one is deeper than the
 earlier one and holds it as `within` lets it, so a recursion handing its
-own growing call to an atom, as `Φ.go( Φ.seq( i.next ).ok )`, is cut too,
-while nested calls whose arguments shrink, such as five `or` in each other,
+own growing call to an atom, as `Φ.go( x ↦ Φ.seq( i ↦ i.next ).ok )`, is cut
+too, while nested calls whose arguments shrink, such as five `or` in each other,
 are not (#2428).
 Where `within'` says no at such a pair, `matching` stops there, since nothing
 below can match where the looser search found nothing (#2438). The depth of a
@@ -709,10 +723,10 @@ writes nothing where the term is the one it came from, with or without the
 arguments the normalization dropped, and nothing where the term is one an
 earlier line named, since the line would only repeat that name.
 Where the term is a bare symbol applied to an argument other than ρ, such as
-`⟦ λ ⤍ 𝜎1 ⟧( 01-:Δ )`, the premise normalizes nothing, since `amiss` and
-`miss` would make it ⊥, while an object nobody knows fed an argument is
-another object nobody knows: it mints a fresh symbol and writes
-`fed 𝜎2:λ ≔ 𝜎1:λ( 01-:Δ )` (`EvFed`), and the markup `<fed symbol="𝜎2"
+`⟦ λ ⤍ 𝜎1 ⟧( k ↦ 01-:Δ )`, the premise normalizes nothing, since `miss`
+would make it ⊥, while an object nobody knows fed an argument is another
+object nobody knows: it mints a fresh symbol and writes
+`fed 𝜎2:λ ≔ 𝜎1:λ( k ↦ 01-:Δ )` (`EvFed`), and the markup `<fed symbol="𝜎2"
 of="𝑒·0·1"/>` (#2476).
 A firing that answered, made, recalled from the memo or renamed, closes its
 block the same way, as `evaluated 𝑛·1·5 ≔ 𝜎1:λ  # 𝑛·0·7` (`EvEvaluated`,
@@ -731,7 +745,7 @@ too, which is cut in turn; that inner cut, told by `_reckoning` of
 `ReduceContext`, writes the call the facts trace as it is, with no argument
 worked out, since working it out runs into the same loop again (#2313).
 An argument that comes to a copy of a terminator of the entry, as
-`Φ.throw( 𝜎1 )`, is written as that copy and never fired (#2316).
+`Φ.throw( m ↦ 𝜎1:λ )`, is written as that copy and never fired (#2316).
 A call ending with attributes over its last application, such as
 `Φ.fork( … )( … ).φ`, keeps them on top: `argued` and the markup step over
 them (`dispatched` of `Deps.hs`), so the object stays a path of the world,
@@ -871,8 +885,9 @@ The same store names the arguments of a call a rule normalizes (`shared` of
 of an application along the spine of the term, other than a name alone, that
 holds no ξ, ρ or other meta, and holds a name or a dispatch off something other
 than a path of `Φ`, gets a name (`minted` of `Sides.hs`), so an accumulator a
-recursion wraps every round, as `Φ.more( Φ.state( Φ.plus( ξ.acc.at ),
-ξ.acc.groups ) )`, is spelled once and not again in every round that copies it.
+recursion wraps every round, as `Φ.more( acc ↦ Φ.state( at ↦ Φ.plus( x ↦
+ξ.acc.at ), groups ↦ ξ.acc.groups ) )`, is spelled once and not again in every
+round that copies it.
 A number, a path or a formation stays as it is. An argument applying ρ to a
 dispatch, or to a name standing for one, as `𝑛·2( ρ ↦ … )` that `dot` makes of
 `ξ.i`, is named without that ρ, which `stayed` drops too, so one value never

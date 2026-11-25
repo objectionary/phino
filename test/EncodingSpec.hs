@@ -124,27 +124,6 @@ spec = do
         , AA_TAU (APP_BINDING (PA_TAU (AT_PHI AT) ARROW' leafExprASCII))
         )
       , ("recurses through AA_TAUS", toASCII (AA_TAUS biPair), AA_TAUS biPairASCII)
-      ,
-        ( "recurses through AA_EXPRS"
-        , toASCII (AA_EXPRS (APP_ARG leafExpr AAS_EMPTY))
-        , AA_EXPRS (APP_ARG leafExprASCII AAS_EMPTY)
-        )
-      ]
-      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
-
-  describe "toASCII on APP_ARG" $
-    it "recurses through both fields" $
-      toASCII (APP_ARG leafExpr (AAS_EXPR EOL (TAB 1) leafExpr AAS_EMPTY))
-        `shouldBe` APP_ARG leafExprASCII (AAS_EXPR EOL (TAB 1) leafExprASCII AAS_EMPTY)
-
-  describe "toASCII on APP_ARGS" $
-    forM_
-      [
-        ( "recurses through AAS_EXPR"
-        , toASCII (AAS_EXPR EOL (TAB 1) leafExpr AAS_EMPTY)
-        , AAS_EXPR EOL (TAB 1) leafExprASCII AAS_EMPTY
-        )
-      , ("leaves AAS_EMPTY untouched", toASCII AAS_EMPTY, AAS_EMPTY)
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
@@ -154,11 +133,6 @@ spec = do
         ( "recurses through PA_TAU, forcing the arrow to ARROW'"
         , toASCII (PA_TAU (AT_PHI PHI) ARROW leafExpr)
         , PA_TAU (AT_PHI AT) ARROW' leafExprASCII
-        )
-      ,
-        ( "recurses through PA_ALPHA, forcing the arrow to ARROW'"
-        , toASCII (PA_ALPHA (AL_IDX ALPHA 0) ARROW leafExpr)
-        , PA_ALPHA (AL_IDX ALPHA' 0) ARROW' leafExprASCII
         )
       ,
         ( "recurses through PA_FORMATION, forcing the arrow to ARROW'"
@@ -200,17 +174,6 @@ spec = do
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
 
-  describe "toASCII on ALPHA" $
-    forM_
-      [ ("recurses through AL_IDX", toASCII (AL_IDX ALPHA 7), AL_IDX ALPHA' 7)
-      ,
-        ( "recurses through AL_META"
-        , toASCII (AL_META ALPHA (META NO_EXCL I "abc"))
-        , AL_META ALPHA' (META EXCL I' "abc")
-        )
-      ]
-      (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))
-
   describe "toASCII on ATTRIBUTE" $
     forM_
       [ ("AT_PHI becomes AT", toASCII (AT_PHI PHI), AT_PHI AT)
@@ -235,9 +198,7 @@ spec = do
 
   describe "toASCII on NUMBER" $
     forM_
-      [ ("IDX_META forces the head to I'", toASCII (IDX_META (META NO_EXCL I "abc")), IDX_META (META EXCL I' "abc"))
-      , ("recurses through LENGTH", toASCII (LENGTH biPair), LENGTH biPairASCII)
-      , ("recurses through DOMAIN", toASCII (DOMAIN biPair), DOMAIN biPairASCII)
+      [ ("recurses through LENGTH", toASCII (LENGTH biPair), LENGTH biPairASCII)
       , ("leaves LITERAL untouched", toASCII (LITERAL 5), LITERAL 5)
       ]
       (\(desc, actual, expected) -> it desc (actual `shouldBe` expected))

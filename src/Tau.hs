@@ -50,7 +50,6 @@ bindingLabels _ = Set.empty
 
 argumentLabels :: Argument -> Set Text
 argumentLabels (ArTau attr expr) = attrLabel attr <> exprLabels expr
-argumentLabels (ArAlpha _ expr) = exprLabels expr
 
 attrLabel :: Attribute -> Set Text
 attrLabel (AtLabel label) = Set.singleton label

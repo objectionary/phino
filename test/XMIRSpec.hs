@@ -329,7 +329,6 @@ spec = do
       , ("keeps byte data and sibling bindings in an application argument", "[[ x -> Q.y(a -> [[ D> 01-02, b -> Q.z ]]) ]]")
       , ("keeps data after an application argument's sibling binding", "[[ top -> [[ @ -> ⊥(a -> [[ x -> [[]], D> 00-FF ]]) ]] ]]")
       , ("keeps data between an application argument's sibling bindings", "[[ top -> [[ @ -> ⊥(a -> [[ x -> [[]], D> 00-FF, y -> [[]] ]]) ]] ]]")
-      , ("keeps data between a positional argument's sibling bindings", "[[ top -> [[ @ -> ⊥(α0 -> [[ x -> [[]], D> 00-FF, y -> [[]] ]]) ]] ]]")
       ]
       ( \(desc, source) -> it desc $ do
           expr <- parseExpressionThrows source
@@ -386,6 +385,16 @@ spec = do
         ( "names the attribute that is empty"
         , try (void (parseXMIRThrows "<object><o name=\"a\" base=\"\"/></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
         , ["The attribute 'base' is not expected to be empty"]
+        )
+      ,
+        ( "refuses an application argument given by its position"
+        , try (void (parseXMIRThrows "<object><o name=\"x\" base=\"Φ.f\"><o base=\"Φ.y\"/></o></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["Application argument must have @as attribute, since a positional argument is not supported"]
+        )
+      ,
+        ( "refuses an application argument given by an index"
+        , try (void (parseXMIRThrows "<object><o name=\"x\" base=\"Φ.f\"><o as=\"α0\" base=\"Φ.y\"/></o></object>" >>= xmirToPhi)) :: IO (Either SomeException ())
+        , ["The positional @as='α0' is not supported"]
         )
       ,
         ( "explains an unsupported binding"
@@ -510,18 +519,18 @@ spec = do
       length xCur `shouldBe` 1
 
     it "omits @base when an application argument is a bare formation" $ do
-      expr <- parseExpressionThrows "[[ foo -> Q.bar(x -> 5, α1 -> [[ z -> ? ]]) ]]"
+      expr <- parseExpressionThrows "[[ foo -> Q.bar(x -> 5, yu -> [[ z -> ? ]]) ]]"
       xmir' <- expressionToXMIR expr defaultXmirContext
       let root = C.fromDocument xmir'
           args = root C.$/ C.element (toName "o") C.&/ C.element (toName "o")
           namedArg = filter (\cur -> C.attribute (toName "as") cur == ["x"]) args
-          formationArg = filter (\cur -> C.attribute (toName "as") cur == ["α1"]) args
+          formationArg = filter (\cur -> C.attribute (toName "as") cur == ["yu"]) args
       case namedArg of
         [argCur] -> C.attribute (toName "base") argCur `shouldBe` ["Φ.number"]
         _ -> expectationFailure "expected exactly one 'x' argument"
       case formationArg of
         [argCur] -> C.attribute (toName "base") argCur `shouldBe` []
-        _ -> expectationFailure "expected exactly one α1 argument"
+        _ -> expectationFailure "expected exactly one argument named yu"
 
     it "escapes XML special characters in attribute values" $ do
       expr <- parseExpressionThrows "[[ a&b -> \"<quoted>\" ]]"

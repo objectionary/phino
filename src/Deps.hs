@@ -29,7 +29,7 @@ import GHC.Clock (getMonotonicTime)
 import GHC.Stats (GCDetails (gcdetails_live_bytes), RTSStats (gc, max_mem_in_use_bytes), getRTSStats, getRTSStatsEnabled)
 import Logger (logDebug, logInfo)
 import Matcher
-import Printer (printAlpha, printAttribute, printBinding, printFunction)
+import Printer (printAttribute, printBinding, printFunction)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath
 import System.IO (Handle, hPutStrLn)
@@ -288,7 +288,6 @@ abbreviatedInside names (ExFormation bds) = ExFormation (map binding bds)
     binding (BiTau attr expr) = BiTau attr (abbreviated names expr)
     binding bd = bd
 abbreviatedInside names (ExApplication expr (ArTau attr arg)) = ExApplication (abbreviated names expr) (ArTau attr (abbreviated names arg))
-abbreviatedInside names (ExApplication expr (ArAlpha alpha arg)) = ExApplication (abbreviated names expr) (ArAlpha alpha (abbreviated names arg))
 abbreviatedInside names (ExDispatch expr attr) = ExDispatch (abbreviated names expr) attr
 abbreviatedInside _ term = term
 
@@ -1171,7 +1170,6 @@ saveEvalXml handle cursor printed report = do
     part _ _ = pure (Right "")
     argument :: Int -> Argument -> Naming String
     argument depth (ArTau attr value) = titled depth value >>= lift . attributed (printAttribute attr)
-    argument depth (ArAlpha alpha value) = titled depth value >>= lift . attributed (printAlpha alpha)
     attributed :: String -> Expression -> IO String
     attributed name ExTermination = pure (printf "<bottom attr=\"%s\"/>" (escapeXML name))
     attributed name value = tagged (kind value) . escapeXMLText <$> spelled value
@@ -1422,4 +1420,3 @@ unnamed names = goExpr
     goBinding bd = bd
     goArgument :: Argument -> Argument
     goArgument (ArTau attr term) = ArTau attr (goExpr term)
-    goArgument (ArAlpha alpha term) = ArAlpha alpha (goExpr term)

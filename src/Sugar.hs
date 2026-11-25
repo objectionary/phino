@@ -64,19 +64,7 @@ withoutRho sugar = goExpr
       | otherwise = Just (AA_TAU (APP_BINDING (goPair pair)))
     goArgument (AA_TAUS binding) = case goArgBinding binding of
       BI_EMPTY{} -> Nothing
-      binding'
-        | sugar == SWEET, Just args <- positional binding' -> Just (AA_EXPRS args)
-        | otherwise -> Just (AA_TAUS binding')
-    goArgument (AA_EXPRS args) = Just (AA_EXPRS (goAppArg args))
-    positional :: BINDING -> Maybe APP_ARG
-    positional (BI_PAIR (PA_ALPHA (AL_IDX _ 0) _ first) rest _) = APP_ARG first <$> following 1 rest
-      where
-        following :: Int -> BINDINGS -> Maybe APP_ARGS
-        following _ BDS_EMPTY{} = Just AAS_EMPTY
-        following next (BDS_PAIR eol' tab' (PA_ALPHA (AL_IDX _ index) _ arg) more)
-          | index == next = AAS_EXPR eol' tab' arg <$> following (next + 1) more
-        following _ _ = Nothing
-    positional _ = Nothing
+      binding' -> Just (AA_TAUS binding')
     goArgBinding :: BINDING -> BINDING
     goArgBinding empty@BI_EMPTY{} = empty
     goArgBinding BI_META{..} = BI_META meta (goArgBindings bindings) tab
@@ -89,14 +77,8 @@ withoutRho sugar = goExpr
     goArgBindings BDS_PAIR{..}
       | isRho pair = goArgBindings bindings
       | otherwise = BDS_PAIR eol tab (goPair pair) (goArgBindings bindings)
-    goAppArg :: APP_ARG -> APP_ARG
-    goAppArg APP_ARG{..} = APP_ARG (goExpr expr) (goAppArgs args)
-    goAppArgs :: APP_ARGS -> APP_ARGS
-    goAppArgs AAS_EMPTY = AAS_EMPTY
-    goAppArgs AAS_EXPR{..} = AAS_EXPR eol tab (goExpr expr) (goAppArgs args)
     goPair :: PAIR -> PAIR
     goPair PA_TAU{..} = PA_TAU attr arrow (goExpr expr)
-    goPair PA_ALPHA{..} = PA_ALPHA alpha arrow (goExpr expr)
     goPair PA_FORMATION{..} = case filter (not . rho) voids of
       [] -> PA_TAU attr arrow (goExpr expr)
       voids' -> PA_FORMATION attr voids' arrow (goExpr expr)
@@ -108,7 +90,6 @@ withoutRho sugar = goExpr
     sugared :: PAIR -> Bool
     sugared PA_TAU{attr = AT_DELTA{}} = False
     sugared PA_TAU{attr = AT_LAMBDA{}} = False
-    sugared PA_ALPHA{} = False
     sugared PA_FORMATION{voids = []} = True
     sugared PA_FORMATION{} = False
     sugared _ = True
@@ -136,12 +117,6 @@ revealXi _ = goExpr
     goArgument :: APP_ARGUMENT -> APP_ARGUMENT
     goArgument (AA_TAU (APP_BINDING pair)) = AA_TAU (APP_BINDING (goPair pair))
     goArgument (AA_TAUS binding) = AA_TAUS (goBinding binding)
-    goArgument (AA_EXPRS arg) = AA_EXPRS (goAppArg arg)
-    goAppArg :: APP_ARG -> APP_ARG
-    goAppArg APP_ARG{..} = APP_ARG (goExpr expr) (goAppArgs args)
-    goAppArgs :: APP_ARGS -> APP_ARGS
-    goAppArgs AAS_EMPTY = AAS_EMPTY
-    goAppArgs AAS_EXPR{..} = AAS_EXPR eol tab (goExpr expr) (goAppArgs args)
     goBinding :: BINDING -> BINDING
     goBinding BI_PAIR{..} = BI_PAIR (goPair pair) (goBindings bindings) tab
     goBinding binding = binding
@@ -150,7 +125,6 @@ revealXi _ = goExpr
     goBindings bindings = bindings
     goPair :: PAIR -> PAIR
     goPair PA_TAU{..} = PA_TAU attr arrow (goExpr expr)
-    goPair PA_ALPHA{..} = PA_ALPHA alpha arrow (goExpr expr)
     goPair PA_FORMATION{..} = PA_FORMATION attr voids arrow (goExpr expr)
     goPair pair = pair
 
@@ -180,16 +154,6 @@ instance ToSalty EXPRESSION where
       tausToPairs BDS_EMPTY{} = []
       tausToPairs BDS_PAIR{..} = pair : tausToPairs bindings
       tausToPairs (BDS_META _ _ mt _) = error $ "BDS_META " ++ show mt ++ " unexpected in tausToPairs"
-  toSalty EX_APPLICATION{argument = AA_EXPRS args, ..} = toSalty (EX_APPLICATION expr space EOL (TAB indent) (AA_TAUS (argToBinding args tab)) EOL (TAB (indent - 1)) indent)
-    where
-      argToBinding :: APP_ARG -> TAB -> BINDING
-      argToBinding APP_ARG{..} =
-        BI_PAIR
-          (PA_ALPHA (AL_IDX ALPHA 0) ARROW expr)
-          (argsToBindings args 1 tab)
-      argsToBindings :: APP_ARGS -> Int -> TAB -> BINDINGS
-      argsToBindings AAS_EMPTY _ tab = BDS_EMPTY tab
-      argsToBindings AAS_EXPR{..} idx tb = BDS_PAIR eol tb (PA_ALPHA (AL_IDX ALPHA idx) ARROW expr) (argsToBindings args (idx + 1) tb)
   toSalty EX_NUMBER{num, tab = tab@TAB{..}, rhos} =
     saltifyPrimitive
       (toCST (BaseObject "number") (indent + 1, EOL))
@@ -271,7 +235,6 @@ instance ToSalty BINDINGS where
 
 instance ToSalty PAIR where
   toSalty PA_TAU{..} = PA_TAU attr arrow (toSalty expr)
-  toSalty PA_ALPHA{..} = PA_ALPHA alpha arrow (toSalty expr)
   toSalty PA_FORMATION{voids, attr, arrow, expr = EX_SINGLE{formation}} = toSalty (PA_FORMATION attr voids arrow formation)
   toSalty PA_FORMATION{voids, attr, arrow, expr = EX_FORMATION{..}} =
     PA_TAU attr arrow (toSalty (EX_FORMATION lsb eol tab (joinToBinding voids binding) eol' tab' rsb))
@@ -292,7 +255,6 @@ instance ToSalty SET where
 
 instance ToSalty NUMBER where
   toSalty LENGTH{..} = LENGTH (toSalty binding)
-  toSalty DOMAIN{..} = DOMAIN (toSalty binding)
   toSalty num = num
 
 instance ToSalty COMPARABLE where

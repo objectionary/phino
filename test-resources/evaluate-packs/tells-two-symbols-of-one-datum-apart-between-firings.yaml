@@ -27,17 +27,17 @@ input: >
     dataized(target) ↦ L_dataized:λ,
     pair(x, y) ↦ L_pair:λ,
     φ ↦ Φ.pair(
-      Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ,
-      Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ ).φ ⟧
+      x ↦ Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ).φ,
+      y ↦ Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎2:λ ) ).φ ).φ ⟧
 result: '⟦ x ↦ 𝜎3:λ, y ↦ 𝜎4:λ ⟧'
 protocol: |
   𝕄(Φ.φ):
     remembered 𝑛·0·1 ≡ Φ.pair  # ⟦ x ↦ ∅, y ↦ ∅, λ ⤍ L_pair ⟧
-    shared 𝑛·1 ≔ Φ.dataized( Φ.bytes( φ ↦ 𝜎1:λ ) ).φ
+    shared 𝑛·1 ≔ Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎1:λ ) ).φ
     𝑛·0·2 ≔ Φ.pair( x ↦ 𝑛·1 )
     𝑛·0·3 ≔ ⟦ x ↦ 𝑛·1, y ↦ ∅, λ ⤍ L_pair ⟧
     remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ 𝑛·1 )
-    shared 𝑛·2 ≔ Φ.dataized( Φ.bytes( φ ↦ 𝜎2:λ ) ).φ
+    shared 𝑛·2 ≔ Φ.dataized( target ↦ Φ.bytes( φ ↦ 𝜎2:λ ) ).φ
     𝑛·0·4 ≔ 𝑛·0·3( y ↦ 𝑛·2 )
     𝑛·0·5 ≔ ⟦ x ↦ 𝑛·1, y ↦ 𝑛·2, λ ⤍ L_pair ⟧
     remembered 𝑛·0·5 ≡ 𝑛·0·4

@@ -32,7 +32,6 @@ instance Slots Expression where
 
 instance Slots Argument where
   slots (ArTau attr expr) = slots attr ++ slots expr
-  slots (ArAlpha alpha expr) = slots alpha ++ slots expr
 
 instance Slots Binding where
   slots (BiAny slot) = [slot]
@@ -44,10 +43,6 @@ instance Slots Binding where
 
 instance Slots Attribute where
   slots (AtAny slot) = [slot]
-  slots _ = []
-
-instance Slots Alpha where
-  slots (AlAny slot) = [slot]
   slots _ = []
 
 instance Slots Bytes where

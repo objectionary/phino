@@ -95,10 +95,7 @@ commands expr = reverse . snd <$> top expr
       AtRho -> Right "ρ"
       other -> patterned place (ExDispatch ExXi other)
     argument :: Text -> Argument -> Either SodgException (Text, Expression)
-    argument place = \case
-      ArTau attr value -> (,value) <$> attribute place attr
-      ArAlpha (Alpha idx) value -> Right ("α" <> T.pack (show idx), value)
-      other -> patterned place (ExApplication ExXi other)
+    argument place (ArTau attr value) = (,value) <$> attribute place attr
     bytes :: Text -> Bytes -> Either SodgException Text
     bytes place = \case
       BtEmpty -> Right "--"

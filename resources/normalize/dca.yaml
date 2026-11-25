@@ -1,6 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-name: dca
-pattern: ⊥(α𝑖 ↦ 𝑒)
-result: ⊥

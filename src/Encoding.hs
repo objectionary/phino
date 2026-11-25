@@ -50,18 +50,9 @@ instance ToASCII BINDINGS where
 instance ToASCII APP_ARGUMENT where
   toASCII (AA_TAU tau) = AA_TAU (toASCII tau)
   toASCII (AA_TAUS taus) = AA_TAUS (toASCII taus)
-  toASCII (AA_EXPRS args) = AA_EXPRS (toASCII args)
-
-instance ToASCII APP_ARG where
-  toASCII APP_ARG{..} = APP_ARG (toASCII expr) (toASCII args)
-
-instance ToASCII APP_ARGS where
-  toASCII AAS_EXPR{..} = AAS_EXPR eol tab (toASCII expr) (toASCII args)
-  toASCII args = args
 
 instance ToASCII PAIR where
   toASCII PA_TAU{..} = PA_TAU (toASCII attr) ARROW' (toASCII expr)
-  toASCII PA_ALPHA{..} = PA_ALPHA (toASCII alpha) ARROW' (toASCII expr)
   toASCII PA_FORMATION{..} = PA_FORMATION (toASCII attr) (map toASCII voids) ARROW' (toASCII expr)
   toASCII PA_VOID{..} = PA_VOID (toASCII attr) ARROW' QUESTION
   toASCII PA_LAMBDA{..} = PA_LAMBDA' func
@@ -75,10 +66,6 @@ instance ToASCII BYTES where
   toASCII (BT_META meta) = BT_META (META EXCL D'' (rest meta))
   toASCII bts = bts
 
-instance ToASCII ALPHA where
-  toASCII AL_IDX{..} = AL_IDX ALPHA' idx
-  toASCII AL_META{..} = AL_META ALPHA' (META EXCL I' (rest meta))
-
 instance ToASCII ATTRIBUTE where
   toASCII AT_PHI{} = AT_PHI AT
   toASCII AT_RHO{} = AT_RHO CARET
@@ -90,9 +77,7 @@ instance ToASCII SET where
   toASCII ST_ATTRIBUTES{..} = ST_ATTRIBUTES (map toASCII attrs)
 
 instance ToASCII NUMBER where
-  toASCII IDX_META{..} = IDX_META (META EXCL I' (rest meta))
   toASCII LENGTH{..} = LENGTH (toASCII binding)
-  toASCII DOMAIN{..} = DOMAIN (toASCII binding)
   toASCII literal@LITERAL{} = literal
 
 instance ToASCII COMPARABLE where

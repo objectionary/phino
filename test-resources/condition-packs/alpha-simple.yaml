@@ -1,9 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-expression: '[[ xxxx -> ? ]](~0 -> Q.y)'
-pattern: '[[ !B1, !t1 -> ?, !B2 ]](α𝑖1 ↦ !e1)'
-condition:
-  eq:
-    - 𝑖1
-    - length: '!B1'

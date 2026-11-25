@@ -6,7 +6,7 @@
 
 module YamlSpec where
 
-import AST (Alpha, Attribute, Binding, Bytes, Expression (ExMeta, ExRoot))
+import AST (Attribute, Binding, Bytes, Expression (ExMeta, ExRoot))
 import Control.Exception (Exception (displayException), SomeException, bracket)
 import Control.Monad
 import Data.ByteString qualified as BS
@@ -117,9 +117,9 @@ spec = do
       [ ("a label that equals the name in a morphing rule", primYaml, failsAsRedundant (decodeYaml' primYaml :: Either Yaml.ParseException MorphRule))
       , ("a label that equals the name in a dataization rule", endYaml, failsAsRedundant (decodeYaml' endYaml :: Either Yaml.ParseException DataizeRule))
       , ("a label that equals the name in a contextualization rule", cxiYaml, failsAsRedundant (decodeYaml' cxiYaml :: Either Yaml.ParseException ContextualizeRule))
-      , ("a malformed embedded 𝜑-syntax: an index meta that does not parse", "'bogus'", isLeft (decodeYaml' "'bogus'" :: Either Yaml.ParseException Number))
+      , ("a number spelt as a text, since no meta stands for one", "'bogus'", isLeft (decodeYaml' "'bogus'" :: Either Yaml.ParseException Number))
+      , ("a number spelt as the index meta, which is not supported", "'𝑖'", isLeft (decodeYaml' "'𝑖'" :: Either Yaml.ParseException Number))
       , ("a malformed embedded 𝜑-syntax: an attribute that does not parse", "'123'", isLeft (decodeYaml' "'123'" :: Either Yaml.ParseException Attribute))
-      , ("a malformed embedded 𝜑-syntax: an alpha that does not parse", "'bogus'", isLeft (decodeYaml' "'bogus'" :: Either Yaml.ParseException Alpha))
       , ("a malformed embedded 𝜑-syntax: bytes that do not parse", "'0a-'", isLeft (decodeYaml' "'0a-'" :: Either Yaml.ParseException Bytes))
       , ("a malformed embedded 𝜑-syntax: an expression that does not parse", "'L>'", isLeft (decodeYaml' "'L>'" :: Either Yaml.ParseException Expression))
       , ("a malformed embedded 𝜑-syntax: a binding that does not parse", "'L>'", isLeft (decodeYaml' "'L>'" :: Either Yaml.ParseException Binding))
@@ -191,12 +191,6 @@ spec = do
         , failsWith
             "anonymous meta '!e' cannot be referenced in 'having' of rule 'foo'"
             (decodeYaml' (rewriting "result: '⟦ ⟧'\nhaving:\n  formation: '𝑒'") :: Either Yaml.ParseException Rule)
-        )
-      ,
-        ( "as a bare index meta in 'when' of a rewriting rule"
-        , failsWith
-            "anonymous meta '!i' cannot be referenced in 'when' of rule 'foo'"
-            (decodeYaml' (rewriting "result: '⟦ ⟧'\nwhen:\n  eq: ['𝑖', 1]") :: Either Yaml.ParseException Rule)
         )
       ,
         ( "inside an 'nf' condition of a rewriting rule"
@@ -326,8 +320,9 @@ spec = do
     forM_
       [ ("bytes missing a dash in 'eq'", "eq: ['𝑒1', '⟦ Δ ⤍ 01 ⟧']", "expecting '-'")
       , ("bytes missing a dash in 'gt'", "gt: ['⟦ Δ ⤍ 7F ⟧', 3]", "expecting '-'")
-      , ("a list in 'gt'", "gt: [[1], 2]", "is a number, an attribute, an expression, or an object of 'length' or 'domain'")
-      , ("a boolean in 'eq'", "eq: [true, 'x']", "is a number, an attribute, an expression, or an object of 'length' or 'domain'")
+      , ("a list in 'gt'", "gt: [[1], 2]", "is a number, an attribute, an expression, or an object of 'length'")
+      , ("a boolean in 'eq'", "eq: [true, 'x']", "is a number, an attribute, an expression, or an object of 'length'")
+      , ("a 'domain' in 'eq'", "eq: [{domain: '𝐵1'}, 1]", "expected one of: [\"length\"]")
       ]
       (\(desc, yaml, message) -> it desc ((decodeYaml' yaml :: Either Yaml.ParseException Condition) `shouldSatisfy` failsWith message))
 

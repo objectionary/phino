@@ -35,12 +35,12 @@ input: >
     number(φ) ↦ ⟦
       gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧,
       plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-    f ↦ 5.gt( 0 ).if( 1.plus( 2 ).plus( 0 ), 3.plus( 4 ).plus( 0 ) ),
-    φ ↦ Φ.f.plus( Φ.f ).φ ⟧
+    f ↦ 5.gt( x ↦ 0 ).if( then ↦ 1.plus( x ↦ 2 ).plus( x ↦ 0 ), else ↦ 3.plus( x ↦ 4 ).plus( x ↦ 0 ) ),
+    φ ↦ Φ.f.plus( x ↦ Φ.f ).φ ⟧
 result: '𝜎6:λ'
 protocol: |
   𝕄(Φ.φ):
-    normalized 𝑛·0·1 ≔ 5.0.gt( 0.0 ).if( 1.0.plus( 2.0 ).plus( 0.0 ), 3.0.plus( 4.0 ).plus( 0.0 ) )  # Φ.f
+    normalized 𝑛·0·1 ≔ 5.0.gt( x ↦ 0.0 ).if( then ↦ 1.0.plus( x ↦ 2.0 ).plus( x ↦ 0.0 ), else ↦ 3.0.plus( x ↦ 4.0 ).plus( x ↦ 0.0 ) )  # Φ.f
     normalized 𝑛·0·2 ≔ ⟦ φ ↦ ∅, gt(x) ↦ L_number_gt:λ, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number
     𝑛·0·3 ≔ 5.0
     𝑛·0·4 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), gt(x) ↦ L_number_gt:λ, plus(x) ↦ L_number_plus:λ ⟧
@@ -89,10 +89,10 @@ protocol: |
       memoized 𝑛·0·7 ⇛ 𝑛·1·27
       evaluated 𝑛·1·28 ≔ 𝑛·1·27  # 𝑛·0·7
     normalized 𝑛·0·8 ≔ ⟦ then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧  # 𝑛·1·28.if
-    shared 𝑛·1 ≔ 1.0.plus( 2.0 ).plus( 𝑛·1·12 )
+    shared 𝑛·1 ≔ 1.0.plus( x ↦ 2.0 ).plus( x ↦ 𝑛·1·12 )
     𝑛·0·9 ≔ 𝑛·1·24.if( then ↦ 𝑛·1 )
     𝑛·0·10 ≔ ⟦ then ↦ 𝑛·1, else ↦ ∅, λ ⤍ L_fork ⟧
-    shared 𝑛·2 ≔ 3.0.plus( 4.0 ).plus( 𝑛·1·12 )
+    shared 𝑛·2 ≔ 3.0.plus( x ↦ 4.0 ).plus( x ↦ 𝑛·1·12 )
     𝑛·0·11 ≔ 𝑛·0·10( else ↦ 𝑛·2 )
     𝑛·0·12 ≔ ⟦ then ↦ 𝑛·1, else ↦ 𝑛·2, λ ⤍ L_fork ⟧
     𝔼(L_fork):
@@ -255,7 +255,7 @@ protocol: |
       𝛿1·6 ≔ 𝛿·6·1  # 𝔻(ξ.ρ)
       𝔻(ξ.x):
         𝕄(ξ.x):
-          normalized 𝑛·6·6 ≔ 𝑛·1·1.gt( 𝑛·5·6 ).if( 𝑛·3·1.plus( 𝑛·3·11 ).plus( 𝑛·5·6 ), 𝑛·4·1.plus( 𝑛·4·11 ).plus( 𝑛·5·6 ) )  # Φ.f
+          normalized 𝑛·6·6 ≔ 𝑛·0·6.if( then ↦ 𝑛·2·9.plus( x ↦ 𝑛·5·6 ), else ↦ 𝑛·2·18.plus( x ↦ 𝑛·5·6 ) )  # Φ.f
           𝑛·6·7 ≔ Φ.number( φ ↦ 𝑛·1·7 )
           𝑛·6·8 ≔ ⟦ φ ↦ 𝑛·1·7, gt(x) ↦ L_number_gt:λ, plus(x) ↦ L_number_plus:λ ⟧
           normalized 𝑛·6·9 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_gt ⟧  # 𝑛·6·8.gt

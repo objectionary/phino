@@ -353,7 +353,6 @@ abstracted store spots form = do
     goBinding _ bd = pure (bd, Map.empty)
     goArgument :: IORef (Map.Map Int [(Expression, Abstraction)]) -> Argument -> IO (Argument, Map.Map Int Expression)
     goArgument cache arg@(ArTau attr expr) = first (intact expr arg (ArTau attr)) <$> goExpr cache expr
-    goArgument cache arg@(ArAlpha alpha expr) = first (intact expr arg (ArAlpha alpha)) <$> goExpr cache expr
 
 kindle :: Sides -> Maybe Memo -> Expression -> Firing -> Answer -> IO ()
 kindle store (Just (Memo _ _ _ _ (Kin places likes _) _)) form firing answer = do
@@ -472,7 +471,6 @@ renamedTerm ctx renaming@(Renaming _ spots@(Spots _ spelt) _ renamed) = goExpr
     goBinding bd = pure bd
     goArgument :: Argument -> IO Argument
     goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> goExpr expr
-    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> goExpr expr
 
 renamedSymbol :: ReduceContext -> Renaming -> Int -> IO Int
 renamedSymbol ctx renaming@(Renaming table _ visiting _) idx = do
@@ -809,7 +807,6 @@ repeats mode form ctx = do
         parts :: Expression -> [Expression]
         parts (ExMeta name) = maybeToList (look name)
         parts (ExApplication callee (ArTau _ arg)) = [callee, arg]
-        parts (ExApplication callee (ArAlpha _ arg)) = [callee, arg]
         parts (ExDispatch inner _) = [inner]
         parts (ExFormation bds) = [body | BiTau attr body <- bds, attr /= AtRho]
         parts _ = []
@@ -992,7 +989,6 @@ shared ctx = go
     goArgument :: Argument -> IO Argument
     goArgument arg@(ArTau AtRho _) = pure arg
     goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> (goValue =<< go expr)
-    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> (goValue =<< go expr)
     goValue :: Expression -> IO Expression
     goValue value@(ExMeta _) = pure value
     goValue value@(ExApplication inner (ArTau AtRho _))
@@ -1016,7 +1012,6 @@ shared ctx = go
     growing (ExMeta _) = True
     growing (ExDispatch inner _) = not (path inner) || growing inner
     growing (ExApplication inner (ArTau _ arg)) = growing inner || growing arg
-    growing (ExApplication inner (ArAlpha _ arg)) = growing inner || growing arg
     growing _ = False
     path :: Expression -> Bool
     path (ExDispatch inner _) = path inner
@@ -1024,7 +1019,6 @@ shared ctx = go
     path _ = False
     closed :: Expression -> Bool
     closed (ExApplication inner (ArTau _ arg)) = closed inner && closed arg
-    closed (ExApplication inner (ArAlpha _ arg)) = closed inner && closed arg
     closed (ExDispatch inner _) = closed inner
     closed (ExFormation _) = True
     closed ExRoot = True

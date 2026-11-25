@@ -88,8 +88,6 @@ data META_HEAD
   | A
   | TAU
   | TAU'
-  | I
-  | I'
   | B
   | B'
   | D
@@ -115,17 +113,8 @@ data TAB
   | NO_TAB
   deriving (Eq, Show)
 
-data ALPHA' = ALPHA | ALPHA'
-  deriving (Eq, Show)
-
-data ALPHA
-  = AL_IDX {sym :: ALPHA', idx :: Int}
-  | AL_META {sym :: ALPHA', meta :: META}
-  deriving (Eq, Show)
-
 data PAIR
   = PA_TAU {attr :: ATTRIBUTE, arrow :: ARROW, expr :: EXPRESSION}
-  | PA_ALPHA {alpha :: ALPHA, arrow :: ARROW, expr :: EXPRESSION}
   | PA_FORMATION {attr :: ATTRIBUTE, voids :: [ATTRIBUTE], arrow :: ARROW, expr :: EXPRESSION}
   | PA_VOID {attr :: ATTRIBUTE, arrow :: ARROW, void :: VOID}
   | PA_LAMBDA {func :: T.Text}
@@ -154,18 +143,9 @@ data BINDINGS
   | BDS_META {eol :: EOL, tab :: TAB, meta :: META, bindings :: BINDINGS}
   deriving (Eq, Show)
 
-data APP_ARG = APP_ARG {expr :: EXPRESSION, args :: APP_ARGS}
-  deriving (Eq, Show)
-
-data APP_ARGS
-  = AAS_EXPR {eol :: EOL, tab :: TAB, expr :: EXPRESSION, args :: APP_ARGS}
-  | AAS_EMPTY
-  deriving (Eq, Show)
-
 data APP_ARGUMENT
   = AA_TAU APP_BINDING
   | AA_TAUS BINDING
-  | AA_EXPRS APP_ARG
   deriving (Eq, Show)
 
 data EXPRESSION
@@ -219,9 +199,7 @@ data EQUAL
   deriving (Eq, Show)
 
 data NUMBER
-  = IDX_META {meta :: META}
-  | LENGTH {binding :: BINDING}
-  | DOMAIN {binding :: BINDING}
+  = LENGTH {binding :: BINDING}
   | LITERAL {num :: Int}
   deriving (Eq, Show)
 
@@ -361,7 +339,7 @@ instance ToCST Expression EXPRESSION where
   toCST (ExDispatch ExXi attr) ctx = EX_ATTR (toCST attr ctx)
   toCST (ExDispatch expr attr) ctx = EX_DISPATCH (toCST expr ctx) NO_SPACE (toCST attr ctx)
   toCST app@(ExApplication _ _) ctx@(tabs, eol) =
-    let (ex, ts, exs) = complexApplication app
+    let (ex, ts) = complexApplication app
         ex' = toCST ex ctx :: EXPRESSION
         next = tabs + 1
         (ts', rs) = withoutRhosInPrimitives ex ts
@@ -369,7 +347,7 @@ instance ToCST Expression EXPRESSION where
      in if length ts' == 1 && dataPrimitive obj && sweetCollapsible obj
           then applicationToPrimitive obj tabs rs
           else
-            if length ts' > 1 && null exs && dataPrimitive obj && sweetCollapsible obj
+            if length ts' > 1 && dataPrimitive obj && sweetCollapsible obj
               then
                 EX_APPLICATION
                   (applicationToPrimitive obj tabs rs)
@@ -381,27 +359,15 @@ instance ToCST Expression EXPRESSION where
                   (TAB tabs)
                   next
               else
-                if null exs
-                  then
-                    EX_APPLICATION
-                      ex'
-                      NO_SPACE
-                      eol
-                      (TAB next)
-                      (AA_TAUS (toCST ts (next, eol) :: BINDING))
-                      eol
-                      (TAB tabs)
-                      next
-                  else
-                    EX_APPLICATION
-                      ex'
-                      NO_SPACE
-                      eol
-                      (TAB next)
-                      (AA_EXPRS (toCST exs (next, eol)))
-                      eol
-                      (TAB tabs)
-                      next
+                EX_APPLICATION
+                  ex'
+                  NO_SPACE
+                  eol
+                  (TAB next)
+                  (AA_TAUS (toCST ts (next, eol) :: BINDING))
+                  eol
+                  (TAB tabs)
+                  next
     where
       primitives :: [T.Text]
       primitives = ["number", "string"]
@@ -422,37 +388,15 @@ instance ToCST Expression EXPRESSION where
         Nothing -> EX_NUMBER (btsToNum bts) (TAB tabs) rhos
       applicationToPrimitive (DataString bts) tabs rhos = EX_STRING (btsToStr bts) (TAB tabs) rhos
       applicationToPrimitive _ _ _ = error "applicationToPrimitive expects DataNumber or DataString"
-      complexApplication :: Expression -> (Expression, [Argument], [Expression])
-      complexApplication expr =
-        let (expr', taus', exprs') = complexApplication' expr
-         in (expr', reverse taus', reverse exprs')
+      complexApplication :: Expression -> (Expression, [Argument])
+      complexApplication = go []
         where
-          complexApplication' :: Expression -> (Expression, [Argument], [Expression])
-          complexApplication' (ExApplication (ExApplication expr tau) tau') =
-            let (before, taus, exprs) = complexApplication' (ExApplication expr tau)
-                taus' = tau' : taus
-             in if null exprs
-                  then (before, taus', [])
-                  else case tau' of
-                    ArAlpha (Alpha idx) expr' ->
-                      if idx == length exprs
-                        then (before, taus', expr' : exprs)
-                        else (before, taus', [])
-                    _ -> (before, taus', [])
-          complexApplication' (ExApplication expr (ArAlpha (Alpha 0) expr')) = (expr, [ArAlpha (Alpha 0) expr'], [expr'])
-          complexApplication' (ExApplication expr tau) = (expr, [tau], [])
-          complexApplication' expr = (expr, [], [])
+          go :: [Argument] -> Expression -> (Expression, [Argument])
+          go taus (ExApplication expr tau) = go (tau : taus) expr
+          go taus expr = (expr, taus)
       head' :: [a] -> a
       head' [] = error "Should never be called"
       head' (x : _) = x
-
-instance ToCST [Expression] APP_ARG where
-  toCST (expr : exprs) ctx = APP_ARG (toCST expr ctx) (toCST exprs ctx)
-  toCST [] _ = error "toCST APP_ARG requires non-empty expression list"
-
-instance ToCST [Expression] APP_ARGS where
-  toCST [] _ = AAS_EMPTY
-  toCST (expr : exprs) ctx@(tabs, eol) = AAS_EXPR eol (TAB tabs) (toCST expr ctx) (toCST exprs ctx)
 
 instance ToCST [Binding] BINDING where
   toCST [] (tabs, _) = BI_EMPTY (TAB tabs)
@@ -504,7 +448,6 @@ instance ToCST Binding PAIR where
 
 instance ToCST Argument PAIR where
   toCST (ArTau attr exp) ctx = PA_TAU (toCST attr ctx) ARROW (toCST exp ctx)
-  toCST (ArAlpha alpha exp) ctx = PA_ALPHA (toCST alpha ctx) ARROW (toCST exp ctx)
 
 instance ToCST [Argument] BINDING where
   toCST [] (tabs, _) = BI_EMPTY (TAB tabs)
@@ -533,11 +476,6 @@ instance ToCST Attribute ATTRIBUTE where
   toCST AtLambda _ = AT_LAMBDA LAMBDA
   toCST (AtMeta mt) _ = AT_META (META NO_EXCL TAU (metaTail mt))
   toCST (AtAny _) _ = AT_META (anyMeta TAU)
-
-instance ToCST Alpha ALPHA where
-  toCST (Alpha idx) _ = AL_IDX ALPHA idx
-  toCST (AlMeta mt) _ = AL_META ALPHA (META NO_EXCL I (metaTail mt))
-  toCST (AlAny _) _ = AL_META ALPHA (anyMeta I)
 
 instance ToCST Y.Condition CONDITION where
   toCST (Y.Not (Y.In [attr] [binding])) _ = CO_BELONGS (attributeToCST attr) NOT_IN (ST_BINDING (bindingsToCST [binding]))
@@ -569,10 +507,7 @@ instance ToCST Y.Comparable COMPARABLE where
   toCST (Y.CmpNum num) _ = CMP_NUM (numberToCST num)
 
 instance ToCST Y.Number NUMBER where
-  toCST (Y.MetaIndex mt) _ = IDX_META (META NO_EXCL I (metaTail mt))
-  toCST (Y.AnyIndex _) _ = IDX_META (anyMeta I)
   toCST (Y.Length binding) _ = LENGTH (bindingsToCST [binding])
-  toCST (Y.Domain binding) _ = DOMAIN (bindingsToCST [binding])
   toCST (Y.Literal num) _ = LITERAL num
 
 instance ToCST Y.ExtraArgument EXTRA_ARG where

@@ -60,14 +60,14 @@ spec = do
       , ("Q.!t1", Just (ExDispatch ExRoot (AtMeta "t1")))
       , ("[[]](!t1 -> $)", Just (ExApplication (ExFormation []) (ArTau (AtMeta "t1") ExXi)))
       ,
-        ( "[[]](~0 -> $)(~11 -> Q)"
+        ( "[[]](x -> $)(yy -> Q)"
         , Just
             ( ExApplication
                 ( ExApplication
                     (ExFormation [])
-                    (ArAlpha (Alpha 0) ExXi)
+                    (ArTau (AtLabel "x") ExXi)
                 )
-                (ArAlpha (Alpha 11) ExRoot)
+                (ArTau (AtLabel "yy") ExRoot)
             )
         )
       , ("[[]](x -> $, y -> Q)", Just (ExApplication (ExApplication (ExFormation []) (ArTau (AtLabel "x") ExXi)) (ArTau (AtLabel "y") ExRoot)))
@@ -125,45 +125,45 @@ spec = do
             )
         )
       ,
-        ( "Q.x(y, [[]].z, Q.y(^,@))"
+        ( "Q.x(a -> y, b -> [[]].z, c -> Q.y(d -> ^, e -> @))"
         , Just
             ( ExApplication
                 ( ExApplication
                     ( ExApplication
                         (ExDispatch ExRoot (AtLabel "x"))
-                        (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "y")))
+                        (ArTau (AtLabel "a") (ExDispatch ExXi (AtLabel "y")))
                     )
-                    (ArAlpha (Alpha 1) (ExDispatch (ExFormation []) (AtLabel "z")))
+                    (ArTau (AtLabel "b") (ExDispatch (ExFormation []) (AtLabel "z")))
                 )
-                ( ArAlpha
-                    (Alpha 2)
+                ( ArTau
+                    (AtLabel "c")
                     ( ExApplication
                         ( ExApplication
                             (ExDispatch ExRoot (AtLabel "y"))
-                            (ArAlpha (Alpha 0) (ExDispatch ExXi AtRho))
+                            (ArTau (AtLabel "d") (ExDispatch ExXi AtRho))
                         )
-                        (ArAlpha (Alpha 1) (ExDispatch ExXi AtPhi))
+                        (ArTau (AtLabel "e") (ExDispatch ExXi AtPhi))
                     )
                 )
             )
         )
       ,
-        ( "5.plus(5.q(\"hello\".length))"
+        ( "5.plus(x -> 5.q(y -> \"hello\".length))"
         , Just
             ( ExApplication
                 ( ExDispatch
                     (DataNumber (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]))
                     (AtLabel "plus")
                 )
-                ( ArAlpha
-                    (Alpha 0)
+                ( ArTau
+                    (AtLabel "x")
                     ( ExApplication
                         ( ExDispatch
                             (DataNumber (BtMany ["40", "14", "00", "00", "00", "00", "00", "00"]))
                             (AtLabel "q")
                         )
-                        ( ArAlpha
-                            (Alpha 0)
+                        ( ArTau
+                            (AtLabel "y")
                             ( ExDispatch
                                 (DataString (BtMany ["68", "65", "6C", "6C", "6F"]))
                                 (AtLabel "length")
@@ -192,9 +192,9 @@ spec = do
       , "Q.x.^.@.!t1"
       , "[[x -> y.z]]"
       , "[[x -> ^, y -> @, z -> !t]]"
-      , "Q.x(a.b.c, Q.a(b), [[]])"
-      , "Q.x(y, [[]].z, Q.y(^,@))"
-      , "[[x -> 5.plus(5), y -> \"hello\", z -> 42.5]]"
+      , "Q.x(u -> a.b.c, v -> Q.a(w -> b), z -> [[]])"
+      , "Q.x(a -> y, b -> [[]].z, c -> Q.y(d -> ^, e -> @))"
+      , "[[x -> 5.plus(x -> 5), y -> \"hello\", z -> 42.5]]"
       , "[[\n  x -> \"Hi\",\n  y -> 42\n]]"
       , "[[x -> -42, y -> +34]]"
       , "⟦x ↦ Φ.org.eolang(z ↦ ξ.f, φ ↦ ρ, t ↦ φ, first ↦ ⟦ λ ⤍ Function_name, Δ ⤍ 42- ⟧)⟧"
@@ -203,7 +203,7 @@ spec = do
       , "[[ x -> \"\\uD835\\uDF11\"]]"
       , "[[ x ↦ \"This plugin has \\x01\\x01\" ]]"
       , "[[ !tfoo -> !e1Some, !t-BAR -> !e_123someW, !Bhi123 ]]"
-      , "[[ !B ]](α𝑖 -> !e)"
+      , "[[ !B ]](𝜏 -> !e)"
       , "[[ 𝜏 -> !e, 𝐵 ]]"
       , "Q(x -> [[]])"
       , "$(x -> [[]])"
@@ -260,8 +260,34 @@ spec = do
       parseExpression
       [ ("⟦ a ↦ Φ.foo( x ↦ 1, y ↦ ) ⟧", "expression:1:25:")
       , ("⟦ a ↦ Φ.foo( x ↦ 1, 2 ) ⟧", "expression:1:21:")
-      , ("⟦\n  app ↦ Φ.io.stdout(\n    text ↦ Φ.string(\n      ⟦ Δ ⤍ 48-65-6C-6C-6F ⟧\n    ),\n    size ↦ Φ.number( ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧,\n    mode ↦ ⟦⟧\n  )\n⟧", "expression:7:10:")
+      , ("⟦\n  app ↦ Φ.io.stdout(\n    text ↦ Φ.string(\n      φ ↦ ⟦ Δ ⤍ 48-65-6C-6C-6F ⟧\n    ),\n    size ↦ Φ.number( φ ↦ ⟦ Δ ⤍ 40-14-00-00-00-00-00-00 ⟧,\n    mode ↦ ⟦⟧\n  )\n⟧", "expression:9:1:")
       ]
+
+  describe "refuses an argument given by its position" $
+    fails
+      parseExpression
+      ( map
+          (\input -> (input, "since a positional one, 'α0 ↦ …' or 'f( … )', is not supported"))
+          [ "Q.x(α0 ↦ Q)"
+          , "Q.x(~0 -> Q)"
+          , "Q.x(~1 -> Q.y, x -> 5)"
+          , "Q.x(x -> 5, ~1 -> Q.y)"
+          , "Q.x(α𝑖1 ↦ Q)"
+          , "Q.x(~!i1 -> Q)"
+          , "Q.x(Q.y)"
+          , "Q.x(Q.y, Q.z)"
+          , "Q.x(k -> Q.y, Q.z)"
+          , "5.plus(6)"
+          , "\"hi\".concat(\"there\")"
+          , "[[ x -> ? ]](~0 -> [[]])"
+          , "Q.number(Q.bytes([[ D> 40-14-00-00-00-00-00-00 ]]))"
+          ]
+      )
+
+  describe "refuses a meta of an index" $
+    forM_
+      ["𝑖1", "!i1", "Q.x(𝑖1 -> Q)", "[[ x -> !i ]]"]
+      (\expr -> it expr (parseExpression expr `shouldSatisfy` isLeft))
 
   describe "tells what a binding prefix may be followed by" $
     fails
@@ -279,7 +305,6 @@ spec = do
       , ("[[ !t0 -> Q ]]", "indexed with zero")
       , ("[[ D> 𝛿0 ]]", "indexed with zero")
       , ("[[ λ ⤍ 𝜎0 ]]", "indexed with zero")
-      , ("[[ !B ]](α𝑖0 -> !e)", "indexed with zero")
       ]
 
   describe "parse packs" $ do
@@ -563,14 +588,14 @@ spec = do
   describe "parse applications with mixed bindings" $
     test
       parseExpression
-      [ ("[[]](Q)", Just (ExApplication (ExFormation []) (ArAlpha (Alpha 0) ExRoot)))
-      , ("[[]](Q, T)", Just (ExApplication (ExApplication (ExFormation []) (ArAlpha (Alpha 0) ExRoot)) (ArAlpha (Alpha 1) ExTermination)))
+      [ ("[[]](k -> Q)", Just (ExApplication (ExFormation []) (ArTau (AtLabel "k") ExRoot)))
+      , ("[[]](k -> Q, m -> T)", Just (ExApplication (ExApplication (ExFormation []) (ArTau (AtLabel "k") ExRoot)) (ArTau (AtLabel "m") ExTermination)))
       , ("Q.x(y -> $)", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "y") ExXi)))
-      , ("[[x -> ?]].x(Q)", Just (ExApplication (ExDispatch (ExFormation [BiVoid (AtLabel "x")]) (AtLabel "x")) (ArAlpha (Alpha 0) ExRoot)))
-      , ("[[]](~!i1 -> $)", Just (ExApplication (ExFormation []) (ArAlpha (AlMeta "i1") ExXi)))
-      , ("[[]](α𝑖1 -> Q)", Just (ExApplication (ExFormation []) (ArAlpha (AlMeta "i1") ExRoot)))
+      , ("[[x -> ?]].x(k -> Q)", Just (ExApplication (ExDispatch (ExFormation [BiVoid (AtLabel "x")]) (AtLabel "x")) (ArTau (AtLabel "k") ExRoot)))
+      , ("[[]](!t1 -> $)", Just (ExApplication (ExFormation []) (ArTau (AtMeta "t1") ExXi)))
+      , ("[[]](𝜏1 -> Q)", Just (ExApplication (ExFormation []) (ArTau (AtMeta "t1") ExRoot)))
       , ("Q.foo(a1 -> Q.y)", Just (ExApplication (ExDispatch ExRoot (AtLabel "foo")) (ArTau (AtLabel "a1") (ExDispatch ExRoot (AtLabel "y")))))
-      , ("Q.f(b(c), d)", Just (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArAlpha (Alpha 0) (ExApplication (ExDispatch ExXi (AtLabel "b")) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "c")))))) (ArAlpha (Alpha 1) (ExDispatch ExXi (AtLabel "d")))))
+      , ("Q.f(u -> b(v -> c), w -> d)", Just (ExApplication (ExApplication (ExDispatch ExRoot (AtLabel "f")) (ArTau (AtLabel "u") (ExApplication (ExDispatch ExXi (AtLabel "b")) (ArTau (AtLabel "v") (ExDispatch ExXi (AtLabel "c")))))) (ArTau (AtLabel "w") (ExDispatch ExXi (AtLabel "d")))))
       ]
 
   describe "parse meta expressions" $
@@ -582,7 +607,7 @@ spec = do
       , ("𝑒1", Just (ExMeta "e1"))
       , ("𝑒2", Just (ExMeta "e2"))
       , ("!e1.x", Just (ExDispatch (ExMeta "e1") (AtLabel "x")))
-      , ("!e1(Q)", Just (ExApplication (ExMeta "e1") (ArAlpha (Alpha 0) ExRoot)))
+      , ("!e1(k -> Q)", Just (ExApplication (ExMeta "e1") (ArTau (AtLabel "k") ExRoot)))
       , ("!n1", Just (ExMeta "n1"))
       , ("!n1", Just (ExMeta "n1"))
       , ("𝑛1", Just (ExMeta "n1"))
@@ -656,9 +681,7 @@ spec = do
 
   describe "phiParser record" $
     forM_
-      [ ("exposes an _alpha field parsing an alpha directly", parseMaybe (_alpha phiParser) "~3" `shouldBe` Just (Alpha 3))
-      , ("exposes an _attribute field parsing an attribute directly", parseMaybe (_attribute phiParser) "foo" `shouldBe` Just (AtLabel "foo"))
-      , ("exposes an _index field parsing an index meta directly", parseMaybe (_index phiParser) "!i1" `shouldBe` Just (Right "i1"))
+      [ ("exposes an _attribute field parsing an attribute directly", parseMaybe (_attribute phiParser) "foo" `shouldBe` Just (AtLabel "foo"))
       , ("exposes a _binding field parsing a binding directly", parseMaybe (_binding phiParser) "x -> $" `shouldBe` Just (BiTau (AtLabel "x") ExXi))
       , ("exposes an _expression field parsing an expression directly", parseMaybe (_expression phiParser) "Q.x" `shouldBe` Just (ExDispatch ExRoot (AtLabel "x")))
       , ("exposes a _string field parsing a quoted string directly", parseMaybe (_string phiParser) "\"hi\"" `shouldBe` Just "hi")
@@ -677,8 +700,6 @@ spec = do
       [ ("parseBinding error is tagged with its entry point name", parseBinding "L>" `shouldSatisfy` either (isInfixOf "binding:1:") (const False))
       , ("parseNumber error is tagged with its entry point name", parseNumber "abc" `shouldSatisfy` either (isInfixOf "number:1:") (const False))
       , ("parseAttribute error is tagged with its entry point name", parseAttribute "123" `shouldSatisfy` either (isInfixOf "attribute:1:") (const False))
-      , ("parseAlpha error is tagged with its entry point name", parseAlpha "bogus" `shouldSatisfy` either (isInfixOf "alpha:1:") (const False))
-      , ("parseIndex error is tagged with its entry point name", parseIndex "bogus" `shouldSatisfy` either (isInfixOf "index meta:1:") (const False))
       ]
       (uncurry it)
 
@@ -714,7 +735,7 @@ spec = do
       , ("$.a : @", "⟦ φ ↦ ξ.a ⟧")
       , ("ξ:ρ", "⟦ ρ ↦ ξ ⟧")
       , ("Q:x", "⟦ x ↦ Φ ⟧")
-      , ("Q.x(y):z", "⟦ z ↦ Φ.x(y) ⟧")
+      , ("Q.x(k ↦ y):z", "⟦ z ↦ Φ.x(k ↦ y) ⟧")
       , ("42:φ", "⟦ φ ↦ 42 ⟧")
       , ("1E-05:φ", "⟦ φ ↦ 1E-05 ⟧")
       , ("\"hi\":φ", "⟦ φ ↦ \"hi\" ⟧")
@@ -722,12 +743,12 @@ spec = do
       , ("ξ.a:φ.b", "⟦ φ ↦ ξ.a ⟧.b")
       , ("ξ.a:φ:b", "⟦ b ↦ ⟦ φ ↦ ξ.a ⟧ ⟧")
       , ("FF-:Δ.x", "⟦ Δ ⤍ FF- ⟧.x")
-      , ("Q.x(ξ.a:φ)", "Q.x(⟦ φ ↦ ξ.a ⟧)")
+      , ("Q.x(k ↦ ξ.a:φ)", "Q.x(k ↦ ⟦ φ ↦ ξ.a ⟧)")
       , ("⟦ x ↦ y:φ, z ↦ FF-:Δ ⟧", "⟦ x ↦ ⟦ φ ↦ ξ.y ⟧, z ↦ ⟦ Δ ⤍ FF- ⟧ ⟧")
       , ("⟦ x ↦ ∅:a, y ↦ ∅ ⟧", "⟦ x ↦ ⟦ a ↦ ∅ ⟧, y ↦ ∅ ⟧")
       , ("[[ x -> ?:a ]]", "⟦ x ↦ ⟦ a ↦ ∅ ⟧ ⟧")
       , ("Q.x(y -> ?:a)", "Q.x(y ↦ ⟦ a ↦ ∅ ⟧)")
-      , ("Q.x(α0 ↦ Plus:λ)", "Q.x(α0 ↦ ⟦ λ ⤍ Plus ⟧)")
+      , ("Q.x(k ↦ Plus:λ)", "Q.x(k ↦ ⟦ λ ⤍ Plus ⟧)")
       , ("⟦ x(y) ↦ 42:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, a ↦ 42 ⟧ ⟧")
       , ("⟦ x(y) ↦ 42:a:b ⟧", "⟦ x ↦ ⟦ y ↦ ∅, b ↦ ⟦ a ↦ 42 ⟧ ⟧ ⟧")
       , ("⟦ x(y, z) ↦ ∅:a ⟧", "⟦ x ↦ ⟦ y ↦ ∅, z ↦ ∅, a ↦ ∅ ⟧ ⟧")
@@ -765,7 +786,7 @@ spec = do
       parseExpression
       ( map
           (\ipt -> (ipt, Nothing :: Maybe Expression))
-          ["Φ.bool(v(x) ↦ ⟦ λ ⤍ L_fork ⟧)", "Q.x(y(z) ↦ FF-:Δ)", "Q.x(y(z) ↦ ⟦ w ↦ ξ ⟧:a)", "Q.x(α0(z) ↦ ⟦ ⟧)", "Q.x(a ↦ ξ, y(z, w) ↦ ⟦ ⟧)", "!e1(x(^,@) -> [[w -> !e2]])", "Q.x(y() -> [[]])", "Q.x(y(q) -> [[w -> !e]])", "Q.x(~1(^,@) -> [[]])"]
+          ["Φ.bool(v(x) ↦ ⟦ λ ⤍ L_fork ⟧)", "Q.x(y(z) ↦ FF-:Δ)", "Q.x(y(z) ↦ ⟦ w ↦ ξ ⟧:a)", "Q.x(a ↦ ξ, y(z, w) ↦ ⟦ ⟧)", "!e1(x(^,@) -> [[w -> !e2]])", "Q.x(y() -> [[]])", "Q.x(y(q) -> [[w -> !e]])"]
       )
 
   describe "rejects a mix of ASCII and Unicode symbols under monoform" $
@@ -787,8 +808,6 @@ spec = do
       , ("⟦ x ↦ ξ.^ ⟧", "The ASCII symbol \"^\" at 1:9")
       , ("[[ φ -> $ ]]", "The Unicode symbol \"φ\" at 1:4")
       , ("⟦ @ ↦ ξ ⟧", "The ASCII symbol \"@\" at 1:3")
-      , ("Q.x(α0 -> $)", "The Unicode symbol \"α\" at 1:5 mixes with the ASCII \"Q\" at 1:1")
-      , ("Φ.x(~0 ↦ ξ)", "The ASCII symbol \"~\" at 1:5 mixes with the Unicode \"Φ\" at 1:1")
       , ("[[ Δ ⤍ 00- ]]", "The Unicode symbol \"Δ ⤍\" at 1:4")
       , ("⟦ D> 00- ⟧", "The ASCII symbol \"D>\" at 1:3")
       , ("[[ λ ⤍ Fn ]]", "The Unicode symbol \"λ ⤍\" at 1:4")
@@ -807,7 +826,6 @@ spec = do
       , ("[[ D> 𝛿1 ]]", "The Unicode symbol \"𝛿\" at 1:7")
       , ("[[ L> 𝑓1 ]]", "The Unicode symbol \"𝑓\" at 1:7")
       , ("[[ L> 𝜎1 ]]", "The Unicode symbol \"𝜎\" at 1:7")
-      , ("Φ.x(α!i1 ↦ ξ)", "The ASCII symbol \"!i\" at 1:6")
       , ("⟦ y ↦ ξ, x -> ξ ⟧", "expression:1:12:")
       ]
 
@@ -816,11 +834,11 @@ spec = do
       (parseExpression' MONOFORM)
       [ ("[[ x -> ? ]]", Just (ExFormation [BiVoid (AtLabel "x")]))
       , ("⟦ x ↦ ∅ ⟧", Just (ExFormation [BiVoid (AtLabel "x")]))
-      , ("\"hi\".x(42)", Just (ExApplication (ExDispatch (DataString (BtMany ["68", "69"])) (AtLabel "x")) (ArAlpha (Alpha 0) (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])))))
+      , ("\"hi\".x(k -> 42)", Just (ExApplication (ExDispatch (DataString (BtMany ["68", "69"])) (AtLabel "x")) (ArTau (AtLabel "k") (DataNumber (BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])))))
       , ("Q:λ", Just (ExFormation [BiLambda (Function "Q")]))
       , ("T:L", Just (ExFormation [BiLambda (Function "T")]))
-      , ("Q.x(~0 -> [[ D> 00-, L> Fn, ^ -> $, @ -> T, y -> !e1, z -> 01-:D ]])", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArAlpha (Alpha 0) (ExFormation [BiDelta (BtOne "00"), BiLambda (Function "Fn"), BiTau AtRho ExXi, BiTau AtPhi ExTermination, BiTau (AtLabel "y") (ExMeta "e1"), BiTau (AtLabel "z") (ExFormation [BiDelta (BtOne "01")])]))))
-      , ("Φ.x(α0 ↦ ⟦ Δ ⤍ 00-, λ ⤍ Fn, ρ ↦ ξ, φ ↦ ⊥, y ↦ 𝑒1, z ↦ 01-:Δ ⟧)", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArAlpha (Alpha 0) (ExFormation [BiDelta (BtOne "00"), BiLambda (Function "Fn"), BiTau AtRho ExXi, BiTau AtPhi ExTermination, BiTau (AtLabel "y") (ExMeta "e1"), BiTau (AtLabel "z") (ExFormation [BiDelta (BtOne "01")])]))))
+      , ("Q.x(k -> [[ D> 00-, L> Fn, ^ -> $, @ -> T, y -> !e1, z -> 01-:D ]])", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "k") (ExFormation [BiDelta (BtOne "00"), BiLambda (Function "Fn"), BiTau AtRho ExXi, BiTau AtPhi ExTermination, BiTau (AtLabel "y") (ExMeta "e1"), BiTau (AtLabel "z") (ExFormation [BiDelta (BtOne "01")])]))))
+      , ("Φ.x(k ↦ ⟦ Δ ⤍ 00-, λ ⤍ Fn, ρ ↦ ξ, φ ↦ ⊥, y ↦ 𝑒1, z ↦ 01-:Δ ⟧)", Just (ExApplication (ExDispatch ExRoot (AtLabel "x")) (ArTau (AtLabel "k") (ExFormation [BiDelta (BtOne "00"), BiLambda (Function "Fn"), BiTau AtRho ExXi, BiTau AtPhi ExTermination, BiTau (AtLabel "y") (ExMeta "e1"), BiTau (AtLabel "z") (ExFormation [BiDelta (BtOne "01")])]))))
       ]
 
   describe "accepts a mix of ASCII and Unicode symbols without monoform" $

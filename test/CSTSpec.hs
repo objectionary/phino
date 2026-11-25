@@ -82,7 +82,7 @@ spec = do
     let number = BaseObject "number"
         again = ExPhiAgain Nothing 1
         bts = BaseObject "bytes"
-        bt = ArAlpha (Alpha 0)
+        bt = ArTau AtPhi
         app = ExApplication
         form = ExFormation [BiDelta (BtMany ["40", "18", "00", "00", "00", "00", "00", "00"])]
         isCSTNumber (EX_NUMBER{}) = True
@@ -289,7 +289,7 @@ spec = do
       "dispatch on Xi becomes a bare attribute"
       (expressionToCST (ExDispatch ExXi (AtLabel "foo")) `shouldBe` EX_ATTR (AT_LABEL "foo"))
 
-  describe "expressionToCST on non-primitive applications" $ do
+  describe "expressionToCST on non-primitive applications" $
     it
       "an application with only named (tau) arguments and no primitive base"
       ( expressionToCST
@@ -298,15 +298,6 @@ spec = do
               (ArTau (AtLabel "y") ExXi)
           )
           `shouldSatisfy` isApplicationWithTaus
-      )
-    it
-      "an application with positional (alpha) arguments and no primitive base"
-      ( expressionToCST
-          ( ExApplication
-              (ExApplication (ExDispatch ExRoot (AtLabel "bar")) (ArAlpha (Alpha 0) ExRoot))
-              (ArAlpha (Alpha 1) ExXi)
-          )
-          `shouldSatisfy` isApplicationWithExprs
       )
 
   describe "conditionToCST on every Y.Condition constructor" $ do
@@ -378,16 +369,10 @@ spec = do
 
   describe "numberToCST on every Y.Number constructor" $
     forM_
-      [ ("MetaIndex", Y.MetaIndex "i1", IDX_META (META NO_EXCL I "1"))
-      ,
+      [
         ( "Length"
         , Y.Length (BiVoid (AtLabel "y"))
         , LENGTH (BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0))
-        )
-      ,
-        ( "Domain"
-        , Y.Domain (BiVoid (AtLabel "y"))
-        , DOMAIN (BI_PAIR (PA_VOID (AT_LABEL "y") ARROW EMPTY) (BDS_EMPTY (TAB 0)) (TAB 0))
         )
       , ("Literal", Y.Literal 5, LITERAL 5)
       ]
@@ -479,30 +464,12 @@ spec = do
       shouldShowAndEqSelf "TAB'" TAB'
       shouldShowAndEqSelf "NO_TAB" NO_TAB
 
-  describe "ALPHA field accessors" $
-    it "exposes every ALPHA field via its accessor" $ do
-      let idxAlpha = AL_IDX{sym = ALPHA, idx = 2}
-          metaAlpha = AL_META{sym = ALPHA', meta = META EXCL TAU "x"}
-      case idxAlpha of
-        actual@AL_IDX{} -> do
-          actual.sym `shouldBe` ALPHA
-          actual.idx `shouldBe` 2
-        _ -> expectationFailure "Expected AL_IDX"
-      case metaAlpha of
-        actual@AL_META{} -> do
-          actual.sym `shouldBe` ALPHA'
-          actual.meta `shouldBe` META EXCL TAU "x"
-        _ -> expectationFailure "Expected AL_META"
-      shouldShowAndEqSelf "AL_IDX" idxAlpha
-      shouldShowAndEqSelf "AL_META" metaAlpha
-
   describe "PAIR field accessors" $
     it "exposes every PAIR constructor's fields via their accessors" $ do
       let attrLabel = AT_LABEL "x"
           exprGlobal = EX_GLOBAL Φ
           metaVal = META EXCL TAU "x"
           pairTau = PA_TAU{attr = attrLabel, arrow = ARROW, expr = exprGlobal}
-          pairAlpha = PA_ALPHA{alpha = AL_IDX ALPHA 0, arrow = ARROW, expr = exprGlobal}
           pairFormation = PA_FORMATION{attr = attrLabel, voids = [AT_RHO RHO], arrow = ARROW, expr = exprGlobal}
           pairVoid = PA_VOID{attr = attrLabel, arrow = ARROW, void = EMPTY}
           pairLambda = PA_LAMBDA{func = "fn"}
@@ -519,12 +486,6 @@ spec = do
           actual.arrow `shouldBe` ARROW
           actual.expr `shouldBe` exprGlobal
         _ -> expectationFailure "Expected PA_TAU"
-      case pairAlpha of
-        actual@PA_ALPHA{} -> do
-          actual.alpha `shouldBe` AL_IDX ALPHA 0
-          actual.arrow `shouldBe` ARROW
-          actual.expr `shouldBe` exprGlobal
-        _ -> expectationFailure "Expected PA_ALPHA"
       case pairFormation of
         actual@PA_FORMATION{} -> do
           actual.attr `shouldBe` attrLabel
@@ -571,7 +532,6 @@ spec = do
           actual.meta `shouldBe` metaVal
         _ -> expectationFailure "Expected PA_META_DELTA'"
       shouldShowAndEqSelf "PA_TAU" pairTau
-      shouldShowAndEqSelf "PA_ALPHA" pairAlpha
       shouldShowAndEqSelf "PA_FORMATION" pairFormation
       shouldShowAndEqSelf "PA_VOID" pairVoid
       shouldShowAndEqSelf "PA_LAMBDA" pairLambda
@@ -636,42 +596,18 @@ spec = do
       shouldShowAndEqSelf "BDS_PAIR" bdsPair
       shouldShowAndEqSelf "BDS_META" bdsMeta
 
-  describe "APP_ARG field accessors" $
-    it "exposes every APP_ARG field via its accessor" $ do
-      let exprGlobal = EX_GLOBAL Φ
-          appArgsEmpty = AAS_EMPTY
-          appArg = APP_ARG{expr = exprGlobal, args = appArgsEmpty}
-      appArg.expr `shouldBe` exprGlobal
-      appArg.args `shouldBe` appArgsEmpty
-      shouldShowAndEqSelf "APP_ARG" appArg
-
-  describe "APP_ARGS field accessors" $
-    it "exposes every APP_ARGS constructor's fields via their accessors" $ do
-      let exprGlobal = EX_GLOBAL Φ
-          appArgsEmpty = AAS_EMPTY
-          appArgsExpr = AAS_EXPR{eol = EOL, tab = TAB 1, expr = exprGlobal, args = appArgsEmpty}
-      case appArgsExpr of
-        actual@AAS_EXPR{} -> do
-          actual.eol `shouldBe` EOL
-          actual.tab `shouldBe` TAB 1
-          actual.expr `shouldBe` exprGlobal
-          actual.args `shouldBe` appArgsEmpty
-        _ -> expectationFailure "Expected AAS_EXPR"
-      shouldShowAndEqSelf "AAS_EXPR" appArgsExpr
-
   describe "APP_ARGUMENT derived instances" $
     it "derives Eq and Show for every APP_ARGUMENT constructor" $ do
       let pairTau = PA_TAU{attr = AT_LABEL "x", arrow = ARROW, expr = EX_GLOBAL Φ}
       shouldShowAndEqSelf "AA_TAU" (AA_TAU (APP_BINDING pairTau))
       shouldShowAndEqSelf "AA_TAUS" (AA_TAUS (BI_EMPTY (TAB 0)))
-      shouldShowAndEqSelf "AA_EXPRS" (AA_EXPRS (APP_ARG (EX_GLOBAL Φ) AAS_EMPTY))
 
   describe "EXPRESSION field accessors" $
     it "exposes every EXPRESSION constructor's fields via their accessors" $ do
       let attrLabel = AT_LABEL "x"
           bindingEmpty = BI_EMPTY{tab = TAB 1}
           metaVal = META EXCL TAU "x"
-          argumentVal = AA_EXPRS (APP_ARG (EX_GLOBAL Φ) AAS_EMPTY)
+          argumentVal = AA_TAUS (BI_PAIR (PA_TAU (AT_LABEL "k") ARROW (EX_GLOBAL Φ)) (BDS_EMPTY (TAB 0)) (TAB 0))
           exGlobal = EX_GLOBAL{global = Φ}
           exXi = EX_XI{xi = XI}
           exAttr = EX_ATTR{attr = attrLabel}
@@ -875,15 +811,9 @@ spec = do
 
   describe "NUMBER field accessors" $
     it "exposes every NUMBER constructor's fields via their accessors" $ do
-      let metaVal = META EXCL TAU "x"
-          bindingEmpty = BI_EMPTY{tab = TAB 0}
-          idxMeta = IDX_META{meta = metaVal}
+      let bindingEmpty = BI_EMPTY{tab = TAB 0}
           lengthVal = LENGTH{binding = bindingEmpty}
           literalVal = LITERAL{num = 5}
-      case idxMeta of
-        actual@IDX_META{} ->
-          actual.meta `shouldBe` metaVal
-        _ -> expectationFailure "Expected IDX_META"
       case lengthVal of
         actual@LENGTH{} ->
           actual.binding `shouldBe` bindingEmpty
@@ -892,7 +822,6 @@ spec = do
         actual@LITERAL{} ->
           actual.num `shouldBe` 5
         _ -> expectationFailure "Expected LITERAL"
-      shouldShowAndEqSelf "IDX_META" idxMeta
       shouldShowAndEqSelf "LENGTH" lengthVal
       shouldShowAndEqSelf "LITERAL" literalVal
 
@@ -1029,6 +958,3 @@ spec = do
     isApplicationWithTaus :: EXPRESSION -> Bool
     isApplicationWithTaus EX_APPLICATION{argument = AA_TAUS{}} = True
     isApplicationWithTaus _ = False
-    isApplicationWithExprs :: EXPRESSION -> Bool
-    isApplicationWithExprs EX_APPLICATION{argument = AA_EXPRS{}} = True
-    isApplicationWithExprs _ = False

@@ -173,11 +173,11 @@ spec = do
         , ExXi
         )
       ,
-        ( "Q -> Q.a(α0 -> Q.c) => ([Q.a, Q.c], [$, T]) => Q -> $(α0 -> T)"
-        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArAlpha (Alpha 0) (ExDispatch ExRoot (AtLabel "c")))
+        ( "Q -> Q.a(k -> Q.c) => ([Q.a, Q.c], [$, T]) => Q -> $(k -> T)"
+        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArTau (AtLabel "k") (ExDispatch ExRoot (AtLabel "c")))
         , [ExDispatch ExRoot (AtLabel "a"), ExDispatch ExRoot (AtLabel "c")]
         , [ExXi, ExTermination]
-        , ExApplication ExXi (ArAlpha (Alpha 0) ExTermination)
+        , ExApplication ExXi (ArTau (AtLabel "k") ExTermination)
         )
       ,
         ( "Q -> Q.x => ([Q.x], []) => Q -> Q.x (replacements exhausted before patterns)"
@@ -304,11 +304,11 @@ spec = do
         , ExFormation [BiLambda (Function "Код")]
         )
       ,
-        ( "Q -> Q.a(α0 -> [[c -> ?]]) => ([[c -> ?]], [[c -> T]]) => Q -> Q.a(α0 -> [[c -> T]])"
-        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArAlpha (Alpha 0) (ExFormation [BiVoid (AtLabel "c")]))
+        ( "Q -> Q.a(k -> [[c -> ?]]) => ([[c -> ?]], [[c -> T]]) => Q -> Q.a(k -> [[c -> T]])"
+        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArTau (AtLabel "k") (ExFormation [BiVoid (AtLabel "c")]))
         , [ExFormation [BiVoid (AtLabel "c")]]
         , [ExFormation [BiTau (AtLabel "c") ExTermination]]
-        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArAlpha (Alpha 0) (ExFormation [BiTau (AtLabel "c") ExTermination]))
+        , ExApplication (ExDispatch ExRoot (AtLabel "a")) (ArTau (AtLabel "k") (ExFormation [BiTau (AtLabel "c") ExTermination]))
         )
       ,
         ( "Q -> [[a -> ?]] => ([[a -> ?]], []) => Q -> [[a -> ?]] (replacements exhausted before patterns)"

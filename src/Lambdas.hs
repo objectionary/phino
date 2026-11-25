@@ -350,7 +350,6 @@ computes = goExpr
     goBinding _ = False
     goArgument :: Argument -> Bool
     goArgument (ArTau _ expr) = goExpr expr
-    goArgument (ArAlpha _ expr) = goExpr expr
     goBytes :: Bytes -> Bool
     goBytes (BtMeta _) = True
     goBytes (BtAny _) = True
@@ -447,7 +446,6 @@ stayed = goExpr
     goBinding bd = bd
     goArgument :: Argument -> Argument
     goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) (goExpr expr)
-    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) (goExpr expr)
     dispatched :: Expression -> Bool
     dispatched (ExDispatch _ _) = True
     dispatched (ExApplication expr _) = dispatched expr
@@ -496,7 +494,6 @@ rewritten ctx rules = goExpr
     goBinding bd = pure bd
     goArgument :: Argument -> IO Argument
     goArgument (ArTau attr expr) = ArTau attr <$> goExpr expr
-    goArgument (ArAlpha alpha expr) = ArAlpha alpha <$> goExpr expr
 
 type Minting = (Int, [(Int, Bytes)])
 
@@ -517,4 +514,3 @@ symbolized term spent = case runState (goExpr term) (spent, []) of
     goBinding _ bd = pure bd
     goArgument :: Argument -> State Minting Argument
     goArgument arg@(ArTau attr expr) = intact expr arg (ArTau attr) <$> goExpr expr
-    goArgument arg@(ArAlpha alpha expr) = intact expr arg (ArAlpha alpha) <$> goExpr expr
