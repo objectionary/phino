@@ -23,7 +23,7 @@ import Data.Maybe (fromMaybe, isJust, listToMaybe)
 import qualified Data.Text as T
 import Deps (Evaluation (..), Judgment (Evaluation, Morphing), State (..), dontSaveEval, dontSaveStep, resited)
 import Engine (Engine (..))
-import Forks (Refusal (Unnamed, Unripe), Side (Lefthand, Righthand), bared, forked, joined)
+import Forks (Fabric, Refusal (Unnamed, Unripe), Side (Lefthand, Righthand), bared, forked, joined)
 import Lambdas (Ending (..), Lambda (..), Line (..), Meta (..), cast, emptyLambdas, matched, minted, rewritten, stayed, symbolized, thrown)
 import Matcher (MetaValue (..), Subst, combine, substEmpty, substSingle, substSlot)
 import Morph (Answer (..), Budget (..), Firing (..), Kept (..), Kindred, ReduceContext (..), ReduceException (..), Steps (..), adopted, argued, awaited, called, charged, coined, counted, deeper, ended, expired, fired, isLambda, kindle, kindred, lambda, minting, morphing, normalized, noted, opening, placed, recalled, remember, remembered, remembering, repeats, retained, settled, starved, unparked, voided)
@@ -408,7 +408,7 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
       (normal, state'') <- settled built univ state' =<< opening Morphing ctx{_saveEval = ctx._saveEval . resited ctx._site built}
       ctx._saveEval (EvAnswer ctx._nesting normal)
       pure (Answer built normal, state'')
-    merged :: ReduceContext -> [T.Text] -> Subst -> [(T.Text, Either Int Bytes)] -> Either Meta Expression -> Expression -> Expression -> Maybe Function -> State -> IO (Answer, State)
+    merged :: ReduceContext -> [T.Text] -> Subst -> [(T.Text, Either Int Bytes)] -> Either Meta Expression -> Expression -> Expression -> Maybe Fabric -> State -> IO (Answer, State)
     merged ctx terminators bound operands on left right fallback state' = do
       condition <- weighed operands on
       (one, state'') <- reached ctx bound left state'
@@ -432,7 +432,7 @@ symbol func form whole self univ state caller = case matched caller._symbolic fu
         Left path -> do
           leftName <- Sides.named ctx._sides one
           rightName <- Sides.named ctx._sides two
-          case maybe (Left Unnamed) (\name -> forked name condition (leftName, one) (rightName, two)) fallback of
+          case maybe (Left Unnamed) (\names -> forked names condition (leftName, one) (rightName, two)) fallback of
             Right term -> do
               ctx._saveEval (EvFabricated ctx._nesting (left, one) (right, two) [(leftName, one), (rightName, two)] term)
               pure (Joined term, state''')

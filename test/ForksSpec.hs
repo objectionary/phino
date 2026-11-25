@@ -7,7 +7,7 @@ module ForksSpec (spec) where
 
 import AST
 import Data.Text (Text)
-import Forks (Refusal (..), Side (..), forked, joined)
+import Forks (Fabric (..), Refusal (..), Side (..), fabric, forked, joined)
 import Parser (parseExpressionThrows)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
@@ -89,7 +89,7 @@ spec = do
 
   describe "forked" $ do
     let fork :: Text -> Either Int Bytes -> String -> String -> IO (Either Refusal Expression)
-        fork func condition left right = forked (Function func) condition <$> fmap twice (parseExpressionThrows left) <*> fmap twice (parseExpressionThrows right)
+        fork func condition left right = forked (fabric (Function func)) condition <$> fmap twice (parseExpressionThrows left) <*> fmap twice (parseExpressionThrows right)
         twice :: Expression -> (Expression, Expression)
         twice side = (side, side)
     it "asks the copies of both sides for an attribute the λ it is given picks between" $ do
@@ -110,6 +110,11 @@ spec = do
     it "keeps one void for an attribute both sides leave void" $ do
       expected <- parseExpressionThrows "⟦ dk ↦ ∅, left🌵 ↦ ⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧( dk ↦ ξ.dk ), right🌵 ↦ ⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧( dk ↦ ξ.dk ), φ ↦ ⟦ ρ ↦ ∅, λ ⤍ L_vb, on🌵 ↦ ⟦ Δ ⤍ 3E- ⟧, left🌵 ↦ ξ.ρ.left🌵.φ, right🌵 ↦ ξ.ρ.right🌵.φ ⟧ ⟧"
       fork "L_vb" (Right (BtOne "3E")) "⟦ dk ↦ ∅, φ ↦ Φ.ic ⟧" "⟦ φ ↦ Φ.yo, dk ↦ ∅ ⟧" >>= (`shouldBe` Right expected)
+    it "names its parts by the names it is given" $ do
+      expected <- parseExpressionThrows "⟦ ab🌵 ↦ ⟦ ke ↦ Φ.qo, ty ↦ Φ.wa ⟧, cd🌵 ↦ ⟦ ke ↦ Φ.ri ⟧, ke ↦ ⟦ ρ ↦ ∅, λ ⤍ L_xu, ef🌵 ↦ ⟦ λ ⤍ 𝜎5 ⟧, ab🌵 ↦ ξ.ρ.ab🌵.ke, cd🌵 ↦ ξ.ρ.cd🌵.ke ⟧, ty ↦ ⟦ ρ ↦ ∅, λ ⤍ L_xu, ef🌵 ↦ ⟦ λ ⤍ 𝜎5 ⟧, ab🌵 ↦ ξ.ρ.ab🌵.ty, cd🌵 ↦ ξ.ρ.cd🌵.ty ⟧ ⟧"
+      left <- parseExpressionThrows "⟦ ke ↦ Φ.qo, ty ↦ Φ.wa ⟧"
+      right <- parseExpressionThrows "⟦ ke ↦ Φ.ri ⟧"
+      forked (Fabric (Function "L_xu") (AtLabel "ef🌵") (AtLabel "ab🌵") (AtLabel "cd🌵")) (Left 5) (left, left) (right, right) `shouldBe` Right expected
     it "tells that the left side leaves void an attribute the right side binds" $
       fork "L_oh" (Right (BtOne "52")) "⟦ ws ↦ ∅ ⟧" "⟦ ws ↦ Φ.ug ⟧" >>= (`shouldBe` Left (Unripe Lefthand (AtLabel "ws")))
     it "tells that the right side leaves void an attribute the left side binds" $

@@ -4,7 +4,7 @@
 -- SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 -- SPDX-License-Identifier: MIT
 
-module Forks (Refusal (..), Side (..), bared, forked, joined) where
+module Forks (Fabric (..), Refusal (..), Side (..), bared, fabric, forked, joined) where
 
 import AST (Argument (..), Attribute (AtDelta, AtLabel, AtLambda, AtRho), Binding (..), Bytes, Expression (ExApplication, ExDispatch, ExFormation, ExPhiAgain, ExPhiMeet, ExTermination, ExXi), Function (FnSymbol), attributeFromBinding, symbols)
 import Control.Monad.Trans.State.Strict (State, runState, state)
@@ -15,10 +15,17 @@ import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.Text (Text)
 import qualified Data.Text as T
 
 type Joining = (Int, Maybe Int, Map (Int, Int) Int, [(Int, (Int, Int))])
+
+data Fabric = Fabric
+  { _fallback :: Function
+  , _weighing :: Attribute
+  , _leftward :: Attribute
+  , _rightward :: Attribute
+  }
+  deriving (Eq, Show)
 
 data Side = Lefthand | Righthand
   deriving (Eq, Show)
@@ -117,8 +124,11 @@ bared left right
     taken ExTermination = False
     taken side = not (bare side)
 
-forked :: Function -> Either Int Bytes -> (Expression, Expression) -> (Expression, Expression) -> Either Refusal Expression
-forked func condition (leftName, left) (rightName, right) = do
+fabric :: Function -> Fabric
+fabric func = Fabric func (AtLabel "on🌵") (AtLabel "left🌵") (AtLabel "right🌵")
+
+forked :: Fabric -> Either Int Bytes -> (Expression, Expression) -> (Expression, Expression) -> Either Refusal Expression
+forked (Fabric func onward lefty righty) condition (leftName, left) (rightName, right) = do
   one <- inlined <$> formed Lefthand left
   two <- inlined <$> formed Righthand right
   maybe (Right (fabricated one two)) Left (listToMaybe (unripe Lefthand one two ++ unripe Righthand two one))
@@ -127,7 +137,7 @@ forked func condition (leftName, left) (rightName, right) = do
     formed side (ExFormation bds) = maybe (Right bds) (Left . Holding side) (listToMaybe [attr | Just attr <- map attributeFromBinding bds, attr == AtDelta || attr == AtLambda])
     formed side _ = Left (Unformed side)
     fabricated :: [Binding] -> [Binding] -> Expression
-    fabricated one two = ExFormation (map BiVoid voids ++ [copy "left🌵" leftName one, copy "right🌵" rightName two] ++ map branch (filter (`Set.notMember` vacated) (distinct (attributes one ++ attributes two))))
+    fabricated one two = ExFormation (map BiVoid voids ++ [copy lefty leftName one, copy righty rightName two] ++ map branch (filter (`Set.notMember` vacated) (distinct (attributes one ++ attributes two))))
       where
         voids :: [Attribute]
         voids = distinct (vacant one ++ vacant two)
@@ -138,17 +148,17 @@ forked func condition (leftName, left) (rightName, right) = do
         heldTwo :: Map Attribute [Attribute]
         heldTwo = held two
         branch :: Attribute -> Binding
-        branch attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [weighing, ask "left🌵" leftward heldOne attr, ask "right🌵" rightward heldTwo attr]))
+        branch attr = BiTau attr (ExFormation ([BiVoid AtRho, BiLambda func] ++ map BiVoid (inner attr) ++ [weighing, ask lefty leftward heldOne attr, ask righty rightward heldTwo attr]))
         weighing :: Binding
-        weighing = BiTau (AtLabel "on🌵") (ExFormation [either (BiLambda . FnSymbol) BiDelta condition])
+        weighing = BiTau onward (ExFormation [either (BiLambda . FnSymbol) BiDelta condition])
         leftward :: Expression
-        leftward = ExDispatch (ExDispatch ExXi AtRho) (AtLabel "left🌵")
+        leftward = ExDispatch (ExDispatch ExXi AtRho) lefty
         rightward :: Expression
-        rightward = ExDispatch (ExDispatch ExXi AtRho) (AtLabel "right🌵")
+        rightward = ExDispatch (ExDispatch ExXi AtRho) righty
         inner :: Attribute -> [Attribute]
         inner attr = nub (concat (mapMaybe (Map.lookup attr) [heldOne, heldTwo]))
-        ask :: Text -> Expression -> Map Attribute [Attribute] -> Attribute -> Binding
-        ask name side holding attr = BiTau (AtLabel name) (applied (ExDispatch side attr) (fromMaybe (inner attr) (Map.lookup attr holding)))
+        ask :: Attribute -> Expression -> Map Attribute [Attribute] -> Attribute -> Binding
+        ask name side holding attr = BiTau name (applied (ExDispatch side attr) (fromMaybe (inner attr) (Map.lookup attr holding)))
     inlined :: [Binding] -> [Binding]
     inlined bds = map goBinding bds
       where
@@ -174,8 +184,8 @@ forked func condition (leftName, left) (rightName, right) = do
     own :: Attribute -> Bool
     own (AtLabel label) = not ("🌵" `T.isSuffixOf` label)
     own attr = attr `notElem` [AtRho, AtLambda, AtDelta]
-    copy :: Text -> Expression -> [Binding] -> Binding
-    copy name side bds = BiTau (AtLabel name) (applied side (vacant bds))
+    copy :: Attribute -> Expression -> [Binding] -> Binding
+    copy name side bds = BiTau name (applied side (vacant bds))
     applied :: Expression -> [Attribute] -> Expression
     applied = foldl (\term attr -> ExApplication term (ArTau attr (ExDispatch ExXi attr)))
     held :: [Binding] -> Map Attribute [Attribute]
