@@ -25,7 +25,7 @@ input: >
     times(b) ↦ ⟦ λ ⤍ L_times ⟧,
     x ↦ Φ.times( b ↦ Φ.dataized( target ↦ Φ.x.q ) ),
     y ↦ Φ.x.q ⟧
-result: '𝜎3:λ.q'
+result: '𝜎4:λ'
 protocol: |
   𝕄(Φ.y):
     normalized 𝑛·0·1 ≔ Φ.times( b ↦ Φ.dataized( target ↦ Φ.x.q ) )  # Φ.x
@@ -67,4 +67,5 @@ protocol: |
       𝑛·1·7 ≔ 𝑛·1·6  # 𝕄(𝑛·1·5)
       memoized 𝑛·2·3 ⇛ 𝜎3:λ
       evaluated 𝑛·1·8 ≔ 𝑛·1·7  # 𝑛·2·3
-    opaque 𝜎3  # 𝕄(𝜎3:λ.q)
+    opaque 𝜎4:λ ≔ 𝜎3:λ.q
+    morphed 𝑛·0·5 ≔ 𝜎4:λ

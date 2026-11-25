@@ -870,7 +870,7 @@ morph'' owner start univ state entry = go start univ state entry
       (term, entered) <- severing expr univ state =<< parking seq state (universed univ caller{_judgment = Morphing})
       ctx <- opening Morphing =<< deeper entered
       parking seq state $ do
-        reached <- maybe (inferred term univ state ctx ctx._engine._morphing) (\raise -> pure (Just (In.Answered (Morphing, "raise") raise, state))) (raised term)
+        reached <- maybe (maybe (inferred term univ state ctx ctx._engine._morphing) (unknown ctx) (dimmed term)) (\raise -> pure (Just (In.Answered (Morphing, "raise") raise, state))) (raised term)
         case reached of
           Just (In.Answered step built, state') -> do
             when owner (ctx._saveEval (EvMorphed ctx._nesting built))
@@ -885,6 +885,15 @@ morph'' owner start univ state entry = go start univ state entry
         raised (ExDispatch target@(ExFormation _) _)
           | thrown caller._raising target = Just target
         raised _ = Nothing
+        dimmed :: Expression -> Maybe Expression
+        dimmed term@(ExDispatch (ExFormation bds) _)
+          | [BiLambda (FnSymbol _)] <- filter isLambda bds = Just term
+        dimmed _ = Nothing
+        unknown :: ReduceContext -> Expression -> IO (Maybe (In.Conclusion Expression, State))
+        unknown ctx term = do
+          fresh <- coined ctx
+          ctx._saveEval (EvOpaqued ctx._nesting fresh term)
+          pure (Just (In.Answered (Morphing, "opaque") (ExFormation [BiLambda (FnSymbol fresh)]), state))
 
 morph :: Expression -> State -> ReduceContext -> IO (Expression, [Rewritten], State)
 morph universe state caller@ReduceContext{..} = do

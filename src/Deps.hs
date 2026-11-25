@@ -162,6 +162,7 @@ data Evaluation
   | EvMorphed Int Expression
   | EvNormalized Int Expression Expression
   | EvFed Int Int Expression
+  | EvOpaqued Int Int Expression
   | EvJoined Int (Either T.Text Expression) Int (Int, Int) (Maybe Int) (Maybe Expression)
   | EvGuarded Int (Either T.Text Expression) (Expression, Expression) (Expression, Expression) Side (Maybe Expression)
   | EvAssumed Int (Expression, Expression) (Expression, Expression)
@@ -245,6 +246,7 @@ tier (EvAnswer depth _) = depth
 tier (EvMorphed depth _) = depth
 tier (EvNormalized depth _ _) = depth
 tier (EvFed depth _ _) = depth
+tier (EvOpaqued depth _ _) = depth
 tier (EvJoined depth _ _ _ _ _) = depth
 tier (EvGuarded depth _ _ _ _ _) = depth
 tier (EvAssumed depth _ _) = depth
@@ -577,6 +579,10 @@ saveEval handle cursor printed printed' profile report = do
       fresh <- render (ExFormation [BiLambda (FnSymbol symbol)])
       origin <- render term
       pure (protocol, Just (indented at (printf "fed %s ≔ %s" fresh origin)))
+    written at (EvOpaqued _ symbol term) protocol = do
+      fresh <- render (ExFormation [BiLambda (FnSymbol symbol)])
+      origin <- render term
+      pure (protocol, Just (indented at (printf "opaque %s ≔ %s" fresh origin)))
     written at (EvJoined _ condition symbol (left, right) bottom raised) protocol = do
       on <- either (pure . labelled protocol) salted condition
       termination <- render ExTermination
@@ -968,6 +974,10 @@ saveEvalXml handle cursor printed report = do
       placed at nesting $ do
         origin <- leaf depth term
         pure (printf "<fed symbol=\"%s\" of=\"%s\"/>" (sigma symbol) (escapeXML origin))
+    elements at (EvOpaqued depth symbol term) nesting =
+      placed at nesting $ do
+        origin <- leaf depth term
+        pure (printf "<opaque symbol=\"%s\" of=\"%s\"/>" (sigma symbol) (escapeXML origin))
     elements at (EvJoined depth condition symbol (left, right) bottom raised) nesting =
       placed at nesting $ do
         on <- either (pure . labelled nesting) (lift . traced) condition

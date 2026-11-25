@@ -375,6 +375,7 @@ A protocol may hold these lines:
   the comment names the meta it read and the meta whose shape it took.
 * `unanswered …` is a λ name no entry answers, and `opaque …` a symbol
   nothing can fire; the comment names the term 𝕄 or 𝔻 worked on.
+  `opaque 𝜎2:λ ≔ 𝜎1:λ.foo` is the new symbol an attribute of a symbol gives.
 * `stuck …` closes a firing that got stuck, and `stall …` stands under one
   that `--acyclic=plausible` answered with an earlier stall.
 * `remembered 𝑛·0·1 ≡ Φ.down` is a fact the run keeps: the term on the

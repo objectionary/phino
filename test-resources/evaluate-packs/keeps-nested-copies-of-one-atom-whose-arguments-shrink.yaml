@@ -65,4 +65,5 @@ protocol: |
       𝑛·1·6 ≔ 𝑛·1·5  # 𝕄(𝑛·1·4)
       memoized 𝑛·0·3 ⇛ 𝜎3:λ
       evaluated 𝑛·1·7 ≔ 𝑛·1·6  # 𝑛·0·3
-    opaque 𝜎3  # 𝕄(𝜎3:λ.q)
+    opaque 𝜎4:λ ≔ 𝜎3:λ.q
+    morphed 𝑛·0·4 ≔ 𝜎4:λ

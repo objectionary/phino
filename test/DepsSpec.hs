@@ -12,7 +12,7 @@ import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.List (isInfixOf, isPrefixOf)
 import Data.Time (LocalTime (LocalTime), TimeOfDay (TimeOfDay), ZonedTime (ZonedTime), fromGregorian, hoursToTimeZone)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvAssumed, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFed, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvPassed, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvShared, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
+import Deps (Acyclic (Proven), Evaluation (EvAnswer, EvApplied, EvAssumed, EvBound, EvBoxed, EvBuilt, EvCast, EvData, EvDeferred, EvDelta, EvDiverged, EvEvaluated, EvFabricated, EvFed, EvFiring, EvGuarded, EvHeader, EvJoined, EvLooped, EvManufactured, EvMemoized, EvMorphed, EvNormalized, EvOpaque, EvOpaqued, EvPassed, EvRecalled, EvRemembered, EvRenamed, EvReshaped, EvRun, EvShared, EvStarted, EvStuck, EvStuckOn, EvSymbolized, EvTaken, EvTerm, EvUndressed, EvUnripe, EvWorld), Header (Header), Judgment (Dataization, Evaluation, Morphing), Nesting (..), Protocol (..), World (World), dontSaveEval, dontSaveStep, emptyNesting, emptyProgress, emptyProtocol, endEval, endEvalXml, perSecond, progressed, resited, saveStep)
 import Fixtures (readUtf8, recorded, recordedWhole, recordedXml)
 import Forks (Refusal (..), Side (..))
 import GHC.Clock (getMonotonicTime)
@@ -141,6 +141,9 @@ spec = do
     it "writes a symbol nothing can fire as opaque, with the attribute taken off it" $ do
       (_, written) <- recorded (\record -> record (EvOpaque 1 7 Morphing (ExDispatch (ExFormation [BiLambda (FnSymbol 7)]) (AtLabel "ёж"))))
       lines written `shouldBe` ["  opaque 𝜎7  # 𝕄(𝜎7:λ.ёж)"]
+    it "writes the symbol a dispatch off a bare symbol gave" $ do
+      (_, written) <- recorded (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing ExRoot, EvOpaqued 1 8 (ExDispatch (ExFormation [BiLambda (FnSymbol 7)]) (AtLabel "ёж"))])
+      last (lines written) `shouldBe` "  opaque 𝜎8:λ ≔ 𝜎7:λ.ёж"
     it "writes a λ function no entry answers as unanswered, with the attribute taken off it" $ do
       (_, written) <- recorded (\record -> record (EvStuck 1 "L_ёж" Morphing (ExDispatch (ExFormation [BiLambda (Function "L_ёж")]) (AtLabel "уж"))))
       lines written `shouldBe` ["  unanswered L_ёж  # 𝕄(L_ёж:λ.уж)"]
@@ -814,6 +817,9 @@ spec = do
     it "writes a symbol nothing can fire as an element of its own, naming the term 𝕄 worked on" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvOpaque 1 120 Morphing (ExDispatch (ExFormation [BiLambda (FnSymbol 120)]) (AtLabel "щ"))])
       lines written `shouldContain` ["  <opaque symbol=\"𝜎120\" by=\"morph\">𝜎120.щ</opaque>"]
+    it "writes the symbol a dispatch off a bare symbol gave as an element naming the dispatch" $ do
+      (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvStarted 1 Morphing ExRoot, EvOpaqued 1 8 (ExDispatch (ExFormation [BiLambda (FnSymbol 7)]) (AtLabel "щ"))])
+      lines written `shouldContain` ["  <opaque symbol=\"𝜎8\" of=\"𝜎7.щ\"/>"]
     it "writes a stuck firing as an element of the word the text uses" $ do
       (_, written) <- recordedXml (\record -> mapM_ record [EvRun Morphing "Φ", EvFiring 1 "L_щ" Morphing ExRoot, EvStuckOn 2 "L_жук"])
       lines written `shouldContain` ["    <stuck λ=\"L_жук\"/>"]

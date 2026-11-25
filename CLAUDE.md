@@ -335,8 +335,8 @@ and the firing writes `assumed 𝜎2:λ ≡ 𝑛1·1` (`EvAssumed`) and the mark
 `<assumed symbol="𝜎2" as="𝑛1·1"/>`, the symbol and the side taken for it, so
 a cut that came to one side of a join no longer gets the firing stuck (#2469).
 In an entry that joins, an operand of `morph` or `undress` or a line whose
-term gets `opaque`, such as a dispatch off the bare symbol of a cut,
-`⟦ λ ⤍ 𝜎5 ⟧.if`, binds its meta to ⊥ rather than getting the firing stuck,
+term gets stuck on a symbol, such as a firing of a formation whose λ is a
+symbol, binds its meta to ⊥ rather than getting the firing stuck,
 so that side ends as a raise does and the join keeps the other one
 (`blanked` of `Evaluate.hs`, #2427). The failure is told by its name, a
 symbol, which no λ name spells, so a stall the memo replays is caught too.
@@ -438,10 +438,16 @@ there would hand out again the symbols its protocol records already spell
 carries. Dataizing a symbol answers a fixed 42, so a `𝛿` always
 holds data. A λ name no entry answers gets stuck, and so does a λ naming a
 symbol, since nothing answers that either; that is what `--partial`
-parks on. The protocol records the first as `unanswered L_none` (`EvStuck`)
-and the second as `opaque 𝜎1` (`EvOpaque`, `<opaque symbol="𝜎1">` in the
+parks on. A dispatch off a formation whose λ is a symbol, such as
+`⟦ λ ⤍ 𝜎1 ⟧.foo`, fires nothing: an attribute of an object nobody knows is
+another object nobody knows, so `morph''` of `Morph.hs` answers it with a
+fresh symbol before any rule and writes `opaque 𝜎2:λ ≔ 𝜎1:λ.foo`
+(`EvOpaqued`), and the markup `<opaque symbol="𝜎2" of="𝜎1.foo"/>`, the way
+`fed` does for an argument (#2479). The protocol records a λ name no entry
+answers as `unanswered L_none` (`EvStuck`) and a firing of a λ naming a
+symbol as `opaque 𝜎1` (`EvOpaque`, `<opaque symbol="𝜎1">` in the
 markup), since no entry of the file may answer a symbol, and both comment
-with the whole term the judgment worked on, as `𝕄(𝜎1:λ.at)`: `premised` of
+with the whole term the judgment worked on, as `𝕄(𝜎1:λ)`: `premised` of
 `Morph.hs` hands it to the firing in `_working` of `ReduceContext` (#2404). What
 fired is written as a tree by `--protocol` and `--minutes`
 (`Evaluation` and `Protocol` in `Deps.hs`), which spells the three judgments

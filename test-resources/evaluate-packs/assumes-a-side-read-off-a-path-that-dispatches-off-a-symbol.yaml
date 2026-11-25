@@ -3,8 +3,8 @@
 ---
 # yamllint disable rule:line-length
 # The join reads its left side off a path, which dispatches 'q' off a bare
-# symbol and is 'opaque'. The opaque ends that side alone as ⊥ (#2427), and
-# the join keeps the right side under the condition.
+# symbol and is 'opaque', giving a new symbol (#2479). The join takes the right
+# side for that symbol and writes an 'assumed' line (#2469).
 symbolic: |
   - λ: L_fork
     dataize:
@@ -23,12 +23,13 @@ protocol: |
         𝛿·1·1 ≔ 00-
       𝛿1·1 ≔ 𝛿·1·1  # 𝔻(ξ.on🌵)
       𝕄(ξ.left🌵):
-        opaque 𝜎1  # 𝕄(𝜎1:λ.q)
+        opaque 𝜎2:λ ≔ 𝜎1:λ.q
+        morphed 𝑛·1·1 ≔ 𝜎2:λ
       𝕄(ξ.right🌵):
-        morphed 𝑛·1·1 ≔ Φ.k:φ
-      guarded 𝛿1·1 ? ⊥ : 𝑛·1·1  # where ⊥ is ⊥
-      𝑛·1·2 ≔ 𝑛·1·1
-      evaluated 𝑛·1·3 ≔ 𝑛·1·2  # ⟦ λ ⤍ L_fork, on🌵 ↦ 00-:Δ, left🌵 ↦ 𝜎1:λ.q, right🌵 ↦ 𝑛·1·2 ⟧
-    normalized 𝑛·0·1 ≔ Φ.k  # 𝑛·1·3.φ
+        morphed 𝑛·1·2 ≔ Φ.k:φ
+      assumed 𝜎2:λ ≡ 𝑛·1·2
+      𝑛·1·3 ≔ 𝑛·1·2
+      evaluated 𝑛·1·4 ≔ 𝑛·1·3  # ⟦ λ ⤍ L_fork, on🌵 ↦ 00-:Δ, left🌵 ↦ 𝜎1:λ.q, right🌵 ↦ 𝑛·1·3 ⟧
+    normalized 𝑛·0·1 ≔ Φ.k  # 𝑛·1·4.φ
     normalized 𝑛·0·2 ≔ ⟦⟧:q  # Φ.k
     morphed 𝑛·0·3 ≔ 𝑛·0·2
