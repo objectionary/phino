@@ -102,7 +102,7 @@ primitives src =
     , "    times -> [[ ^ -> ?, x -> ?, L> L_number_times ]],"
     , "    div -> [[ ^ -> ?, x -> ?, L> L_number_div ]],"
     , "    gt -> [[ ^ -> ?, x -> ?, L> L_number_gt ]],"
-    , "    eq -> [[ ^ -> ?, x -> ?, @ -> $.^.as-bytes.eq( x.as-bytes ) ]],"
+    , "    eq -> [[ ^ -> ?, x -> ?, @ -> $.^.as-bytes.eq( b -> x.as-bytes ) ]],"
     , "    nope -> [[ ^ -> ?, L> L_number_nope ]]"
     , "  ]],"
     , "  @ -> " ++ src

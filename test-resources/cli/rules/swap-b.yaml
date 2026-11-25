@@ -3,4 +3,4 @@
 ---
 name: swap-b
 pattern: ⟦ x -> !e1 ⟧
-result: Q.b(!e1)
+result: Q.b(k -> !e1)

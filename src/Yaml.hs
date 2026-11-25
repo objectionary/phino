@@ -84,9 +84,6 @@ instance FromJSON Attribute where
             Right attr -> pure attr
       )
 
-instance FromJSON Alpha where
-  parseJSON = parseJSON' "Alpha" parseAlpha
-
 instance FromJSON Bytes where
   parseJSON = parseJSON' "Bytes" parseBytes
 
@@ -108,12 +105,8 @@ instance FromJSON Number where
       | toRational (round num :: Integer) /= toRational num -> fail (printf "Expected an integer, got a fractional number %s" (show num))
       | (round num :: Integer) < toInteger (minBound :: Int) || (round num :: Integer) > toInteger (maxBound :: Int) -> fail (printf "The literal %s does not fit into Int" (show num))
       | otherwise -> pure (Literal (round num))
-    String txt -> case parseIndex (unpack txt) of
-      Right (Right mt) -> pure (MetaIndex mt)
-      Right (Left slot) -> pure (AnyIndex slot)
-      Left err -> fail err
     _ ->
-      fail "Expected a numerable expression (object, number or index meta)"
+      fail "Expected a numerable expression (object or number)"
 
 instance FromJSON Comparable where
   parseJSON (Number num)
@@ -125,7 +118,6 @@ instance FromJSON Comparable where
     foldr1
       (<|>)
       [ CmpAttr <$> parseJSON v
-      , CmpNum <$> parseJSON v
       , CmpExpr <$> parseJSON v
       ]
   parseJSON _ = fail "An argument of 'eq' or 'gt' is a number, an attribute, an expression, or an object of 'length' or 'domain'"
@@ -291,9 +283,7 @@ instance FromJSON Rule where
   parseJSON value = genericParseJSON defaultOptions value
 
 data Number
-  = MetaIndex Text
-  | AnyIndex Slot
-  | Length Binding
+  = Length Binding
   | Domain Binding
   | Literal Int
   deriving (Eq, Generic, Show)
@@ -365,10 +355,8 @@ instance Slots Comparable where
   slots (CmpExpr expr) = slots expr
 
 instance Slots Number where
-  slots (AnyIndex slot) = [slot]
   slots (Length bd) = slots bd
   slots (Domain bd) = slots bd
-  slots (MetaIndex _) = []
   slots (Literal _) = []
 
 instance Slots ExtraArgument where
@@ -425,12 +413,9 @@ instance Metas Comparable where
   bare names (CmpExpr expr) = CmpExpr (bare names expr)
 
 instance Metas Number where
-  metas (MetaIndex named) = metas named
-  metas (AnyIndex slot) = metas slot
   metas (Length bd) = metas bd
   metas (Domain bd) = metas bd
   metas (Literal _) = []
-  bare names (MetaIndex named) = MetaIndex (bare names named)
   bare names (Length bd) = Length (bare names bd)
   bare names (Domain bd) = Domain (bare names bd)
   bare _ num = num

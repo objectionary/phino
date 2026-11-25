@@ -119,7 +119,7 @@ $ cat sum.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
   number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-  φ ↦ 5.plus( 6 )
+  φ ↦ 5.plus( x ↦ 6 )
 ⟧
 $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho sum.phi
 40-45-00-00-00-00-00-00
@@ -199,7 +199,7 @@ $ cat partial.phi
     times(ρ, x) ↦ ⟦ λ ⤍ L_number_times ⟧,
     as-bool ↦ ⟦ λ ⤍ L_number_as_bool ⟧
   ⟧,
-  φ ↦ 2.times( 3 ).plus( 4 ).as-bool
+  φ ↦ 2.times( x ↦ 3 ).plus( x ↦ 4 ).as-bool
 ⟧
 $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho partial.phi
 [ERROR]: No entry of --symbolic answers the λ function 'L_number_as_bool'
@@ -207,8 +207,8 @@ $ phino dataize --symbolic=atoms.yaml --partial --sweet --hide-rho partial.phi
 L_number_as_bool:λ
 ```
 
-Here `2.times( 3 ).plus( 4 )` was computed, and the symbol it came to sits in
-the hidden `ρ`, while `as-bool` stays where it was.
+Here `2.times( x ↦ 3 ).plus( x ↦ 4 )` was computed, and the symbol it came to
+sits in the hidden `ρ`, while `as-bool` stays where it was.
 An operand that reaches the terminator `⊥` is left in place the same way.
 
 ### Reducing a term inside a universe
@@ -223,7 +223,7 @@ $ cat universe.phi
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
   number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧
 ⟧
-$ phino dataize --symbolic=atoms.yaml --inside='5.plus( 6 )' universe.phi
+$ phino dataize --symbolic=atoms.yaml --inside='5.plus( x ↦ 6 )' universe.phi
 40-45-00-00-00-00-00-00
 ```
 
@@ -251,7 +251,7 @@ $ cat two.phi
 ⟦
   bytes ↦ ⟦ φ ↦ ∅ ⟧,
   number ↦ ⟦ φ ↦ ∅, plus(ρ, x) ↦ ⟦ λ ⤍ L_number_plus ⟧ ⟧,
-  φ ↦ 5.plus( 6 ).plus( 7 )
+  φ ↦ 5.plus( x ↦ 6 ).plus( x ↦ 7 )
 ⟧
 $ phino dataize --symbolic=atoms.yaml --sweet --hide-rho two.phi
 40-45-00-00-00-00-00-00
@@ -259,8 +259,8 @@ $ phino morph --symbolic=atoms.yaml --locator=Q.φ --sweet --hide-rho two.phi
 ⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧
 ```
 
-The inner `5.plus( 6 )` fires, because `.plus` is dispatched on its result,
-while the outer call is left for dataization.
+The inner `5.plus( x ↦ 6 )` fires, because `.plus` is dispatched on its
+result, while the outer call is left for dataization.
 Where no formation is reachable, `morph` prints `⊥`.
 It fails on a term that is not a normal form.
 It takes every option of `dataize`.
@@ -458,9 +458,11 @@ syntax sugar. The `rewrite` command also allows you to desugar the expression
 and print it in canonical syntax:
 
 ```bash
-$ echo '[[ @ -> Q.io.stdout("hello") ]]' | phino rewrite
+$ echo '[[ @ -> Q.io.stdout(text -> "hello") ]]' | phino rewrite
 ⟦
-  φ ↦ Φ.io.stdout( α0 ↦ Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ) ) )
+  φ ↦ Φ.io.stdout(
+    text ↦ Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 68-65-6C-6C-6F ⟧ ) )
+  )
 ⟧
 ```
 
@@ -626,7 +628,6 @@ Comparable:              # comparable object that may be used in 'eq' condition
 
 Number:                  # comparable number
   = Integer              # just regular integer
-  | IndexMeta'           # 𝑖 (or !i), the index captured by an α𝑖 argument
   | length: BiMeta'      # calculate length of bindings by given meta binding
   | domain: BiMeta'      # calculate number of unique attributes in given
                          # meta binding (excluding 'assets')
@@ -662,7 +663,7 @@ Here's list of functions that are supported for extensions:
 * `concat` - accepts bytes or dataizable expressions as arguments,
   concatenates them into single sequence and convert it to expression
   that can be pretty printed as human readable string:
-  `Φ.string(Φ.bytes⟦ Δ ⤍ !d ⟧)`.
+  `Φ.string( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ !d ⟧ ) )`.
 * `sed` - pattern replacer, works like unix `sed` function.
   Accepts two arguments: target expression and pattern.
   Pattern must start with `s/`, consists of three parts
@@ -697,8 +698,6 @@ capturing attributes, bindings, etc.
 This is the list of supported meta variables:
 
 * `!t` || `𝜏` - attribute
-* `!i` || `𝑖` - the index of a positional (α) application argument,
-                captured by writing `α𝑖` (or `~!i`)
 * `!e` || `𝑒` - any expression
 * `!n` || `𝑛` - any expression that is already in normal form (behaves like
                 `!e`/`𝑒`, but only binds a sub-expression in NF, so no explicit
@@ -725,8 +724,9 @@ Without a suffix, a meta variable is anonymous: it matches any term on its
 own, binds no name, and is refused anywhere but in a pattern, so
 `⟦ 𝜏 ↦ 𝑒, 𝜏 ↦ 𝑒 ⟧` matches any two attributes.
 
-A positional (α) application argument is written as `α0`, `~0` (ASCII), or
-`α𝑖`/`~!i` when its index is captured by an `!i`/`𝑖` meta variable.
+An application argument is always given by the name of the attribute it goes
+to, as in `Φ.f( x ↦ ξ.y )`, and a positional one, such as `Φ.f( ξ.y )` or
+`Φ.f( α0 ↦ ξ.y )`, is refused.
 
 ## Benchmark
 

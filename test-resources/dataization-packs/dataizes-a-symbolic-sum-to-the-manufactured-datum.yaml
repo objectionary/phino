@@ -5,5 +5,5 @@
 # datum every symbol is manufactured the same one of, and not the sum at all.
 model: true
 symbolic: true
-input: '5.plus( 6 )'
+input: '5.plus( x -> 6 )'
 result: '40-45-00-00-00-00-00-00'

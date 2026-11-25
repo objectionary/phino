@@ -15,10 +15,10 @@ loops: 1
 partial: true
 input: >
   ⟦ o ↦ ⟦ f(x) ↦ ⟦ φ ↦ ξ.x.call ⟧ ⟧,
-    a1 ↦ ⟦ call ↦ Φ.o.f( Φ.a2 ) ⟧,
-    a2 ↦ ⟦ call ↦ Φ.o.f( Φ.a3 ) ⟧,
-    a3 ↦ ⟦ call ↦ Φ.o.f( Φ.a1 ) ⟧,
-    app ↦ Φ.o.f( Φ.a1 ).q ⟧
+    a1 ↦ ⟦ call ↦ Φ.o.f( x ↦ Φ.a2 ) ⟧,
+    a2 ↦ ⟦ call ↦ Φ.o.f( x ↦ Φ.a3 ) ⟧,
+    a3 ↦ ⟦ call ↦ Φ.o.f( x ↦ Φ.a1 ) ⟧,
+    app ↦ Φ.o.f( x ↦ Φ.a1 ).q ⟧
 result: '𝜎1:λ'
 protocol: |
   𝕄(Φ.app):
@@ -28,14 +28,14 @@ protocol: |
     𝑛·0·4 ≔ ⟦ x ↦ Φ.a1, φ ↦ x.call ⟧
     remembered 𝑛·0·4 ≡ 𝑛·0·3
     normalized 𝑛·0·5 ≔ Φ.a1.call.q  # 𝑛·0·4.φ.q
-    normalized 𝑛·0·6 ≔ Φ.o.f( Φ.a2 ):call  # Φ.a1
-    normalized 𝑛·0·7 ≔ Φ.o.f( Φ.a2 )  # 𝑛·0·6.call
+    normalized 𝑛·0·6 ≔ Φ.o.f( x ↦ Φ.a2 ):call  # Φ.a1
+    normalized 𝑛·0·7 ≔ Φ.o.f( x ↦ Φ.a2 )  # 𝑛·0·6.call
     𝑛·0·8 ≔ 𝑛·0·2( x ↦ Φ.a2 )
     𝑛·0·9 ≔ ⟦ x ↦ Φ.a2, φ ↦ x.call ⟧
     remembered 𝑛·0·9 ≡ 𝑛·0·8
     normalized 𝑛·0·10 ≔ Φ.a2.call.q  # 𝑛·0·9.φ.q
-    normalized 𝑛·0·11 ≔ Φ.o.f( Φ.a3 ):call  # Φ.a2
-    normalized 𝑛·0·12 ≔ Φ.o.f( Φ.a3 )  # 𝑛·0·11.call
+    normalized 𝑛·0·11 ≔ Φ.o.f( x ↦ Φ.a3 ):call  # Φ.a2
+    normalized 𝑛·0·12 ≔ Φ.o.f( x ↦ Φ.a3 )  # 𝑛·0·11.call
     𝑛·0·13 ≔ 𝑛·0·2( x ↦ Φ.a3 )
     𝑛·0·14 ≔ ⟦ x ↦ Φ.a3, φ ↦ x.call ⟧
     remembered 𝑛·0·14 ≡ 𝑛·0·13

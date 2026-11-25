@@ -175,12 +175,6 @@ spec = do
         , ExTermination
         )
       ,
-        ( "[[ ^ -> ? ]](α0 -> $.foo) => T"
-        , ExApplication (ExFormation [BiVoid AtRho]) (ArAlpha (Alpha 0) (ExDispatch ExXi (AtLabel "foo")))
-        , ExRoot
-        , ExTermination
-        )
-      ,
         ( "Q => [[]] (a universe distinct from Φ) => [[]]"
         , ExRoot
         , ExFormation []

@@ -130,9 +130,6 @@ _in attrs bindings subst _ =
     (_, _) -> pure []
 
 numToInt :: Y.Number -> Subst -> Maybe Int
-numToInt (Y.MetaIndex meta) (Subst mp) = case M.lookup (Named meta) mp of
-  Just (MvIndex idx) -> Just idx
-  _ -> Nothing
 numToInt (Y.Length (BiMeta meta)) (Subst mp) = case M.lookup (Named meta) mp of
   Just (MvBindings bds) -> Just (length bds)
   _ -> Nothing
@@ -218,7 +215,6 @@ xiFree ExRoot = True
 xiFree ExTermination = True
 xiFree (ExMeta meta) = isName meta
 xiFree (ExApplication e (ArTau _ te)) = xiFree e && xiFree te
-xiFree (ExApplication e (ArAlpha _ te)) = xiFree e && xiFree te
 xiFree (ExDispatch e _) = xiFree e
 xiFree _ = False
 
@@ -382,7 +378,6 @@ metasWithPrefix prefix = nub . go
     goBinding _ = []
     goArgument :: Argument -> [Expression]
     goArgument (ArTau _ expr) = go expr
-    goArgument (ArAlpha _ expr) = go expr
 
 matchExpressionWithRule :: Expression -> Y.Rule -> RuleContext -> IO [Subst]
 matchExpressionWithRule expr rule = matchExpressionBy (deep rule) [substEmpty] expr rule

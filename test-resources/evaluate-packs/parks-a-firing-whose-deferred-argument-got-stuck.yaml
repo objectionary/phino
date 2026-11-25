@@ -24,9 +24,9 @@ partial: true
 input: >
   ⟦ box ↦ ⟦ s ↦ ∅, x ↦ ∅, φ ↦ ξ.s.next ⟧,
     p ↦ ⟦
-      c ↦ Φ.box( ⟦ λ ⤍ 𝜎1 ⟧, ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧.φ ),
+      c ↦ Φ.box( s ↦ ⟦ λ ⤍ 𝜎1 ⟧, x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧.φ ),
       λ ⤍ L_pair ⟧.φ ⟧
-result: '⟦ c ↦ Φ.box( ⟦ λ ⤍ 𝜎1 ⟧, ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧.φ ), λ ⤍ L_pair ⟧.φ'
+result: '⟦ c ↦ Φ.box( s ↦ ⟦ λ ⤍ 𝜎1 ⟧, x ↦ ⟦ arg ↦ ⟦ λ ⤍ L_none ⟧, λ ⤍ L_outer ⟧.φ ), λ ⤍ L_pair ⟧.φ'
 protocol: |
   𝕄(Φ.p):
     𝔼(L_pair):

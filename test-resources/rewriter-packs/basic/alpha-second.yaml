@@ -1,9 +1,0 @@
-# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
-# SPDX-License-Identifier: MIT
----
-rules:
-  basic: ['alpha']
-input: |
-  [[ q -> $.y, x -> ?, y -> [[ ]] ]](~1 -> Q.y)
-output: |-
-  ⟦ q ↦ ξ.y, x ↦ ∅, y ↦ ⟦ ⟧ ⟧(x ↦ Φ.y)

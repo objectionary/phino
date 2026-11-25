@@ -3,6 +3,6 @@
 # yamllint disable rule:line-length
 ---
 expression: |
-  [[ x -> Q.foo(~0 -> Q.bytes([[ D> 3F-F0-00-00-00-00-00-00 ]])) ]]
+  [[ x -> Q.foo(k -> Q.bytes(@ -> [[ D> 3F-F0-00-00-00-00-00-00 ]])) ]]
 result: |-
-  Φ.foo( Φ.bytes( 3F-F0-00-00-00-00-00-00:Δ ) ):x
+  Φ.foo( k ↦ Φ.bytes( φ ↦ 3F-F0-00-00-00-00-00-00:Δ ) ):x

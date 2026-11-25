@@ -40,12 +40,6 @@ spec = do
             , commonContext
             , ExApplication commonContext (ArTau (AtLabel "x") commonContext)
             )
-          ,
-            ( "recurses into both sides of an application with an alpha argument"
-            , ExApplication ExXi (ArAlpha (Alpha 0) ExXi)
-            , commonContext
-            , ExApplication commonContext (ArAlpha (Alpha 0) commonContext)
-            )
           ]
           (\(desc, expr, context, expected) -> it desc (contextualize expr context `shouldReturn` expected))
   describe "contextualize a term no rule matches" $ do

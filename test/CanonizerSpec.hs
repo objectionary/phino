@@ -79,11 +79,6 @@ spec = do
         , ExDispatch (ExFormation [BiLambda (Function "Fn1")]) (AtLabel "attr")
         )
       ,
-        ( "recurses through ExApplication's alpha argument"
-        , ExApplication ExRoot (ArAlpha (Alpha 0) (ExFormation [BiLambda (Function "Wrapped")]))
-        , ExApplication ExRoot (ArAlpha (Alpha 0) (ExFormation [BiLambda (Function "Fn1")]))
-        )
-      ,
         ( "recurses through ExPhiMeet"
         , ExPhiMeet (Just "p") 1 (ExFormation [BiLambda (Function "Meet")])
         , ExPhiMeet (Just "p") 1 (ExFormation [BiLambda (Function "Fn1")])

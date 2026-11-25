@@ -29,12 +29,12 @@ symbolic: |
 location: 'Q.y'
 input: >
   ⟦ box(v) ↦ ⟦ tag ↦ ξ.v, λ ⤍ L_box ⟧,
-    x ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ Φ.box( 𝜎2:λ ), right🌵 ↦ Φ.box( 𝜎3:λ ) ⟧,
+    x ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ Φ.box( v ↦ 𝜎2:λ ), right🌵 ↦ Φ.box( v ↦ 𝜎3:λ ) ⟧,
     y ↦ Φ.x.tag ⟧
 result: '𝜎4:λ'
 protocol: |
   𝕄(Φ.y):
-    remembered 𝑛·0·1 ≡ Φ.x  # ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ Φ.box( 𝜎2:λ ), right🌵 ↦ Φ.box( 𝜎3:λ ) ⟧
+    remembered 𝑛·0·1 ≡ Φ.x  # ⟦ λ ⤍ L_fork, on🌵 ↦ 𝜎1:λ, left🌵 ↦ Φ.box( v ↦ 𝜎2:λ ), right🌵 ↦ Φ.box( v ↦ 𝜎3:λ ) ⟧
     𝔼(L_fork):
       𝔻(ξ.on🌵):
         𝛿·1·1 ≔ 𝔻(𝜎1:λ)

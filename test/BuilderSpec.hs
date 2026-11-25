@@ -86,16 +86,10 @@ spec = do
             )
         )
       ,
-        ( "Q.c(α!i -> !e) => (!i >> 2, !e >> $) => Q.c(α2 -> $)"
-        , ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArAlpha (AlMeta "i") (ExMeta "e"))
-        , [("i", MvIndex 2), ("e", MvExpression ExXi)]
-        , Right (ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArAlpha (Alpha 2) ExXi))
-        )
-      ,
-        ( "Q.c(α!i -> Q) => () => X"
-        , ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArAlpha (AlMeta "i") ExRoot)
+        ( "Q.c(!t -> Q) => () => X"
+        , ExApplication (ExDispatch ExRoot (AtLabel "c")) (ArTau (AtMeta "t") ExRoot)
         , []
-        , Left "meta 'i' is either does not exist or refers to an inappropriate term"
+        , Left "meta 't' is either does not exist or refers to an inappropriate term"
         )
       ]
 

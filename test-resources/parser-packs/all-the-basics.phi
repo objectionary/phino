@@ -32,9 +32,9 @@
     float-application ↦ 52.1(z ↦ ξ.f, k ↦ ξ.i),
     minus ↦ -0,
     inline-application ↦ Φ.x(
-      "Hello", 42, Φ.y("world", 11.plus(12)), 42.5
+      a ↦ "Hello", b ↦ 42, c ↦ Φ.y(d ↦ "world", e ↦ 11.plus(f ↦ 12)), g ↦ 42.5
     ),
-    default-package ↦ Φ.number(42),
+    default-package ↦ Φ.number(φ ↦ 42),
     inline-voids(text, φ) ↦ ⟦ ⟧,
     empty-inline-voids() ↦ ⟦
       num ↦ 42

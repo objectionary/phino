@@ -49,14 +49,12 @@ abridged cut width = goExpr
     goBindings folded empty@BDS_EMPTY{..} = BDS_PAIR EOL tab (PA_FOLDED folded) empty
     goPair :: PAIR -> PAIR
     goPair PA_TAU{..} = PA_TAU attr arrow (goExpr expr)
-    goPair PA_ALPHA{..} = PA_ALPHA alpha arrow (goExpr expr)
     goPair PA_FORMATION{..} = PA_FORMATION attr voids arrow (goExpr expr)
     goPair PA_DELTA{..} = PA_DELTA (goBytes bytes)
     goPair pair = pair
     goArgument :: APP_ARGUMENT -> APP_ARGUMENT
     goArgument (AA_TAU APP_BINDING{..}) = AA_TAU (APP_BINDING (goPair pair))
     goArgument (AA_TAUS binding) = AA_TAUS (goIntact binding)
-    goArgument (AA_EXPRS APP_ARG{..}) = AA_EXPRS (APP_ARG (goExpr expr) (goAppArgs args))
     counted :: APP_ARGUMENT -> Int
     counted (AA_TAU _) = 1
     counted (AA_TAUS binding) = goCount binding
@@ -69,11 +67,6 @@ abridged cut width = goExpr
         goCounts BDS_EMPTY{} = 0
         goCounts BDS_PAIR{..} = 1 + goCounts bindings
         goCounts BDS_META{..} = 1 + goCounts bindings
-    counted (AA_EXPRS APP_ARG{args = rest}) = 1 + goCount rest
-      where
-        goCount :: APP_ARGS -> Int
-        goCount AAS_EMPTY = 0
-        goCount AAS_EXPR{..} = 1 + goCount args
     goIntact :: BINDING -> BINDING
     goIntact BI_PAIR{..} = BI_PAIR (goPair pair) (goIntacts bindings) tab
     goIntact BI_META{..} = BI_META meta (goIntacts bindings) tab
@@ -82,9 +75,6 @@ abridged cut width = goExpr
     goIntacts BDS_PAIR{..} = BDS_PAIR eol tab (goPair pair) (goIntacts bindings)
     goIntacts BDS_META{..} = BDS_META eol tab meta (goIntacts bindings)
     goIntacts empty = empty
-    goAppArgs :: APP_ARGS -> APP_ARGS
-    goAppArgs AAS_EXPR{..} = AAS_EXPR eol tab (goExpr expr) (goAppArgs args)
-    goAppArgs AAS_EMPTY = AAS_EMPTY
     goBytes :: BYTES -> BYTES
     goBytes (BT_MANY bts)
       | cut && length bts > 8 = BT_CUT (take 2 bts) (length bts - 4) (drop (length bts - 2) bts)

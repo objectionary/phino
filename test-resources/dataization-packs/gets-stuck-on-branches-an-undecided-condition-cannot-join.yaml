@@ -6,5 +6,5 @@
 # 'if' gets stuck instead of picking a branch (#1996).
 model: true
 symbolic: true
-input: '5.gt( 6 ).if( 1, 2 )'
+input: '5.gt( x -> 6 ).if( then -> 1, else -> 2 )'
 fails: "No entry of --symbolic answers the λ function 'L_fork'"

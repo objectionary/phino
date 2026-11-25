@@ -31,25 +31,6 @@ spec = do
           it desc $ show attr `shouldBe` expected
       )
 
-  describe "Attribute Show instance renders AtAlpha" $
-    forM_
-      [ ("zero index", Alpha 0, "α0")
-      , ("positive index", Alpha 42, "α42")
-      , ("large index", Alpha 999, "α999")
-      ]
-      ( \(desc, attr, expected) ->
-          it desc $ show attr `shouldBe` expected
-      )
-
-  describe "Alpha Eq instance compares same constructors" $
-    forM_
-      [ ("alphas equal", Alpha 1, Alpha 1, True)
-      , ("alphas differ", Alpha 1, Alpha 2, False)
-      ]
-      ( \(desc, lhs, rhs, expected) ->
-          it desc $ (lhs == rhs) `shouldBe` expected
-      )
-
   describe "Attribute Show instance renders special attributes" $
     forM_
       [ ("rho", AtRho, "ρ")
@@ -231,7 +212,7 @@ spec = do
       , ("deeply nested dispatch", ExDispatch (ExDispatch ExRoot (AtLabel "a")) (AtLabel "b"), 5)
       , ("formation with dispatch inside", ExFormation [BiTau AtRho (ExDispatch ExRoot (AtLabel "x"))], 7)
       , ("application with tau argument", ExApplication ExRoot (ArTau AtRho ExRoot), 6)
-      , ("application with alpha argument", ExApplication ExRoot (ArAlpha (Alpha 0) ExRoot), 6)
+      , ("application with a named argument", ExApplication ExRoot (ArTau (AtLabel "kx") ExRoot), 6)
       , ("phi-meet wraps its inner count", ExPhiMeet Nothing 1 (ExDispatch ExRoot (AtLabel "x")), 3)
       , ("phi-meet with label wraps its inner count", ExPhiMeet (Just "m") 2 ExRoot, 1)
       , ("phi-again wraps its inner count", ExPhiAgain Nothing 1 (ExDispatch ExRoot (AtLabel "x")), 3)
@@ -243,7 +224,7 @@ spec = do
       )
 
   describe "hashExpression" $ do
-    it "hashes every Expression/Binding/Bytes/Attribute/Argument/Alpha/Function constructor without collisions" $
+    it "hashes every Expression/Binding/Bytes/Attribute/Argument/Function constructor without collisions" $
       let exprs =
             [ ExFormation []
             , ExFormation [BiTau AtRho ExRoot]
@@ -259,8 +240,8 @@ spec = do
             , ExRoot
             , ExTermination
             , ExApplication ExRoot (ArTau AtRho ExXi)
-            , ExApplication ExRoot (ArAlpha (Alpha 3) ExXi)
-            , ExApplication ExRoot (ArAlpha (AlMeta "A") ExXi)
+            , ExApplication ExRoot (ArTau (AtLabel "x") ExXi)
+            , ExApplication ExRoot (ArTau (AtMeta "A") ExXi)
             , ExDispatch ExRoot (AtLabel "x")
             , ExDispatch ExRoot AtPhi
             , ExDispatch ExRoot AtRho
@@ -390,7 +371,7 @@ spec = do
           depths :: Map.Map T.Text Int
           depths = List.foldl' (\kept (name, term) -> Map.insert name (deepness look (`Map.lookup` kept) term) kept) Map.empty (Map.toAscList terms)
           whole :: Expression
-          whole = ExApplication three (ArAlpha (Alpha 0) (ExMeta "n·2"))
+          whole = ExApplication three (ArTau (AtLabel "arg") (ExMeta "n·2"))
        in deepness look (`Map.lookup` depths) whole `shouldBe` deepness look (const Nothing) whole
 
   describe "reaches" $ do
@@ -502,19 +483,6 @@ spec = do
             )
         , Just (BtOne "05")
         )
-      ,
-        ( "matches the legacy positional (alpha0) form on both layers"
-        , ExApplication
-            (ExDispatch ExRoot (AtLabel "number"))
-            ( ArAlpha
-                (Alpha 0)
-                ( ExApplication
-                    (ExDispatch ExRoot (AtLabel "bytes"))
-                    (ArAlpha (Alpha 0) (ExFormation [BiDelta (BtOne "05")]))
-                )
-            )
-        , Just (BtOne "05")
-        )
       ]
       ( \(desc, expr, expected) ->
           it desc $
@@ -584,7 +552,7 @@ spec = do
     it "does not take a dispatch on a formation for inert" $
       inert (ExDispatch (ExFormation [BiTau (AtLabel "hm") ExRoot]) (AtLabel "hm")) `shouldBe` False
     it "does not take an application of ⊥ for inert" $
-      inert (ExApplication ExTermination (ArAlpha (Alpha 2) ExXi)) `shouldBe` False
+      inert (ExApplication ExTermination (ArTau (AtLabel "zwei") ExXi)) `shouldBe` False
     it "does not take a formation holding both λ and Δ for inert" $
       inert (ExFormation [BiDelta (BtOne "3F"), BiVoid AtRho, BiLambda (Function "L_ep")]) `shouldBe` False
     it "does not take a formation holding a redex deep inside for inert" $
@@ -626,8 +594,8 @@ spec = do
 
   describe "Expression Show instance" $
     it "does not show what a node carries besides its parts" $
-      show (ExApplication (ExDispatch ExXi (AtLabel "yb")) (ArAlpha (Alpha 0) (ExFormation [BiVoid AtRho])))
-        `shouldBe` "ExApplication (ExDispatch ExXi yb) (ArAlpha α0 (ExFormation [BiVoid ρ]))"
+      show (ExApplication (ExDispatch ExXi (AtLabel "yb")) (ArTau (AtLabel "kl") (ExFormation [BiVoid AtRho])))
+        `shouldBe` "ExApplication (ExDispatch ExXi yb) (ArTau kl (ExFormation [BiVoid ρ]))"
 
   describe "lifted" $ do
     it "raises every symbol above the floor by the offset" $

@@ -9,7 +9,7 @@ expression: |
       b ↦ Φ.org.ρ.φ,
       c ↦ ξ.xyz(
         q ↦ Φ.y,
-        α0 ↦ ξ.a.b
+        r ↦ ξ.a.b
       ),
       z ↦ ⟦
         λ ⤍ Func,
@@ -23,7 +23,7 @@ result: |-
   [[
     number(a) -> [[
       b -> Q.org.^.@,
-      c -> xyz( q -> Q.y, ~0 -> a.b ),
+      c -> xyz( q -> Q.y, r -> a.b ),
       z -> [[ L> Func, D> 00-, def -> Q.txt.sprintf ]],
       error -> T
     ]]

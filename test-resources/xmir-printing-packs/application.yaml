@@ -6,11 +6,11 @@ phi: |
   [[
     foo -> [[
       @ -> $.^.z,
-      bar -> Q.y(5, "foo")
+      bar -> Q.y(a -> 5, b -> "foo")
     ]]
   ]]
 xpaths:
   - '/object/o[@name="foo" and o[2][@base="Φ.y"]]'
-  - '/object/o/o/o[@as="α0" and @base="Φ.number"]'
-  - '/object/o/o/o[@as="α1" and @base="Φ.string"]'
+  - '/object/o/o/o[@as="a" and @base="Φ.number"]'
+  - '/object/o/o/o[@as="b" and @base="Φ.string"]'
   - '/object/o/o[@name="φ" and @base="ξ.ρ.z"]'

@@ -29,7 +29,7 @@ symbolic: |
       left: 𝑛3
       right: 𝑛4
 location: 'Q.y'
-input: '⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ x ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ λ ⤍ 𝜎3 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧, λ ⤍ L_inc ⟧.φ ⟧'
+input: '⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ x ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ λ ⤍ 𝜎3 ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( x ↦ ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧, λ ⤍ L_inc ⟧.φ ⟧'
 result: '𝜎7:λ'
 protocol: |
   𝕄(Φ.y):
@@ -47,12 +47,12 @@ protocol: |
             𝑛·2·3 ≔ Φ.box( x ↦ Φ.items.tail )
             𝑛·2·4 ≔ ⟦ x ↦ Φ.items.tail, w ↦ ∅, φ ↦ x.next ⟧
             remembered 𝑛·2·4 ≡ 𝑛·2·2( x ↦ Φ.items.tail )
-            𝑛·2·5 ≔ 𝑛·2·3( w ↦ Φ.inc( 2A-:Δ ) )
-            𝑛·2·6 ≔ ⟦ x ↦ Φ.items.tail, w ↦ Φ.inc( 2A-:Δ ), φ ↦ x.next ⟧
-            remembered 𝑛·2·6 ≡ 𝑛·2·4( w ↦ Φ.inc( 2A-:Δ ) )
+            𝑛·2·5 ≔ 𝑛·2·3( w ↦ Φ.inc( x ↦ 2A-:Δ ) )
+            𝑛·2·6 ≔ ⟦ x ↦ Φ.items.tail, w ↦ Φ.inc( x ↦ 2A-:Δ ), φ ↦ x.next ⟧
+            remembered 𝑛·2·6 ≡ 𝑛·2·4( w ↦ Φ.inc( x ↦ 2A-:Δ ) )
             morphed 𝑛·2·7 ≔ 𝑛·2·6
           𝑛2·2 ≔ 𝑛·2·7  # 𝕄(ξ.b)
-          recalled 𝑛·2·6 ⇒ 𝑛·2·4( w ↦ Φ.inc( 2A-:Δ ) )
+          recalled 𝑛·2·6 ⇒ 𝑛·2·4( w ↦ Φ.inc( x ↦ 2A-:Δ ) )
           recalled 𝑛·2·4 ⇒ 𝑛·2·2( x ↦ Φ.items.tail )
           recalled 𝑛·2·2 ⇒ Φ.box
           𝕄(𝑛2.w):

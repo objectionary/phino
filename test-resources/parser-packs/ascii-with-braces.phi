@@ -5,7 +5,7 @@
       b -> Q.org.^.@,
       c -> $.xyz(
         q -> Q.y,
-        ~0 -> $.a.b
+        r -> $.a.b
       ),
       z -> [[
         L> Func,
@@ -14,8 +14,7 @@
         num -> 42,
         str -> "Hello, world!"
       ]],
-      w -> x(-42, "Hi", y, Q.io.text),
+      w -> x(a -> -42, b -> "Hi", c -> y, d -> Q.io.text),
       error -> T
     ]]
   ]]
-

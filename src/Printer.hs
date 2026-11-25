@@ -10,7 +10,6 @@ module Printer
   , printExpressionHidingRho'
   , printExpressionWith
   , printAttribute
-  , printAlpha
   , printBinding
   , printBytes
   , printFunction
@@ -65,14 +64,6 @@ printAttribute att =
   let (_, encoding, _, _) = defaultPrintConfig
    in printAttribute' att encoding
 
-printAlpha' :: Alpha -> Encoding -> String
-printAlpha' index encoding = T.unpack $ render (withEncoding encoding (toCST index (0, NO_EOL) :: ALPHA))
-
-printAlpha :: Alpha -> String
-printAlpha index =
-  let (_, encoding, _, _) = defaultPrintConfig
-   in printAlpha' index encoding
-
 printBinding' :: Binding -> PrintConfig -> String
 printBinding' bd = printExpression' (ExFormation [bd])
 
@@ -101,7 +92,6 @@ printExtraArg arg = printExtraArg' arg defaultPrintConfig
 
 printMetaValue :: MetaValue -> PrintConfig -> String
 printMetaValue (MvAttribute att) (_, encoding, _, _) = printAttribute' att encoding
-printMetaValue (MvIndex index) _ = show index
 printMetaValue (MvExpression ex) config = printExpression' ex config
 printMetaValue (MvBytes bts) _ = printBytes bts
 printMetaValue (MvBindings bds) config = printExpression' (ExFormation bds) config

@@ -43,9 +43,7 @@ instance Arbitrary Grown where
       spelled (ExApplication (DataString _) (ArTau AtRho _)) = False
       spelled _ = True
       argument :: Int -> Gen Argument
-      argument depth = frequency [(3, ArTau <$> attribute <*> expression (depth - 1)), (2, ArAlpha <$> alpha <*> expression (depth - 1))]
-      alpha :: Gen Alpha
-      alpha = frequency [(4, Alpha <$> chooseInt (0, 3)), (1, AlMeta <$> meta "i")]
+      argument depth = ArTau <$> attribute <*> expression (depth - 1)
       bindings :: Int -> Gen [Binding]
       bindings depth = do
         attrs <- nub <$> (chooseInt (0, 4) >>= (`vectorOf` attribute))
@@ -81,7 +79,5 @@ instance Arbitrary Grown where
       binding _ = []
       held :: Argument -> Expression
       held (ArTau _ inner) = inner
-      held (ArAlpha _ inner) = inner
       argued :: Argument -> [Argument]
       argued (ArTau attr inner) = ArTau attr <$> smaller inner
-      argued (ArAlpha idx inner) = ArAlpha idx <$> smaller inner

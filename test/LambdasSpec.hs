@@ -542,8 +542,8 @@ spec = do
       stayed term `shouldBe` kept
 
     it "drops every ρ a chain of applications gives a dispatch" $ do
-      term <- parseExpressionThrows "ξ.f( ρ ↦ ⟦ a ↦ ∅ ⟧ )( α0 ↦ ⟦⟧ )( ρ ↦ ⟦ b ↦ ∅ ⟧ )"
-      kept <- parseExpressionThrows "ξ.f( α0 ↦ ⟦⟧ )"
+      term <- parseExpressionThrows "ξ.f( ρ ↦ ⟦ a ↦ ∅ ⟧ )( uz ↦ ⟦⟧ )( ρ ↦ ⟦ b ↦ ∅ ⟧ )"
+      kept <- parseExpressionThrows "ξ.f( uz ↦ ⟦⟧ )"
       stayed term `shouldBe` kept
 
     it "keeps the ρ a formation is applied to" $ do
@@ -634,8 +634,8 @@ spec = do
       made `shouldBe` expected
 
     it "rewrites a term a rule matches inside the argument of an application" $ do
-      made <- rewrote [("Φ.true", "Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )")] "Φ.jq( α0 ↦ Φ.true )"
-      expected <- parseExpressionThrows "Φ.jq( α0 ↦ Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ ) )"
+      made <- rewrote [("Φ.true", "Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ )")] "Φ.jq( ho ↦ Φ.true )"
+      expected <- parseExpressionThrows "Φ.jq( ho ↦ Φ.bool( if ↦ ⟦ Δ ⤍ 01- ⟧ ) )"
       made `shouldBe` expected
 
     it "rewrites every place a rule matches inside a formation" $ do
@@ -644,7 +644,7 @@ spec = do
       made `shouldBe` expected
 
     it "binds the metas of the pattern in the result" $ do
-      made <- rewrote [("Φ.flag( α0 ↦ 𝑒1 )", "Φ.bool( if ↦ 𝑒1 )")] "Φ.flag( α0 ↦ ⟦ λ ⤍ 𝜎6 ⟧ )"
+      made <- rewrote [("Φ.flag( on ↦ 𝑒1 )", "Φ.bool( if ↦ 𝑒1 )")] "Φ.flag( on ↦ ⟦ λ ⤍ 𝜎6 ⟧ )"
       expected <- parseExpressionThrows "Φ.bool( if ↦ ⟦ λ ⤍ 𝜎6 ⟧ )"
       made `shouldBe` expected
 
@@ -669,8 +669,8 @@ spec = do
       made `shouldBe` expected
 
     it "keeps a term no rule matches" $ do
-      term <- parseExpressionThrows "Φ.false( α0 ↦ ⟦ Δ ⤍ 2E- ⟧ )"
-      made <- rewrote [("Φ.true", "Φ.vw")] "Φ.false( α0 ↦ ⟦ Δ ⤍ 2E- ⟧ )"
+      term <- parseExpressionThrows "Φ.false( ev ↦ ⟦ Δ ⤍ 2E- ⟧ )"
+      made <- rewrote [("Φ.true", "Φ.vw")] "Φ.false( ev ↦ ⟦ Δ ⤍ 2E- ⟧ )"
       made `shouldBe` term
 
     it "hands back the very term no rule matches, so a shared term stays shared" $ do
@@ -694,7 +694,7 @@ spec = do
       (\(_, _, spent) -> spent) (symbolized term 11) `shouldBe` 12
 
     it "leaves a term holding no datum as it is" $ do
-      term <- parseExpressionThrows "⟦ φ ↦ Φ.wert( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ).zahl, λ ⤍ L_kern, tief ↦ ξ.ρ.q( α0 ↦ ξ.w ) ⟧"
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.wert( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ).zahl, λ ⤍ L_kern, tief ↦ ξ.ρ.q( am ↦ ξ.w ) ⟧"
       symbolized term 5 `shouldBe` (term, [], 5)
 
     it "keeps the bindings beside the datum it turned into a symbol" $ do
@@ -726,7 +726,7 @@ spec = do
       (\(made, _, _) -> made) (symbolized term 9) `shouldBe` term
 
     it "mints no symbol for a constant the method of a number holds" $ do
-      term <- parseExpressionThrows "⟦ φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ), abs ↦ ⟦ φ ↦ ξ.ρ.lt( Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ) ) ⟧ ⟧"
+      term <- parseExpressionThrows "⟦ φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 40-45-00-00-00-00-00-00 ⟧ ), abs ↦ ⟦ φ ↦ ξ.ρ.lt( x ↦ Φ.number( φ ↦ Φ.bytes( φ ↦ ⟦ Δ ⤍ 00-00-00-00-00-00-00-00 ⟧ ) ) ) ⟧ ⟧"
       (\(_, known, _) -> known) (symbolized term 603) `shouldBe` [(604, BtMany ["40", "45", "00", "00", "00", "00", "00", "00"])]
 
     it "turns the datum the ρ of an atom binds into a fresh symbol" $ do
@@ -744,9 +744,9 @@ spec = do
       masked <- parseExpressionThrows "Φ.f( q ↦ ⟦ λ ⤍ 𝜎4 ⟧ )"
       (\(made, _, _) -> made) (symbolized term 3) `shouldBe` masked
 
-    it "turns the datum a positional argument holds into a fresh symbol" $ do
-      term <- parseExpressionThrows "Φ.vk( α0 ↦ ⟦ Δ ⤍ 5B- ⟧ )"
-      masked <- parseExpressionThrows "Φ.vk( α0 ↦ ⟦ λ ⤍ 𝜎14 ⟧ )"
+    it "turns the datum an argument holds into a fresh symbol" $ do
+      term <- parseExpressionThrows "Φ.vk( ry ↦ ⟦ Δ ⤍ 5B- ⟧ )"
+      masked <- parseExpressionThrows "Φ.vk( ry ↦ ⟦ λ ⤍ 𝜎14 ⟧ )"
       (\(made, _, _) -> made) (symbolized term 13) `shouldBe` masked
 
     it "walks the target of a dispatch down to the datum" $ do

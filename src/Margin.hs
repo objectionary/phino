@@ -58,19 +58,9 @@ instance WithMargin EXPRESSION where
 instance WithMargin APP_ARGUMENT where
   withMargin' cfg (AA_TAU tau) = AA_TAU (withMargin' cfg tau)
   withMargin' cfg (AA_TAUS taus) = AA_TAUS (withMargin' cfg taus)
-  withMargin' cfg (AA_EXPRS args) = AA_EXPRS (withMargin' cfg args)
 
 instance WithMargin APP_BINDING where
   withMargin' cfg APP_BINDING{..} = APP_BINDING (withMargin' cfg pair)
-
-instance WithMargin APP_ARG where
-  withMargin' cfg@(extra, margin) arg@APP_ARG{..} =
-    let single = toSingleLine arg
-     in if fits extra margin single then single else APP_ARG (withMargin' cfg expr) (withMargin' cfg args)
-
-instance WithMargin APP_ARGS where
-  withMargin' cfg AAS_EXPR{..} = AAS_EXPR EOL tab (withMargin' cfg expr) (withMargin' cfg args)
-  withMargin' _ args = args
 
 instance WithMargin BINDING where
   withMargin' cfg BI_PAIR{..} = BI_PAIR (withMargin' (commas cfg) pair) (withMargin' cfg bindings) tab
@@ -95,11 +85,6 @@ instance WithMargin PAIR where
     let single = toSingleLine pa
         extra' = extra + lengthOf attr + lengthOf arrow + 2
         pa' = PA_TAU attr arrow (withMargin' (extra', margin) expr)
-     in if fits extra margin single then single else pa'
-  withMargin' (extra, margin) pa@PA_ALPHA{..} =
-    let single = toSingleLine pa
-        extra' = extra + lengthOf alpha + lengthOf arrow + 2
-        pa' = PA_ALPHA alpha arrow (withMargin' (extra', margin) expr)
      in if fits extra margin single then single else pa'
   withMargin' (extra, margin) pa@PA_FORMATION{..} =
     let single = toSingleLine pa

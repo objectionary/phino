@@ -23,16 +23,16 @@ partial: true
 input: >
   ⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧,
     times(b) ↦ ⟦ λ ⤍ L_times ⟧,
-    x ↦ Φ.times( Φ.dataized( Φ.x.q ) ),
+    x ↦ Φ.times( b ↦ Φ.dataized( target ↦ Φ.x.q ) ),
     y ↦ Φ.x.q ⟧
 result: '𝜎3:λ.q'
 protocol: |
   𝕄(Φ.y):
-    normalized 𝑛·0·1 ≔ Φ.times( Φ.dataized( Φ.x.q ) )  # Φ.x
+    normalized 𝑛·0·1 ≔ Φ.times( b ↦ Φ.dataized( target ↦ Φ.x.q ) )  # Φ.x
     remembered 𝑛·0·2 ≡ Φ.times  # ⟦ b ↦ ∅, λ ⤍ L_times ⟧
-    𝑛·0·3 ≔ Φ.times( b ↦ Φ.dataized( Φ.x.q ) )
-    𝑛·0·4 ≔ ⟦ b ↦ Φ.dataized( Φ.x.q ), λ ⤍ L_times ⟧
-    remembered 𝑛·0·4 ≡ 𝑛·0·2( b ↦ Φ.dataized( Φ.x.q ) )
+    𝑛·0·3 ≔ Φ.times( b ↦ Φ.dataized( target ↦ Φ.x.q ) )
+    𝑛·0·4 ≔ ⟦ b ↦ Φ.dataized( target ↦ Φ.x.q ), λ ⤍ L_times ⟧
+    remembered 𝑛·0·4 ≡ 𝑛·0·2( b ↦ Φ.dataized( target ↦ Φ.x.q ) )
     𝔼(L_times):
       𝔻(ξ.b):
         𝕄(ξ.b):
@@ -44,10 +44,10 @@ protocol: |
         𝔼(L_dataized):
           𝔻(ξ.target):
             𝕄(ξ.target):
-              normalized 𝑛·2·1 ≔ Φ.times( Φ.dataized( Φ.x.q ) )  # Φ.x
-              𝑛·2·2 ≔ Φ.times( b ↦ Φ.dataized( Φ.x.q ) )
-              𝑛·2·3 ≔ ⟦ b ↦ Φ.dataized( Φ.x.q ), λ ⤍ L_times ⟧
-              recalled 𝑛·0·4 ⇒ 𝑛·0·2( b ↦ Φ.dataized( Φ.x.q ) )
+              normalized 𝑛·2·1 ≔ 𝑛·0·3  # Φ.x
+              𝑛·2·2 ≔ Φ.times( b ↦ 𝑛·1·2 )
+              𝑛·2·3 ≔ ⟦ b ↦ 𝑛·1·2, λ ⤍ L_times ⟧
+              recalled 𝑛·0·4 ⇒ 𝑛·0·2( b ↦ Φ.dataized( target ↦ Φ.x.q ) )
               recalled 𝑛·0·2 ⇒ Φ.times
               looped 𝜎1 ≔ 𝑛·2·2.q  # plausible, repeats 𝑛·2·3
               morphed 𝑛·2·4 ≔ 𝜎1:λ

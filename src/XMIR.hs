@@ -48,7 +48,6 @@ import Parser (parseAttribute)
 import Paths_phino (version)
 import Printer
 import Text.Printf (printf)
-import qualified Text.Read as TR
 import Text.XML
 import qualified Text.XML.Cursor as C
 
@@ -165,7 +164,6 @@ expression app@(ExApplication expr arg) ctx = do
   where
     (as, texpr) = case arg of
       ArTau attr value -> (printAttribute attr, value)
-      ArAlpha alpha value -> (printAlpha alpha, value)
 expression expr _ = throwIO (UnsupportedExpression expr)
 
 metaAttribute :: Attribute -> Bool
@@ -497,7 +495,6 @@ xmirToFormationBinding derived cur fqn
       name <- getAttr "name" cur
       case name of
         "λ" -> BiLambda . Function <$> lambdaName derived cur fqn
-        ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         "φ" -> BiTau AtPhi <$> xmirToFormation derived cur (name : fqn)
         "ρ" -> BiTau AtRho <$> xmirToFormation derived cur (name : fqn)
         ('+' : test) -> toAttr test cur >> BiTau (AtLabel (T.pack name)) <$> xmirToFormation derived cur (name : fqn)
@@ -509,7 +506,6 @@ xmirToFormationBinding derived cur fqn
       attr <- case name of
         "φ" -> pure AtPhi
         "ρ" -> pure AtRho
-        ('α' : _) -> throwIO (InvalidXMIRFormat "Formation child @name can't start with α" cur)
         ('+' : test) -> toAttr test cur >> pure (AtLabel (T.pack name))
         ('-' : test) -> toAttr test cur >> pure (AtLabel (T.pack name))
         _ -> toAttr name cur
@@ -636,45 +632,35 @@ xmirToExpression derived cur fqn
           xmirToApplication derived head' (c C.$/ C.element (toName "o")) names
 
 xmirToApplication :: Derived -> Expression -> [C.Cursor] -> [String] -> IO Expression
-xmirToApplication derived = xmirToApplication' 0
+xmirToApplication _ expr [] _ = pure expr
+xmirToApplication derived expr (arg : args) fqn = do
+  app <- applied
+  xmirToApplication derived app args fqn
   where
-    xmirToApplication' :: Int -> Expression -> [C.Cursor] -> [String] -> IO Expression
-    xmirToApplication' _ expr [] _ = pure expr
-    xmirToApplication' idx expr (arg : args) fqn = do
-      let app
-            | hasAttr "name" arg = throwIO (InvalidXMIRFormat "Application argument can't have @name attribute" arg)
-            | hasAttr "base" arg && hasText arg = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" arg)
-            | not (hasAttr "base" arg) = do
-                key <- asToKey arg idx
-                arg' <- xmirToFormation derived arg fqn
-                pure (ExApplication expr (mkArg key arg'))
-            | otherwise = do
-                key <- asToKey arg idx
-                arg' <- xmirToExpression derived arg fqn
-                pure (ExApplication expr (mkArg key arg'))
-      app' <- app
-      xmirToApplication' (idx + 1) app' args fqn
-    mkArg :: Either Alpha Attribute -> Expression -> Argument
-    mkArg (Left alpha) expr = ArAlpha alpha expr
-    mkArg (Right attr) expr = ArTau attr expr
-    asToKey :: C.Cursor -> Int -> IO (Either Alpha Attribute)
-    asToKey cur position
+    applied :: IO Expression
+    applied
+      | hasAttr "name" arg = throwIO (InvalidXMIRFormat "Application argument can't have @name attribute" arg)
+      | hasAttr "base" arg && hasText arg = throwIO (InvalidXMIRFormat "It's illegal in XMIR to have @base and text() at the same time" arg)
+      | not (hasAttr "base" arg) = do
+          key <- asToKey arg
+          ExApplication expr . ArTau key <$> xmirToFormation derived arg fqn
+      | otherwise = do
+          key <- asToKey arg
+          ExApplication expr . ArTau key <$> xmirToExpression derived arg fqn
+    asToKey :: C.Cursor -> IO Attribute
+    asToKey cur
       | hasAttr "as" cur = do
           as <- getAttr "as" cur
           case as of
-            'α' : rest' -> case TR.readMaybe rest' :: Maybe Integer of
-              Just idx
-                | all isDigit rest' && idx <= toInteger (maxBound :: Int) -> pure (Left (Alpha (fromInteger idx)))
-              _ -> throwIO (InvalidXMIRFormat (printf "The attribute started with 'α' must be followed by a non-negative integer that fits into %d" (maxBound :: Int)) cur)
+            'α' : _ -> throwIO (InvalidXMIRFormat (printf "The positional @as='%s' is not supported, since an application argument is given by the name of the attribute it goes to" as) cur)
             "ρ" -> throwIO (InvalidXMIRFormat "The 'ρ' in @as attribute is illegal in XMIR" cur)
-            _ -> Right <$> toAttr as cur
-      | otherwise = pure (Left (Alpha position))
+            _ -> toAttr as cur
+      | otherwise = throwIO (InvalidXMIRFormat "Application argument must have @as attribute, since a positional argument is not supported" cur)
 
 toAttr :: String -> C.Cursor -> IO Attribute
 toAttr attr cur = case attr of
   "φ" -> pure AtPhi
   "ρ" -> pure AtRho
-  'α' : _ -> throwIO (InvalidXMIRFormat "α-index is not a valid dispatch attribute in XMIR" cur)
   ch : _
     | ch `notElem` ['a' .. 'z'] -> throwIO (InvalidXMIRFormat (printf "The attribute '%s' must start with ['a'..'z']" attr) cur)
     | '.' `elem` attr -> throwIO (InvalidXMIRFormat "Attribute can't contain dots" cur)

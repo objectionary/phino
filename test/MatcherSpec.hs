@@ -154,15 +154,6 @@ spec = do
           it desc $ matchAttribute ptn tgt `shouldBe` expected
       )
 
-  describe "matchAlpha: alpha => alpha => substitution" $
-    forM_
-      [ ("α1 => α1 => [()]", Alpha 1, Alpha 1, substs [[]])
-      , ("α0 => α1 => []", Alpha 0, Alpha 1, substs [])
-      ]
-      ( \(desc, ptn, tgt, expected) ->
-          it desc $ matchAlpha ptn tgt `shouldBe` expected
-      )
-
   describe "matchFunction: function => function => substitution" $
     forM_
       [ ("!f => Func => [(!f >> Func)]", FnMeta "f", Function "Func", substs [[("f", MvFunction (Function "Func"))]])
@@ -637,7 +628,7 @@ spec = do
         `shouldBe` []
   describe "hits" $ do
     it "finds every rule matching deep inside the term in the order one walk meets them" $
-      hits [(7, False, \_ expr -> [() | ExTermination <- [expr]]), (3, False, \_ expr -> [() | ExRoot <- [expr]]), (5, False, \_ expr -> [() | ExXi <- [expr]])] Nothing (ExDispatch (ExApplication ExXi (ArAlpha (Alpha 2) ExTermination)) (AtLabel "y"))
+      hits [(7, False, \_ expr -> [() | ExTermination <- [expr]]), (3, False, \_ expr -> [() | ExRoot <- [expr]]), (5, False, \_ expr -> [() | ExXi <- [expr]])] Nothing (ExDispatch (ExApplication ExXi (ArTau (AtLabel "zw") ExTermination)) (AtLabel "y"))
         `shouldBe` [5, 7]
     it "never asks a rule that is a redex inside an inert term" $
       hits [(4, True, \_ expr -> [() | ExXi <- [expr]]), (9, False, \_ expr -> [() | ExXi <- [expr]])] Nothing (ExFormation [BiTau (AtLabel "zk") ExXi])

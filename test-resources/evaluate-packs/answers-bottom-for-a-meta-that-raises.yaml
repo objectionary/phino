@@ -15,7 +15,7 @@ symbolic: |
       𝛿1: 𝑛1
     𝑛: ⟦ λ ⤍ 𝜎 ⟧
 location: 'Q.y'
-input: '⟦ wrap(x) ↦ ⟦ λ ⤍ L_wrap ⟧, y ↦ Φ.wrap( ⟦ λ ⤍ L_throw ⟧ ).φ ⟧'
+input: '⟦ wrap(x) ↦ ⟦ λ ⤍ L_wrap ⟧, y ↦ Φ.wrap( x ↦ ⟦ λ ⤍ L_throw ⟧ ).φ ⟧'
 result: '⊥'
 protocol: |
   𝕄(Φ.y):

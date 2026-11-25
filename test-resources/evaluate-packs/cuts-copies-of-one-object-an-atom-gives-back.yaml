@@ -22,10 +22,10 @@ loops: 1
 partial: true
 input: >
   ⟦ f(x) ↦ ⟦ φ ↦ ξ.x.call ⟧,
-    a1 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a2 ) ⟧ ⟧,
-    a2 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a3 ) ⟧ ⟧,
-    a3 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a1 ) ⟧ ⟧,
-    app ↦ Φ.f( Φ.a1 ).q ⟧
+    a1 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( x ↦ Φ.a2 ) ⟧ ⟧,
+    a2 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( x ↦ Φ.a3 ) ⟧ ⟧,
+    a3 ↦ ⟦ call ↦ ⟦ λ ⤍ L_m, t ↦ Φ.f( x ↦ Φ.a1 ) ⟧ ⟧,
+    app ↦ Φ.f( x ↦ Φ.a1 ).q ⟧
 result: '𝜎1:λ'
 protocol: |
   𝕄(Φ.app):
@@ -34,8 +34,8 @@ protocol: |
     𝑛·0·3 ≔ ⟦ x ↦ Φ.a1, φ ↦ x.call ⟧
     remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ Φ.a1 )
     normalized 𝑛·0·4 ≔ Φ.a1.call.q  # 𝑛·0·3.φ.q
-    normalized 𝑛·0·5 ≔ ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a2 ) ⟧:call  # Φ.a1
-    remembered 𝑛·0·6 ≡ Φ.a1.call  # ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a2 ) ⟧
+    normalized 𝑛·0·5 ≔ ⟦ λ ⤍ L_m, t ↦ Φ.f( x ↦ Φ.a2 ) ⟧:call  # Φ.a1
+    remembered 𝑛·0·6 ≡ Φ.a1.call  # ⟦ λ ⤍ L_m, t ↦ Φ.f( x ↦ Φ.a2 ) ⟧
     𝔼(L_m):
       𝕄(ξ.t):
         𝑛·1·1 ≔ Φ.f( x ↦ Φ.a2 )
@@ -55,8 +55,8 @@ protocol: |
     remembered 𝑛·1·3 ≡ 𝑛·1·7.φ
     normalized 𝑛·0·7 ≔ 𝑛·1·3.q  # 𝑛·1·7.φ.q
     normalized 𝑛·0·8 ≔ Φ.a2.call.q  # 𝑛·1·3.φ.q
-    normalized 𝑛·0·9 ≔ ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a3 ) ⟧:call  # Φ.a2
-    remembered 𝑛·0·10 ≡ Φ.a2.call  # ⟦ λ ⤍ L_m, t ↦ Φ.f( Φ.a3 ) ⟧
+    normalized 𝑛·0·9 ≔ ⟦ λ ⤍ L_m, t ↦ Φ.f( x ↦ Φ.a3 ) ⟧:call  # Φ.a2
+    remembered 𝑛·0·10 ≡ Φ.a2.call  # ⟦ λ ⤍ L_m, t ↦ Φ.f( x ↦ Φ.a3 ) ⟧
     𝔼(L_m):
       𝕄(ξ.t):
         𝑛·2·1 ≔ Φ.f( x ↦ Φ.a3 )

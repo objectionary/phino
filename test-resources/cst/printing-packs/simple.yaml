@@ -6,8 +6,8 @@ expression: |
   [[
     foo -> [[
       @ -> $.^.z,
-      bar -> Q.y(5, "foo")
+      bar -> Q.y(a -> 5, b -> "foo")
     ]]
   ]]
 result: |-
-  ⟦ φ ↦ ρ.z, bar ↦ Φ.y( 5.0, "foo" ) ⟧:foo
+  ⟦ φ ↦ ρ.z, bar ↦ Φ.y( a ↦ 5.0, b ↦ "foo" ) ⟧:foo

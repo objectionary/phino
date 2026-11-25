@@ -35,16 +35,16 @@ input: >
     bool(φ) ↦ ⟦ if ↦ ⟦ ρ ↦ ∅, then ↦ ∅, else ↦ ∅, λ ⤍ L_fork ⟧ ⟧,
     number(φ) ↦ ⟦ gt(ρ, x) ↦ ⟦ λ ⤍ L_number_gt ⟧ ⟧,
     pick(x, y) ↦ ⟦ λ ⤍ L_pick ⟧,
-    φ ↦ Φ.pick( 5.gt( 0 ).if( 7, 7 ), 5.gt( 0 ).if( 70, 70 ) ).φ ⟧
+    φ ↦ Φ.pick( x ↦ 5.gt( x ↦ 0 ).if( then ↦ 7, else ↦ 7 ), y ↦ 5.gt( x ↦ 0 ).if( then ↦ 70, else ↦ 70 ) ).φ ⟧
 result: '⟦ φ ↦ ⟦ Δ ⤍ 40-51-80-00-00-00-00-00 ⟧ ⟧'
 protocol: |
   𝕄(Φ.φ):
     remembered 𝑛·0·1 ≡ Φ.pick  # ⟦ x ↦ ∅, y ↦ ∅, λ ⤍ L_pick ⟧
-    shared 𝑛·1 ≔ 5.0.gt( 0.0 ).if( 7.0, 7.0 )
+    shared 𝑛·1 ≔ 5.0.gt( x ↦ 0.0 ).if( then ↦ 7.0, else ↦ 7.0 )
     𝑛·0·2 ≔ Φ.pick( x ↦ 𝑛·1 )
     𝑛·0·3 ≔ ⟦ x ↦ 𝑛·1, y ↦ ∅, λ ⤍ L_pick ⟧
     remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ 𝑛·1 )
-    shared 𝑛·2 ≔ 5.0.gt( 0.0 ).if( 70.0, 70.0 )
+    shared 𝑛·2 ≔ 5.0.gt( x ↦ 0.0 ).if( then ↦ 70.0, else ↦ 70.0 )
     𝑛·0·4 ≔ 𝑛·0·3( y ↦ 𝑛·2 )
     𝑛·0·5 ≔ ⟦ x ↦ 𝑛·1, y ↦ 𝑛·2, λ ⤍ L_pick ⟧
     remembered 𝑛·0·5 ≡ 𝑛·0·4

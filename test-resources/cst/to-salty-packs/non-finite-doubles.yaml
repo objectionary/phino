@@ -6,7 +6,7 @@ expression: |
   [[
     nan -> Q.nan,
     pinf -> Q.pinf,
-    ninf -> Q.number(~0 -> Q.bytes([[D> FF-F0-00-00-00-00-00-00]]), ^ -> Q.x)
+    ninf -> Q.number(@ -> Q.bytes(@ -> [[D> FF-F0-00-00-00-00-00-00]]), ^ -> Q.x)
   ]]
 result: |-
   ⟦

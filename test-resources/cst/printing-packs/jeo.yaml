@@ -4,23 +4,23 @@
 ---
 expression: |
   ⟦
-    x ↦ Φ.x(Φ.jeo.opcode.lconst_0(
-      9
+    x ↦ Φ.x(a ↦ Φ.jeo.opcode.lconst_0(
+      v ↦ 9
     ),
-    Φ.jeo.opcode.lstore(
-      55,
-      1
+    b ↦ Φ.jeo.opcode.lstore(
+      v ↦ 55,
+      w ↦ 1
     ),
-    Φ.jeo.opcode.iconst_0(
-      3
+    c ↦ Φ.jeo.opcode.iconst_0(
+      v ↦ 3
     ),
-    Φ.jeo.opcode.istore(
-      54,
-      3
+    d ↦ Φ.jeo.opcode.istore(
+      v ↦ 54,
+      w ↦ 3
     ),
-    Φ.jeo.label(
-      Φ.bytes(
-        ⟦
+    e ↦ Φ.jeo.label(
+      v ↦ Φ.bytes(
+        φ ↦ ⟦
           Δ ⤍ 4C-31-32-38-34-34-34-35-32-36-37
         ⟧
       )
@@ -28,9 +28,9 @@ expression: |
   ⟧
 result: |-
   Φ.x(
-    Φ.jeo.opcode.lconst_0( 9.0 ),
-    Φ.jeo.opcode.lstore( 55.0, 1.0 ),
-    Φ.jeo.opcode.iconst_0( 3.0 ),
-    Φ.jeo.opcode.istore( 54.0, 3.0 ),
-    Φ.jeo.label( Φ.bytes( 4C-31-32-38-34-34-34-35-32-36-37:Δ ) )
+    a ↦ Φ.jeo.opcode.lconst_0( v ↦ 9.0 ),
+    b ↦ Φ.jeo.opcode.lstore( v ↦ 55.0, w ↦ 1.0 ),
+    c ↦ Φ.jeo.opcode.iconst_0( v ↦ 3.0 ),
+    d ↦ Φ.jeo.opcode.istore( v ↦ 54.0, w ↦ 3.0 ),
+    e ↦ Φ.jeo.label( v ↦ Φ.bytes( φ ↦ 4C-31-32-38-34-34-34-35-32-36-37:Δ ) )
   ):x

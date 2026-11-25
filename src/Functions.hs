@@ -114,7 +114,6 @@ _dataize [Y.ArgExpression expr] subst = do
   case expr' of
     DataObject _ bytes -> pure (TeBytes bytes)
     ExApplication (BaseObject "bytes") (ArTau AtPhi (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
-    ExApplication (BaseObject "bytes") (ArAlpha (Alpha 0) (ExFormation bds)) | Just bytes <- delta bds -> pure (TeBytes bytes)
     ExFormation bds | Just bytes <- delta bds -> pure (TeBytes bytes)
     _ -> throwIO (userError "Only data objects and bytes are supported by 'dataize' function now")
   where
@@ -329,7 +328,6 @@ _join args subst = do
     rhos _ _ = False
     renameArgument :: Map.Map Attribute Attribute -> Int -> Argument -> Argument
     renameArgument changes depth (ArTau attr expr) = ArTau attr (renameExpression changes depth expr)
-    renameArgument changes depth (ArAlpha alpha expr) = ArAlpha alpha (renameExpression changes depth expr)
     freshAttr :: Set.Set Attribute -> IO Attribute
     freshAttr unavailable = do
       term <- _randomTau [] subst

@@ -262,11 +262,11 @@ spec = do
         testCLISucceeded ["rewrite", "--normalize", "--flat", "--sweet"] ["Φ.x( ρ ↦ ⟦⟧, ρ ↦ ⟦ a ↦ Φ.x( ρ ↦ ⟦⟧ ), b ↦ ⟦⟧ ⟧ )"]
     it "keeps the terms of nested forks small while dataizing" $
       withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
-        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
+        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(left -> s, right -> s), s -> Q.outer ]], outer -> [[ φ -> h.if(left -> Q.good, right -> h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(left -> Q.false, right -> Q.eq.if(left -> Q.false, right -> Q.good)), e1 -> Q.entry.text ]]" $
           testCLISucceeded ["dataize", "--cheat", "--acyclic=plausible", "--max-loops=2", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["00-"]
     it "lets the terms of nested forks grow while dataizing without it" $
       withTempFileContent "cheat-atomsXXXXXX.yaml" "- λ: L_eq\n  𝑛: '⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧'\n- λ: L_fork\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    'on': $.on🌵\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n" $ \atoms ->
-        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(s, s), s -> Q.outer ]], outer -> [[ φ -> h.if(Q.good, h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(Q.false, Q.eq.if(Q.false, Q.good)), e1 -> Q.entry.text ]]" $
+        withStdin "[[ eq -> L_eq:λ, false -> [[ if(left, right) -> right:φ ]], entry -> [[ φ -> s.if(left -> s, right -> s), s -> Q.outer ]], outer -> [[ φ -> h.if(left -> Q.good, right -> h), h -> Q.inner ]], good -> [[ φ -> Q.eq, text -> [[ D> 00- ]] ]], inner -> Q.eq.if(left -> Q.false, right -> Q.eq.if(left -> Q.false, right -> Q.good)), e1 -> Q.entry.text ]]" $
           testCLIFailed ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=5000", "--locator=Q.e1", "--symbolic=" ++ atoms] ["--max-nodes=5000"]
 
   describe "--hide-rho" $
@@ -308,10 +308,10 @@ spec = do
         , ["⟦\n  b(c) ↦ ⟦⟧\n⟧:x:a"]
         )
       ,
-        ( "prints positional arguments as such once the rho is gone"
-        , "⟦ a ↦ ξ.b(ρ ↦ ξ, α0 ↦ ξ.c, α1 ↦ ξ.d) ⟧"
+        ( "prints the other arguments once the rho is gone"
+        , "⟦ a ↦ ξ.b(ρ ↦ ξ, k ↦ ξ.c, m ↦ ξ.d) ⟧"
         , ["rewrite", "--flat", "--sweet", "--hide-rho"]
-        , ["b( c, d ):a"]
+        , ["b( k ↦ c, m ↦ d ):a"]
         )
       ,
         ( "drops the rho from the LaTeX output too"
@@ -548,13 +548,13 @@ spec = do
           )
         ,
           ( "with wrong --hide option"
-          , ["rewrite", "--hide=Q.x(Q.y)"]
-          , ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
+          , ["rewrite", "--hide=Q.x(k -> Q.y)"]
+          , ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( k ↦ Φ.y )"]
           )
         , ("with many --show options", ["rewrite", "--show=Q.x.y", "--show=hello"], ["The option --show can be used only once"])
         ,
           ( "with wrong --show option"
-          , ["rewrite", "--show=Q.x(Q.y)"]
+          , ["rewrite", "--show=Q.x(k -> Q.y)"]
           , ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
           )
         , ("with --show overlapping --hide", ["rewrite", "--show=Q.x", "--hide=Q.x"], ["[ERROR]:", "The --show locator 'Φ.x' is also listed in --hide"])
@@ -573,15 +573,15 @@ spec = do
           )
         ,
           ( "with non-dispatch --focus"
-          , ["rewrite", "--focus=Q.x(Q.y)"]
-          , ["Invalid set of arguments: Only dispatch expression started with Φ (or Q) can be used in --focus, but given: Φ.x( Φ.y )"]
+          , ["rewrite", "--focus=Q.x(k -> Q.y)"]
+          , ["Invalid set of arguments: Only dispatch expression started with Φ (or Q) can be used in --focus, but given: Φ.x( k ↦ Φ.y )"]
           )
         , ("with --focus!=Q and --output=XMIR", ["rewrite", "--focus=Q.x", "--output=xmir"], ["Only --focus=Q is allowed to be used with --output=xmir"])
         , ("with --margin < 0", ["rewrite", "--margin=-1"], ["--margin must be positive"])
         ,
           ( "with --breakpoint which does not exist across the rules"
           , ["rewrite", "--breakpoint=hello", "--normalize"]
-          , ["The rule 'hello' provided in '--breakpoint' option is absent across given rewriting rules: alpha"]
+          , ["The rule 'hello' provided in '--breakpoint' option is absent across given rewriting rules: copy"]
           )
         ]
         (\(desc, args, expected) -> it desc (withStdin "[[ x -> 5 ]]" (testCLIFailed args expected)))
@@ -728,7 +728,7 @@ spec = do
 
     it "saves dataize steps to dir with --steps-dir" $
       withTempDirectory "phino-steps-dataize" $ \dir ->
-        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]" $ do
+        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6).plus(x -> 7) ]]" $ do
           testCLISucceeded
             ["dataize", symbolic, "--steps-dir=" ++ dir, "--sweet"]
             ["40-45"]
@@ -900,17 +900,6 @@ spec = do
           [ unlines
               [ "\\begin{phiquation*}"
               , "|5.0| : |x|{.}"
-              , "\\end{phiquation*}"
-              ]
-          ]
-
-    it "rewrites an alpha-index argument as \\alpha subscript in LaTeX" $
-      withStdin "Q.foo(~1 -> Q.y)" $
-        testCLISucceeded
-          ["rewrite", "--output=latex", "--flat", "--nonumber"]
-          [ unlines
-              [ "\\begin{phiquation*}"
-              , "Q . |foo| ( \\phiTerminal{\\alpha_{1}} -> Q . |y| ){.}"
               , "\\end{phiquation*}"
               ]
           ]
@@ -1572,10 +1561,10 @@ spec = do
     it "feeds an argument to a bare symbol and gets a new symbol, not ⊥" $
       withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
         hClose stream
-        withStdin "⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧, app ↦ Φ.x( 01-:Δ ) ⟧" $
+        withStdin "⟦ x ↦ ⟦ λ ⤍ 𝜎1 ⟧, app ↦ Φ.x( k ↦ 01-:Δ ) ⟧" $
           testCLISucceeded ["dataize", "--locator=Q.app", "--partial", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
         protocol <- readProtocol path
-        map (dropWhile (== ' ')) (lines protocol) `shouldContain` ["fed 𝜎2:λ ≔ 𝜎1:λ( 01-:Δ )", "morphed 𝑛·0·2 ≔ 𝜎2:λ", "𝛿·0·1 ≔ 𝔻(𝜎2:λ)"]
+        map (dropWhile (== ' ')) (lines protocol) `shouldContain` ["fed 𝜎2:λ ≔ 𝜎1:λ( k ↦ 01-:Δ )", "morphed 𝑛·0·2 ≔ 𝜎2:λ", "𝛿·0·1 ≔ 𝔻(𝜎2:λ)"]
 
     it "feeds a named argument to a bare symbol and writes it to the XML protocol" $
       withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
@@ -1615,7 +1604,7 @@ spec = do
             ["[ERROR]: Evaluation did not finish before reaching the limit of firings: --max-firings=5"]
 
     describe "--acyclic=proven" $ do
-      let circling = "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧"
+      let circling = "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( x ↦ ξ.x ) ⟧, t ↦ Φ.cyc( x ↦ ⟦⟧ ) ⟧"
       it "spends the whole budget and fails on the limit without the flag" $
         withStdin circling $
           testCLIFailed
@@ -1645,16 +1634,16 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ.t):"
                        , "  𝕄(Φ.t):"
-                       , "    remembered 𝑛·0·1 ≡ Φ.cyc  # ⟦ x ↦ ∅, φ ↦ Φ.cyc( x ) ⟧"
+                       , "    remembered 𝑛·0·1 ≡ Φ.cyc  # ⟦ x ↦ ∅, φ ↦ Φ.cyc( x ↦ x ) ⟧"
                        , "    𝑛·0·2 ≔ Φ.cyc( x ↦ ⟦⟧ )"
-                       , "    𝑛·0·3 ≔ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
+                       , "    𝑛·0·3 ≔ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ↦ x ) ⟧"
                        , "    remembered 𝑛·0·3 ≡ 𝑛·0·1( x ↦ ⟦⟧ )"
                        , "    morphed 𝑛·0·4 ≔ 𝑛·0·3"
                        , "  boxed 𝑛·0·5 ≔ 𝑛·0·4.φ"
-                       , "  normalized 𝑛·0·6 ≔ Φ.cyc( ⟦⟧ )  # 𝑛·0·5"
+                       , "  normalized 𝑛·0·6 ≔ 𝑛·0·2  # 𝑛·0·5"
                        , "  𝕄(𝑛·0·5):"
                        , "    𝑛·0·7 ≔ Φ.cyc( x ↦ ⟦⟧ )"
-                       , "    𝑛·0·8 ≔ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ) ⟧"
+                       , "    𝑛·0·8 ≔ ⟦ x ↦ ⟦⟧, φ ↦ Φ.cyc( x ↦ x ) ⟧"
                        , "    morphed 𝑛·0·9 ≔ 𝑛·0·8"
                        , "  recalled 𝑛·0·3 ⇒ 𝑛·0·1( x ↦ ⟦⟧ )"
                        , "  recalled 𝑛·0·1 ⇒ Φ.cyc"
@@ -1685,7 +1674,7 @@ spec = do
                        , "    <morphed meta=\"𝑛·0·4\">𝑛·0·3</morphed>"
                        , "  </morph>"
                        , "  <boxed meta=\"𝑛·0·5\">𝑛·0·4.φ</boxed>"
-                       , "  <applied meta=\"𝑒·0·3\" of=\"Φ.cyc\"><meta attr=\"α0\">𝑒·0·1</meta><meta attr=\"ρ\">𝑛·0·2</meta></applied>"
+                       , "  <applied meta=\"𝑒·0·3\" of=\"𝑛·0·2\"><meta attr=\"ρ\">𝑛·0·2</meta></applied>"
                        , "  <normalized meta=\"𝑛·0·6\" of=\"𝑛·0·5\">𝑒·0·3</normalized>"
                        , "  <morph at=\"𝑛·0·5\">"
                        , "    <applied meta=\"𝑛·0·7\" by=\"morph\" at=\"𝑛·0·5\" of=\"Φ.cyc\"><meta attr=\"x\">𝑒·0·1</meta></applied>"
@@ -1737,13 +1726,13 @@ spec = do
           testCLISucceeded ["dataize", "--locator=Q.t", "--acyclic=plausible", "--max-loops=1"] ["01-"]
 
       it "cuts a recursion that never stops with --max-loops=1" $
-        withStdin "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( ξ.x ) ⟧, t ↦ Φ.cyc( ⟦⟧ ) ⟧" $
+        withStdin "⟦ cyc ↦ ⟦ x ↦ ∅, φ ↦ Φ.cyc( x ↦ ξ.x ) ⟧, t ↦ Φ.cyc( x ↦ ⟦⟧ ) ⟧" $
           testCLISucceeded
             ["dataize", "--locator=Q.t", "--acyclic=proven", "--max-loops=1", "--max-steps=4000"]
             ["40-45-00-00-00-00-00-00"]
 
       describe "over a recursion that takes an attribute off its own call" $ do
-        let world = "⟦ num(φ) ↦ ⟦ gt(ρ, b) ↦ L_gt:λ, plus(ρ, b) ↦ L_plus:λ ⟧, seq(i) ↦ ⟦ φ ↦ Φ.num( φ ↦ 𝜎1:λ ).gt( i ).if( Φ.seq( i.plus( Φ.num( φ ↦ 01-:Δ ) ) ).plus( Φ.num( φ ↦ 01-:Δ ) ), i ) ⟧, app ↦ Φ.seq( Φ.num( φ ↦ 00-:Δ ) ) ⟧"
+        let world = "⟦ num(φ) ↦ ⟦ gt(ρ, b) ↦ L_gt:λ, plus(ρ, b) ↦ L_plus:λ ⟧, seq(i) ↦ ⟦ φ ↦ Φ.num( φ ↦ 𝜎1:λ ).gt( b ↦ i ).if( left ↦ Φ.seq( i ↦ i.plus( b ↦ Φ.num( φ ↦ 01-:Δ ) ) ).plus( b ↦ Φ.num( φ ↦ 01-:Δ ) ), right ↦ i ) ⟧, app ↦ Φ.seq( i ↦ Φ.num( φ ↦ 00-:Δ ) ) ⟧"
             atoms = T.pack "- λ: L_gt\n  dataize: {𝛿1: $.b}\n  𝑛: ⟦ if ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ⟧\n- λ: L_fork\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  evaluate: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  symbolize: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  cast: {𝑛7: 𝑛5, 𝑛8: 𝑛6}\n  join: {'on': $.on🌵, left: 𝑛7, right: 𝑛8, otherwise: L_fork}\n- λ: L_plus\n  dataize: {𝛿1: $.ρ}\n  𝑛: Φ.num( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n"
         it "cuts the recursion by --max-loops, not by --max-steps" $
           withLambdasOf atoms $ \file ->
@@ -1789,7 +1778,7 @@ spec = do
           recorded "w" >>= (`shouldSatisfy` maybe False (elem "recalled 𝑛·1·5 ⇒ 𝜎3:λ"))
 
       describe "over a recursion that hands its own growing call to an atom" $ do
-        let world = "⟦ go(x) ↦ ⟦ λ ⤍ L_go ⟧, seq(i) ↦ ⟦ ok ↦ Φ.go( Φ.seq( i.next ).ok ) ⟧, app ↦ Φ.seq( 𝜎1:λ ).ok ⟧"
+        let world = "⟦ go(x) ↦ ⟦ λ ⤍ L_go ⟧, seq(i) ↦ ⟦ ok ↦ Φ.go( x ↦ Φ.seq( i ↦ i.next ).ok ) ⟧, app ↦ Φ.seq( i ↦ 𝜎1:λ ).ok ⟧"
             atoms = T.pack "- λ: L_go\n  morph: {𝑛1: $.x}\n  𝑛: 𝑛1\n"
         it "cuts the recursion by --max-loops, not by --max-steps" $
           withLambdasOf atoms $ \file ->
@@ -1844,7 +1833,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withLambdasOf (T.pack "- λ: L_d\n  dataize:\n    𝛿1: $.t\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \file ->
-            withStdin "⟦ d(t) ↦ ⟦ λ ⤍ L_d ⟧, e ↦ Φ.d( Φ.d( Φ.d( Φ.d( Φ.d( Φ.d( 01-:Δ ) ) ) ) ) ) ⟧" $
+            withStdin "⟦ d(t) ↦ ⟦ λ ⤍ L_d ⟧, e ↦ Φ.d( t ↦ Φ.d( t ↦ Φ.d( t ↦ Φ.d( t ↦ Φ.d( t ↦ Φ.d( t ↦ 01-:Δ ) ) ) ) ) ) ⟧" $
               testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.e", "--acyclic=plausible", "--max-loops=0", "--partial", "--quiet", "--sweet", "--hide-rho", "--minutes=" ++ path] []
           records <- readProtocol path
           lines records `shouldNotSatisfy` any (isInfixOf "looped")
@@ -1858,16 +1847,16 @@ spec = do
           testCLIFailed ["dataize", "--locator=Q.t", "--max-loops=1"] ["The option --max-loops requires --acyclic, since only --acyclic cuts a loop"]
 
     describe "--acyclic=plausible over a mutual recursion of four objects" $ do
-      let world = "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, plus(i) ↦ ⟦ λ ⤍ L_plus ⟧, read(p) ↦ ⟦ at ↦ ξ.p ⟧, f1(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 28-:Δ ).if( Φ.read( Φ.f4( Φ.plus( ξ.i ) ).at ), Φ.read( Φ.plus( ξ.i ) ) ) ⟧, " ++ intercalate ", " [printf "f%d(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), %02X-:Δ ).if( Φ.read( ξ.i ), Φ.f%d( Φ.f%d( ξ.i ).at ) ) ⟧" level (0x28 + level :: Int) level (level - 1) | level <- [2 .. 4 :: Int]] ++ ", t ↦ Φ.f4( 00-:Δ ).at ⟧"
-          atoms = T.pack "- λ: L_fork\n  dataize: {𝛿1: $.on🌵}\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  stay: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  evaluate: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  undress: {𝑛15: 𝑛5, 𝑛16: 𝑛6}\n  symbolize: {𝑛11: 𝑛15, 𝑛12: 𝑛16}\n  defer: {𝑛13: 𝑛11, 𝑛14: 𝑛12}\n  cast: {𝑛19: 𝑛13, 𝑛20: 𝑛14}\n  join: {'on': 𝛿1, left: 𝑛19, right: 𝑛20, otherwise: L_fork}\n- λ: L_eq\n  dataize: {𝛿1: $.a, 𝛿2: $.b}\n  𝑛: Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ )\n- λ: L_byte\n  dataize: {𝛿1: $.data, 𝛿2: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_plus\n  dataize: {𝛿1: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+      let world = "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( left ↦ FF-:Δ, right ↦ 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, plus(i) ↦ ⟦ λ ⤍ L_plus ⟧, read(p) ↦ ⟦ at ↦ ξ.p ⟧, f1(i) ↦ ⟦ φ ↦ Φ.eq( a ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ ξ.i ), b ↦ 28-:Δ ).if( left ↦ Φ.read( p ↦ Φ.f4( i ↦ Φ.plus( i ↦ ξ.i ) ).at ), right ↦ Φ.read( p ↦ Φ.plus( i ↦ ξ.i ) ) ) ⟧, " ++ intercalate ", " [printf "f%d(i) ↦ ⟦ φ ↦ Φ.eq( a ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ ξ.i ), b ↦ %02X-:Δ ).if( left ↦ Φ.read( p ↦ ξ.i ), right ↦ Φ.f%d( i ↦ Φ.f%d( i ↦ ξ.i ).at ) ) ⟧" level (0x28 + level :: Int) level (level - 1) | level <- [2 .. 4 :: Int]] ++ ", t ↦ Φ.f4( i ↦ 00-:Δ ).at ⟧"
+          atoms = T.pack "- λ: L_fork\n  dataize: {𝛿1: $.on🌵}\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  stay: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  evaluate: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  undress: {𝑛15: 𝑛5, 𝑛16: 𝑛6}\n  symbolize: {𝑛11: 𝑛15, 𝑛12: 𝑛16}\n  defer: {𝑛13: 𝑛11, 𝑛14: 𝑛12}\n  cast: {𝑛19: 𝑛13, 𝑛20: 𝑛14}\n  join: {'on': 𝛿1, left: 𝑛19, right: 𝑛20, otherwise: L_fork}\n- λ: L_eq\n  dataize: {𝛿1: $.a, 𝛿2: $.b}\n  𝑛: Φ.bit( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ )\n- λ: L_byte\n  dataize: {𝛿1: $.data, 𝛿2: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_plus\n  dataize: {𝛿1: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       it "answers the rounds alike an earlier one from memory, within a cap of firings the work of every round runs over" $
         withLambdasOf atoms $ \file ->
           withStdin world $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.t", "--acyclic=plausible", "--max-loops=1", "--max-firings=400"] ["40-45-00-00-00-00-00-00"]
 
     describe "--acyclic=plausible over an accumulator that grows every round" $ do
-      let world = "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, state(at, groups) ↦ ⟦ φ ↦ ξ.at ⟧, more(acc) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.acc.at ), 29-:Δ ).if( ξ.acc, Φ.more( Φ.more( Φ.state( Φ.plus( ξ.acc.at ), ξ.acc.groups ) ) ) ) ⟧, e1 ↦ Φ.byte( 𝜎1:λ, Φ.more( Φ.state( 00-:Δ, 00-:Δ ) ).at ) ⟧"
-          atoms = T.pack "- λ: L_fork\n  dataize: {𝛿1: $.on🌵}\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  stay: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  evaluate: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  undress: {𝑛15: 𝑛5, 𝑛16: 𝑛6}\n  symbolize: {𝑛11: 𝑛15, 𝑛12: 𝑛16}\n  defer: {𝑛13: 𝑛11, 𝑛14: 𝑛12}\n  cast: {𝑛19: 𝑛13, 𝑛20: 𝑛14}\n  join: {'on': 𝛿1, left: 𝑛19, right: 𝑛20, otherwise: L_fork}\n- λ: L_eq\n  dataize: {𝛿1: $.a, 𝛿2: $.b}\n  𝑛: Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ )\n- λ: L_byte\n  dataize: {𝛿1: $.data, 𝛿2: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_plus\n  dataize: {𝛿1: $.x}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
+      let world = "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( left ↦ FF-:Δ, right ↦ 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, plus(x) ↦ ⟦ λ ⤍ L_plus ⟧, state(at, groups) ↦ ⟦ φ ↦ ξ.at ⟧, more(acc) ↦ ⟦ φ ↦ Φ.eq( a ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ ξ.acc.at ), b ↦ 29-:Δ ).if( left ↦ ξ.acc, right ↦ Φ.more( acc ↦ Φ.more( acc ↦ Φ.state( at ↦ Φ.plus( x ↦ ξ.acc.at ), groups ↦ ξ.acc.groups ) ) ) ) ⟧, e1 ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ Φ.more( acc ↦ Φ.state( at ↦ 00-:Δ, groups ↦ 00-:Δ ) ).at ) ⟧"
+          atoms = T.pack "- λ: L_fork\n  dataize: {𝛿1: $.on🌵}\n  morph: {𝑛1: $.left🌵, 𝑛2: $.right🌵}\n  stay: {𝑛3: 𝑛1, 𝑛4: 𝑛2}\n  evaluate: {𝑛5: 𝑛3, 𝑛6: 𝑛4}\n  undress: {𝑛15: 𝑛5, 𝑛16: 𝑛6}\n  symbolize: {𝑛11: 𝑛15, 𝑛12: 𝑛16}\n  defer: {𝑛13: 𝑛11, 𝑛14: 𝑛12}\n  cast: {𝑛19: 𝑛13, 𝑛20: 𝑛14}\n  join: {'on': 𝛿1, left: 𝑛19, right: 𝑛20, otherwise: L_fork}\n- λ: L_eq\n  dataize: {𝛿1: $.a, 𝛿2: $.b}\n  𝑛: Φ.bit( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ )\n- λ: L_byte\n  dataize: {𝛿1: $.data, 𝛿2: $.i}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_plus\n  dataize: {𝛿1: $.x}\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       it "shares the accumulator by a name, so no line of the minutes grows with the rounds" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -1879,7 +1868,7 @@ spec = do
 
       it "gives an argument read off a copy one name, so a chain of recursions stays within a cap of firings" $
         withLambdasOf atoms $ \file ->
-          withStdin "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, num(v) ↦ ⟦ φ ↦ ξ.v, next ↦ Φ.num( ξ.v ) ⟧, r1(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 0A-:Δ ).if( ξ.i, Φ.r1( ξ.i.next ) ) ⟧, r2(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 22-:Δ ).if( Φ.r2( Φ.r1( ξ.i.next ) ), ξ.i ) ⟧, r3(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 23-:Δ ).if( Φ.r3( Φ.r2( ξ.i.next ) ), ξ.i ) ⟧, r4(i) ↦ ⟦ φ ↦ Φ.eq( Φ.byte( 𝜎1:λ, ξ.i ), 24-:Δ ).if( Φ.r4( Φ.r3( ξ.i.next ) ), ξ.i ) ⟧, e1 ↦ Φ.byte( 𝜎1:λ, Φ.r4( Φ.num( 00-:Δ ) ) ) ⟧" $
+          withStdin "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( left ↦ FF-:Δ, right ↦ 00-:Δ ) ⟧, eq(a, b) ↦ ⟦ λ ⤍ L_eq ⟧, byte(data, i) ↦ ⟦ λ ⤍ L_byte ⟧, num(v) ↦ ⟦ φ ↦ ξ.v, next ↦ Φ.num( v ↦ ξ.v ) ⟧, r1(i) ↦ ⟦ φ ↦ Φ.eq( a ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ ξ.i ), b ↦ 0A-:Δ ).if( left ↦ ξ.i, right ↦ Φ.r1( i ↦ ξ.i.next ) ) ⟧, r2(i) ↦ ⟦ φ ↦ Φ.eq( a ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ ξ.i ), b ↦ 22-:Δ ).if( left ↦ Φ.r2( i ↦ Φ.r1( i ↦ ξ.i.next ) ), right ↦ ξ.i ) ⟧, r3(i) ↦ ⟦ φ ↦ Φ.eq( a ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ ξ.i ), b ↦ 23-:Δ ).if( left ↦ Φ.r3( i ↦ Φ.r2( i ↦ ξ.i.next ) ), right ↦ ξ.i ) ⟧, r4(i) ↦ ⟦ φ ↦ Φ.eq( a ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ ξ.i ), b ↦ 24-:Δ ).if( left ↦ Φ.r4( i ↦ Φ.r3( i ↦ ξ.i.next ) ), right ↦ ξ.i ) ⟧, e1 ↦ Φ.byte( data ↦ 𝜎1:λ, i ↦ Φ.r4( i ↦ Φ.num( v ↦ 00-:Δ ) ) ) ⟧" $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.e1", "--acyclic=plausible", "--max-loops=1", "--max-firings=600"] ["40-45-00-00-00-00-00-00"]
 
     describe "--acyclic at a recursive call" $ do
@@ -1937,7 +1926,7 @@ spec = do
         recorded "2" "protocolXXXXXX.txt" >>= (`shouldContain` ["          passed 𝑛·6·4 ≔ Φ.down( i ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ Φ.wrap( v ↦ 01-:Δ ) ) ) )  # plausible, repeats 𝑛·0·4"])
 
     describe "--acyclic at an object an atom only hands back" $ do
-      let world = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, down ↦ ⟦ φ ↦ Φ.call( Φ.down ).at, at ↦ 2A-:Δ ⟧, t ↦ Φ.down ⟧"
+      let world = "⟦ call(a) ↦ ⟦ λ ⤍ L_call ⟧, down ↦ ⟦ φ ↦ Φ.call( a ↦ Φ.down ).at, at ↦ 2A-:Δ ⟧, t ↦ Φ.down ⟧"
           calling = T.pack "- λ: L_call\n  morph:\n    𝑛1: $.a\n  𝑛: 𝑛1\n"
           recorded :: String -> IO [String]
           recorded name =
@@ -1962,7 +1951,7 @@ spec = do
         recorded "protocolXXXXXX.xml" >>= (`shouldContain` ["        <passed meta=\"𝑛·1·2\" by=\"morph\" match=\"plausible\" at=\"ξ.a\" of=\"𝑛·1·1\" object=\"Φ.down\"/>"])
 
     describe "--acyclic at a copy holding a λ" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, x ↦ Φ.dataized( Φ.fork( Φ.dataized( Φ.x ), ⟦ λ ⤍ 𝜎3 ⟧ ) ) ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, x ↦ Φ.dataized( target ↦ Φ.fork( left ↦ Φ.dataized( target ↦ Φ.x ), right ↦ ⟦ λ ⤍ 𝜎3 ⟧ ) ) ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
           recorded :: String -> IO [String]
           recorded name =
@@ -1983,7 +1972,7 @@ spec = do
         recorded "protocolXXXXXX.txt" >>= (`shouldContain` ["                      looped 𝜎8 ≔ Φ.dataized( target ↦ 𝜎7:λ )  # plausible, repeats 𝑛·7·2"])
 
     describe "--acyclic at a copy holding a λ that evaluate fires" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ ⟦ φ ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.x ) ) ) ⟧ ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ ⟦ φ ↦ Φ.fork( left ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), right ↦ Φ.num( φ ↦ Φ.dataized( target ↦ Φ.x ) ) ) ⟧ ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       it "answers the copy holding a λ that evaluate cuts with a fresh symbol and goes on" $
         withLambdasOf forking $ \file ->
@@ -1991,7 +1980,7 @@ spec = do
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
     describe "--acyclic at a copy whose call ends with an attribute" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ), Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.x.φ ) ) ) ) ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, x ↦ Φ.fork( left ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ), right ↦ Φ.fork( left ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), right ↦ Φ.num( φ ↦ Φ.dataized( target ↦ Φ.x.φ ) ) ) ) ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
           recorded :: String -> IO [String]
           recorded name =
@@ -2010,7 +1999,7 @@ spec = do
         recorded "protocolXXXXXX.xml" >>= (`shouldSatisfy` any (isInfixOf "object=\"Φ.fork\" dispatch=\"right🌵.φ\"><with><meta attr=\"left\">𝑛·7·5</meta><meta attr=\"right\">𝑛·8·2</meta></with></looped>"))
 
     describe "--acyclic at a copy whose argument repeats the same loop" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, times(b) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ) ) ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, times(b) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( b ↦ Φ.dataized( target ↦ Φ.x ) ) ⟧"
           atoms = T.pack "- λ: L_times\n  dataize:\n    𝛿1: $.b\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
       it "ends the run with an answer once it cuts the loop" $
         withLambdasOf atoms $ \file ->
@@ -2033,7 +2022,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withLambdasOf (T.pack "- λ: L_times\n  terminators: [L_throw]\n  dataize:\n    𝛿1: $.b\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n- λ: L_dataized\n  terminators: [L_throw]\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n") $ \file ->
-            withStdin "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, throw(message) ↦ ⟦ λ ⤍ L_throw ⟧, times(b, c) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( Φ.dataized( Φ.x ), Φ.throw( 𝜎1:λ ) ) ⟧" $
+            withStdin "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, throw(message) ↦ ⟦ λ ⤍ L_throw ⟧, times(b, c) ↦ ⟦ λ ⤍ L_times ⟧, x ↦ Φ.times( b ↦ Φ.dataized( target ↦ Φ.x ), c ↦ Φ.throw( message ↦ 𝜎1:λ ) ) ⟧" $
               testCLISucceeded
                 ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2", "--max-seconds=30", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
                 []
@@ -2041,7 +2030,7 @@ spec = do
           filter (isInfixOf "looped 𝜎3") (lines records) `shouldBe` ["                          looped 𝜎3 ≔ Φ.times( b ↦ 𝜎2:λ, c ↦ 𝑛·6·12 )  # plausible, repeats 𝑛·6·5"]
 
     describe "--acyclic at a fork the memo fabricated" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.p, Φ.q ) ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( left ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), right ↦ Φ.num( φ ↦ Φ.dataized( target ↦ Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.bool( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎1 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( left ↦ Φ.p, right ↦ Φ.q ) ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
           recorded :: IO [String]
           recorded =
@@ -2063,11 +2052,11 @@ spec = do
 
       it "answers the fork it cuts inside a formation fabricated from a fork of the world with a fresh symbol and goes on" $
         withLambdasOf forking $ \file ->
-          withStdin "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.fork( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.fork( Φ.p, Φ.q ) ⟧" $
+          withStdin "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, fork(left, right) ↦ ⟦ λ ⤍ L_fork, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.fork( left ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), right ↦ Φ.num( φ ↦ Φ.dataized( target ↦ Φ.p ) ) ) ⟧, q ↦ ⟦ φ ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ) ⟧, x ↦ Φ.fork( left ↦ Φ.p, right ↦ Φ.q ) ⟧" $
             testCLISucceeded ["dataize", "--symbolic=" ++ file, "--locator=Q.x", "--acyclic=plausible", "--max-loops=2"] ["40-45-00-00-00-00-00-00"]
 
     describe "--acyclic at a fork written in place" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ⟧, x ↦ Φ.p ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( left ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), right ↦ Φ.num( φ ↦ Φ.dataized( target ↦ Φ.p ) ) ) ⟧, x ↦ Φ.p ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
           recorded :: IO [String]
           recorded =
@@ -2091,7 +2080,7 @@ spec = do
         recorded >>= (`shouldNotSatisfy` any (isInfixOf "stuck L_dataized"))
 
     describe "--acyclic at a fork nested in a side of another fork" $ do
-      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.num( ⟦ λ ⤍ 𝜎5 ⟧ ), Φ.bool( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎6 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( Φ.num( ⟦ λ ⤍ 𝜎3 ⟧ ), Φ.num( Φ.dataized( Φ.p ) ) ) ) ⟧, x ↦ Φ.p ⟧"
+      let recursive = "⟦ dataized(target) ↦ ⟦ λ ⤍ L_dataized ⟧, bool(fork) ↦ ⟦ if ↦ ξ.fork ⟧, num(φ) ↦ ⟦⟧, p ↦ ⟦ φ ↦ Φ.bool( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎4 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( left ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎5 ⟧ ), right ↦ Φ.bool( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ ⟦ λ ⤍ 𝜎6 ⟧, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ).if( left ↦ Φ.num( φ ↦ ⟦ λ ⤍ 𝜎3 ⟧ ), right ↦ Φ.num( φ ↦ Φ.dataized( target ↦ Φ.p ) ) ) ) ⟧, x ↦ Φ.p ⟧"
           forking = T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  join:\n    on: 𝛿1\n    left: 𝑛3\n    right: 𝑛4\n    otherwise: L_fork\n- λ: L_dataized\n  dataize:\n    𝛿1: $.target\n  𝑛: ⟦ λ ⤍ 𝜎 ⟧\n"
           recorded :: IO [String]
           recorded =
@@ -2126,7 +2115,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withLambdasOf (T.pack "- λ: L_fork\n  dataize:\n    𝛿1: $.on🌵\n  morph:\n    𝑛1: $.left🌵\n    𝑛2: $.right🌵\n  stay:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  evaluate:\n    𝑛5: 𝑛3\n    𝑛6: 𝑛4\n  undress:\n    𝑛15: 𝑛5\n    𝑛16: 𝑛6\n  symbolize:\n    𝑛11: 𝑛15\n    𝑛12: 𝑛16\n  defer:\n    𝑛13: 𝑛11\n    𝑛14: 𝑛12\n  cast:\n    𝑛19: 𝑛13\n    𝑛20: 𝑛14\n  join:\n    on: 𝛿1\n    left: 𝑛19\n    right: 𝑛20\n    otherwise: L_fork\n") $ \file ->
-            withStdin "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( FF-:Δ, 00-:Δ ) ⟧, no ↦ Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ 00-:Δ, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ), maybe ↦ Φ.bit( ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ), next(x) ↦ ⟦ φ ↦ ξ.x ⟧, down(i) ↦ ⟦ φ ↦ Φ.maybe.if( Φ.no, Φ.down( Φ.next( ξ.i ) ) ) ⟧, l🌵 ↦ ⟦ e1 ↦ Φ.down( i ↦ 𝜎3:λ ).if( FF-:Δ, 00-:Δ ) ⟧ ⟧" $
+            withStdin "⟦ bit(fork) ↦ ⟦ if ↦ ξ.fork, φ ↦ ξ.fork( left ↦ FF-:Δ, right ↦ 00-:Δ ) ⟧, no ↦ Φ.bit( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ 00-:Δ, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ), maybe ↦ Φ.bit( fork ↦ ⟦ λ ⤍ L_fork, left ↦ ∅, right ↦ ∅, on🌵 ↦ 𝜎1:λ, left🌵 ↦ ξ.left, right🌵 ↦ ξ.right ⟧ ), next(x) ↦ ⟦ φ ↦ ξ.x ⟧, down(i) ↦ ⟦ φ ↦ Φ.maybe.if( left ↦ Φ.no, right ↦ Φ.down( i ↦ Φ.next( x ↦ ξ.i ) ) ) ⟧, l🌵 ↦ ⟦ e1 ↦ Φ.down( i ↦ 𝜎3:λ ).if( left ↦ FF-:Δ, right ↦ 00-:Δ ) ⟧ ⟧" $
               testCLISucceeded
                 ["dataize", "--symbolic=" ++ file, "--locator=Q.l🌵.e1", "--acyclic=plausible", "--max-loops=2", "--partial", "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho", "--max-steps=1000", "--max-seconds=10"]
                 []
@@ -2172,13 +2161,13 @@ spec = do
           ["01-:Δ\n01-"]
 
     it "focuses a compressed sequence whose meet replaces a step root" $
-      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
+      withStdin "[[ @ -> [[ @ -> $.c.plus( x -> 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--hide=Q.bytes", "--hide=Q.number", "--locator=Q.@", "--focus=Q.@", "--meet-length=5", "--meet-popularity=1"]
-          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( |32.0| ), |c| -> |25.0| ]] } \\phiDataize[\\nameref{r:box}]"]
+          ["\\phinoMeet{dataization:1}{ [[ @ -> |c| . |plus| ( |x| -> |32.0| ), |c| -> |25.0| ]] } \\phiDataize[\\nameref{r:box}]"]
 
     it "compresses a canonized whole-expression sequence into a meet" $
-      withStdin "[[ @ -> [[ @ -> $.c.plus( 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
+      withStdin "[[ @ -> [[ @ -> $.c.plus( x -> 32.0 ), c -> 25.0 ]], bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus -> [[ ^ -> ?, x -> ?, L> L_number_plus ]] ]] ]]" $
         testCLISucceeded
           ["dataize", symbolic, "--output=latex", "--sweet", "--nonumber", "--compress", "--canonize", "--meet-prefix=dataization", "--sequence", "--flat", "--quiet", "--meet-length=5", "--meet-popularity=1"]
           ["\\phinoMeet{dataization:1}"]
@@ -2277,10 +2266,10 @@ spec = do
           testCLIFailed ["morph", "--locator=Q.t", "--protocol=daten.xml", "--abridged-data"] ["The option --abridged-data requires --abridged"]
 
     describe "--protocol" $ do
-      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
-          chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
-          nested = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6.plus(7)) ]]"
-          mixed = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]], times(^, x) -> [[ L> L_number_times ]] ]], @ -> 5.plus(6).times(7) ]]"
+      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6) ]]"
+          chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6).plus(x -> 7) ]]"
+          nested = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6.plus(x -> 7)) ]]"
+          mixed = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]], times(^, x) -> [[ L> L_number_times ]] ]], @ -> 5.plus(x -> 6).times(x -> 7) ]]"
       it "opens the protocol with the run it is the protocol of" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
@@ -2414,7 +2403,7 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  boxed 𝑛·0·1 ≔ Φ.φ"
-                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0 )  # Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( x ↦ 6.0 )  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
                        , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
                        , "    𝑛·0·4 ≔ 5.0"
@@ -2512,7 +2501,7 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  boxed 𝑛·0·1 ≔ Φ.φ"
-                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0 ).plus( 7.0 )  # Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( x ↦ 6.0 ).plus( x ↦ 7.0 )  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
                        , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
                        , "    𝑛·0·4 ≔ 5.0"
@@ -2609,7 +2598,7 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  boxed 𝑛·0·1 ≔ Φ.φ"
-                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0 ).times( 7.0 )  # Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( x ↦ 6.0 ).times( x ↦ 7.0 )  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
                        , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ, times(x) ↦ L_number_times:λ ⟧  # Φ.number"
                        , "    𝑛·0·4 ≔ 5.0"
@@ -2706,13 +2695,13 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  boxed 𝑛·0·1 ≔ Φ.φ"
-                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0.plus( 7.0 ) )  # Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( x ↦ 6.0.plus( x ↦ 7.0 ) )  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
                        , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"
                        , "    𝑛·0·4 ≔ 5.0"
                        , "    𝑛·0·5 ≔ ⟦ φ ↦ Φ.bytes( φ ↦ 40-14-00-00-00-00-00-00:Δ ), plus(x) ↦ L_number_plus:λ ⟧"
                        , "    normalized 𝑛·0·6 ≔ ⟦ x ↦ ∅, λ ⤍ L_number_plus ⟧  # 𝑛·0·5.plus"
-                       , "    shared 𝑛·1 ≔ 6.0.plus( 7.0 )"
+                       , "    shared 𝑛·1 ≔ 6.0.plus( x ↦ 7.0 )"
                        , "    𝑛·0·7 ≔ 𝑛·0·4.plus( x ↦ 𝑛·1 )"
                        , "    𝑛·0·8 ≔ ⟦ x ↦ 𝑛·1, λ ⤍ L_number_plus ⟧"
                        , "    morphed 𝑛·0·9 ≔ 𝑛·0·8"
@@ -2819,7 +2808,7 @@ spec = do
           it ("writes the reached --max-cycles to the protocol " ++ template) $
             withTempFile template $ \(path, stream) -> do
               hClose stream
-              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
+              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( tup ↦ ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( tup ↦ ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( p ↦ 𝜎1:λ ) ⟧" $
                 testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-cycles=7", "--partial", "--locator=Q.x", recording path, "--quiet", "--sweet", "--hide-rho"] []
               records <- readProtocol path
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
@@ -2830,7 +2819,7 @@ spec = do
           it ("writes the reached --max-nodes to the protocol " ++ template) $
             withTempFile template $ \(path, stream) -> do
               hClose stream
-              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
+              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( tup ↦ ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( tup ↦ ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( p ↦ 𝜎1:λ ) ⟧" $
                 testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", recording path, "--quiet", "--sweet", "--hide-rho"] []
               records <- readProtocol path
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
@@ -2841,7 +2830,7 @@ spec = do
           it ("writes the reached --max-memory to the protocol " ++ template) $
             withTempFile template $ \(path, stream) -> do
               hClose stream
-              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧" $
+              withStdin "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( tup ↦ ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( tup ↦ ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( p ↦ 𝜎1:λ ) ⟧" $
                 testCLISucceeded ["dataize", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", recording path, "--quiet", "--sweet", "--hide-rho"] []
               records <- readProtocol path
               any (isPrefixOf record . dropWhile (== ' ')) (lines records) `shouldBe` True
@@ -2862,7 +2851,7 @@ spec = do
       it "keeps the lines of a run that fails" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
-          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 5.plus(6).nope ]]" $
+          withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 5.plus(x -> 6).nope ]]" $
             testCLIFailed
               ["dataize", symbolic, "--minutes=" ++ path, "--quiet", "--sweet", "--hide-rho"]
               ["No entry of --symbolic answers the λ function 'L_number_nope'"]
@@ -2870,7 +2859,7 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  boxed 𝑛·0·1 ≔ Φ.φ"
-                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( 6.0 ).nope  # Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 5.0.plus( x ↦ 6.0 ).nope  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
                        , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ, nope ↦ L_number_nope:λ ⟧  # Φ.number"
                        , "    𝑛·0·4 ≔ 5.0"
@@ -2966,7 +2955,7 @@ spec = do
                          , "  <applied meta=\"𝑒·0·2\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></applied>"
                          , "  <applied meta=\"𝑒·0·3\" of=\"Φ.bytes\"><datum attr=\"φ\">40-18-00-00-00-00-00-00</datum></applied>"
                          , "  <applied meta=\"𝑒·0·4\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·3</meta></applied>"
-                         , "  <applied meta=\"𝑒·0·5\" of=\"𝑒·0·2.plus\"><meta attr=\"α0\">𝑒·0·4</meta><ref attr=\"ρ\">Φ</ref></applied>"
+                         , "  <applied meta=\"𝑒·0·5\" of=\"𝑒·0·2.plus\"><meta attr=\"x\">𝑒·0·4</meta><ref attr=\"ρ\">Φ</ref></applied>"
                          , "  <normalized meta=\"𝑛·0·2\" of=\"Φ.φ\">𝑒·0·5</normalized>"
                          , "  <morph at=\"𝑛·0·1\">"
                          , "    <normalized meta=\"𝑛·0·3\" of=\"Φ.number\">Φ.number</normalized>"
@@ -3118,10 +3107,10 @@ spec = do
                          , "  <applied meta=\"𝑒·0·2\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></applied>"
                          , "  <applied meta=\"𝑒·0·3\" of=\"Φ.bytes\"><datum attr=\"φ\">40-18-00-00-00-00-00-00</datum></applied>"
                          , "  <applied meta=\"𝑒·0·4\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·3</meta></applied>"
-                         , "  <applied meta=\"𝑒·0·5\" of=\"𝑒·0·2.plus\"><meta attr=\"α0\">𝑒·0·4</meta></applied>"
+                         , "  <applied meta=\"𝑒·0·5\" of=\"𝑒·0·2.plus\"><meta attr=\"x\">𝑒·0·4</meta></applied>"
                          , "  <applied meta=\"𝑒·0·6\" of=\"Φ.bytes\"><datum attr=\"φ\">40-1C-00-00-00-00-00-00</datum></applied>"
                          , "  <applied meta=\"𝑒·0·7\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·6</meta></applied>"
-                         , "  <applied meta=\"𝑒·0·8\" of=\"𝑒·0·5.plus\"><meta attr=\"α0\">𝑒·0·7</meta><ref attr=\"ρ\">Φ</ref></applied>"
+                         , "  <applied meta=\"𝑒·0·8\" of=\"𝑒·0·5.plus\"><meta attr=\"x\">𝑒·0·7</meta><ref attr=\"ρ\">Φ</ref></applied>"
                          , "  <normalized meta=\"𝑛·0·2\" of=\"Φ.φ\">𝑒·0·8</normalized>"
                          , "  <morph at=\"𝑛·0·1\">"
                          , "    <normalized meta=\"𝑛·0·3\" of=\"Φ.number\">Φ.number</normalized>"
@@ -3372,15 +3361,15 @@ spec = do
                          , "  <applied meta=\"𝑒·0·4\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·3</meta></applied>"
                          , "  <applied meta=\"𝑒·0·5\" of=\"Φ.bytes\"><datum attr=\"φ\">40-1C-00-00-00-00-00-00</datum></applied>"
                          , "  <applied meta=\"𝑒·0·6\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·5</meta></applied>"
-                         , "  <applied meta=\"𝑒·0·7\" of=\"𝑒·0·4.plus\"><meta attr=\"α0\">𝑒·0·6</meta></applied>"
-                         , "  <applied meta=\"𝑒·0·8\" of=\"𝑒·0·2.plus\"><meta attr=\"α0\">𝑒·0·7</meta><ref attr=\"ρ\">Φ</ref></applied>"
+                         , "  <applied meta=\"𝑒·0·7\" of=\"𝑒·0·4.plus\"><meta attr=\"x\">𝑒·0·6</meta></applied>"
+                         , "  <applied meta=\"𝑒·0·8\" of=\"𝑒·0·2.plus\"><meta attr=\"x\">𝑒·0·7</meta><ref attr=\"ρ\">Φ</ref></applied>"
                          , "  <normalized meta=\"𝑛·0·2\" of=\"Φ.φ\">𝑒·0·8</normalized>"
                          , "  <morph at=\"𝑛·0·1\">"
                          , "    <normalized meta=\"𝑛·0·3\" of=\"Φ.number\">Φ.number</normalized>"
                          , "    <applied meta=\"𝑛·0·4\" by=\"morph\" at=\"𝑛·0·1\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></applied>"
                          , "    <formed meta=\"𝑛·0·5\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></formed>"
                          , "    <normalized meta=\"𝑛·0·6\" of=\"𝑛·0·5.plus\">𝑛·0·4.plus</normalized>"
-                         , "    <applied meta=\"𝑒·0·9\" of=\"𝑒·0·4.plus\"><meta attr=\"α0\">𝑒·0·6</meta></applied>"
+                         , "    <applied meta=\"𝑒·0·9\" of=\"𝑒·0·4.plus\"><meta attr=\"x\">𝑒·0·6</meta></applied>"
                          , "    <shared meta=\"𝑛·1\">𝑒·0·9</shared>"
                          , "    <applied meta=\"𝑛·0·7\" by=\"morph\" at=\"𝑛·0·1\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑛·1</meta></applied>"
                          , "    <formed meta=\"𝑛·0·8\" of=\"𝑛·0·4.plus\"><meta attr=\"x\">𝑛·1</meta></formed>"
@@ -3491,7 +3480,7 @@ spec = do
         it "records a λ function no entry answers as a childless element" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(x -> 3).nope ]]" $
               testCLISucceeded ["dataize", symbolic, "--partial", "--protocol=" ++ path, "--quiet", "--sweet", "--hide-rho"] []
             records <- readProtocol path
             lines records
@@ -3502,7 +3491,7 @@ spec = do
                          , "  <applied meta=\"𝑒·0·2\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></applied>"
                          , "  <applied meta=\"𝑒·0·3\" of=\"Φ.bytes\"><datum attr=\"φ\">40-08-00-00-00-00-00-00</datum></applied>"
                          , "  <applied meta=\"𝑒·0·4\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·3</meta></applied>"
-                         , "  <applied meta=\"𝑒·0·5\" of=\"𝑒·0·2.times\"><meta attr=\"α0\">𝑒·0·4</meta></applied>"
+                         , "  <applied meta=\"𝑒·0·5\" of=\"𝑒·0·2.times\"><meta attr=\"x\">𝑒·0·4</meta></applied>"
                          , "  <applied meta=\"𝑒·0·6\" of=\"𝑒·0·5.nope\"><ref attr=\"ρ\">Φ</ref></applied>"
                          , "  <normalized meta=\"𝑛·0·2\" of=\"Φ.φ\">𝑒·0·6</normalized>"
                          , "  <morph at=\"𝑛·0·1\">"
@@ -3587,7 +3576,7 @@ spec = do
         it "closes the document even when the run fails" $
           withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
             hClose stream
-            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]" $
+            withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(x -> 3).nope ]]" $
               testCLIFailed ["dataize", symbolic, "--protocol=" ++ path] ["No entry of --symbolic answers"]
             records <- readProtocol path
             lines records
@@ -3598,7 +3587,7 @@ spec = do
                          , "  <applied meta=\"𝑒·0·2\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·1</meta></applied>"
                          , "  <applied meta=\"𝑒·0·3\" of=\"Φ.bytes\"><datum attr=\"φ\">40-08-00-00-00-00-00-00</datum></applied>"
                          , "  <applied meta=\"𝑒·0·4\" of=\"Φ.number\"><meta attr=\"φ\">𝑒·0·3</meta></applied>"
-                         , "  <applied meta=\"𝑒·0·5\" of=\"𝑒·0·2.times\"><meta attr=\"α0\">𝑒·0·4</meta></applied>"
+                         , "  <applied meta=\"𝑒·0·5\" of=\"𝑒·0·2.times\"><meta attr=\"x\">𝑒·0·4</meta></applied>"
                          , "  <applied meta=\"𝑒·0·6\" of=\"𝑒·0·5.nope\"><ref attr=\"ρ\">Φ</ref></applied>"
                          , "  <normalized meta=\"𝑛·0·2\" of=\"Φ.φ\">𝑒·0·6</normalized>"
                          , "  <morph at=\"𝑛·0·1\">"
@@ -3704,7 +3693,7 @@ spec = do
           records `shouldSatisfy` isPrefixOf "<?xml"
 
     describe "--minutes" $ do
-      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6) ]]"
       it "writes the indented text into a file named .xml" $
         withTempFile "minutesXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
@@ -3748,7 +3737,7 @@ spec = do
           records `shouldBe` "𝔻(Φ):\n  𝛿·0·1 ≔ 01-\n"
 
     describe "--partial" $ do
-      let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(3).nope ]]"
+      let stuck = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ times(^, x) -> [[ L> L_number_times ]], nope -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> 2.times(x -> 3).nope ]]"
           dispatched = "[[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.foo.bar ]]"
           wrapped = "[[ app -> [[ foo -> [[ bar -> [[ ^ -> ?, L> L_number_nope ]] ]], @ -> Q.app.foo.bar ]] ]]"
       it "fails on a λ function that cannot fire without the flag" $
@@ -3778,7 +3767,7 @@ spec = do
           lines records
             `shouldBe` [ "𝔻(Φ):"
                        , "  boxed 𝑛·0·1 ≔ Φ.φ"
-                       , "  normalized 𝑛·0·2 ≔ 2.0.times( 3.0 ).nope  # Φ.φ"
+                       , "  normalized 𝑛·0·2 ≔ 2.0.times( x ↦ 3.0 ).nope  # Φ.φ"
                        , "  𝕄(𝑛·0·1):"
                        , "    normalized 𝑛·0·3 ≔ ⟦ φ ↦ ∅, times(x) ↦ L_number_times:λ, nope ↦ L_number_nope:λ ⟧  # Φ.number"
                        , "    𝑛·0·4 ≔ 2.0"
@@ -3831,7 +3820,7 @@ spec = do
                        ]
 
       it "still prints bytes when nothing gets stuck" $
-        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]" $
+        withStdin "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6) ]]" $
           testCLISucceeded ["dataize", symbolic, "--partial"] ["40-45-00-00-00-00-00-00"]
 
       it "prints the residual at --locator as XMIR, with ρ hidden" $
@@ -3855,7 +3844,7 @@ spec = do
         withStdin stuck $
           testCLISucceeded
             ["dataize", symbolic, "--partial", "--sequence", "--sweet", "--hide-rho", "--flat"]
-            ["2.0.times( 3.0 ).nope", "L_number_nope:λ"]
+            ["2.0.times( x ↦ 3.0 ).nope", "L_number_nope:λ"]
 
       it "prints the terminator ⊥ the object reduces to as the residue" $
         withStdin "[[ ]]" $
@@ -3893,7 +3882,7 @@ spec = do
               ["\\begin{phiquation}", "[[ D> |02-| ]]{.}", "\\end{phiquation}"]
 
     describe "--symbolic" $ do
-      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6) ]]"
+      let sum' = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6) ]]"
       it "fires the λ function an entry of the file answers" $
         withStdin sum' $
           testCLISucceeded ["dataize", symbolic] ["40-45-00-00-00-00-00-00"]
@@ -3957,7 +3946,7 @@ spec = do
       let universe = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> [[ D> 01- ]] ]]"
       it "dataizes an expression the input does not contain" $
         withStdin universe $
-          testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )"] ["40-45-00-00-00-00-00-00"]
+          testCLISucceeded ["dataize", symbolic, "--inside=5.plus( x -> 6 )"] ["40-45-00-00-00-00-00-00"]
 
       it "normalizes what it is handed before dataizing it" $
         withStdin universe $
@@ -3969,13 +3958,13 @@ spec = do
 
       it "morphs inside the universe just as it dataizes inside it" $
         withStdin universe $
-          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
+          testCLISucceeded ["morph", symbolic, "--inside=5.plus( x ↦ 6 )", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
 
       it "opens the text protocol before the objects it made while aiming" $
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin universe $
-            testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["morph", symbolic, "--inside=5.plus( x -> 6 )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           takeWhile (/= '(') (concat (take 1 (lines records))) `shouldBe` "𝕄"
 
@@ -3983,7 +3972,7 @@ spec = do
         withTempFile "protocolXXXXXX.xml" $ \(path, stream) -> do
           hClose stream
           withStdin universe $
-            testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["dataize", symbolic, "--inside=5.plus( x -> 6 )", "--protocol=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           take 1 (lines records) `shouldBe` ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>"]
 
@@ -4016,7 +4005,7 @@ spec = do
         withTempFile "protocolXXXXXX.txt" $ \(path, stream) -> do
           hClose stream
           withStdin universe $
-            testCLISucceeded ["dataize", symbolic, "--inside=5.plus( 6 )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
+            testCLISucceeded ["dataize", symbolic, "--inside=5.plus( x -> 6 )", "--minutes=" ++ path, "--sweet", "--hide-rho", "--quiet"] []
           records <- readProtocol path
           take 3 (lines records) `shouldBe` ["𝔻(Φ.a🌵0):", "  𝕄(Φ.a🌵0):", "    normalized 𝑛·0·1 ≔ ⟦ φ ↦ ∅, plus(x) ↦ L_number_plus:λ ⟧  # Φ.number"]
 
@@ -4038,7 +4027,7 @@ spec = do
 
       it "accepts --locator=Φ with morph --inside, since Φ and Q both name the root" $
         withStdin universe $
-          testCLISucceeded ["morph", symbolic, "--inside=5.plus( 6 )", "--locator=Φ", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
+          testCLISucceeded ["morph", symbolic, "--inside=5.plus( x ↦ 6 )", "--locator=Φ", "--sweet", "--hide-rho", "--flat"] ["⟦ x ↦ 6.0, λ ⤍ L_number_plus ⟧"]
 
       it "fails when the input expression is not a formation" $
         withStdin "Q.x" $
@@ -4078,25 +4067,25 @@ spec = do
       it "with wrong --hide option" $
         withStdin "" $
           testCLIFailed
-            ["dataize", "--hide=Q.x(Q.y)"]
-            ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( Φ.y )"]
+            ["dataize", "--hide=Q.x(k -> Q.y)"]
+            ["[ERROR]: Invalid set of arguments: Only dispatch expression", "but given: Φ.x( k ↦ Φ.y )"]
 
       it "with wrong --show option" $
         withStdin "" $
           testCLIFailed
-            ["dataize", "--show=Q.x(Q.y)"]
+            ["dataize", "--show=Q.x(k -> Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --show"]
 
       it "with wrong --locator option" $
         withStdin "" $
           testCLIFailed
-            ["dataize", "--locator=Q.x(Q.y)"]
+            ["dataize", "--locator=Q.x(k -> Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
 
       it "with wrong --focus option" $
         withStdin "" $
           testCLIFailed
-            ["dataize", "--focus=Q.x(Q.y)"]
+            ["dataize", "--focus=Q.x(k -> Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --focus"]
 
       it "with wrong --locator option written through ξ, keeping ξ in the error" $
@@ -4120,7 +4109,7 @@ spec = do
           ["[ERROR]: Normalization did not finish before reaching the limit of cycles: --max-cycles=1"]
 
   describe "morph" $ do
-    let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(6).plus(7) ]]"
+    let chained = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], @ -> 5.plus(x -> 6).plus(x -> 7) ]]"
     it "prints help" $
       testCLISucceeded ["morph", "--help"] ["Morph the 𝜑-expression"]
 
@@ -4178,8 +4167,7 @@ spec = do
       withStdin chained $
         testCLISucceeded
           ["morph", symbolic, "--locator=Q.@", "--sequence", "--headers", "--sweet", "--hide-rho", "--flat"]
-          [ "Rule 'maa'"
-          , "Rule 'alpha'"
+          [ "Rule 'ma'"
           , "Rule 'copy'"
           , "Rule 'mf'"
           , "⟦ x ↦ 7.0, λ ⤍ L_number_plus ⟧"
@@ -4329,7 +4317,7 @@ spec = do
             length (filter (isInfixOf "𝔼(L_split)") (lines records)) `shouldBe` 64
 
     describe "--max-nodes" $ do
-      let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
+      let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( tup ↦ ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( tup ↦ ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( p ↦ 𝜎1:λ ) ⟧"
       it "fails with non-positive --max-nodes" $
         withStdin growing $
           testCLIFailed ["dataize", "--max-nodes=0"] ["--max-nodes must be positive"]
@@ -4344,14 +4332,14 @@ spec = do
         withStdin growing $
           testCLISucceeded
             ["morph", "--acyclic=plausible", "--max-loops=2", "--max-nodes=60", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
-            ["Φ.m( 𝜎1:λ )"]
+            ["Φ.m( p ↦ 𝜎1:λ )"]
 
       it "passes a small run in a large program under --max-nodes" $
         withStdin ("⟦ x ↦ ⟦ φ ↦ ξ.y, y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
           testCLISucceeded ["dataize", "--max-nodes=50", "--locator=Q.x"] ["05-"]
 
     describe "--max-memory" $ do
-      let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( 𝜎1:λ ) ⟧"
+      let growing = "⟦ m(p) ↦ ⟦ φ ↦ ξ.a( tup ↦ ξ.p ).φ, a(ρ, tup) ↦ ⟦ φ ↦ ρ.a( tup ↦ ξ.tup.tail ).φ ⟧ ⟧, x ↦ Φ.m( p ↦ 𝜎1:λ ) ⟧"
       it "fails with non-positive --max-memory" $
         withStdin growing $
           testCLIFailed ["dataize", "--max-memory=0G"] ["--max-memory must be positive"]
@@ -4370,7 +4358,7 @@ spec = do
         withStdin growing $
           testCLISucceeded
             ["morph", "--acyclic=plausible", "--max-loops=2", "--max-memory=1K", "--partial", "--locator=Q.x", "--flat", "--hide-rho", "--sweet"]
-            ["Φ.m( 𝜎1:λ )"]
+            ["Φ.m( p ↦ 𝜎1:λ )"]
 
       it "passes a small run in a large program under --max-memory" $
         withStdin ("⟦ x ↦ ⟦ φ ↦ ξ.y, y ↦ ⟦ Δ ⤍ 05- ⟧ ⟧, junk ↦ ⟦ " ++ intercalate ", " [printf "a%d ↦ ⟦ b ↦ ⟦ c ↦ ⟦ Δ ⤍ 01- ⟧ ⟧ ⟧" index | index <- [0 .. 999 :: Int]] ++ " ⟧ ⟧") $
@@ -4461,10 +4449,10 @@ spec = do
             X.nameLocalName (X.elementName (X.documentRoot document)) `shouldBe` T.pack "protocol"
 
     it "parks the spent budget as a residual with --partial" $
-      withStdin "⟦ φ ↦ 5.gt(Φ.nan) ⟧" $
+      withStdin "⟦ φ ↦ 5.gt(b ↦ Φ.nan) ⟧" $
         testCLISucceeded
           ["morph", "--locator=Q.@", "--max-steps=10", "--partial", "--flat", "--hide-rho", "--sweet"]
-          ["5.0.gt( Φ.nan )"]
+          ["5.0.gt( b ↦ Φ.nan )"]
 
     describe "--partial" $ do
       let stuck = "[[ @ -> [[ L> Sym_arg_0 ]].foo ]]"
@@ -4538,11 +4526,11 @@ spec = do
         records `shouldContain` ["    <formed meta=\"𝑒·1·3\"><symbol attr=\"x\">𝜎1</symbol><ref attr=\"φ\">x.next</ref></formed>", "    <deferred symbol=\"𝜎3\" by=\"morph\" at=\"𝑛2.φ\" of=\"𝑒·1·3\"/>"]
 
       it "names an argument of a deferred copy by the object its morph answered" $ do
-        records <- recordedWith (joining <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
+        records <- recordedWith (joining <> counting) [] "⟦ box(x, w) ↦ ⟦ φ ↦ x.next ⟧, num(φ) ↦ ⟦⟧, inc(x) ↦ ⟦ λ ⤍ L_inc ⟧, items ↦ ⟦ tail ↦ ⟦ λ ⤍ 𝜎1 ⟧ ⟧, y ↦ ⟦ c ↦ ⟦ λ ⤍ 𝜎2 ⟧, a ↦ ⟦ Δ ⤍ 01- ⟧, b ↦ Φ.box( x ↦ Φ.items.tail, w ↦ Φ.inc( x ↦ ⟦ Δ ⤍ 2A- ⟧ ) ), λ ⤍ L_fork ⟧ ⟧"
         filter (isInfixOf "<deferred") records `shouldBe` ["    <deferred symbol=\"𝜎4\" by=\"morph\" at=\"𝑛2.φ\" of=\"Φ.box\"><with><symbol attr=\"x\">𝜎1</symbol><meta attr=\"w\">𝑛·2·7</meta></with></deferred>"]
 
     describe "--acyclic=plausible" $ do
-      let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( 7.plus( 5.plus( 6 ) ), 7.plus( 5.plus( 6 ) ) ).φ ]]"
+      let twins = "[[ bytes ↦ ⟦ φ ↦ ∅ ⟧, number(φ) -> [[ plus(^, x) -> [[ L> L_number_plus ]] ]], pair(a, b) -> [[ L> L_pair ]], t -> Φ.pair( a -> 7.plus( x -> 5.plus( x -> 6 ) ), b -> 7.plus( x -> 5.plus( x -> 6 ) ) ).φ ]]"
           pairs = T.pack "- λ: L_number_plus\n  dataize:\n    𝛿1: $.ρ\n    𝛿2: $.x\n  𝑛: Φ.number( φ ↦ ⟦ λ ⤍ 𝜎 ⟧ )\n- λ: L_pair\n  morph:\n    𝑛1: $.a\n    𝑛2: $.b\n  evaluate:\n    𝑛3: 𝑛1\n    𝑛4: 𝑛2\n  𝑛: ⟦ φ ↦ ⟦ a ↦ 𝑛3, b ↦ 𝑛4 ⟧ ⟧\n"
           recorded :: String -> IO [String]
           recorded mode =
@@ -4653,7 +4641,7 @@ spec = do
       it "with wrong --locator option" $
         withStdin "" $
           testCLIFailed
-            ["morph", "--locator=Q.x(Q.y)"]
+            ["morph", "--locator=Q.x(k -> Q.y)"]
             ["[ERROR]:", "Only dispatch expression started with Φ (or Q) can be used in --locator"]
 
   describe "explain" $ do
@@ -4687,8 +4675,8 @@ spec = do
 
     it "explains multiple rules" $
       testCLISucceeded
-        ["explain", "--rule=resources/normalize/copy.yaml", "--rule=resources/normalize/alpha.yaml"]
-        ["\\phinoNormalizationRule{copy}", "\\phinoNormalizationRule{alpha}"]
+        ["explain", "--rule=resources/normalize/copy.yaml", "--rule=resources/normalize/stay.yaml"]
+        ["\\phinoNormalizationRule{copy}", "\\phinoNormalizationRule{stay}"]
 
     it "reproduces the same shuffle order for the same --seed" $ do
       let args =
@@ -4710,7 +4698,7 @@ spec = do
     it "accepts --seed flag" $
       testCLISucceeded
         ["explain", "--seed=7", "--normalize"]
-        ["\\phinoNormalizationRule{alpha}"]
+        ["\\phinoNormalizationRule{copy}"]
 
     forM_
       [ ("normalization", "--normalize", "normalize")
@@ -4758,7 +4746,7 @@ spec = do
             testCLISucceeded ["explain", "--normalize", printf "--target=%s" path] []
             content <- readFile path
             _ <- evaluate (length content)
-            content `shouldContain` "\\phinoNormalizationRule{alpha}"
+            content `shouldContain` "\\phinoNormalizationRule{copy}"
         )
 
   describe "merge" $ do

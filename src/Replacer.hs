@@ -33,9 +33,6 @@ replaceArgument :: ReplaceState Argument -> ReplaceExpressionFunc' -> ReplaceSta
 replaceArgument (ArTau attr expr, ptns, repls) func =
   let (expr', ptns', repls') = func (expr, ptns, repls)
    in (ArTau attr expr', ptns', repls')
-replaceArgument (ArAlpha alpha expr, ptns, repls) func =
-  let (expr', ptns', repls') = func (expr, ptns, repls)
-   in (ArAlpha alpha expr', ptns', repls')
 
 replaceExpression' :: ReplaceExpressionFunc'
 replaceExpression' state@(expr, ptns@(ptn : _ptns), repls@(repl : _repls))
@@ -105,7 +102,6 @@ swallowed replaced = go []
     children (ExFormation bds) = [inner | BiTau _ inner <- bds]
     children (ExDispatch inner _) = [inner]
     children (ExApplication inner (ArTau _ arg)) = [inner, arg]
-    children (ExApplication inner (ArAlpha _ arg)) = [inner, arg]
     children (ExPhiMeet _ _ inner) = [inner]
     children (ExPhiAgain _ _ inner) = [inner]
     children _ = []

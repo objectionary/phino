@@ -43,21 +43,12 @@ instance ToSingleLine BINDINGS where
 
 instance ToSingleLine PAIR where
   toSingleLine PA_TAU{..} = PA_TAU attr arrow (toSingleLine expr)
-  toSingleLine PA_ALPHA{..} = PA_ALPHA alpha arrow (toSingleLine expr)
   toSingleLine PA_FORMATION{..} = PA_FORMATION attr voids arrow (toSingleLine expr)
   toSingleLine pair = pair
 
 instance ToSingleLine APP_ARGUMENT where
   toSingleLine (AA_TAU tau) = AA_TAU (toSingleLine tau)
   toSingleLine (AA_TAUS taus) = AA_TAUS (toSingleLine taus)
-  toSingleLine (AA_EXPRS args) = AA_EXPRS (toSingleLine args)
-
-instance ToSingleLine APP_ARG where
-  toSingleLine APP_ARG{..} = APP_ARG (toSingleLine expr) (toSingleLine args)
-
-instance ToSingleLine APP_ARGS where
-  toSingleLine AAS_EXPR{..} = AAS_EXPR NO_EOL TAB' (toSingleLine expr) (toSingleLine args)
-  toSingleLine args = args
 
 instance ToSingleLine SET where
   toSingleLine ST_BINDING{..} = ST_BINDING (toSingleLine binding)

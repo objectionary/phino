@@ -50,8 +50,8 @@ spec = do
         )
       ,
         ( "formation with app"
-        , ExApplication (ExFormation []) (ArAlpha (Alpha 0) ExRoot)
-        , "[[]]( Q )"
+        , ExApplication (ExFormation []) (ArTau (AtLabel "kt") ExRoot)
+        , "[[]]( kt -> Q )"
         )
       , ("meta expr", ExMeta "e", "!e")
       , ("meta binding", ExFormation [BiMeta "B"], "[[ !B ]]")
@@ -309,13 +309,6 @@ spec = do
           it desc (printAttribute attr `shouldBe` expected)
       )
 
-  describe "printAlpha with default encoding" $
-    forM_
-      [ ("α42", Alpha 42, "α42")
-      , ("meta alpha", AlMeta "i", "α𝑖")
-      ]
-      (\(desc, alpha, expected) -> it desc (printAlpha alpha `shouldBe` expected))
-
   describe "printBinding renders as a one-binding formation" $
     forM_
       [ ("tau binding", BiTau (AtLabel "x") ExRoot, "Φ:x")
@@ -353,22 +346,21 @@ spec = do
   describe "printSubsts and printSubsts' render substitutions" $
     forM_
       [ ("MvAttribute", [Subst (Map.singleton (Named "t") (MvAttribute (AtLabel "x")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "t >> x")
-      , ("MvIndex", [Subst (Map.singleton (Named "i") (MvIndex 3))], (SWEET, UNICODE, MULTILINE, defaultMargin), "i >> 3")
       , ("MvExpression", [Subst (Map.singleton (Named "e") (MvExpression ExRoot))], (SWEET, UNICODE, MULTILINE, defaultMargin), "e >> Φ")
       , ("MvBytes", [Subst (Map.singleton (Named "b") (MvBytes (BtOne "1F")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "b >> 1F-")
       , ("MvBindings", [Subst (Map.singleton (Named "bnd") (MvBindings [BiVoid (AtLabel "y")]))], (SWEET, UNICODE, MULTILINE, defaultMargin), "bnd >> ∅:y")
       , ("MvFunction", [Subst (Map.singleton (Named "f") (MvFunction (Function "func")))], (SWEET, UNICODE, MULTILINE, defaultMargin), "f >> func")
       ,
         ( "keys of a multi-entry substitution are sorted and each is on its own line"
-        , [Subst (Map.fromList [(Named "a", MvIndex 1), (Named "b", MvIndex 2)])]
+        , [Subst (Map.fromList [(Named "a", MvBytes (BtOne "01")), (Named "b", MvBytes (BtOne "02"))])]
         , (SWEET, UNICODE, MULTILINE, defaultMargin)
-        , "a >> 1\nb >> 2"
+        , "a >> 01-\nb >> 02-"
         )
       ,
         ( "multiple substitutions are separated with a dashed line"
-        , [Subst (Map.singleton (Named "a") (MvIndex 1)), Subst (Map.singleton (Named "b") (MvIndex 2))]
+        , [Subst (Map.singleton (Named "a") (MvBytes (BtOne "01"))), Subst (Map.singleton (Named "b") (MvBytes (BtOne "02")))]
         , (SWEET, UNICODE, MULTILINE, defaultMargin)
-        , "a >> 1\n------\nb >> 2"
+        , "a >> 01-\n------\nb >> 02-"
         )
       , ("an empty substitution list renders the dashed placeholder", [], (SWEET, UNICODE, SINGLELINE, defaultMargin), "------")
       ,
@@ -422,8 +414,8 @@ spec = do
       , "⟦ x ↦ ⟦ φ ↦ ξ.a ⟧(y ↦ ⟦ Δ ⤍ 01- ⟧) ⟧"
       , "⟦ x(a) ↦ ⟦ φ ↦ a ⟧ ⟧"
       , "⟦ x ↦ ⟦⟧ ⟧"
-      , "⟦ x ↦ Φ.number(Φ.bytes(⟦ Δ ⤍ 7F-F8-00-00-00-00-00-01 ⟧)) ⟧"
-      , "⟦ x ↦ Φ.y(⟦ φ ↦ ξ.z ⟧, ⟦ λ ⤍ Fn ⟧) ⟧"
+      , "⟦ x ↦ Φ.number(φ ↦ Φ.bytes(φ ↦ ⟦ Δ ⤍ 7F-F8-00-00-00-00-00-01 ⟧)) ⟧"
+      , "⟦ x ↦ Φ.y(a ↦ ⟦ φ ↦ ξ.z ⟧, b ↦ ⟦ λ ⤍ Fn ⟧) ⟧"
       , "⟦ x ↦ ⟦ λ ⤍ Fn, ρ ↦ ⟦ φ ↦ ξ ⟧ ⟧, y ↦ ∅ ⟧"
       , "⟦ x ↦ ⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧ ⟧"
       , "⟦ x ↦ ⟦ a ↦ ∅, 𝜏1 ↦ ∅ ⟧ ⟧"
@@ -469,7 +461,7 @@ spec = do
       , ("⟦ x ↦ ⟦ a ↦ ∅, 𝜏1 ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ x(a) ↦ ∅:𝜏1 ⟧")
       , ("⟦ x ↦ ⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧ ⟧", SWEET, UNICODE, "⟦ 𝜏1 ↦ ∅, a ↦ ∅ ⟧:x")
       , ("Φ.bool(v ↦ ⟦ x ↦ ∅, λ ⤍ L_fork ⟧)", SWEET, UNICODE, "Φ.bool( v ↦ ⟦ x ↦ ∅, λ ⤍ L_fork ⟧ )")
-      , ("Φ.bool(α0 ↦ ⟦ x ↦ ∅, y ↦ ξ ⟧)", SWEET, UNICODE, "Φ.bool( ⟦ x ↦ ∅, y ↦ ξ ⟧ )")
+      , ("Φ.bool(v ↦ ⟦ x ↦ ∅, y ↦ ξ ⟧)", SWEET, UNICODE, "Φ.bool( v ↦ ⟦ x ↦ ∅, y ↦ ξ ⟧ )")
       , ("⟦ x ↦ ξ.a ⟧", SALTY, UNICODE, "⟦ x ↦ ξ.a ⟧")
       , ("⟦ Δ ⤍ FF-AA ⟧", SALTY, ASCII, "[[ D> FF-AA ]]")
       ]

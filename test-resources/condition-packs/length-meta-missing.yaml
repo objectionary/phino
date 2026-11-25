@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
 # SPDX-License-Identifier: MIT
 ---
-expression: '[[ x -> Q.y, w -> $ ]](~0 -> Q)'
-pattern: '[[ !B1 ]](α𝑖1 ↦ Q)'
+expression: '[[ x -> Q.y, w -> $ ]](x -> Q)'
+pattern: '[[ !B1 ]](!t1 -> Q)'
 condition:
   not:
     eq:

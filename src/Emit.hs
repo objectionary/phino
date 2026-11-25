@@ -405,14 +405,6 @@ matching (ExApplication expr (ArTau attr arg)) var = do
   expression <- matching expr head'
   argument <- matching arg arg'
   pure (Gen (PCon "ExApplication" [PVar head', PCon "ArTau" [PVar attr', PVar arg']]) (single var) : attribute' ++ expression ++ argument)
-matching (ExApplication expr (ArAlpha alpha arg)) var = do
-  head' <- fresh
-  alpha' <- fresh
-  arg' <- fresh
-  expression <- matching expr head'
-  index <- indexed alpha alpha'
-  argument <- matching arg arg'
-  pure (Gen (PCon "ExApplication" [PVar head', PCon "ArAlpha" [PVar alpha', PVar arg']]) (single var) : expression ++ index ++ argument)
 matching expr _ = refuse (printf "its pattern holds the term '%s', which only a rule of YAML can match" (show expr))
 
 bindings :: [Binding] -> String -> Emitting [Qual]
@@ -474,14 +466,6 @@ attribute (AtMeta meta) var = meta' (Named meta) var
 attribute (AtAny _) _ = pure []
 attribute attr var = (\literal -> [Guard (printf "%s == %s" var literal)]) <$> attributed attr
 
-indexed :: Alpha -> String -> Emitting [Qual]
-indexed (AlMeta meta) var = do
-  index <- fresh
-  bound <- meta' (Named meta) index
-  pure (Gen (PCon "Alpha" [PVar index]) (single var) : bound)
-indexed (AlAny _) var = pure [Gen (PCon "Alpha" [PVar "_"]) (single var)]
-indexed (Alpha idx) var = pure [Guard (printf "%s == Alpha %d" var idx)]
-
 meta' :: Meta -> String -> Emitting [Qual]
 meta' key var =
   known key >>= \case
@@ -498,7 +482,6 @@ prefixed prefix = nub . go
       | T.pack prefix `T.isPrefixOf` kind = [Anon slot]
     go (ExFormation bds) = concat [go expr | BiTau _ expr <- bds]
     go (ExApplication expr (ArTau _ arg)) = go expr ++ go arg
-    go (ExApplication expr (ArAlpha _ arg)) = go expr ++ go arg
     go (ExDispatch expr _) = go expr
     go _ = []
 
@@ -555,7 +538,6 @@ compared operator (Just left) (Just right) = printf "%s %s %s" (parens left) ope
 compared _ _ _ = "False"
 
 number :: Y.Number -> Emitting (Maybe String)
-number (Y.MetaIndex meta) = known (Named meta)
 number (Y.Length (BiMeta meta)) = fmap ("length " ++) <$> known (Named meta)
 number (Y.Domain (BiMeta meta)) = fmap ("Ru.domainOf " ++) <$> known (Named meta)
 number (Y.Literal num) = pure (Just (show num))
@@ -594,11 +576,6 @@ built checked (ExApplication expr (ArTau attr arg)) = do
   attr' <- builtAttribute attr
   arg' <- built checked arg
   pure (printf "ExApplication %s (ArTau %s %s)" <$> fmap parens expr' <*> fmap parens attr' <*> fmap parens arg')
-built checked (ExApplication expr (ArAlpha alpha arg)) = do
-  expr' <- built checked expr
-  alpha' <- builtAlpha alpha
-  arg' <- built checked arg
-  pure (printf "ExApplication %s (ArAlpha %s %s)" <$> fmap parens expr' <*> fmap parens alpha' <*> fmap parens arg')
 built _ expr = refuse (printf "it builds the term '%s', which only a rule of YAML can build" (show expr))
 
 builtBinding :: Bool -> Binding -> Emitting (Maybe String)
@@ -625,11 +602,6 @@ builtAttribute :: Attribute -> Emitting (Maybe String)
 builtAttribute (AtMeta meta) = known (Named meta)
 builtAttribute (AtAny _) = pure Nothing
 builtAttribute attr = Just <$> attributed attr
-
-builtAlpha :: Alpha -> Emitting (Maybe String)
-builtAlpha (AlMeta meta) = fmap ("Alpha " ++) <$> known (Named meta)
-builtAlpha (AlAny _) = pure Nothing
-builtAlpha (Alpha idx) = pure (Just (printf "Alpha %d" idx))
 
 attributed :: Attribute -> Emitting String
 attributed (AtLabel label) = pure (printf "AtLabel (%s)" (texted label))
