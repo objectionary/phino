@@ -44,7 +44,7 @@ import Rewriter
 import Rule (RuleContext (..), matchExpressionWithRule)
 import Sides (sides)
 import Slots (anonymous)
-import Sodg (printCommands, sodg)
+import Sodg (printCommands, sodg, untested)
 import System.Directory (canonicalizePath, doesFileExist, getModificationTime)
 import System.Exit (exitSuccess)
 import System.FilePath (takeDirectory, (</>))
@@ -444,7 +444,7 @@ runSodg :: OptsSodg -> IO ()
 runSodg OptsSodg{..} = do
   input <- readInput _inputFile
   expr <- parseInput input _inputFormat POLYFORM
-  graph <- sodg expr
+  graph <- sodg (if _dropTests then untested expr else expr)
   putStr (printCommands graph)
 
 runCompile :: OptsCompile -> IO ()

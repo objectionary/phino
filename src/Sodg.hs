@@ -12,6 +12,7 @@ module Sodg
   , commands
   , sodg
   , printCommands
+  , untested
   , vertex
   )
 where
@@ -109,6 +110,25 @@ commands expr = reverse . snd <$> top expr
       Function name -> Right name
       FnSymbol idx -> Right ("𝜎" <> T.pack (show idx))
       other -> patterned place (ExFormation [BiLambda other])
+
+untested :: Expression -> Expression
+untested = \case
+  ExFormation bds -> ExFormation (map inner (filter kept bds))
+  ExDispatch base attr -> ExDispatch (untested base) attr
+  ExApplication proto (ArTau attr value) -> ExApplication (untested proto) (ArTau attr (untested value))
+  other -> other
+  where
+    kept :: Binding -> Bool
+    kept = \case
+      BiTau (AtLabel label) _ -> not (test label)
+      BiVoid (AtLabel label) -> not (test label)
+      _ -> True
+    test :: Text -> Bool
+    test label = any (`T.isPrefixOf` label) ["p🌵", "n🌵", "+", "-"]
+    inner :: Binding -> Binding
+    inner = \case
+      BiTau attr value -> BiTau attr (untested value)
+      other -> other
 
 sodg :: Expression -> IO [Command]
 sodg = either throwIO pure . commands

@@ -53,6 +53,15 @@ spec = do
             _ -> expectationFailure "The pack holds neither a single 'output' nor a single 'fails'"
       )
 
+  describe "untested" $ do
+    it "drops the tests of every object, however deep" $ do
+      expr <- parseExpressionThrows "⟦ a ↦ Φ.f( x ↦ ⟦ y ↦ ⟦ n🌵no ↦ ∅, z ↦ Φ.u ⟧ ⟧ ).g, p🌵it ↦ ⟦ q ↦ Φ.v ⟧ ⟧"
+      expected <- parseExpressionThrows "⟦ a ↦ Φ.f( x ↦ ⟦ y ↦ ⟦ z ↦ Φ.u ⟧ ⟧ ).g ⟧"
+      untested expr `shouldBe` expected
+    it "drops the tests the XMIR reader names with a sign" $
+      untested (ExFormation [BiTau (AtLabel "+ok") ExRoot, BiTau (AtLabel "x") ExRoot, BiVoid (AtLabel "-bad")])
+        `shouldBe` ExFormation [BiTau (AtLabel "x") ExRoot]
+
   describe "sodg keeps its four promises on any program" $ do
     prop "every F, D, A and T makes a fresh name and a command uses only names made above it" $ \(Grown grown) ->
       let expr = scrubbed False grown

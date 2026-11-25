@@ -4935,6 +4935,18 @@ spec = do
       withStdin "⟦ a ↦ ⊥ ⟧" $
         testCLISucceeded ["sodg"] ["F c0 a\nT c1\nP c0 a c1\n"]
 
+    it "drops the tests with --drop-tests" $
+      withStdin "⟦ a ↦ ⟦ x ↦ ∅, p🌵works ↦ ⟦ φ ↦ ξ.ρ.x ⟧, n🌵fails ↦ Φ.b ⟧ ⟧" $
+        testCLISucceeded ["sodg", "--drop-tests"] ["F c0 a\nF c1 x\nP c0 a c1\n"]
+
+    it "drops the tests of XMIR with --drop-tests" $
+      withStdin "<object><o name=\"app\"><o name=\"x\" base=\"Φ.number\"/><o name=\"+works\"><o name=\"φ\" base=\"Φ.true\"/></o></o></object>" $
+        testCLISucceeded ["sodg", "--input=xmir", "--drop-tests"] ["F c0 app\nF c1 x\nD c2 c0 number\nP c1 x c2\nP c0 app c1\n"]
+
+    it "keeps the tests without --drop-tests" $
+      withStdin "⟦ p🌵works ↦ Φ.b ⟧" $
+        testCLISucceeded ["sodg"] ["F c0 p🌵works\nD c1 c0 b\nP c0 p🌵works c1\n"]
+
     it "rejects an option of other commands" $
       withStdin "⟦⟧" $
         testCLIFailed ["sodg", "--sweet"] ["Invalid option"]

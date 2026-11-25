@@ -82,6 +82,9 @@ its bindings, a dispatch or an application after its operands, `Φ` is `c0`,
 `ξ` the nearest formation around, and every ⊥ a fresh cell `T` makes a
 terminator (#2455). A term holding a meta or a ξ outside every formation is
 refused.
+Given `--drop-tests`, it first drops the unit tests of every object, each
+attribute named `p🌵…`, `n🌵…`, `+…` or `-…` with all it holds
+(`untested`, #2487).
 
 ### Two-phase rendering pipeline
 

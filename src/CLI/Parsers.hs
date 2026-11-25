@@ -654,6 +654,7 @@ sodgParser =
             <$> optLogLevel
             <*> optLogLines
             <*> optInputFormat
+            <*> switch (long "drop-tests" <> help "Drop the unit tests of every object, the attributes named p🌵…, n🌵…, +… or -…, with all they hold")
             <*> argInputFile
         )
 
