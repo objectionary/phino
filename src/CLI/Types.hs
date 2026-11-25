@@ -8,7 +8,7 @@ module CLI.Types where
 
 import AST
 import Control.Exception (Exception)
-import Deps (Acyclic)
+import Deps (Acyclic, Duration)
 import Lining (LineFormat)
 import Logger (LogLevel)
 import Must (Must)
@@ -120,7 +120,7 @@ data OptsDataize = OptsDataize
   , _maxCycles :: Int
   , _maxSteps :: Int
   , _maxFirings :: Maybe Int
-  , _maxSeconds :: Maybe Int
+  , _maxSeconds :: Maybe Duration
   , _maxNodes :: Maybe Int
   , _maxMemory :: Maybe Int
   , _margin :: Int
@@ -172,7 +172,7 @@ data OptsMorph = OptsMorph
   , _maxCycles :: Int
   , _maxSteps :: Int
   , _maxFirings :: Maybe Int
-  , _maxSeconds :: Maybe Int
+  , _maxSeconds :: Maybe Duration
   , _maxNodes :: Maybe Int
   , _maxMemory :: Maybe Int
   , _margin :: Int

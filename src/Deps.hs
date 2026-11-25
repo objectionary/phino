@@ -96,6 +96,12 @@ opened Dataization = "dataize"
 opened Evaluation = "evaluate"
 opened Contextualization = "contextualize"
 
+data Duration = Duration
+  { _given :: String
+  , _span :: Double
+  }
+  deriving (Eq, Show)
+
 data Acyclic
   = Proven
   | Plausible
@@ -143,7 +149,7 @@ data Evaluation
   | EvStall Int T.Text
   | EvStuckOn Int T.Text
   | EvStarved Int Int Judgment Expression
-  | EvTimeout Int Int Judgment Expression
+  | EvTimeout Int Duration Judgment Expression
   | EvSpent Int Int Judgment Expression
   | EvExceeded Int Int Judgment Expression
   | EvOversized Int Int Judgment Expression
@@ -501,7 +507,7 @@ saveEval handle cursor printed printed' profile report = do
       pure (protocol, Just (indented at (remarked (printf "starved %d" limit) remarks)))
     written at (EvTimeout _ limit judgment site) protocol = do
       remarks <- context protocol judgment site
-      pure (protocol, Just (indented at (remarked (printf "timeout %d" limit) remarks)))
+      pure (protocol, Just (indented at (remarked (printf "timeout %s" limit._given) remarks)))
     written at (EvSpent _ limit judgment site) protocol = do
       remarks <- context protocol judgment site
       pure (protocol, Just (indented at (remarked (printf "spent %d" limit) remarks)))
@@ -892,7 +898,7 @@ saveEvalXml handle cursor printed report = do
     elements at (EvStarved depth limit judgment site) nesting =
       placed at nesting (printf "<starved limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
     elements at (EvTimeout depth limit judgment site) nesting =
-      placed at nesting (printf "<timeout limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
+      placed at nesting (printf "<timeout limit=\"%s\" by=\"%s\" at=\"%s\"/>" limit._given (opened judgment) . escapeXML <$> located depth site)
     elements at (EvSpent depth limit judgment site) nesting =
       placed at nesting (printf "<spent limit=\"%d\" by=\"%s\" at=\"%s\"/>" limit (opened judgment) . escapeXML <$> located depth site)
     elements at (EvExceeded depth limit judgment site) nesting =

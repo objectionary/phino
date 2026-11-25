@@ -21,7 +21,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Yaml qualified as Decode
 import Dataize (Outcome (..), dataize)
-import Deps (Acyclic (..), Evaluation (EvLooped, EvMorphed, EvNormalized, EvRecalled, EvWorld), Judgment (..), State, Term (TeExpression))
+import Deps (Acyclic (..), Duration (..), Evaluation (EvLooped, EvMorphed, EvNormalized, EvRecalled, EvWorld), Judgment (..), State, Term (TeExpression))
 import Engine (Engine (_normal))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, linked, overdue, primitives)
@@ -302,7 +302,7 @@ spec = do
       let formation :: Expression -> Int -> Expression
           formation base depth = ExFormation [BiTau (AtLabel "x") (iterate (`ExDispatch` AtLabel "w") base !! depth), BiTau AtPhi ExRoot]
       base <- defaultReduceContext ExRoot
-      ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline 31 due)}
+      ctx <- enter (formation ExRoot 1300) base{_acyclic = Just Plausible, _deadline = Just (Deadline (Duration "31" 31) due)}
       timeout 10000000 (enter (formation ExXi 1700) ctx)
         `shouldThrow` (\e -> "--max-seconds=31" `isInfixOf` show (e :: SomeException))
 
@@ -352,7 +352,7 @@ spec = do
       base <- defaultReduceContext ExRoot
       noted base{_facts = Just facts} wide (ExDispatch ExRoot (AtLabel "cq"))
       due <- (+ 2) <$> getMonotonicTime
-      ctx <- enter looping base{_acyclic = Just Plausible, _maxLoops = 0, _facts = Just facts, _reckoning = True, _deadline = Just (Deadline 43 due), _saveEval = \record -> modifyIORef' told (record :)}
+      ctx <- enter looping base{_acyclic = Just Plausible, _maxLoops = 0, _facts = Just facts, _reckoning = True, _deadline = Just (Deadline (Duration "43" 43) due), _saveEval = \record -> modifyIORef' told (record :)}
       _ <- timeout 10000000 (fired ExRoot ctx ExRoot emptyState looping)
       records <- readIORef told
       [answered | EvLooped _ _ _ _ _ (Just (_, answered)) <- records] `shouldBe` [Just (ExDispatch (ExDispatch ExRoot (AtLabel "cq")) (AtLabel "kq"))]

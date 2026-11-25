@@ -18,7 +18,7 @@ import Data.List (find, isInfixOf)
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Yaml qualified as Decode
-import Deps (Acyclic, Evaluation (EvRun), Judgment (Morphing), Term (TeExpression), certainty)
+import Deps (Acyclic, Duration (..), Evaluation (EvRun), Judgment (Morphing), Term (TeExpression), certainty)
 import Encoding (Encoding (UNICODE))
 import Files (allPathsIn)
 import Fixtures (defaultReduceContext, fixtureLambdas, recorded, recorded', withLambdas, withLambdasOf)
@@ -201,7 +201,7 @@ spec = do
       table <- withLambdasOf ("- λ: L_wide\n  morph:\n    𝑛1: $.x\n  rewrite:\n    𝑛2:\n      of: 𝑛1\n      rules:\n" <> T.concat (map (\idx -> "        - name: never" <> T.pack (show idx) <> "\n          pattern: 𝑒1.qz\n          result: 𝑒1\n") [1 .. 2000 :: Int]) <> "  𝑛: 𝑛2\n") readLambdas
       due <- (+ 0.2) <$> getMonotonicTime
       ctx <- withLambdas table <$> defaultReduceContext (ExDispatch ExRoot (AtLabel "y"))
-      timeout 10000000 (morph program emptyState ctx{_deadline = Just (Deadline 37 due)})
+      timeout 10000000 (morph program emptyState ctx{_deadline = Just (Deadline (Duration "37" 37) due)})
         `shouldThrow` (\e -> "--max-seconds=37" `isInfixOf` show (e :: SomeException))
 
   describe "fabricates a formation of two sides of different shapes" $

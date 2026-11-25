@@ -41,7 +41,7 @@ import Data.Text qualified as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Yaml qualified as Yaml
 import Dataize (reduction)
-import Deps (Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
+import Deps (Duration (..), Judgment (..), SaveEvalFunc, dontSaveEval, dontSaveStep)
 import Engine (Engine, building, yaml)
 import Evaluate (evaluation)
 import GHC.Clock (getMonotonicTime)
@@ -77,7 +77,7 @@ loopingLambdas :: (FilePath -> IO a) -> IO a
 loopingLambdas = withLambdasOf "- λ: L_loop\n  𝑛: ⟦ λ ⤍ L_loop ⟧\n"
 
 overdue :: Int -> IO Deadline
-overdue cap = Deadline cap . subtract 1 <$> getMonotonicTime
+overdue cap = Deadline (Duration (show cap) (fromIntegral cap)) . subtract 1 <$> getMonotonicTime
 
 withLambdasOf :: T.Text -> (FilePath -> IO a) -> IO a
 withLambdasOf lambdas = withTemp "phino-symbolic-.yaml" (encodeUtf8 lambdas)
