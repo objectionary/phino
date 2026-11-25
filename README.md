@@ -173,6 +173,10 @@ file:
   meta.
   It may hold `otherwise`, a λ name that joins two formations of different
   shapes one attribute at a time, and the file must answer that name too.
+  It may be a mapping instead, holding that name under `λ` and the names of
+  the condition and the two sides in the formation it makes under `on`,
+  `left` and `right`, such as `c🌵`; each ends with `🌵`, and a missing one
+  is `on🌵`, `left🌵` or `right🌵`.
 * `terminators` lists λ names that only raise, as in `[L_throw]`.
   A term holding one of them, or an application of one, passes every line
   as it is, and `join` takes it for a side that raises, as it takes `⊥`.
