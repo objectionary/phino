@@ -14,9 +14,9 @@ concurrency:
 env:
   GHC_VERSION: '9.8.4'
   CABAL_VERSION: '3.18.2.0'
-  HOME_REV: 'a4ccaa932aa2049b509a96f3589f7f28ec4e4469'
-  EOLANG_VERSION: '0.37.1'
-  EO_PARSER: '0.63.2'
+  HOME_REV: 'd723e17579c6ed2d015d1ec67ebeb901d9402a25'
+  EOLANG_VERSION: '0.38.0'
+  EO_PARSER: '0.63.4'
 permissions: read-all
 jobs:
   objectionary:
@@ -66,17 +66,35 @@ jobs:
         run: |
           cd home
           eoc -s objects parse --parser="$EO_PARSER"
+      # The parser names an argument by its place, as α0, which phino refuses.
+      # The 'dealpha' goal names it after the void it lands in, by the tables
+      # of the 'infer' goal. No command of eoc runs the two, so the Maven
+      # wrapper of eoc does, with what eo-runtime/pom.xml of EO gives 'infer'.
+      - name: Name every positional argument
+        run: |
+          home="$(pwd)/home"
+          cd "$(npm root -g)/eolang/mvnw"
+          ./mvnw eo:infer eo:dealpha \
+            "-Deo.version=${EO_PARSER}" \
+            "-Deo.sources=${home}/objects" \
+            "-Deo.target=${home}/.eoc" \
+            '-Deo.infer.canon=Φ.bytes,Φ.number,Φ.string' \
+            '-Deo.infer.roots=Φ.tuple,Φ.map,Φ.set' \
+            '-Deo.infer.scalars=Φ.number,Φ.bytes,Φ.string,Φ.bool,Φ.true,Φ.false,Φ.i8,Φ.i16,Φ.i32,Φ.i64,Φ.u8,Φ.u16,Φ.u32,Φ.u64,Φ.dataized' \
+            -Deo.dealpha.rigid=true \
+            --batch-mode --color=never --fail-fast --strict-checksums
       - name: Round-trip every XMIR document through phino
         run: |
           cd home
+          named=$(find .eoc -maxdepth 1 -type d -name '*-dealpha')
           count=0
           while IFS= read -r file; do
-            rel="${file#.eoc/01-parse/}"
+            rel="${file#"${named}"/}"
             dir=".eoc/2-rewritten/$(dirname "$rel")"
             mkdir -p "$dir"
             phino rewrite --input=xmir --output=xmir "$file" > "$dir/$(basename "$rel")"
             count=$((count + 1))
-          done < <(find .eoc/01-parse -type f -name '*.xmir')
+          done < <(find "${named}" -type f -name '*.xmir')
           echo "Rewritten $count XMIR document(s)"
           test "$count" -gt 0
       - name: Regenerate EO sources from rewritten XMIR
