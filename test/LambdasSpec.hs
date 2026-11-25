@@ -12,6 +12,7 @@ import Control.Monad (forM_)
 import Data.List (isInfixOf)
 import Data.Text qualified as T
 import Fixtures (withLambdasOf)
+import Forks (Fabric (..), fabric)
 import Functions (buildTerm)
 import Lambdas (Ending (..), Lambda (..), Lambdas, Line (..), Meta (..), cast, emptyLambdas, matched, minted, readLambdas, rewritten, stayed, symbolized, taken, thrown)
 import Parser (parseExpressionThrows)
@@ -99,7 +100,7 @@ sides known func = case _ending <$> matched known func of
   Just (Joining _ left right _) -> Just (left, right)
   _ -> Nothing
 
-fallback :: Lambdas -> T.Text -> Maybe Function
+fallback :: Lambdas -> T.Text -> Maybe Fabric
 fallback known func = case _ending <$> matched known func of
   Just (Joining _ _ _ name) -> name
   _ -> Nothing
@@ -244,7 +245,19 @@ spec = do
 
     it "reads the λ function the 'otherwise' of a 'join' block names" $ do
       known <- lambdasOf (joint <> "    otherwise: L_join\n")
-      fallback known "L_fork" `shouldBe` Just (Function "L_join")
+      fallback known "L_fork" `shouldBe` Just (fabric (Function "L_join"))
+
+    it "reads the names of the parts of a fabricated formation the 'otherwise' of a 'join' block gives" $ do
+      known <- lambdasOf (joint <> "    otherwise:\n      λ: L_join\n      on: c🌵\n      left: a🌵\n      right: b🌵\n")
+      fallback known "L_fork" `shouldBe` Just (Fabric (Function "L_join") (AtLabel "c🌵") (AtLabel "a🌵") (AtLabel "b🌵"))
+
+    it "keeps the default name of a part of a fabricated formation the 'otherwise' of a 'join' block does not give" $ do
+      known <- lambdasOf (joint <> "    otherwise:\n      λ: L_join\n      left: a🌵\n")
+      fallback known "L_fork" `shouldBe` Just (Fabric (Function "L_join") (AtLabel "on🌵") (AtLabel "a🌵") (AtLabel "right🌵"))
+
+    it "reads an 'otherwise' holding only a λ as one keeping every default name" $ do
+      known <- lambdasOf (joint <> "    otherwise:\n      λ: L_join\n")
+      fallback known "L_fork" `shouldBe` Just (fabric (Function "L_join"))
 
     it "reads a 'join' block with no 'otherwise' as one fabricating nothing" $ do
       known <- lambdasOf joint
@@ -493,6 +506,13 @@ spec = do
       , ("a 'join' block with a key it does not read", joint <> "    middle: $.m\n", "The key 'middle' of the 'join' block of λ function 'L_fork' is none of its keys: on, left, right, otherwise")
       , ("a 'join' block whose 'otherwise' is no λ name", joint <> "    otherwise: l_join\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' is 'l_join', while it must name a λ function, such as 'L_join'")
       , ("a 'join' block whose 'otherwise' names a symbol", joint <> "    otherwise: 𝜎3\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' is '𝜎3', while it must name a λ function, such as 'L_join'")
+      , ("an 'otherwise' naming a part by a name with no 🌵", joint <> "    otherwise:\n      λ: L_join\n      on: c\n", "The 'on' of the 'otherwise' of the 'join' block of λ function 'L_fork' is 'c', while it must name an attribute ending with '🌵', such as 'on🌵'")
+      , ("an 'otherwise' naming a part by what is no attribute", joint <> "    otherwise:\n      λ: L_join\n      left: a🌵.b🌵\n", "The 'left' of the 'otherwise' of the 'join' block of λ function 'L_fork' is 'a🌵.b🌵', while it must name an attribute ending with '🌵'")
+      , ("an 'otherwise' giving one name to two parts", joint <> "    otherwise:\n      λ: L_join\n      left: on🌵\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' gives one name to two of 'on', 'left' and 'right'")
+      , ("an 'otherwise' with no 'λ' key", joint <> "    otherwise:\n      on: c🌵\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' has no 'λ' key")
+      , ("an 'otherwise' with a key it does not read", joint <> "    otherwise:\n      λ: L_join\n      middle: m🌵\n", "The key 'middle' of the 'otherwise' of the 'join' block of λ function 'L_fork' is none of its keys: λ, on, left, right")
+      , ("an 'otherwise' whose 'λ' is no λ name", joint <> "    otherwise:\n      λ: l_join\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' is 'l_join', while it must name a λ function")
+      , ("an 'otherwise' which is a list", joint <> "    otherwise: [L_join]\n", "The 'otherwise' of the 'join' block of λ function 'L_fork' is neither a λ name nor a mapping with the keys λ, on, left, right")
       , ("a 'join' block which is no mapping", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join: [𝛿1, $.a, $.b]\n", "join: parsing")
       , ("a side of a 'join' block naming a meta nothing binds", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  join:\n    on: 𝛿1\n    left: 𝑛1\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' that none of 'morph', 'undress', 'evaluate', 'stay', 'rewrite', 'symbolize', 'cast' and 'defer' binds")
       , ("a side of a 'join' block reading a meta inside a term", "- λ: L_fork\n  dataize:\n    𝛿1: $.c\n  morph:\n    𝑛1: $.a\n  join:\n    on: 𝛿1\n    left: 𝑛1.x\n    right: $.b\n", "The side 'left' of the 'join' block of λ function 'L_fork' reads the meta 'n1' inside a term, while a side is a path from '$' or a meta alone")

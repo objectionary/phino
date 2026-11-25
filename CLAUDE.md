@@ -356,9 +356,14 @@ that function, whose `on🌵` holds `⟦ Δ ⤍ 𝛿1 ⟧`, the bytes of the con
 as `ρ.left🌵.a`. The 🌵 mark keeps
 these names apart from any attribute of a side, such as the `left` and
 `right` voids of the `if` of a bool in EO, since no program spells it
-(#2027). A copy leaves void every void of the formations the sides bind its
-attribute to, the left side's first, and asks a side binding the attribute to
-a formation for it applied to the voids of that formation alone, as
+(#2027). These three are only the defaults: `otherwise` may be a mapping
+holding the λ name under `λ` and the names of the parts under `on`, `left`
+and `right`, each optional and ending with 🌵, which `forked` takes from
+`Fabric` of `Forks.hs`, so a copy fires the same entry and finds its
+operands where the first firing found them (#2483). A copy leaves void
+every void of the formations the sides bind its attribute to, the left
+side's first, and asks a side binding the attribute to a formation for it
+applied to the voids of that formation alone, as
 `ρ.left🌵.a( x ↦ ξ.x )`, and any other side for it applied to every void, so
 a method of the fabricated formation takes its arguments (#2031). Before
 that, `inlined` binds an attribute a side binds to `ξ.f`, where `f` is

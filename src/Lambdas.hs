@@ -32,13 +32,13 @@ import Builder (buildExpressionThrows)
 import Control.Exception (Exception, throwIO)
 import Control.Monad ((<$!>))
 import Control.Monad.Trans.State.Strict (State, runState, state)
-import Data.Aeson (FromJSON (parseJSON), Key, Object, withObject, (.!=), (.:?))
+import Data.Aeson (FromJSON (parseJSON), Key, Object, Value (Object, String), withObject, (.!=), (.:?))
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Aeson.Types (JSONPathElement (Key), (<?>))
 import Data.Char (isDigit)
 import Data.Either (partitionEithers)
-import Data.List (find, sortOn)
+import Data.List (find, nub, sortOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Maybe (fromMaybe, listToMaybe)
@@ -46,6 +46,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Yaml as Yaml
+import Forks (Fabric (Fabric), fabric)
 import Language (Language, language, shared)
 import Logger (logDebug)
 import Matcher (substEmpty)
@@ -77,7 +78,7 @@ data Line
 
 data Ending
   = Answering Expression
-  | Joining (Either Meta Expression) Expression Expression (Maybe Function)
+  | Joining (Either Meta Expression) Expression Expression (Maybe Fabric)
 
 data Lambda = Lambda
   { _key :: Text
@@ -159,8 +160,29 @@ instance FromJSON Lambda where
           side name term = case metas term of
             [] -> pure term
             meta : _ -> fail (printf "The side '%s' of the 'join' block of λ function '%s' reads the meta '%s' inside a term, while a side is a path from '$' or a meta alone" name key (T.unpack meta))
-          fallback :: Text -> Yaml.Parser Function
-          fallback spelling = case parseBinding (printf "λ ⤍ %s" (T.unpack spelling)) of
+          fallback :: Value -> Yaml.Parser Fabric
+          fallback (String spelling) = fabric <$> function spelling
+          fallback (Object names) = do
+            case filter (`notElem` ["λ", "on", "left", "right"]) (map Key.toText (KeyMap.keys names)) of
+              [] -> pure ()
+              name : _ -> fail (printf "The key '%s' of the 'otherwise' of the 'join' block of λ function '%s' is none of its keys: λ, on, left, right" (T.unpack name) key)
+            func <- names .:? "λ" >>= maybe (fail (printf "The 'otherwise' of the 'join' block of λ function '%s' has no 'λ' key" key)) function
+            onward <- label "on" "on🌵"
+            lefty <- label "left" "left🌵"
+            righty <- label "right" "right🌵"
+            if length (nub [onward, lefty, righty]) < 3
+              then fail (printf "The 'otherwise' of the 'join' block of λ function '%s' gives one name to two of 'on', 'left' and 'right', while each of them names an attribute of its own" key)
+              else pure (Fabric func onward lefty righty)
+            where
+              label :: Key -> Text -> Yaml.Parser Attribute
+              label name spelling = names .:? name >>= maybe (pure (AtLabel spelling)) (attribute name)
+              attribute :: Key -> Text -> Yaml.Parser Attribute
+              attribute name spelling = case parseExpression (printf "ξ.%s" (T.unpack spelling)) of
+                Right (ExDispatch ExXi attr@(AtLabel text)) | "🌵" `T.isSuffixOf` text -> pure attr
+                _ -> fail (printf "The '%s' of the 'otherwise' of the 'join' block of λ function '%s' is '%s', while it must name an attribute ending with '🌵', such as 'on🌵'" (Key.toString name) key (T.unpack spelling))
+          fallback _ = fail (printf "The 'otherwise' of the 'join' block of λ function '%s' is neither a λ name nor a mapping with the keys λ, on, left, right" key)
+          function :: Text -> Yaml.Parser Function
+          function spelling = case parseBinding (printf "λ ⤍ %s" (T.unpack spelling)) of
             Right (BiLambda func@(Function _)) -> pure func
             _ -> fail (printf "The 'otherwise' of the 'join' block of λ function '%s' is '%s', while it must name a λ function, such as 'L_join'" key (T.unpack spelling))
       reductions :: Text -> (Text -> Yaml.Parser Meta) -> (Meta -> Meta -> Line) -> Object -> Key -> Yaml.Parser [Either (Meta, Expression) Line]
