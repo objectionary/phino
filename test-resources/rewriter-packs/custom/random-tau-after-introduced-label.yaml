@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Objectionary.com
+# SPDX-License-Identifier: MIT
+---
+input: '[[ stage -> 0 ]]'
+output: '[[ stage -> 2, a🌵0 -> "kept", a🌵1 -> "new" ]]'
+rules:
+  custom:
+    - name: introduce label
+      pattern: '[[ stage -> 0 ]]'
+      result: '[[ stage -> 1, a🌵0 -> "kept" ]]'
+    - name: mint fresh label
+      pattern: '[[ stage -> 1, !B1 ]]'
+      result: '[[ stage -> 2, !B1, !t1 -> "new" ]]'
+      where:
+        - meta: '!t1'
+          function: random-tau
