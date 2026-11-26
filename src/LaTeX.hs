@@ -246,7 +246,12 @@ expressionToLaTeX ex ctx =
     ]
 
 piped :: T.Text -> T.Text
-piped str = "|" <> toLaTeX str <> "|"
+piped str = "|" <> T.concatMap unicode str <> "|"
+  where
+    unicode :: Char -> T.Text
+    unicode ch
+      | ch `elem` ("φρξ" :: String) = T.pack (printf "[U+%04X]" (ord ch))
+      | otherwise = toLaTeX (T.singleton ch)
 
 class ToLaTeX a where
   toLaTeX :: a -> a
