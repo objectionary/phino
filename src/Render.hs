@@ -232,6 +232,7 @@ instance Render EXPRESSION where
   rendering EX_XI{..} = rendering xi
   rendering EX_ATTR{..} = rendering attr
   rendering EX_TERMINATION{..} = rendering termination
+  rendering EX_FORMATION{binding = BI_EMPTY{}, ..} = rendering lsb <> rendering rsb
   rendering EX_FORMATION{..} = rendering lsb <> rendering eol <> rendering tab <> rendering binding <> rendering eol' <> rendering tab' <> rendering rsb
   rendering EX_DISPATCH{..} = rendering expr <> rendering space <> "." <> rendering space <> rendering attr
   rendering EX_APPLICATION{..} = rendering expr <> rendering space <> "(" <> rendering eol <> rendering tab <> rendering argument <> rendering eol' <> rendering tab' <> ")"
